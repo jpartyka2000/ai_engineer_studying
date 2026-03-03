@@ -13,23 +13,70 @@
     </p>
 </div>
 
+<!-- Search bar -->
 <div class="mb-8">
     <div class="max-w-md mx-auto">
         <input type="text"
                id="subject-search"
                placeholder="Search subjects..."
-               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+               hx-get="{% url 'home' %}"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#subject-grid"
+               hx-select="#subject-grid"
+               name="q">
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="subject-grid">
-    <!-- Subject cards will be loaded here -->
+<!-- Subjects by category -->
+<div id="subject-grid">
+    {% if categories %}
+        {% for category, subjects in categories.items %}
+        <div class="mb-10">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">{{ category }}</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for subject in subjects %}
+                <a href="{% url 'subjects:detail' slug=subject.slug %}"
+                   class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200 block">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-900 text-lg mb-2">{{ subject.name }}</h3>
+                            <p class="text-sm text-gray-600 mb-3">{{ subject.description|truncatewords:20 }}</p>
+                        </div>
+                        {% if subject.icon %}
+                        <span class="text-2xl">{{ subject.icon }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            Exam
+                        </span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Lightning
+                        </span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Q&A
+                        </span>
+                        {% if subject.supports_visuals %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Visuals
+                        </span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
     <div class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-        <p>No subjects available yet.</p>
-        <p class="text-sm mt-2">Add subjects through the Django admin.</p>
+        <p class="text-lg mb-2">No subjects available yet.</p>
+        <p class="text-sm">Add subjects through the Django admin.</p>
     </div>
+    {% endif %}
 </div>
 
+<!-- Study Modes Info -->
 <div class="mt-12 text-center">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">Study Modes</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
@@ -55,4 +102,25 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Simple client-side search filtering
+    document.getElementById('subject-search').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const subjectCards = document.querySelectorAll('#subject-grid a');
+
+        subjectCards.forEach(function(card) {
+            const name = card.querySelector('h3').textContent.toLowerCase();
+            const description = card.querySelector('p').textContent.toLowerCase();
+
+            if (name.includes(searchTerm) || description.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
 {% endblock %}

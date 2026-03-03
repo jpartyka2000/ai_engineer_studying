@@ -113,6 +113,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Authentication
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+
 # Anthropic Claude API
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
 CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
