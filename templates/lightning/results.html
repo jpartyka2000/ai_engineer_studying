@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Results - Lightning Round - {{ session.subject.name }} - AI Interview Prep{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'subjects:detail' slug=session.subject.slug %}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+            &larr; Back to {{ session.subject.name }}
+        </a>
+    </div>
+
+    <!-- Results Summary Card -->
+    <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 {% if session.accuracy_percentage >= 80 %}bg-green-100{% elif session.accuracy_percentage >= 60 %}bg-yellow-100{% else %}bg-red-100{% endif %} rounded-full mb-4">
+                <svg class="w-10 h-10 {% if session.accuracy_percentage >= 80 %}text-green-600{% elif session.accuracy_percentage >= 60 %}text-yellow-600{% else %}text-red-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Lightning Round Complete!</h1>
+            <p class="text-gray-600">{{ session.subject.name }} - {{ session.difficulty|title }}</p>
+            {% if session.status == 'timed_out' %}
+            <span class="inline-block mt-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                Time Expired
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-3xl font-bold text-gray-900">{{ session.questions_answered }}</div>
+                <div class="text-sm text-gray-600">Questions Answered</div>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <div class="text-3xl font-bold text-green-600">{{ session.questions_correct }}</div>
+                <div class="text-sm text-gray-600">Correct Answers</div>
+            </div>
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <div class="text-3xl font-bold text-blue-600">{{ session.accuracy_percentage }}%</div>
+                <div class="text-sm text-gray-600">Accuracy</div>
+            </div>
+            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                <div class="text-3xl font-bold text-yellow-600">{{ session.best_streak }}</div>
+                <div class="text-sm text-gray-600">Best Streak</div>
+            </div>
+        </div>
+
+        <!-- Additional Stats -->
+        <div class="flex justify-center space-x-8 text-sm text-gray-600 border-t pt-6">
+            <div>
+                <span class="font-medium">Time Limit:</span>
+                {% for seconds, label in session.TIME_LIMIT_CHOICES %}
+                    {% if seconds == session.time_limit_seconds %}{{ label }}{% endif %}
+                {% endfor %}
+            </div>
+            <div>
+                <span class="font-medium">Avg Response:</span>
+                {% if avg_response_time_ms %}
+                    {{ avg_response_time_ms }}ms
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+            <div>
+                <span class="font-medium">Date:</span>
+                {{ session.started_at|date:"M d, Y" }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-center space-x-4 mb-8">
+        <a href="{% url 'lightning:config' subject_slug=session.subject.slug %}"
+           class="bg-yellow-500 text-white py-2 px-6 rounded-md font-medium hover:bg-yellow-600">
+            Try Again
+        </a>
+        <a href="{% url 'subjects:detail' slug=session.subject.slug %}"
+           class="bg-gray-200 text-gray-700 py-2 px-6 rounded-md font-medium hover:bg-gray-300">
+            Back to Subject
+        </a>
+    </div>
+
+    <!-- Question Review -->
+    {% if answers %}
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Question Review</h2>
+
+        <div class="space-y-4">
+            {% for answer in answers %}
+            <div class="border rounded-lg p-4 {% if answer.is_correct %}border-green-200 bg-green-50{% else %}border-red-200 bg-red-50{% endif %}">
+                <div class="flex items-start justify-between mb-2">
+                    <span class="text-sm font-medium {% if answer.is_correct %}text-green-700{% else %}text-red-700{% endif %}">
+                        {% if answer.is_correct %}Correct{% else %}Incorrect{% endif %}
+                    </span>
+                    <span class="text-xs text-gray-500">{{ answer.response_time_ms }}ms</span>
+                </div>
+
+                <p class="text-gray-900 mb-3">{{ answer.question.question_text|truncatewords:30 }}</p>
+
+                <div class="text-sm">
+                    <span class="text-gray-600">Your answer:</span>
+                    <span class="font-medium {% if answer.is_correct %}text-green-700{% else %}text-red-700{% endif %}">
+                        {{ answer.user_answer }}
+                    </span>
+                    {% if not answer.is_correct %}
+                    <span class="text-gray-600 ml-2">Correct answer:</span>
+                    <span class="font-medium text-green-700">{{ answer.question.correct_answer }}</span>
+                    {% endif %}
+                </div>
+
+                {% if answer.question.explanation and not answer.is_correct %}
+                <details class="mt-2">
+                    <summary class="text-sm text-indigo-600 cursor-pointer hover:text-indigo-800">
+                        Show Explanation
+                    </summary>
+                    <p class="mt-2 text-sm text-gray-600">{{ answer.question.explanation }}</p>
+                </details>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
