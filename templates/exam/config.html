@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Exam - {{ subject.name }} - AI Interview Prep{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{% url 'subjects:detail' slug=subject.slug %}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+        &larr; Back to {{ subject.name }}
+    </a>
+</div>
+
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-900">Configure Your Exam</h1>
+            <p class="text-gray-600 mt-2">{{ subject.name }}</p>
+        </div>
+
+        <form method="post" action="{% url 'exam:start' subject_slug=subject.slug %}">
+            {% csrf_token %}
+
+            <!-- Difficulty Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-3">
+                    Select Difficulty Level
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {% for level, count in difficulties.items %}
+                    <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none
+                        {% if level == 'intermediate' %}border-indigo-500 ring-2 ring-indigo-500{% else %}border-gray-300{% endif %}">
+                        <input type="radio" name="difficulty" value="{{ level }}"
+                               class="sr-only" {% if level == 'intermediate' %}checked{% endif %}
+                               {% if count == 0 %}disabled{% endif %}>
+                        <span class="flex flex-1">
+                            <span class="flex flex-col">
+                                <span class="block text-sm font-medium text-gray-900 capitalize">
+                                    {{ level }}
+                                </span>
+                                <span class="mt-1 flex items-center text-sm text-gray-500">
+                                    {{ count }} questions available
+                                </span>
+                            </span>
+                        </span>
+                        <span class="pointer-events-none absolute -inset-px rounded-lg border-2" aria-hidden="true"></span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Question Count -->
+            <div class="mb-8">
+                <label for="question_count" class="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Questions
+                </label>
+                <input type="number" name="question_count" id="question_count"
+                       value="{{ default_count }}" min="1" max="50"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <p class="mt-1 text-sm text-gray-500">
+                    Choose between 1 and 50 questions (limited by available questions)
+                </p>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Exam Rules</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>Questions are presented one at a time</li>
+                                <li>You cannot go back to previous questions</li>
+                                <li>You can flag questions for review</li>
+                                <li>Your score and detailed review will be shown at the end</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit"
+                    class="w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Start Exam
+            </button>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Handle radio button visual selection
+    document.querySelectorAll('input[name="difficulty"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('label[for]').forEach(label => {
+                label.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-500');
+                label.classList.add('border-gray-300');
+            });
+            if (this.checked) {
+                this.closest('label').classList.remove('border-gray-300');
+                this.closest('label').classList.add('border-indigo-500', 'ring-2', 'ring-indigo-500');
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

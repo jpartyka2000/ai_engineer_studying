@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Exam Results - {{ session.subject.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Score Card -->
+    <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Exam Complete!</h1>
+            <p class="text-gray-600">{{ session.subject.name }} - {{ session.difficulty|title }}</p>
+
+            <!-- Score Circle -->
+            <div class="my-8">
+                <div class="inline-flex items-center justify-center w-32 h-32 rounded-full
+                    {% if session.score_percentage >= 80 %}bg-green-100 text-green-600
+                    {% elif session.score_percentage >= 60 %}bg-yellow-100 text-yellow-600
+                    {% else %}bg-red-100 text-red-600{% endif %}">
+                    <span class="text-4xl font-bold">{{ session.score_percentage }}%</span>
+                </div>
+            </div>
+
+            <!-- Score Details -->
+            <div class="grid grid-cols-3 gap-4 max-w-md mx-auto">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600">{{ correct_count }}</div>
+                    <div class="text-sm text-gray-500">Correct</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-red-600">{{ incorrect_count }}</div>
+                    <div class="text-sm text-gray-500">Incorrect</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-600">{{ session.question_count }}</div>
+                    <div class="text-sm text-gray-500">Total</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Review -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Question Review</h2>
+
+        <div class="space-y-6">
+            {% for answer in answers %}
+            <div class="border rounded-lg p-6 {% if answer.is_correct %}border-green-200 bg-green-50{% else %}border-red-200 bg-red-50{% endif %}">
+                <!-- Question Header -->
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-medium text-gray-900">Question {{ forloop.counter }}</span>
+                        {% if answer.is_flagged %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                            Flagged
+                        </span>
+                        {% endif %}
+                    </div>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium
+                        {% if answer.is_correct %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                        {% if answer.is_correct %}Correct{% else %}Incorrect{% endif %}
+                    </span>
+                </div>
+
+                <!-- Question Text -->
+                <div class="mb-4">
+                    <p class="text-gray-900">{{ answer.question.question_text|linebreaks }}</p>
+                </div>
+
+                {% if answer.question.is_multiple_choice %}
+                <!-- Multiple Choice Options -->
+                <div class="space-y-2 mb-4">
+                    {% for option in answer.question.options_list %}
+                    <div class="flex items-center p-2 rounded
+                        {% if option.letter == answer.question.correct_answer %}bg-green-100 border border-green-300
+                        {% elif option.letter == answer.user_answer and not answer.is_correct %}bg-red-100 border border-red-300
+                        {% else %}bg-white border border-gray-200{% endif %}">
+                        <span class="font-medium text-gray-900 mr-2">{{ option.letter }}.</span>
+                        <span class="text-gray-700">{{ option.text }}</span>
+                        {% if option.letter == answer.question.correct_answer %}
+                        <span class="ml-auto text-green-600 text-sm">Correct Answer</span>
+                        {% elif option.letter == answer.user_answer and not answer.is_correct %}
+                        <span class="ml-auto text-red-600 text-sm">Your Answer</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <!-- Free Text Answer -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Your Answer</h4>
+                        <p class="p-2 bg-white border rounded {% if not answer.is_correct %}border-red-300{% else %}border-green-300{% endif %}">
+                            {{ answer.user_answer|default:"No answer provided" }}
+                        </p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Correct Answer</h4>
+                        <p class="p-2 bg-white border border-green-300 rounded">
+                            {{ answer.question.correct_answer }}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Explanation -->
+                {% if answer.question.explanation %}
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <h4 class="text-sm font-medium text-blue-800 mb-1">Explanation</h4>
+                    <p class="text-sm text-blue-700">{{ answer.question.explanation }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-8 flex justify-center space-x-4">
+        <a href="{% url 'exam:config' subject_slug=session.subject.slug %}"
+           class="bg-indigo-600 text-white py-2 px-6 rounded-md font-medium hover:bg-indigo-700">
+            Take Another Exam
+        </a>
+        <a href="{% url 'subjects:detail' slug=session.subject.slug %}"
+           class="bg-gray-200 text-gray-700 py-2 px-6 rounded-md font-medium hover:bg-gray-300">
+            Back to {{ session.subject.name }}
+        </a>
+    </div>
+</div>
+{% endblock %}

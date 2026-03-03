@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Question {{ question_number }} - {{ session.subject.name }} Exam{% endblock %}
+
+{% block content %}
+{% if all_answered %}
+<script>window.location.href = "{% url 'exam:submit' subject_slug=session.subject.slug pk=session.pk %}";</script>
+{% else %}
+
+<!-- Progress Bar -->
+<div class="mb-6">
+    <div class="flex justify-between text-sm text-gray-600 mb-2">
+        <span>Question {{ question_number }} of {{ total_questions }}</span>
+        <span>{{ session.subject.name }} - {{ session.difficulty|title }}</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: {{ progress_percent }}%"></div>
+    </div>
+</div>
+
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <!-- Question -->
+        <div class="mb-8">
+            <div class="flex items-start justify-between mb-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                    {% if question.difficulty == 'beginner' %}bg-green-100 text-green-800
+                    {% elif question.difficulty == 'intermediate' %}bg-yellow-100 text-yellow-800
+                    {% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ question.difficulty|title }}
+                </span>
+                {% if current_answer.is_flagged %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                    Flagged
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="prose max-w-none">
+                <p class="text-lg text-gray-900">{{ question.question_text|linebreaks }}</p>
+            </div>
+        </div>
+
+        <!-- Answer Form -->
+        <form method="post" action="{% url 'exam:answer' subject_slug=session.subject.slug pk=session.pk %}">
+            {% csrf_token %}
+
+            {% if question.is_multiple_choice %}
+            <!-- Multiple Choice Options -->
+            <div class="space-y-3 mb-6">
+                {% for option in question.options_list %}
+                <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input type="radio" name="answer" value="{{ option.letter }}"
+                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                    <span class="ml-3 flex items-center">
+                        <span class="font-medium text-gray-900 mr-2">{{ option.letter }}.</span>
+                        <span class="text-gray-700">{{ option.text }}</span>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Free Text Answer -->
+            <div class="mb-6">
+                <label for="answer" class="block text-sm font-medium text-gray-700 mb-2">
+                    Your Answer
+                </label>
+                <textarea name="answer" id="answer" rows="4"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="Type your answer here..."></textarea>
+            </div>
+            {% endif %}
+
+            <!-- Flag Checkbox -->
+            <div class="flex items-center mb-6">
+                <input type="checkbox" name="flag" id="flag"
+                       {% if current_answer.is_flagged %}checked{% endif %}
+                       class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                <label for="flag" class="ml-2 text-sm text-gray-600">
+                    Flag this question for review
+                </label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    {% if question_number < total_questions %}
+                    {{ total_questions|add:"-1"|add:question_number|stringformat:"d" }} questions remaining
+                    {% else %}
+                    Last question
+                    {% endif %}
+                </div>
+                <button type="submit"
+                        class="bg-indigo-600 text-white py-2 px-6 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    {% if question_number == total_questions %}
+                    Submit & Finish
+                    {% else %}
+                    Next Question
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
