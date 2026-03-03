@@ -1,0 +1,59 @@
+Great question 👌
+
+Looking at your code:
+
+```python
+mock_df = MagicMock()
+```
+
+---
+
+## 1. Direct Type
+
+* `mock_df` is an **instance of `unittest.mock.MagicMock`**.
+* That’s the concrete runtime type.
+
+```python
+from unittest.mock import MagicMock
+mock_df = MagicMock()
+print(type(mock_df))
+# <class 'unittest.mock.MagicMock'>
+```
+
+---
+
+## 2. Why It’s Acting Like a DataFrame
+
+* You’ve configured `mock_df` to *behave* like a PySpark `DataFrame`:
+
+  * `mock_df.columns = [...]`
+  * `mock_df.count.return_value = 100`
+  * `mock_df.filter.return_value = mock_df` (so methods can be chained).
+* So while its type is still `MagicMock`, its **interface mimics** `pyspark.sql.DataFrame`.
+
+This is the essence of mocking: the object is **not** a real `DataFrame`, but you’ve told it how to respond to methods and attributes that your code under test will call.
+
+---
+
+## 3. For Type Hinting (Optional)
+
+If you want type checkers (mypy, Pyright) to treat `mock_df` *as if* it were a `DataFrame`, you could annotate it:
+
+```python
+from pyspark.sql import DataFrame
+from unittest.mock import MagicMock
+
+mock_df: DataFrame = MagicMock()
+```
+
+At runtime, it’s still a `MagicMock`, but static type checkers will accept it anywhere a `DataFrame` is expected.
+
+---
+
+## ✅ Answer
+
+The actual type of `mock_df` is **`unittest.mock.MagicMock`**, but it’s **configured to behave like a PySpark `DataFrame`** for testing purposes.
+
+---
+
+👉 Do you want me to also show you how you could **assert calls** on `mock_df` (e.g., check that `.filter()` was called with the right arguments) — that’s one of the main reasons people use `MagicMock` in Spark tests?

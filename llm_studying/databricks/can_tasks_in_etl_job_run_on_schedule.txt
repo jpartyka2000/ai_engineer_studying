@@ -1,0 +1,65 @@
+In Databricks, **schedules (time‑based triggers) are always defined at the job (or pipeline) level**, not per individual task. When you set up a Scheduled trigger, it will kick off the **entire** DAG of tasks every time it fires—you can’t attach multiple cron expressions or frequencies to individual tasks within that same job. ([Databricks Documentation][1], [Databricks Documentation][2])
+
+---
+
+### Option 1: Split into two jobs
+
+* **Daily Job**
+  Contains your ETL tasks + the ML‐prediction step.
+  Schedule: every day (e.g. nightly).
+* **Weekly Recalibration Job**
+  A separate job that runs only your model‑recalibration notebook (and then re‑registers in MLFlow).
+  Schedule: once a week (e.g. every Monday at 3 AM).
+
+This cleanly separates concerns, makes retries and monitoring simpler, and avoids any trickery around “skipping” a task ([Reddit][3]).
+
+---
+
+### Option 2: Conditional execution within a single job
+
+You can keep one multi‑task job and add an **If/else condition** (or “Run if” dependency) around your recalibration task so that it only actually runs on, say, Monday:
+
+1. **Daily schedule** on the job (e.g. every night at 2 AM).
+2. Add an **If/else condition** task before recalibration with an expression like:
+
+   ```
+   {{job.start_time.weekday}} == 0  
+   ```
+
+   (in Python, 0 = Monday).
+3. Wire your recalibration notebook to run only when that condition is true.
+4. Downstream “false” branch does nothing (or logs “skip”).
+
+This leverages Databricks Workflows’ control‑flow features to branch tasks on any boolean expression ([Databricks Documentation][4], [Databricks Documentation][5]).
+
+---
+
+### Option 3: In‑notebook date check
+
+Keep your daily job run as‑is, but at the top of your recalibration notebook:
+
+```python
+from datetime import datetime
+if datetime.utcnow().weekday() != 0:   # only run on Mondays
+    print("Skipping recalibration today")
+    dbutils.notebook.exit("SKIP")
+# else: proceed with retraining & MLFlow registration…
+```
+
+This is a simple “guard clause” approach that doesn’t require conditional tasks, though it still triggers the notebook every day.
+
+---
+
+### Which to choose?
+
+* **Separate jobs** are the most transparent and easiest to monitor.
+* **Conditional tasks** let you keep a single workflow in one place, if you’re comfortable with Workflows’ branching.
+* **In‑notebook checks** are a low‑touch fallback if you can’t—or don’t want to—use branching in the UI.
+
+All approaches ensure your model‑recalibration only runs on the cadence you choose, while letting your daily ETL + prediction pipeline keep humming along uninterrupted.
+
+[1]: https://docs.databricks.com/aws/en/jobs/triggers?utm_source=chatgpt.com "Automating jobs with schedules and triggers"
+[2]: https://docs.databricks.com/aws/en/jobs/scheduled?utm_source=chatgpt.com "Run jobs on a schedule - Databricks Documentation"
+[3]: https://www.reddit.com/r/databricks/comments/1j0vu3b/assigning_multiple_triggers_to_a_job/?utm_source=chatgpt.com "assigning multiple triggers to a job? : r/databricks - Reddit"
+[4]: https://docs.databricks.com/aws/en/jobs/run-if?utm_source=chatgpt.com "Configure task dependencies - Databricks Documentation"
+[5]: https://docs.databricks.com/aws/en/jobs/if-else?utm_source=chatgpt.com "Add branching logic to a job with the If/else task"

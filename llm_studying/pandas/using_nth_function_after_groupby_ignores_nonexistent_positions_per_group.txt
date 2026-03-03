@@ -1,0 +1,27 @@
+No—`.nth([0,1,2])` won’t throw an error if some groups don’t have all three positions. Pandas will simply return whatever rows *do* exist in each group, and skip any out-of-range positions.
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'grp': ['A','A','B','B','B'],
+    'val': [10,20,30,40,50]
+})
+
+# A has only positions 0 and 1; B has 0,1,2
+result = df.groupby('grp').nth([0,1,2]).reset_index()
+print(result)
+```
+
+Output:
+
+```
+  grp  val
+0   A   10   # pos 0
+1   A   20   # pos 1
+2   B   30   # pos 0
+3   B   40   # pos 1
+4   B   50   # pos 2
+```
+
+No exception is raised—group “A” just omits the nonexistent position 2. If you need to fill missing positions with, say, NaNs, you’d have to reindex after the fact, but by default `.nth()` quietly skips out-of-range entries.

@@ -1,0 +1,59 @@
+QUESTION:
+---------
+Level: Medium | Area: Path Creation & Basics | Type: Multiple Choice
+
+What happens when you use an absolute path in a `/` join operation?
+
+    from pathlib import Path
+    base = Path("/home/user")
+    result = base / "/etc/passwd"
+    print(result)
+
+A) Path("/home/user/etc/passwd")
+B) Path("/etc/passwd")
+C) Path("/home/user//etc/passwd")
+D) Raises ValueError
+
+YOUR ANSWER:
+------------
+D) Raises ValueError
+
+CORRECT ANSWER:
+---------------
+B) Path("/etc/passwd")
+
+EXPLANATION:
+------------
+When you join with an absolute path, it REPLACES everything before it!
+The base path is completely discarded — no error, no warning.
+
+    base = Path("/home/user")
+    base / "/etc/passwd"      →  Path("/etc/passwd")
+    
+    # The "/home/user" is thrown away!
+
+THIS IS INTENTIONAL BEHAVIOR:
+-----------------------------
+It mirrors how os.path.join() works:
+
+    import os.path
+    os.path.join("/home/user", "/etc/passwd")  →  "/etc/passwd"
+
+WHY THIS MATTERS — SECURITY RISK:
+---------------------------------
+This can be a security vulnerability if you're not careful:
+
+    # DANGEROUS: User input could escape intended directory
+    user_input = "/etc/passwd"
+    file_path = Path("/safe/uploads") / user_input
+    # Result: Path("/etc/passwd") — NOT what you wanted!
+
+SAFE PATTERN:
+-------------
+    # Strip leading slashes from user input
+    user_input = user_input.lstrip("/")
+    
+    # Or validate the result
+    result = (base / user_input).resolve()
+    if not str(result).startswith(str(base.resolve())):
+        raise ValueError("Path escape attempt!")

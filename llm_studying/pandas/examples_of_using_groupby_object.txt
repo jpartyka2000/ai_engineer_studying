@@ -1,0 +1,79 @@
+Here are a few realistic **`DataFrameGroupBy`**-only patterns that **don’t** immediately reduce you to an aggregated summary, but let you **filter** or **slice** the original table based on group-level logic:
+
+---
+
+### 1. Drop “small” groups
+
+Keep only product categories with at least 100 orders:
+
+```python
+grouped = df.groupby('product_category')
+large_category_df = grouped.filter(lambda grp: len(grp) >= 100)
+```
+
+* `grouped.filter(...)` returns a **subset** of the original `df`
+* No explicit `.agg()` or `.sum()`—you’re just pruning entire groups
+
+---
+
+### 2. Remove “inactive” customers
+
+Say you want only customers who have made **every** month’s purchase in your dataset:
+
+```python
+months = df['order_date'].dt.to_period('M').unique().size
+
+active_customers_df = (
+    df
+    .groupby('customer_id')
+    .filter(lambda grp: grp['order_date']
+                          .dt.to_period('M')
+                          .nunique() == months)
+)
+```
+
+---
+
+### 3. Filter by group-wise statistic (variance, quantile, etc.)
+
+E.g. drop any store whose daily sales have **zero variance** (perhaps malfunctioning POS):
+
+```python
+clean_df = (
+    df
+    .groupby('store_id')
+    .filter(lambda grp: grp['daily_sales'].var() > 0)
+)
+```
+
+---
+
+### 4. Keep groups that “trend up”
+
+Only regions whose last-quarter revenue exceeds their first-quarter:
+
+```python
+uptrending = (
+    df
+    .groupby('region')
+    .filter(lambda grp: grp.sort_values('quarter')['revenue'].iloc[-1] 
+                       > grp.sort_values('quarter')['revenue'].iloc[0])
+)
+```
+
+---
+
+### 5. Grab a single group for inspection
+
+Without aggregating, you can still pull out the raw slice:
+
+```python
+grouped = df.groupby('department')
+marketing_df = grouped.get_group('Marketing')
+```
+
+—`marketing_df` is the full sub-DataFrame for that one key, no `.agg` needed.
+
+---
+
+In each of these, you’re working directly with the **`DataFrameGroupBy`** object and returning a filtered or sliced **DataFrame** that preserves all original columns and row-level detail—no summary tables in sight.

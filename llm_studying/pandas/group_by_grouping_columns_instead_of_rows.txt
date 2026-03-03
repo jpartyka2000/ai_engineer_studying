@@ -1,0 +1,74 @@
+Here’s a concrete example where you **group columns** (i.e. aggregate across different metrics) instead of rows. Imagine you have quarterly sales broken out by region, with products as your index:
+
+```python
+import pandas as pd
+
+# ── 1) Sample data: quarterly sales by region ───────────────────────────────
+df = pd.DataFrame({
+    'North_Q1': [100, 150, 200],
+    'North_Q2': [110, 160, 210],
+    'South_Q1': [ 80, 120, 180],
+    'South_Q2': [ 90, 130, 190],
+}, index=['Product A', 'Product B', 'Product C'])
+
+print(df)
+```
+
+```
+           North_Q1  North_Q2  South_Q1  South_Q2
+Product A       100       110        80        90
+Product B       150       160       120       130
+Product C       200       210       180       190
+```
+
+---
+
+## A) Group columns by **region** and sum
+
+```python
+# groupby on axis=1, using the prefix before '_' as the key
+by_region = df.groupby(lambda col: col.split('_')[0], axis=1).sum()
+print(by_region)
+```
+
+```
+           North  South
+Product A    210    170
+Product B    310    250
+Product C    410    370
+```
+
+- **What happened?**  
+  - The `lambda` sees each column name (`"North_Q1"`, `"South_Q2"`, …), splits on `_`, takes the first part (`"North"` or `"South"`), and then sums all columns with the same key.  
+  - Result: one column per region, with each product’s total across Q1+Q2.
+
+---
+
+## B) Group columns by **quarter** instead
+
+```python
+by_quarter = df.groupby(lambda col: col.split('_')[1], axis=1).sum()
+print(by_quarter)
+```
+
+```
+           Q1   Q2
+Product A  180  200
+Product B  270  290
+Product C  380  400
+```
+
+- **Here** we extracted the second part of each column name (`"Q1"` or `"Q2"`) and summed across regions, giving total company-wide sales per quarter for each product.
+
+---
+
+### Key points
+
+- `axis=1` tells pandas “group the **columns** by this key” instead of grouping rows.  
+- The grouping key can be:  
+  - A **callable** on the column names (as shown),  
+  - A **list/array** of labels the same length as `df.columns`, or  
+  - A **mapping** (`dict`) from old column names → new group names.  
+- After grouping, you can chain any aggregation (`.sum()`, `.mean()`, etc.) to roll up those grouped columns.
+
+This pattern is really handy whenever your column names encode a category (region, quarter, metric-type, etc.) and you want to aggregate across those categories.

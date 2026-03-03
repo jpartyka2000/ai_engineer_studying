@@ -1,0 +1,83 @@
+Here’s a concrete example showing how you can use `reindex()` with both **forward‑fill** (`ffill`) and **backward‑fill** (`bfill`) to fill in missing rows:
+
+```python
+import pandas as pd
+
+# 1) Create a quarterly DataFrame
+df = pd.DataFrame(
+    {'Value': [100, 200, 300]},
+    index=pd.to_datetime(['2025-01-01', '2025-03-01', '2025-06-01'])
+)
+print("Original (quarterly) df:")
+print(df, "\n")
+
+# 2) Define a full monthly index
+monthly_idx = pd.date_range('2025-01-01', '2025-06-30', freq='M')
+
+# 3) Reindex without filling (introduces NaNs)
+df_monthly = df.reindex(monthly_idx)
+print("After reindex (monthly, gaps = NaN):")
+print(df_monthly, "\n")
+
+# 4) Forward‑fill: carry last known value forward
+df_ffill = df_monthly.reindex(monthly_idx, method='ffill')
+print("Forward‑filled (ffill):")
+print(df_ffill, "\n")
+
+# 5) Backward‑fill: carry next known value backward
+df_bfill = df_monthly.reindex(monthly_idx, method='bfill')
+print("Backward‑filled (bfill):")
+print(df_bfill)
+```
+
+**Output:**
+
+1. **Original (quarterly)**
+
+   ```
+               Value
+   2025-01-01    100
+   2025-03-01    200
+   2025-06-01    300
+   ```
+
+2. **Reindexed to monthly (gaps = NaN)**
+
+   ```
+               Value
+   2025-01-31  100.0
+   2025-02-28    NaN
+   2025-03-31  200.0
+   2025-04-30    NaN
+   2025-05-31    NaN
+   2025-06-30  300.0
+   ```
+
+3. **Forward‑filled (`ffill`)**
+
+   ```
+               Value
+   2025-01-31  100.0
+   2025-02-28  100.0
+   2025-03-31  200.0
+   2025-04-30  200.0
+   2025-05-31  200.0
+   2025-06-30  300.0
+   ```
+
+4. **Backward‑filled (`bfill`)**
+
+   ```
+               Value
+   2025-01-31  100.0
+   2025-02-28  200.0
+   2025-03-31  200.0
+   2025-04-30  300.0
+   2025-05-31  300.0
+   2025-06-30  300.0
+   ```
+
+* **`method='ffill'`** carries the last known (non‑NaN) value *forward* to fill subsequent gaps.
+* **`method='bfill'`** carries the next known value *backward* to fill preceding gaps.
+
+You can pass these as arguments to `reindex()`, or equivalently call the convenience methods `.ffill()` / `.bfill()` on a reindexed frame.

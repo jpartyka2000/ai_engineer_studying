@@ -1,0 +1,122 @@
+To create an object that gets instantiated only once in your application, you can use the **Singleton design pattern**. There are several ways to implement a Singleton in Python:
+
+---
+
+### **1. Using a Class with a Class-Level Instance**
+This approach ensures that the class always returns the same instance.
+
+```python
+class Singleton:
+    _instance = None  # Class-level attribute to store the single instance
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
+# Example Usage
+singleton1 = Singleton()
+singleton2 = Singleton()
+print(singleton1 is singleton2)  # True
+```
+
+---
+
+### **2. Using a Decorator**
+A function-based approach using a decorator can also enforce the Singleton pattern.
+
+```python
+def singleton(cls):
+    instances = {}
+
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+
+    return get_instance
+
+@singleton
+class MyClass:
+    pass
+
+# Example Usage
+obj1 = MyClass()
+obj2 = MyClass()
+print(obj1 is obj2)  # True
+```
+
+---
+
+### **3. Using a Module**
+Modules in Python are singleton by design. You can simply define your object in a module and import it wherever needed.
+
+#### **singleton_module.py**
+```python
+class MySingleton:
+    def __init__(self):
+        self.data = "I am a singleton"
+
+singleton = MySingleton()
+```
+
+#### **main.py**
+```python
+from singleton_module import singleton
+
+obj1 = singleton
+obj2 = singleton
+print(obj1 is obj2)  # True
+```
+
+---
+
+### **4. Using `threading` for Thread Safety**
+If your application is multi-threaded, you need to ensure the Singleton instance is created safely.
+
+```python
+import threading
+
+class Singleton:
+    _instance = None
+    _lock = threading.Lock()  # Ensure thread safety
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+```
+
+---
+
+### **5. Using Metaclasses**
+A more advanced approach is to use a metaclass to enforce the Singleton pattern.
+
+```python
+class SingletonMeta(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Singleton(metaclass=SingletonMeta):
+    pass
+
+# Example Usage
+singleton1 = Singleton()
+singleton2 = Singleton()
+print(singleton1 is singleton2)  # True
+```
+
+---
+
+### **Which Approach Should You Use?**
+- **Simple use cases**: Class-level `_instance` or module-based implementation.
+- **Reusable pattern**: Decorator or metaclass.
+- **Thread-safe applications**: Use `threading.Lock`.
+- **Readability and maintainability**: Module-based Singleton is straightforward and Pythonic.
+
+Let me know if you need further details!

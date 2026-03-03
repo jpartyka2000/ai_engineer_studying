@@ -1,0 +1,64 @@
+When you call `.head(n)` on the object returned by `df.groupby(…)`, pandas does **not** perform any aggregation—instead it simply filters the original DataFrame to keep the first *n* rows of **each** group. Behind the scenes it:
+
+1. Builds your groups (e.g. “all rows with `DEGREE_OFFERING='X'`, all rows with `DEGREE_OFFERING='Y'`, …”).
+2. For each group, takes the first *n* rows (in whatever order they currently appear).
+3. Concatenates those per-group slices back together into one DataFrame.
+
+Here’s a tiny example:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    "team": ["A","A","A","B","B","C","C","C","C"],
+    "score": [10,20,30,15,25,5,15,25,35]
+})
+
+# Suppose we want the top-2 scores per team, but first we sort within each team:
+df_sorted = (
+    df
+    .sort_values(["team","score"], ascending=[True, False])
+)
+# df_sorted now is:
+#   team  score
+# 2    A     30
+# 1    A     20
+# 0    A     10
+# 4    B     25
+# 3    B     15
+# 8    C     35
+# 7    C     25
+# 6    C     15
+# 5    C      5
+
+top2_per_team = df_sorted.groupby("team").head(2)
+
+# Result:
+#   team  score
+# 2    A     30
+# 1    A     20
+# 4    B     25
+# 3    B     15
+# 8    C     35
+# 7    C     25
+```
+
+A few important notes:
+
+* **Order matters.**  You almost always want to `.sort_values(...)` first, so that “first 2 rows” really means “the two highest scores” (or whatever your sort key is), not just “the first two rows in the original file.”
+* **Index preservation.**  The rows you get back carry their original index labels.  If you want a fresh 0…N–1 index, you can always `.reset_index(drop=True)` at the end.
+* **No aggregation.**  If you needed to compute, say, the maximum or the sum within each group, you’d use `.agg()` or one of the named shortcuts like `.max()`, `.sum()`, etc.  But when all you want is “the first *n* rows per group” (e.g. a rolling window, “top‐k” selection, peek at examples), `head(n)` on the grouped object is the simplest.
+
+### Alternatives
+
+* **`.nth(n)`** will pick the \_n\_th row of each group (or a list of positions).
+* **`.apply(lambda g: g.head(n))`** works too, but under the hood it’s doing more bookkeeping than the specialized `groupby.head(n)`.
+* For a truly “top‐k” semantics you can also do:
+
+  ```python
+  df_sorted.groupby("team", as_index=False).apply(lambda g: g.head(2)).reset_index(drop=True)
+  ```
+
+  but again that’s more verbose.
+
+In short, whenever you need the “first *n* rows of each group” (after you’ve possibly sorted or filtered your DataFrame), `df.groupby(...).head(n)` is the go-to pandas idiom.

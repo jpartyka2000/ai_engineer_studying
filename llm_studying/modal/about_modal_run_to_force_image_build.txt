@@ -1,0 +1,13 @@
+When you use `add_local_dir` on the image definition (as your `modal_eval_harness.py` does), Modal bakes your source code into a cached image layer. This means subsequent runs can silently use stale code even if you've made local changes.
+
+To force Modal to rebuild the image from scratch:
+
+```bash
+modal run --force-build cue_eval/modal_eval_harness.py::app.run -- jeff_small_eval_test cue_eval/configs/development_harness.yaml true
+```
+
+The `--force-build` flag tells Modal to ignore all cached layers and rebuild the entire image, which will pick up your current local files.
+
+**When you need this:** Any time you change source code under `agent_service/`, `cue_eval/`, `cue_training/`, or `client_info.py` — basically anything referenced by the `add_local_dir` or `add_local_file` calls in your image definition.
+
+**An alternative approach:** If you find yourself needing `--force-build` constantly, you could refactor the harness to use `modal.Mount` in the function decorator instead of `add_local_dir` on the image. Mounts upload fresh files every run rather than caching them in the image. The tradeoff is slightly slower startup since files get uploaded each time, but you'd never get bitten by stale code again.

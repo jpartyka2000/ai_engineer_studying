@@ -1,0 +1,87 @@
+**Yes, in 99.9% of cases, constructors return an instance of the class.**
+
+However, there's an important distinction in Python:
+
+## The Two Methods Involved
+
+```python
+class MyClass:
+    def __new__(cls):
+        # The ACTUAL constructor - creates the instance
+        instance = super().__new__(cls)
+        return instance  # Returns a new instance
+    
+    def __init__(self):
+        # The initializer - sets up the instance
+        # Returns None (implicitly)
+        self.attribute = "value"
+```
+
+When you call `MyClass()`:
+1. `__new__()` **creates** the instance (the actual constructor)
+2. `__init__()` **initializes** the instance (the initializer)
+3. The instance is returned to you
+
+## Normal Behavior (99.9% of cases)
+
+```python
+class Person:
+    def __init__(self, name):
+        self.name = name
+
+person = Person("Alice")  # ✓ Returns instance of Person
+type(person)  # <class 'Person'>
+```
+
+## Exceptions (Advanced Cases)
+
+`__new__` can technically return anything:
+
+### Example 1: Singleton Pattern
+```python
+class Singleton:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance  # Returns cached instance
+
+s1 = Singleton()
+s2 = Singleton()
+print(s1 is s2)  # True - same instance
+```
+
+### Example 2: Return Different Class
+```python
+class Factory:
+    def __new__(cls, type_name):
+        if type_name == "A":
+            return ClassA()  # Returns instance of different class!
+        else:
+            return ClassB()
+
+obj = Factory("A")  # Returns ClassA instance, not Factory!
+```
+
+### Example 3: Immutable Type Subclasses
+```python
+class PositiveInt(int):
+    def __new__(cls, value):
+        if value < 0:
+            value = 0
+        return super().__new__(cls, value)
+
+num = PositiveInt(-5)  # Returns PositiveInt(0)
+```
+
+## Key Takeaway
+
+**For your case (`LegacyCueAgentWrapper`)**:
+```python
+return cls(agent)
+```
+
+This **always returns an instance of `LegacyCueAgentWrapper`** (or a subclass if someone inherits from it).
+
+You're not overriding `__new__`, so you're using the default behavior which creates and returns a proper instance of the class.

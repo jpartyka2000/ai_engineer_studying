@@ -1,0 +1,56 @@
+`RunItemStreamEvent` is one of the high-level streaming event types emitted by the Agents SDK when you execute an agent run in **batch or streaming** mode. Each `RunItemStreamEvent` represents a single **unit of work** or **step** in the agent’s execution plan—typically corresponding to either:
+
+1. **An input item being processed**
+2. **A tool call being invoked**
+3. **A tool result being returned**
+4. **The agent finishing a subtask**
+
+---
+
+### Where it lives
+
+```python
+from openai.agents.stream_events import RunItemStreamEvent
+```
+
+It sits alongside other event types like `RawResponsesStreamEvent`, `AgentUpdatedStreamEvent`, and `ToolResponseStreamEvent`.
+
+---
+
+### Core attributes
+
+* **`event.item`**
+  The original `InputItem` or `ToolCall` instance that this event is about.
+* **`event.result`** (optional)
+  The output of that item (for tools or sub-runs).
+* **`event.status`**
+  A small enum indicating whether this item is `STARTED`, `COMPLETED`, or `FAILED`.
+* **`event.timestamp`**
+  When the event occurred, so you can measure durations or latency per item.
+
+---
+
+### How it fits into the streaming API
+
+When you do:
+
+```python
+async for event in agent.stream_responses(input_batch):
+    if isinstance(event, RunItemStreamEvent):
+        print(f"Item {event.item.id} {event.status} at {event.timestamp}")
+        if event.result is not None:
+            print("  → Result:", event.result)
+```
+
+* You see **each discrete “run item”** pushed through the agent’s pipeline, in the order they’re processed.
+* You can track progress, measure per-step latency, and handle retries or errors on a per-item basis.
+
+---
+
+### Typical use cases
+
+* **Fine-grained logging**: Record exactly when each tool call started and finished.
+* **Progress bars**: Show users how many items have been processed out of a batch.
+* **Error handling**: Detect if a particular tool invocation failed and take corrective action immediately.
+
+In essence, `RunItemStreamEvent` is your hook for observing the lifecycle of **every bite-sized action** an agent takes as it works through your inputs, making it ideal for observability and orchestration around complex, multi-step runs.

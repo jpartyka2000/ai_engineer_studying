@@ -1,0 +1,61 @@
+That error pops up any time LightGBM sees a “categorical” column whose underlying dtype isn’t integer‑based. Even if your values look like numbers, if they’re floats or objects you’ll get:
+
+> Categorical feature is not a number
+
+---
+
+## Why it happens
+
+* **LightGBM’s native categoricals** must be represented as integer codes (0, 1, 2, …).
+* If you pass a column of dtype `float64` (even if all values happen to be whole numbers) or `object`, LightGBM will refuse to treat it as categorical.
+
+---
+
+## How to fix
+
+1. **Convert to pandas `category` dtype**
+
+   ```python
+   for c in categorical_cols:
+       X_train[c] = X_train[c].astype('category')
+       X_valid[c] = X_valid[c].astype('category')
+   ```
+
+   When you do this, LightGBM will pick up `.cat.codes` under the hood.
+
+2. **Or manually map to integer codes**
+
+   ```python
+   mapping = {val: i for i, val in enumerate(X_train[c].unique())}
+   X_train[c] = X_train[c].map(mapping).astype(int)
+   X_valid[c] = X_valid[c].map(mapping).astype(int)
+   ```
+
+3. **Pass the right parameter**
+
+   * **scikit‑learn API**
+
+     ```python
+     model = LGBMClassifier(...)
+     model.fit(
+         X_train, y_train,
+         eval_set=[(X_valid, y_valid)],
+         categorical_feature=categorical_cols
+     )
+     ```
+   * **Low‑level API**
+
+     ```python
+     dtrain = lgb.Dataset(X_train, label=y_train,
+                          categorical_feature=categorical_cols)
+     ```
+
+---
+
+### Quick checklist
+
+* ✅ Your categorical columns are dtype `category` **or** an integer dtype.
+* ✅ You’re passing their names (or indices) to `categorical_feature`.
+* ✅ There are no NaNs in those columns (LightGBM can’t handle nulls in categoricals).
+
+Once you convert those columns to integer/category dtype, the “Categorical feature is not a number” error will disappear.

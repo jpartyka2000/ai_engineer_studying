@@ -1,0 +1,47 @@
+Training an LLM via SFT to handle two related but distinct tasks in a single example can work, but there are important tradeoffs to consider:
+
+## Potential Challenges:
+
+1. **Conflicting Objectives**: The model may struggle to optimize for both tasks simultaneously. The decision task requires strategic reasoning about computational cost vs. accuracy, while the guessing task requires pure mathematical computation. These require different cognitive strategies.
+
+2. **Training Signal Confusion**: When the model gets feedback, it might not clearly distinguish which aspect needs improvement. If it chooses "verify" but guesses wrong, should it learn to compute better or to choose "compute" instead?
+
+3. **Cascading Errors**: The second task depends on the first. If the model incorrectly chooses "verify" for a complex expression it can't solve, it's being trained on an impossible task, which could degrade performance.
+
+## Why It Might Still Work:
+
+1. **Task Correlation**: The skills are related - understanding expression complexity helps both with the decision and with knowing when you can reliably compute mentally.
+
+2. **Implicit Curriculum Learning**: By seeing examples where verify succeeds (simple expressions) and fails (complex ones), the model learns the boundary naturally.
+
+3. **Richer Training Signal**: Each example provides more information about the model's capabilities and decision-making.
+
+## Alternative Approaches to Consider:
+
+1. **Two-Stage Training**: First train on the decision task alone, then fine-tune on computation given the decision.
+
+2. **Separate Models**: Use one model for decisions and another for computation. This allows each to specialize.
+
+3. **Conditional Training**: Structure the training data so that:
+   - For "compute" decisions, no guess is required
+   - For "verify" decisions, include the guess attempts
+   This makes the second task explicitly conditional on the first.
+
+4. **Weighted Loss**: If training jointly, weight the loss functions differently based on which task is more important for your application.
+
+## Practical Recommendation:
+
+Given your specific use case, I'd suggest structuring the training data to make the relationship explicit. For example:
+
+```json
+{
+  "messages": [
+    {"role": "user", "content": "((7**4)*(6*5))"},
+    {"role": "assistant", "content": "{\"decision\": \"verify\", \"reasoning\": \"Despite high complexity, this has recognizable patterns\"}"},
+    {"role": "user", "content": "What is your guess?"},
+    {"role": "assistant", "content": "72030"}
+  ]
+}
+```
+
+This separates the tasks into distinct conversation turns, making the training signal clearer while still teaching both skills. The model learns that verify decisions should be followed by accurate guesses, while compute decisions bypass the guessing entirely.

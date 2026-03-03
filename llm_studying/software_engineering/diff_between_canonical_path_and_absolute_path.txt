@@ -1,0 +1,48 @@
+An **absolute path** and a **canonical path** both start from the filesystem root, but they differ in what transformations they apply:
+
+| Feature             | Absolute Path                                                           | Canonical Path                                               |
+| ------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Starts at root      | ✅ (e.g. `/home/alice/project/file.txt` or `C:\Data\file.txt`)           | ✅ (same)                                                     |
+| Contains `.` / `..` | May still include `.` (current dir) or `..` (parent dir)                | All `.` and `..` segments are collapsed away                 |
+| Symlink resolution  | Does **not** resolve symbolic links                                     | **Resolves** every symlink so you get the real physical path |
+| Unique identifier   | Two different absolutes can point to the same file via symlinks or `..` | Always maps to exactly one filesystem node                   |
+
+---
+
+### Examples
+
+Assume on a Unix box:
+
+```bash
+$ pwd
+/home/alice/work
+
+$ ls -l /home/alice/data → /mnt/storage/datasets
+```
+
+1. **Absolute but not canonical**
+
+   ```
+   /home/alice/data/../data/./file.csv
+   ```
+
+   * Starts at `/`, so it’s absolute.
+   * Still has `..` and `.`.
+
+2. **Canonical**
+
+   ```bash
+   realpath /home/alice/data/../data/./file.csv
+   # → /mnt/storage/datasets/file.csv
+   ```
+
+   * Collapsed `..` and `.`
+   * Followed the `/home/alice/data` symlink to `/mnt/storage/datasets`
+   * Result is the one true, unambiguous path on disk.
+
+---
+
+### When to use which
+
+* **Absolute path**: when you just need a path from the root regardless of symlinks (e.g. config files you know won’t move).
+* **Canonical path**: when you need a **single, consistent** reference (for caching, deduplication, or security checks) so that no two different-looking paths can refer to the same file.

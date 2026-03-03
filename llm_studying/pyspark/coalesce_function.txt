@@ -1,0 +1,30 @@
+You can create a new column called `'close_date'` in PySpark by using the **`coalesce()`** function. This function returns the first non-null value from a list of columns, which is exactly what you need in this case, where either `"closed_won_date"` or `"closed_lost_date"` will have a datetime value, and in rare cases, both might be null.
+
+### Steps:
+1. **Use `coalesce()`** to choose the first non-null value between the two columns (`'closed_won_date'` and `'closed_lost_date'`).
+2. **Handle rows with null values** in both columns—this won’t require additional logic if you're okay with having `null` in the `'close_date'` when both original columns are null.
+
+### Code:
+
+```python
+from pyspark.sql import functions as F
+
+# Assuming your DataFrame is df and the two columns are 'closed_won_date' and 'closed_lost_date'
+df = df.withColumn(
+    'close_date',
+    F.coalesce(F.col('closed_won_date'), F.col('closed_lost_date'))
+)
+
+# Show the updated DataFrame with the new 'close_date' column
+df.show()
+```
+
+### Explanation:
+- **`F.coalesce()`**: This function takes multiple column arguments and returns the first non-null value. In your case, it will return the value from `'closed_won_date'` if it’s not null, otherwise it will return the value from `'closed_lost_date'`. If both are null, `'close_date'` will also be null.
+- This method ensures that you only get one datetime value per row as you mentioned there is no row where both columns have dates.
+
+### Handling Edge Cases:
+- If both `'closed_won_date'` and `'closed_lost_date'` are null, the resulting `'close_date'` will also be null.
+- If one of the columns is non-null, it will take priority in creating the `'close_date'`.
+
+This solution efficiently handles your requirement with minimal code and leverages PySpark's native functions to process the DataFrame.

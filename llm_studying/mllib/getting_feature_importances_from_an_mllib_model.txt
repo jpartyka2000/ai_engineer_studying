@@ -1,0 +1,33 @@
+For Spark’s MLlib tree-based models (e.g., RandomForestClassifier, RandomForestRegressor, GBTClassifier, or GBTRegressor), you can extract the global feature importances via the model’s `featureImportances` attribute. This attribute returns a SparseVector that contains the importance of each feature.
+
+For example:
+
+```python
+from pyspark.ml.classification import RandomForestClassifier
+
+# Assuming trainingData is a Spark DataFrame with features assembled into a vector column "features"
+model = RandomForestClassifier(featuresCol="features", labelCol="label").fit(trainingData)
+
+# Get the feature importances as a SparseVector, then convert to a dense array if desired
+importances = model.featureImportances.toArray()
+print(importances)
+```
+
+If you used a `VectorAssembler` to combine multiple columns into the "features" column, you can map these importances back to your original feature names. For instance, if your assembler was defined like this:
+
+```python
+from pyspark.ml.feature import VectorAssembler
+
+feature_names = ["feature1", "feature2", "feature3"]
+assembler = VectorAssembler(inputCols=feature_names, outputCol="features")
+trainingData = assembler.transform(rawData)
+```
+
+Then you can print the feature importances along with the feature names:
+
+```python
+for feature, importance in zip(feature_names, importances):
+    print(f"{feature}: {importance:.4f}")
+```
+
+This way, you can obtain and interpret the global feature importances from your tree-based MLlib model.

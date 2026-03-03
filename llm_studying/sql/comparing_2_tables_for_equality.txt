@@ -1,0 +1,117 @@
+Yes—you can do both schema and data comparisons entirely in SQL. Here are a few patterns you can drop into a Databricks SQL notebook (or any Spark SQL-compatible engine) to smoke-test table A vs. table B:
+
+---
+
+## **1. Schema comparison**
+
+### a) Quick column-list diff via the metastore
+
+```sql
+-- Columns in A not in B
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'A'
+EXCEPT
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'B';
+
+-- Columns in B not in A
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'B'
+EXCEPT
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'A';
+```
+
+### b) Or just eyeball the DESCRIBE output
+
+```sql
+DESCRIBE A;
+DESCRIBE B;
+```
+
+and scan for mismatches in order, type, nullability, etc.
+
+---
+
+## **2. Row-count sanity check**
+
+Make sure they even have the same number of rows before diving deeper:
+
+```sql
+SELECT 
+  (SELECT COUNT(*) FROM A) AS cntA,
+  (SELECT COUNT(*) FROM B) AS cntB;
+```
+
+---
+
+## **3. Data equality via `EXCEPT`**
+
+Assuming the schemas line up (same columns in the same order), you can find “A − B” and “B − A”:
+
+```sql
+-- Rows in A but not in B
+SELECT * FROM A
+EXCEPT
+SELECT * FROM B;
+
+-- Rows in B but not in A
+SELECT * FROM B
+EXCEPT
+SELECT * FROM A;
+```
+
+If both of those return zero rows, your tables are identical.
+
+---
+
+## **4. Aggregate checksum approach**
+
+For very large tables, a full `EXCEPT` can be expensive. You can compare per-table hashes:
+
+```sql
+WITH hashedA AS (
+  SELECT
+    SUM(CAST(sha2(concat_ws('||', *), 256) AS BINARY)) AS checksumA
+  FROM A
+),
+hashedB AS (
+  SELECT
+    SUM(CAST(sha2(concat_ws('||', *), 256) AS BINARY)) AS checksumB
+  FROM B
+)
+SELECT checksumA, checksumB
+FROM hashedA CROSS JOIN hashedB;
+```
+
+If the two checksums match and the row counts match, you can be confident the data is identical.
+
+---
+
+## **Putting it all together**
+
+```sql
+-- 1) Quick row‐count check
+SELECT
+  (SELECT COUNT(*) FROM A) AS cntA,
+  (SELECT COUNT(*) FROM B) AS cntB;
+
+-- 2) Schema diff
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'A'
+EXCEPT
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'B';
+
+-- 3) Data-diff
+SELECT * FROM A EXCEPT SELECT * FROM B;
+SELECT * FROM B EXCEPT SELECT * FROM A;
+```
+
+Use whichever steps make sense for your size and performance needs.

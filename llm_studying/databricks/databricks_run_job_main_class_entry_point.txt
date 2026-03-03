@@ -1,0 +1,88 @@
+Yes, you can use the **Databricks Jobs API** to run a Python script that contains a **class-based entry point** (like a `Main` class). However, Databricks does not natively recognize class-based entry points, so you need to structure your script properly and ensure that the job execution calls the class explicitly.
+
+---
+
+### **Steps to Run a Python Script with a `Main` Class in Databricks Jobs API**
+
+#### **1. Structure Your Python Script (`main_script.py`)**
+Your script should have a standard Python entry point (`if __name__ == "__main__"`) to instantiate and execute the `Main` class:
+
+```python
+class Main:
+    def __init__(self):
+        print("Initializing Main class")
+
+    def run(self):
+        print("Executing Main class logic")
+        # Add your job logic here
+
+if __name__ == "__main__":
+    job = Main()
+    job.run()
+```
+
+---
+
+#### **2. Upload the Script to Databricks**
+You need to store your script in **DBFS** (Databricks File System) or a workspace location:
+
+```bash
+databricks fs cp main_script.py dbfs:/FileStore/main_script.py
+```
+
+Alternatively, you can manage the script within a Databricks repository.
+
+---
+
+#### **3. Create a Databricks Job Using the Jobs API**
+You can use the **Databricks Jobs API** to submit this script as a job:
+
+**API Request Example (JSON Payload):**
+```json
+{
+  "name": "Run Main Class",
+  "new_cluster": {
+    "spark_version": "13.3.x-scala2.12",
+    "node_type_id": "i3.xlarge",
+    "num_workers": 1
+  },
+  "libraries": [],
+  "email_notifications": {},
+  "timeout_seconds": 3600,
+  "max_retries": 1,
+  "notebook_task": {
+    "notebook_path": "/Repos/my_repo/main_script"
+  },
+  "spark_python_task": {
+    "python_file": "dbfs:/FileStore/main_script.py"
+  }
+}
+```
+
+If you're using the Databricks REST API, you can submit this payload using:
+
+```bash
+curl -X POST https://<databricks-instance>/api/2.1/jobs/create \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/json" \
+  -d @job_payload.json
+```
+
+---
+
+#### **4. Alternative: Running from a Python Wheel**
+If your script is part of a **Python package**, you can:
+1. Package it into a wheel (`.whl` file).
+2. Upload it to DBFS or a Databricks repo.
+3. Define the **entry point** in `setup.py` (e.g., `entry_points={"console_scripts": ["main-entry=main_script:Main.run"]}`)
+4. Use the Jobs API to execute it via `spark_python_task`.
+
+---
+
+### **Key Takeaways**
+✅ **Yes, you can run a Python script with a `Main` class** in Databricks Jobs.  
+✅ **Explicitly call the class in `if __name__ == "__main__"`** to ensure execution.  
+✅ **Use the `spark_python_task` field in the Jobs API** to execute the script.  
+✅ **Consider packaging your code into a wheel** if it's a structured module.  
+
+Would you like help structuring the project for easier deployment?

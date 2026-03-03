@@ -1,0 +1,48 @@
+Yes, inheriting from both `str` and `Enum` (creating a "StrEnum") does make the enum values easier to access and use in several ways:
+
+## Benefits of `(str, Enum)`:
+
+1. **Direct string comparison** - You can compare directly with strings without accessing `.value`:
+```python
+# With (str, Enum)
+if store_kind == "source":  # Works!
+    ...
+
+# Without str inheritance, you'd need:
+if store_kind == StoreKind.SOURCE.value:
+    ...
+```
+
+2. **String operations work directly**:
+```python
+# These all work without .value
+print(f"Store type: {StoreKind.SOURCE}")  # "source"
+store_kind.upper()  # "SOURCE"
+store_kind.startswith("s")  # True
+```
+
+3. **JSON serialization** - The enum serializes to its string value automatically:
+```python
+import json
+json.dumps({"kind": StoreKind.SOURCE})  # {"kind": "source"}
+```
+
+4. **Use as dictionary keys** - Works seamlessly:
+```python
+data = {
+    StoreKind.SOURCE: "data1",
+    StoreKind.SEGMENT: "data2"
+}
+# Can also access with strings
+data["source"]  # "data1"
+```
+
+5. **Type hints remain clear** while being string-compatible:
+```python
+def process_store(kind: StoreKind) -> None:
+    # Can still use enum benefits (autocomplete, type checking)
+    # But also accept string values that match
+    ...
+```
+
+This pattern is so useful that Python 3.11+ includes `StrEnum` as a built-in class that does exactly this. For earlier Python versions, your approach of inheriting from `(str, Enum)` is the standard way to achieve the same behavior.

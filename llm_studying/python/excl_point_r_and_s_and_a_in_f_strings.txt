@@ -1,0 +1,141 @@
+## 📋 Overview: `!r` and `!s` in F-Strings
+
+---
+
+### What Are They?
+
+These are **conversion flags** that control how objects are converted to strings inside f-strings.
+
+| Flag | Calls | Purpose |
+|------|-------|---------|
+| `{obj}` | `__str__` | Default — user-friendly |
+| `{obj!s}` | `__str__` | Explicit `str()` |
+| `{obj!r}` | `__repr__` | Explicit `repr()` |
+| `{obj!a}` | `ascii()` | Like `repr()`, but escapes non-ASCII |
+
+---
+
+### Basic Example
+
+```python
+class Person:
+    def __init__(self, name):
+        self.name = name
+    
+    def __str__(self):
+        return self.name
+    
+    def __repr__(self):
+        return f"Person('{self.name}')"
+
+p = Person("Alice")
+
+print(f"{p}")    # Alice (uses __str__)
+print(f"{p!s}")  # Alice (uses __str__, explicit)
+print(f"{p!r}")  # Person('Alice') (uses __repr__)
+```
+
+---
+
+### Why Use `!r`?
+
+**Debugging** — see exactly what you're dealing with:
+
+```python
+name = "Alice"
+empty = ""
+has_spaces = "  Bob  "
+
+# Without !r — hard to spot issues
+print(f"Name: {name}")        # Name: Alice
+print(f"Name: {empty}")       # Name: 
+print(f"Name: {has_spaces}")  # Name:   Bob  
+
+# With !r — shows quotes and whitespace clearly
+print(f"Name: {name!r}")        # Name: 'Alice'
+print(f"Name: {empty!r}")       # Name: ''
+print(f"Name: {has_spaces!r}")  # Name: '  Bob  '
+```
+
+---
+
+### Useful for Logging
+
+```python
+user_input = "  \t\n  "
+
+# Bad — looks empty
+print(f"User entered: {user_input}")
+# Output: User entered:    
+
+# Good — shows what's really there
+print(f"User entered: {user_input!r}")
+# Output: User entered: '  \t\n  '
+```
+
+---
+
+### Strings vs Other Types
+
+For most types, `!r` adds quotes around strings and shows type info:
+
+```python
+text = "hello"
+number = 42
+items = [1, 2, 3]
+
+print(f"{text}")    # hello
+print(f"{text!r}")  # 'hello'
+
+print(f"{number}")    # 42
+print(f"{number!r}")  # 42 (same — int's __str__ and __repr__ are identical)
+
+print(f"{items}")    # [1, 2, 3]
+print(f"{items!r}")  # [1, 2, 3] (same for lists)
+```
+
+---
+
+### The `!a` Flag (ASCII)
+
+Escapes non-ASCII characters:
+
+```python
+name = "Café"
+
+print(f"{name}")    # Café
+print(f"{name!r}")  # 'Café'
+print(f"{name!a}")  # 'Caf\xe9'
+```
+
+Useful when you need ASCII-safe output.
+
+---
+
+### Combining with Format Specs
+
+You can use conversion flags with format specifications:
+
+```python
+price = 19.99
+name = "Coffee"
+
+# Conversion flag comes BEFORE the colon
+print(f"{name!r:>20}")   # '      "Coffee"' (right-aligned, 20 chars)
+print(f"{price!r:>10}")  # '     19.99'
+```
+
+---
+
+### Quick Summary
+
+| Syntax | What It Does | When to Use |
+|--------|--------------|-------------|
+| `{x}` | Calls `str(x)` | Normal display |
+| `{x!s}` | Calls `str(x)` | Explicit, same as default |
+| `{x!r}` | Calls `repr(x)` | Debugging, logging |
+| `{x!a}` | Calls `ascii(x)` | ASCII-safe output |
+
+---
+
+Ready for Question 30?

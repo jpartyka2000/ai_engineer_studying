@@ -1,0 +1,130 @@
+═══════════════════════════════════════════════════════════════
+PATHLIB DEEP DIVE: THE strict PARAMETER IN .resolve()
+═══════════════════════════════════════════════════════════════
+
+BASIC SYNTAX:
+───────────────────────────────────────────────────────────────
+Path.resolve(strict=False)  # Default behavior
+
+WHAT DOES strict DO?
+───────────────────────────────────────────────────────────────
+The strict parameter controls whether .resolve() checks if the 
+path actually exists on the filesystem.
+
+  strict=False (default)  → Resolves path regardless of existence
+  strict=True             → Raises FileNotFoundError if path 
+                            doesn't exist
+
+DEMONSTRATION:
+───────────────────────────────────────────────────────────────
+from pathlib import Path
+
+# Assume this file does NOT exist:
+p = Path("/home/user/nonexistent/file.txt")
+
+# strict=False (default) — works fine
+result = p.resolve()
+# Returns: PosixPath('/home/user/nonexistent/file.txt')
+
+# strict=True — raises an error
+result = p.resolve(strict=True)
+# Raises: FileNotFoundError: [Errno 2] No such file or directory
+
+WHEN TO USE EACH:
+───────────────────────────────────────────────────────────────
+USE strict=False (default) WHEN:
+  - Building paths that will be created later
+  - Working with hypothetical or planned paths
+  - You just want to normalize/clean up a path string
+  - You'll check existence separately with .exists()
+
+USE strict=True WHEN:
+  - You need to guarantee the path exists before proceeding
+  - Validating user input paths
+  - Security-sensitive operations (avoid path traversal attacks)
+  - You want to fail fast if something is wrong
+
+PRACTICAL EXAMPLES:
+───────────────────────────────────────────────────────────────
+# Example 1: Validating a config file path
+def load_config(config_path):
+    try:
+        resolved = Path(config_path).resolve(strict=True)
+        return resolved.read_text()
+    except FileNotFoundError:
+        raise ValueError(f"Config file not found: {config_path}")
+
+# Example 2: Safe path building (no strict needed)
+def get_output_path(filename):
+    output_dir = Path("/app/outputs")
+    return (output_dir / filename).resolve()  # May not exist yet
+
+# Example 3: Security — prevent directory traversal
+def safe_read_file(user_input, allowed_dir):
+    """Safely read a file, ensuring it's within allowed_dir."""
+    allowed = Path(allowed_dir).resolve(strict=True)
+    requested = (allowed / user_input).resolve(strict=True)
+    
+    # Check the resolved path is still within allowed directory
+    if not str(requested).startswith(str(allowed)):
+        raise SecurityError("Path traversal attempt detected!")
+    
+    return requested.read_text()
+
+# Example 4: Handling symlinks with strict
+# strict=True also ensures ALL components of the path exist,
+# including resolving symlinks to real targets
+symlink_path = Path("/home/user/link_to_file")
+real_path = symlink_path.resolve(strict=True)  
+# Fails if symlink is broken (target doesn't exist)
+
+PYTHON VERSION NOTES:
+───────────────────────────────────────────────────────────────
+Python 3.5:   strict parameter doesn't exist
+              .resolve() always behaved like strict=True
+
+Python 3.6+:  strict parameter introduced
+              Default changed to strict=False
+
+This was a breaking change! Code written for 3.5 that relied
+on resolve() raising errors for non-existent paths may break
+in 3.6+ unless explicitly using strict=True.
+
+# Python 3.5 behavior (implicit strict=True)
+Path("/nonexistent").resolve()  # Raised FileNotFoundError
+
+# Python 3.6+ behavior (implicit strict=False)  
+Path("/nonexistent").resolve()  # Returns resolved path silently
+
+COMBINING WITH OTHER CHECKS:
+───────────────────────────────────────────────────────────────
+# Pattern 1: Resolve then check (more control over error handling)
+p = Path(user_input).resolve()
+if not p.exists():
+    handle_missing_file()
+
+# Pattern 2: Use strict for atomic check-and-resolve
+try:
+    p = Path(user_input).resolve(strict=True)
+except FileNotFoundError:
+    handle_missing_file()
+
+# Pattern 3: Check specific conditions after resolving
+p = Path(some_path).resolve(strict=True)
+if not p.is_file():
+    raise ValueError("Path exists but is not a file")
+
+EDGE CASES:
+───────────────────────────────────────────────────────────────
+# Partial existence: /home/user exists, but /subdir/file.txt doesn't
+p = Path("/home/user/subdir/file.txt")
+
+p.resolve(strict=False)  # Works: /home/user/subdir/file.txt
+p.resolve(strict=True)   # Raises FileNotFoundError
+
+# Current directory resolution
+p = Path("./relative/path")
+p.resolve(strict=False)  # Prepends cwd, normalizes
+p.resolve(strict=True)   # Same, but checks existence
+
+═══════════════════════════════════════════════════════════════

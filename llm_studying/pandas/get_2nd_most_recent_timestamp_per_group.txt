@@ -1,0 +1,62 @@
+You can’t get “the second‐largest” directly via one of the built-in transform strings, but you can certainly roll your own with a little `lambda`. For example, if you want, for each  $`DEGREE_OFFERING`, `YEAR_QUARTER`$ group, to broadcast the 2ⁿᵈ-most-recent `COHORT_TS` (or `NaT` when there isn’t one), you can do:
+
+```python
+import pandas as pd
+
+df = df_data_only_good_cohorts.copy()
+
+df['most_recent_cohort_ts'] = (
+    df
+    .groupby(['DEGREE_OFFERING', 'YEAR_QUARTER'])['COHORT_TS']
+    .transform('max')
+)
+
+df['second_most_recent_cohort_ts'] = (
+    df
+    .groupby(['DEGREE_OFFERING', 'YEAR_QUARTER'])['COHORT_TS']
+    .transform(lambda ts: 
+        ts.sort_values(ascending=False).iloc[1] 
+        if len(ts) >= 2 
+        else pd.NaT
+    )
+)
+```
+
+What’s going on here:
+
+1. **`groupby(...).transform('max')`**
+
+   * exactly as before, this picks the single maximum timestamp and broadcasts it to every row in the group.
+
+2. **`groupby(...).transform(lambda ts: ...)`**
+
+   * inside the lambda, `ts` is the **entire Series** of `COHORT_TS` for that group.
+   * `ts.sort_values(ascending=False)` sorts them newest → oldest.
+   * `.iloc[1]` picks the 2ⁿᵈ element (i.e. the second-most-recent).
+   * if the group has fewer than two elements we return `pd.NaT` so you don’t get an IndexError.
+
+Now you'll have two new columns:
+
+* **`most_recent_cohort_ts`** — the top (max) timestamp in each group
+* **`second_most_recent_cohort_ts`** — the runner-up timestamp (or `NaT`) in each group
+
+From there you can compute anything you like (e.g. admit-rates, rolling averages, …) based on that second-most-recent timestamp.
+
+----------------------
+
+Inside that `transform(...)` you did:
+
+```python
+.grouped = df_data_only_good_cohorts.groupby(
+    ['DEGREE_OFFERING', 'YEAR_QUARTER']
+)['COHORT_TS']
+```
+
+so you’re grouping **one** column (`COHORT_TS`).  That means when you call
+
+```python
+.transform(lambda ts: …)
+```
+
+the `ts` that your lambda sees is a **`pd.Series`** containing just the `COHORT_TS` values for that particular `(DEGREE_OFFERING, YEAR_QUARTER)` group (indexed by the original row‐indices). It is *not* a DataFrame.
+

@@ -1,0 +1,75 @@
+**`F.datediff()` in PySpark**
+
+Calculates the difference in days between two dates.
+
+**Syntax:**
+
+```python
+F.datediff(end, start)
+```
+
+Returns the number of days from `start` to `end` (i.e., `end - start`).
+
+**Basic example:**
+
+```python
+from pyspark.sql import functions as F
+
+df = spark.createDataFrame([
+    ("2024-01-01", "2024-01-10"),
+    ("2024-03-01", "2024-03-15")
+], ["start_date", "end_date"])
+
+df.withColumn(
+    "days_diff",
+    F.datediff(F.col("end_date"), F.col("start_date"))
+).show()
+```
+
+**Output:**
+
+```
++----------+----------+---------+
+|start_date|  end_date|days_diff|
++----------+----------+---------+
+|2024-01-01|2024-01-10|        9|
+|2024-03-01|2024-03-15|       14|
++----------+----------+---------+
+```
+
+**Argument order matters:**
+
+```python
+F.datediff(end, start)   # Positive if end > start
+F.datediff(start, end)   # Negative if end > start
+```
+
+**Works with:**
+
+- `DateType` columns
+- `TimestampType` columns (time portion ignored)
+- String columns in date format (auto-cast)
+
+**Using with literals:**
+
+```python
+df.withColumn(
+    "days_since_epoch",
+    F.datediff(F.col("date_column"), F.lit("1970-01-01"))
+)
+
+df.withColumn(
+    "days_until_deadline",
+    F.datediff(F.lit("2024-12-31"), F.col("start_date"))
+)
+```
+
+**Common use cases:**
+
+- Calculating age in days
+- Finding time between events
+- Filtering by recency (`F.datediff(F.current_date(), F.col("created_at")) < 30`)
+
+**Limitation:**
+
+Only returns whole days. For finer granularity (hours, minutes, seconds), use `F.unix_timestamp()` and do arithmetic.

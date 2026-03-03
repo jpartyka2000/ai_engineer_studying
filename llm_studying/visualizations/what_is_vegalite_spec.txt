@@ -1,0 +1,239 @@
+**Vega-Lite** is a high-level visualization grammar for creating interactive charts and graphs. The `vegalite_spec` is a **JSON specification** that describes how to render a data visualization.
+
+## What is Vega-Lite?
+
+Vega-Lite is a declarative language for creating visualizations - you describe **what** you want, not **how** to draw it:
+
+```python
+# A vegalite_spec is typically a JSON string like this:
+vegalite_spec = """{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "category", "type": "nominal"},
+    "y": {"field": "value", "type": "quantitative"}
+  }
+}"""
+```
+
+## In Your Context:
+
+```python
+class VisualizationStoreData(TypedDict):
+    type: StoreKind
+    data_store_id: str
+    vegalite_spec: str  # The JSON spec defining the visualization
+    basis_kind: str  # Where data comes from
+    basis_id: str
+    visualization_type: str  # "bar", "line", "scatter", etc.
+    sql: str  # Query to get the data
+    name: str
+    description: str
+```
+
+Your system appears to store visualization configurations that combine:
+1. **Data source** (sql, basis_id)
+2. **Visualization spec** (vegalite_spec)
+3. **Metadata** (name, description, type)
+
+## Example Vega-Lite Specifications:
+
+### Simple Bar Chart
+```python
+visualization = VisualizationStoreData(
+    type=StoreKind.VISUALIZATION,
+    data_store_id="viz_001",
+    name="Monthly Sales",
+    visualization_type="bar",
+    sql="SELECT month, SUM(revenue) as total FROM sales GROUP BY month",
+    vegalite_spec=json.dumps({
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "mark": "bar",
+        "encoding": {
+            "x": {
+                "field": "month",
+                "type": "ordinal",
+                "title": "Month"
+            },
+            "y": {
+                "field": "total",
+                "type": "quantitative",
+                "title": "Revenue ($)"
+            },
+            "color": {
+                "field": "total",
+                "type": "quantitative",
+                "scale": {"scheme": "blues"}
+            }
+        }
+    }),
+    basis_id="src_sales",
+    basis_kind="source",
+    description="Monthly revenue breakdown"
+)
+```
+
+### Line Chart with Time Series
+```python
+vegalite_spec = json.dumps({
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+    "mark": "line",
+    "encoding": {
+        "x": {
+            "field": "date",
+            "type": "temporal",
+            "axis": {"title": "Date"}
+        },
+        "y": {
+            "field": "price",
+            "type": "quantitative",
+            "axis": {"title": "Stock Price"}
+        },
+        "color": {
+            "field": "symbol",
+            "type": "nominal",
+            "legend": {"title": "Stock"}
+        }
+    },
+    "width": 800,
+    "height": 400
+})
+```
+
+### Scatter Plot
+```python
+vegalite_spec = json.dumps({
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+    "mark": {"type": "point", "filled": True},
+    "encoding": {
+        "x": {
+            "field": "revenue",
+            "type": "quantitative",
+            "scale": {"type": "log"}
+        },
+        "y": {
+            "field": "profit",
+            "type": "quantitative"
+        },
+        "size": {
+            "field": "employees",
+            "type": "quantitative"
+        },
+        "color": {
+            "field": "industry",
+            "type": "nominal"
+        },
+        "tooltip": [
+            {"field": "company_name", "type": "nominal"},
+            {"field": "revenue", "type": "quantitative", "format": "$,.0f"}
+        ]
+    }
+})
+```
+
+## Why Store Vega-Lite Specs?
+
+### 1. **Declarative & Portable**
+```python
+# The spec is just JSON - can be rendered anywhere
+spec = json.loads(visualization["vegalite_spec"])
+
+# Render in Python
+import altair as alt
+chart = alt.Chart.from_dict(spec)
+
+# Render in JavaScript
+# vegaEmbed('#chart', spec);
+
+# Render in Jupyter
+display(chart)
+```
+
+### 2. **Complete Visualization Definition**
+```python
+# Everything needed to recreate the viz
+{
+    "data": {"values": [...]},  # Or reference to data
+    "mark": "bar",
+    "encoding": {...},
+    "width": 600,
+    "height": 400,
+    "title": "Sales Dashboard",
+    "config": {"axis": {"labelFont": "Arial"}}
+}
+```
+
+### 3. **Interactive Features Built-In**
+```python
+vegalite_spec = {
+    "selection": {
+        "brush": {"type": "interval"}
+    },
+    "mark": "point",
+    "encoding": {
+        "color": {
+            "condition": {
+                "selection": "brush",
+                "field": "category",
+                "type": "nominal"
+            },
+            "value": "gray"
+        }
+    }
+}
+```
+
+## How It Might Be Used:
+
+```python
+def render_visualization(viz_data: VisualizationStoreData):
+    """Render a stored visualization"""
+    
+    # 1. Execute SQL to get data
+    data = execute_query(viz_data["sql"])
+    
+    # 2. Parse the Vega-Lite spec
+    spec = json.loads(viz_data["vegalite_spec"])
+    
+    # 3. Inject data into spec
+    spec["data"] = {"values": data.to_dict("records")}
+    
+    # 4. Render (using Altair as example)
+    import altair as alt
+    chart = alt.Chart.from_dict(spec)
+    
+    return chart
+
+# Usage
+viz = get_visualization("viz_001")
+chart = render_visualization(viz)
+chart.save("output.html")
+```
+
+## Common Patterns:
+
+```python
+# Store template specs with placeholders
+template_spec = {
+    "mark": "bar",
+    "encoding": {
+        "x": {"field": "__X_FIELD__", "type": "nominal"},
+        "y": {"field": "__Y_FIELD__", "type": "quantitative"}
+    }
+}
+
+# Create specific visualizations from templates
+def create_bar_viz(x_field: str, y_field: str) -> str:
+    spec = template_spec.copy()
+    spec["encoding"]["x"]["field"] = x_field
+    spec["encoding"]["y"]["field"] = y_field
+    return json.dumps(spec)
+
+# Store in your TypedDict
+viz = VisualizationStoreData(
+    vegalite_spec=create_bar_viz("product", "sales"),
+    ...
+)
+```
+
+**Bottom line**: `vegalite_spec` is a JSON string containing a Vega-Lite visualization specification - a declarative description of how to create a chart from data. It's like storing a "recipe" for creating consistent, reproducible visualizations from your SQL query results.

@@ -1,0 +1,68 @@
+You can use **`re.sub`** to replace each instance of `YEARWEEK(arg)` with `YEAROFWEEK(arg)`, while keeping the argument the same, by using a **capturing group** for the argument inside the parentheses.
+
+Here's how you can do it:
+
+### Code:
+
+```python
+import re
+
+# SQL query
+sql_query = """
+SELECT 
+    YEARWEEK(sale_date) AS week_number,
+    YEAR(sale_date) AS year,
+    SUM(sale_amount) AS total_sales
+FROM 
+    sales_table
+WHERE 
+    sale_date BETWEEN '2024-01-01' AND '2024-12-31'
+GROUP BY 
+    YEAR(sale_date), YEARWEEK(sale_date)
+ORDER BY 
+    year, week_number;
+"""
+
+# Pattern to match YEARWEEK(arg) and keep the argument
+pattern = r"YEARWEEK\((.*?)\)"
+
+# Replace YEARWEEK with YEAROFWEEK, keeping the argument
+result = re.sub(pattern, r"YEAROFWEEK(\1)", sql_query)
+
+print(result)
+```
+
+### Explanation:
+- **Pattern (`r"YEARWEEK\((.*?)\)"`)**:
+  - `YEARWEEK`: Matches the literal text "YEARWEEK".
+  - `\(` and `\)`: Matches the literal parentheses `(` and `)`.
+  - `(.*?)`: A **capturing group** that matches the content inside the parentheses (the argument of `YEARWEEK`). The `?` makes the `*` non-greedy, so it captures everything inside the first pair of parentheses, even if there are nested parentheses.
+
+- **Replacement (`r"YEAROFWEEK(\1)"`)**:
+  - `YEAROFWEEK`: Replaces `YEARWEEK` with `YEAROFWEEK`.
+  - `(\1)`: Inserts the content from the first capturing group (i.e., the argument inside the parentheses).
+
+### Output:
+
+```sql
+SELECT 
+    YEAROFWEEK(sale_date) AS week_number,
+    YEAR(sale_date) AS year,
+    SUM(sale_amount) AS total_sales
+FROM 
+    sales_table
+WHERE 
+    sale_date BETWEEN '2024-01-01' AND '2024-12-31'
+GROUP BY 
+    YEAR(sale_date), YEAROFWEEK(sale_date)
+ORDER BY 
+    year, week_number;
+```
+
+### Key Points:
+- The regex captures the argument of `YEARWEEK` using `(.*?)`, which matches any content inside the parentheses.
+- `re.sub` then replaces `YEARWEEK` with `YEAROFWEEK` while preserving the argument.
+
+This will work for any instance of `YEARWEEK(arg)` in the query and replace it with `YEAROFWEEK(arg)` while keeping the argument intact.
+
+Let me know if you need more details!

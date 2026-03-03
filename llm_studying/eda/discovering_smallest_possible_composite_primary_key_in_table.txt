@@ -1,0 +1,65 @@
+Here's a script that checks if those two columns are sufficient, and if not, finds the minimum additional column(s) needed:
+
+```python
+import pandas as pd
+
+from pyspark.sql import SparkSession
+
+df = spark.table("pathahead.fourthrev_ecue.int_deal_contact_lead").toPandas()
+
+total_rows = len(df)
+print(f"Total rows: {total_rows}")
+
+# Check if the base columns are sufficient
+base_cols = ['deal_deal_id', 'deal_contact_contact_id']
+base_unique = len(df.drop_duplicates(subset=base_cols))
+
+print(f"\nUnique rows with {base_cols}: {base_unique}")
+
+if base_unique == total_rows:
+    print("\n✓ These two columns are sufficient as a composite primary key!")
+else:
+    print(f"\n✗ These two columns leave {total_rows - base_unique} duplicate rows")
+    print("\nSearching for a third column to complete the primary key...\n")
+    
+    # Get candidate columns (exclude the base columns)
+    candidate_cols = [c for c in df.columns if c not in base_cols]
+    
+    # Check each candidate column
+    results = []
+    for col in candidate_cols:
+        test_cols = base_cols + [col]
+        unique_count = len(df.drop_duplicates(subset=test_cols))
+        results.append({
+            'column': col,
+            'unique_count': unique_count,
+            'is_complete_pk': unique_count == total_rows
+        })
+    
+    # Sort by unique_count descending
+    results = sorted(results, key=lambda x: x['unique_count'], reverse=True)
+    
+    # Show columns that complete the PK
+    complete_pk_cols = [r['column'] for r in results if r['is_complete_pk']]
+    
+    if complete_pk_cols:
+        print(f"=== Columns that complete the primary key ({len(complete_pk_cols)} found) ===\n")
+        for col in complete_pk_cols:
+            print(f"  ✓ {base_cols + [col]}")
+        
+        print(f"\n=== Recommended composite PK ===")
+        print(f"  {base_cols + [complete_pk_cols[0]]}")
+    else:
+        print("No single column completes the PK. Showing top candidates:\n")
+        for r in results[:10]:
+            remaining = total_rows - r['unique_count']
+            print(f"  {r['column']}: {r['unique_count']} unique ({remaining} remaining dups)")
+        
+        print("\nYou may need to add 2+ additional columns. Consider investigating further.")
+```
+
+This script will:
+
+1. First check if `deal_deal_id` + `deal_contact_contact_id` is already unique
+2. If not, try adding each other column one at a time and report which ones make the combination unique
+3. Recommend the simplest composite PK

@@ -1,0 +1,45 @@
+When you call the **`/v1/fine_tuning/alpha/graders/validate`** endpoint, the service does a few checks to make sure your grader is well-formed and won’t blow up at run-time:
+
+1. **Schema & syntax validation**
+
+   * It verifies your grader object against the expected grader schema (checks required fields like `type`, `name`, and any type-specific settings).
+   * Any JSON-Schema or Jinja-templating syntax errors are caught early.
+
+2. **Dry-run of your grading logic**
+
+   * The service compiles your prompts (the `"input"` templates) and references (e.g. `{{ sample.output_text }}`) to make sure the placeholders resolve.
+   * If you’ve defined a model-based grader (e.g. `type: "score_model"`), it actually sends a small test through that grader using a mocked `item` and `sample` so it can confirm the model call succeeds (and returns a numeric score in your declared `range`).
+
+3. **Returns structured feedback**
+
+   * On success, you get a `200 OK` with a JSON payload like:
+
+     ```json
+     {
+       "valid": true,
+       "errors": []
+     }
+     ```
+   * If anything’s wrong, you’ll see `valid: false` and an `errors` array, for example:
+
+     ```json
+     {
+       "valid": false,
+       "errors": [
+         { "path": "grader.input[1]", "message": "Unmatched template variable `{{ item.foo }}`" },
+         { "path": "grader.model",    "message": "Model `o9-super` not supported for scoring" }
+       ]
+     }
+     ```
+
+   This pinpoints exactly where your definition breaks.
+
+---
+
+### Why validate first?
+
+* **Save compute:** Catch typos or logic mistakes before running against hundreds or thousands of examples.
+* **Fail fast:** You’ll know immediately if your prompt templates or grader code are invalid.
+* **Confidence:** A validated grader means your subsequent `run` calls can focus on throughput, not debugging.
+
+Once your grader validates cleanly, you can plug it into a fine-tuning or reinforcement-fine-tuning job—or use `/graders/run` on individual items—knowing it won’t error in production.

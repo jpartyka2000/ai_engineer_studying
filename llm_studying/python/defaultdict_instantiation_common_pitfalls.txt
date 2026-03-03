@@ -1,0 +1,82 @@
+Perfect — here’s the post again with a **Common Pitfalls** section added:
+
+---
+
+### Understanding `defaultdict` and Callables
+
+When you create a `defaultdict` in Python, you pass it a **callable** (like a function, class, or `lambda`) as its first argument. This callable is used to **generate a default value** whenever you access a key that doesn’t exist yet.
+
+For example:
+
+```python
+from collections import defaultdict
+
+# Each new key will start with 0 as its value
+counts = defaultdict(int)
+
+counts["apples"] += 1
+print(counts)  
+# {'apples': 1}
+```
+
+Here, `int` is the callable. Each time a missing key is referenced, `int()` is called to produce `0`.
+
+---
+
+### Why it must be a callable
+
+If you were to pass in a literal value like `0` or `{}`, every missing key would share that exact same object. Instead, by passing in a callable, `defaultdict` can **call it fresh** each time, creating a new object for each key.
+
+Example with a `lambda`:
+
+```python
+# Each new key gets its own dictionary
+stats = defaultdict(lambda: {"total": 0, "correct": 0})
+
+stats["easy"]["total"] += 1
+stats["hard"]["total"] += 2
+print(stats)
+# {'easy': {'total': 1, 'correct': 0}, 'hard': {'total': 2, 'correct': 0}}
+```
+
+Each key gets a new independent dictionary because the `lambda` is executed separately for each missing key.
+
+---
+
+### ⚠️ Common Pitfalls
+
+1. **Using a mutable object directly**
+
+   ```python
+   # Wrong: every key shares the same list
+   bad = defaultdict(list())
+   ```
+
+   This immediately calls `list()` once, giving a single empty list. All keys point to the same list.
+
+   ✅ Correct:
+
+   ```python
+   good = defaultdict(list)  # list is callable
+   ```
+
+2. **Forgetting that defaults are created on access**
+
+   ```python
+   d = defaultdict(int)
+   print(d["missing"])  # creates 'missing': 0
+   ```
+
+   Simply *accessing* a non-existent key adds it to the dictionary. If you just want to check without creating, use `in` or `.get()`.
+
+3. **Confusing with `dict.setdefault`**
+   `setdefault` sets a default value once when missing. `defaultdict` always calls the factory whenever a new key is encountered.
+
+---
+
+✅ **Takeaway:**
+When instantiating a `defaultdict`, pass a **callable factory** (e.g., `list`, `int`, `lambda: {...}`). Each time you access a missing key, that callable is invoked to generate the default. This avoids shared-state bugs and keeps your dictionary safe and predictable.
+
+---
+
+Would you like me to also add a quick **table of the most common callables** people pass (`list`, `int`, `set`, `dict`) and what defaults they produce?

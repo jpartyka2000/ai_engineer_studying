@@ -1,0 +1,49 @@
+Pandas `fillna()` doesn't have a `subset` parameter like PySpark does, but it offers other ways to target specific columns.
+
+**PySpark approach** — explicit `subset` parameter:
+
+```python
+df.fillna("unk", subset=["col_a", "col_b"])
+```
+
+**Pandas approaches:**
+
+1. **Dictionary mapping columns to fill values** — most flexible:
+   ```python
+   df.fillna({"col_a": "unk", "col_b": "unk", "col_c": 0})
+   ```
+
+2. **Same value for multiple columns via dict comprehension**:
+   ```python
+   columns = ["col_a", "col_b"]
+   df.fillna({col: "unk" for col in columns})
+   ```
+
+3. **Select columns first, then fill**:
+   ```python
+   df[columns] = df[columns].fillna("unk")
+   ```
+
+4. **Loop over columns**:
+   ```python
+   for col in columns:
+       df[col] = df[col].fillna("unk")
+   ```
+
+The dictionary approach is arguably more powerful than a simple `subset` parameter because it lets you specify different fill values per column in a single call:
+
+```python
+df.fillna({
+    "name": "unknown",
+    "age": 0,
+    "score": df["score"].mean()
+})
+```
+
+With PySpark's `subset` parameter, you can only fill one value at a time across the specified columns. To fill different values per column in PySpark, you'd need multiple `fillna` calls or use `na.fill` with a dict:
+
+```python
+df.na.fill({"name": "unknown", "age": 0})
+```
+
+So while Pandas lacks the convenient `subset` parameter, its dictionary-based approach provides equivalent (and in some ways more flexible) functionality.

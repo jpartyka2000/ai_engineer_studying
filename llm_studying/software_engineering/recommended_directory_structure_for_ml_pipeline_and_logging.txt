@@ -1,0 +1,73 @@
+To cleanly support **shared logging across multiple files** in your ML pipeline, the best practice is to:
+
+### ✅ Use a `common` or `utils` package for logging (and other shared code)
+
+---
+
+### 📁 Recommended Directory Structure:
+
+```
+my_project/
+├── pipeline/                      # Main ML pipeline code
+│   ├── run_pipeline.py            # Top-level pipeline file
+│   ├── complete_model.py          # Model logic
+│   └── submit_model.py            # Another ML module
+├── common/                        # Shared utilities
+│   └── logger.py                  # Central logging module
+├── data/                          # Optional: raw or processed data loaders
+├── models/                        # Optional: model saving/loading utils
+├── README.md
+└── requirements.txt
+```
+
+---
+
+### ✅ Each File Imports the Shared Logger Like This:
+
+Assuming `logger.py` defines:
+
+```python
+# common/logger.py
+import logging
+
+LOGGER = logging.getLogger("ml_pipeline")
+LOGGER.setLevel(logging.INFO)
+```
+
+Then in any module (e.g. `run_pipeline.py`, `complete_model.py`, etc):
+
+```python
+from common.logger import LOGGER
+```
+
+Even if they're in different folders — as long as your **`common/` is a proper Python module (i.e., has `__init__.py`)** and you're running from the project root — this import will work cleanly.
+
+---
+
+### 📌 Additional Setup Tips:
+
+1. ✅ **Add `__init__.py`** to every folder (`common/`, `pipeline/`) to make them Python packages.
+
+2. ✅ **Run scripts from the root** of the repo, or use an entry-point script (`run_pipeline.py`) there. This ensures `common.logger` resolves correctly.
+
+3. ✅ For production or CLI usage, consider adding:
+
+   ```python
+   if __name__ == "__main__":
+       from pipeline.run_pipeline import main
+       main()
+   ```
+
+4. 🔧 Optional: Configure your logger with a formatter/handler once in `logger.py`.
+
+---
+
+### ✅ Summary
+
+Use a `common/` or `utils/` directory at the **project root** to contain `logger.py`, and ensure all other modules import from it with:
+
+```python
+from common.logger import LOGGER
+```
+
+Would you like a sample `logger.py` file with formatter/handler settings included?

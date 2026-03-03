@@ -1,0 +1,102 @@
+
+Yes, the `WITH ROLLUP` clause can be applied to provide a **summary row** that counts the rows in the result set. This works because aggregation functions like `COUNT` can be used alongside `GROUP BY WITH ROLLUP`. The summary row created by `ROLLUP` will then display the total count across all groups.
+
+---
+
+### **Example: Counting Rows in the Result Set**
+
+#### Dataset: `employees`
+| department  | job_title    |
+|-------------|--------------|
+| HR          | Recruiter    |
+| HR          | Manager      |
+| Engineering | Developer    |
+| Engineering | Tester       |
+
+#### Query:
+```sql
+SELECT 
+    department,
+    COUNT(*) AS row_count
+FROM 
+    employees
+GROUP BY 
+    department WITH ROLLUP;
+```
+
+#### Result:
+| department    | row_count |
+|---------------|-----------|
+| HR            | 2         |
+| Engineering   | 2         |
+| NULL          | 4         |  -- Summary row with the total count
+
+---
+
+### **How It Works**:
+1. **`COUNT(*)`**:
+   - Counts the rows in each group (per department).
+2. **`WITH ROLLUP`**:
+   - Adds a row with `NULL` in the `department` column, showing the total count of rows in the table.
+
+---
+
+### **Adding Multiple Levels of Grouping**
+If you want to count rows at multiple grouping levels and include a summary row, you can add more columns to the `GROUP BY` clause.
+
+#### Query:
+```sql
+SELECT 
+    department,
+    job_title,
+    COUNT(*) AS row_count
+FROM 
+    employees
+GROUP BY 
+    department, job_title WITH ROLLUP;
+```
+
+#### Result:
+| department    | job_title    | row_count |
+|---------------|--------------|-----------|
+| HR            | Recruiter    | 1         |
+| HR            | Manager      | 1         |
+| HR            | NULL         | 2         |  -- Subtotal for HR
+| Engineering   | Developer    | 1         |
+| Engineering   | Tester       | 1         |
+| Engineering   | NULL         | 2         |  -- Subtotal for Engineering
+| NULL          | NULL         | 4         |  -- Grand total
+
+---
+
+### **Advanced Use Case: Customizing the Summary Row**
+To provide a more meaningful label for the summary row, you can use the **`GROUPING()`** function (if supported) to identify subtotal or grand total rows and add custom labels.
+
+#### Query:
+```sql
+SELECT 
+    CASE 
+        WHEN GROUPING(department) = 1 THEN 'Total'
+        ELSE department
+    END AS department,
+    COUNT(*) AS row_count
+FROM 
+    employees
+GROUP BY 
+    department WITH ROLLUP;
+```
+
+#### Result:
+| department    | row_count |
+|---------------|-----------|
+| HR            | 2         |
+| Engineering   | 2         |
+| Total         | 4         |  -- Custom label for the summary row
+
+---
+
+### **Key Considerations**:
+- Ensure that using `WITH ROLLUP` aligns with the presentation format expected by the users or application.
+- If subtotals and grand totals are unnecessary, filtering them out with a `HAVING` clause is an option.
+
+Using `WITH ROLLUP` to generate a summary row for the count of rows is a straightforward and efficient approach in SQL for summarizing grouped data.

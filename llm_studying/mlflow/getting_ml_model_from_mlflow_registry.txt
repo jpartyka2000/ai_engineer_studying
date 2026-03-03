@@ -1,0 +1,79 @@
+Thought for a couple of seconds
+
+
+To load a registered model into any MLflow‑enabled notebook (Databricks or otherwise), you just need its **Model Registry URI** and then call one of MLflow’s `load_model` helpers. Here are the most common patterns:
+
+---
+
+## 1) Load the “Production” version by name
+
+If you’ve promoted your model to the **Production** stage, you can simply do:
+
+```python
+import mlflow
+
+# (Only needed if you’re off‑cluster or have custom tracking)
+# mlflow.set_tracking_uri("databricks")
+
+# "MyModel" = the name you registered under
+model_uri = "models:/MyModel/Production"
+
+# Loads it as a pyfunc (universal) model
+model = mlflow.pyfunc.load_model(model_uri)
+
+# If you need the raw sklearn/LightGBM object instead:
+# model = mlflow.sklearn.load_model(model_uri)
+```
+
+Now `model` behaves like any Python object with a `.predict()` (or `.predict_proba()`) method.
+
+---
+
+## 2) Load a specific version
+
+If you want version 3 in the registry:
+
+```python
+model_uri = "models:/MyModel/3"
+model = mlflow.pyfunc.load_model(model_uri)
+```
+
+---
+
+## 3) Query via the MLflow Client
+
+If you don’t know the version but want the latest in a given stage:
+
+```python
+from mlflow.tracking import MlflowClient
+import mlflow
+
+client    = MlflowClient()
+# get the latest Production version
+mv        = client.get_latest_versions("MyModel", stages=["Production"])[0]
+model_uri = f"models:/{mv.name}/{mv.version}"
+
+model = mlflow.pyfunc.load_model(model_uri)
+```
+
+---
+
+## 4) Using as a Spark UDF (Databricks)
+
+If you’d rather run inference in Spark SQL or on a DataFrame:
+
+```python
+# inside a Databricks notebook with a SparkSession `spark`
+import mlflow
+
+spark_udf = mlflow.pyfunc.spark_udf(spark, "models:/MyModel/Production")
+# then call it in Spark DataFrame
+df = spark.table("your_table")
+df.withColumn("pred", spark_udf(*[df[c] for c in predictor_cols])).show()
+```
+
+---
+
+### Putting it in your notebook
+
+Just drop one of these snippets into your new notebook (after setting the same MLflow tracking URI if needed), point `model_uri` at the registered name/stage/version, and you’re off to the races—no more hard‑coded pickles or code duplication.

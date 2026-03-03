@@ -1,0 +1,87 @@
+Great question! Yes, SMILE does have some practical disadvantages compared to DAgger. Let me break them down:
+
+## Practical Disadvantages of SMILE
+
+### 1. **More Expert Queries Per Iteration**
+
+**SMILE:**
+- During trajectory execution, you need to query the expert at **every timestep** to decide which action to take
+- If the coin flip says "follow expert," you need the expert action RIGHT NOW to continue the trajectory
+- This requires **online access** to the expert during data collection
+
+**DAgger:**
+- Execute the learned policy completely first (no expert needed during execution)
+- Query expert afterwards for labels (can be done **offline** or in batch)
+- More flexible: you can collect trajectories now, get expert labels later
+
+**Real-world impact:** If your expert is a human, SMILE requires them to be actively involved during the entire data collection process, which is more demanding.
+
+### 2. **Harder to Parallelize Data Collection**
+
+**SMILE:**
+- Needs expert input during trajectory execution
+- If expert is human or a computational bottleneck, you can't easily run multiple trajectory collections in parallel
+- Data collection is more sequential
+
+**DAgger:**
+- Can execute many π(i) rollouts in parallel
+- Batch all the visited states together
+- Query expert once on the entire batch
+- Much more efficient for large-scale data collection
+
+### 3. **Expert Must Be Queryable in Real-Time**
+
+**SMILE:**
+- Assumes you can query the expert at arbitrary states during execution
+- Some experts might not be available this way (e.g., recorded demonstrations, pre-collected datasets)
+
+**DAgger:**
+- Can work with any expert that can label states, even if not available in real-time
+- More flexible for different expert types
+
+### 4. **Hyperparameter Tuning: The Mixing Probability**
+
+**SMILE:**
+- You need to choose the mixing probability p (e.g., 0.8 for expert, 0.2 for learner)
+- This is an additional hyperparameter that affects learning
+- Optimal p might vary by domain or iteration
+- Getting this wrong can hurt performance
+
+**DAgger:**
+- No mixing probability to tune
+- One less hyperparameter to worry about
+
+### 5. **Potentially Slower Exploration of Pure Learned Behavior**
+
+**SMILE:**
+- Because expert keeps providing corrections, you might not see the **full consequences** of the learned policy's mistakes
+- Could miss important failure modes that only appear after multiple consecutive errors
+- Might not explore "what happens if π(i) runs completely on its own"
+
+**DAgger:**
+- Fully commits to π(i), so you see exactly what happens when it runs autonomously
+- Better understanding of the policy's true failure modes
+- More representative of actual deployment
+
+## When SMILE's Disadvantages Matter Most
+
+These disadvantages are especially problematic when:
+- Expert is expensive (human time, computational cost)
+- You need to collect data at scale
+- You want to parallelize training
+- You're working with pre-recorded demonstrations
+- Deployment will be fully autonomous (no expert safety net)
+
+## When SMILE Might Still Be Worth It
+
+Despite these disadvantages, SMILE can be valuable when:
+- Training stability is critical
+- You want to avoid catastrophic failures during learning
+- Expert queries are cheap (e.g., simulator with perfect oracle)
+- You prefer gradual, safe learning over aggressive exploration
+
+## Summary
+
+SMILE's main practical disadvantage is that it's **more demanding on the expert** and **harder to scale**. DAgger is generally more practical for real-world applications where expert time is limited or you need efficient, parallelizable data collection.
+
+Does this help you understand the trade-offs?

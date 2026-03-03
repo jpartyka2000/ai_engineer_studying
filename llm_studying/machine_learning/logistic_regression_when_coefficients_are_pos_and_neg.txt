@@ -1,0 +1,58 @@
+In logistic regression, each fitted coefficient $β_j$ represents the change in the **log-odds** of your positive class for a one-unit increase in predictor $x_j$, all else held constant:
+
+$$
+\log\!\Bigl(\tfrac{P(y=1)}{P(y=0)}\Bigr)
+  \;=\; β_0
+  \;+\; β_1 x_1
+  \;+\; β_2 x_2
+  \;+\;\cdots
+$$
+
+* **Positive $β_j$** means that as $x_j$ goes up, the log-odds of “success” increase (so the predicted probability goes up).
+* **Negative $β_j$** means that as $x_j$ goes up, the log-odds decrease (so the predicted probability goes down).
+
+---
+
+### 1. Why mixed signs are normal
+
+* **Directional effects**: Real–world features often have differing relationships to your target.  Some factors (e.g. “number of past applications”) might *increase* chance, others (e.g. “cost per lead”) might *decrease* it.
+* **Centering and scaling**: If you’ve standardized or binned features differently, the zero‐point can shift, flipping signs on small coefficients but without a modeling error.
+* **Correlation structure**: In the presence of correlated predictors, one feature may soak up shared signal in one direction and “push back” on another, yielding opposite signs even if both individually correlate positively with the target.
+
+So seeing a mix of positive and negative coefficients is exactly what you’d expect unless all your predictors logically move the outcome in the same direction.
+
+---
+
+### 2. When mixed signs might signal a problem
+
+You only need to worry if a coefficient’s **sign** or **magnitude** is:
+
+1. **Counterintuitive** given domain knowledge
+
+   * E.g. you’d strongly expect “higher income → higher conversion,” but the model shows a large negative coefficient.
+2. **Extreme** or **unstable**
+
+   * Very large magnitude coefficients (especially on unscaled inputs) can indicate quasi-separation or multicollinearity.
+3. **Highly sensitive to sampling**
+
+   * If re-fitting on a small perturbation of data flips a sign, it may mean your feature is noisy or redundant.
+
+In those cases, dig in by:
+
+* **Checking feature encoding** (“Did I accidentally invert a 0/1 flag?”).
+* **Examining correlations** or computing **VIF** to detect multicollinearity.
+* **Adding/removing regularization** (L2 penalty) or performing **feature selection** to stabilize coefficients.
+
+---
+
+### 3. Best practices
+
+* **Interpret coefficients on a sensible scale**: if your feature is binned or standardized, remember that a “one-unit” jump isn’t always the raw measurement.
+* **Always check sign against intuition**: sign flips can be illuminating (e.g. uncovering Simpson’s paradox) rather than a bug.
+* **Use regularization**: L2 (ridge) will shrink unstable coefficients toward zero, reducing wild sign behavior on noisy predictors.
+
+---
+
+#### Bottom line
+
+A mix of positive and negative coefficients is **expected** and simply tells you which features push the prediction up or down.  It’s only a red flag if a sign contradicts strong prior belief or if the coefficient seems erratic—then you’d inspect data coding, feature correlations, and regularization to diagnose further.

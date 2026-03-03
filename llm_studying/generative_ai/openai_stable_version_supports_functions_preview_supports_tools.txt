@@ -1,0 +1,76 @@
+Here’s a standalone explanation of the two APIs and their support for “functions” vs. “tools”:
+
+---
+
+## OpenAI Stable SDK (v0.27.x → v1.99.x): JSON-Only **functions** API
+
+* **What it is:** The “classic” OpenAI Python client you get when you `pip install openai` (versions up through today’s 1.99.9).
+* **How it works:**
+
+  * You declare your callable endpoints purely as JSON schemas under the `functions=` parameter.
+  * Each entry looks like:
+
+    ```python
+    {
+      "name": "my_function",
+      "description": "What it does",
+      "parameters": { /* JSON Schema */ }
+    }
+    ```
+  * You **do not** pass any Python function objects into your API call.
+* **Runtime flow:**
+
+  1. Model returns a `function_call` with `name` and `arguments`.
+  2. Your code inspects `response.choices[0].message.function_call`, parses arguments, and **manually** calls the corresponding Python function.
+  3. You send the function’s return value back in a follow-up prompt.
+* **Pros:**
+
+  * No risk of serialization errors—everything in your request is pure JSON.
+  * Available today in every public release.
+* **Cons:**
+
+  * You handle the dispatching and reinjection logic yourself.
+  * Slightly more boilerplate in user code.
+
+---
+
+## OpenAI Preview SDK (1.0.0-rc12+): Native **tools** API with Callables
+
+* **What it is:** A preview release (installed via `pip install --pre openai`) that introduces first-class support for Python callables.
+* **How it works:**
+
+  * You register real Python functions in a `tools=` list:
+
+    ```python
+    {
+      "name": "my_tool",
+      "description": "Does something",
+      "function": my_python_callable,   # live Python function
+      "parameters": { /* JSON Schema */ }
+    }
+    ```
+  * You instruct the SDK to “pick and run” with `tool_choice="auto"`.
+* **Runtime flow:**
+
+  1. The preview client strips out the Python callables and sends only the JSON schemas to the API.
+  2. If the model elects to call a tool, the client **automatically** invokes your local Python function with the parsed arguments.
+  3. The client then injects the function’s return value back into the chat seamlessly.
+* **Pros:**
+
+  * Minimal boilerplate: you don’t manually dispatch or re-roundtrip the function response.
+  * Elegant end-to-end function-calling integration.
+* **Cons:**
+
+  * You must install the preview SDK (`--pre`), which may have breaking changes and is not yet part of the stable release.
+  * Preview releases occasionally change their API surface.
+
+---
+
+### Which to Choose?
+
+* **For production or simple prototypes today:**
+  Use the **stable** SDK and its `functions=` API. It’s rock-solid and universally available.
+* **For cleaner, hands-off function calls** (and if you’re comfortable on a preview release):
+  Switch to the **preview** SDK and register real Python callables under `tools=` with `tool_choice="auto"`.
+
+---

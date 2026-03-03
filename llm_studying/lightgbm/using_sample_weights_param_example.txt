@@ -1,0 +1,73 @@
+Sure! Here's a complete example of using the `sample_weight` parameter in a **LightGBM classifier** to target specific instances or groups — for example, giving more importance to underrepresented or underperforming subgroups such as a particular `degree_offering`.
+
+---
+
+### 🎯 **Goal**: Weight certain groups (e.g., `"unc-mph"`) more during training.
+
+---
+
+### ✅ Example
+
+```python
+import pandas as pd
+import numpy as np
+from lightgbm import LGBMClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+
+# Example dataset
+np.random.seed(42)
+
+# Simulate a toy dataset
+n = 10000
+df = pd.DataFrame({
+    'feature1': np.random.randn(n),
+    'feature2': np.random.rand(n),
+    'degree_offering': np.random.choice(['unc-mph', 'nu-mac', 'ucb-mids'], size=n, p=[0.1, 0.45, 0.45]),
+    'target': np.random.binomial(1, 0.05, size=n)  # highly imbalanced
+})
+
+# Add slightly higher target rates for 'unc-mph'
+df.loc[df['degree_offering'] == 'unc-mph', 'target'] = np.random.binomial(1, 0.10, size=(df['degree_offering'] == 'unc-mph').sum())
+
+# Features and label
+X = df[['feature1', 'feature2']]
+y = df['target']
+
+# Encode degree_offering for weighting (not needed in X here)
+weights = np.where(df['degree_offering'] == 'unc-mph', 5.0, 1.0)  # weight unc-mph 5x more
+
+# Train-test split
+X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
+    X, y, weights, test_size=0.2, random_state=42
+)
+
+# Fit LightGBM with sample_weight
+model = LGBMClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train, sample_weight=w_train)
+
+# Predict and evaluate
+y_pred_proba = model.predict_proba(X_test)[:, 1]
+auc = roc_auc_score(y_test, y_pred_proba)
+print(f"ROC AUC: {auc:.3f}")
+```
+
+---
+
+### 🔍 Notes:
+
+* `sample_weight` accepts a **1D array-like** structure the same length as `X_train`
+* It allows **per-instance control** over loss impact
+* Useful for:
+
+  * **Underrepresented classes**
+  * **Critical business segments**
+  * **Temporal rebalancing** (e.g., recent data gets higher weight)
+
+---
+
+### 🧠 Tip:
+
+If you want to dynamically assign weights based on group performance (e.g., groups with low recall get more weight), you can compute those weights programmatically from prior evaluation.
+
+Let me know if you'd like an example of that too!

@@ -1,0 +1,68 @@
+I'll search for the latest documentation on Claude Code's safety features and sandboxing options.
+
+Great question! There are several approaches to run Claude Code safely on your Mac, ranging from built-in features to fully isolated environments. Here's what I'd recommend:
+
+## 1. Use the Built-in Sandbox Mode (Recommended Starting Point)
+
+Claude Code has native sandboxing that provides filesystem and network isolation using macOS's Seatbelt technology. To enable it:
+
+```bash
+# Run this inside Claude Code
+/sandbox
+```
+
+This gives you:
+- **Filesystem isolation**: Claude can only write to your current working directory
+- **Network isolation**: Only approved domains can be accessed
+- **Prompt on boundary crossing**: You get notified if Claude tries to access anything outside the sandbox
+
+**Tip**: Create a dedicated project folder and run Claude Code from there, so it can only touch files in that specific directory.
+
+## 2. Default Permission Mode (Without Sandbox)
+
+Even without sandboxing enabled, Claude Code operates on a permission-based model by default—it asks before:
+- Modifying files
+- Running commands that could have side effects
+- Accessing network resources
+
+You'll see prompts to approve each action. This is safe but can get tedious.
+
+## 3. Maximum Isolation: Docker Container
+
+For the strongest guarantees, run Claude Code inside a Docker container. This completely isolates it from your Mac's files and accounts:
+
+```dockerfile
+FROM node:20-alpine
+RUN npm install -g @anthropic-ai/claude-code
+WORKDIR /workspace
+CMD ["bash"]
+```
+
+Then mount only the specific project folder you want Claude to work on:
+
+```bash
+docker run -it -v $(pwd)/my-project:/workspace my-claude-image
+```
+
+This way, Claude literally cannot access your Desktop, home directory, or any credentials outside the container.
+
+## Practical Setup for Your Use Case
+
+Since you want to (a) generate code and (b) verify correctness without risk, I'd suggest:
+
+1. **Create a fresh project folder** on your Desktop or elsewhere
+2. **Navigate to that folder** in Terminal
+3. **Run `/sandbox`** after starting Claude Code
+4. **Set restrictive permissions** in your `settings.json`:
+
+```json
+{
+  "permissions": {
+    "deny": ["Bash(rm:*)", "Read(~/.ssh/**)", "Read(~/.aws/**)", "Read(~/.env)"]
+  }
+}
+```
+
+This blocks destructive commands and access to sensitive credential files.
+
+Would you like more details on any of these approaches, or help setting up a Docker-based workflow? 

@@ -1,0 +1,31 @@
+The stack‐trace is telling you that inside your model’s `load_context` you’re doing:
+
+```python
+self.server_hostname = os.environ["DATABRICKS_HOST"]
+```
+
+but when the scoring container spins up there is no `DATABRICKS_HOST` in its environment, so you get a `KeyError`.
+
+### How to fix
+
+You need to inject those three values into the model‐serving container’s env at deployment time. On Databricks Model Serving:
+
+1. Go to your serving endpoint in the UI.
+
+2. Click **Edit** (or **Update**).
+
+3. Under **Advanced** → **Environment variables**, add:
+
+   | Name                  | Value                                                           |
+   | --------------------- | --------------------------------------------------------------- |
+   | `DATABRICKS_HOST`     | e.g. `https://<your-workspace>.azuredatabricks.net`             |
+   | `DATABRICKS_SQL_PATH` | your SQL warehouse HTTP path (you can copy from the SQL editor) |
+   | `DATABRICKS_TOKEN`    | a Personal Access Token with SQL permissions                    |
+
+4. Save & Redeploy.
+
+Once the endpoint comes back up, your model’s `load_context` will find those env vars and connect to Databricks SQL successfully.
+
+---
+
+**Alternative:** if you’re deploying via the `mlflow deployments` CLI, you can pass `-e DATABRICKS_HOST=<...> -e DATABRICKS_SQL_PATH=<...> -e DATABRICKS_TOKEN=<...>` to `mlflow deployments create/update` so they end up in the container.

@@ -1,0 +1,30 @@
+When you pass an `input_example` (and/or a `signature`) into `mlflow.log_model()`, MLflow doesn’t just write out your JSON and call it a day—it actually tries to **run** the model in “serving mode” on that example to make sure:
+
+1. The example matches your signature (all columns present, correct dtypes, etc.), and
+2. The model’s scoring logic itself doesn’t blow up when you serve it.
+
+Under the hood MLflow’s “validate serving input example” code does something like:
+
+```python
+# pseudo‐code from mlflow.models.model
+from mlflow.models import pyfunc
+import flask
+
+# start a tiny Flask API that hosts your new model…
+app = flask.Flask(__name__)
+pyfunc._load_pyfunc(artifact_path)  # load your model
+app.route("/invocations", methods=["POST"])(handler)
+
+# POST your input_example to /invocations as JSON…
+resp = requests.post("http://localhost:<port>/invocations", json=your_example)
+```
+
+That local micro‐service is spun up purely to test that your signature and example actually work end-to-end. If `flask` isn’t installed, MLflow can’t start that test server and so raises warnings/errors about “failed to validate serving input example.”
+
+---
+
+### TL;DR
+
+* **Why Flask?** MLflow uses Flask to host a **temporary** inference endpoint during model logging so it can send your `input_example` through `/invocations` and confirm everything runs smoothly.
+* **Without Flask:** the validation step simply fails (either with warnings or errors), because MLflow can’t spin up that test server.
+* **Solution:** install Flask on your cluster (e.g. via `%pip install flask` or in your cluster’s init script), or omit the `input_example` (which skips that validation entirely).

@@ -1,0 +1,28 @@
+* When you instantiate a `StreamHandler`, you can pass **any** object as its `stream` argument, as long as that object implements:
+
+  1. **`write(self, msg: str)`**:
+
+     * This is how the handler delivers each formatted log record.
+     * Your object’s `write()` will be called with the log line (plus newline).
+  2. **Optionally `flush(self)`**:
+
+     * After writing, the handler calls `flush()` to ensure the output is actually sent out (especially important for buffered streams).
+     * If you don’t implement `flush()`, the log will still be written, but may sit in a buffer until the stream closes or auto-flushes.
+
+**In practice:**
+
+```python
+class MyStream:
+    def write(self, msg):
+        # e.g. send to a network socket, GUI widget, etc.
+        do_something_with(msg)
+
+    def flush(self):
+        # e.g. ensure all data is pushed out now
+        do_flush_actions()
+
+handler = logging.StreamHandler(stream=MyStream())
+```
+
+* Without `write()`, the handler can’t output anything (you’ll get an AttributeError).
+* Without `flush()`, your messages will still queue up but may not appear immediately.

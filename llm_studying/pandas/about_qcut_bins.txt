@@ -1,0 +1,91 @@
+The bin values you obtained from `pd.qcut()`:
+
+```
+[0.00940867 0.42478904 0.78408547 1.        ]
+```
+
+indicate that your data has been divided into **quartiles**, not tertiles. This is because there are **four boundary values**, which implies that your data has been split into four bins, representing four equal-sized groups (quartiles).
+
+Here’s a breakdown:
+- Quartiles split the data into four equal parts, with three cut points, resulting in four intervals.
+- Tertiles would split the data into three equal parts, with two cut points, resulting in three intervals.
+
+In your case, the data is likely being divided into four parts (quartiles) with cut points at approximately 0.0094, 0.4248, 0.7841, and 1.0.
+
+### Confirming the Quartile Bins
+If you want to explicitly confirm that `pd.qcut()` is generating quartiles, you can check the `q` parameter. It should be set to `4` for quartiles.
+
+Example:
+
+```python
+# Example usage of pd.qcut for quartiles
+df['quartile_bins'] = pd.qcut(df['your_column'], q=4)
+```
+
+- `q=4` divides the data into quartiles.
+- For tertiles, you would use `q=3`.
+
+So in summary, your bin values correspond to **quartiles** since you have four boundaries.
+
+---------------------
+
+The first bin values in `pd.qcut()` might start just above 0 instead of exactly at 0 for a few reasons:
+
+### 1. **Data Distribution**:
+   - `pd.qcut()` splits the data into equal-sized bins based on **quantiles**, not fixed intervals. If your data’s smallest value is greater than 0, the first bin boundary will reflect that. It will start at or near the smallest value in the data.
+   - For example, if the minimum value in your data is 0.0094, that will be the start of the first bin.
+
+### 2. **Exclusion of Exact Minimum**:
+   - By default, `pd.qcut()` might not include the exact minimum value in the first bin if the minimum is an outlier or does not fit cleanly into the quantile split. For continuous data, it's common for the bin edges to slightly differ from exact round numbers.
+
+### 3. **Precision and Floating-Point Representation**:
+   - Floating-point precision might result in bin boundaries that are slightly off from what you might expect (like starting just above 0). These slight differences are often due to how decimal numbers are represented in computing.
+
+### How to Check or Adjust
+If you want to confirm this or force the bin edges to include 0, you can:
+1. Check the minimum value of the column:
+
+   ```python
+   print(df['your_column'].min())
+   ```
+
+2. Manually set the bins if you want specific boundaries:
+
+   ```python
+   # Custom bins starting from 0
+   bins = [0, 0.33, 0.66, 1.0]
+   df['custom_bins'] = pd.cut(df['your_column'], bins=bins)
+   ```
+
+### Conclusion:
+The bin starting just above 0 likely reflects the smallest value in your data rather than `pd.qcut()` being constrained to 0. Since `qcut` is based on quantiles, it divides the data evenly across the range, regardless of where 0 lies in the distribution.
+
+------------------------
+
+In `pd.qcut()`, the boundary between two bins is typically inclusive on one side and exclusive on the other. By default:
+
+- The **upper bound** of a bin is **inclusive** (i.e., values at the end of the bin are included in that bin).
+- The **lower bound** of the next bin is **exclusive** (i.e., the next bin starts just after the upper bound of the previous bin).
+
+So if one bin ends at `0.211`, the next bin will start just after `0.211` but not necessarily at `0.222`. Instead, it will start at the next smallest possible value after `0.211`, depending on the precision of your data.
+
+### Example:
+If a bin ends at `0.211`, the next bin would begin just above `0.211`, but the exact starting point depends on the precision of the floating-point numbers.
+
+In Pandas, this is handled internally using floating-point precision, and typically the bin boundary will be something like:
+
+- First bin: `[lower_bound_1, 0.211]`
+- Second bin: `(0.211, upper_bound_2]`
+
+In this case, the second bin starts **right after** `0.211`, not at `0.222` unless that's explicitly defined.
+
+### You Can Check Bin Intervals with `qcut`
+To see the exact bin intervals, you can check the result of `pd.qcut()`:
+
+```python
+# Example of qcut with bins
+bins = pd.qcut(df['your_column'], q=4, retbins=True)
+print(bins[1])  # This prints the actual bin edges
+```
+
+This will show you the exact boundaries of each bin.

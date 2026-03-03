@@ -1,0 +1,61 @@
+es—the TD target in step 2 is an approximation, not the true expected return. This is one of the core trade-offs in temporal difference learning:
+
+
+---
+
+1️⃣ The "True" Target (Monte Carlo Return)
+
+The true state value under policy  is:
+
+V^\pi(s_t) = \mathbb{E}_\pi\big[ r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \dots \big]
+
+If we wanted a perfectly unbiased target, we would have to wait until the end of the episode, sum up all discounted rewards, and use that full return  as the target:
+
+y^{MC}_t = G_t = \sum_{k=0}^{T-t} \gamma^k r_{t+k}
+
+But this has high variance, especially in long-horizon tasks.
+
+
+---
+
+2️⃣ The TD Target (Bootstrapping Approximation)
+
+Instead of waiting for the full return, we "bootstrap" using the current value function estimate for the next state:
+
+y^{TD}_t = r_t + \gamma V_\theta(s_{t+1})
+
+This is only an approximation, because:
+
+is itself a learned, imperfect estimate of future returns.
+
+If the value network is inaccurate early in training, this target will be biased.
+
+Over time, as the network improves, the approximation gets closer to the true expectation.
+
+
+
+---
+
+3️⃣ Why This Works Despite Being Approximate
+
+Lower variance: You don’t rely entirely on stochastic future rewards; you use your current best guess.
+
+Bootstrapping: The target becomes better as your value network improves, leading to fixed-point convergence toward the true  under ideal conditions.
+
+
+
+---
+
+4️⃣ The TD Error
+
+The value network is updated based on:
+
+\delta_t = \big(r_t + \gamma V_\theta(s_{t+1})\big) - V_\theta(s_t)
+
+Here, both terms are estimates—the first uses the immediate reward, the second uses the current approximation for the next state. Over time, repeated updates push  toward the true expectation.
+
+
+---
+
+✅ Key takeaway:
+The target in TD learning (and A2C) is not the real future return, but rather a bootstrapped guess based on the current value network. This introduces bias, but it drastically reduces variance compared to pure Monte Carlo updates, making learning more stable and sample-efficient.

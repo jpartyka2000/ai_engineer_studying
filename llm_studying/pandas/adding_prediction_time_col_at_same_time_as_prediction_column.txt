@@ -1,0 +1,64 @@
+You can absolutely do it in one go by capturing the “now” timestamp once and then using `.assign()` (or direct assignment) to create both columns together. For example:
+
+```python
+import datetime
+
+# Capture the current time once
+now = datetime.datetime.utcnow()
+
+# Then assign both columns at once
+df_data = df_data.assign(
+    prediction       = (df_data["probability"] >= threshold).astype(int),
+    prediction_time  = now
+)
+```
+
+What’s happening here:
+
+1. **`now = datetime.datetime.utcnow()`**
+   Grabs a single timestamp, so all your rows get the exact same “prediction time.”
+
+2. **`.assign(...)`**
+
+   * `prediction` is computed by comparing and casting the Boolean mask to `int`.
+   * `prediction_time` is simply set to the `now` you captured.
+
+This keeps it in one expression, and is both clear and vectorized. If you really wanted to stick with `np.where`, you can do the same thing:
+
+```python
+now = datetime.datetime.utcnow()
+
+df_data = df_data.assign(
+    prediction      = np.where(df_data["probability"] >= threshold, 1, 0),
+    prediction_time = now
+)
+```
+
+Either approach avoids two separate lines and ensures you don’t accidentally get slightly different timestamps if your DataFrame is large.
+
+---------------------
+
+You don’t *have* to use `.assign()` to get the exact‐same timestamp on every row—just grab it once up front and then do your normal column assignments (even on a single line if you like). For example:
+
+```python
+import datetime
+import numpy as np
+
+# 1) grab your threshold‐time once
+now = datetime.datetime.utcnow()
+
+# 2) compute your mask
+mask = np.where(df_data["probability"] >= threshold, 1, 0)
+
+# 3) assign both columns in one go
+df_data["prediction"], df_data["prediction_time"] = mask, now
+```
+
+What’s happening:
+
+* You call `utcnow()` exactly once, so `now` is a single timestamp.
+* You build `mask` as your 0/1 array.
+* The tuple assignment on the left (`df_data["prediction"], df_data["prediction_time"] = …`) writes `mask` into `prediction` and the scalar `now` into `prediction_time` (pandas will broadcast that scalar to every row).
+
+And voilà—you didn’t use `.assign()`, but both columns get set together and share the *same* timestamp.
+

@@ -1,0 +1,113 @@
+## Method Resolution Order (MRO)
+
+MRO is the order Python searches through a class hierarchy to find a method or attribute. It matters most with **multiple inheritance**.
+
+### Simple Case (Single Inheritance)
+
+```python
+class Animal:
+    def speak(self):
+        return "..."
+
+class Dog(Animal):
+    def speak(self):
+        return "Woof"
+
+class Puppy(Dog):
+    pass
+
+# MRO: Puppy → Dog → Animal → object
+Puppy.__mro__
+# (<class 'Puppy'>, <class 'Dog'>, <class 'Animal'>, <class 'object'>)
+
+Puppy().speak()  # "Woof" (found in Dog)
+```
+
+### The Diamond Problem (Multiple Inheritance)
+
+```python
+class A:
+    def greet(self):
+        return "A"
+
+class B(A):
+    def greet(self):
+        return "B"
+
+class C(A):
+    def greet(self):
+        return "C"
+
+class D(B, C):  # Inherits from both B and C
+    pass
+
+# Which greet() does D use?
+D().greet()  # "B"
+```
+
+**MRO resolves this:**
+
+```python
+D.__mro__
+# (<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
+```
+
+Visualized:
+
+```
+      A
+     / \
+    B   C
+     \ /
+      D
+
+MRO flattens this: D → B → C → A → object
+```
+
+### The C3 Linearization Algorithm
+
+Python uses "C3 linearization" to compute MRO. The rules:
+
+1. Children come before parents
+2. Parents are searched in the order listed: `class D(B, C)` → B before C
+3. A class only appears once
+
+### Viewing MRO
+
+```python
+# As tuple
+MyClass.__mro__
+
+# As list
+MyClass.mro()
+```
+
+### Practical Example
+
+```python
+class Logger:
+    def log(self, msg):
+        print(f"[LOG] {msg}")
+
+class DatabaseMixin:
+    def save(self):
+        self.log("Saving to database")  # Calls Logger.log via MRO
+
+class APIClient(Logger):
+    def fetch(self):
+        self.log("Fetching from API")
+
+class Service(APIClient, DatabaseMixin, Logger):
+    pass
+
+Service.__mro__
+# Service → APIClient → DatabaseMixin → Logger → object
+
+s = Service()
+s.fetch()  # "[LOG] Fetching from API"
+s.save()   # "[LOG] Saving to database"
+```
+
+### Why It Matters
+
+When you call `getattr(obj, 'is_legacy', False)`, Python walks the MRO looking for `is_legacy`. The first class in the chain that has it wins.

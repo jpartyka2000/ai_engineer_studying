@@ -1,0 +1,122 @@
+Great idea! Training on negative examples helps the model learn boundaries and avoid invalid tool calls. Here are several approaches:
+
+## Approach 1: Text Response Instead of Tool Call
+
+When the LLM should NOT make a tool call, have it respond with explanatory text:
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a data analysis agent. Generate a complete chain of tool calls to solve the provided user question, based on this tool sequence: source -> segment -> calculate -> (more segments/calculates as needed) -> compare -> (optional) user_feedback_artifacts -> final answer. Emit a valid JSON list, where each element in the list is a JSON object representing a tool call, but DO NOT generate any other text!! Be sure that the JSON being generated is valid and can be parsed by json.loads() correctly. Keep answers concise and grounded in tool outputs."
+    },
+    {
+      "role": "developer", 
+      "content": "Tool registry (families; variants via parameters):\n- source(dataset, window?) -> {source_id, dataset, window_resolved, grain, columns[], stats?, schema_version?, lineage?, hints?}\n- segment(source_id, method?, group_by?, filters?, window?, return_quality?, detail_level?) -> {segment_id, source_id, grain, group_by_requested?, group_by_resolved?, filters_applied?, window_resolved?, semantic_map?, quality?, stats?, warnings?}\n- calculate(source_id, segment_id?, metrics[], additional_factors?) -> {calculate_id, metrics_added, summary?}\n- compare(calculations[], align_on[], method?, detail_level?) -> {compare_id, quick_facts, table[], stats?}\n- user_feedback(prompt, suggested?) -> {text}\n- user_feedback_artifacts(compare_id, title, notes) -> {status}\nIDs must be UUIDv7."
+    },
+    {
+      "role": "user",
+      "content": "What's the weather like today?"
+    },
+    {
+      "role": "assistant",
+      "content": "I cannot help with weather information as I only have access to data analysis tools for datasets, not real-time weather data. My available tools are designed for analyzing business and educational data."
+    }
+  ]
+}
+```
+
+## Approach 2: Wrong Function Call with Correction
+
+Show the model what NOT to do, then what TO do:
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a data analysis agent..."
+    },
+    {
+      "role": "developer",
+      "content": "Tool registry... Note: NEVER use 'delete_data' or 'send_email' functions - these are not available."
+    },
+    {
+      "role": "user", 
+      "content": "Please delete all the old records from the student database."
+    },
+    {
+      "role": "assistant",
+      "content": "I cannot delete data as I don't have access to data deletion functions. I can only analyze existing data using source, segment, calculate, and compare tools. Would you like me to help you analyze the data instead?"
+    }
+  ]
+}
+```
+
+## Approach 3: Invalid Tool Call Example
+
+Train on examples where the model should recognize invalid requests:
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a data analysis agent..."
+    },
+    {
+      "role": "developer",
+      "content": "Tool registry (families; variants via parameters):\n- source(dataset, window?) -> {source_id, dataset, window_resolved, grain, columns[], stats?, schema_version?, lineage?, hints?}\n- segment(source_id, method?, group_by?, filters?, window?, return_quality?, detail_level?) -> {segment_id, source_id, grain, group_by_requested?, group_by_resolved?, filters_applied?, window_resolved?, semantic_map?, quality?, stats?, warnings?}\n- calculate(source_id, segment_id?, metrics[], additional_factors?) -> {calculate_id, metrics_added, summary?}\n- compare(calculations[], align_on[], method?, detail_level?) -> {compare_id, quick_facts, table[], stats?}\n- user_feedback(prompt, suggested?) -> {text}\n- user_feedback_artifacts(compare_id, title, notes) -> {status}\nIDs must be UUIDv7."
+    },
+    {
+      "role": "user",
+      "content": "Send me an email with the analysis results."
+    },
+    {
+      "role": "assistant",
+      "content": "I cannot send emails as that function is not available in my tool registry. I can only perform data analysis operations: source, segment, calculate, compare, user_feedback, and user_feedback_artifacts."
+    }
+  ]
+}
+```
+
+## Approach 4: Boundary Case Training
+
+Train on edge cases where the request is unclear or ambiguous:
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a data analysis agent..."
+    },
+    {
+      "role": "developer",
+      "content": "Tool registry..."
+    },
+    {
+      "role": "user",
+      "content": "Do something with data."
+    },
+    {
+      "role": "assistant", 
+      "content": "Your request is too vague. Please specify what type of data analysis you need. I can help you source data, segment it, calculate metrics, or compare results. What specific analysis are you looking for?"
+    }
+  ]
+}
+```
+
+## Key Benefits:
+
+1. **Boundary Learning**: Model learns when NOT to use tools
+2. **Error Prevention**: Reduces hallucinated function calls
+3. **Graceful Degradation**: Model provides helpful explanations instead of errors
+4. **Scope Clarity**: Reinforces what tools are actually available
+
+## Recommended Distribution:
+- **70-80%** positive examples (correct tool calls)
+- **20-30%** negative examples (text responses, boundary cases)
+
+This approach teaches the model both what to do AND what not to do, making it more robust and reliable.

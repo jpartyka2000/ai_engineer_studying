@@ -1,0 +1,101 @@
+When you run from your macOS Terminal, your shell has already loaded your OpenAI key (e.g. from `~/.zshrc` or `~/.bash_profile`) into the environment as `OPENAI_API_KEY`. VS Code, however, doesn’t always inherit all of your shell’s startup files—especially when you:
+
+* Use the **Debugger** (“Run → Start Debugging”)
+* Use **Code Runner** or another “send-to-Python” extension
+* Open an integrated terminal that isn’t a *login* shell
+
+As a result, when your script does something like:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI()  
+# ⇢ internally reads os.environ["OPENAI_API_KEY"]
+```
+
+you’ll get:
+
+```
+KeyError: 'OPENAI_API_KEY'
+```
+
+because VS Code’s environment doesn’t actually have that variable set.
+
+---
+
+## How to fix
+
+### 1. Make sure VS Code loads your shell env
+
+In your **settings.json**, ensure you’ve enabled an integrated terminal as a login shell. For zsh:
+
+```jsonc
+{
+  "terminal.integrated.profiles.osx": {
+    "zsh (login)": {
+      "path": "zsh",
+      "args": ["-l"]
+    }
+  },
+  "terminal.integrated.defaultProfile.osx": "zsh (login)"
+}
+```
+
+This makes `code`’s built-in terminal source your `~/.zprofile` / `~/.bash_profile` so `OPENAI_API_KEY` is defined.
+
+### 2. Use a `.env` file
+
+Create a file named `.env` in the root of your workspace:
+
+```dotenv
+OPENAI_API_KEY=sk-…
+```
+
+Then in your **settings.json**:
+
+```jsonc
+{
+  "python.envFile": "${workspaceFolder}/.env"
+}
+```
+
+The Python extension will load that file’s vars before running or debugging.
+
+### 3. Explicitly pass environment variables to the debugger
+
+If you launch via a debug configuration, you can inject your key there. In `.vscode/launch.json`:
+
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "env": {
+        "OPENAI_API_KEY": "sk-…"
+      }
+    }
+  ]
+}
+```
+
+### 4. Verify at runtime
+
+Add a quick sanity check:
+
+```python
+import os
+
+print("OPENAI_API_KEY:", os.environ.get("OPENAI_API_KEY"))
+```
+
+If it prints `None` in VS Code, you know for sure the variable isn’t loaded there.
+
+---
+
+By ensuring VS Code’s runtime environment has `OPENAI_API_KEY` set—either via a login shell, a workspace `.env`, or your debug config—you’ll eliminate that KeyError and your code will run just like it does in your normal Terminal.

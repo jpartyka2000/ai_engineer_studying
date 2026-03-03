@@ -1,0 +1,72 @@
+You can use Python’s built‑in `difflib` module to compute a “diff” between two text files, much like the Unix `diff` command. Here’s a minimal example using a unified diff format:
+
+```python
+import difflib
+
+def diff_files(file1_path, file2_path):
+    # Read in the two files as lists of lines
+    with open(file1_path, 'r') as f1:
+        a_lines = f1.readlines()
+    with open(file2_path, 'r') as f2:
+        b_lines = f2.readlines()
+
+    # Generate a unified diff
+    diff = difflib.unified_diff(
+        a_lines,                    # old file
+        b_lines,                    # new file
+        fromfile=file1_path,        # label for old file
+        tofile=file2_path,          # label for new file
+        lineterm=''                 # omit extra newlines
+    )
+
+    # Print (or collect) the diff output
+    for line in diff:
+        print(line)
+
+if __name__ == "__main__":
+    diff_files("file1.txt", "file2.txt")
+```
+
+**How it works:**
+
+1. **Read files** into two lists of lines.
+2. **`difflib.unified_diff`** compares those lists and yields a generator of strings in “unified” diff format (with `@@` hunks and `+`/`-` prefixes).
+3. **Iterate/print** each line to see the full diff.
+
+---
+
+### Other handy variants
+
+* **Context diff** (similar to `diff -C`):
+
+  ```python
+  diff = difflib.context_diff(a_lines, b_lines,
+                              fromfile='old', tofile='new',
+                              lineterm='')
+  ```
+* **Side‑by‑side HTML** (great for embedding in web pages):
+
+  ```python
+  html = difflib.HtmlDiff().make_file(a_lines, b_lines,
+                                      fromdesc='file1', todesc='file2')
+  with open("diff.html","w") as out:
+      out.write(html)
+  ```
+* **Character‑level diff** with `difflib.ndiff` if you want plus/minus markers on each character or word, rather than line‑based.
+
+---
+
+### Quick boolean compare
+
+If you only need to know “are these files identical?” (no diff details), you can use the `filecmp` module:
+
+```python
+import filecmp
+
+if filecmp.cmp("file1.txt","file2.txt", shallow=False):
+    print("Files are identical")
+else:
+    print("Files differ")
+```
+
+But for the actual content difference, `difflib.unified_diff` (or `context_diff` / `ndiff`) is the way to go.

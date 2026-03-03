@@ -1,0 +1,110 @@
+# Setting Log Levels in Python: Two Approaches
+
+Python's logging module provides two main ways to set the logging level for a logger:
+
+## 1. Using the `setLevel()` Method
+
+You can set the level on an existing logger using the `setLevel()` method:
+
+```python
+import logging
+
+logger = logging.getLogger("my_logger")
+logger.setLevel(logging.DEBUG)  # Set level after creation
+
+logger.debug("This will be logged")
+logger.info("This will also be logged")
+```
+
+**Advantages:**
+- Can change the level at any time during program execution
+- Useful for dynamically adjusting verbosity based on conditions
+- Works on any existing logger
+
+**Example - Dynamic Level Adjustment:**
+```python
+import logging
+
+logger = logging.getLogger("app")
+logger.setLevel(logging.INFO)
+
+# Later in code, based on some condition:
+if debug_mode:
+    logger.setLevel(logging.DEBUG)  # Make it more verbose
+```
+
+## 2. Using `basicConfig()` with the `level` Argument
+
+When setting up logging initially, you can specify the level in `basicConfig()`:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("my_logger")
+
+logger.debug("This will be logged")
+logger.info("This will also be logged")
+```
+
+**Important Notes:**
+- `basicConfig()` sets the level for the **root logger**
+- It only works the **first time** it's called (subsequent calls are ignored)
+- All loggers inherit from the root logger by default
+
+## Key Difference: Root Logger vs. Specific Logger
+
+```python
+import logging
+
+# This sets the ROOT logger's level
+logging.basicConfig(level=logging.DEBUG)
+
+# This sets a SPECIFIC logger's level
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.WARNING)  # Overrides root logger for this logger
+```
+
+## Complete Example Showing Both
+
+```python
+import logging
+
+# Set root logger to INFO
+logging.basicConfig(level=logging.INFO)
+
+# Create two loggers
+logger1 = logging.getLogger("module1")
+logger2 = logging.getLogger("module2")
+
+# logger1 inherits INFO from root
+logger1.info("This appears")      # ✅ Logged
+logger1.debug("This is hidden")   # ❌ Not logged
+
+# Change logger2's level specifically
+logger2.setLevel(logging.DEBUG)
+logger2.info("This appears")      # ✅ Logged
+logger2.debug("This also appears") # ✅ Logged (different from logger1!)
+```
+
+## Best Practice
+
+For most applications, use **both**:
+1. Use `basicConfig(level=...)` to set a reasonable default for the entire application
+2. Use `setLevel()` on specific loggers to fine-tune behavior for different modules or to suppress noisy third-party libraries
+
+```python
+import logging
+
+# Set application-wide default
+logging.basicConfig(level=logging.INFO)
+
+# Get your application's logger
+logger = logging.getLogger(__name__)
+
+# Suppress noisy third-party loggers
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+```
+
+This gives you both consistency and flexibility!

@@ -1,0 +1,55 @@
+Here you go — a clean standalone “post-ready” version of **Option 2: Custom JSON Serializer for NumPy Types**:
+
+---
+
+# 🧩 How to Fix: “Object of type float32 is not JSON serializable”
+
+If you get this error:
+
+```
+TypeError: Object of type float32 is not JSON serializable
+```
+
+it means your dictionary contains **NumPy types** (e.g., `np.float32`, `np.float64`, `np.int64`). Python’s built-in `json` module can’t serialize these.
+
+A simple and clean fix is to provide a **custom serializer** to `json.dumps`.
+
+---
+
+## ✅ Custom JSON Serializer for NumPy Data Types
+
+```python
+import json
+import numpy as np
+
+def default_serializer(obj):
+    if isinstance(obj, (np.float32, np.float64)):
+        return float(obj)
+    if isinstance(obj, (np.int32, np.int64)):
+        return int(obj)
+    # Add more conversions here if needed
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+json_str = json.dumps(output_dict, ensure_ascii=False, default=default_serializer)
+```
+
+### What this does
+
+* Converts `np.float32` / `np.float64` → Python `float`
+* Converts `np.int32` / `np.int64` → Python `int`
+* Lets all other types pass through to `json.dumps`
+* Raises a clear error if you hit some unexpected type
+
+---
+
+## ✔️ When you should use this
+
+Use this approach when:
+
+* You want to keep the built-in `json` module.
+* You occasionally store NumPy values in your dict.
+* You want a single place to define your conversion rules.
+
+---
+
+If you'd like, I can also create versions for JSONLines, deeply nested structures, or automatic recursive conversion.

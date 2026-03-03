@@ -1,0 +1,60 @@
+The `@app.cls` decorator turns a Python class into a Modal service that runs on remote infrastructure.
+
+## What it does
+
+It tells Modal: "Take this class, run it in a container in the cloud, and manage its lifecycle for me."
+
+```python
+@app.cls(
+    image=vllm_image,
+    gpu="H100:1",
+    # ... other config
+)
+class VLLMServer:
+    ...
+```
+
+Without the decorator, `VLLMServer` is just a regular Python class. With it, Modal will:
+
+1. Spin up a container with the specified image
+2. Attach the requested GPU
+3. Instantiate your class inside that container
+4. Handle scaling, networking, and lifecycle
+
+## Why `@app.cls` vs `@app.function`
+
+Modal has two main decorators:
+
+**`@app.function`** — for stateless functions
+```python
+@app.function(gpu="A100")
+def process_image(img):
+    # Each call is independent
+    return result
+```
+
+**`@app.cls`** — for stateful services
+```python
+@app.cls(gpu="H100")
+class VLLMServer:
+    _engine = None  # State persists between requests
+    
+    @modal.enter()
+    def startup(self):
+        self._engine = load_model()  # Expensive, runs once
+    
+    @modal.method()
+    def generate(self, prompt):
+        return self._engine.generate(prompt)  # Reuses loaded model
+```
+
+## Why it matters for this LLM server
+
+Loading a model takes 30+ seconds. You don't want to reload it for every request. With `@app.cls`:
+
+- The model loads once in `@modal.enter()`
+- State (`self._engine`) persists across requests
+- Multiple requests reuse the same loaded model
+- The container stays warm between requests (until the scaledown window)
+
+It's the difference between "serverless function" and "serverless service."

@@ -1,0 +1,93 @@
+Great question! **`weave.Model` automatically generates an `__init__` method** for you based on the class-level type annotations.
+
+## How It Works
+
+`weave.Model` works similarly to Pydantic's `BaseModel` or Python's `@dataclass` decorator:
+
+```python
+class CueEvaluationAgent(weave.Model):
+    model_name: str          # ← These annotations
+    agent_version: str       # ← tell weave.Model
+    evaluation_version: str  # ← what fields exist
+    llm_config: dict
+    model: Model
+    cue_agents: dict[str, Union[CueAgent, LegacyCueAgentWrapper]]
+```
+
+Behind the scenes, `weave.Model` uses a **metaclass** or similar mechanism to:
+1. Detect the type-annotated fields
+2. Automatically generate an `__init__` method that accepts these as parameters
+3. Set them as instance attributes
+
+## It's Equivalent To Writing:
+
+```python
+class CueEvaluationAgent(weave.Model):
+    def __init__(
+        self,
+        model_name: str,
+        agent_version: str,
+        evaluation_version: str,
+        llm_config: dict,
+        model: Model,
+        cue_agents: dict[str, Union[CueAgent, LegacyCueAgentWrapper]]
+    ):
+        self.model_name = model_name
+        self.agent_version = agent_version
+        self.evaluation_version = evaluation_version
+        self.llm_config = llm_config
+        self.model = model
+        self.cue_agents = cue_agents
+```
+
+But you don't have to write all that boilerplate!
+
+## Similar Patterns in Python
+
+This is a common pattern in modern Python:
+
+### 1. **Dataclasses**
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Person:
+    name: str
+    age: int
+    # __init__ auto-generated!
+
+p = Person(name="Alice", age=30)
+```
+
+### 2. **Pydantic**
+```python
+from pydantic import BaseModel
+
+class Person(BaseModel):
+    name: str
+    age: int
+    # __init__ auto-generated with validation!
+
+p = Person(name="Alice", age=30)
+```
+
+### 3. **Weave Models**
+```python
+import weave
+
+class MyModel(weave.Model):
+    param1: str
+    param2: int
+    # __init__ auto-generated with Weave tracking!
+
+m = MyModel(param1="hello", param2=42)
+```
+
+## Why This is Useful
+
+- **Less boilerplate**: No need to write repetitive `__init__` code
+- **Type hints serve dual purpose**: Documentation AND constructor definition
+- **Weave integration**: Automatic serialization, versioning, and tracking
+- **Validation**: Weave can validate types automatically (similar to Pydantic)
+
+So when you create the evaluation agent in the runner, Weave automatically knows how to construct it based on those type annotations! 🎉

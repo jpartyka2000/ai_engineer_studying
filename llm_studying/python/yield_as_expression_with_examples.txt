@@ -1,0 +1,153 @@
+============================================================
+YIELD AS AN EXPRESSION — DETAILED EXPLANATION
+============================================================
+
+THE KEY CONCEPT
+------------------------------------------------------------
+In Python, `yield` is not just a statement — it's an 
+EXPRESSION that can produce a value. This means it can 
+appear on the right side of an assignment:
+
+    received = yield "Ready"
+
+This single line does TWO things:
+1. Sends "Ready" OUT of the generator
+2. Receives a value INTO the generator (when resumed)
+
+------------------------------------------------------------
+TIMING: WHEN DOES THE ASSIGNMENT HAPPEN?
+------------------------------------------------------------
+
+This is the crucial part that confuses many people:
+
+    received = yield "Ready"
+              ^
+              |
+    The generator PAUSES here, BEFORE the assignment!
+
+STEP-BY-STEP BREAKDOWN:
+
+    def receiver():
+        received = yield "Ready"    # Line A
+        yield f"You sent: {received}"
+
+    gen = receiver()
+
+    # STEP 1: next(gen)
+    # - Executes until it hits `yield "Ready"`
+    # - "Ready" is sent OUT to the caller
+    # - Generator PAUSES *at* the yield expression
+    # - Assignment to `received` has NOT happened yet!
+    # - Returns: "Ready"
+    
+    # STEP 2: gen.send("Hello")
+    # - Generator RESUMES
+    # - The yield expression evaluates to "Hello"
+    # - NOW the assignment happens: received = "Hello"
+    # - Execution continues to the next yield
+    # - Returns: "You sent: Hello"
+
+------------------------------------------------------------
+VISUAL TIMELINE
+------------------------------------------------------------
+
+    next(gen) called
+         |
+         v
+    [received = yield "Ready"]
+                  |
+                  +---> "Ready" sent out
+                  |
+                  X  <-- PAUSED HERE (assignment not done!)
+    
+    
+    gen.send("Hello") called
+         |
+         v
+    [received = yield "Ready"]
+         ^            |
+         |            +---> resumes, yield evaluates to "Hello"
+         |
+         +--- NOW assignment happens: received = "Hello"
+         
+         |
+         v
+    [yield f"You sent: {received}"]
+                  |
+                  +---> "You sent: Hello" sent out
+
+------------------------------------------------------------
+WHY THIS MATTERS
+------------------------------------------------------------
+
+This timing explains why you MUST call next() before send():
+
+    gen = receiver()
+    gen.send("Hello")  # TypeError! Generator not started
+    
+The generator needs to advance TO the yield expression 
+first. Only then can send() provide a value for that 
+yield expression to evaluate to.
+
+First call options:
+    next(gen)        # Advances to first yield
+    gen.send(None)   # Same effect — None is ignored
+
+------------------------------------------------------------
+COMPARING YIELD BEHAVIORS
+------------------------------------------------------------
+
+# As a statement (no assignment):
+def gen1():
+    yield "value"      # Just sends "value" out, that's it
+
+# As an expression with assignment:
+def gen2():
+    x = yield "value"  # Sends "value" out, receives into x
+
+# Multiple yields with send():
+def gen3():
+    a = yield 1        # Yields 1, receives into a
+    b = yield 2        # Yields 2, receives into b
+    yield a + b        # Yields sum of received values
+
+g = gen3()
+next(g)           # Returns 1, paused before a is assigned
+g.send(10)        # a = 10, returns 2, paused before b assigned
+g.send(20)        # b = 20, returns 30
+
+------------------------------------------------------------
+PRACTICAL EXAMPLE: RUNNING AVERAGE
+------------------------------------------------------------
+
+def running_average():
+    total = 0
+    count = 0
+    average = None
+    
+    while True:
+        value = yield average   # Send out average, receive value
+        total += value
+        count += 1
+        average = total / count
+
+avg = running_average()
+next(avg)            # Start generator, returns None
+print(avg.send(10))  # 10.0  (running avg after 10)
+print(avg.send(20))  # 15.0  (running avg after 10, 20)
+print(avg.send(30))  # 20.0  (running avg after 10, 20, 30)
+
+------------------------------------------------------------
+SUMMARY
+------------------------------------------------------------
+
+    received = yield "Ready"
+
+EXECUTION ORDER:
+    1. FIRST:  yield sends "Ready" out, generator pauses
+    2. SECOND: when resumed via send(), assignment happens
+
+The assignment happens AFTER the yield, when the generator
+resumes — not before, not during.
+
+============================================================

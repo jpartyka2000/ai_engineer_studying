@@ -1,0 +1,110 @@
+## Variance Inflation Factor (VIF) Explained
+
+### The Core Intuition
+
+VIF answers the question: **"How well can I predict this feature using all the other features?"**
+
+If a feature can be accurately predicted from other features, it's redundant—the information it contains is already "built into" the dataset through combinations of other variables.
+
+### How It Works
+
+For each feature X_i, VIF performs this process:
+
+**Step 1: Regress the feature against all other features**
+
+```
+X_i = β₀ + β₁X₁ + β₂X₂ + ... + βₙXₙ + ε
+```
+
+You're treating the feature as if it were a target variable and trying to predict it from everything else.
+
+**Step 2: Calculate R² from that regression**
+
+R² tells you what proportion of variance in X_i is explained by the other features.
+
+- R² = 0.0 → Other features explain nothing about X_i (completely independent)
+- R² = 0.9 → Other features explain 90% of X_i (highly redundant)
+- R² = 1.0 → Other features perfectly predict X_i (exact linear combination)
+
+**Step 3: Calculate VIF**
+
+```
+VIF = 1 / (1 - R²)
+```
+
+### Interpreting VIF Values
+
+| VIF | R² | Interpretation |
+|-----|-----|----------------|
+| 1.0 | 0.0 | Completely independent of other features |
+| 1.25 | 0.2 | Low redundancy |
+| 2.0 | 0.5 | Moderate redundancy |
+| 5.0 | 0.8 | High redundancy (common threshold for concern) |
+| 10.0 | 0.9 | Very high redundancy (often used as cutoff) |
+| ∞ | 1.0 | Perfect multicollinearity (feature is exact linear combo) |
+
+### Why the Formula Works
+
+The formula `1 / (1 - R²)` has a specific meaning in regression theory. When you include a collinear feature in a regression model, the variance of its coefficient estimate gets **inflated** by exactly this factor.
+
+If VIF = 5, the standard error of that feature's coefficient is √5 ≈ 2.2 times larger than it would be if the feature were uncorrelated with others. This makes it harder to determine if that feature has a real effect.
+
+### A Concrete Example
+
+Imagine a dataset with these features:
+
+```
+height_inches    = [60, 65, 70, 72, 68]
+height_cm        = [152.4, 165.1, 177.8, 182.9, 172.7]  # height_inches × 2.54
+weight           = [140, 155, 180, 190, 165]
+age              = [25, 32, 45, 28, 37]
+```
+
+When you calculate VIF for `height_cm`:
+
+1. Regress `height_cm` on `height_inches`, `weight`, `age`
+2. R² ≈ 1.0 (because `height_cm = height_inches × 2.54` exactly)
+3. VIF = 1 / (1 - 1.0) = ∞
+
+This tells you `height_cm` is perfectly "buildable" from other features.
+
+### Why VIF Captures "Buildability"
+
+VIF specifically detects **linear combinations**. A feature can be "built" from others when:
+
+```
+feature ≈ c₀ + c₁(other₁) + c₂(other₂) + ... + cₙ(otherₙ)
+```
+
+Examples of buildable features:
+
+| Scenario | What VIF Detects |
+|----------|------------------|
+| `total = price + tax` | `total` has high VIF because it's a sum of other columns |
+| `avg = (a + b + c) / 3` | `avg` is redundant if a, b, c are in the dataset |
+| `bmi ≈ weight / height²` | BMI has high VIF if weight and height are present |
+| `revenue ≈ units × price` | Revenue is reconstructable from its components |
+
+### Limitations
+
+VIF only detects **linear** relationships. It won't catch:
+
+- Non-linear dependencies (e.g., `y = x²`)
+- Complex interactions (e.g., `y = x₁ × x₂ / x₃`)
+- Categorical encodings where one column is the complement of others
+
+For non-linear redundancy, you'd need other techniques like mutual information or non-linear regression.
+
+### Connection to the Code
+
+In the feature interestingness analyzer, the VIF score was transformed as:
+
+```python
+scores[col] = 1 / vif  # which equals (1 - R²)
+```
+
+This inverts it so that:
+- **Higher score = lower VIF = more unique = better**
+- **Lower score = higher VIF = more redundant = less interesting**
+
+A feature that can be built from others isn't adding new information to your model—VIF quantifies exactly how much of that feature is "already there."

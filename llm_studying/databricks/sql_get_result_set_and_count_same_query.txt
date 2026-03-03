@@ -1,0 +1,134 @@
+Yes, it is possible in Databricks to submit a SQL query that simultaneously returns a result set and the count of its rows. Here are a few approaches to achieve this:
+
+---
+
+### **Approach 1: Use a Common Table Expression (CTE)**
+
+You can use a CTE to calculate the row count alongside the main query:
+```sql
+WITH main_query AS (
+    SELECT * 
+    FROM your_table
+    WHERE some_condition
+)
+SELECT *, COUNT(*) OVER () AS total_rows
+FROM main_query;
+```
+- **Explanation**: 
+  - The `COUNT(*) OVER ()` computes the total number of rows in the result set without needing a separate query.
+  - The query returns all rows with an additional column, `total_rows`, which contains the row count.
+
+---
+
+### **Approach 2: Use `UNION ALL`**
+
+If you want the count as a separate row:
+```sql
+SELECT * 
+FROM your_table
+WHERE some_condition
+UNION ALL
+SELECT NULL, COUNT(*)
+FROM your_table
+WHERE some_condition;
+```
+- **Explanation**: 
+  - The first part of the query returns the actual rows.
+  - The second part adds a single row containing the count of rows.
+
+---
+
+### **Approach 3: Use `Databricks SQL` Metadata Features**
+If you are only interested in knowing the row count without explicitly returning it as part of the result set, Databricks provides tools like the **Query History** or **Dataframe API** that can give you row counts after executing your query.
+
+For example, if you are working with PySpark:
+```python
+df = spark.sql("SELECT * FROM your_table WHERE some_condition")
+row_count = df.count()  # Returns row count
+df.show()  # Displays the result set
+```
+
+---
+
+### **Approach 4: Run Two Queries**
+If a single query is not strictly necessary, you can submit two queries in Databricks:
+```sql
+-- Query to fetch data
+SELECT * FROM your_table WHERE some_condition;
+
+-- Query to count rows
+SELECT COUNT(*) AS row_count FROM your_table WHERE some_condition;
+```
+This approach allows better clarity but requires two separate submissions.
+
+---
+
+### Which Approach Should You Choose?
+- **Single query requirement**: Use Approach 1 (CTE) or Approach 2 (`UNION ALL`).
+- **For exploratory analysis**: Approach 3 (PySpark DataFrame API) provides flexibility.
+- **Readability**: Use separate queries if you don't mind two steps.
+
+Let me know if you'd like to see this demonstrated in PySpark or SQL in Databricks!
+
+---------------------
+
+In the query:
+
+```sql
+SELECT * 
+FROM your_table
+WHERE some_condition
+UNION ALL
+SELECT NULL, COUNT(*)
+FROM your_table
+WHERE some_condition;
+```
+
+The `NULL` is used as a placeholder in the second query to match the column structure of the first query (`SELECT * FROM your_table WHERE some_condition`). 
+
+---
+
+### Why Use `NULL`?
+
+1. **Ensuring Column Alignment**:
+   - SQL queries combined with `UNION` or `UNION ALL` must have the same number of columns in their output, and those columns must have compatible data types.
+   - If the first query (`SELECT *`) selects multiple columns, the second query (`SELECT NULL, COUNT(*)`) must also provide the same number of columns to avoid a SQL error.
+
+2. **No Relevant Data**:
+   - In this case, the first query fetches actual rows of data, but the second query is only concerned with the count of those rows.
+   - The `NULL` acts as a placeholder for any additional columns from the first query. For instance:
+     - If `your_table` has two columns, `col1` and `col2`, the first query selects both (`SELECT col1, col2`), so the second query uses `NULL, COUNT(*)` to provide two columns (one for `col1` and another for `col2`).
+
+---
+
+### Example Scenario
+
+Assume `your_table` has the following schema:
+
+| id   | name   |
+|------|--------|
+| 1    | Alice  |
+| 2    | Bob    |
+| 3    | Carol  |
+
+If `some_condition` filters all rows, the query results would look like this:
+
+```plaintext
+id    | name
+------+-------
+1     | Alice
+2     | Bob
+3     | Carol
+NULL  | 3  -- Added by the second query (count result)
+```
+
+The `NULL` aligns with the `id` column in this case, while `COUNT(*)` provides the row count in the `name` column's place.
+
+---
+
+### Best Practices
+
+- Use `NULL` for alignment only when the second query does not have meaningful data to provide for those columns.
+- Alternatively, you can use descriptive literals, such as `SELECT 'Total', COUNT(*)`, to make the output more informative.
+
+If the `SELECT *` query has more complex columns, the placeholders in the second query need to match in number and type.

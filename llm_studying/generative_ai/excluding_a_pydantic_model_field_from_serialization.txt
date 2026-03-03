@@ -1,0 +1,137 @@
+# Excluding Fields from Pydantic Serialization
+
+Pydantic's `Field` function accepts an `exclude` parameter that controls whether a field is included when the model is serialized (e.g., via `model_dump()` or `model_dump_json()`).
+
+## Basic Usage
+
+```python
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    username: str
+    email: str
+    password: str = Field(exclude=True)  # Never serialized
+
+
+user = User(username="alice", email="alice@example.com", password="secret123")
+
+print(user.model_dump())
+# {'username': 'alice', 'email': 'alice@example.com'}
+
+print(user.password)  # Still accessible in memory
+# 'secret123'
+```
+
+## Key Points
+
+1. **The field still exists on the object** — you can access it normally via `user.password`
+2. **Exclusion only affects serialization** — `model_dump()`, `model_dump_json()`, and `dict()` (v1) won't include it
+3. **Validation still runs** — the field is validated on input like any other field
+
+## Excluding Multiple Fields
+
+```python
+class APIResponse(BaseModel):
+    # Included in serialization
+    status: str
+    message: str
+    
+    # Excluded from serialization
+    internal_trace_id: str = Field(exclude=True)
+    debug_info: dict = Field(default_factory=dict, exclude=True)
+    raw_response: bytes = Field(default=b"", exclude=True)
+```
+
+## Combining with Default Values
+
+When excluding fields, you typically want a default value so the field is optional during construction:
+
+```python
+class Result(BaseModel):
+    summary: str
+    
+    # Excluded with defaults
+    full_data: list = Field(default_factory=list, exclude=True)
+    metadata: dict | None = Field(default=None, exclude=True)
+```
+
+## Runtime Override
+
+You can override exclusion behavior at serialization time:
+
+```python
+class Document(BaseModel):
+    title: str
+    content: str
+    internal_id: str = Field(exclude=True)
+
+
+doc = Document(title="Report", content="...", internal_id="abc123")
+
+# Default behavior — internal_id excluded
+doc.model_dump()
+# {'title': 'Report', 'content': '...'}
+
+# Override to include excluded fields
+doc.model_dump(exclude_unset=False, exclude=set())  # Doesn't work for Field(exclude=True)
+
+# To include it, you need to explicitly specify which fields to include
+doc.model_dump(include={"title", "content", "internal_id"})
+# {'title': 'Report', 'content': '...', 'internal_id': 'abc123'}
+```
+
+## Alternative: Exclude at Serialization Time
+
+Instead of setting `exclude=True` on the field, you can exclude fields when calling `model_dump()`:
+
+```python
+class User(BaseModel):
+    username: str
+    email: str
+    password: str  # No exclude=True here
+
+
+user = User(username="alice", email="alice@example.com", password="secret123")
+
+# Exclude at dump time
+user.model_dump(exclude={"password"})
+# {'username': 'alice', 'email': 'alice@example.com'}
+
+# Exclude multiple fields
+user.model_dump(exclude={"password", "email"})
+# {'username': 'alice'}
+```
+
+## Nested Exclusion
+
+For nested models, you can use a dict to specify nested exclusions:
+
+```python
+class Address(BaseModel):
+    street: str
+    city: str
+    zip_code: str
+
+
+class Person(BaseModel):
+    name: str
+    address: Address
+
+
+person = Person(
+    name="Bob",
+    address=Address(street="123 Main", city="NYC", zip_code="10001")
+)
+
+# Exclude nested field
+person.model_dump(exclude={"address": {"zip_code"}})
+# {'name': 'Bob', 'address': {'street': '123 Main', 'city': 'NYC'}}
+```
+
+## When to Use Each Approach
+
+| Approach | Use Case |
+|----------|----------|
+| `Field(exclude=True)` | Field should **never** be serialized (e.g., passwords, internal state, large data) |
+| `model_dump(exclude={...})` | Field should **sometimes** be excluded depending on context |

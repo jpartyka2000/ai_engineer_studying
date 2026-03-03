@@ -1,0 +1,89 @@
+Exactly! You've got it.
+
+## setLevel() = Range (Level and Above)
+
+`setLevel()` always means "this level **and everything above it**":
+
+```python
+handler.setLevel(logging.INFO)
+# Accepts: INFO, WARNING, ERROR, CRITICAL
+# Rejects: DEBUG
+```
+
+You **cannot** use `setLevel()` alone to accept only INFO messages.
+
+## Filters = Exact Matching (or Any Custom Logic)
+
+If you want to accept **only a specific level** (not a range), you must use a filter:
+
+```python
+# Accept ONLY INFO level (not WARNING, ERROR, etc.)
+handler.addFilter(lambda record: record.levelno == logging.INFO)
+```
+
+## Complete Example: Exact Level Matching
+
+```python
+import logging
+import sys
+
+logger = logging.getLogger("app")
+logger.setLevel(logging.DEBUG)
+
+# Handler 1: ONLY DEBUG messages
+debug_only_handler = logging.StreamHandler(sys.stdout)
+debug_only_handler.setLevel(logging.DEBUG)  # Must be at or below DEBUG
+debug_only_handler.setFormatter(logging.Formatter('[DEBUG] %(message)s'))
+debug_only_handler.addFilter(lambda record: record.levelno == logging.DEBUG)
+
+# Handler 2: ONLY INFO messages
+info_only_handler = logging.StreamHandler(sys.stdout)
+info_only_handler.setLevel(logging.INFO)  # Must be at or below INFO
+info_only_handler.setFormatter(logging.Formatter('[INFO] %(message)s'))
+info_only_handler.addFilter(lambda record: record.levelno == logging.INFO)
+
+# Handler 3: ONLY ERROR messages
+error_only_handler = logging.StreamHandler(sys.stdout)
+error_only_handler.setLevel(logging.ERROR)  # Must be at or below ERROR
+error_only_handler.setFormatter(logging.Formatter('[ERROR] %(message)s'))
+error_only_handler.addFilter(lambda record: record.levelno == logging.ERROR)
+
+logger.addHandler(debug_only_handler)
+logger.addHandler(info_only_handler)
+logger.addHandler(error_only_handler)
+
+# Test it out
+logger.debug("This is debug")      # Only debug_only_handler outputs
+logger.info("This is info")        # Only info_only_handler outputs
+logger.warning("This is warning")  # No handler outputs!
+logger.error("This is error")      # Only error_only_handler outputs
+```
+
+**Output:**
+```
+[DEBUG] This is debug
+[INFO] This is info
+[ERROR] This is error
+```
+
+Notice: The WARNING message doesn't appear anywhere because no handler accepts it!
+
+## Comparison Table
+
+| Goal | Method |
+|------|--------|
+| Accept DEBUG and above | `setLevel(logging.DEBUG)` |
+| Accept INFO and above | `setLevel(logging.INFO)` |
+| Accept ERROR and above | `setLevel(logging.ERROR)` |
+| Accept **ONLY** DEBUG | `setLevel(DEBUG)` + `addFilter(lambda r: r.levelno == logging.DEBUG)` |
+| Accept **ONLY** INFO | `setLevel(INFO)` + `addFilter(lambda r: r.levelno == logging.INFO)` |
+| Accept DEBUG and INFO (but not WARNING+) | `setLevel(DEBUG)` + `addFilter(lambda r: r.levelno <= logging.INFO)` |
+
+## Why This Design?
+
+The Python logging design assumes most use cases want **severity thresholds** (e.g., "log everything ERROR and above"). Exact level matching is less common, so it requires the extra step of adding a filter.
+
+**Summary:** 
+- **Range matching** → use `setLevel()`
+- **Exact matching** → use `setLevel()` + `addFilter()`
+- **Custom logic** → use `addFilter()` with any condition you want!

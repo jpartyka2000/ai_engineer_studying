@@ -1,0 +1,58 @@
+That broadcast error happens because when you pass a bare tuple to `replace()`, pandas thinks it’s an array-like of length 3 (your three elements) and tries to broadcast it against your million-row Series. To avoid that, wrap your tuple-keys in a sequence or use a lookup that doesn’t trigger vectorized broadcasting.
+
+Here are several alternatives to using `Series.map()` (or to using `replace()` directly on a raw tuple):
+
+1. **`Series.replace()` with lists of keys and values**
+
+   ```python
+   keys   = list(prob_delta_tuple_list_dict.keys())
+   values = list(prob_delta_tuple_list_dict.values())
+   df_data["delta"] = df_data["pn_cn_yq"].replace(to_replace=keys, value=values)
+   ```
+
+   By giving `replace()` a list of tuples, pandas treats each tuple as a single lookup key.
+
+2. **`Series.apply()` with a lambda**
+
+   ```python
+   df_data["delta"] = df_data["pn_cn_yq"].apply(
+       lambda tpl: prob_delta_tuple_list_dict.get(tpl, 0)
+   )
+   ```
+
+   This runs a Python function row-by-row and never tries to vector-broadcast.
+
+3. **List comprehension**
+
+   ```python
+   m = prob_delta_tuple_list_dict
+   df_data["delta"] = [m.get(tpl, 0) for tpl in df_data["pn_cn_yq"]]
+   ```
+
+   Often the fastest pure-Python approach for an un-vectorized lookup.
+
+4. **`numpy.vectorize`**
+
+   ```python
+   import numpy as np
+   vget = np.vectorize(lambda tpl: prob_delta_tuple_list_dict.get(tpl, 0))
+   df_data["delta"] = vget(df_data["pn_cn_yq"].values)
+   ```
+
+   Wraps your lookup in a “vectorized” call—still Python-level under the hood but avoids pandas’ replace logic.
+
+5. **`DataFrame.merge()` against a tiny lookup table**
+
+   ```python
+   lookup = (
+       pd.DataFrame.from_records(
+           [(k, v) for k, v in prob_delta_tuple_list_dict.items()],
+           columns=["pn_cn_yq", "delta"],
+       )
+   )
+   df_data = df_data.merge(lookup, on="pn_cn_yq", how="left").fillna({"delta": 0})
+   ```
+
+   This does a proper relational join, and is often very clear when your lookup dict is large.
+
+All of these will give you a new `"delta"` column without tripping over pandas’ broadcasting rules.

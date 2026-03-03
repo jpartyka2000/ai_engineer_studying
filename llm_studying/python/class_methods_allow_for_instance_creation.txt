@@ -1,0 +1,119 @@
+You’re hitting the heart of the design tension:
+
+* **In “Jobs API” mode** you want to parse your flags, load the DataFrame inside `main()`, then run the sim without ever manually doing
+
+  ```python
+  sim = CampaignMCSimulator(…)
+  ```
+* **In “programmatic” mode** you want to do exactly that.
+
+The cleanest, most Pythonic way is to **keep your core logic in the constructor + `run_simulation()`**, and then add a small **factory method** (or just do it in `main`) that builds an instance for you from parsed args. You don’t need to turn your constructor into a no-arg stub or try to shoe-horn everything into class-level variables.
+
+Here’s a minimal refactoring:
+
+```python
+import argparse
+import numpy as np
+import pandas as pd
+import sys
+from pyspark.sql import SparkSession
+
+class CampaignMCSimulator:
+    REQUIRED_COLUMNS_LIST = [
+        'campaign','monthly_spend','monthly_clicks',
+        'monthly_all_conversions','sum_CLV_fp_365'
+    ]
+
+    def __init__(self, overall_budget, n_iterations, pct_min_max, ctr, df):
+        # … your existing validation + data‐prep …
+        self.overall_budget = overall_budget
+        self.n_iterations   = n_iterations
+        self.pct_min_max    = pct_min_max
+        self.ctr            = ctr
+        self.df             = df.copy()
+        self._prepare_data()
+
+    def _prepare_data(self):
+        # … all your df transformations into self.df and self.campaigns_dict …
+        pass
+
+    def generate_valid_allocation(self):
+        # … exactly as you have it …
+        pass
+
+    def run_simulation(self):
+        # … exactly as you have it …
+        pass
+
+    @staticmethod
+    def parse_args():
+        p = argparse.ArgumentParser()
+        p.add_argument("--overall_budget", type=float, required=True)
+        p.add_argument("--n_iterations",   type=int,   required=True)
+        p.add_argument("--pct_min_max",    type=float, required=True)
+        p.add_argument("--ctr",            type=float, required=True)
+        p.add_argument("--input_table",    type=str,   required=True)
+        return p.parse_args()
+
+    @classmethod
+    def main(cls):
+        args = cls.parse_args()
+
+        # 1) load the DataFrame inside the Jobs cluster
+        spark = SparkSession.builder.getOrCreate()
+        df = spark.table(args.input_table).toPandas()
+
+        # 2) build an instance
+        sim = cls(
+            overall_budget=args.overall_budget,
+            n_iterations=args.n_iterations,
+            pct_min_max=args.pct_min_max,
+            ctr=args.ctr,
+            df=df
+        )
+
+        # 3) run it
+        results = sim.run_simulation()
+
+        # 4) emit or write results
+        print(results)
+        # results.to_csv("/dbfs/tmp/mc_results.csv", index=False)
+
+if __name__ == "__main__":
+    CampaignMCSimulator.main()
+```
+
+### What this gives you
+
+* **Jobs API**
+  – You point your job at this file; Databricks spins up a cluster and runs
+
+  ```bash
+  python mc_sim.py \
+    --overall_budget 250000 \
+    --n_iterations 10000 \
+    --pct_min_max 0.5 \
+    --ctr 0.02 \
+    --input_table pathahead.tealhq_ecue.campaign_mc_data_april_2025
+  ```
+
+  – That invokes `main()`, which parses, loads the table, instantiates the class, and runs.
+
+* **Programmatic / local**
+
+  ```python
+  from mc_sim import CampaignMCSimulator
+  import pandas as pd
+
+  df_local = pd.read_csv("fixture.csv")
+  sim = CampaignMCSimulator(
+      overall_budget=100000,
+      n_iterations=1000,
+      pct_min_max=0.3,
+      ctr=0.02,
+      df=df_local
+  )
+  df_out = sim.run_simulation()
+  ```
+
+No trickery with class‐level variables is needed: you simply use `main()` as your entry‐point when you’re on the Jobs API, and you use the constructor + `run_simulation()` when you’re local.

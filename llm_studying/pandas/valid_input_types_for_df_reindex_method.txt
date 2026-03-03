@@ -1,0 +1,68 @@
+The `index` (and `columns`) parameter of `DataFrame.reindex()` can be **any object that Pandas knows how to turn into an Index**. In practice that means:
+
+1. **Python list or tuple of labels**
+
+   ```python
+   df.reindex(index=['a', 'b', 'c'])
+   ```
+
+2. **NumPy array of labels**
+
+   ```python
+   import numpy as np
+   new_idx = np.array(['a','b','c'])
+   df.reindex(index=new_idx)
+   ```
+
+3. **Any Pandas Index object:**
+
+   * **`Index`**
+
+     ```python
+     idx = pd.Index(['a','b','c'])
+     df.reindex(index=idx)
+     ```
+   * **`RangeIndex`** (auto‐generated integer index)
+
+     ```python
+     df.reindex(index=pd.RangeIndex(start=0, stop=10, step=2))
+     ```
+   * **`DatetimeIndex`**
+
+     ```python
+     dates = pd.date_range('2025-01-01','2025-01-05')
+     df.reindex(index=dates)
+     ```
+   * **`MultiIndex`**
+
+     ```python
+     mi = pd.MultiIndex.from_product([['A','B'], [1,2]])
+     df.reindex(index=mi)
+     ```
+
+4. **`range`** or other iterable
+
+   ```python
+   df.reindex(index=range(3))   # equivalent to [0,1,2]
+   ```
+
+5. **Mapping both axes at once**
+   You can pass a dict if you want to reindex rows and columns in one call:
+
+   ```python
+   df.reindex(index=['a','b'], columns=['x','y','z'])
+   ```
+
+---
+
+### What Pandas does under the hood
+
+* It **examines** your `index=` (or `columns=`) argument and calls `pd.Index(...)` on it.
+* If it’s already an Index, it uses it directly; if it’s a list/array/tuple/range, it builds a new Index of the same type.
+* Then it lines up your old data to the new labels, inserting missing slots (filled with NaN or your `fill_value`) and dropping any old labels you didn’t include.
+
+---
+
+### In summary
+
+> **Anything that can be passed to** `pd.Index(...)`—lists, arrays, ranges, or existing Index objects—is a valid input to `reindex()`.

@@ -1,0 +1,37 @@
+When you call `df.set_index(col)`, pandas **replaces** the DataFrame’s current index with the values in `col`. It does not stack or augment levels on top of the existing index—what was the index before is discarded (unless you explicitly preserved it).
+
+**Key points:**
+
+* **Replacement, not addition**
+
+  ```python
+  df = df.set_index('date')
+  ```
+
+  After this, `df.index` is only the `DatetimeIndex` built from the `'date'` column. The old `RangeIndex(0, 1, 2, …)` is gone.
+
+* **Preserving the old index**
+  If you want to keep the old index as a column, use
+
+  ```python
+  df = df.reset_index().set_index('date')
+  ```
+
+  or
+
+  ```python
+  df = df.set_index('date', drop=False)
+  ```
+
+  so that the former index is retained in a column.
+
+* **Appending a new level**
+  Only if you explicitly ask for it—with `append=True`—does pandas create a MultiIndex:
+
+  ```python
+  df = df.set_index('date', append=True)
+  ```
+
+  In that case, the new level (`'date'`) becomes the *deepest* level of a two-level index, with the original index still sitting at level 0.
+
+In short, by default `set_index` is a **destructive** replacement of the index; stacking levels requires you to opt in via `append=True`.

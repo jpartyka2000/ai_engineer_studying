@@ -1,0 +1,23 @@
+They’re never explicitly turned into a separate `probs` tensor in your code—PyTorch’s `Categorical` distribution handles that for you under the hood.
+
+When you do:
+
+```python
+dist = Categorical(logits=logits)
+```
+
+1. `Categorical` **stores** your raw `logits` tensor.
+2. Whenever you call
+
+   * `dist.sample()`, it (conceptually) converts them to probabilities via
+
+     $$
+       p_i = \frac{\exp(\text{logit}_i)}{\sum_j \exp(\text{logit}_j)}
+     $$
+
+     then draws an index according to that categorical pmf.
+   * `dist.log_prob(a)`, it again uses those logits to compute
+     $\log p_a = \text{logit}_a - \log\sum_j\exp(\text{logit}_j)$
+     (i.e.\ `log_softmax(logits)[a]`) and returns that.
+
+So the softmax/normalization step is all buried inside `torch.distributions.Categorical`—you just feed it logits and it takes care of turning them into a proper probability distribution whenever it needs to sample or compute log-probs.

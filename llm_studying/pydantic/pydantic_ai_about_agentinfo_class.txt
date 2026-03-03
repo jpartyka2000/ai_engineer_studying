@@ -1,0 +1,51 @@
+Here’s a detailed look at **`AgentInfo`** in **Pydantic AI** — what it is, how it’s used, and why it matters.
+
+---
+
+## 📌 What Is `AgentInfo`
+
+* `AgentInfo` is a **dataclass** defined in the `pydantic_ai.models.function` module. ([Pydantic AI][1])
+* It encapsulates **metadata about an Agent** that is passed into functions in `FunctionModel` (those function tools exposed to the agent). ([Pydantic AI][1])
+* Essentially, when the LLM (through Pydantic AI) invokes a function via the agent’s tooling interface, the function may receive an `AgentInfo` object as context.
+
+---
+
+## 🧩 Fields / Attributes of `AgentInfo`
+
+According to the source, `AgentInfo` has the following attributes: ([Pydantic AI][1])
+
+| Field               | Type                   | Description                                                                                                            |                                                                                    |
+| ------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `function_tools`    | `list[ToolDefinition]` | The set of **function tools** available on the agent (i.e. those registered via `@agent.tool` or `@agent.tool_plain`). |                                                                                    |
+| `allow_text_output` | `bool`                 | Whether the agent permits plain text output (not via a structured tool) in addition to structured output.              |                                                                                    |
+| `output_tools`      | `list[ToolDefinition]` | The tools that can be called to produce the **final output** of the agent.                                             |                                                                                    |
+| `model_settings`    | \`ModelSettings        | None\`                                                                                                                 | The model settings passed to the current run (like temperature, max tokens, etc.). |
+
+Thus, `AgentInfo` gives a function being called enough context about the agent’s configuration and tools.
+
+---
+
+## 🔄 How It Gets Used
+
+* When you define a function for the agent to call, that function can take `AgentInfo` as a parameter (usually second parameter) so it knows about the agent’s environment.
+* Inside that function, you can look up which tools are available, check output behavior, or adjust logic based on `model_settings`.
+* It bridges the function tool world and the agent’s tool orchestration layer.
+
+---
+
+## ✅ Why It Matters
+
+1. **Context Awareness**
+   A tool function doesn’t have to act in a vacuum — knowing the agent’s toolset, output permissions, and model settings helps make more dynamic, intelligent function behavior.
+
+2. **Consistency & Safety**
+   The agent can limit or veto certain behaviors. For example, if `allow_text_output=False`, a function might need to produce structured output only.
+
+3. **Separation of Concerns**
+   Functions don’t need to carry around global references to the agent. `AgentInfo` is passed in cleanly, making functions more modular and easier to test.
+
+---
+
+If you like, I can also show you a **mini example** of writing a function tool that takes `AgentInfo` and uses it (e.g. checking `output_tools` or `allow_text_output`) — it might make the concept more concrete. Do you want me to do that?
+
+[1]: https://ai.pydantic.dev/api/models/function/?utm_source=chatgpt.com "pydantic_ai.models.function"

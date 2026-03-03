@@ -1,0 +1,55 @@
+When we say “one selector per category” for a **nominal** (i.e. categorical) column, we mean that for each *distinct* value in that column we generate exactly one atomic rule of the form:
+
+```
+column == that_value
+```
+
+These become the building blocks your subgroup‐discovery algorithm uses to compose more complex rules. Concretely:
+
+* Suppose you have a column `gender` with two values: `M` and `F`.
+
+  * You’ll get two selectors:
+
+    1. **gender == 'M'**
+    2. **gender == 'F'**
+
+* If you have a column `country` with values `US, CA, UK, DE`, you get four selectors:
+
+  1. **country == 'US'**
+  2. **country == 'CA'**
+  3. **country == 'UK'**
+  4. **country == 'DE'**
+
+These selectors are instances of something like `NominalSelector(attribute, value)` in **pysubgroup**, and they form the “search space” of all *single‐condition* rules. Later, your beam‐search (or DFS) will combine them (up to `depth=5` in your example) to discover subgroups like:
+
+```
+gender == 'F'  AND  country == 'US'  AND  age > 30  AND  ...
+```
+
+—where `gender == 'F'` and `country == 'US'` were both created “one‐per‐category” from their respective columns.
+
+---
+
+### Why do we do this?
+
+1. **Completeness**
+   By including every possible category as its own selector, you ensure no potentially interesting subgroup is overlooked.
+
+2. **Modularity**
+   Each selector is a tiny, self‐contained rule.  Combinations of selectors yield more specific (“deeper”) subgroups.
+
+3. **Efficiency**
+   The search algorithm can quickly evaluate and rank each single‐category rule before deciding which ones to extend and combine into multi‐condition rules.
+
+---
+
+### How it ties into `create_selectors()`:
+
+```python
+selectors = create_selectors(df_data, nbins=5, intervals_only=True)
+```
+
+* **Numeric columns** → quantile‐based bins (interval selectors).
+* **Nominal columns** → exactly one selector for *each* distinct category.
+
+You then drop any selectors on the target itself, and pass the rest into your `SubgroupDiscoveryTask` to find interesting, high‐WRAcc combinations of these atomic rules.

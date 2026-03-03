@@ -1,0 +1,55 @@
+Great observation! The keys `"tool_calls_total"` and `"tool_calls_success"` don't show up in the summary because **Weave only aggregates metrics that it finds across multiple evaluation examples.**
+
+Here's what's happening:
+
+**In your `score()` method:**
+```python
+return {
+    "tool_calls_total": tot,
+    "tool_calls_success": ok,
+    "tool_success_rate": success_rate,
+}
+```
+
+**But in the output, you only see:**
+- `"tool_success_rate"` under `"output"` (aggregated from individual examples)
+- `"tool_success_rate_micro"` under `"tool_success"` (from your custom `summarize()`)
+
+**Why the other keys are missing:**
+
+1. **They're likely being computed per-example** but Weave's default aggregation might not be showing them in the summary view
+2. **Check if they appear in the detailed per-example results** (not just the summary)
+3. **Weave may be filtering out intermediate metrics** that are used for calculation but not considered "final" scores
+
+**To verify:**
+
+You should be able to see `tool_calls_total` and `tool_calls_success` if you:
+- Look at individual evaluation rows in the Weave UI
+- Access `results` programmatically and inspect the per-example data
+
+**Why `tool_success_rate` shows up but not the counts:**
+
+Weave's auto-aggregation typically computes `mean` for numeric values. It's showing:
+- `"tool_success_rate": {"mean": 0.666...}` - the average rate across examples
+- But may not show raw counts because they're not being aggregated in a meaningful way
+
+**Your `summarize()` method works differently:**
+
+It manually computes the micro-average across ALL tool calls (not per-example), which is why `tool_success_rate_micro` appears separately under the `"tool_success"` section.
+
+**Want to see those counts in the summary?**
+
+You could modify `summarize()` to include them:
+
+```python
+def summarize(self, rows: list[dict]) -> dict:
+    T = sum(r.get("tool_calls_total", 0) for r in rows)
+    S = sum(r.get("tool_calls_success", 0) for r in rows)
+    return {
+        "tool_success_rate_micro": (S / T) if T else 0.0,
+        "tool_calls_total_sum": T,
+        "tool_calls_success_sum": S,
+    }
+```
+
+Does that match what you're seeing?

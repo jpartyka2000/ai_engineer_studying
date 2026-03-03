@@ -1,0 +1,18 @@
+There isn’t a dedicated “get fine‐tune job cost” endpoint in the OpenAI API—so you can’t just call something like `client.fine_tunes.get_cost(job_id)`. Fine-tune jobs themselves don’t return a “cost” field.
+
+**How to figure out what you spent:**
+
+1. **Usage Records**
+   Use the [Usage API endpoint](https://platform.openai.com/docs/api-reference/usage) to pull your token usage broken down by `model` and `purpose`. Fine-tuning shows up under the `fine_tune` category. By querying the date range that covers your job’s run time and summing the `usage` × `unit_price` for that category, you can approximate the cost.
+
+2. **Billing Dashboard / Invoices**
+   The simplest way is to look in the OpenAI web dashboard under **Billing → Usage** or inspect your monthly invoice PDF, which will show line items for fine-tuning.
+
+3. **Track Ahead of Time**
+   If you need per-job granularity in your own system, you can instrument your pipeline to:
+
+   * Record the job’s `created_at` and `updated_at` timestamps.
+   * Immediately after it finishes, call the Usage API for that exact time window.
+   * Multiply token counts by the published fine-tuning rates.
+
+While a bit manual, that approach is the only way to programmatically attribute specific fine-tune jobs to dollars spent.

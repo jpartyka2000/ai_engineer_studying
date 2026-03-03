@@ -1,0 +1,59 @@
+The SQL query is producing an error because Databricks SQL (and Apache Spark SQL) does not support using **`INTERVAL 1 QUARTER`** in date arithmetic directly. The `INTERVAL` keyword in Databricks SQL only supports specific units like `DAY`, `MONTH`, `YEAR`, etc., but **not `QUARTER`**. This makes the `CURRENT_DATE() - INTERVAL 1 QUARTER` part of the query invalid.
+
+Here’s how you can fix it:
+
+---
+
+### **Correct Query**
+To calculate the previous quarter's year and quarter, you can use the `DATE_ADD` and `MONTH` functions for date arithmetic:
+
+```sql
+SELECT SUM(opportunity_amount) 
+FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps 
+WHERE is_closed_won = 1 
+  AND QUARTER(closed_won) = QUARTER(DATE_ADD(CURRENT_DATE(), -3 * 30)) 
+  AND YEAR(closed_won) = YEAR(DATE_ADD(CURRENT_DATE(), -3 * 30));
+```
+
+### **Explanation**
+1. **Substituting `INTERVAL 1 QUARTER`:**
+   - Replace `INTERVAL 1 QUARTER` with `DATE_ADD(CURRENT_DATE(), -3 * 30)`.
+   - Subtracting approximately 90 days (3 months) gives a rough equivalent of one quarter.
+
+2. **Using `DATE_ADD`:**
+   - `DATE_ADD` allows adding or subtracting a specific number of days from a date.
+   - Multiplying by `30` assumes each month has approximately 30 days.
+
+---
+
+### **Alternative Approach**
+If you want more precise calculations for previous quarters:
+
+1. Use `DATE_TRUNC` to find the start of the current and previous quarters:
+   ```sql
+   SELECT SUM(opportunity_amount)
+   FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps
+   WHERE is_closed_won = 1
+     AND closed_won >= DATE_TRUNC('QUARTER', DATE_ADD(CURRENT_DATE(), -3))
+     AND closed_won < DATE_TRUNC('QUARTER', CURRENT_DATE());
+   ```
+
+2. **Explanation:**
+   - `DATE_TRUNC('QUARTER', DATE_ADD(CURRENT_DATE(), -3))`: Finds the start of the previous quarter.
+   - `DATE_TRUNC('QUARTER', CURRENT_DATE())`: Finds the start of the current quarter.
+   - This ensures precise quarter boundaries without relying on `QUARTER` or `YEAR`.
+
+---
+
+### **Debugging Tips**
+If the corrected query still fails:
+1. Verify the column names (`closed_won`, `opportunity_amount`, `is_closed_won`) exist and match exactly.
+2. Check the data type of `closed_won`. If it’s stored as a string, convert it to a `DATE` using:
+   ```sql
+   CAST(closed_won AS DATE)
+   ```
+3. Test parts of the query incrementally:
+   - Run `SELECT QUARTER(CURRENT_DATE())` to check compatibility.
+   - Query the table directly with `LIMIT` to inspect data.
+
+Let me know if you encounter further issues!

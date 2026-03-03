@@ -1,0 +1,40 @@
+In Pandas a **MultiIndex** (or “hierarchical index”) is just a tuple of several ordinary Index objects, stacked on top of one another.  Internally each of those constituent Indexes is called a “level,” and they’re numbered from **0** up:
+
+```text
+MultiIndex(levels=[['A','B'],       ← level 0
+                   ['X','Y','Z']],   ← level 1
+           codes=[[0,0,1,1],        ← code arrays for level 0
+                  [2,1,2,0]])       ← code arrays for level 1
+```
+
+1. **Level 0** is the outermost index.
+2. **Level 1** is the next‐inner index.
+3. And so on: if you had a 3-deep MultiIndex, you’d have levels 0, 1, 2.
+
+You can refer to them by position or (if named) by name:
+
+```python
+# suppose df has a MultiIndex
+df.index.get_level_values(0)   # the first ("outer") level
+df.index.get_level_values(1)   # the second level
+```
+
+When you do `reset_index()` on a MultiIndex, if any of your levels didn’t originally have a `.name`, Pandas will invent names `"level_0"`, `"level_1"`, `"level_2"`, etc., corresponding to their positions.  That’s why you sometimes see a column called `level_2`—it was the third (zero-based) level in your index that got turned into a column without an explicit name.
+
+---
+
+### Quick reference
+
+* **Position**: levels are numbered `0, 1, 2, …` in the order they’re stacked (outer → inner).
+* **Accessing**:
+
+  ```python
+  mi = df.index
+  # by position
+  outer_vals = mi.get_level_values(0)
+  inner_vals = mi.get_level_values(1)
+  # by name (if you named your levels)
+  mid_vals   = mi.get_level_values('my_mid_level_name')
+  ```
+* **Resetting**:
+  `df.reset_index()` will turn each level into a column named either by its `.name` or, if unnamed, by `"level_{i}"`.

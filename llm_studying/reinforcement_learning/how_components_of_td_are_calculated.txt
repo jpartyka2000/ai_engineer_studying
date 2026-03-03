@@ -1,0 +1,87 @@
+In Advantage Actor-Critic (A2C) (and most actor-critic methods), the value network (critic) is trained to approximate the state value function:
+
+V^\pi(s) = \mathbb{E}_\pi \Big[ \sum_{k=0}^\infty \gamma^k r_{t+k} \,\Big|\, s_t = s \Big]
+
+This means that the value network learns a function  that takes only the state  as input and predicts the expected return starting from that state under the current policy.
+
+Here's how it works step by step:
+
+
+---
+
+1️⃣ Data Collection
+
+During an episode or batch of experience, the agent interacts with the environment and collects transitions:
+
+(s_t, a_t, r_t, s_{t+1})
+
+These transitions are stored for training.
+
+
+---
+
+2️⃣ Temporal Difference (TD) Target
+
+We compute a bootstrapped target for the value function:
+
+y_t = r_t + \gamma V_\theta(s_{t+1})
+
+This is the TD(0) target, where the prediction for the next state  is used to estimate future returns.  is the current value network’s prediction of the value of the next state.
+
+
+---
+
+3️⃣ Value Network Update
+
+We train the value network by minimizing the mean squared error (MSE) between its prediction for the current state  and the TD target:
+
+L_V(\theta) = \big( V_\theta(s_t) - y_t \big)^2
+
+Gradients are computed and backpropagated to update .
+
+
+---
+
+4️⃣ Iterative Bootstrapping
+
+Since  comes from the same network being trained, the learning process is bootstrapped:
+
+Initially, predictions for  may be poor.
+
+Over time, as the network improves, both  and  become better approximations of the true expected return.
+
+
+
+---
+
+5️⃣ How Predictions for Both  and  Are Made
+
+The same value network is used for both  and .
+
+At training time, you pass  through the network to get one prediction and  through the same network to get the other prediction.
+
+The network is a function approximator , meaning it can produce a value estimate for any input state.
+
+
+
+---
+
+6️⃣ Key Idea
+
+You don't need two separate networks or precomputed values for .
+
+At each update step, you reuse the current value network for both  and .
+
+Over time, this bootstrapped target provides a lower-variance (but biased) estimate compared to Monte Carlo returns.
+
+
+
+---
+
+✅ Summary
+
+The value network is a function  that predicts the expected discounted sum of future rewards given any state.
+
+To compute temporal difference errors, you query the same network twice: once for  and once for .
+
+The network is trained iteratively to reduce the TD error, eventually providing reliable predictions for all states.

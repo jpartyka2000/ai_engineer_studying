@@ -1,0 +1,41 @@
+Here are several strategies to speed up joins between two PySpark DataFrames:
+
+- **Broadcast Join:**  
+  If one DataFrame is small, use a broadcast join to send it to all worker nodes. This avoids a costly shuffle. For example:
+  
+  ```python
+  from pyspark.sql.functions import broadcast
+  
+  joined_df = large_df.join(broadcast(small_df), "join_key")
+  ```
+
+- **Selective Column Projection:**  
+  Before joining, select only the columns you actually need. This reduces data transfer during the join.
+
+- **Proper Partitioning:**  
+  Partition your DataFrames based on the join key. If both DataFrames are partitioned on the same key, the join will require less shuffling.
+
+- **Bucketing and Sorting:**  
+  Bucketing the data on the join key and sorting within each bucket can improve join performance, especially when the data is reused across multiple joins.
+
+- **Optimize Shuffle Partitions:**  
+  Adjust the number of shuffle partitions (via `spark.sql.shuffle.partitions`) to match your cluster resources and data size. Lowering or increasing this number can have a big impact on join performance.
+
+- **Avoid Data Skew:**  
+  If certain keys are extremely frequent, data skew can slow down joins. Consider techniques like salting the keys or handling skewed keys separately.
+
+- **Caching Intermediate Results:**  
+  If you plan to use one of the DataFrames multiple times in joins, persist or cache it so that Spark doesn't recompute it for each join.
+
+Using these strategies can help minimize expensive shuffles and maximize parallelism, leading to faster join operations in PySpark.
+
+-----------------------------------
+
+You can retrieve the current number of shuffle partitions via the Spark configuration. For example:
+
+```python
+num_shuffle_partitions = spark.conf.get("spark.sql.shuffle.partitions")
+print("Current number of shuffle partitions:", num_shuffle_partitions)
+```
+
+This will print the value of `spark.sql.shuffle.partitions` that Spark is currently using for shuffle operations.

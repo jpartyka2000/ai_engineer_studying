@@ -1,0 +1,29 @@
+Bootstrapping off a learned critic cuts down on variance because you replace a long, random‐sum of future rewards with a single random reward plus your critic’s **deterministic** estimate of what comes next.  Concretely:
+
+1. **Monte Carlo return (high variance)**
+
+   $$
+     G_t = r_{t+1} + \gamma\,r_{t+2} + \gamma^2\,r_{t+3} + \cdots
+   $$
+
+   Every sample of $G_t$ depends on the full cascade of future, stochastic rewards.  Small chance events (like a lucky early score or an unlucky turnover) get multiplied out over many steps, leading to huge variability in your gradient estimates.
+
+2. **One‐step bootstrap (low variance)**
+
+   $$
+     \underbrace{r_{t+1} + \gamma\,V(s_{t+1})}_{\text{TD target}}
+   $$
+
+   Here you only sample the single immediate reward $r_{t+1}$ (still random) but then **plug in** your critic’s value $V(s_{t+1})$ (a point estimate) instead of sampling the rest of the trajectory.  Since $V(s_{t+1})$ is the critic’s **mean** prediction of all those future rewards, you eliminate all the additional noise from later time steps.
+
+3. **Bias–variance tradeoff**
+
+   * **MC**: unbiased estimate of the true return but very high variance.
+   * **TD bootstrap**: introduces some bias (because $V$ is only an approximation) but massively reduces variance (you only sample one real reward instead of many).
+
+4. **Policy‐gradient implication**
+   When you weight your log‐prob gradients by a lower‐variance signal (the TD error or advantage) instead of by $G_t$, your gradient estimates fluctuate much less from one update to the next, leading to **faster** and **more stable** learning.
+
+---
+
+> **Bottom line:** by using the critic’s value as a proxy for the uncertain tail of the return, you trade a bit of bias for a large drop in variance—making your policy‐gradient steps far more reliable than pure Monte Carlo updates.

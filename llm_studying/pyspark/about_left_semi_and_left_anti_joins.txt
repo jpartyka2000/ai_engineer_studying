@@ -1,0 +1,54 @@
+In Spark, **left-semi** and **left-anti** joins are special-purpose joins for filtering one DataFrame against another:
+
+---
+
+### Left-Semi Join
+
+* **Syntax:**
+
+  ```python
+  df1.join(df2, on="key", how="left_semi")
+  ```
+* **What it does:**
+  Returns **only the rows from `df1`** for which there exists *at least one* matching key in `df2`.
+  No columns from `df2` are ever included—only the original `df1` columns are kept.
+* **Equivalent to:**
+  SQL’s `WHERE EXISTS` or pandas’ `df1[df1.key.isin(df2.key)]`.
+* **When to use:**
+  Fast “inner filter” when you just need to keep rows in `df1` that have a match in `df2`.
+
+---
+
+### Left-Anti Join
+
+* **Syntax:**
+
+  ```python
+  df1.join(df2, on="key", how="left_anti")
+  ```
+* **What it does:**
+  Returns **only the rows from `df1`** for which there is **no** matching key in `df2`.
+  Again, you only get `df1`’s columns.
+* **Equivalent to:**
+  SQL’s `WHERE NOT EXISTS` or pandas’ `df1[~df1.key.isin(df2.key)]`.
+* **When to use:**
+  Quickly filter out any rows in `df1` that appear in `df2`.
+
+---
+
+#### Why these matter
+
+* **Performance:** Spark can optimize semi/anti-joins more efficiently than a generic left-join + filter.
+* **Clarity:** Makes your intent (“keep only matching” vs. “drop all matching”) explicit and avoids the need to add extra filter or drop steps.
+
+---
+
+**Example:**
+
+```python
+# keep only leads present in the “approved” list
+approved_semi = leads_df.join(approved_df, on="LEAD_ID", how="left_semi")
+
+# keep only leads NOT yet approved
+approved_anti = leads_df.join(approved_df, on="LEAD_ID", how="left_anti")
+```

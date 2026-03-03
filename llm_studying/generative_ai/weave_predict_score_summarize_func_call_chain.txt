@@ -1,0 +1,44 @@
+Yes, the Scorer methods are **controlled by Weave's evaluation framework**. Here's the order and timing of when these methods get called:
+
+## Execution Order
+
+1. **`evaluation_agent.predict()` is called** for each row in your dataset
+   - This happens when you call `evaluation.evaluate(evaluation_agent)`
+   - Your `CueEvaluationAgent` processes the input and returns output
+
+2. **`score()` is called for each dataset row** (per-example scoring)
+   - Called immediately after each prediction
+   - Runs **once per dataset row**
+   - Receives the `output` from your agent and any columns from the dataset row that match the scorer's parameter names
+   - Returns a dict with scores for that individual example
+
+3. **`summarize()` is called once at the end** (aggregation)
+   - Called **after all rows have been scored**
+   - Receives a list of all the score dicts returned by `score()`
+   - Computes aggregate metrics across the entire evaluation
+   - Returns a dict with summary metrics
+
+## In Your Case
+
+For your `ToolSuccessScorer`:
+
+```python
+# For each row in dataset:
+output = await evaluation_agent.predict(row)  # Step 1
+score_result = await tool_scorer.score(output=output)  # Step 2
+# score_result = {"tool_calls_total": 5, "tool_calls_success": 4, "tool_success_rate": 0.8}
+
+# After all rows complete:
+all_scores = [score_result_1, score_result_2, ..., score_result_n]
+summary = tool_scorer.summarize(rows=all_scores)  # Step 3
+# summary = {"tool_success_rate_micro": 0.85}
+```
+
+## Key Points
+
+- **Weave automatically orchestrates this flow** - you don't call these methods directly
+- The `score()` method parameters are automatically matched to dataset columns and the model output
+- If you don't define `summarize()`, Weave uses `auto_summarize` (averages for numbers, counts for booleans)
+- Your custom `summarize()` computes a micro-average (total successes / total calls) rather than a macro-average (average of per-row rates)
+
+This is why your scorer calculates both per-row metrics in `score()` and a different aggregate in `summarize()` - giving you fine-grained and summary views of performance.

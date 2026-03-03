@@ -1,0 +1,107 @@
+## Entropy
+
+**Entropy** comes from information theory and measures the uncertainty or unpredictability in a random variable. It quantifies how much "information" is contained in a variable.
+
+For a discrete variable with possible values {x₁, x₂, ..., xₙ}:
+
+$$H(X) = -\sum_{i=1}^{n} p(x_i) \log_2 p(x_i)$$
+
+## Interpreting entropy
+
+| Entropy Level | Meaning |
+|---------------|---------|
+| H = 0 | No uncertainty—variable is constant (only one outcome) |
+| H = maximum | Maximum uncertainty—all outcomes equally likely |
+
+For a binary variable, entropy ranges from 0 to 1 bit. For a variable with n equally likely outcomes, maximum entropy is log₂(n).
+
+## Example
+
+**Coin flip scenarios:**
+
+- Fair coin (50/50): H = -0.5 log₂(0.5) - 0.5 log₂(0.5) = 1 bit
+- Biased coin (90/10): H = -0.9 log₂(0.9) - 0.1 log₂(0.1) ≈ 0.47 bits
+- Constant (100/0): H = 0 bits
+
+The fair coin has maximum uncertainty—you gain the most information when you observe the outcome. The constant "coin" has zero entropy—observing it tells you nothing new.
+
+## How entropy measures feature usefulness
+
+Entropy alone tells you about a single variable's uncertainty. To assess a feature's usefulness for prediction, you need to look at how it relates to the target variable. This is where **information gain** and **mutual information** come in.
+
+### Information Gain
+
+Information gain measures how much knowing a feature reduces uncertainty about the target:
+
+$$IG(Y|X) = H(Y) - H(Y|X)$$
+
+where H(Y|X) is the conditional entropy of Y given X:
+
+$$H(Y|X) = \sum_{x} p(x) \cdot H(Y|X=x)$$
+
+**Interpretation:** If a feature has high information gain, knowing its value significantly reduces your uncertainty about the target. That's a useful feature.
+
+### Mutual Information
+
+Mutual information is closely related—it measures the amount of information shared between two variables:
+
+$$I(X;Y) = H(X) + H(Y) - H(X,Y)$$
+
+This is symmetric: I(X;Y) = I(Y;X). It equals zero when X and Y are independent, and increases as they become more dependent.
+
+## Practical example
+
+Suppose you're predicting whether someone buys a product (target Y):
+
+**Feature A: Random ID number**
+- High entropy (many unique values)
+- But H(Y|A) ≈ H(Y)—knowing the ID doesn't help predict purchase
+- Information gain ≈ 0
+- Useless feature
+
+**Feature B: Previous customer (yes/no)**
+- Lower entropy (only two values)
+- But H(Y|B) << H(Y)—knowing customer status greatly reduces uncertainty
+- High information gain
+- Useful feature
+
+**Feature C: Constant value (everyone has same value)**
+- Zero entropy
+- Cannot reduce uncertainty at all
+- Information gain = 0
+- Useless feature
+
+## Entropy vs. correlation-based measures
+
+| Aspect | Correlation (Pearson/Spearman/Kendall) | Entropy/Mutual Information |
+|--------|----------------------------------------|----------------------------|
+| **Relationship type** | Linear or monotonic | Any dependency, including non-monotonic |
+| **Variable type** | Continuous (or ordinal for rank-based) | Naturally suited for categorical; can discretize continuous |
+| **What it misses** | Non-monotonic patterns (e.g., U-shaped) | Nothing—captures any statistical dependency |
+| **Computation** | Simple | Requires probability estimation; can be tricky with continuous data |
+
+## Why entropy-based measures are powerful
+
+**1. Captures any relationship**
+
+Correlation only catches linear or monotonic relationships. Mutual information detects *any* statistical dependency. If Y = X² (a parabola), correlation might be near zero, but mutual information will be high.
+
+**2. Works naturally with categorical variables**
+
+For features like "color" or "country," correlation doesn't apply. Entropy-based measures handle categories directly.
+
+**3. Foundation for tree-based models**
+
+Decision trees (and by extension random forests, gradient boosting) use information gain or similar metrics (like Gini impurity) to decide splits. Understanding entropy helps you understand why these models select certain features.
+
+## Limitations
+
+**Discretization required for continuous variables.** You need to bin continuous features, and the choice of bins affects results.
+
+**Computationally intensive.** Estimating probabilities and computing entropy across many features can be slower than correlation.
+
+**Can overvalue high-cardinality features.** A feature with many unique values (like an ID) can appear to have high mutual information due to overfitting, even if it's not genuinely predictive. This is why random forests use out-of-bag samples and why you should be cautious with features that have many categories.
+
+## Summary
+
+Entropy measures uncertainty in a variable. By itself, high entropy just means high variability. The real value comes from **information gain** or **mutual information**, which measure how much a feature reduces uncertainty about the target. These metrics capture any form of dependency—not just linear or monotonic—making them especially powerful for feature selection when relationships might be complex.

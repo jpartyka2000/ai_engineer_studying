@@ -1,0 +1,56 @@
+USING __name__ WITH PATH — WHAT HAPPENS?
+=========================================
+
+SHORT ANSWER:
+-------------
+Creating the Path object does NOT cause an error. Path() accepts any string.
+But operations requiring the path to exist would fail.
+
+
+WHAT ACTUALLY HAPPENS:
+----------------------
+    from pathlib import Path
+    
+    # When script is run directly: __name__ == "__main__"
+    p = Path(__name__)
+    
+    print(p)           →  __main__          # Works fine!
+    print(type(p))     →  <class 'pathlib.PosixPath'>
+    
+    # These work (no filesystem access needed):
+    p.name             →  "__main__"
+    p.suffix           →  ""
+    p.stem             →  "__main__"
+    p.parent           →  Path(".")
+    
+    # These FAIL (require the path to exist):
+    p.exists()         →  False (probably)
+    p.read_text()      →  FileNotFoundError!
+    p.stat()           →  FileNotFoundError!
+
+
+WHY NO ERROR ON CREATION?
+-------------------------
+Path objects are just representations of paths — they don't validate 
+whether the path actually exists when created. This is intentional:
+
+    # All valid Path objects, even if they don't exist:
+    Path("nonexistent_file.txt")
+    Path("/fake/directory/nothing.py")
+    Path("__main__")
+    Path("literally anything!")
+
+
+COMMON CONFUSION:
+-----------------
+You might be thinking of:
+
+    __file__   →  the actual path to the current script
+    __name__   →  the module name (string, not a path)
+
+If you want the script's path, use __file__:
+
+    from pathlib import Path
+    
+    script_path = Path(__file__)           # The script's location
+    script_dir = Path(__file__).parent     # The script's directory

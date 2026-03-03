@@ -1,0 +1,48 @@
+Yes—you can keep everything in the same file and still isolate your logging setup into a neat helper at the top. For example, at the very top of your module:
+
+```python
+import logging
+import sys
+
+def _configure_module_logger() -> logging.Logger:
+    """
+    Set up and return a module‐level logger with a stdout handler
+    and our standard formatter. Call this exactly once, at import time.
+    """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # clear any inherited handlers
+    logger.handlers.clear()
+
+    # stdout handler
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(handler)
+    logger.propagate = False
+    return logger
+
+# Configure logger exactly once, then reuse everywhere below
+LOGGER = _configure_module_logger()
+```
+
+Then all of your classes and functions in this file simply do:
+
+```python
+class TwoUMLUtils:
+    @staticmethod
+    def _initial_filtering(df):
+        LOGGER.info("Entering _initial_filtering")
+        # … filtering logic …
+        LOGGER.info("Exiting _initial_filtering")
+        return df
+```
+
+This way:
+
+1. **The setup code** lives in one place at the top of the file.
+2. **`LOGGER`** is a true module‐level constant.
+3. **No need for a separate file**, but you still get a single, reusable function (`_configure_module_logger`) in case you want to duplicate the pattern in other modules.

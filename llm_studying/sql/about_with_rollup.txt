@@ -1,0 +1,92 @@
+The `WITH ROLLUP` clause in SQL is an extension of the `GROUP BY` clause that allows for hierarchical aggregation. It is useful for generating subtotals and grand totals for grouped data in a single query.
+
+---
+
+### **How It Works**
+1. **Purpose**:
+   - `WITH ROLLUP` calculates subtotals at various levels of grouping and a grand total for the entire dataset.
+   - It extends the results of a `GROUP BY` query by including additional rows for these aggregated values.
+
+2. **Order of Calculation**:
+   - The subtotals and totals are computed based on the hierarchy of columns specified in the `GROUP BY` clause.
+   - Subtotals are added for each column grouping from left to right, and the grand total is at the bottom.
+
+3. **Null Values**:
+   - The rows representing subtotals and grand totals will have `NULL` in the columns where grouping doesn't apply.
+
+---
+
+### **Example**
+#### Dataset: `sales`
+| region   | product | sales_amount |
+|----------|---------|--------------|
+| North    | A       | 100          |
+| North    | B       | 200          |
+| South    | A       | 150          |
+| South    | B       | 300          |
+
+#### Query:
+```sql
+SELECT 
+    region,
+    product,
+    SUM(sales_amount) AS total_sales
+FROM 
+    sales
+GROUP BY 
+    region, product WITH ROLLUP;
+```
+
+#### Result:
+| region   | product | total_sales |
+|----------|---------|-------------|
+| North    | A       | 100         |
+| North    | B       | 200         |
+| North    | NULL    | 300         |  -- Subtotal for North
+| South    | A       | 150         |
+| South    | B       | 300         |
+| South    | NULL    | 450         |  -- Subtotal for South
+| NULL     | NULL    | 750         |  -- Grand Total
+
+---
+
+### **Explanation**:
+1. **Rows with Subtotals**:
+   - For each `region`, a row with `NULL` in the `product` column shows the subtotal for that region.
+2. **Row with Grand Total**:
+   - A row with `NULL` in both `region` and `product` shows the grand total for all sales.
+
+---
+
+### **When to Use `WITH ROLLUP`**
+- When you need subtotals and a grand total for hierarchical groupings.
+- Common in financial or sales reports where aggregated data at different levels is required.
+
+---
+
+### **Limitations**:
+1. **Output Format**:
+   - Subtotals and grand totals appear as additional rows, which might require post-processing for user-friendly presentation.
+2. **Unsupported in Some Dialects**:
+   - Not all SQL dialects support `WITH ROLLUP`. In some systems, similar functionality can be achieved using `GROUPING SETS`.
+
+---
+
+### Advanced Example: Adding Filters with `HAVING`
+You can use the `HAVING` clause to filter out subtotal or total rows if needed:
+```sql
+SELECT 
+    region,
+    product,
+    SUM(sales_amount) AS total_sales
+FROM 
+    sales
+GROUP BY 
+    region, product WITH ROLLUP
+HAVING 
+    region IS NOT NULL OR product IS NOT NULL;  -- Exclude grand total
+```
+
+---
+
+`WITH ROLLUP` is a powerful tool for generating hierarchical aggregates and simplifying complex reporting tasks directly in SQL.

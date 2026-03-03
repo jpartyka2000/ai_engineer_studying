@@ -1,0 +1,188 @@
+The sqlparse library is a Python package designed to parse, analyze, and format SQL queries. It is lightweight, non-validating, and highly useful for tasks related to SQL manipulation. While it doesn’t validate queries against a specific SQL dialect or database schema, it provides many helpful features for SQL preprocessing.
+
+
+---
+
+Capabilities of sqlparse
+
+1. SQL Parsing
+
+sqlparse can tokenize SQL statements into a structured format that allows detailed examination of their components.
+
+Extracting SQL Clauses: Identify SELECT, FROM, WHERE, JOIN, etc.
+
+Breaking Down Queries: Tokenize SQL queries into their components for further analysis.
+
+
+Example: Parsing a SQL Query
+
+import sqlparse
+
+query = "SELECT id, name FROM users WHERE age > 30;"
+parsed = sqlparse.parse(query)
+print(parsed[0].tokens)  # Outputs tokens representing the SQL structure
+
+
+---
+
+2. SQL Formatting
+
+sqlparse allows you to prettify or reformat SQL queries for better readability.
+
+Add Indentation: Make SQL more readable by aligning clauses and keywords.
+
+Convert Case: Uppercase or lowercase SQL keywords.
+
+Strip Redundant Whitespace: Clean up messy SQL statements.
+
+
+Example: Formatting SQL
+
+from sqlparse import format
+
+query = "select id, name from users where age > 30"
+formatted_query = format(query, reindent=True, keyword_case='upper')
+print(formatted_query)
+
+Output:
+
+SELECT id, name
+FROM users
+WHERE age > 30
+
+
+---
+
+3. SQL Tokenization
+
+sqlparse can split SQL into logical components called tokens, such as keywords, identifiers, operators, and literals.
+
+Keyword Identification: Detect SQL keywords like SELECT, INSERT, etc.
+
+Literals Extraction: Extract table names, column names, or values from a query.
+
+Query Analysis: Examine the query structure token by token.
+
+
+Example: Tokenization
+
+from sqlparse import parse
+
+query = "SELECT id, name FROM users WHERE age > 30;"
+parsed = parse(query)[0]
+for token in parsed.tokens:
+    print(token)
+
+Output:
+
+SELECT
+id, name
+FROM
+users
+WHERE
+age > 30;
+
+
+---
+
+4. Query Analysis
+
+While sqlparse doesn’t validate queries against a database, you can use it to analyze query structure for:
+
+Identifying SQL Statement Type: Determine if the query is a SELECT, INSERT, UPDATE, etc.
+
+Extracting Table Names: Parse the FROM clause to list the tables.
+
+Identifying Subqueries: Detect and handle nested SQL queries.
+
+
+Example: Identifying Tables
+
+from sqlparse import parse
+from sqlparse.sql import IdentifierList, Identifier
+from sqlparse.tokens import Keyword, DML
+
+query = "SELECT id, name FROM users u JOIN orders o ON u.id = o.user_id;"
+parsed = parse(query)[0]
+
+def extract_tables(parsed):
+    tables = []
+    for token in parsed.tokens:
+        if isinstance(token, IdentifierList):
+            for identifier in token.get_identifiers():
+                tables.append(identifier.get_real_name())
+        elif isinstance(token, Identifier):
+            tables.append(token.get_real_name())
+        elif token.ttype is Keyword and token.value.upper() == 'FROM':
+            tables.append(str(token))
+    return tables
+
+print(extract_tables(parsed))
+
+
+---
+
+5. SQL Query Validation
+
+sqlparse doesn’t validate SQL syntax in terms of database execution but can identify improperly structured SQL by failing to parse it properly.
+
+Detect Missing Clauses: Identify when a query is incomplete or malformed.
+
+Custom Rules: Write logic to enforce specific SQL standards (e.g., no SELECT *).
+
+
+Example: Simple Validation
+
+from sqlparse import parse
+
+def is_valid_sql(query):
+    try:
+        parse(query)
+        return True
+    except Exception:
+        return False
+
+query = "SELECT id, name FROM WHERE age > 30;"  # Malformed SQL
+print(is_valid_sql(query))  # Outputs: False
+
+
+---
+
+6. Integration with Other Tools
+
+sqlparse is often used in combination with other tools for:
+
+Linting: Building custom SQL linters to enforce best practices.
+
+Query Normalization: Preparing queries for comparison by reordering or reformatting them.
+
+Building SQL Editors: Tokenizing SQL for syntax highlighting or intelligent code completion.
+
+
+
+---
+
+Limitations of sqlparse
+
+No Validation Against a Database: It does not check SQL against specific database schemas or dialects (e.g., MySQL, PostgreSQL).
+
+Limited Dialect Support: It doesn’t handle vendor-specific SQL features like proprietary functions or clauses.
+
+Non-Validating: While it can parse invalid SQL, it won’t catch all errors.
+
+
+
+---
+
+Best Use Cases for sqlparse
+
+Preprocessing SQL before execution.
+
+Analyzing SQL for custom validation.
+
+Formatting SQL for better readability in codebases.
+
+Extracting insights or structure from raw SQL queries.
+
+
+Would you like to see an example tailored to your specific use case?

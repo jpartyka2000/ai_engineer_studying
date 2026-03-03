@@ -1,0 +1,85 @@
+You can often get the best of both worlds by **starting with Supervised Fine-Tuning (SFT)** to teach your base model the broad behavior you want—and then **refining it with DPO** to align it more tightly to human preferences. Here’s how and why that hybrid approach can boost performance:
+
+---
+
+## 1. Why combine SFT + DPO?
+
+* **SFT lays the foundation**
+
+  * Teaches your model the domain-specific language, desired formats, and general correctness on your data.
+  * Turn your prompt–completion pairs into a supervised cross-entropy objective to quickly ingrain “obvious” behavior.
+
+* **DPO sharpens preferences**
+
+  * Takes your human comparisons (A/B preferences) and directly optimizes the model to rank preferred completions higher.
+  * Fixes the subtle ordering issues that SFT’s one-size-fits-all loss can’t capture.
+
+Together, you get a model that’s both **competent** (thanks to SFT) and **well-aligned to nuanced human tastes** (thanks to DPO).
+
+---
+
+## 2. Typical workflow
+
+1. **Collect your data**
+
+   * **SFT dataset**: `<prompt, target_completion>` pairs (e.g. high-quality examples).
+   * **Preference dataset**: `<prompt, y⁺, y⁻>` triples derived from A/B tests or human ranking.
+
+2. **Stage 1: Supervised Fine-Tuning**
+
+   ```bash
+   openai api fine_tunes.create \
+     --model base-model \
+     --training_file sft_data.jsonl \
+     --n_epochs 3 \
+     --batch_size 16
+   ```
+
+   * Outputs a new checkpoint, e.g. `ft:sft-model-2025-08-15`.
+
+3. **Stage 2: Direct Preference Optimization**
+
+   * Use your **DPO training loop**, but initialize from the SFT checkpoint:
+
+     ```python
+     from dpo import DPOTrainer
+     model = load_pretrained("ft:sft-model-2025-08-15")
+     trainer = DPOTrainer(model, preference_dataset, alpha=1.0)
+     trainer.train(epochs=2)
+     ```
+   * Or, if using OpenAI’s hosted DPO API once available:
+
+     ```json
+     POST /v1/fine_tuning/jobs
+     {
+       "model":"ft:sft-model-2025-08-15",
+       "preference_file":"file-xyz",
+       "method":"dpo",
+       "alpha":1.0
+     }
+     ```
+
+4. **Deploy & evaluate**
+
+   * You’ll now have `ft:dpo-from-sft-2025-08-15`.
+   * Run human evaluations or automatic metrics to verify improvements over pure SFT or pure DPO.
+
+---
+
+## 3. Key benefits
+
+* **Faster convergence**: SFT gets you “in the right ballpark,” so DPO needs fewer epochs to fine-tune preferences.
+* **Lower cost**: Less DPO training time (token-based) than doing preference tuning from scratch.
+* **Improved stability**: SFT reduces the risk of DPO overfitting to sparse preference data.
+* **Clear separation of concerns**: You maintain a clean SFT corpus for broad coverage and a smaller preference set for alignment tweaks.
+
+---
+
+### Takeaway
+
+> **SFT → DPO** is a powerful 2-stage recipe:
+>
+> 1. **Teach** the model your domain and style with plain supervised learning.
+> 2. **Tune** it on human preference data via DPO’s pairwise ranking loss.
+
+The result is a model that’s both **knowledgeable** and **highly aligned** to your users’ nuanced expectations.

@@ -1,0 +1,61 @@
+Now I can see exactly what's happening. The `predict()` method **is not** being called at instantiation — it's being called later by Weave's evaluation framework.
+
+## The Flow
+
+Here's the sequence of events:
+
+```
+1. CueEvaluationAgent is instantiated (line ~58)
+   └── Only Pydantic validation runs here; predict() is NOT called
+
+2. Model is published to Weave (line ~66)
+   └── Just serialization/registration; predict() is NOT called
+
+3. weave.Evaluation is created (line ~82)
+   └── Just sets up the evaluation object; predict() is NOT called
+
+4. evaluation.evaluate(evaluation_agent, ...) is called (line ~97)
+   └── THIS is where predict() gets called — once per row in your dataset
+```
+
+## What `evaluation.evaluate()` Does
+
+When you call:
+
+```python
+results = await evaluation.evaluate(
+    evaluation_agent, __weave={"display_name": eval_run_name_with_timestamp}
+)
+```
+
+Weave's `Evaluation` class iterates over every row in your `dataset` and calls `evaluation_agent.predict()` for each one, passing the row's fields as keyword arguments. That's why your `predict()` method has parameters like `customer_id`, `question`, `difficulty`, etc. — these match the columns in your dataset.
+
+Essentially, Weave does something like this internally:
+
+```python
+# Pseudocode of what weave.Evaluation.evaluate() does
+async def evaluate(self, model):
+    results = []
+    for row in self.dataset:
+        # Calls your predict() method with dataset row as kwargs
+        prediction = await model.predict(**row)
+        
+        # Then runs each scorer
+        scores = {}
+        for scorer in self.scorers:
+            scores[scorer.name] = await scorer(prediction, **row)
+        
+        results.append({"prediction": prediction, "scores": scores})
+    return results
+```
+
+## Summary
+
+| Step | What Happens | `predict()` Called? |
+|------|--------------|---------------------|
+| `CueEvaluationAgent(...)` | Pydantic validation, attribute assignment | No |
+| `weave.publish(model)` | Registers model with Weave | No |
+| `weave.Evaluation(...)` | Creates evaluation config | No |
+| `evaluation.evaluate(agent)` | Runs predictions + scoring | **Yes, once per dataset row** |
+
+So there's no mystery — `predict()` is being called exactly where you'd expect in an evaluation framework: during `evaluate()`.

@@ -1,0 +1,75 @@
+Got it — this is a common trick to turn cyclical features like hour of day, day of week, or month of year into a form an ML model can understand without creating artificial breaks.
+
+Here’s a step-by-step example using np.sin and np.cos for hour of day.
+
+
+---
+
+Why use sin/cos for time features?
+
+If you encode hours as integers 0–23 directly, a model will think 0 and 23 are far apart, when in reality they are adjacent in time.
+Using sine and cosine projects the value onto a circle, preserving cyclic proximity.
+
+
+---
+
+Example
+
+import numpy as np
+import pandas as pd
+
+# Sample dataset with timestamps
+df = pd.DataFrame({
+    'timestamp': pd.date_range('2025-08-09', periods=8, freq='3H')
+})
+
+# Extract hour of day (0–23)
+df['hour'] = df['timestamp'].dt.hour
+
+# Encode as cyclical features
+df['hour_sin'] = np.sin(2 * np.pi * df['hour'] / 24)
+df['hour_cos'] = np.cos(2 * np.pi * df['hour'] / 24)
+
+print(df)
+
+Output:
+
+timestamp  hour  hour_sin  hour_cos
+0 2025-08-09 00:00:00     0  0.000000  1.000000
+1 2025-08-09 03:00:00     3  0.707107  0.707107
+2 2025-08-09 06:00:00     6  1.000000  0.000000
+3 2025-08-09 09:00:00     9  0.707107 -0.707107
+4 2025-08-09 12:00:00    12  0.000000 -1.000000
+5 2025-08-09 15:00:00    15 -0.707107 -0.707107
+6 2025-08-09 18:00:00    18 -1.000000  0.000000
+7 2025-08-09 21:00:00    21 -0.707107  0.707107
+
+
+---
+
+Formula
+
+For a cyclic variable x with period P:
+
+Sine: sin(2πx / P) — position on vertical axis
+
+Cosine: cos(2πx / P) — position on horizontal axis
+
+
+
+---
+
+Other time features you can encode this way
+
+Day of week → P = 7
+
+Month of year → P = 12
+
+Minute of hour → P = 60
+
+
+Example for day of week:
+
+df['day_of_week'] = df['timestamp'].dt.weekday
+df['dow_sin'] = np.sin(2 * np.pi * df['day_of_week'] / 7)
+df['dow_cos'] = np.cos(2 * np.pi * df['day_of_week'] / 7)

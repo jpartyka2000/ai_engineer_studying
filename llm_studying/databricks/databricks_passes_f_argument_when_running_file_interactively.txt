@@ -1,0 +1,31 @@
+Good thinking! A simple approach is to check whether Databricks' `-f` argument is present in `sys.argv` and choose the parsing method accordingly:
+
+```python
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Kicks off stats model build")
+
+    parser.add_argument(
+        "-e",
+        "--environment",
+        choices=["development", "staging", "production"],
+        help="Corresponds to the schema data will be written. Expects 'development', 'staging', or 'production'",
+        default="development",
+    )
+
+    # Use parse_known_args() when running interactively in Databricks (which passes -f),
+    # otherwise use strict parse_args() for pipeline runs
+    if "-f" in sys.argv:
+        args, unknown = parser.parse_known_args()
+        logger.info(f"Running interactively, ignoring Databricks arguments: {unknown}")
+    else:
+        args = parser.parse_args()
+    
+    environment = args.environment.lower()
+    target_schema = get_target_schema(environment)
+    
+    # ... rest of your code remains the same ...
+```
+
+This way:
+- When you run it as a file interactively, Databricks passes `-f`, so it uses `parse_known_args()` and ignores the extra arguments
+- When your colleague runs it in a pipeline, there's no `-f`, so it uses strict `parse_args()` which will catch any typos or invalid arguments

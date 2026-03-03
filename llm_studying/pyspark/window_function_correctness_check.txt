@@ -1,0 +1,54 @@
+To verify that your PySpark window function with a window size of 3 is correctly partitioning and ordering the rows, you can use the `F.collect_list()` function to capture the values of `'year_quarter_numeric'` in each window and display them alongside the original values. This allows you to see the specific rows included in each window and compare the results to ensure they are correct.
+
+Here’s how you can check the values of `'year_quarter_numeric'` for the rows within each window:
+
+### Step-by-Step Approach:
+
+1. **Create a Column for the Window**: Use the window specification you have (`window_spec_stage_ravg_3_qtr`) and apply `F.collect_list()` to gather the `'year_quarter_numeric'` values from the current window.
+
+2. **Display the Collected Values**: Display the collected list of `'year_quarter_numeric'` values for each row to visually verify that the correct rows are being included in each window.
+
+### PySpark Code Example:
+
+```python
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+# Define your window spec with 3 quarters
+window_spec_stage_ravg_3_qtr = Window.partitionBy('opportunity_record_type').orderBy('year_quarter_numeric').rowsBetween(-2, 0)
+
+# Use collect_list() to gather the 'year_quarter_numeric' values in each window
+df_verification = df.withColumn(
+    'year_quarters_in_window',
+    F.collect_list('year_quarter_numeric').over(window_spec_stage_ravg_3_qtr)
+)
+
+# Display the relevant columns to check the windows
+df_verification.select('opportunity_record_type', 'year_quarter_numeric', 'year_quarters_in_window').show(truncate=False)
+```
+
+### Explanation:
+- **`F.collect_list('year_quarter_numeric')`**: This collects all the `'year_quarter_numeric'` values within the current window and creates a list of them. This list represents the values for the rows within the window for that particular record.
+  
+- **`Window.partitionBy('opportunity_record_type')`**: This ensures that the window function groups rows by `opportunity_record_type`.
+
+- **`orderBy('year_quarter_numeric')`**: This orders the rows by `year_quarter_numeric` within each partition.
+
+- **`rowsBetween(-2, 0)`**: This specifies a window that includes the current row and the previous two rows, which ensures a 3-row window.
+
+### Output:
+The result of the `select` will show each row with its current `year_quarter_numeric` value along with the list of `year_quarter_numeric` values for the 3-row window it's a part of. You can visually inspect these lists to confirm whether the correct rows are being included.
+
+Example output:
+```
++-----------------------+-------------------+-----------------------+
+|opportunity_record_type |year_quarter_numeric|year_quarters_in_window|
++-----------------------+-------------------+-----------------------+
+|Net New                |20222              |[20220, 20221, 20222]  |
+|Net New                |20223              |[20221, 20222, 20223]  |
+|Renewal                |20223              |[20221, 20222, 20223]  |
++-----------------------+-------------------+-----------------------+
+```
+
+### Conclusion:
+Using `F.collect_list()` with your window specification allows you to capture the relevant `year_quarter_numeric` values within each 3-row window. By examining these lists, you can verify that the correct rows are being included in each window and ensure that the window function is working as expected.

@@ -1,0 +1,98 @@
+## String Annotations in Python Typing
+
+String annotations are type hints written as **strings** instead of direct type references. They solve several common typing problems.
+
+## Basic Usage:
+
+```python
+# Regular annotation
+def process(data: dict) -> int:
+    pass
+
+# String annotation
+def process(data: "dict") -> "int":
+    pass
+
+# Both work the same for type checkers
+```
+
+## When You Need String Annotations:
+
+### 1. **Forward References**
+```python
+class Node:
+    # Node isn't fully defined yet, so use string
+    def set_next(self, next_node: "Node") -> None:
+        self.next = next_node
+    
+    # This would fail without quotes:
+    # def set_next(self, next_node: Node) -> None:  # NameError!
+```
+
+### 2. **Circular Imports**
+```python
+# user.py
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .order import Order  # Only imported for type checking
+
+class User:
+    def get_orders(self) -> list["Order"]:  # String avoids runtime import
+        pass
+```
+
+### 3. **Python Version Compatibility**
+```python
+# Python 3.8 and earlier
+numbers: list[int] = []  # TypeError in 3.8!
+numbers: "list[int]" = []  # Works in all versions
+
+# Python 3.9+
+numbers: list[int] = []  # Now works without quotes
+```
+
+## The Future Import Solution:
+
+```python
+from __future__ import annotations  # Makes ALL annotations strings
+
+# Now you can write without quotes:
+class Node:
+    def set_next(self, next_node: Node) -> None:  # Works!
+        pass
+
+def process(items: list[dict[str, int]]) -> None:  # Works in 3.8!
+    pass
+```
+
+## Type Checkers Still Work:
+
+```python
+# Type checkers (mypy, pyright) evaluate string annotations
+def add(x: "int", y: "int") -> "int":
+    return x + y
+
+add(1, 2)  # ✓ Type checker approves
+add("a", "b")  # ✗ Type checker warns
+```
+
+## Common Patterns:
+
+```python
+# Complex types in strings
+Matrix = "list[list[float]]"
+UserDict = "dict[str, User]"
+Callback = "Callable[[int, str], None]"
+
+# Conditional imports
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import expensive_module
+    
+def process(data: "expensive_module.DataClass"):
+    pass
+```
+
+**Bottom line**: String annotations let you reference types that aren't available at runtime - either because they're not defined yet, would cause import cycles, or don't exist in your Python version. They're evaluated by type checkers but ignored at runtime.

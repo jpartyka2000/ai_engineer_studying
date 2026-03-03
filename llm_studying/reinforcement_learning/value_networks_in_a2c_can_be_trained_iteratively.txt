@@ -1,0 +1,55 @@
+Not necessarily—you don’t have to pre-train the value network before using bootstrap targets. In practice, actor-critic methods like A2C start training both actor and critic from the very beginning, even when the value estimates are poor. Here's why this works:
+
+
+---
+
+1️⃣ Bootstrapping Works Iteratively
+
+The TD target:
+
+y_t = r_t + \gamma V_\theta(s_{t+1})
+
+relies on the current network's estimate , which is initially inaccurate. Early on, the target might be very noisy or biased, but as training progresses:
+
+is updated toward returns observed in actual trajectories.
+
+Subsequent TD targets become increasingly accurate, because  improves over time.
+
+Eventually,  converges to the true value function under the learned policy.
+
+
+This is a form of bootstrapping convergence, common in TD learning and Q-learning.
+
+
+---
+
+2️⃣ Monte Carlo Returns Are Sometimes Used Initially
+
+Some implementations combine Monte Carlo returns and TD targets (or use multi-step returns, e.g., TD(λ)):
+
+y_t = r_t + \gamma r_{t+1} + \dots + \gamma^{n-1} r_{t+n-1} + \gamma^n V_\theta(s_{t+n})
+
+Early on, you may rely more on actual sampled returns to guide learning.
+
+As the value network gets better, the bootstrapped part  becomes more reliable.
+
+
+This approach reduces bias in early training when the critic is not yet accurate.
+
+
+---
+
+3️⃣ Practical Strategy
+
+No separate pre-training: Most A2C implementations start with a randomly initialized value network and train it online from the first steps.
+
+Advantage estimates help: The actor’s policy updates depend on the advantage function . Even rough value predictions provide useful learning signals to reduce variance compared to vanilla policy gradients.
+
+Bootstrapping quality improves naturally: As both actor and critic improve, targets become more accurate and stable.
+
+
+
+---
+
+✅ Key takeaway:
+You don't need to train the critic offline first. TD learning is self-correcting: early targets are noisy but improve over time as the critic learns from experience. Pre-training on episode data can help warm-start learning, but it's not required for A2C to work.

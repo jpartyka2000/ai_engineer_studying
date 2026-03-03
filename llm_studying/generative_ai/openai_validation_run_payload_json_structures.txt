@@ -1,0 +1,71 @@
+There are actually two different `payload` objects in your snippet—one for **validation** and one for **execution**. Both are sent as JSON bodies to the Evals API, but they carry slightly different fields.
+
+---
+
+## 1) Validation payload
+
+```python
+payload = {
+    "grader": grader
+}
+```
+
+* **Key**: `grader`
+
+  * **Value**: your full grader definition (the dict you built with `"type"`, `"name"`, `"input"` templates, `"model"` spec, etc.).
+* **Purpose**: tells the `/graders/validate` endpoint “here’s the grader I plan to use, please check it for schema errors, template errors, or runtime problems.”
+
+### Minimal structure
+
+```json
+{
+  "grader": { /* your grader object */ }
+}
+```
+
+---
+
+## 2) Run payload
+
+```python
+payload = {
+  "grader": grader,
+  "item": {
+     "reference_answer": 1.0
+  },
+  "model_sample": "0.9"
+}
+```
+
+When you invoke `/graders/run`, you provide:
+
+| Field          | Description                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| `grader`       | The **same** grader definition you validated earlier.                                        |
+| `item`         | A single example’s ground-truth fields, matching your `item_schema`.                         |
+|                | - Here: `{"reference_answer": 1.0}` because your schema only has that field.                 |
+| `model_sample` | The **model’s answer** for this one example—passed as a raw string.                          |
+|                | - Here: `"0.9"`. In more complex tasks this could be full text or JSON from a function call. |
+
+### Minimal structure
+
+```json
+{
+  "grader": { /* your grader object */ },
+  "item":   { /* one data example, e.g. item.reference_answer or item.smiles */ },
+  "model_sample": "…"  /* the model’s raw output corresponding to that item */
+}
+```
+
+---
+
+### Why the difference?
+
+* **Validate** only needs to see the grader itself—no example data needed.
+* **Run** needs:
+
+  1. **The grader** (to know how to score),
+  2. **An `item`** (to supply `{{ item.* }}` values), and
+  3. **A `model_sample`** (to supply `{{ sample.output_text }}` or `{{ sample.output_tools }}`).
+
+That consistent structure lets you independently validate your grader definition once, then call it repeatedly over individual examples in a lightweight way.

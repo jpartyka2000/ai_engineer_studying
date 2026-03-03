@@ -1,0 +1,39 @@
+Both are response classes in FastAPI for returning data to clients, but they serve different purposes.
+
+**JSONResponse** is for returning a complete JSON payload all at once. You give it a Python dict or list, it serializes it to JSON, and sends it back.
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+@app.get("/data")
+def get_data():
+    return JSONResponse(content={"message": "Hello", "count": 42})
+```
+
+**StreamingResponse** is for sending data incrementally, chunk by chunk, rather than all at once. You give it a generator or iterator, and it streams the output as it's produced.
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+
+app = FastAPI()
+
+def generate_lines():
+    for i in range(1000):
+        yield f"Line {i}\n"
+
+@app.get("/stream")
+def stream_data():
+    return StreamingResponse(generate_lines(), media_type="text/plain")
+```
+
+**When to use each:**
+
+- **JSONResponse:** Normal API responses where you have all the data ready and it fits comfortably in memory.
+
+- **StreamingResponse:** Large files, real-time data, server-sent events, or anything where you don't want to (or can't) load everything into memory before sending. Common examples include downloading large CSVs, streaming video, or streaming LLM outputs token by token.
+
+One practical difference: with `StreamingResponse`, the client starts receiving data before the server is done generating it. With `JSONResponse`, the client waits until the entire response is ready.

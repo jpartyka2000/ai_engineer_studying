@@ -1,0 +1,34 @@
+Thought for a few seconds
+
+
+You don’t *have* to log your target column as its own artifact for MLflow to work—MLflow’s core model‐logging APIs care only about:
+
+1. **The trained model object** (via `log_model`)
+2. **An input/output signature** (via `infer_signature`)
+3. Any **metrics**, **params**, or **arbitrary files** you choose to log
+
+By default, the “output” side of that signature is inferred from whatever you passed into `infer_signature` (e.g. your array of `y_pred` or `predict_proba` values), not from the *training* labels themselves.
+
+---
+
+### When you *might* want to log your outcome variable
+
+* **Reproducibility & auditing**: If you need to be able to re‑evaluate model performance months later exactly on the same labels you trained against, you could write your `y_train` (or a held‑out `y_test`) out to CSV or Parquet and call
+
+  ```python
+  mlflow.log_artifact("y_train.csv", artifact_path="labels")
+  ```
+
+* **Input example including label**: If you use `mlflow.log_model(..., input_example=...)`, you can pass a small DataFrame that includes both the feature columns and the label column so someone inspecting the run sees “here’s what a full record (X+y) looks like.”
+
+* **Distribution tracking**: You might snapshot the distribution of your target (e.g. class balance) as a small JSON or plot and log that so you can later detect if your production data drifts.
+
+---
+
+### But for inference you *only* need:
+
+* The model itself
+* The *input* schema (your predictors)
+* Optionally an *output* schema if you want MLflow to know you return probabilities vs. labels
+
+So in short: **no**, you don’t need to separately store your `y` as an artifact unless you have a specific reproducibility or monitoring use‑case. MLflow’s model + signature + metrics is enough to serve and track your model.

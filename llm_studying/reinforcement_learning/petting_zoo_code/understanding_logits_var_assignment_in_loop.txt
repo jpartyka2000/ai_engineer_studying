@@ -1,0 +1,27 @@
+That line is simply doing a **forward pass** of your policy network for whichever agent’s turn it is, turning the raw observation `obs` into a vector of **logits** (unnormalized action scores).  Concretely:
+
+1. **`policies[agent]`**
+
+   * Looks up the `PolicyNet` instance you created for that agent (e.g. `"first_0"` or `"second_0"`).
+
+2. **`(obs)`**
+
+   * Invokes that network’s `forward()` method, passing in the raw Atari frame `obs` (a NumPy array of shape `(210,160,3)`).
+
+3. **Inside `forward(obs)`**:
+
+   * Converts `obs` to a float tensor and scales it to `[0,1]`.
+   * Permutes dimensions to `[C,H,W]` and unsqueezes to add a **batch** dimension: `[1,3,210,160]`.
+   * Flattens and runs it through two `Linear` layers with a `ReLU` in between.
+
+4. **Output `logits`**
+
+   * A 1-D tensor of length `n_actions` (e.g. 6 for Atari Tennis), containing the **pre-softmax scores** for each possible discrete action.
+
+Those `logits` are then handed to
+
+```python
+dist = Categorical(logits=logits)
+```
+
+so you can sample an action and compute its log-probability.

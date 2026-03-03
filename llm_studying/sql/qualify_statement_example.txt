@@ -1,0 +1,66 @@
+If you only want the **source rows** that contribute to the final result, you can use a **window function** with filtering but avoid adding columns for aggregate operators like `COUNT()` or `AVG()`. You can simply filter using the `QUALIFY` clause or a subquery.
+
+Here’s how you can adjust your query:
+
+### Query:
+```sql
+SELECT *
+FROM pathahead.motimatic_ecue.raw_stats_table
+WHERE made_consensus_building_scoping = 1
+  AND YEAR(opportunity_close_date) IS NOT NULL
+  AND QUARTER(opportunity_close_date) IS NOT NULL
+QUALIFY COUNT(*) OVER (PARTITION BY YEAR(opportunity_close_date), QUARTER(opportunity_close_date)) >= 2
+ORDER BY YEAR(opportunity_close_date), QUARTER(opportunity_close_date);
+```
+
+---
+
+### Explanation:
+1. **Source Rows**:
+   - Instead of adding aggregate columns, the query simply selects all columns from the source table (`SELECT *`) to retain the original rows.
+
+2. **Window Function for Filtering**:
+   - `COUNT(*) OVER (PARTITION BY YEAR(opportunity_close_date), QUARTER(opportunity_close_date))`: Counts the rows in each year-quarter group.
+   - `QUALIFY COUNT(*) >= 2`: Filters out groups with fewer than 2 rows while retaining all rows within qualifying groups.
+
+3. **Order By**:
+   - Sorts rows by `YEAR(opportunity_close_date)` and `QUARTER(opportunity_close_date)` for clarity.
+
+---
+
+### Hypothetical Output:
+| opportunity_history_opportunity_id | opportunity_name | opportunity_close_date | opportunity_amount | made_consensus_building_scoping | ... |
+|-------------------------------------|------------------|------------------------|--------------------|----------------------------------|-----|
+| 001                                 | Deal A           | 2023-02-01            | 10000.00          | 1                                | ... |
+| 002                                 | Deal B           | 2023-03-15            | 11000.00          | 1                                | ... |
+| 003                                 | Deal C           | 2024-06-10            | 20000.00          | 1                                | ... |
+
+In this case:
+- Only the rows within year-quarter groups meeting the `COUNT(*) >= 2` condition are included.
+- No additional aggregate columns (`COUNT`, `AVG`, etc.) are added.
+
+---
+
+### Alternative Without QUALIFY:
+If your SQL engine doesn't support `QUALIFY`, you can use a subquery for filtering:
+
+```sql
+SELECT t.*
+FROM pathahead.motimatic_ecue.raw_stats_table t
+JOIN (
+    SELECT YEAR(opportunity_close_date) AS year, 
+           QUARTER(opportunity_close_date) AS quarter
+    FROM pathahead.motimatic_ecue.raw_stats_table
+    WHERE made_consensus_building_scoping = 1
+    GROUP BY YEAR(opportunity_close_date), QUARTER(opportunity_close_date)
+    HAVING COUNT(*) >= 2
+) filtered
+ON YEAR(t.opportunity_close_date) = filtered.year
+   AND QUARTER(t.opportunity_close_date) = filtered.quarter
+WHERE made_consensus_building_scoping = 1
+ORDER BY YEAR(opportunity_close_date), QUARTER(opportunity_close_date);
+```
+
+---
+
+Let me know if you'd like further assistance!

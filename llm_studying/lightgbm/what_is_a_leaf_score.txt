@@ -1,0 +1,80 @@
+A **leaf score** (sometimes called a **leaf weight**) is simply the constant value that a single leaf of a boosted tree predicts.  In gradient boosting we choose that constant so as to minimize the regularized objective over the examples that fall into that leaf.
+
+---
+
+### 1. The basic formula (with only L2 regularization)
+
+For a given leaf $l$, let
+
+* $G = \sum_{i\in\text{leaf}} g_i$ be the sum of the first‑order gradients (w\.r.t. the loss) of all training examples in that leaf,
+* $H = \sum_{i\in\text{leaf}} h_i$ be the sum of the second‑order gradients (Hessians),
+* $\lambda$ be the L2 regularization parameter (`reg_lambda`).
+
+Then the optimal leaf score $w^\star$ is
+
+$$
+w^\star
+\;=\;
+-\frac{G}{H + \lambda}.
+$$
+
+---
+
+### 2. A tiny numeric example
+
+Suppose in one leaf you have three training examples whose gradients and Hessians (from your loss function) are:
+
+| example | $g_i$ | $h_i$ |
+| :-----: | :---: | :---: |
+|    1    |  $-2$ |  1.5  |
+|    2    |  $-3$ |  2.0  |
+|    3    |  $+1$ |  1.0  |
+
+and you’ve set `reg_lambda = 1.0`.  Then:
+
+1. **Sum the gradients**
+   $G = -2 + (-3) + 1 = -4$
+
+2. **Sum the Hessians**
+   $H = 1.5 + 2.0 + 1.0 = 4.5$
+
+3. **Compute the leaf score**
+
+   $$
+     w^\star
+     = -\frac{-4}{4.5 + 1.0}
+     = \frac{4}{5.5}
+     \approx 0.727.
+   $$
+
+That means *any* new sample that falls into this leaf will have its prediction adjusted by about **+0.727** by this tree.
+
+---
+
+### 3. Effect of L1 regularization
+
+If you also have `reg_alpha > 0`, the formula becomes a *soft‑thresholding*:
+
+$$
+w^\star
+= 
+\begin{cases}
+\displaystyle
+\frac{\,-(\,|G| - \alpha)\,\mathrm{sign}(G)\,}{\,H + \lambda\,}
+& \text{if } |G| > \alpha,\\[8pt]
+0
+& \text{otherwise.}
+\end{cases}
+$$
+
+So small‑magnitude gradient sums get zeroed out, pruning tiny leaves entirely.
+
+---
+
+### 4. Putting it in context
+
+* Each tree in LightGBM is a collection of these leaves.
+* During training, for every candidate split it computes the would‑be $G_L, H_L$ and $G_R, H_R$ on the two sides, and uses that to score the split (the gain in loss reduction).
+* Once the tree structure is fixed, it computes one $w^\star$ per leaf using the formula above.
+
+That’s what your “leaf score” is: the per‑leaf constant that best fits the residual gradients, regularized by `reg_lambda` (and optionally `reg_alpha`).

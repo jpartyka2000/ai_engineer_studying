@@ -1,0 +1,43 @@
+**PySpark's collect() method:**
+
+`collect()` retrieves all rows from a distributed DataFrame or RDD and returns them to the driver node as a local Python list.
+
+```python
+df = spark.createDataFrame([(1, "a"), (2, "b"), (3, "c")], ["id", "letter"])
+results = df.collect()
+# [Row(id=1, letter='a'), Row(id=2, letter='b'), Row(id=3, letter='c')]
+```
+
+---
+
+**When to use it:**
+
+- When you need all data locally for further Python processing
+- After filtering or aggregating down to a small result set
+- For debugging or inspection of small datasets
+
+---
+
+**The main danger:**
+
+`collect()` pulls the entire dataset into driver memory. On a large DataFrame, this will crash your driver with an out-of-memory error.
+
+```python
+# Dangerous on large data
+huge_df.collect()  # Don't do this
+
+# Safe — reduced to small result first
+huge_df.groupBy("category").count().collect()  # OK
+```
+
+---
+
+**Alternatives:**
+
+| Method | Use case |
+|--------|----------|
+| `take(n)` | Get first n rows |
+| `head(n)` | Same as take |
+| `first()` | Get first row only |
+| `show()` | Print rows (doesn't return data) |
+| `toPandas()` | Convert to pandas DataFrame (same memory risk) |

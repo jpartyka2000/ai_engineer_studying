@@ -1,0 +1,95 @@
+Great question 👌 Let’s dig into `TypedDict`.
+
+---
+
+## 📌 What is `TypedDict`?
+
+`TypedDict` is a special type introduced in **PEP 589** that lets you specify the expected keys and value types of a dictionary in Python type hints.
+
+It’s available in:
+
+* **`typing`** (Python ≥ 3.8)
+* **`typing_extensions`** (for Python < 3.8, or to get newer typing features early)
+
+So `from typing_extensions import TypedDict` is just a backport for older versions.
+
+---
+
+## 🧩 Example
+
+Without `TypedDict`, a dictionary’s typing is very loose:
+
+```python
+from typing import Dict
+
+def get_user() -> Dict[str, str]:
+    return {"name": "Alice", "email": "a@example.com"}
+```
+
+This only says "a dictionary with string keys and string values," but gives **no guarantee** about *which keys* exist.
+
+---
+
+With `TypedDict`:
+
+```python
+from typing_extensions import TypedDict
+
+class UserDict(TypedDict):
+    name: str
+    email: str
+    age: int
+
+def get_user() -> UserDict:
+    return {"name": "Alice", "email": "a@example.com", "age": 30}
+```
+
+Now type checkers know:
+
+* `name`, `email`, and `age` **must be present**.
+* Their types are fixed (`str`, `str`, `int`).
+
+---
+
+## ⚖️ Required vs Optional Keys
+
+By default, all keys are required. But you can make keys optional in two ways:
+
+1. **Per key (using `NotRequired` or `Required` — PEP 655):**
+
+```python
+from typing_extensions import TypedDict, NotRequired
+
+class UserDict(TypedDict):
+    name: str
+    email: str
+    age: NotRequired[int]   # optional key
+```
+
+2. **Whole TypedDict (with `total=False`):**
+
+```python
+class PartialUserDict(TypedDict, total=False):
+    name: str
+    email: str
+    age: int
+```
+
+Here, *all* keys are optional.
+
+---
+
+## ✅ Key Points
+
+* `TypedDict` = a way to give **shape** to dictionaries (specific keys + types).
+* Type checkers (mypy, Pyright, etc.) enforce these rules.
+* At runtime, `TypedDict` is just a normal `dict`. It has **no runtime checks** by default.
+
+---
+
+👉 In short:
+`TypedDict` is like defining a "lightweight schema" for dicts in Python type hints. It’s very useful when modeling JSON-like data, configs, or API responses.
+
+---
+
+Would you like me to also show how **Pydantic models compare to `TypedDict`** (since they both give dicts a schema, but Pydantic enforces it at runtime)?

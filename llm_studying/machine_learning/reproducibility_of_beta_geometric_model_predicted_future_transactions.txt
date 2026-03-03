@@ -1,0 +1,47 @@
+In theory, if you fit a BetaGeoFitter on exactly the same data with the same parameters, the estimated model parameters and thus the predicted future transactions should be identical from run to run. However, there are a few considerations to ensure reproducibility:
+
+1. **Deterministic Optimization:**  
+   The BetaGeoFitter uses maximum likelihood estimation via numerical optimization. If the optimizer starts with a random initialization or if its convergence depends on numerical tolerances, you might see small variations. Unfortunately, BetaGeoFitter doesn’t have an explicit random seed parameter. To mitigate this, you can:
+   - **Save and Reload the Model:** After fitting the model once, save its parameters (or the entire model) and then reuse that fitted model for predictions in subsequent runs.
+   - **Environment Consistency:** Make sure your Spark and Python environments are stable and that no other factors (like differences in data type coercion or rounding) introduce variability.
+
+2. **Using MLflow for Reproducibility:**  
+   MLflow lets you log the parameters and the fitted model as artifacts. If you log your fitted model once, you can later load the exact same model to generate predictions rather than refitting it every time. This way, you guarantee that the predictions remain consistent as long as your data hasn’t changed.
+
+For example, after fitting your model:
+
+```python
+from lifetimes import BetaGeoFitter
+import mlflow
+import mlflow.sklearn
+
+# Fit the model
+bgf = BetaGeoFitter(penalizer_coef=0.0)
+bgf.fit(
+    df_data['frequency'], 
+    df_data['subscription:payment_successful_client_event_times_recency_days'], 
+    df_data['subscription:payment_successful_client_event_times_age_days']
+)
+
+# Log the model with MLflow so that you can reuse it later
+mlflow.sklearn.log_model(bgf, "bgf_model")
+```
+
+Later, you can load it back with:
+
+```python
+loaded_bgf = mlflow.sklearn.load_model("runs:/<run_id>/bgf_model")
+```
+
+And then use `loaded_bgf` for predictions. This approach eliminates variability from repeated fitting.
+
+3. **Rounding and Data Consistency:**  
+   Rounding predictions (as in your code with `.round(3)`) also helps ensure that minor numerical differences aren’t visible in your final outputs.
+
+### Summary
+
+- **Reproducibility is assured** if the data and parameters are identical and if the optimization process is deterministic.
+- **If there's any randomness or variation,** saving the fitted model and reusing it for prediction (or setting a fixed random seed in your environment, if applicable) will help maintain reproducibility.
+- **MLflow can help** by logging your model and its parameters, so you can always re-run inference with the exact same model without refitting.
+
+Following these steps should ensure that your predicted future transactions are reproducible when the data does not change.

@@ -1,0 +1,50 @@
+PySpark's `fillna()` (and its alias `na.fill()`) supports a `subset` parameter that lets you specify which columns to apply the fill operation to.
+
+**Basic syntax:**
+
+```python
+df.fillna(value, subset=columns)
+# or equivalently
+df.na.fill(value, subset=columns)
+```
+
+**Examples:**
+
+```python
+# fill nulls in specific columns with a string
+df.fillna("unknown", subset=["name", "city"])
+
+# fill nulls in specific columns with a number
+df.fillna(0, subset=["age", "score"])
+```
+
+**Behavior notes:**
+
+1. **Type matching matters** — PySpark will only fill columns where the value type is compatible. If you pass a string value, it won't fill numeric columns, and vice versa:
+   ```python
+   # only fills string columns in the subset
+   df.fillna("unk", subset=["name", "age"])  # "age" won't be filled if it's numeric
+   ```
+
+2. **Without subset** — fills all columns where the type matches:
+   ```python
+   df.fillna(0)  # fills all numeric columns with 0
+   df.fillna("unknown")  # fills all string columns with "unknown"
+   ```
+
+3. **Empty subset** — effectively a no-op, fills nothing:
+   ```python
+   df.fillna("unk", subset=[])  # returns df unchanged
+   ```
+
+**Dictionary alternative:**
+
+If you need different fill values per column, skip `subset` and pass a dictionary instead:
+
+```python
+df.fillna({"name": "unknown", "age": 0, "score": -1})
+# or
+df.na.fill({"name": "unknown", "age": 0, "score": -1})
+```
+
+So `subset` is convenient when you want to fill multiple columns with the same value, while the dictionary approach is better when each column needs a different fill value.

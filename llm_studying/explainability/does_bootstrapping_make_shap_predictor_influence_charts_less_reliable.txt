@@ -1,0 +1,68 @@
+Great question.
+
+If you're referring to using bootstrapped training with an ExtraTreesClassifier and then visualizing predictor influence via something like a SHAP summary plot (or "snap" summary plot), then yes—bootstrapping can introduce more variability into the feature importance estimates, depending on how you compute and aggregate them.
+
+
+---
+
+Why bootstrapping may affect feature influence plots:
+
+1. Bootstrap = less stable trees
+
+Each tree sees only ~63% of the original dataset (with replacement), so:
+
+Individual trees may split on different features due to random sampling noise.
+
+This causes greater variation in which features are selected and considered “important.”
+
+
+2. SHAP (or similar methods) are sensitive to tree structure
+
+SHAP values are calculated based on:
+
+Tree structure (which features are used in splits, and where),
+
+Path-dependent contributions for each sample.
+
+
+When trees are bootstrapped:
+
+Some features may appear less frequently, lowering their influence in the aggregate plot.
+
+Others may be overrepresented in some trees by chance.
+
+
+Thus, SHAP values may fluctuate more, especially when the number of trees is low or the dataset is small.
+
+
+---
+
+But this variability isn’t necessarily bad:
+
+It reflects model uncertainty in the presence of limited or noisy data.
+
+It can regularize influence scores, preventing overreliance on particular predictors.
+
+If you train enough trees (e.g. 200+), these fluctuations tend to average out.
+
+
+
+---
+
+Recommendations:
+
+If consistency/stability is critical: consider disabling bootstrap (bootstrap=False) to ensure every tree sees the full dataset. This gives more deterministic influence scores.
+
+If using bootstrap: use a larger number of trees (e.g. 300–500) to average out variability and stabilize SHAP plots.
+
+Bonus tip: You can generate multiple models with different random seeds and average the SHAP values to get a more robust estimate of feature influence (this is a form of SHAP bagging).
+
+
+
+---
+
+TL;DR:
+
+Yes, bootstrapping can lead to slightly less stable SHAP summary plots in ExtraTrees.
+
+No, it doesn't necessarily make them unreliable, especially if you use enough trees and understand that it's reflecting natural uncertainty in the model's structure.

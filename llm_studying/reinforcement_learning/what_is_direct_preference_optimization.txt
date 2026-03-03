@@ -1,0 +1,59 @@
+**Direct Preference Optimization (DPO)** is a recently‐proposed alternative to the traditional RLHF pipeline that lets you fine-tune a language model directly on human preference data—**without** having to run any reinforcement-learning optimization loop or train a separate reward model. Here’s how it works and why it matters:
+
+---
+
+## 1. Motivation
+
+* **RLHF complexity**
+
+  * Standard RLHF requires three distinct stages:
+
+    1. Train a **reward model** on comparison data
+    2. Run a costly **policy optimization** (e.g. PPO) to align your policy model to that reward
+    3. Validate, tune hyperparameters, etc.
+  * This pipeline is computationally heavy and tricky to stabilize.
+
+* **DPO goal**
+
+  * Leverage the same preference comparisons (A ≻ B) but **bypass** explicit reward modeling and on-policy RL.
+  * Turn pairwise preferences into a **simple supervised loss**.
+
+---
+
+## 2. Core idea
+
+Given a dataset of pairs $(x, y^+, y^-)$ where $y^+$ is the human-preferred completion to prompt $x$, and $y^-$ is the less-preferred one, DPO fine-tunes your model $π_θ$ by minimizing the logistic objective:
+
+$$
+\mathcal{L}(θ) = -\mathbb{E}_{(x, y^+, y^-)}
+\Bigl[\log \sigma\bigl(\alpha \bigl(\log π_θ(y^+\!\mid\!x) - \log π_θ(y^-\!\mid\!x)\bigr)\bigr)\Bigr]
+$$
+
+* $\log π_θ(y\mid x)$ is the model’s log‐probability of a completion.
+* $\sigma(\cdot)$ is the sigmoid function.
+* $\alpha$ is a temperature/hyperparameter controlling margin.
+
+**Interpretation:** you push the fine-tuned model to **assign higher likelihood** to preferred completions than to their counterparts, without ever training a separate reward network or sampling on-policy.
+
+---
+
+## 3. Advantages
+
+* **Simplicity**: single supervised training stage—just pair‐wise likelihood comparisons.
+* **Stability**: avoids RL instabilities (PPO clipping, KL penalties, reward collapse).
+* **Efficiency**: uses standard gradient descent; no environment simulator needed.
+* **Empirical performance**: in published benchmarks, DPO matches or outperforms PPO-based RLHF with far less compute.
+
+---
+
+## 4. When to use
+
+* You already have comparison data (human A/B preferences).
+* You want faster iteration and less infrastructure overhead than full RLHF.
+* You’re comfortable with adding a simple comparator loss atop your base model’s cross-entropy training loop.
+
+---
+
+### TL;DR
+
+> **DPO** turns preference comparisons into a **logistic ranking loss** on your model’s own token probabilities, so you can fine-tune for human preference alignment with **one** supervised step—no reward model, no policy optimization, just gradient descent on a pairwise objective.

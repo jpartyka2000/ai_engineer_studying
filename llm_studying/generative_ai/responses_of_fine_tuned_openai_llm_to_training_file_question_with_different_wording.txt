@@ -1,0 +1,37 @@
+When you fine‑tune an OpenAI model on a small set of 150 exact “question→answer” pairs, you’re essentially nudging a huge pre‑trained language model toward those specific mappings—but you’re *not* replacing its entire language understanding. Here’s what happens:
+
+1. **Built‑in generalization remains**
+   The underlying GPT model still “knows” English, synonyms, paraphrase structures, and can reason beyond your exact examples. It won’t treat your fine‑tuned examples as a dumb lookup table.
+
+2. **But you only taught it 150 surface forms**
+   If your training set contains only
+
+   ```text
+   Q: How many days are in February?  
+   A: 28 or 29, depending on leap years.
+   ```
+
+   the model will almost certainly answer correctly to “How many days does February have?” or “What’s the length of February in days?”—because it understands that pattern from pre‑training and your fine‑tuning just reinforces it.
+
+   However, if you ask something like “What’s February’s day‑count when it’s a leap year?” the model may default back to its pre‑trained knowledge (which is still correct) or mix with your fine‑tuned phrasing. Usually you’ll still get the right answer, but it might phrase it differently.
+
+3. **When paraphrase goes too far**
+   If your user’s question is semantically similar but *very* different in wording—or if you only ever showed the model extremely narrow variants—there’s a chance the fine‑tuned version will lean on whichever answer “feels closest” in embedding space. That can lead to hallucination or to falling back on the pre‑trained base model.
+
+---
+
+### How to improve robustness
+
+* **Augment your training set with paraphrases**
+  For each of your 150 QA pairs, generate 3–5 alternate phrasings (manually or with an LLM) so the fine‑tune sees more surface variety.
+
+* **Use retrieval + RAG**
+  Store your 150 answers in a vector database, and at query time retrieve the most relevant few and feed them to the LLM. That way, regardless of wording, you’ll retrieve the right answer snippet.
+
+* **Leverage prompts with few‑shot examples**
+  Instead of (or in addition to) fine‑tuning, prepend a few representative examples to each prompt. GPT‑4, in particular, is excellent at following a pattern demonstrated in‑context, even when phrasing varies.
+
+---
+
+**Bottom line:**
+Your fine‑tuned model will *mostly* generalize to small paraphrases, thanks to its strong pre‑training, but it’s *not* guaranteed. If you need rock‑solid coverage of varied user wordings, either augment your fine‑tune with paraphrases or switch to a retrieval‑augmented approach.

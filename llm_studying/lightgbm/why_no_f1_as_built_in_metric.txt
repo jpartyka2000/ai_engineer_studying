@@ -1,0 +1,62 @@
+F1 is available as a metric for LightGBM models — but with some caveats, especially depending on how you're using LightGBM (e.g., via the Python API, CLI, or scikit-learn wrapper). Here's what you need to know:
+
+
+---
+
+1. LightGBM native API
+
+In the native lightgbm.train() API:
+
+The built-in metrics are mostly limited to things like 'binary_logloss', 'auc', 'accuracy', etc.
+
+F1 is not a built-in evaluation metric, but...
+
+
+You can define a custom evaluation function to calculate F1 during training or validation.
+
+from sklearn.metrics import f1_score
+
+def lgb_f1_score(y_pred, data):
+    y_true = data.get_label()
+    y_pred_binary = (y_pred >= 0.5).astype(int)
+    return 'f1', f1_score(y_true, y_pred_binary), True
+
+# Then pass this to the train function
+lgb.train(params, train_data, valid_sets=[valid_data], feval=lgb_f1_score)
+
+
+---
+
+2. Scikit-learn wrapper (LGBMClassifier)
+
+If you're using lightgbm.LGBMClassifier with scikit-learn tools:
+
+F1 is supported via sklearn.metrics.make_scorer in GridSearchCV, cross_val_score, etc.
+
+You can use it like this:
+
+
+from sklearn.metrics import make_scorer, f1_score
+from lightgbm import LGBMClassifier
+from sklearn.model_selection import cross_val_score
+
+model = LGBMClassifier()
+scorer = make_scorer(f1_score)
+scores = cross_val_score(model, X, y, scoring=scorer, cv=5)
+
+
+---
+
+Why F1 isn’t “built-in” to native LightGBM
+
+LightGBM’s built-in metrics are limited to fast, threshold-free metrics like AUC or logloss.
+
+F1 requires thresholding the predicted probabilities, which slows things down and introduces a decision boundary (usually 0.5) — something LightGBM tries to avoid in its internal training metrics.
+
+That’s why they leave it to you to plug in a custom threshold-based metric like F1 if you need it.
+
+
+
+---
+
+Let me know if you want a drop-in F1 scorer for a LightGBM CV or model training run.

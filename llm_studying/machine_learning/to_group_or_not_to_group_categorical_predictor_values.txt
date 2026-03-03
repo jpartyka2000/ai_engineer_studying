@@ -1,0 +1,54 @@
+**Evaluating ML model performance**
+
+Jeffrey’s asking if grouping 50 unique lead sources into 5 could improve an ML model’s performance. Grouping high-cardinality variables usually simplifies the model and could help reduce overfitting and noise. However, some smaller groups might have valuable predictive power, so grouping could lose info. For tree-based models like XGBoost, grouping might reduce memory and speed requirements while still working well. It’s best to test empirically to see the impact.
+
+Thought for 4 seconds
+
+Reducing a high‐cardinality categorical feature from 50 levels down to 5 is essentially a form of **feature engineering** and **regularization**. Whether it helps depends on a few factors:
+
+---
+
+## 1. Variance vs. Bias trade‑off  
+- **High cardinality (50 distinct sources)**  
+  - **Pros:** You preserve every bit of potentially predictive information—if “Source X” really has a unique behavior, the model can pick up on it.  
+  - **Cons:** More levels → more splits to consider → higher chance the model “overfits” to idiosyncratic behavior in your training data.  
+- **Lower cardinality (5 grouped sources)**  
+  - **Pros:** Fewer levels → simpler model → often better generalization on new data, especially if some original sources had very few examples.  
+  - **Cons:** You may lose genuine signal if, say, “Source A” and “Source B” behave quite differently but both end up in the same bucket.
+
+---
+
+## 2. Model type matters  
+- **Tree‑based models** (ExtraTrees, XGBoost):  
+  - They handle arbitrary integer codes by learning threshold splits. High cardinality isn’t disastrous—trees will simply split on the codes that matter.  
+  - But if many levels have very few samples, you can end up with spurious splits. Grouping rare sources into an “Other” bucket often helps.  
+- **Linear models** (logistic regression, linear SVM):  
+  - If you one‑hot encode 50 levels, that’s 49 extra dummy variables—risking multicollinearity and overfitting unless you have lots of data or strong regularization.  
+  - Grouping down to 5 means only 4 dummies and a much more compact representation.
+
+---
+
+## 3. Practical guidelines  
+1. **Frequency grouping**  
+   - Bucket the top N most frequent sources into their own categories and lump the rest into “Other.”  
+   - E.g. keep the 4–5 largest sources as separate, merge the 45 rarer ones.  
+2. **Domain grouping**  
+   - If you know some sources are similar (e.g. “paid search – Google” vs. “paid search – Bing”), group them into “Paid Search.”  
+   - Use business knowledge to create buckets that have real meaning.  
+3. **Empirical validation**  
+   - Ultimately, try both versions (50 vs. 5 levels) in a hold‑out or cross‑validation setup and compare your primary metric (e.g. MAE for regression or F1/AUC for classification).  
+   - You can also monitor model training speed and stability.
+
+---
+
+## 4. When you might **not** want to group  
+- If you have **tons of data** for each of the 50 levels, and you see consistent, statistically significant differences in behavior, you may want to keep them separate.  
+- If you’re using a model that natively supports high‐cardinality categoricals (e.g. CatBoost’s categorical handling), you can leave them as is.
+
+---
+
+### Bottom line  
+- **Grouping often helps** by reducing noise and dimensionality, especially when some categories are rare.  
+- **But it can lose real signal** if you group two truly different sources together.  
+
+**Recommendation:** start by grouping the rare 40–45 sources into “Other,” keep the handful of most important or frequent ones distinct, and then compare model performance (and training speed) against the full‑50‑level version. That empirical test will tell you which representation your pipeline really prefers.

@@ -1,0 +1,58 @@
+Yes, **Weave automatically creates that summary output** `{'true_count': 2, 'true_fraction': 1.0}` for you!
+
+## How Weave Auto-Summarizes Scorer Results
+
+When a scorer returns **boolean values**, Weave's `auto_summarize` function automatically computes:
+- `true_count`: Number of `True` values
+- `true_fraction`: Proportion of `True` values (true_count / total_count)
+
+This happens automatically when you use a scorer that returns boolean results and **don't define a custom `summarize()` method**.
+
+## Example
+
+If your `made_mandatory_tool_call` scorer looks something like this:
+
+```python
+class MandatoryToolCallScorer(Scorer):
+    @weave.op()
+    async def score(self, output: dict, mandatory_tool_call: str = None) -> dict:
+        # Check if the mandatory tool was called
+        made_call = check_if_tool_was_called(output, mandatory_tool_call)
+        return {"made_mandatory_tool_call": made_call}  # Boolean value
+```
+
+Weave sees that `made_mandatory_tool_call` is a boolean and automatically summarizes it as:
+- `true_count`: 2 (both examples returned True)
+- `true_fraction`: 1.0 (100% of examples returned True)
+
+## The Auto-Summarize Logic
+
+From the Weave documentation, the `auto_summarize` function:
+- **For booleans**: Computes count and fraction of `True` values
+- **For numbers**: Computes mean/average
+- **For other types**: Ignores them
+
+## If You Want Custom Summarization
+
+If you want to customize this behavior, you can override the `summarize()` method:
+
+```python
+class MandatoryToolCallScorer(Scorer):
+    @weave.op()
+    async def score(self, output: dict, mandatory_tool_call: str = None) -> dict:
+        made_call = check_if_tool_was_called(output, mandatory_tool_call)
+        return {"made_mandatory_tool_call": made_call}
+    
+    def summarize(self, score_rows: list[dict]) -> dict:
+        # Custom summarization logic
+        values = [row.get("made_mandatory_tool_call", False) for row in score_rows]
+        return {
+            "made_mandatory_tool_call": {
+                "total": len(values),
+                "passed": sum(values),
+                "pass_rate": sum(values) / len(values) if values else 0
+            }
+        }
+```
+
+But in your case, **Weave is doing this automatically for you** because you're returning a boolean value and not overriding `summarize()`. It's a helpful default behavior!

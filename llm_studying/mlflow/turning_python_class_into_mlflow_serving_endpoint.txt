@@ -1,0 +1,130 @@
+To turn your existing `CampaignMCSimulator` into a low-latency REST endpoint via MLflow Model Serving, you can wrap it in a `mlflow.pyfunc.PythonModel`.  Here’s how it typically goes:
+
+1. **Create a PyFunc wrapper**
+
+   ```python
+   # file: mc_pyfunc.py
+   import mlflow.pyfunc
+   import pandas as pd
+   from pyspark.sql import SparkSession
+   from your_module import CampaignMCSimulator
+
+   class MCSimulatorPyfunc(mlflow.pyfunc.PythonModel):
+       def load_context(self, context):
+           # No external artifacts to load in this example
+           pass
+
+       def predict(self, context, model_input: pd.DataFrame) -> pd.DataFrame:
+           """
+           Expects model_input with exactly one row containing:
+             - overall_budget
+             - n_iterations
+             - pct_min_max
+             - ctr
+             - input_table   (full Delta table name)
+           """
+           # Pull params from that single-row DataFrame
+           params = model_input.iloc[0].to_dict()
+
+           # Spin up Spark, read the Delta table
+           spark = SparkSession.builder.getOrCreate()
+           df_campaign = spark.table(params['input_table']).toPandas()
+
+           # Run your simulator
+           sim = CampaignMCSimulator(
+               overall_budget = params['overall_budget'],
+               n_iterations   = int(params['n_iterations']),
+               pct_min_max    = params['pct_min_max'],
+               ctr            = params['ctr'],
+               df             = df_campaign
+           )
+           return sim.run_simulation()
+   ```
+
+2. **Log & register the model**
+   In a separate script or notebook:
+
+   ```python
+   import mlflow
+   from mc_pyfunc import MCSimulatorPyfunc
+   import pandas as pd
+
+   # Dummy “example” input to infer signature
+   example_input = pd.DataFrame([{
+       "overall_budget": 250000.0,
+       "n_iterations":   10000,
+       "pct_min_max":    0.5,
+       "ctr":            0.02,
+       "input_table":    "schema.table_name"
+   }])
+
+   with mlflow.start_run() as run:
+       mlflow.pyfunc.log_model(
+           artifact_path="mc_sim_pyfunc",
+           python_model=MCSimulatorPyfunc(),
+           # so serving can validate the schema
+           input_example=example_input
+       )
+       run_id = run.info.run_id
+
+   # Register in the Model Registry
+   model_uri = f"runs:/{run_id}/mc_sim_pyfunc"
+   mv = mlflow.register_model(model_uri, "MC_Simulator_Service")
+
+   # (Optional) transition to Production
+   from mlflow.tracking import MlflowClient
+   client = MlflowClient()
+   client.transition_model_version_stage(
+       name="MC_Simulator_Service",
+       version=mv.version,
+       stage="Production"
+   )
+   ```
+
+3. **Deploy via Model Serving**
+   In the Databricks UI under **Models → MC\_Simulator\_Service**, click **Serve**, choose the Production version, and spin up the endpoint.
+
+4. **Call your new endpoint**
+   From any client (Python, curl, etc.):
+
+   ```python
+   import mlflow.pyfunc
+   import pandas as pd
+
+   # 1) In-process (if you’ve downloaded the model)
+   mc = mlflow.pyfunc.load_model("models:/MC_Simulator_Service/Production")
+
+   req = pd.DataFrame([{
+       "overall_budget": 250000.0,
+       "n_iterations":   10000,
+       "pct_min_max":    0.5,
+       "ctr":            0.02,
+       "input_table":    "schema.table_name"
+   }])
+
+   result_df = mc.predict(req)
+   print(result_df.head())
+   ```
+
+   Or via REST:
+
+   ```bash
+   curl -X POST https://<your-databricks>/model/MC_Simulator_Service/Production/invocations \
+        -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{
+             "dataframe_split":{
+               "columns":["overall_budget","n_iterations","pct_min_max","ctr","input_table"],
+               "data":[[250000,10000,0.5,0.02,"schema.table_name"]]
+             }
+           }'
+   ```
+
+---
+
+**Key points**
+
+* You subclass `mlflow.pyfunc.PythonModel` and override **only** `predict()` (and `load_context()` if you have extra artifacts).
+* In `predict()`, you accept a pandas DataFrame of parameters, load your campaign table via Spark, kick off the sim, and return a pandas DataFrame of results.
+* You then **log** that wrapper as a pyfunc model, **register** it, and **serve** it—in Databricks that gives you a stable REST endpoint.
+* Clients can invoke it with a single JSON payload; MLflow handles serialization, scaling, and routing.

@@ -1,0 +1,36 @@
+Thought for a couple of seconds
+
+Yes—`Series.map()` is designed to take **exactly** one of three kinds of inputs:
+
+1. **A dict (or any mapping):**  
+   ```python
+   df['col_mapped'] = df['col'].map({'a': 1, 'b': 2, 'c': 3})
+   ```
+   Each value in `df['col']` is looked up as a key in the dict; unmapped keys become `NaN` (unless you pre‐fill them).
+
+2. **Another Series:**  
+   ```python
+   lookup = pd.Series({'a': 1, 'b': 2, 'c': 3})
+   df['col_mapped'] = df['col'].map(lookup)
+   ```
+   Under the hood it treats your lookup‐Series’s **index** as the keys and its **values** as the mapped results.
+
+3. **A function (or other callable):**  
+   ```python
+   df['col_mapped'] = df['col'].map(lambda x: len(x))
+   ```
+   The function is applied element‑wise.
+
+Those are the *only* valid types for `.map()`. If you pass anything else (e.g. a list, scalar, or DataFrame), you’ll get a “not callable” error or else pandas won’t know how to interpret it.
+
+---
+
+### Quick reference
+
+| Argument type        | What it does                                               |
+|----------------------|-------------------------------------------------------------|
+| **dict / mapping**   | key→value lookup, unmapped → `NaN`                          |
+| **Series**           | index→value lookup, unmapped → `NaN`                        |
+| **callable**         | calls `f(x)` for each element `x`                           |
+
+If you need more flexibility (e.g. filling unmapped values, handling defaults), you can chain `.fillna(...)`, or use `replace(mapping_dict)` (for dicts) or a full `.apply(...)` (for arbitrary logic).

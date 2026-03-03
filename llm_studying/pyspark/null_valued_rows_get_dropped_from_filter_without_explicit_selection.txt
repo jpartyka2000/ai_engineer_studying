@@ -1,0 +1,94 @@
+In PySpark, you can filter a DataFrame using either the `filter(...)` or `where(...)` method, supplying a boolean expression on one or more columns. For example:
+
+```python
+from pyspark.sql.functions import col
+
+# Keep only rows where "age" > 30
+df_filtered = df.filter(col("age") > 30)
+```
+
+**Key point about Nulls**
+
+* In Spark (as in SQL), any comparison involving a null value evaluates to `null` (treated as false in a filter).
+* That means if a row has `age = null`, then `col("age") > 30` yields `null` for that row, so Spark does *not* include it. In other words, rows where `age` is null are silently dropped whenever you write a plain comparison or equality check––you have to explicitly ask to keep them.
+
+---
+
+### Example: Nulls get dropped unless you include them
+
+Suppose you have:
+
+```python
+data = [
+    (1, 25),
+    (2, None),
+    (3, 40),
+]
+df = spark.createDataFrame(data, ["id", "age"])
+```
+
+* `df.show()`
+
+  ```
+  +---+----+
+  | id| age|
+  +---+----+
+  |  1|  25|
+  |  2|null|
+  |  3|  40|
+  +---+----+
+  ```
+
+If you write:
+
+```python
+df_over_30 = df.filter(col("age") > 30)
+df_over_30.show()
+```
+
+* Output:
+
+  ```
+  +---+---+
+  | id|age|
+  +---+---+
+  |  3| 40|
+  +---+---+
+  ```
+
+  Notice that the row `(2, null)` is dropped automatically.
+
+---
+
+### Including nulls explicitly
+
+If you want to keep rows where `age` is null (in addition to those > 30), combine the conditions with `isNull()`:
+
+```python
+from pyspark.sql.functions import col
+
+df_over_30_or_null = df.filter(
+    (col("age") > 30) | col("age").isNull()
+)
+df_over_30_or_null.show()
+```
+
+* Output:
+
+  ```
+  +---+----+
+  | id| age|
+  +---+----+
+  |  2|null|
+  |  3|  40|
+  +---+----+
+  ```
+
+Here, `(col("age") > 30)` filters in the 40-year-old row, while `col("age").isNull()` explicitly adds back the row where `age` was null. Without that `isNull()` clause, null-valued rows never satisfy the comparison and remain excluded.
+
+---
+
+#### Takeaway
+
+* **Filtering** by e.g. `col("mycol") == someValue` or `col("mycol") > threshold` will drop any rows where `mycol` is null, because `null == something` (or `null > something`) evaluates to unknown/false.
+* If you need to preserve or check for nulls, always add `col("mycol").isNull()` (or `isNotNull()`) to your filter expression.

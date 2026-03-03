@@ -1,0 +1,125 @@
+## 📋 Overview: Comparison Dunder Methods in Python
+
+---
+
+### The Six Comparison Methods
+
+| Operator | Method | Meaning |
+|----------|--------|---------|
+| `<` | `__lt__` | Less than |
+| `<=` | `__le__` | Less than or equal |
+| `==` | `__eq__` | Equal |
+| `!=` | `__ne__` | Not equal |
+| `>` | `__gt__` | Greater than |
+| `>=` | `__ge__` | Greater than or equal |
+
+---
+
+### Basic Signature
+
+All comparison methods follow the same pattern:
+
+```python
+def __lt__(self, other):
+    # Return True, False, or NotImplemented
+```
+
+- `self` — The left operand
+- `other` — The right operand
+
+---
+
+### Simple Example
+
+```python
+class Age:
+    def __init__(self, years):
+        self.years = years
+    
+    def __lt__(self, other):
+        return self.years < other.years
+    
+    def __eq__(self, other):
+        return self.years == other.years
+
+a = Age(25)
+b = Age(30)
+
+print(a < b)   # True
+print(a == b)  # False
+```
+
+---
+
+### The Easy Way: `@total_ordering`
+
+Instead of writing all six methods, implement `__eq__` plus ONE other:
+
+```python
+from functools import total_ordering
+
+@total_ordering
+class Age:
+    def __init__(self, years):
+        self.years = years
+    
+    def __eq__(self, other):
+        return self.years == other.years
+    
+    def __lt__(self, other):
+        return self.years < other.years
+
+# Python auto-generates: __le__, __gt__, __ge__, __ne__
+```
+
+---
+
+### Returning `NotImplemented`
+
+When you can't compare with the other type, return `NotImplemented`:
+
+```python
+def __lt__(self, other):
+    if not isinstance(other, Age):
+        return NotImplemented  # Let Python try other.__gt__(self)
+    return self.years < other.years
+```
+
+---
+
+### Default Behavior
+
+| Method | Default if not defined |
+|--------|------------------------|
+| `__eq__` | Compares by identity (`is`) |
+| `__ne__` | Returns `not self.__eq__(other)` |
+| `__lt__`, `__le__`, `__gt__`, `__ge__` | Raises `TypeError` |
+
+---
+
+### Quick Reference
+
+```python
+from functools import total_ordering
+
+@total_ordering
+class MyClass:
+    def __init__(self, value):
+        self.value = value
+    
+    def __eq__(self, other):
+        if not isinstance(other, MyClass):
+            return NotImplemented
+        return self.value == other.value
+    
+    def __lt__(self, other):
+        if not isinstance(other, MyClass):
+            return NotImplemented
+        return self.value < other.value
+```
+
+That's all you need for full comparison support!
+
+---
+
+Ready for Question 15?

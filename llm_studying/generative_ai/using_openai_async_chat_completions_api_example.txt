@@ -1,0 +1,141 @@
+Yes, OpenAI provides async support for their chat completions API through their Python SDK. Given your evaluation script that needs to make many API calls, async would significantly speed up your processing.
+
+Here's how to modify your evaluation code to use async:
+
+```python
+import asyncio
+import aiohttp
+from openai import AsyncOpenAI
+import json
+import time
+
+# Initialize async client
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY_NEW"))
+
+async def predict_next_call_async(system_prompt, developer_prompt, user_question_str, context_calls_json):
+    """Async version of predict_next_call"""
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "developer", "content": developer_prompt},
+        {"role": "user", "content": user_question_str},
+        {"role": "assistant", "content":
+            "Here are the previous tool calls (with argument names only):\n"
+            f"{context_calls_json}\n\n"
+            "Please output the name of the next tool call..."
+            # (rest of your prompt)
+        }
+    ]
+    
+    response = await client.chat.completions.create(
+        model=MODEL,
+        messages=messages
+    )
+    
+    content = response.choices[0].message.content
+    return content.strip() if content else ""
+
+async def process_example_async(example, runidx, idx, semaphore):
+    """Process a single example asynchronously with rate limiting"""
+    async with semaphore:  # Limit concurrent requests
+        messages = example["messages"]
+        
+        system_prompt_str = next(m["content"] for m in messages if m["role"] == "system")
+        developer_prompt_str = next(m["content"] for m in messages if m["role"] == "developer")
+        user_question_str = next(m["content"] for m in messages if m["role"] == "user")
+        
+        # Extract ground truth as before
+        assistant_msgs_list = [m for m in messages if m["role"] == "assistant" and "tool_calls" in m]
+        full_calls = assistant_msgs_list[-1]["tool_calls"]
+        context_calls = full_calls[:-1]
+        last_call_gt = full_calls[-1]
+        
+        context_json = build_context_calls_for_prompt(context_calls)
+        
+        # Retry logic with exponential backoff
+        max_retries = 10
+        for attempt in range(1, max_retries + 1):
+            try:
+                pred_str = await predict_next_call_async(
+                    system_prompt_str, 
+                    developer_prompt_str, 
+                    user_question_str, 
+                    context_json
+                )
+                
+                # Process prediction as before
+                pred_obj = normalize_prediction(pred_str)
+                if pred_obj and ("name" in pred_obj or 
+                               ("function" in pred_obj and "name" in pred_obj["function"])):
+                    break
+                    
+            except Exception as e:
+                if attempt == max_retries:
+                    print(f"Example {idx} failed after {max_retries} attempts")
+                    pred_obj = {}
+                else:
+                    await asyncio.sleep(min(2 ** attempt, 60))
+        
+        # Return results for aggregation
+        return {
+            'idx': idx,
+            'runidx': runidx,
+            'gt': last_call_gt,
+            'pred': pred_obj,
+            # ... other needed data
+        }
+
+async def evaluate_async(input_jsonl_path_str, max_examples=None, max_concurrent=10):
+    """Main async evaluation function"""
+    # Create semaphore to limit concurrent requests
+    semaphore = asyncio.Semaphore(max_concurrent)
+    
+    # Load all examples
+    examples = []
+    with open(input_jsonl_path_str) as f:
+        for idx, line in enumerate(f, 1):
+            if max_examples and idx > max_examples:
+                break
+            examples.append(json.loads(line))
+    
+    all_results = []
+    
+    for runidx in range(1, N_RUNS + 1):
+        print(f"Starting Run #{runidx}")
+        
+        # Create tasks for all examples in this run
+        tasks = [
+            process_example_async(example, runidx, idx, semaphore)
+            for idx, example in enumerate(examples, 1)
+        ]
+        
+        # Process in batches to show progress
+        batch_size = 50
+        for i in range(0, len(tasks), batch_size):
+            batch = tasks[i:i+batch_size]
+            batch_results = await asyncio.gather(*batch)
+            all_results.extend(batch_results)
+            print(f"  Processed {min(i+batch_size, len(tasks))}/{len(tasks)} examples")
+    
+    # Process results and calculate metrics
+    # (Same metric calculation code as before, working with all_results)
+    
+    return all_results
+
+# Run the async evaluation
+if __name__ == "__main__":
+    results = asyncio.run(
+        evaluate_async(
+            "qa_pairs_for_rl_training_20250830_consistent.jsonl",
+            max_examples=500,
+            max_concurrent=10  # Adjust based on rate limits
+        )
+    )
+```
+
+Key benefits for your use case:
+
+1. **Parallel processing**: Instead of waiting for each API call sequentially, you can have multiple in flight
+2. **Configurable concurrency**: The `max_concurrent` parameter prevents overwhelming the API
+3. **Much faster evaluation**: With 500 examples × 2 runs = 1000 API calls, async could reduce runtime from hours to minutes
+
+For your evaluation script specifically, async would be very beneficial since you're making many independent API calls. Just be mindful of OpenAI's rate limits - the semaphore pattern above helps manage this by limiting concurrent requests.

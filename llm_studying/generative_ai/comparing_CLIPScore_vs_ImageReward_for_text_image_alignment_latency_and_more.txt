@@ -1,0 +1,30 @@
+I didn't find a direct head-to-head latency benchmark, but I can give you a solid comparison based on the architecture differences:
+
+**CLIPScore is significantly faster than ImageReward.**
+
+Here's why:
+
+**CLIPScore (CLIP ViT-L/14)**
+- A single forward pass through a vision encoder + a text encoder, then a cosine similarity computation. That's it.
+- ~400M parameters total (shared between both encoders)
+- On a typical GPU, inference is in the range of **5–15ms per image**
+- Very lightweight — can easily run on CPU too (though slower)
+
+**ImageReward (BLIP-based)**
+- Built on top of a much larger BLIP architecture with a cross-attention mechanism between image and text
+- ~1B+ parameters
+- Requires the image and text to interact through cross-attention layers, not just a simple dot product
+- Roughly **3–5x slower** than CLIPScore per image — typically **30–80ms per image** on GPU depending on hardware
+
+**In practice:**
+
+| | CLIPScore | ImageReward |
+|---|---|---|
+| Architecture | Dual encoder + cosine sim | BLIP cross-attention + reward head |
+| Model size | ~400M params | ~1B+ params |
+| GPU latency (approx) | 5–15ms/image | 30–80ms/image |
+| CPU feasible? | Yes (slower) | Painful |
+| Batch-friendly? | Very | Moderate |
+| Accuracy (human alignment) | Good | Better |
+
+**Bottom line:** If you're scoring thousands of images and speed matters, CLIPScore is the clear winner. If you're scoring a smaller set and want higher quality alignment scores, ImageReward is worth the extra latency. For a middle ground, you could also look at **PickScore**, which uses a CLIP-based architecture (so it's fast like CLIPScore) but is trained on human preference data (so it's more accurate than vanilla CLIPScore).

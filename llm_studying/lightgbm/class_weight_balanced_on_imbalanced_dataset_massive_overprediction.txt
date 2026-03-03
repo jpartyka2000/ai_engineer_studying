@@ -1,0 +1,61 @@
+Yes — setting `class_weight='balanced'` in a **LightGBM classifier** on a **highly imbalanced dataset** (e.g., 3–4% positive class) **can lead to overprediction of the positive class**, especially in the **probability outputs**.
+
+---
+
+### 🔍 Why it happens
+
+`class_weight='balanced'` automatically assigns weights **inversely proportional to class frequency**:
+
+$$
+w_i = \frac{n_{\text{samples}}}{n_{\text{classes}} \times n_{\text{samples, class i}}}
+$$
+
+So for your case (3–4% positive):
+
+* The positive class (minority) gets a **very large weight**
+* The loss function strongly penalizes misclassifying positives
+* The model will **shift its probability outputs higher** to **avoid false negatives**
+* This can result in **inflated predicted probabilities** for the positive class, especially near the threshold (e.g., predicting 0.20–0.40 when the actual calibrated probability is 0.05–0.10)
+
+---
+
+### 📈 What you might observe
+
+* High **recall**, low **precision** on the positive class
+* Overestimated predicted probabilities
+* Poor **probability calibration** (e.g., model says 40% chance of positive, but only 5% actually submit)
+
+---
+
+### ✅ Recommended mitigations
+
+1. **Calibrate the model outputs** after training:
+
+   * Use **Platt scaling** or **isotonic regression** (via `sklearn.calibration.CalibratedClassifierCV`)
+   * This adjusts probabilities without changing classification
+
+2. **Try `scale_pos_weight` instead**:
+
+   * Sometimes gives more stable results than `class_weight='balanced'` in LightGBM
+   * Set manually:
+
+     ```python
+     scale_pos_weight = (num_negative / num_positive)
+     ```
+
+3. **Tune explicitly**:
+
+   * Use a fixed weight (e.g., `class_weight={0: 1, 1: 20}`) and validate on held-out data
+   * Monitor calibration curves or Brier score
+
+---
+
+### ✅ TL;DR
+
+| Setting                   | Risk of Overprediction?  | Notes                                    |
+| ------------------------- | ------------------------ | ---------------------------------------- |
+| `class_weight='balanced'` | ✅ Yes                    | Especially on rare-positive problems     |
+| `scale_pos_weight`        | ⚠️ Possible              | More direct, but still needs calibration |
+| No weighting              | ❌ Underpredicts positive | May ignore minority class entirely       |
+
+Let me know if you want code to compare calibrated vs. uncalibrated probabilities on your dataset.

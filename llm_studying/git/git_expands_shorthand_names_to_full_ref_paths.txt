@@ -1,0 +1,78 @@
+**Git expands shorthand names to full ref paths:**
+
+When you type a branch or tag name, Git searches through ref locations in a specific order to find the full path.
+
+```bash
+git checkout main
+# Git resolves this to: refs/heads/main
+```
+
+---
+
+**Resolution order:**
+
+When you provide a short name like `foo`, Git looks for it in this order:
+
+1. `foo` (exact match, e.g., `HEAD`)
+2. `refs/foo`
+3. `refs/tags/foo`
+4. `refs/heads/foo`
+5. `refs/remotes/foo`
+6. `refs/remotes/foo/HEAD`
+
+The first match wins.
+
+---
+
+**Common expansions:**
+
+| You type | Git resolves to |
+|----------|-----------------|
+| `main` | `refs/heads/main` |
+| `origin/main` | `refs/remotes/origin/main` |
+| `v1.0.0` | `refs/tags/v1.0.0` |
+| `HEAD` | `HEAD` (special ref) |
+
+---
+
+**See what Git resolves:**
+
+```bash
+git rev-parse --symbolic-full-name main
+# refs/heads/main
+
+git rev-parse --symbolic-full-name origin/main
+# refs/remotes/origin/main
+
+git rev-parse --symbolic-full-name v1.0.0
+# refs/tags/v1.0.0
+```
+
+---
+
+**When to use full paths:**
+
+Most of the time shorthand works fine. Use full paths when:
+
+- A tag and branch have the same name (to avoid ambiguity)
+- Writing scripts that need to be explicit
+- Working with refspecs in `git fetch` or `git push`
+
+```bash
+# Ambiguous — could be tag or branch named "release"
+git checkout release
+
+# Explicit
+git checkout refs/heads/release    # the branch
+git checkout refs/tags/release     # the tag
+```
+
+---
+
+**Git will warn you about ambiguity:**
+
+```
+warning: refname 'release' is ambiguous.
+```
+
+In that case, use the full ref path to be explicit about which one you mean.

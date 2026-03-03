@@ -1,0 +1,25 @@
+Jupyter notebooks (via IPython) already start and manage an **asyncio** event loop behind the scenes, and even patch it to allow “top-level” `await` calls directly in cells. That means:
+
+1. **Event loop is running**
+   When your notebook kernel starts, IPython spins up an asyncio loop so that any async libraries (like `aiohttp`, `asyncio.sleep`, etc.) can schedule tasks.
+
+2. **Top-level `await` supported**
+   Thanks to IPython’s built-in support (and use of tools like `nest_asyncio`), you can write
+
+   ```python
+   await some_async_function()
+   ```
+
+   right inside a cell without having to wrap it in `async def` or call `asyncio.run()`.
+
+3. **`asyncio.run()` would conflict**
+   `asyncio.run()` tries to create and run its own new event loop from scratch—and it refuses to run if there’s already a loop running in the current thread. If you call it in a notebook, you’ll get an error like
+
+   ```
+   RuntimeError: asyncio.run() cannot be called from a running event loop
+   ```
+
+   because IPython’s loop is already active.
+
+**In short:** Jupyter’s kernel gives you a live asyncio loop and lets you `await` at the top level, so there’s no need (and indeed no room) to call `asyncio.run()` inside your notebook cells.
+

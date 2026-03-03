@@ -1,0 +1,132 @@
+Thought for a second
+
+
+Yes—**I strongly recommend** keeping your **retraining** logic in its **own job** (not embedded in your ETL), and letting your ETL pipeline simply **load** the latest registered model to do inference. That way:
+
+* Your ETL stays fast, predictable, and only does data movement + scoring.
+* Your training job can run on a schedule (daily, weekly) or be triggered by new data arrivals, without touching the ETL code.
+* You get clear separation of concerns, easier testing, and fewer surprises in production.
+
+---
+
+## 1. Training job (notebook or script)
+
+This is the code that **ingests fresh data**, **re‑trains**, **evaluates**, and **registers** the new model in MLflow.
+
+```python
+# train_and_register.py
+
+import mlflow
+import mlflow.sklearn
+from mlflow.models.signature import infer_signature
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import pandas as pd
+
+def load_data():
+    # your logic to pull the freshest data (e.g. from a warehouse or data lake)
+    return pd.read_parquet("/data/opportunities_2025Q1.parquet")
+
+def train_and_register():
+    df = load_data()
+    X = df[["sales_cycle_length_days","account_age_days", ...]]
+    y = df["is_closed_won"]
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    mlflow.set_experiment("SalesCycleModel_Training")
+
+    with mlflow.start_run():
+        # train
+        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+        clf.fit(X_train, y_train)
+
+        # evaluate
+        preds = clf.predict(X_val)
+        acc   = accuracy_score(y_val, preds)
+        mlflow.log_metric("val_accuracy", acc)
+
+        # log signature
+        signature = infer_signature(X_train, preds)
+        mlflow.sklearn.log_model(
+            clf,
+            "model",
+            signature=signature,
+            input_example=X_train.head(3)
+        )
+
+        # register
+        run_id   = mlflow.active_run().info.run_id
+        model_uri = f"runs:/{run_id}/model"
+        mlflow.register_model(model_uri, "SalesCycleModel")
+
+        # (optionally) auto‐transition to Staging
+        client = mlflow.tracking.MlflowClient()
+        client.transition_model_version_stage(
+            name="SalesCycleModel",
+            version=client.get_latest_versions("SalesCycleModel", stages=[])[0].version,
+            stage="Staging",
+            archive_existing_versions=False
+        )
+
+if __name__ == "__main__":
+    train_and_register()
+```
+
+You can schedule this script every night (via Airflow, cron, Databricks Jobs, etc.). It will produce a new version in the Model Registry each run.
+
+---
+
+## 2. ETL pipeline (separate script)
+
+Your ETL job never calls `.fit()`. It simply **loads** the **Production** (or Staging) model and runs `.predict()`.
+
+```python
+# etl_score.py
+
+import mlflow
+import mlflow.pyfunc
+import pandas as pd
+
+def extract_transform():
+    # pull raw data, do your cleans and joins
+    return pd.read_parquet("/data/new_opportunities.parquet")
+
+def score_and_load(df):
+    # load the latest Production version
+    model_uri = "models:/SalesCycleModel/Production"
+    model = mlflow.pyfunc.load_model(model_uri)
+
+    # run inference
+    X = df[["sales_cycle_length_days","account_age_days", ...]]
+    df["win_probability"] = model.predict(X)
+
+    # write results out to your warehouse or BI environment
+    df.to_parquet("/data/scored_opps.parquet")
+
+def main():
+    df = extract_transform()
+    score_and_load(df)
+
+if __name__ == "__main__":
+    main()
+```
+
+Schedule this ETL to run after your training job (or at whatever cadence you need). It will always pick up the **most recently promoted** model in Production.
+
+---
+
+### Why this separation matters
+
+| Concern      | Training Job                                      | ETL/Scoring Job                              |
+| ------------ | ------------------------------------------------- | -------------------------------------------- |
+| Purpose      | Re‐fit on fresh data, register new model versions | Ingest new raw data, score with latest model |
+| Dependencies | Heavy ML libraries, GPUs/cluster                  | Lightweight inference runtime                |
+| Scheduling   | Daily/weekly/triggered by data arrival            | Hourly/batch/near‐real‐time as needed        |
+| Failures     | Training failures don’t break ETL                 | Scoring failures don’t affect retraining     |
+| Auditing     | All train runs in MLflow, with metrics            | All scored outputs stored separately         |
+
+This pattern scales cleanly as you add new feature engineering, cross‑validation, or drift‑monitoring to your training flow, without ever having to touch your production ETL scripts.

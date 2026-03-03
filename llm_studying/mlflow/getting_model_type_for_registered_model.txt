@@ -1,0 +1,63 @@
+Yes, once you have a registered model version in MLflow, you can often determine what kind of model it is by inspecting its flavors, which indicate the original framework (e.g., sklearn, lightgbm, xgboost, etc.).
+
+Here’s how you can do that:
+
+
+---
+
+Option 1: Use MlflowClient.get_model_version_download_uri() + mlflow.models.Model.load()
+
+from mlflow.tracking import MlflowClient
+from mlflow.models import Model
+import mlflow
+
+client = MlflowClient()
+model_name = "your_model_name"
+model_version = "1"  # or latest.version
+
+# Get model URI
+model_uri = client.get_model_version_download_uri(model_name, model_version)
+
+# Load model metadata
+model_metadata = Model.load(model_uri)
+
+# Check flavors
+print(model_metadata.flavors)
+
+Example output:
+
+{
+  'sklearn': {'pickled_model': 'model.pkl', 'sklearn_version': '1.2.2'},
+  'python_function': {'loader_module': 'mlflow.sklearn'}
+}
+
+This tells you:
+
+It's a scikit-learn model
+
+It supports the pyfunc flavor for generic loading
+
+
+
+---
+
+Option 2: Use MLflow REST API (for external tools)
+
+You can also inspect this via the MLflow REST API (or UI), but for most Python workflows, the method above is easier.
+
+
+---
+
+Quick check from a loaded model (less reliable)
+
+If you've already loaded a model with mlflow.pyfunc.load_model():
+
+model = mlflow.pyfunc.load_model(model_uri)
+print(type(model._model_impl))
+
+This may hint at the flavor (e.g., if it’s a SklearnModel, LightGBMModel, etc.), but it’s not officially documented and may change across versions.
+
+
+---
+
+Would you like a helper function that checks the model's framework automatically from a registered model name/version?

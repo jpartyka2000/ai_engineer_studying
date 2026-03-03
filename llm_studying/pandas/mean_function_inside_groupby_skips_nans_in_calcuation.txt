@@ -1,0 +1,38 @@
+You can let pandas do the “ignore NaN” logic for you by taking a row‐wise mean:
+
+```python
+df_seasonal_rates['seasonal_admit_rate'] = (
+    df_seasonal_rates[
+       ['seasonal_admit_rate_1_yr_prior', 'seasonal_admit_rate_2_yr_prior']
+    ]
+    .mean(axis=1)
+)
+```
+
+By default `.mean(axis=1)` skips `NaN` values, so:
+
+* If **both** priors are present → you get their average.
+* If **one** is `NaN` → you get the non‑`NaN` value.
+* If **both** are `NaN` → you get `NaN`.
+
+---
+
+### Alternative: manual formula
+
+If you ever need to see how it works under the hood, you can do:
+
+```python
+num_non_null = (
+    df_seasonal_rates['seasonal_admit_rate_1_yr_prior'].notnull().astype(int)
+  + df_seasonal_rates['seasonal_admit_rate_2_yr_prior'].notnull().astype(int)
+)
+
+sum_vals = (
+    df_seasonal_rates['seasonal_admit_rate_1_yr_prior'].fillna(0)
+  + df_seasonal_rates['seasonal_admit_rate_2_yr_prior'].fillna(0)
+)
+
+df_seasonal_rates['seasonal_admit_rate'] = sum_vals / num_non_null
+```
+
+But the **`.mean(axis=1)`** approach is the most concise and idiomatic.

@@ -1,0 +1,44 @@
+Here are two quick ways to grep for a string under a Workspace path in Databricks:
+
+---
+
+## 1) Shell + DBFS FUSE
+
+Workspace files you “Import” or “Upload” appear under `/dbfs`. So in a `%sh` cell you can do:
+
+```bash
+%sh
+# Recursively search for “SEARCH_TERM” in all .py files under /dbfs/Workspace/Users/you@yourorg/... 
+grep -Rn --include="*.py" "SEARCH_TERM" /dbfs/Workspace/Users/you@yourorg/path/to/dir
+```
+
+* `-R` / `--recursive`
+* `-n` shows line numbers
+* `--include="*.py"` restricts to Python files (change or omit as needed)
+
+---
+
+## 2) Python in a notebook
+
+If you prefer Python, use `os.walk` on the same `/dbfs` path:
+
+```python
+import os
+
+search = "SEARCH_TERM"
+root = "/dbfs/Workspace/Users/you@yourorg/path/to/dir"
+
+for dirpath, _, files in os.walk(root):
+    for fn in files:
+        if fn.endswith(".py"):
+            full = os.path.join(dirpath, fn)
+            try:
+                with open(full, "r") as f:
+                    for i, line in enumerate(f, 1):
+                        if search in line:
+                            print(f"{full}:{i}: {line.strip()}")
+            except Exception:
+                pass
+```
+
+This will print every matching line with its file path and line number.

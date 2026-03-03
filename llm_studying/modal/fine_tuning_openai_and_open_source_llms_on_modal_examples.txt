@@ -1,0 +1,264 @@
+Yes, you can fine-tune both OpenAI models and open-source LLMs using Modal! Let me show you how to do both.
+
+## Option 1: Fine-tuning OpenAI Models on Modal
+
+For OpenAI, you're essentially running your fine-tuning script on Modal's infrastructure:
+
+```python
+import modal
+import os
+
+app = modal.App("openai-fine-tuning")
+
+# Create image with OpenAI SDK
+image = modal.Image.debian_slim().pip_install("openai", "pandas")
+
+# Store your OpenAI API key as a Modal secret
+secret = modal.Secret.from_name("openai-secret")
+
+@app.function(
+    image=image,
+    secret=secret,
+    timeout=3600,  # 1 hour timeout for long fine-tuning jobs
+)
+def fine_tune_openai(training_file_path: str):
+    from openai import OpenAI
+    
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    
+    # Upload training file
+    with open(training_file_path, "rb") as f:
+        response = client.files.create(file=f, purpose="fine-tune")
+    
+    file_id = response.id
+    print(f"Uploaded file ID: {file_id}")
+    
+    # Create fine-tuning job
+    job = client.fine_tuning.jobs.create(
+        training_file=file_id,
+        model="gpt-4o-mini-2024-07-18",  # or another model
+        hyperparameters={
+            "n_epochs": 3,
+            "batch_size": 1,
+            "learning_rate_multiplier": 2
+        }
+    )
+    
+    print(f"Fine-tuning job created: {job.id}")
+    return job.id
+
+@app.local_entrypoint()
+def main():
+    # Upload your JSONL file to Modal first
+    training_file = "training_data.jsonl"
+    
+    job_id = fine_tune_openai.remote(training_file)
+    print(f"Started fine-tuning job: {job_id}")
+```
+
+## Option 2: Fine-tuning Open-Source LLMs (Recommended for Modal)
+
+This is where Modal really shines - using GPUs to fine-tune open-source models:
+
+```python
+import modal
+
+app = modal.App("llm-fine-tuning")
+
+# Create a custom image with all necessary libraries
+image = (
+    modal.Image.debian_slim(python_version="3.10")
+    .pip_install(
+        "torch",
+        "transformers",
+        "datasets",
+        "accelerate",
+        "peft",  # For LoRA/QLoRA
+        "bitsandbytes",  # For quantization
+        "wandb",  # For tracking
+        "trl",  # For supervised fine-tuning
+    )
+)
+
+# Mount for storing model checkpoints
+volume = modal.Volume.from_name("model-checkpoints", create_if_missing=True)
+
+@app.function(
+    image=image,
+    gpu="A100",  # or "A10G", "T4" for smaller models
+    timeout=86400,  # 24 hours
+    volumes={"/models": volume},
+)
+def fine_tune_llama(
+    model_name: str = "meta-llama/Llama-2-7b-hf",
+    dataset_name: str = "your-dataset",
+):
+    import torch
+    from transformers import (
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        TrainingArguments,
+        Trainer,
+        DataCollatorForLanguageModeling,
+    )
+    from datasets import load_dataset
+    from peft import LoraConfig, get_peft_model, TaskType
+    
+    # Load model and tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.pad_token = tokenizer.eos_token
+    
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        load_in_8bit=True,  # Use quantization to save memory
+        device_map="auto",
+        torch_dtype=torch.float16,
+    )
+    
+    # Configure LoRA for efficient fine-tuning
+    lora_config = LoraConfig(
+        r=16,
+        lora_alpha=32,
+        target_modules=["q_proj", "v_proj"],
+        lora_dropout=0.1,
+        bias="none",
+        task_type=TaskType.CAUSAL_LM,
+    )
+    
+    model = get_peft_model(model, lora_config)
+    model.print_trainable_parameters()
+    
+    # Load and prepare dataset
+    dataset = load_dataset(dataset_name)
+    
+    def tokenize_function(examples):
+        return tokenizer(
+            examples["text"],
+            truncation=True,
+            padding="max_length",
+            max_length=512,
+        )
+    
+    tokenized_dataset = dataset.map(tokenize_function, batched=True)
+    
+    # Training arguments
+    training_args = TrainingArguments(
+        output_dir="/models/checkpoints",
+        num_train_epochs=3,
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=4,
+        warmup_steps=100,
+        logging_steps=10,
+        save_steps=500,
+        evaluation_strategy="steps",
+        eval_steps=500,
+        save_total_limit=2,
+        load_best_model_at_end=True,
+        fp16=True,
+        push_to_hub=False,
+    )
+    
+    # Create trainer
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_dataset["train"],
+        eval_dataset=tokenized_dataset["validation"],
+        tokenizer=tokenizer,
+        data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),
+    )
+    
+    # Train
+    trainer.train()
+    
+    # Save the model
+    trainer.save_model("/models/final_model")
+    print("Fine-tuning complete! Model saved to /models/final_model")
+    
+    return "Fine-tuning complete"
+
+@app.local_entrypoint()
+def main():
+    fine_tune_llama.remote()
+```
+
+## Option 3: Using Axolotl for Advanced Fine-tuning
+
+```python
+import modal
+
+app = modal.App("axolotl-fine-tuning")
+
+# Axolotl-ready image
+image = (
+    modal.Image.from_registry("winglian/axolotl:main-py3.10-cu118-2.0.1")
+    .pip_install("wandb")
+)
+
+volume = modal.Volume.from_name("model-storage", create_if_missing=True)
+
+@app.function(
+    image=image,
+    gpu=modal.gpu.A100(count=1),  # Multi-GPU: count=2
+    timeout=86400,
+    volumes={"/workspace": volume},
+)
+def train_with_axolotl(config_path: str):
+    import subprocess
+    import yaml
+    
+    # Load and modify config if needed
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    # Run Axolotl training
+    subprocess.run([
+        "accelerate", "launch", "-m", "axolotl.cli.train",
+        config_path
+    ], check=True)
+    
+    return "Training complete"
+```
+
+## Setting Up Secrets for API Keys
+
+For OpenAI or HuggingFace tokens:
+
+```bash
+# Create a secret for OpenAI
+modal secret create openai-secret OPENAI_API_KEY=<your-key>
+
+# For HuggingFace private models
+modal secret create huggingface-secret HF_TOKEN=<your-token>
+```
+
+## Monitoring Training Progress
+
+```python
+@app.function(image=image, gpu="A100")
+def train_with_monitoring():
+    import wandb
+    
+    # Initialize Weights & Biases for monitoring
+    wandb.init(project="modal-fine-tuning")
+    
+    # Your training code here
+    # Metrics will be logged to W&B dashboard
+```
+
+## Key Advantages of Modal for Fine-tuning:
+
+1. **No GPU setup**: Automatically provisions GPUs
+2. **Cost-effective**: Pay only for compute time used
+3. **Scalable**: Easy to use multiple GPUs or run parallel experiments
+4. **Persistent storage**: Save checkpoints across runs
+5. **Easy experimentation**: Change GPU types with one parameter
+
+## Typical Workflow:
+
+1. Prepare your dataset (JSONL for OpenAI, HuggingFace format for open-source)
+2. Upload to Modal volumes or S3
+3. Run fine-tuning job on Modal's GPUs
+4. Download or deploy the fine-tuned model
+
+The open-source approach on Modal is particularly powerful because you get access to high-end GPUs without managing infrastructure, and you can fine-tune models that would be impossible to run on consumer hardware.

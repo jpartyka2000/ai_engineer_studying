@@ -1,0 +1,99 @@
+OpenMP (Open Multi-Processing) is an API for parallel programming on shared-memory systems, typically used in C, C++, and Fortran. It allows developers to write code that can run in parallel across multiple CPU cores using compiler directives (e.g., #pragma omp parallel in C/C++).
+
+What does "OpenMP support in Python" mean?
+
+Python itself does not natively support OpenMP because it's an interpreted language and does not expose OpenMP directives. However, OpenMP can still be indirectly used in Python through compiled libraries or extensions written in C/C++ or Fortran that are OpenMP-enabled.
+
+Here’s how Python can interact with OpenMP:
+
+
+---
+
+✅ 1. NumPy, SciPy, scikit-learn
+
+Many performance-critical Python libraries are compiled with OpenMP for multi-threaded performance under the hood. If the libraries are built with OpenMP support, they can leverage parallel CPU cores automatically.
+
+Example: Some BLAS/LAPACK backends used by NumPy (like OpenBLAS or Intel MKL) use OpenMP to parallelize operations like matrix multiplication.
+
+
+
+---
+
+✅ 2. Cython
+
+Cython can compile Python-like code to C and allows the use of OpenMP.
+
+Example:
+
+
+# cython: language_level=3, boundscheck=False
+# distutils: extra_compile_args = -fopenmp
+# distutils: extra_link_args = -fopenmp
+
+cimport cython
+from cython.parallel import prange
+
+def parallel_sum(double[:] arr):
+    cdef Py_ssize_t i
+    cdef double total = 0
+
+    with nogil:
+        for i in prange(arr.shape[0], nogil=True, num_threads=4):
+            total += arr[i]
+    return total
+
+
+---
+
+✅ 3. Numba
+
+Numba is a JIT compiler for Python that can also parallelize loops using OpenMP under the hood.
+
+Example:
+
+
+from numba import njit, prange
+
+@njit(parallel=True)
+def parallel_sum(arr):
+    total = 0.0
+    for i in prange(len(arr)):
+        total += arr[i]
+    return total
+
+Numba doesn't expose OpenMP directly, but it can generate LLVM code that uses OpenMP behind the scenes.
+
+
+---
+
+✅ 4. Writing your own C/C++ Extensions
+
+You can write C/C++ code using OpenMP, compile it as a shared library (e.g., .so or .dll), and then load and call it from Python using ctypes or cffi.
+
+
+---
+
+⚠️ Considerations
+
+GIL (Global Interpreter Lock): Python threads (via threading module) are often limited by the GIL, but OpenMP-based computation runs outside the GIL, so it's useful for CPU-bound tasks.
+
+Environment Variables: To control OpenMP thread usage, you may need to set:
+
+export OMP_NUM_THREADS=4
+
+
+
+---
+
+Summary
+
+Method Uses OpenMP? Notes
+
+Pure Python ❌ No OpenMP support
+NumPy/SciPy/sklearn ✅ Depends on how they were compiled
+Cython ✅ Requires manual setup
+Numba ✅ (indirect) Uses LLVM threading
+ctypes/C++ extension ✅ Full OpenMP access
+
+
+Let me know if you want a working example using Cython or Numba.

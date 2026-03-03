@@ -1,0 +1,50 @@
+Let’s break it down:
+
+```python
+X_probs.iloc[val_idx,
+             X_probs.columns.get_loc('new_probability')
+            ] = proba_val
+```
+
+1. **`X_probs.iloc[...]`**
+   `.iloc` is Pandas’ *integer-position based* indexer. It takes two arguments:
+
+   * The first is the list (or array) of **row positions** you want to set.
+   * The second is the **column position**.
+
+2. **`val_idx`**
+   This is your array of **row positions** (e.g. `[5, 17, 42, …]`) coming from your cross-val split.
+
+3. **`X_probs.columns.get_loc('new_probability')`**
+
+   * `X_probs.columns` is an `Index` of all your column labels.
+   * `.get_loc('new_probability')` returns the *integer position* of that column in the list.
+     For example, if `new_probability` is the **4th** column, this returns `3` (0-based).
+
+4. **Putting it together**
+
+   ```python
+   X_probs.iloc[val_idx, 3] = proba_val
+   ```
+
+   if `3` is the position of `'new_probability'`.
+
+5. **Assignment**
+
+   * On the left you’ve selected exactly the cells at `(row positions in val_idx, column 'new_probability')`.
+   * On the right you have your 1-d array `proba_val` of the *same length* as `val_idx`.
+   * Pandas will broadcast each `proba_val[i]` into the corresponding row in `X_probs`.
+
+---
+
+### Why this is preferred over `X_probs['new_probability'][val_idx] = ...`
+
+* Using `iloc` avoids **chained-assignment pitfalls**, ensuring you write directly into the DataFrame’s memory.
+* It also makes explicit whether `val_idx` refers to **positions** (`iloc`) or **labels** (`loc`).
+
+As long as:
+
+* `len(proba_val) == len(val_idx)`, and
+* `val_idx` contains valid integer positions,
+
+this line will correctly “scatter” your calibrated probabilities back into the DataFrame column.

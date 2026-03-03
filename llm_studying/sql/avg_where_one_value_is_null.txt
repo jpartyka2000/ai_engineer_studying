@@ -1,0 +1,30 @@
+In SQL, if any of the values within the `AVG()` function are `NULL`, they are excluded from the calculation. SQL aggregate functions like `AVG()` automatically ignore `NULL` values.
+
+### How This Applies to Your Query
+If any of the individual columns in the expression 
+```sql
+dif_qualified_to_consensus_building_scoping + 
+dif_consensus_building_scoping_to_proposal__negotiation + 
+dif_proposal__negotiation_to_contracting + 
+dif_contracting_to_deal_closing + 
+dif_deal_closing_to_closed_won
+```
+contains a `NULL`, the **entire expression for that row** will evaluate to `NULL`. This is because adding `NULL` to any value results in `NULL`. As a result:
+- That row will be excluded from the calculation of `AVG()`.
+
+### Example:
+Suppose your table has the following rows:
+
+| dif_qualified_to_consensus_building_scoping | dif_consensus_building_scoping_to_proposal__negotiation | dif_proposal__negotiation_to_contracting | dif_contracting_to_deal_closing | dif_deal_closing_to_closed_won | Result of Expression |
+|---------------------------------------------|----------------------------------------------------------|------------------------------------------|----------------------------------|-------------------------------|-----------------------|
+| 10                                          | 20                                                       | 15                                       | 10                               | 5                             | 60                    |
+| NULL                                        | 25                                                       | 10                                       | 5                                | 10                            | NULL                  |
+| 5                                           | 15                                                       | 10                                       | 10                               | NULL                          | NULL                  |
+
+- For the first row, all values are present, so the sum is `60`, and it contributes to the `AVG()`.
+- For the second and third rows, the result of the sum is `NULL`, so those rows are excluded from the calculation.
+
+If only the first row contributes, the `AVG()` would return `60`.
+
+### Key Takeaway:
+If **all rows** result in `NULL`, the `AVG()` function will return `NULL`. Otherwise, it will compute the average based on the non-`NULL` results.

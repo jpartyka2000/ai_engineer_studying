@@ -1,0 +1,229 @@
+I think you meant `__iter__` and `__next__`! Let me explain both.
+
+---
+
+## 📋 Overview: `__iter__` and `__next__` — The Iteration Protocol
+
+---
+
+### The Big Picture
+
+To make an object work in a `for` loop, Python needs two things:
+
+| Method | Purpose |
+|--------|---------|
+| `__iter__` | Returns an iterator object |
+| `__next__` | Returns the next value (or raises `StopIteration` when done) |
+
+```python
+for item in something:
+    print(item)
+```
+
+Under the hood, Python does:
+
+```python
+iterator = something.__iter__()  # Get the iterator
+while True:
+    try:
+        item = iterator.__next__()  # Get next value
+        print(item)
+    except StopIteration:  # No more values
+        break
+```
+
+---
+
+### `__iter__` — "Give Me Something I Can Iterate Over"
+
+Called when iteration begins. Must return an **iterator** (an object with `__next__`).
+
+```python
+class MyCollection:
+    def __iter__(self):
+        # Return an iterator object
+        return self  # Often returns self if the class has __next__
+```
+
+**Two common patterns:**
+
+```python
+# Pattern 1: Return self (class is its own iterator)
+class Countdown:
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        # ... return values
+
+# Pattern 2: Return a different iterator
+class Countdown:
+    def __iter__(self):
+        return CountdownIterator(self.start)
+```
+
+---
+
+### `__next__` — "Give Me the Next Value"
+
+Called repeatedly to get each value. When done, raise `StopIteration`.
+
+```python
+class Counter:
+    def __init__(self, limit):
+        self.limit = limit
+        self.current = 0
+    
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        if self.current >= self.limit:
+            raise StopIteration  # No more values!
+        self.current += 1
+        return self.current
+
+for num in Counter(3):
+    print(num)
+# 1
+# 2
+# 3
+```
+
+---
+
+### Simple Example: Counting Up
+
+```python
+class CountUp:
+    def __init__(self, start, end):
+        self.current = start
+        self.end = end
+    
+    def __iter__(self):
+        return self  # This object is its own iterator
+    
+    def __next__(self):
+        if self.current > self.end:
+            raise StopIteration
+        value = self.current
+        self.current += 1
+        return value
+
+for n in CountUp(1, 5):
+    print(n)
+# 1
+# 2
+# 3
+# 4
+# 5
+```
+
+---
+
+### The Problem with Returning `self`
+
+If `__iter__` returns `self`, the iterator can only be used **once**:
+
+```python
+class OneTimeOnly:
+    def __init__(self, limit):
+        self.limit = limit
+        self.current = 0
+    
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        if self.current >= self.limit:
+            raise StopIteration
+        self.current += 1
+        return self.current
+
+counter = OneTimeOnly(3)
+
+print(list(counter))  # [1, 2, 3]
+print(list(counter))  # [] — exhausted!
+```
+
+**Fix: Reset state in `__iter__`:**
+
+```python
+def __iter__(self):
+    self.current = 0  # Reset!
+    return self
+```
+
+**Or: Return a fresh iterator each time:**
+
+```python
+class Reusable:
+    def __init__(self, limit):
+        self.limit = limit
+    
+    def __iter__(self):
+        return ReusableIterator(self.limit)
+
+class ReusableIterator:
+    def __init__(self, limit):
+        self.limit = limit
+        self.current = 0
+    
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        if self.current >= self.limit:
+            raise StopIteration
+        self.current += 1
+        return self.current
+```
+
+---
+
+### Quick Comparison
+
+| Aspect | `__iter__` | `__next__` |
+|--------|------------|------------|
+| When called | Once, at start of iteration | Repeatedly, for each value |
+| Returns | An iterator object | The next value |
+| Signals "done" | N/A | Raises `StopIteration` |
+| Required for | Being iterable | Being an iterator |
+
+---
+
+### The Easy Way: Generators
+
+For simple cases, use a generator instead of writing both methods:
+
+```python
+class Countdown:
+    def __init__(self, start):
+        self.start = start
+    
+    def __iter__(self):
+        current = self.start
+        while current >= 1:
+            yield current
+            current -= 1
+
+for num in Countdown(5):
+    print(num)
+# 5, 4, 3, 2, 1
+```
+
+The `yield` keyword makes `__iter__` return a generator, which automatically has `__next__`.
+
+---
+
+### Summary
+
+| Method | Question It Answers |
+|--------|---------------------|
+| `__iter__` | "How do I get an iterator for this object?" |
+| `__next__` | "What's the next value?" |
+| `StopIteration` | "There are no more values" |
+
+---
+
+Now, would you like to attempt the `Countdown` question?

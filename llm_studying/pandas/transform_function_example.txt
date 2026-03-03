@@ -1,0 +1,61 @@
+The `.transform()` method in pandas is a way to compute **group-level** statistics or apply **row-wise** functions while keeping the **same shape** (index and length) as your original DataFrame or Series. Here’s what makes it special:
+
+1. **Grouping or column selection**
+
+   ```python
+   grouped = df.groupby('my_group')
+   # or for a single column:
+   series_grouped = df.groupby('my_group')['my_value']
+   ```
+
+2. **Calling `.transform(func)`**
+
+   * You can pass a string shortcut (e.g. `'mean'`, `'sum'`, `'max'`), a NumPy/UDF (e.g. `np.log1p`), or any function that takes an array and returns either a **scalar** or an **array** of the same length as its input.
+   * For each group, pandas applies `func` and then **broadcasts** the result back to each original row in that group.
+
+3. **Result shape**
+
+   * The output of `transform` always has the **same index** and **same length** as the object you called it on.
+   * That means you can assign it directly as a new column without worrying about misalignment:
+
+     ```python
+     df['group_mean'] = df.groupby('my_group')['my_value'].transform('mean')
+     # df['group_mean'] has one value per row, equal to that row’s group average
+     ```
+
+---
+
+### How it differs from other group methods
+
+| Method              | Output shape      | Use case                                    |
+| ------------------- | ----------------- | ------------------------------------------- |
+| `.agg(…)`           | one row per group | summary tables (e.g. pivot-style results)   |
+| `.apply(…)`         | variable          | arbitrary functions that can change shape   |
+| **`.transform(…)`** | **same as input** | create group-level features aligned to rows |
+
+---
+
+### Quick example
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'team': ['A','A','B','B','B'],
+    'score': [10, 15, 20, 25, 30]
+})
+
+# Compute each row’s deviation from its team average
+df['team_avg'] = df.groupby('team')['score'].transform('mean')
+df['dev_from_avg'] = df['score'] - df['team_avg']
+
+# Result:
+#   team  score  team_avg  dev_from_avg
+# 0    A     10      12.5          -2.5
+# 1    A     15      12.5           2.5
+# 2    B     20      25.0          -5.0
+# 3    B     25      25.0           0.0
+# 4    B     30      25.0           5.0
+```
+
+Here, `.transform('mean')` gave you a **5-element** Series (same as `df`) containing each team’s average score, ready for further per-row calculations.

@@ -1,0 +1,105 @@
+The `is_dataclass()` function in Python’s `dataclasses` module lets you test whether an object or a class was created using the `@dataclass` decorator. It’s a simple way to detect “dataclass-ness” at runtime.
+
+---
+
+## Signature
+
+```python
+from dataclasses import is_dataclass
+
+is_dataclass(obj)  -> bool
+```
+
+* **`obj`**
+  Can be any Python object (instance, class, module, etc.).
+
+* **Returns**
+
+  * `True` if **either**
+
+    1. `obj` is an instance of a dataclass, **or**
+    2. `obj` is a dataclass **type** (i.e. a class decorated with `@dataclass`)
+  * `False` otherwise.
+
+---
+
+## How it works
+
+1. **On a dataclass type**
+
+   ```python
+   from dataclasses import dataclass, is_dataclass
+
+   @dataclass
+   class Point:
+       x: float
+       y: float
+
+   is_dataclass(Point)           # → True
+   ```
+
+2. **On a dataclass instance**
+
+   ```python
+   p = Point(1.0, 2.0)
+   is_dataclass(p)               # → True
+   ```
+
+3. **On non-dataclass objects**
+
+   ```python
+   is_dataclass(123)             # → False
+   is_dataclass([1,2,3])         # → False
+   class C: pass
+   is_dataclass(C)               # → False
+   ```
+
+4. **On partial dataclasses**
+   If you subclass a dataclass **without** `@dataclass`, it’s still considered a dataclass type/instance:
+
+   ```python
+   class SubPoint(Point): pass
+   is_dataclass(SubPoint)        # → True
+   is_dataclass(SubPoint(0,0))   # → True
+   ```
+
+---
+
+## Common use‐cases
+
+* **Generic serialization / validation**
+  You can write a function that walks through nested structures, and whenever it sees a dataclass, it converts it to a dict via `asdict()`.
+
+* **Framework integrations**
+  In APIs or ORMs, you might accept either plain dicts or dataclass instances—`is_dataclass()` lets you branch accordingly.
+
+* **Type checks in libraries**
+  Build utilities that enforce or adapt to dataclasses, e.g.:
+
+  ```python
+  def process(obj):
+      if is_dataclass(obj):
+          data = asdict(obj)
+      else:
+          data = obj
+      ...
+  ```
+
+---
+
+## Pitfalls & gotchas
+
+* **Does not detect “frozen” vs. regular**
+  Both `@dataclass` and `@dataclass(frozen=True)` yield `True`.
+
+* **Inherited classes**
+  As shown above, subclasses of a dataclass without redecorating still return `True`.
+
+* **Not for namedtuple**
+  Even though `namedtuple` gives you a class with fields, `is_dataclass()` returns `False` for them.
+
+---
+
+### TL;DR
+
+Use `is_dataclass(obj)` whenever you need to know if something—be it a class or an instance—was defined via `@dataclass`. It’s a lightweight, reliable check built into the standard library.

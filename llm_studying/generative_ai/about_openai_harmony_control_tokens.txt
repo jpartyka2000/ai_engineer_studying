@@ -1,0 +1,40 @@
+OpenAI’s Harmony protocol (used by `gpt-oss` models) uses **special control tokens**—sometimes called “tags”—to **frame** a multi-message, multi-channel conversation in a single token stream. These tokens mark the boundaries between messages, roles, channels, and function calls, so the model (and your parser) know exactly where each piece begins and ends. Here are the core tags:
+
+| Tag | Meaning |     |                                                                                                                           |
+| --- | ------- | --- | ------------------------------------------------------------------------------------------------------------------------- |
+| \`< | start   | >\` | **Begin a new message** frame. Every message (system, developer, user, assistant, tool) starts with this.                 |
+| \`< | role    | >\` | (Implicit in Harmony framing) Indicates the message’s **role** (e.g. `system`, `user`, `assistant`, `tool`, `developer`). |
+| \`< | channel | >\` | Declares the assistant’s **channel** (`analysis`, `commentary`, or `final`) for this message.                             |
+| \`< | message | >\` | Marks the start of the **payload** (the actual text content) for the current role/channel.                                |
+| \`< | call    | >\` | Signals that the assistant is **calling** a function/tool next.                                                           |
+| \`< | return  | >\` | Signals the **end of a function call** and return to normal message framing.                                              |
+| \`< | end     | >\` | **End of the current message** frame. Every message must be closed with this.                                             |
+
+---
+
+### How they work together
+
+A full assistant message looks like:
+
+```
+<|start|><|role|>assistant<|channel|>analysis<|message|>…reasoning here…<|end|>
+<|start|><|role|>assistant<|channel|>commentary<|message|>…calling tool…<|call|><|end|>
+<|start|><|role|>assistant<|channel|>final<|message|>…user-facing answer…<|end|>
+```
+
+1. **`<|start|>`** kicks off each message.
+2. **`<|role|>`** and **`<|channel|>`** tag its origin and purpose.
+3. **`<|message|>`** begins the actual text.
+4. If it’s a function call, **`<|call|>`** replaces the usual content.
+5. After tools run, **`<|return|>`** can wrap their outputs.
+6. **`<|end|>`** closes the message so the next `<|start|>` isn’t ambiguous.
+
+---
+
+### Why use these tags?
+
+* **Precision:** Ensures the model knows exactly where reasoning stops and the final answer begins.
+* **Tool orchestration:** Clearly delimits calls and returns, so parsers can automate function invocation.
+* **Multi-message flows:** Lets a single generation emit many structured messages in one go.
+
+If you’re using OpenAI’s hosted Chat API (GPT-4, GPT-3.5) you don’t need these—OpenAI handles framing for you. But for **custom pipelines** with open-source models, **Harmony tags** are the lingua franca that make “chat + tools” work end-to-end .

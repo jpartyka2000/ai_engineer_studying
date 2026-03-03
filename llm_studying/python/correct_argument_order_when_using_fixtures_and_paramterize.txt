@@ -1,0 +1,45 @@
+When writing a **pytest** unit test that uses both **fixtures** and **`@pytest.mark.parametrize`**, the **order of arguments** in the test function matters. Here’s the correct way to structure it:
+
+---
+
+### **✅ Correct Order:**
+1. **Parameterized arguments** (from `@pytest.mark.parametrize`)
+2. **Fixture arguments** (from `@pytest.fixture`)
+
+```python
+import pytest
+
+@pytest.fixture
+def sample_data():
+    return {"a": 10, "b": 20}
+
+@pytest.mark.parametrize("x, y, expected", [(1, 2, 3), (4, 5, 9), (10, 20, 30)])
+def test_addition(x, y, expected, sample_data):
+    result = x + y
+    assert result == expected
+```
+
+### **📌 Why This Order?**
+- **`@pytest.mark.parametrize` runs before fixtures** → It creates multiple test cases dynamically.
+- **Fixtures are injected after parameterization** → The test function receives fixture values after all parameterized arguments are assigned.
+
+---
+
+### **🚨 Incorrect Order (Will Cause Errors)**
+```python
+@pytest.mark.parametrize("x, y, expected", [(1, 2, 3), (4, 5, 9), (10, 20, 30)])
+def test_addition(sample_data, x, y, expected):  # ❌ Wrong order
+    result = x + y
+    assert result == expected
+```
+- This will **fail** because pytest tries to resolve `sample_data` before `x, y, expected`, which is not how it works.
+
+---
+
+### **📌 Summary**
+| Argument Type         | Order in Function Signature |
+|----------------------|--------------------------|
+| **Parametrized values** | **First** |
+| **Fixture values** | **Last** |
+
+Would you like an example with **multiple fixtures**? 😊

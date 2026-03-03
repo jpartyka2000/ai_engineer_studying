@@ -1,0 +1,88 @@
+In the Transformer architecture, **dot product + normalization (scaling)** is primarily used in two key places to calculate similarity:
+
+### 1. **Scaled Dot-Product Attention (Self-Attention & Cross-Attention)**
+   - In the attention mechanism, similarity between query (\(Q\)) and key (\(K\)) vectors is computed using the **dot product**, followed by **scaling**:
+     \[
+     \text{Attention Scores} = \frac{Q K^T}{\sqrt{d_k}}
+     \]
+   - This scaling factor (\(\sqrt{d_k}\)) is crucial because dot products tend to grow in magnitude as the dimensionality (\(d_k\)) increases, leading to sharper softmax distributions.
+
+### 2. **Query-Key-Value Attention Across Multiple Heads**
+   - In **multi-head attention**, each head independently computes similarity using **scaled dot-product attention** before concatenating the results.
+
+---
+
+While the **dot product itself** appears in other places (e.g., final classification layers in BERT or similarity-based retrieval), **explicit dot product + scaling for similarity computation** happens **inside attention mechanisms** in the transformer.
+
+Would you like me to break it down further with an example?
+
+-------------------------
+
+Let's break it down step by step with an example to see exactly where **dot product + norm scaling** is used to compute similarity in a Transformer.
+
+---
+
+### **Step 1: Self-Attention – Computing Similarity Between Tokens**
+In self-attention, we compute how similar each token is to every other token in a sequence. This is done by:
+
+1. **Projecting input embeddings** into three vectors:  
+   - **Query (Q)**: Represents the current token asking for information.
+   - **Key (K)**: Represents all tokens that might provide useful information.
+   - **Value (V)**: Contains actual content to be aggregated.
+
+   If our input consists of \( n \) tokens, and each token is represented as a vector of dimension \( d_{\text{model}} \), then:
+   - \( Q, K, V \) are each of shape \( (n, d_k) \) where \( d_k = d_{\text{model}} / h \) (for \( h \) attention heads).
+
+---
+
+### **Step 2: Computing Similarity (Dot Product + Scaling)**
+We compute **attention scores** by taking the **dot product** of queries and keys:
+
+\[
+\text{Attention Scores} = Q K^T
+\]
+
+- This results in an \( n \times n \) matrix where each entry represents the similarity between two tokens.
+- A larger dot product means the tokens are more similar.
+
+Next, we **scale** these scores to prevent large values from dominating the softmax function:
+
+\[
+\frac{Q K^T}{\sqrt{d_k}}
+\]
+
+- The division by \( \sqrt{d_k} \) prevents large dot products from making the softmax distribution overly sharp, which would lead to vanishing gradients.
+
+---
+
+### **Step 3: Applying Softmax & Weighting Values**
+- We apply the **softmax** function to transform the similarity scores into attention weights:
+
+\[
+\text{Attention Weights} = \text{softmax} \left(\frac{Q K^T}{\sqrt{d_k}} \right)
+\]
+
+- These weights determine how much information each token should "attend" to.
+- We use these weights to compute a weighted sum of the **value (V) vectors**:
+
+\[
+\text{Output} = \text{Attention Weights} \times V
+\]
+
+---
+
+### **Step 4: Multi-Head Attention**
+- In **multi-head attention**, multiple attention heads perform these calculations in parallel.
+- Each head has its own set of \( Q, K, V \) projections and applies **dot product + scaling** separately.
+- The outputs from different heads are concatenated and passed through a linear transformation.
+
+---
+
+### **Final Answer: Where Dot Product + Scaling is Used**
+1. **Self-Attention & Cross-Attention (Inside Multi-Head Attention)**
+   - Used to compute similarity between tokens in a sequence.
+   - Formula: \( \frac{Q K^T}{\sqrt{d_k}} \).
+
+Since this happens **in each attention head**, the operation is repeated **h times per layer** in **each attention block** (self-attention for encoders, cross-attention for decoders).
+
+Would you like a numerical example to visualize this further? 🚀

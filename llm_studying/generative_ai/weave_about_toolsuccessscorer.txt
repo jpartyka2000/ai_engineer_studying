@@ -1,0 +1,82 @@
+## `ToolSuccessScorer` in Weave
+
+`ToolSuccessScorer` evaluates whether an **AI agent successfully used tools/functions correctly** - checking if tool calls had the right syntax, parameters, and achieved their purpose.
+
+## What It Measures:
+
+```python
+# It checks tool/function calling success
+agent_output = {
+    "tool_calls": [
+        {
+            "tool": "calculate",
+            "parameters": {"expression": "2+2"},
+            "result": 4,
+            "status": "success"
+        }
+    ]
+}
+# Score: High (tool called correctly, got result)
+
+agent_output = {
+    "tool_calls": [
+        {
+            "tool": "search_web",
+            "parameters": {"query": None},  # Missing required param
+            "error": "Missing query parameter",
+            "status": "failed"
+        }
+    ]
+}
+# Score: Low (tool call failed)
+```
+
+## Common Use Cases:
+
+```python
+from weave.scorers import ToolSuccessScorer
+
+class AgentEvaluator:
+    def __init__(self):
+        self.tool_scorer = ToolSuccessScorer()
+    
+    @weave.op()
+    def evaluate_agent_run(self, output: dict):
+        # Check if agent used tools correctly
+        tool_score = self.tool_scorer.score(output)
+        
+        return {
+            "tool_success_rate": tool_score,
+            "failed_calls": self.get_failed_tool_calls(output)
+        }
+```
+
+## What It Tracks:
+
+1. **Syntax correctness** - Valid function names and parameters
+2. **Execution success** - Tool returned result vs error
+3. **Parameter validation** - Required params present, correct types
+4. **Tool choice** - Used appropriate tool for the task
+
+## Example Evaluation:
+
+```python
+# Agent attempting to answer "What's the weather in NYC?"
+good_execution = {
+    "tool_calls": [
+        {"tool": "get_weather", "params": {"city": "NYC"}, "success": True}
+    ],
+    "final_answer": "It's 72°F and sunny in NYC"
+}
+# High score - correct tool, correct params
+
+bad_execution = {
+    "tool_calls": [
+        {"tool": "calculate", "params": {"expr": "NYC"}, "success": False}
+    ],
+    "final_answer": "I couldn't get the weather"  
+}
+# Low score - wrong tool for the task
+```
+
+**Bottom line**: `ToolSuccessScorer` measures how well an AI agent uses tools/functions - essential for evaluating agents that need to call APIs, databases, or other functions to complete tasks.

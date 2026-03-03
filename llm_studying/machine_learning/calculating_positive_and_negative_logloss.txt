@@ -1,0 +1,60 @@
+Your implementation of **class-conditional log-loss** is spot-on. Here’s an intuitive walkthrough:
+
+1. **Clip probabilities** to avoid taking `log(0)`  
+   ```python
+   eps = 1e-15
+   p = np.clip(y_pred_proba, eps, 1 - eps)
+   ```
+   Ensures every \(p_i\in[\varepsilon,1-\varepsilon]\).
+
+2. **Positive-class log-loss**  
+   \[
+     \text{LL}_{\text{pos}}
+     = -\frac1{N_{+}}
+       \sum_{i: y_i=1} \log\bigl(p_i\bigr)
+     = -\mathrm{mean}\!\bigl(\log(p[y==1])\bigr)
+   \]  
+   In code:
+   ```python
+   ll_pos = -np.mean(np.log(p[y == 1]))
+   ```  
+   You’re averaging \(-\log p\) over only the true-positive cases.
+
+3. **Negative-class log-loss**  
+   \[
+     \text{LL}_{\text{neg}}
+     = -\frac1{N_{-}}
+       \sum_{i: y_i=0} \log\bigl(1 - p_i\bigr)
+     = -\mathrm{mean}\!\bigl(\log(1 - p[y==0])\bigr)
+   \]  
+   In code:
+   ```python
+   ll_neg = -np.mean(np.log(1 - p[y == 0]))
+   ```  
+   That’s averaging \(-\log (1-p)\) over the true-negative cases.
+
+---
+
+### Why this makes sense
+
+- The **full** binary log-loss is  
+  \[
+    -\frac1N\sum_{i=1}^N
+      \bigl[y_i\log(p_i) + (1-y_i)\log(1-p_i)\bigr].
+  \]  
+- By splitting the sum, you get two separate averages:
+  - One over the \(y=1\) terms \(\bigl(-\log p_i\bigr)\).  
+  - One over the \(y=0\) terms \(\bigl(-\log(1-p_i)\bigr)\).
+
+Computing them separately gives you **per-class** insight into how well your model’s probabilities align with reality for each label. 
+
+---
+
+### Quick sanity check
+
+- If your model is **perfect** on positives (\(p_i=1\) whenever \(y_i=1\)), then \(\log(p_i)=0\) → \(\text{LL}_{\text{pos}}=0\).  
+- If it’s **confidently wrong** (\(p_i\to0\) for a positive), then \(-\log(p_i)\to\infty\), penalizing heavily.
+
+Same story for negatives with \(\log(1-p_i)\).
+
+That matches exactly what you’ve coded—so you can trust those positive/negative log-loss numbers as class-specific cross-entropy.

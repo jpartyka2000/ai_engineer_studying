@@ -1,0 +1,76 @@
+Excellent question — this touches one of Python’s core exception-handling mechanics.
+
+In short:
+
+> **`raise` with no arguments** re-raises the *most recent active exception* currently being handled.
+
+---
+
+## 🧠 Explanation
+
+When you’re inside an `except` block, Python keeps track of the exception object being handled.
+If you call `raise` **without specifying an exception**, Python simply re-throws that same exception.
+
+### Example:
+
+```python
+try:
+    1 / 0
+except ZeroDivisionError:
+    print("Handling it...")
+    raise  # ← re-raises the same ZeroDivisionError
+```
+
+Output:
+
+```
+Handling it...
+Traceback (most recent call last):
+  ...
+ZeroDivisionError: division by zero
+```
+
+So the second `raise` doesn’t create a new exception — it **continues propagating** the one that’s already being handled.
+
+---
+
+## ⚠️ Outside an `except` Block
+
+If you call `raise` with no arguments *outside* of an active exception handler, Python doesn’t know what to re-raise, and you’ll get:
+
+```
+RuntimeError: No active exception to reraise
+```
+
+---
+
+## 🧩 Common Use Case
+
+This is useful when you want to:
+
+* Log or partially handle an exception,
+* Then pass it upward to be handled elsewhere.
+
+Example:
+
+```python
+try:
+    risky_operation()
+except ValueError as e:
+    logger.error(f"Bad input: {e}")
+    raise  # Re-throw to let outer code handle it too
+```
+
+---
+
+## ✅ Summary
+
+| Situation                 | Behavior                                              |
+| ------------------------- | ----------------------------------------------------- |
+| Inside an `except` block  | Re-raises the same exception                          |
+| Outside an `except` block | Raises `RuntimeError: No active exception to reraise` |
+| Typical use               | Log or clean up, then propagate error                 |
+
+---
+
+Would you like me to show how this works when chaining exceptions manually (e.g., `raise NewError(...) from e`)?

@@ -1,0 +1,83 @@
+You need to use **`MERGE`** (upsert operation) instead of `overwrite` mode. This allows you to update specific columns in existing rows without overwriting the entire table.
+
+Here's how to do it:
+
+```python
+from delta.tables import DeltaTable
+
+# Define your table name
+table_name = "pathahead.motimatic_ecue.text_features_notes_summary_dec_2025"
+
+# Load the existing Delta table
+delta_table = DeltaTable.forName(spark, table_name)
+
+# Perform the merge
+delta_table.alias("target").merge(
+    df_spark.alias("source"),
+    "target.id = source.id"  # Replace 'id' with your actual join key(s)
+).whenMatchedUpdate(
+    set={
+        "column_to_update": "source.column_to_update"  # Specify which column(s) to update
+    }
+).whenNotMatchedInsertAll(  # Optional: insert new rows if they don't exist
+).execute()
+```
+
+## Key Changes:
+
+1. **Use `DeltaTable.forName()`** to reference the existing table
+2. **Define the merge condition** - which column(s) identify matching rows (like a primary key)
+3. **Use `whenMatchedUpdate()`** to specify which columns to update
+4. **Use `whenNotMatchedInsertAll()`** if you want to insert new rows (optional)
+
+## Example - Update only one column:
+
+```python
+from delta.tables import DeltaTable
+
+table_name = "pathahead.motimatic_ecue.text_features_notes_summary_dec_2025"
+delta_table = DeltaTable.forName(spark, table_name)
+
+delta_table.alias("target").merge(
+    df_spark.alias("source"),
+    "target.note_id = source.note_id"  # Your matching key
+).whenMatchedUpdate(
+    set={
+        "summary": "source.summary"  # Only update the 'summary' column
+    }
+).whenNotMatchedInsertAll(
+).execute()
+```
+
+## Example - Update multiple columns:
+
+```python
+delta_table.alias("target").merge(
+    df_spark.alias("source"),
+    "target.note_id = source.note_id"
+).whenMatchedUpdate(
+    set={
+        "summary": "source.summary",
+        "updated_date": "source.updated_date",
+        "status": "source.status"
+    }
+).whenNotMatchedInsertAll(
+).execute()
+```
+
+## If you don't want to insert new rows:
+
+Just remove the `.whenNotMatchedInsertAll()` line:
+
+```python
+delta_table.alias("target").merge(
+    df_spark.alias("source"),
+    "target.note_id = source.note_id"
+).whenMatchedUpdate(
+    set={
+        "summary": "source.summary"
+    }
+).execute()
+```
+
+The key is identifying what column(s) serve as your unique identifier to match rows between the source and target tables.

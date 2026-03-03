@@ -1,0 +1,24 @@
+Thought for a couple of seconds
+
+Exactly—when you call:
+
+```python
+y_pred_proba = cross_val_predict(
+    model,
+    closed_df,
+    series_target,
+    cv=cv,
+    method="predict_proba"
+)[:, 1]
+```
+
+what happens under the hood is:
+
+1. `cv.split(closed_df, series_target)` generates your (train_idx, test_idx) pairs.
+2. For each fold, `cross_val_predict`  
+   a. Fits `model` on the **train** indices (everything _except_ the current test fold).  
+   b. Calls `predict_proba` on the **test** indices (the hold‑out fold).  
+   c. Writes those test‑fold predictions into the corresponding slots of the output array.
+3. After cycling through all folds, you end up with a probability for **every** sample—each one coming from the model that never saw that sample in its training set.
+
+So yes: the resulting `y_pred_proba[i]` is the probability assigned to instance _i_ when it was held out as the “test” in its fold. You never get a prediction on a sample from a model that was trained on that same sample.

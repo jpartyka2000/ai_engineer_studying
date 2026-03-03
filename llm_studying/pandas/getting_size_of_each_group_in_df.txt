@@ -1,0 +1,49 @@
+You want each row to carry the size of its own `(DEGREE_OFFERING, LEAD_TRACK, COHORT)` group. The easiest way is to use the built‑in `"size"` transform on *one* column (it doesn’t matter which, since every column in the group has the same number of rows):
+
+```python
+df_data['group_count'] = (
+    df_data
+    .groupby(['DEGREE_OFFERING','LEAD_TRACK','COHORT'])['DEGREE_OFFERING']
+    .transform('size')
+)
+```
+
+Explanation:
+
+1. **`groupby([...])['DEGREE_OFFERING']`**
+   Selecting a single column converts your groupby into a **SeriesGroupBy**, which is what `transform` expects for a single-series output.
+
+2. **`.transform('size')`**
+   Returns a Series the same length as `df_data`, where each value is the size of the group that row belongs to.
+
+3. **Assignment**
+   You can directly assign that Series into a new column `group_count`.
+
+---
+
+### A couple of variants
+
+* **Using `len`**:
+
+  ```python
+  df_data['group_count'] = (
+      df_data
+      .groupby(['DEGREE_OFFERING','LEAD_TRACK','COHORT'])['DEGREE_OFFERING']
+      .transform(len)
+  )
+  ```
+* **Using `size()` + `map`**:
+
+  ```python
+  sizes = (
+      df_data
+      .groupby(['DEGREE_OFFERING','LEAD_TRACK','COHORT'])
+      .size()
+      # sizes is a Series with a MultiIndex
+  )
+  df_data['group_count'] = df_data.set_index(
+      ['DEGREE_OFFERING','LEAD_TRACK','COHORT']
+    ).index.map(sizes)
+  ```
+
+But the first `.transform('size')` approach is the most concise and idiomatic.

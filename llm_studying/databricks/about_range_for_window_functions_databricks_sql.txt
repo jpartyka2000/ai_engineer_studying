@@ -1,0 +1,58 @@
+Yes, **`RANGE`** is supported in window functions in Databricks SQL, but there are limitations. Specifically:
+
+1. **`RANGE` Clause Overview:**
+   - The `RANGE` clause in window functions is used to define the frame based on logical values (like dates or numbers) rather than physical rows.
+   - However, in Databricks SQL, `RANGE` is only supported with **numeric or date/time expressions**.
+
+2. **Limitations:**
+   - It requires the `ORDER BY` column to be numeric or date/time.
+   - The frame definition (e.g., `BETWEEN INTERVAL`) must align with the supported types and syntax. `INTERVAL` is **not directly compatible** with `RANGE`.
+
+3. **Alternative Approaches:**
+   - Use `ROWS` for row-based frames.
+   - For `RANGE` with intervals, you may need to adjust the logic using filters, joins, or aggregations instead.
+
+---
+
+### Example of Using `RANGE` in Databricks SQL
+If you want to compute a rolling sum based on a date column, you can use `RANGE` with an explicit numeric or date range:
+
+```sql
+SELECT 
+    opportunity_close_date,
+    SUM(opportunity_amount) OVER (
+        ORDER BY opportunity_close_date 
+        RANGE BETWEEN INTERVAL 7 DAYS PRECEDING AND CURRENT ROW
+    ) AS rolling_sum
+FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps
+WHERE opportunity_record_type = 'NET NEW' 
+  AND opportunity_close_date BETWEEN '2024-06-01' AND '2024-08-31';
+```
+
+### Common Errors with `RANGE` in Databricks
+1. **Unsupported `RANGE` with `INTERVAL`:**
+   - The `INTERVAL` keyword is not directly usable with `RANGE`. You might see an error like:
+     ```
+     Error: Interval is not supported in RANGE clause.
+     ```
+
+   **Fix:** Use `DATE_ADD` or `DATE_SUB` with filtering:
+   ```sql
+   SELECT 
+       opportunity_close_date,
+       (SELECT SUM(opportunity_amount)
+        FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps t2
+        WHERE t2.opportunity_close_date BETWEEN DATE_SUB(t1.opportunity_close_date, 7) AND t1.opportunity_close_date
+       ) AS rolling_sum
+   FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps t1
+   WHERE opportunity_record_type = 'NET NEW' 
+     AND opportunity_close_date BETWEEN '2024-06-01' AND '2024-08-31';
+   ```
+
+2. **Unsupported Data Types:**
+   - Ensure the `ORDER BY` column is numeric or a date/time type. If it’s a string, cast it appropriately.
+
+3. **Large Data Volumes:**
+   - If your dataset is large, consider limiting the range or optimizing partitions to improve performance.
+
+Let me know if you have specific use cases where `RANGE` isn't working, and I can help refine the query!

@@ -1,0 +1,179 @@
+## Destructuring in `match` Statements
+
+In `match` statements, destructuring **extracts values while pattern matching** - you simultaneously check structure AND capture values into variables.
+
+## Basic Tuple/List Destructuring:
+
+```python
+data = (200, "success", {"id": 123})
+
+match data:
+    case (status_code, message, payload):
+        # Now you have three variables:
+        # status_code = 200
+        # message = "success"  
+        # payload = {"id": 123}
+        print(f"Got {status_code}: {message}")
+```
+
+## Nested Destructuring:
+
+```python
+response = ("user", ("Alice", 30, "NYC"))
+
+match response:
+    case ("user", (name, age, city)):
+        # Unpacks the nested tuple:
+        # name = "Alice"
+        # age = 30
+        # city = "NYC"
+        print(f"{name} from {city}")
+    
+    case ("admin", (name, level)):
+        print(f"Admin {name} level {level}")
+```
+
+## Dictionary Destructuring:
+
+```python
+data = {"type": "error", "code": 404, "message": "Not found", "timestamp": 1234}
+
+match data:
+    case {"type": "error", "code": code, "message": msg}:
+        # Extracts specific keys:
+        # code = 404
+        # msg = "Not found"
+        # (ignores "timestamp" - dict patterns match partially)
+        print(f"Error {code}: {msg}")
+    
+    case {"type": "success", "data": result}:
+        return result
+```
+
+## Capturing Remaining Elements:
+
+```python
+command = ["move", "player", 10, 20, "fast"]
+
+match command:
+    case ["move", entity, x, y, *modifiers]:
+        # entity = "player"
+        # x = 10
+        # y = 20  
+        # modifiers = ["fast"]
+        print(f"Moving {entity} to ({x},{y}) with {modifiers}")
+    
+    case ["attack", target, *weapons]:
+        print(f"Attacking {target} with {weapons}")
+```
+
+## Mixed Destructuring with Guards:
+
+```python
+point = (5, 10)
+
+match point:
+    case (x, y) if x == y:
+        # Destructures first, THEN checks guard
+        print(f"Diagonal point at {x}")
+    
+    case (x, 0):
+        # x is captured, y must be 0
+        print(f"On X-axis at {x}")
+    
+    case (0, y):
+        # y is captured, x must be 0
+        print(f"On Y-axis at {y}")
+    
+    case (x, y):
+        # Both captured
+        print(f"Point at ({x}, {y})")
+```
+
+## Complex Nested Structures:
+
+```python
+api_response = {
+    "user": {
+        "name": "Alice",
+        "contacts": ["bob@email.com", "charlie@email.com"]
+    },
+    "status": "active"
+}
+
+match api_response:
+    case {
+        "user": {
+            "name": username,
+            "contacts": [first_contact, *other_contacts]
+        },
+        "status": status
+    }:
+        # Extracted:
+        # username = "Alice"
+        # first_contact = "bob@email.com"
+        # other_contacts = ["charlie@email.com"]
+        # status = "active"
+        print(f"{username}'s primary: {first_contact}")
+```
+
+## Destructuring with Wildcards:
+
+```python
+record = ("Alice", 30, "Engineer", "NYC")
+
+match record:
+    case (name, _, job, _):
+        # Only capture name and job, ignore age and city
+        print(f"{name} works as {job}")
+    
+    case (name, age, *_):
+        # Capture first two, ignore rest
+        print(f"{name} is {age}")
+```
+
+## Class Instance Destructuring:
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Result:
+    success: bool
+    value: any
+    error: str = None
+
+result = Result(True, 42, None)
+
+match result:
+    case Result(success=True, value=val):
+        # val = 42
+        print(f"Success with {val}")
+    
+    case Result(success=False, error=err) if err:
+        # Only matches if success=False AND error is truthy
+        print(f"Failed: {err}")
+```
+
+## Key Rules:
+
+1. **Variables capture values** - Any name becomes a variable
+2. **Literals must match exactly** - `0`, `"error"`, etc.
+3. **`_` ignores values** - Wildcard that doesn't capture
+4. **Dicts match partially** - Only specified keys need to exist
+5. **Lists/tuples must match fully** - Unless using `*rest`
+
+```python
+# This example shows all rules:
+data = {"action": "create", "items": [1, 2, 3], "user": "admin"}
+
+match data:
+    case {"action": "create", "items": [first, *rest]}:
+        # "create" must match exactly (literal)
+        # first captures 1 (variable)
+        # rest captures [2, 3] (variable with *)
+        # "user" key ignored (partial dict match)
+        print(f"Creating {first} and {len(rest)} more")
+```
+
+**The power**: You're not just checking if data matches a pattern - you're **extracting the pieces you need** at the same time!

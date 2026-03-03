@@ -1,0 +1,58 @@
+You need to explicitly install FastAPI in the Modal image. Here's the corrected version of Option 1:
+
+```python
+import modal
+
+app = modal.App("interactive-square-service")
+
+# Create an image with FastAPI installed
+image = modal.Image.debian_slim().pip_install("fastapi")
+
+@app.function(image=image)  # Add the image parameter here
+@modal.web_endpoint()
+def square(n: int = 0):
+    """HTTP endpoint that squares a number"""
+    result = n ** 2
+    return {
+        "input": n,
+        "result": result,
+        "message": f"The square of {n} is {result}"
+    }
+
+@app.local_entrypoint()
+def main():
+    # Deploy the service
+    print("Deploying service...")
+    print("Once deployed, you can access it at the URL shown")
+    print("Example: curl 'https://YOUR-URL?n=42'")
+```
+
+The key change is:
+1. Creating an image with FastAPI: `image = modal.Image.debian_slim().pip_install("fastapi")`
+2. Adding `image=image` parameter to the `@app.function()` decorator
+
+Now when you run:
+```bash
+modal deploy your_script.py
+```
+
+It should work without errors. Modal will:
+1. Build a container image with FastAPI installed
+2. Deploy your function as a web endpoint
+3. Give you a URL you can access
+
+After deployment, you'll get a URL like:
+```
+https://YOUR-USERNAME--interactive-square-service-square.modal.run
+```
+
+You can then test it:
+```bash
+# Using curl
+curl "https://YOUR-USERNAME--interactive-square-service-square.modal.run?n=42"
+
+# Or just visit in a browser
+https://YOUR-USERNAME--interactive-square-service-square.modal.run?n=42
+```
+
+This error occurred because Modal used to automatically include FastAPI for web endpoints, but now requires explicit installation for better control over dependencies and image size.

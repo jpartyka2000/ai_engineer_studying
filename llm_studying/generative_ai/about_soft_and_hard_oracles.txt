@@ -1,0 +1,60 @@
+In the context of SFT (Supervised Fine-Tuning) of LLMs, **soft oracles** refer to models or systems that provide probabilistic or "soft" labels/feedback rather than hard, binary correct/incorrect labels.
+
+## Key Characteristics of Soft Oracles
+
+1. **Probability Distributions**: Instead of saying "this answer is correct" (hard label), a soft oracle provides probability distributions over possible answers, like "70% correct, 30% could be better"
+
+2. **Confidence Scores**: They output confidence levels for their predictions, acknowledging uncertainty
+
+3. **Gradient Information**: Soft oracles provide richer gradient signals during training compared to hard labels
+
+## Common Types in LLM Fine-Tuning
+
+### 1. **Teacher Models in Distillation**
+```python
+# Example: Using a larger model as a soft oracle
+teacher_logits = large_model(input)  # Returns probability distribution
+student_loss = KL_divergence(student_logits, teacher_logits)
+```
+
+### 2. **Reward Models with Uncertainty**
+Instead of binary feedback:
+- Hard oracle: "Response A is better than B" (1 or 0)
+- Soft oracle: "Response A is 0.73 better than B" (continuous value)
+
+### 3. **Ensemble-based Oracles**
+Multiple models vote, providing a distribution of opinions rather than a single answer.
+
+## Why Soft Oracles Matter in SFT
+
+1. **More Information**: A soft label like [0.7, 0.2, 0.1] contains more information than a hard label like [1, 0, 0]
+
+2. **Better Generalization**: Training on probability distributions often leads to models that generalize better
+
+3. **Handling Ambiguity**: Many tasks have inherently ambiguous "correct" answers - soft oracles can represent this uncertainty
+
+## Practical Example in Your Context
+
+In your fine-tuning script, if you were using a soft oracle approach, instead of training on exact responses like:
+```json
+{"messages": [{"role": "assistant", "content": "Exact answer"}]}
+```
+
+You might have:
+```json
+{
+  "messages": [{"role": "assistant", "content": "Answer"}],
+  "confidence": 0.85,
+  "alternative_responses": [
+    {"content": "Alternative 1", "score": 0.10},
+    {"content": "Alternative 2", "score": 0.05}
+  ]
+}
+```
+
+## Contrast with Hard Oracles
+
+- **Hard Oracle**: "This is THE correct answer" (binary supervision)
+- **Soft Oracle**: "This answer has 0.8 probability of being appropriate" (probabilistic supervision)
+
+Soft oracles are particularly useful when fine-tuning on subjective tasks where there isn't always one definitively correct answer, like creative writing, dialogue generation, or complex reasoning tasks.

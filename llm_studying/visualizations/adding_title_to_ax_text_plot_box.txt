@@ -1,0 +1,57 @@
+You can’t pass a separate `title=` into `ax.text()`, but you can easily fake it two ways:
+
+---
+
+### 1) Prepend a “title line” in the same text box
+
+Just stick your heading on top of your counts, separated by a newline, e.g.:
+
+```python
+# build a little multi‐line string, with a title
+counts_str = "Bin Counts\n" + "\n".join(
+    [f"Q{int(q)+1}: {cnt}" for q, cnt in counts.items()]
+)
+
+# same text box call as before:
+ax.text(
+    1.02, 0.5, counts_str,
+    transform = ax.transAxes,
+    fontsize  = 10,
+    va        = 'center',
+    ha        = 'left',
+    bbox      = dict(boxstyle='round', facecolor='white', alpha=0.5)
+)
+```
+
+If you want that first line bolder, you can add another `\n` or even two separate `ax.text()` calls—one for the title (with `fontweight='bold'`) and one for the lines beneath.
+
+---
+
+### 2) Use an AnchoredText box
+
+Matplotlib’s `AnchoredText` gives you a clean framed text‐box that you can position just like a legend:
+
+```python
+from matplotlib.offsetbox import AnchoredText
+
+# prepare your titled block
+counts_text = "Bin Counts\n" + "\n".join(
+    [f"Q{int(q)+1}: {cnt}" for q, cnt in counts.items()]
+)
+
+# create and anchor it
+at = AnchoredText(
+    counts_text,
+    loc          = 'upper left',
+    bbox_to_anchor = (1.02, 0.5),
+    bbox_transform = ax.transAxes,
+    frameon      = True,
+    prop         = dict(size=10)
+)
+at.patch.set_boxstyle("round,pad=0.3")
+ax.add_artist(at)
+```
+
+This gives you a neat “title” line and the counts below in one box, which you can style however you like.
+
+Either approach will get you a titled box sitting to the right of your bars!

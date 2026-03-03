@@ -1,0 +1,38 @@
+**`asyncio.gather()` Preserves Task Order in Its Results**
+
+When you invoke multiple coroutines with `asyncio.gather()`, its return value is a tuple whose elements line up exactly with the order in which you passed the coroutines to `gather()`, regardless of which one actually finishes first. For example:
+
+```python
+import asyncio
+
+async def task(name, delay):
+    await asyncio.sleep(delay)
+    return f"{name} done"
+
+async def main():
+    results = await asyncio.gather(
+        task("first", 2),
+        task("second", 1),
+        task("third", 3),
+    )
+    print(results)
+    # → ["first done", "second done", "third done"]
+
+asyncio.run(main())
+```
+
+Even though `"second"` completes in 1 second (before `"first"` at 2 seconds), `gather()` still returns its result in the second position of the list.
+
+This ordered collection is useful because it guarantees that:
+
+1. **Positional integrity:** You can destructure the results tuple knowing which coroutine’s output lives in which slot.
+2. **Alignment with inputs:** Even if tasks race to finish, your downstream code can unambiguously match each result to its originating task.
+3. **Predictable workflows:** When gathering heterogeneous jobs—for instance, fetching data, writing logs, checking status—you can write
+
+   ```python
+   data, log_ack, status = await asyncio.gather(fetch_data(), write_log(), check_status())
+   ```
+
+   and be confident that `data` is always the fetch result, `log_ack` the logger’s response, and `status` the health check.
+
+In short, `asyncio.gather()` doesn’t just run tasks concurrently—it also hands back their results in a stable, input-aligned order, making concurrent orchestration clear and reliable.

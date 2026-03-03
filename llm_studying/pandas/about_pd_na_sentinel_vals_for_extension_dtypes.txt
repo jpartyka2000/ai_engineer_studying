@@ -1,0 +1,76 @@
+### Pandas.NA: Pandas’ Unified Missing‑Value Sentinel
+
+**`pandas.NA`** is a special scalar introduced in Pandas 1.0 to represent “missing” values consistently across the new **nullable** extension dtypes. Unlike `None` or `np.nan`, `pd.NA` works seamlessly in integer, boolean, and string arrays without forcing you into `object` dtype.
+
+---
+
+#### 1. Which dtypes use `pd.NA`
+
+|         Extension dtype         | Missing sentinel |
+| :-----------------------------: | :--------------: |
+|             `Int64`             |      `<NA>`      |
+|            `boolean`            |      `<NA>`      |
+|             `string`            |      `<NA>`      |
+| `Float32`, `Float64` (nullable) |      `<NA>`      |
+
+To create a nullable integer Series:
+
+```python
+import pandas as pd
+
+s = pd.Series([1, pd.NA, 3], dtype="Int64")
+print(s)
+# 0       1
+# 1    <NA>
+# 2       3
+# dtype: Int64
+```
+
+---
+
+#### 2. Why `pd.NA` over `None` or `np.nan`
+
+* **Preserves dtype**: assigning `pd.NA` to an `Int64` Series keeps it integer‑typed, whereas `None` or `np.nan` would cast it to `object` or `float`.
+* **Consistent operations**: arithmetic and comparison with `pd.NA` produce `pd.NA`, propagating missingness in a predictable way.
+
+```python
+s + 1  
+# 0       2
+# 1    <NA>    # remains NA, not an error or float NaN
+# 2       4
+# dtype: Int64
+```
+
+---
+
+#### 3. Detecting and handling `pd.NA`
+
+* **Detect** missing values with `isna()` / `isnull()`:
+
+  ```python
+  s.isna()
+  # 0    False
+  # 1     True
+  # 2    False
+  # dtype: boolean
+  ```
+* **Fill** or **drop**:
+
+  ```python
+  s.fillna(0)     # replaces <NA> with 0
+  s.dropna()      # drops <NA> entries
+  ```
+
+---
+
+#### 4. Limitations and gotchas
+
+* **No mixed usage**: you can’t mix `pd.NA` with plain NumPy arrays—only use it with Pandas extension dtypes.
+* **Function support**: some operations still return `np.nan` for floats; check dtype after transformations.
+* **Comparisons**: `pd.NA == pd.NA` yields `<NA>`, not `True` or `False`. Use `isna()` instead of equality checks.
+
+---
+
+### Bottom Line
+
+Use **`pd.NA`** whenever you need a robust, consistent missing‑value marker in integer, boolean, or string columns. It preserves your column’s intended dtype and enables clean, predictable propagation of “missingness” throughout your data pipeline.

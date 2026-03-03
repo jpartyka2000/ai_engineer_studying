@@ -1,0 +1,102 @@
+Pysubgroups doesn’t ship with a black-box “diverse‐rule” optimizer out of the box—that is, there’s no single `DiversitySearch` class that will automatically enforce “use as many different selectors as possible.”  However, you have a few practical ways to *encourage* diversity among the rules you discover:
+
+---
+
+### 1. Use a set‐discovery task rather than single‐rule search
+
+Instead of:
+
+```python
+task = ps.SubgroupDiscoveryTask(…)
+search = ps.BeamSearch(…)
+result = search.execute(task)
+```
+
+you can use the **Subgroup-Set-Discovery** machinery:
+
+```python
+from pysubgroup import SubgroupSetDiscoveryTask, CoverQF
+
+# Define a set–level quality function (e.g. weighted‐cover to reward non‐overlapping coverage)
+set_qf = CoverQF()
+
+set_task = SubgroupSetDiscoveryTask(
+    data=df_data,
+    target=target,
+    search_space=selectors,
+    result_set_size=25,
+    qf=set_qf,
+    depth=5
+)
+
+set_search = ps.BeamSearch(beam_width=50)
+set_result = set_search.execute(set_task)
+df_set_rules = set_result.to_dataframe( )
+```
+
+Here, `CoverQF` (or any set‐level QF) will *reward* you for choosing rules that cover different parts of the dataset, implicitly pushing the algorithm toward more diverse selectors.
+
+---
+
+### 2. Sequential covering (a “greedy” post-filter)
+
+1. **Discover** a large pool of candidate rules (say top-100 by WRAcc).
+2. **Greedy pick** one by one into your final set, each time removing or heavily penalizing any candidate that **shares** too many selectors (or instances) with the ones you’ve already chosen.
+
+```python
+candidates = result.to_dataframe()  # top‐100 WRAcc rules
+final = []
+
+while len(final) < 10 and len(candidates):
+    best = candidates.iloc[0]
+    final.append(best)
+    # drop any rule that overlaps on >1 selector with `best`:
+    def overlap(r):
+        return len(set(r['subgroup'].split(' AND '))
+                   & set(best['subgroup'].split(' AND '))) > 1
+    candidates = candidates[~candidates.apply(overlap, axis=1)].reset_index(drop=True)
+
+final_df = pd.DataFrame(final)
+display(final_df)
+```
+
+---
+
+### 3. Custom quality function with an overlap penalty
+
+You can subclass any QF (e.g. `WRAccQF`) and subtract a small penalty when your new subgroup re-uses the same selector attribute as any subgroup you’ve already accepted:
+
+```python
+class PenalizedWRAcc(ps.WRAccQF):
+    def __init__(self, seen_selectors, penalty=0.1):
+        super().__init__()
+        self.seen = seen_selectors  # set of (attribute, operator, value) tuples
+        self.pen = penalty
+
+    def evaluate(self, subgroup, data):
+        base = super().evaluate(subgroup, data)
+        # get this subgroup’s atomic selectors:
+        atoms = subgroup.selectors  
+        # compute how many atoms are “new” vs. in self.seen
+        reuse = sum(1 for a in atoms if a in self.seen)
+        return base - self.pen * reuse
+```
+
+Then, inside your search loop, after you pick a rule, add its atoms to `seen_selectors` so the next search round “knows” to penalize re-using them.
+
+---
+
+### 4. Increase beam width and post‐filter by Jaccard
+
+A simpler but effective hack is to:
+
+1. **Set** `beam_width` quite high (e.g. 200) so the search keeps many divergent prefixes.
+2. **After** you get your top-K, compute pairwise Jaccard similarity over their selector sets and then choose a maximal subset with pairwise similarity below some threshold (e.g. 0.5).
+
+---
+
+#### TL;DR
+
+* **No single “diversity” model** in pysubgroups—but
+* **Subgroup-Set-Discovery** with a set‐QF like `CoverQF` is your best built-in bet.
+* Otherwise, use **sequential covering** or a **custom QF** to penalize selector overlap, or simply **post‐filter** on Jaccard similarity.

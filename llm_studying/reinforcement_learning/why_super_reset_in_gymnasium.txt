@@ -1,0 +1,34 @@
+In Gymnasium (the successor to classic Gym), the base `Env.reset()` does a couple of important things for you:
+
+1. **Seeding**
+   When you call
+
+   ```python
+   obs, info = env.reset(seed=42)
+   ```
+
+   under the hood `super().reset(seed=42)` will take care of initializing the environment’s random number generator(s) with that seed.  If you skip it, your own use of `random.randrange(...)` (or any other RNG inside your env) won’t actually be reproducible.
+
+2. **Wrapper compatibility**
+   If someone wraps your env in one of Gym’s built-in wrappers (e.g. `TimeLimit`, `RecordVideo`, `Monitor`), those wrappers often override `reset()` and do stuff *before* or *after* your `reset()`.  By calling `super().reset(...)` you ensure that the wrapper chain all gets the reset call it needs.
+
+3. **API conformance**
+   The new Gymnasium API requires `reset()` to return `(obs, info)` rather than just `obs`.  The base class handles the empty‐`info` case, so you don’t have to re-implement that boilerplate.
+
+So in short, calling:
+
+```python
+def reset(self, *, seed=None, options=None):
+    super().reset(seed=seed)        # ← seed the RNG and let wrappers hook in
+    self.current = random.randrange(self.n_questions)
+    …
+    return obs, {}
+```
+
+is the recommended pattern to:
+
+1. Wire up seeding properly,
+2. Let any outer wrappers do their work,
+3. Adhere to the Gymnasium `(obs, info)` signature.
+
+If you omit that call, your environment may not behave deterministically under `seed=…`, and wrapped environments might mis-function.

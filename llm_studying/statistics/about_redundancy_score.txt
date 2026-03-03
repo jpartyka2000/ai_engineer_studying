@@ -1,0 +1,61 @@
+## How Redundancy Score is Computed
+
+The code measures how "unique" each feature is by checking how strongly it correlates with other features. Here's the step-by-step process:
+
+### Step 1: Build the correlation matrix
+
+```python
+corr_matrix = X.corr(method="pearson").abs()
+```
+
+Compute Pearson correlation between every pair of features, then take absolute values (so strong negative correlations count the same as strong positive ones).
+
+### Step 2: For each feature, find its maximum correlation with any other feature
+
+```python
+other_corrs = corr_matrix.loc[col].drop(col, errors="ignore")
+max_corr = other_corrs.max()
+```
+
+For feature A, look at its correlations with B, C, D, etc. (excluding itself), and find the highest one.
+
+### Step 3: Convert to a uniqueness score
+
+```python
+scores[col] = 1.0 - max_corr
+```
+
+Subtract from 1 so that:
+- **Low redundancy → high score** (feature is unique)
+- **High redundancy → low score** (feature duplicates another)
+
+## Example
+
+Suppose you have three features with this correlation matrix:
+
+| | A | B | C |
+|--|---|---|---|
+| **A** | 1.0 | 0.9 | 0.2 |
+| **B** | 0.9 | 1.0 | 0.3 |
+| **C** | 0.2 | 0.3 | 1.0 |
+
+**Feature A:**
+- Correlations with others: B=0.9, C=0.2
+- Max = 0.9
+- Redundancy score = 1 - 0.9 = **0.1** (highly redundant with B)
+
+**Feature B:**
+- Correlations with others: A=0.9, C=0.3
+- Max = 0.9
+- Redundancy score = 1 - 0.9 = **0.1** (highly redundant with A)
+
+**Feature C:**
+- Correlations with others: A=0.2, B=0.3
+- Max = 0.3
+- Redundancy score = 1 - 0.3 = **0.7** (relatively unique)
+
+## The intuition
+
+If a feature is highly correlated with *any* other feature, it's potentially redundant—you might not need both. The score identifies features that bring unique information versus those that overlap with something else already in the dataset.
+
+This is useful for feature selection: if you have two features with 0.95 correlation, keeping both adds little value and may cause issues like multicollinearity in linear models.

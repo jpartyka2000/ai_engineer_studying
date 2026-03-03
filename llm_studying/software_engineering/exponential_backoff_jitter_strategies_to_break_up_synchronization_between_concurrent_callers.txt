@@ -1,0 +1,45 @@
+Adding a small random offset (the “jitter”)—even if it’s just 0–1 second—helps break up synchronization between concurrent callers trying the same operation. Here’s why it matters:
+
+1. **Prevent thundering herds**
+   If many coroutines (or even different processes/clients) all hit a failure at the same time and then sleep for exactly the same delays (1 s, 2 s, 4 s, 8 s, …), they’ll retry in lockstep and potentially overwhelm the service again. Even a tiny bit of randomness makes each client’s retry schedule drift apart, smoothing out the overall retry traffic.
+
+2. **Smoothing burstiness**
+   At early retries, a ±1 s jitter is a large fraction of the base delay (e.g. sleep = 1 s → 1–2 s). At later retries it’s relatively small (e.g. sleep = 32 s → 32–33 s), but by then the load on the service has hopefully decreased enough that precise staggering is less critical. Early randomness is most important.
+
+3. **Simple and effective**
+   Adding `random.random()` is one of the simplest “jitter” strategies (sometimes called “full jitter” when you randomize between 0 and the full backoff period). Even using a small additive jitter is better than none, and it’s easy to reason about:
+
+   ```python
+   delay = min(delay * 2, 60.0)       # exponential growth
+   sleep_time = delay + random.random()  # add 0–1 s of jitter
+   await asyncio.sleep(sleep_time)
+   ```
+
+---
+
+### Alternative jitter strategies
+
+* **Full jitter** (random between 0 and `delay`):
+
+  ```python
+  sleep_time = random.uniform(0, delay)
+  ```
+
+  Provides maximum randomness, but can make retries very bunched up at low delays.
+
+* **Decorrelated jitter** (AWS recommendation):
+
+  ```python
+  sleep_time = min(max(base, random.uniform(0, sleep_time * 3)), cap)
+  ```
+
+  Mixes exponential backoff with randomized scaling for even smoother spreads.
+
+* **Proportional jitter** (e.g. ±20%):
+
+  ```python
+  jitter = delay * 0.2
+  sleep_time = random.uniform(delay - jitter, delay + jitter)
+  ```
+
+All of these aim for the same goal: avoid synchronized retries. Even a “small” `random.random()` does meaningful work at the point when your delays are shortest—which is often when the system is most stressed.

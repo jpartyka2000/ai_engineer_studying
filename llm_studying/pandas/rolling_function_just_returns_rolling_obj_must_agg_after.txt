@@ -1,0 +1,26 @@
+No—calling `rolling(window)` by itself **does not** compute any statistic. It gives you a **`Rolling`** object that you can then ask for whatever aggregation you like:
+
+```python
+# this gives you a Rolling object, no numbers yet
+rolling_obj = df['x'].rolling(window=7, min_periods=1)
+```
+
+From there you typically call one of the built-in aggregators:
+
+* `rolling_obj.mean()` → 7-period mean
+* `rolling_obj.sum()`  → 7-period sum
+* `rolling_obj.min()`, `max()`, `std()`, etc.
+* `rolling_obj.aggregate(func)` or `rolling_obj.apply(func)` for custom functions
+
+If you instead do the aggregation via a GroupBy+`transform`, e.g.:
+
+```python
+df['x'].groupby(keys).transform(lambda s: s.rolling(7,1).mean())
+```
+
+then it’s exactly equivalent to calling `.mean()` on your `Rolling`. In every case:
+
+1. **`rolling(...)`** just sets up the window parameters and returns the “window” object.
+2. **You must call** `.mean()`, `.sum()`, `.apply()`, `.aggregate()`, or another method to actually get numbers out.
+
+There is **no “default”** aggregation inside `rolling()` itself—you always explicitly pick which statistic you want.

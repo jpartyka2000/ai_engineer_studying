@@ -1,0 +1,28 @@
+The `imagehash` library computes **perceptual hashes** of images — compact fingerprints that represent visual content rather than raw pixel data. Unlike cryptographic hashes (where a single pixel change produces a completely different hash), perceptual hashes remain similar for visually similar images.
+
+**Core hash types:**
+
+- **aHash (average hash):** Simplest/fastest. Resizes image to 8×8, compares each pixel to the mean. Good for identical images with minor edits.
+- **pHash (perceptual hash):** Uses DCT (discrete cosine transform) on the image. More robust to scaling, compression, and minor color changes. Generally the best default choice.
+- **dHash (difference hash):** Compares adjacent pixel gradients. Fast and good at detecting structural similarity.
+- **wHash (wavelet hash):** Uses wavelet transform. Similar robustness to pHash with different tradeoff characteristics.
+
+**Basic usage:**
+
+```python
+from PIL import Image
+import imagehash
+
+hash1 = imagehash.phash(Image.open("img1.png"))
+hash2 = imagehash.phash(Image.open("img2.png"))
+
+# Hamming distance — 0 means identical, lower = more similar
+distance = hash1 - hash2
+print(distance)  # e.g., 4
+
+# Typical threshold: distance < 10 means "visually similar"
+```
+
+**Common use cases:** duplicate image detection, reverse image search, near-duplicate filtering in datasets, and content-based image deduplication. The hashes are small (typically 64 bits), so you can compare millions of images efficiently by precomputing hashes and doing integer comparisons.
+
+Install with `pip install imagehash` (depends on Pillow, numpy, scipy).

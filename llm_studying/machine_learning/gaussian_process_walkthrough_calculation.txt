@@ -1,0 +1,313 @@
+Below is a **step-by-step** toy example showing how you might carry out *Gaussian Process (GP) regression* with a small data set. We’ll:
+
+1. Define a tiny training set.  
+2. Pick a simple kernel (covariance) function.  
+3. Compute the Gaussian Process posterior mean and variance for a **single new test point**.  
+
+> **Note**: We’ll do all computations explicitly so you can see how each matrix and vector is formed and combined.
+
+---
+
+## **Step 1: Define the Training Data**
+
+Suppose you have **2 training points**:
+
+\[
+\begin{aligned}
+x_1 &= 0, \quad y_1 = 1.0, \\
+x_2 &= 1, \quad y_2 = 0.8.
+\end{aligned}
+\]
+
+We collect them into:
+
+- **Training inputs**: \(\mathbf{X} = (0, 1)\).  
+- **Observed outputs**: \(\mathbf{y} = (1.0,\, 0.8)^\top.\)
+
+We want to predict the function value at a **test point** \(x_* = 0.5\).
+
+---
+
+## **Step 2: Choose a Kernel Function**
+
+We’ll use the **Radial Basis Function (RBF)** or “Gaussian” kernel with **variance** \(\sigma^2 = 1\) and **length scale** \(\ell = 1\). Recall:
+
+\[
+k(x, x') 
+= \exp\!\Bigl(-\frac{(x - x')^2}{2\,\ell^2}\Bigr).
+\]
+
+Since \(\ell = 1\), it simplifies to:
+
+\[
+k(x, x') 
+= \exp\!\Bigl(-\frac{(x - x')^2}{2}\Bigr).
+\]
+
+---
+
+## **Step 3: Build the Covariance Matrix \(\mathbf{K}\)**
+
+The covariance matrix \(\mathbf{K}(\mathbf{X}, \mathbf{X})\) among the training inputs is:
+
+\[
+\mathbf{K} 
+= 
+\begin{pmatrix}
+k(x_1, x_1) & k(x_1, x_2) \\
+k(x_2, x_1) & k(x_2, x_2)
+\end{pmatrix}.
+\]
+
+Substitute \(x_1=0\) and \(x_2=1\):
+
+1. \(k(0, 0) = e^{-((0 - 0)^2 / 2)} = e^0 = 1.\)  
+2. \(k(0, 1) = e^{-((0 - 1)^2 / 2)} = e^{-0.5} \approx 0.60653.\)  
+3. \(k(1, 0) = k(0, 1)\) by symmetry = \(0.60653.\)  
+4. \(k(1, 1) = e^{-((1 - 1)^2 / 2)} = 1.\)
+
+Thus,
+
+\[
+\mathbf{K}(\mathbf{X}, \mathbf{X}) 
+= 
+\begin{pmatrix}
+1.0 & 0.60653 \\
+0.60653 & 1.0
+\end{pmatrix}.
+\]
+
+*(We assume zero observation noise for simplicity; otherwise we’d add \(\sigma_n^2\mathbf{I}\) on the diagonal.)*
+
+---
+
+## **Step 4: Invert the Covariance Matrix**
+
+We’ll need \(\mathbf{K}^{-1}\). For a \(2\times2\) matrix 
+\(\begin{pmatrix} a & b \\ b & a \end{pmatrix}\),
+the determinant is \(a^2 - b^2\). So:
+
+1. \(\det(\mathbf{K}) = 1\cdot 1 - 0.60653 \times 0.60653 \approx 1 - 0.3679 = 0.6321.\)  
+2. The inverse is
+   \[
+   \mathbf{K}^{-1}
+   =
+   \frac{1}{0.6321}
+   \begin{pmatrix}
+   1.0 & -0.60653 \\
+   -0.60653 & 1.0
+   \end{pmatrix}
+   \approx
+   \begin{pmatrix}
+   1.581 & -0.959 \\
+   -0.959 & 1.581
+   \end{pmatrix}.
+   \]
+
+---
+
+## **Step 5: Build the Cross-Covariance Vector \(\mathbf{k}_*(x_*)\)**
+
+For a **test point** \(x_* = 0.5\), we compute its covariance with each training input:
+
+\[
+\mathbf{k}_*(x_*) 
+= 
+\begin{pmatrix}
+k(x_1, x_*) \\
+k(x_2, x_*)
+\end{pmatrix}
+=
+\begin{pmatrix}
+k(0, 0.5) \\
+k(1, 0.5)
+\end{pmatrix}.
+\]
+
+1. \(k(0, 0.5) = e^{-((0-0.5)^2 / 2)} = e^{-0.25/2} = e^{-0.125} \approx 0.8825.\)  
+2. \(k(1, 0.5) = e^{-((1-0.5)^2 / 2)} = e^{-0.25/2} = e^{-0.125} \approx 0.8825.\)
+
+Hence,
+
+\[
+\mathbf{k}_*(0.5)
+\approx
+\begin{pmatrix}
+0.8825 \\
+0.8825
+\end{pmatrix}.
+\]
+
+---
+
+## **Step 6: Posterior Mean**
+
+In a noiseless GP, the **predictive mean** at \(x_*\) is:
+
+\[
+\mu(x_*) 
+= 
+\mathbf{k}_*(x_*)^\top \,\mathbf{K}^{-1}\,\mathbf{y}.
+\]
+
+1. First compute \(\boldsymbol{\alpha} = \mathbf{K}^{-1}\,\mathbf{y}\):
+
+   \[
+   \boldsymbol{\alpha}
+   =
+   \begin{pmatrix}
+   1.581 & -0.959 \\
+   -0.959 & 1.581
+   \end{pmatrix}
+   \begin{pmatrix}
+   1.0 \\
+   0.8
+   \end{pmatrix}
+   =
+   \begin{pmatrix}
+   1.581*1.0 - 0.959*0.8 \\
+   -0.959*1.0 + 1.581*0.8
+   \end{pmatrix}.
+   \]
+   
+   Numerically,
+   \[
+   \boldsymbol{\alpha}
+   \approx
+   \begin{pmatrix}
+   1.581 - 0.7672 \\
+   -0.959 + 1.2648
+   \end{pmatrix}
+   =
+   \begin{pmatrix}
+   0.8138 \\
+   0.3058
+   \end{pmatrix}.
+   \]
+
+2. Then,
+   \[
+   \mu(0.5) 
+   = 
+   \mathbf{k}_*(0.5)^\top \boldsymbol{\alpha}
+   =
+   \begin{pmatrix}0.8825 & 0.8825\end{pmatrix}
+   \begin{pmatrix}0.8138 \\ 0.3058\end{pmatrix}
+   \approx
+   0.8825 \times 0.8138 +\, 0.8825 \times 0.3058 
+   \approx
+   0.7187 + 0.2700 
+   =
+   0.9887.
+   \]
+
+So the GP predicts the function’s **mean** at \(x_* = 0.5\) is around **0.989**.
+
+---
+
+## **Step 7: Posterior Variance**
+
+The **predictive variance** at \(x_*\) (no noise) is given by:
+
+\[
+\sigma^2(x_*) 
+= 
+k(x_*, x_*) \;-\; \mathbf{k}_*(x_*)^\top \,\mathbf{K}^{-1}\,\mathbf{k}_*(x_*).
+\]
+
+- First, \(k(0.5, 0.5) = e^{-((0.5 - 0.5)^2 / 2)} = e^0 = 1.\)  
+- We already have \(\mathbf{k}_*(0.5)\) and \(\mathbf{K}^{-1}\). So:
+
+  1. Compute 
+     \[
+     \mathbf{v}
+     = 
+     \mathbf{K}^{-1}\,\mathbf{k}_*(0.5).
+     \]
+     Numerically:
+     \[
+     \mathbf{v}
+     =
+     \begin{pmatrix}
+     1.581 & -0.959 \\
+     -0.959 & 1.581
+     \end{pmatrix}
+     \begin{pmatrix}
+     0.8825 \\ 
+     0.8825
+     \end{pmatrix}
+     =
+     \begin{pmatrix}
+     1.581 \times 0.8825 - 0.959 \times 0.8825 \\
+     -0.959 \times 0.8825 + 1.581 \times 0.8825
+     \end{pmatrix}.
+     \]
+     Factoring out \(0.8825\):
+     \[
+     \mathbf{v}
+     =
+     0.8825 \times
+     \begin{pmatrix}
+     1.581 - 0.959 \\
+     -0.959 + 1.581
+     \end{pmatrix}
+     =
+     0.8825 \times
+     \begin{pmatrix}
+     0.622 \\
+     0.622
+     \end{pmatrix}
+     \approx
+     \begin{pmatrix}
+     0.549 \\ 
+     0.549
+     \end{pmatrix}.
+     \]
+
+  2. Then,
+     \[
+     \mathbf{k}_*(0.5)^\top\,\mathbf{v}
+     =
+     (0.8825,\; 0.8825)
+     \begin{pmatrix}
+     0.549 \\
+     0.549
+     \end{pmatrix}
+     =
+     0.8825 \times 0.549 + 0.8825 \times 0.549
+     =
+     2 \times 0.8825 \times 0.549
+     \approx 
+     0.969.
+     \]
+
+- Therefore:
+  \[
+  \sigma^2(0.5) 
+  = 
+  1 \;-\; 0.969 
+  = 
+  0.031.
+  \]
+
+Hence, the posterior **variance** at \(x_*\) is \(0.031\), and the standard deviation is about \(\sqrt{0.031} \approx 0.176\).
+
+---
+
+## **Summary of Final GP Prediction**
+
+- **Posterior Mean** at \(x_* = 0.5\): \(\;\approx 0.989\).  
+- **Posterior Variance** at \(x_* = 0.5\): \(\; \approx 0.031 \; (\text{std} \approx 0.176).\)
+
+We see that, according to this mini GP model and the highly correlated training points, the model fairly confidently predicts a value close to **0.99** in between the training points (0,1) with observed outputs 1.0 and 0.8.
+
+---
+
+### Why This Illustrates GP Regression
+
+1. We started with only two observations.  
+2. We modeled them as being drawn from a Gaussian Process with a chosen **kernel** (RBF).  
+3. Using the GP formulas, we found the **posterior distribution** over possible function values at a new location \(x_* = 0.5\).  
+4. We get not only a **mean prediction** (\(\approx 0.99\)) but also an **uncertainty** measure (variance \(= 0.031\))—a core advantage of GPs.
+
+You can expand this approach to more data points, different kernels, noise terms, and multi-dimensional inputs. The basic linear-algebra steps—forming the covariance matrix, inverting it, and using the GP posterior equations—remain the same.

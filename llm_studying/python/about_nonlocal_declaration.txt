@@ -1,0 +1,62 @@
+You need to tell Python that you want to use (and mutate) the **`iter_count`** from the enclosing function, rather than treating it as a new local variable. You can do that with a `nonlocal` declaration. For example:
+
+```python
+def optimize_feature_subsets(
+    df: pd.DataFrame,
+    predictors: list[str],
+    target_col: str,
+    estimator,
+    cv: int = 5,
+    scoring: str = 'neg_log_loss',
+    n_calls: int = 20,
+    k: int = 11,
+    random_state: int = 42
+):
+    X = df[predictors]
+    y = df[target_col]
+
+    # drop target from X if it's in predictors
+    X = X.drop(columns=[target_col], errors='ignore')
+
+    # one binary choice per predictor
+    search_space = [Categorical([0, 1], name=feat) for feat in predictors]
+
+    iter_count = 0
+
+    def objective(mask: list[int]):
+        nonlocal iter_count      # ← allow modification of the outer `iter_count`
+        iter_count += 1
+        print(f"Iteration {iter_count} has begun!")
+        print('----------')
+
+        # enforce exactly k features
+        if sum(mask) != k:
+            return 1.0
+
+        selected = [feat for feat, flag in zip(predictors, mask) if flag]
+        print(f"k={k}, selected={selected}")
+
+        # call your test routine (which should return logloss or whatever you're minimizing)
+        score = test_model("lightgbm", X[selected], y, estimator, verbose=True)
+
+        return score
+
+    res = gp_minimize(
+        func=objective,
+        dimensions=search_space,
+        n_calls=n_calls,
+        random_state=random_state
+    )
+
+    best_mask     = res.x
+    best_features = [feat for feat, flag in zip(predictors, best_mask) if flag]
+    best_score    = -res.fun
+
+    return best_features, best_score, res
+```
+
+### Key points
+
+* **`nonlocal iter_count`** inside `objective()` tells Python “when I do `iter_count += 1`, I mean the `iter_count` defined in the outer function, not a brand‑new local.”
+* You must place the `nonlocal` statement **before** you first read or write `iter_count`.
+* Now each call to `objective()` will bump your counter and print the correct iteration number.

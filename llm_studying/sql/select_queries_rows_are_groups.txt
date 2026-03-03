@@ -1,0 +1,91 @@
+In SQL, there are certain types of **`SELECT` queries** where each row in the result set corresponds to a **group** rather than individual records from the table. These are generally associated with **grouping** and **aggregation** operations. Below is a list of such query types and an explanation:
+
+---
+
+### **1. `GROUP BY` Queries**
+- **Description**: Rows in the result represent groups of data, aggregated by one or more columns.
+- **Example**:
+  ```sql
+  SELECT department_id, COUNT(*) AS employee_count
+  FROM employees
+  GROUP BY department_id;
+  ```
+  - **Result**: Each row represents a group (e.g., one row per department).
+
+---
+
+### **2. `GROUP BY ... WITH ROLLUP` Queries**
+- **Description**: Produces group totals and subtotals, adding rows for aggregated values of higher-level groups.
+- **Example**:
+  ```sql
+  SELECT department_id, job_id, SUM(salary) AS total_salary
+  FROM employees
+  GROUP BY department_id, job_id WITH ROLLUP;
+  ```
+  - **Result**: Rows represent individual groups, subtotals, and a grand total.
+
+---
+
+### **3. `GROUP BY ... WITH CUBE` Queries (if supported)**
+- **Description**: Extends grouping to include all possible combinations of the columns, producing subtotals across multiple dimensions.
+- **Example**:
+  ```sql
+  SELECT department_id, job_id, SUM(salary) AS total_salary
+  FROM employees
+  GROUP BY department_id, job_id WITH CUBE;
+  ```
+  - **Result**: Rows represent all combinations of grouped dimensions, subtotals, and a grand total.
+
+---
+
+### **4. Window Functions with Partitioning**
+- **Description**: Although not strictly a `GROUP BY`, window functions use **`PARTITION BY`** to group rows while retaining individual rows in the result. Each "group" exists as part of the partition.
+- **Example**:
+  ```sql
+  SELECT department_id, employee_id, SUM(salary) OVER (PARTITION BY department_id) AS total_department_salary
+  FROM employees;
+  ```
+  - **Result**: While each row corresponds to an individual record, the `PARTITION BY` groups records for computation.
+
+---
+
+### **5. Aggregate Queries Without Explicit `GROUP BY`**
+- **Description**: If no explicit **`GROUP BY`** is provided, the entire table is treated as a single group.
+- **Example**:
+  ```sql
+  SELECT COUNT(*) AS total_employees
+  FROM employees;
+  ```
+  - **Result**: A single row representing the aggregation of all rows.
+
+---
+
+### **6. `HAVING` with `GROUP BY` Queries**
+- **Description**: Used to filter groups created by `GROUP BY`, ensuring only certain groups appear in the output.
+- **Example**:
+  ```sql
+  SELECT department_id, COUNT(*) AS employee_count
+  FROM employees
+  GROUP BY department_id
+  HAVING COUNT(*) > 10;
+  ```
+  - **Result**: Each row corresponds to a group that satisfies the `HAVING` condition.
+
+---
+
+### **7. Pivot Queries**
+- **Description**: Used to transform grouped rows into columns, where each row still represents a distinct group.
+- **Example** (depending on SQL dialect):
+  ```sql
+  SELECT department_id, 
+         SUM(CASE WHEN job_id = 'HR' THEN salary END) AS hr_salary,
+         SUM(CASE WHEN job_id = 'ENG' THEN salary END) AS eng_salary
+  FROM employees
+  GROUP BY department_id;
+  ```
+  - **Result**: Each row corresponds to a department (group), with additional columns for aggregated values.
+
+---
+
+### Summary
+The common thread in these types of queries is that each row in the output represents a **group** of rows from the original table, created using **aggregation** or **partitioning** logic. The most common type is the `GROUP BY` query, but advanced features like `WITH ROLLUP`, `WITH CUBE`, and `PARTITION BY` allow more flexible grouping and aggregation.

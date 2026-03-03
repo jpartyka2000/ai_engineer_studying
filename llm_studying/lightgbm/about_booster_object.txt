@@ -1,0 +1,116 @@
+In the scikit-learn API, `LGBMClassifier` or `LGBMRegressor` wraps a native LightGBM “Booster” object under the hood. Once you’ve called `.fit(...)`, you can access:
+
+```python
+booster = model.booster_
+```
+
+`booster` is an instance of `lightgbm.basic.Booster`.  Here’s what you can do with it:
+
+---
+
+## 1. Inspect the training‐time parameters
+
+These are the exact parameters that LightGBM used during training (including defaults you didn’t explicitly set):
+
+```python
+# returns a dict of all parameters passed to the native train() call
+print(booster.params)
+```
+
+Typical keys include
+
+* `"boosting_type"`, `"objective"`, `"learning_rate"`, `"num_leaves"`, `"max_bin"`,
+* `"feature_fraction"`, `"bagging_fraction"`, `"lambda_l1"`, `"lambda_l2"`, etc.
+
+---
+
+## 2. Query the number of boosting iterations (trees)
+
+If you used early‐stopping, you often don’t train all `n_estimators`:
+
+```python
+print("Best iteration:", booster.best_iteration)       # the early‐stop point
+print("Total trees:", booster.num_trees())             # same as best_iteration if stopped
+```
+
+---
+
+## 3. Dump the full model structure
+
+You can serialize the entire model (tree structures, split thresholds, leaf values) to JSON:
+
+```python
+model_dict = booster.dump_model()
+# model_dict is a nested dict with "tree_info" → list of trees, each with splits/leaves
+```
+
+This is what gets served if you do `booster.save_model("model.txt", format="json")` or use MLflow’s native save.
+
+---
+
+## 4. Retrieve feature names & importances
+
+Once you’ve fit the model, you can see which features were most important:
+
+```python
+# names of all features in the order LightGBM used them:
+feat_names = booster.feature_name()
+
+# two common importance types: "split" (frequency) or "gain" (total information gain)
+imp_gain  = booster.feature_importance(importance_type="gain")
+imp_split = booster.feature_importance(importance_type="split")
+
+# pair them up
+for name, g, s in zip(feat_names, imp_gain, imp_split):
+    print(f"{name:20s} gain={g:8.2f}  split={s:6d}")
+```
+
+---
+
+## 5. Other useful Booster methods
+
+* **`booster.current_iteration()`**
+  Returns how many boosting rounds have been performed so far (useful in incremental training).
+
+* **`booster.model_to_string()`**
+  Get a string representation of the model in LightGBM’s native text format.
+
+* **`booster.save_model(path)`**
+  Write out a binary model file you can reload later with `Booster(model_file=path)`.
+
+* **`booster.predict(data, raw_score=False, num_iteration=None)`**
+  You can also call the native `predict` on `booster`, bypassing the sklearn wrapper, and pass `num_iteration="best"` to use the best iteration found by early stopping.
+
+---
+
+### Putting it all together
+
+```python
+from lightgbm import LGBMClassifier
+
+# 1) train
+model = LGBMClassifier(n_estimators=1000, learning_rate=0.05, random_state=42)
+model.fit(X_train, y_train,
+          eval_set=[(X_val, y_val)],
+          early_stopping_rounds=50,
+          verbose=False)
+
+# 2) grab the booster
+booster = model.booster_
+
+# 3) print the exact params used
+print("Params:", booster.params)
+
+# 4) number of trees
+print("Best iteration:", booster.best_iteration)
+
+# 5) feature importance
+fnames = booster.feature_name()
+importance = booster.feature_importance(importance_type="gain")
+print(sorted(zip(fnames, importance), key=lambda x: -x[1])[:10])
+
+# 6) inspect model JSON
+model_json = booster.dump_model()
+```
+
+By digging into `booster_` you get full visibility into exactly how LightGBM trained your model: the hyperparameters, the early‐stopping result, the tree structures, and the feature rankings.

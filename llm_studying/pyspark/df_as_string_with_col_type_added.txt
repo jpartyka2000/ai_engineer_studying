@@ -1,0 +1,84 @@
+Yes, it is possible in PySpark to output a DataFrame as a JSON string and include type information for each column. You can achieve this by combining the schema of the DataFrame (which contains type information) with its data.
+
+Here's how you can do it:
+
+### Code Example
+
+```python
+from pyspark.sql import SparkSession
+import json
+
+# Create a Spark session
+spark = SparkSession.builder.appName("DataFrameToJSONWithSchema").getOrCreate()
+
+# Example DataFrame
+data = [(1, "Alice", 23.5), (2, "Bob", 45.2)]
+columns = ["id", "name", "score"]
+df = spark.createDataFrame(data, columns)
+
+# Extract schema and data
+schema = [{"name": field.name, "type": str(field.dataType)} for field in df.schema.fields]
+data = df.collect()  # Collect DataFrame rows to the driver
+
+# Combine schema and data into a JSON-friendly format
+result = {
+    "schema": schema,
+    "data": [row.asDict() for row in data]
+}
+
+# Convert to JSON string
+json_output = json.dumps(result, indent=2)
+
+# Print the JSON string
+print(json_output)
+```
+
+### Output Example
+For the above code, the JSON string will look like this:
+```json
+{
+  "schema": [
+    {
+      "name": "id",
+      "type": "IntegerType"
+    },
+    {
+      "name": "name",
+      "type": "StringType"
+    },
+    {
+      "name": "score",
+      "type": "DoubleType"
+    }
+  ],
+  "data": [
+    {
+      "id": 1,
+      "name": "Alice",
+      "score": 23.5
+    },
+    {
+      "id": 2,
+      "name": "Bob",
+      "score": 45.2
+    }
+  ]
+}
+```
+
+### Explanation:
+1. **Schema Extraction**:
+   - The `df.schema.fields` provides a list of column metadata.
+   - Each field has attributes such as `name` and `dataType`.
+
+2. **Data Extraction**:
+   - The `df.collect()` retrieves all rows of the DataFrame as a list of Row objects.
+   - Each `Row` is converted to a dictionary using `asDict()` for JSON serialization.
+
+3. **Combine Schema and Data**:
+   - Combine the schema and data into a single dictionary structure.
+
+4. **Convert to JSON**:
+   - Use Python's `json.dumps()` to serialize the dictionary into a JSON string.
+
+This approach ensures that the JSON string contains both the data and the type information for each column.

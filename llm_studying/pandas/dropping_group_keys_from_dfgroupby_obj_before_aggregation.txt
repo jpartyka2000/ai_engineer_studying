@@ -1,0 +1,59 @@
+You can’t directly “pop” groups off a `GroupBy` object, but there are a few idiomatic ways to exclude certain group‐keys before you do aggregation:
+
+---
+
+### 1) Filter your DataFrame **before** grouping
+
+```python
+bad_keys = {('A',2020), ('B',2021)}   # whatever keys you want to drop
+
+# if you grouped on two cols, your key is a tuple
+df2 = df[~df.set_index(['colA','colB']).index.isin(bad_keys)]
+
+result = (
+    df2
+      .groupby(['colA','colB'])
+      .agg(…)
+)
+```
+
+This way only the “good” rows ever enter the grouping.
+
+---
+
+### 2) Use `groupby.filter()` to drop whole groups
+
+`.filter()` takes a function that sees each sub‐DataFrame and keeps it if the function returns True:
+
+```python
+bad_keys = {('A',2020), ('B',2021)}
+
+df2 = (
+    df
+      .groupby(['colA','colB'])
+      .filter(lambda grp: grp.name not in bad_keys)
+)
+
+result = df2.groupby(['colA','colB']).agg(…)
+```
+
+Here `grp.name` is the group‐key (either a scalar or a tuple), so any group whose name is in `bad_keys` gets dropped.
+
+---
+
+### 3) Drop keys **after** aggregating
+
+If you only have a few keys to exclude, you can just do your agg and then `.drop` those rows from the result:
+
+```python
+agg = df.groupby(['colA','colB']).agg({'val':'sum'})
+# agg is a DataFrame with a MultiIndex of (colA,colB)
+agg = agg.drop(index=list(bad_keys))
+```
+
+---
+
+**Pick the one that best fits your workflow**:
+
+* If you want the excluded groups gone before any heavy work, use approach 1 or 2.
+* If you only know which keys to drop after seeing the aggregated result, approach 3 is easiest.

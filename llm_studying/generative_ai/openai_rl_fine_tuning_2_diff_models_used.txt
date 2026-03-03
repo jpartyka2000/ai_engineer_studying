@@ -1,0 +1,25 @@
+The two settings aren’t in competition—they control different parts of the process:
+
+1. **UI “Model”** (e.g. `o4-mini-2025-04-16`)
+
+   * This is the **policy model** your RL-FT job will fine-tune. It governs which LLM’s weights get updated during training and which model is actually deployed afterwards.
+
+2. **`model` inside your `score_model` grader**
+
+   * This tells the Eval service **which model to call when scoring** each sample (i.e. computing the “explanation” sub-score in your multi-grader).
+   * It has **no impact** on the policy training loop itself—it only affects your reward computation.
+
+---
+
+### What actually happens
+
+* During each training iteration, OpenAI:
+
+  1. **Samples** a completion from your **policy** (the UI-selected base model).
+  2. **Grades** that completion by invoking your multi-grader:
+
+     * For the `string_check` part, no model call is needed.
+     * For the `score_model` part, it calls the **grader.model** you specified to score the explanation.
+  3. **Aggregates** those scores into a reward signal and updates the policy model’s weights.
+
+So you’ll end up with an RL-fine-tuned `o4-mini-2025-04-16` policy, but your grading might be powered by, say, `gpt-4o-2024-08-06` under the hood if that’s what you put in your grader definition.

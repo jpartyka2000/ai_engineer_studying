@@ -1,0 +1,116 @@
+Yes, Databricks **vector search index** can be used directly in SQL without the need to load the entire Delta table into a DataFrame. This allows for efficient vector similarity search, especially for large datasets, by leveraging the indexing and query optimization provided by the vector search feature in Databricks.
+
+Here’s how you can achieve this:
+
+---
+
+### **1. Store Data with Embeddings in a Delta Table**
+Ensure your Delta table includes a column for embeddings (type `VECTOR`). This is necessary for creating and using a vector search index.
+
+#### Example: Create a Table with Text and Embeddings
+```sql
+CREATE TABLE questions_with_embeddings (
+    id STRING,
+    question STRING,
+    embedding VECTOR(768)  -- Assuming embeddings are 768-dimensional
+)
+USING DELTA;
+
+-- Insert sample data with embeddings
+INSERT INTO questions_with_embeddings
+VALUES
+('q1', 'What is the capital of France?', array(0.1, 0.2, 0.3, ..., 0.99)),
+('q2', 'How to make a pizza?', array(0.2, 0.1, 0.4, ..., 0.88)),
+('q3', 'What is the weather today?', array(0.05, 0.23, 0.37, ..., 0.91));
+```
+
+---
+
+### **2. Create a Vector Search Index**
+Once the Delta table has embeddings, create a vector search index for efficient similarity search.
+
+#### Create the Vector Index:
+```sql
+CREATE INDEX questions_index
+ON TABLE questions_with_embeddings (embedding)
+AS 'VECTOR';
+```
+
+This indexes the `embedding` column, enabling fast similarity-based retrieval.
+
+---
+
+### **3. Query the Vector Search Index**
+Use SQL to perform a similarity search. The user query’s embedding can be passed directly to the query as an array.
+
+#### Example: Find the Most Similar Question
+If the embedding of the user query (e.g., `"Tell me about Paris"`) is `[0.1, 0.23, 0.21, ..., 0.91]`, you can query the indexed table directly:
+
+```sql
+WITH user_query AS (
+    SELECT array(0.1, 0.23, 0.21, ..., 0.91) AS embedding
+)
+
+SELECT id, question, cosine_similarity(user_query.embedding, embedding) AS similarity
+FROM questions_with_embeddings
+ORDER BY similarity DESC
+LIMIT 1;
+```
+
+---
+
+### **Explanation**
+1. **`VECTOR` Type**: The `embedding` column stores vectors using the `VECTOR` type, enabling vector-based operations.
+2. **Index Usage**: The `questions_index` vector search index ensures efficient retrieval of the most similar rows based on cosine similarity.
+3. **Dynamic Query Embedding**: The user query’s embedding can be dynamically passed in SQL without needing to read or preprocess the entire Delta table in Python.
+
+---
+
+### **4. Automating Query Embedding Generation**
+To generate the query embedding dynamically in Python and use it in SQL, you can:
+
+#### Example:
+```python
+from transformers import AutoTokenizer, AutoModel
+import torch
+
+# Load model and tokenizer
+model_name = "sentence-transformers/all-MiniLM-L6-v2"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModel.from_pretrained(model_name)
+
+# Generate embedding for the user query
+def get_query_embedding(text):
+    inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt")
+    with torch.no_grad():
+        embeddings = model(**inputs).last_hidden_state.mean(dim=1)
+    return embeddings.squeeze().tolist()
+
+# Example user query
+user_query = "Tell me about Paris"
+query_embedding = get_query_embedding(user_query)
+
+# Use the embedding in SQL query
+query = f"""
+WITH user_query AS (
+    SELECT array({', '.join(map(str, query_embedding))}) AS embedding
+)
+SELECT id, question, cosine_similarity(user_query.embedding, embedding) AS similarity
+FROM questions_with_embeddings
+ORDER BY similarity DESC
+LIMIT 1;
+"""
+
+# Execute the query in Databricks
+result = spark.sql(query)
+result.show()
+```
+
+---
+
+### **Advantages of This Approach**
+1. **No Full Table Load**: The Delta table is queried directly via SQL; only the relevant rows are retrieved.
+2. **Efficient Search**: The vector search index optimizes similarity queries.
+3. **Dynamic Embedding**: User query embeddings can be computed in Python and passed to the SQL query seamlessly.
+
+This method ensures scalability and efficiency while leveraging Databricks' vector search capabilities.

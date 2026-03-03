@@ -1,0 +1,54 @@
+Thought for a couple of seconds
+
+
+Yes—before you call `mlflow.register_model(...)`, you must have already written your trained model out to your artifact store (e.g. via `mlflow.sklearn.log_model` or `mlflow.lightgbm.log_model`). The registry itself doesn’t serialize your Python object—it merely creates a pointer (the “model URI”) to an existing artifact.
+
+---
+
+### Why you log first
+
+1. **`log_model`**
+
+   ```python
+   with mlflow.start_run() as run:
+       mlflow.sklearn.log_model(clf, "model")
+       run_id = run.info.run_id
+   ```
+
+   This writes your `clf` object (pickled, plus signature, conda env, etc.) into the run’s artifact directory—under `runs:/{run_id}/model`.
+
+2. **`register_model`**
+
+   ```python
+   model_uri = f"runs:/{run_id}/model"
+   mv = mlflow.register_model(model_uri, "MyModel")
+   ```
+
+   This takes that URI and creates a new entry in the Model Registry.  It does *not* re‑log or re‑serialize the model; it just remembers “MyModel” version X lives at that runs\:/ URI.
+
+If you try to register a URI that doesn’t exist in the artifact store, you’ll get an error.  Likewise, if you never called `log_model` (or otherwise saved your model to disk), there is no artifact for MLflow to register.
+
+---
+
+### Full pattern
+
+```python
+import mlflow
+import mlflow.sklearn
+from mlflow.tracking import MlflowClient
+
+# 1) Train your model
+clf.fit(X_train, y_train)
+
+# 2) Log it to this run’s artifacts
+with mlflow.start_run() as run:
+    mlflow.sklearn.log_model(clf, "model")
+    run_id   = run.info.run_id
+
+# 3) Register that already‐logged artifact
+model_uri = f"runs:/{run_id}/model"
+mv = mlflow.register_model(model_uri, "MyModel")
+# mv.current_stage == "None" until you transition it
+```
+
+Only after step 2 does the path `runs:/{run_id}/model` actually exist—and only then can step 3 succeed in creating a Registry entry.

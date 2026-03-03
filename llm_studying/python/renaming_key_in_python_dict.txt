@@ -1,0 +1,71 @@
+You can’t *rename* a key in-place, but you can achieve the same effect by:
+
+1. **Popping** the old key’s value
+2. **Re-inserting** it under the new key name
+
+Here’s the simplest recipe:
+
+```python
+d = {"old_key": 123, "other": 456}
+
+# 1) pop the value
+value = d.pop("old_key")
+
+# 2) assign it to the new key
+d["new_key"] = value
+
+print(d)  # {'other': 456, 'new_key': 123}
+```
+
+---
+
+### One-liner
+
+If you don’t need to keep the old key:
+
+```python
+d["new_key"] = d.pop("old_key")
+```
+
+---
+
+### For multiple keys or a whole dict
+
+If you need to rename several keys (or do it programmatically), you can build a new dict with a comprehension:
+
+```python
+rename_map = {"old_key": "new_key", "foo": "bar"}
+
+old = {"old_key": 1, "foo": 2, "baz": 3}
+
+new = {
+    (rename_map.get(k) or k): v
+    for k, v in old.items()
+}
+
+print(new)  # {'new_key': 1, 'bar': 2, 'baz': 3}
+```
+
+Here’s what’s happening:
+
+* `rename_map.get(k)` looks up the new name for `k`; if it’s not in the map, it returns `None`.
+* `or k` falls back to the original key if there’s no entry in `rename_map`.
+
+---
+
+### In-place multiple rename
+
+If you really want to mutate the original dict for multiple keys, you can:
+
+```python
+for old_key, new_key in list(rename_map.items()):
+    if old_key in d:
+        d[new_key] = d.pop(old_key)
+```
+
+* We wrap `rename_map.items()` in `list()` so we’re not modifying the dict while iterating it.
+* For each `(old_key, new_key)`, we pop the old and assign to the new.
+
+---
+
+Pick whichever approach makes your code clearer!

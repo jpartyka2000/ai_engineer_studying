@@ -1,0 +1,173 @@
+The **`F.when()`** method in PySpark is a powerful function used to create **conditional expressions**. It allows you to apply **if-else** logic within a DataFrame to generate new columns based on specified conditions. It is particularly useful when you need to create or modify a column based on certain criteria or conditions.
+
+### How **`F.when()`** Works:
+- **`F.when(condition, value)`**: If the `condition` is true for a row, it returns the `value`; otherwise, it returns `null`.
+- You can chain **`F.when()`** with **`F.otherwise(value)`** to provide an alternative value when the condition is not met.
+  
+### Syntax:
+```python
+from pyspark.sql import functions as F
+
+F.when(condition, value).otherwise(alternative_value)
+```
+
+### Common Use Cases for **`F.when()`**:
+1. **Creating new columns based on conditions.**
+2. **Assigning different values based on specific ranges or categories.**
+3. **Handling null values or missing data.**
+
+### Example of **`F.when()`**:
+Let’s look at some simple examples to illustrate how **`F.when()`** is used.
+
+#### 1. **Basic Example**: Categorizing Age Groups
+
+```python
+from pyspark.sql import SparkSession, functions as F
+
+# Create a sample DataFrame
+spark = SparkSession.builder.getOrCreate()
+data = [(1, "John", 28), (2, "Jane", 22), (3, "Doe", None)]
+df = spark.createDataFrame(data, ["id", "name", "age"])
+
+# Use F.when() to create an age group column
+df_with_age_group = df.withColumn(
+    "age_group",
+    F.when(F.col("age") >= 25, "Adult")
+    .otherwise("Young")  # If age is less than 25, assign "Young"
+)
+
+df_with_age_group.show()
+```
+
+### Output:
+```
++---+----+----+---------+
+| id|name| age|age_group|
++---+----+----+---------+
+|  1|John|  28|    Adult|
+|  2|Jane|  22|    Young|
+|  3| Doe|null|     null|
++---+----+----+---------+
+```
+
+In this example:
+- If the `age` is 25 or above, the `age_group` is classified as `"Adult"`.
+- If the `age` is below 25, the `age_group` is classified as `"Young"`.
+- For rows where `age` is `null`, the `age_group` column returns `null` because we did not specify a fallback value for `null` values.
+
+#### 2. **Chaining Multiple Conditions**: Assigning Grades Based on Scores
+
+You can chain multiple **`F.when()`** conditions to handle more complex cases.
+
+```python
+# Sample data with scores
+data = [(1, "John", 85), (2, "Jane", 40), (3, "Doe", 70), (4, "Sam", 55)]
+df = spark.createDataFrame(data, ["id", "name", "score"])
+
+# Use F.when() to assign grades based on score ranges
+df_with_grades = df.withColumn(
+    "grade",
+    F.when(F.col("score") >= 80, "A")
+    .when(F.col("score") >= 60, "B")  # Between 60 and 79, assign "B"
+    .when(F.col("score") >= 50, "C")  # Between 50 and 59, assign "C"
+    .otherwise("F")  # Below 50, assign "F"
+)
+
+df_with_grades.show()
+```
+
+### Output:
+```
++---+----+-----+-----+
+| id|name|score|grade|
++---+----+-----+-----+
+|  1|John|   85|    A|
+|  2|Jane|   40|    F|
+|  3|Doe |   70|    B|
+|  4|Sam |   55|    C|
++---+----+-----+-----+
+```
+
+In this example:
+- **`F.when(F.col("score") >= 80, "A")`**: If the score is 80 or above, assign grade "A".
+- **`F.when(F.col("score") >= 60, "B")`**: If the score is between 60 and 79, assign grade "B".
+- **`F.when(F.col("score") >= 50, "C")`**: If the score is between 50 and 59, assign grade "C".
+- **`.otherwise("F")`**: If the score is below 50, assign grade "F".
+
+#### 3. **Handling Null Values**: Defaulting Values When `null`
+
+**`F.when()`** can also be used to handle `null` values, such as defaulting to a specific value if a column has missing data.
+
+```python
+# Sample data with possible null values
+data = [(1, "John", 28), (2, "Jane", None), (3, "Doe", 30)]
+df = spark.createDataFrame(data, ["id", "name", "age"])
+
+# Use F.when() to handle null values in the "age" column
+df_with_default_age = df.withColumn(
+    "age_with_default",
+    F.when(F.col("age").isNull(), 25)  # If age is null, assign 25
+    .otherwise(F.col("age"))  # Otherwise, keep the original age
+)
+
+df_with_default_age.show()
+```
+
+### Output:
+```
++---+----+----+--------------+
+| id|name| age|age_with_default|
++---+----+----+--------------+
+|  1|John|  28|             28|
+|  2|Jane|null|             25|
+|  3|Doe |  30|             30|
++---+----+----+--------------+
+```
+
+In this example:
+- **`F.when(F.col("age").isNull(), 25)`**: If `age` is `null`, it assigns a default value of 25.
+- **`.otherwise(F.col("age"))`**: If `age` is not `null`, it keeps the original value.
+
+#### 4. **Combining Conditions Using Logical Operators**
+
+You can combine conditions using logical operators like **`&`** (AND) and **`|`** (OR).
+
+```python
+# Sample data
+data = [(1, "John", 85, "M"), (2, "Jane", 40, "F"), (3, "Doe", 70, "M"), (4, "Sam", 55, "F")]
+df = spark.createDataFrame(data, ["id", "name", "score", "gender"])
+
+# Use F.when() with logical operators to assign custom labels
+df_with_custom_labels = df.withColumn(
+    "label",
+    F.when((F.col("score") >= 80) & (F.col("gender") == "M"), "High-performing Male")
+    .when((F.col("score") >= 80) & (F.col("gender") == "F"), "High-performing Female")
+    .otherwise("Other")
+)
+
+df_with_custom_labels.show()
+```
+
+### Output:
+```
++---+----+-----+------+------------------+
+| id|name|score|gender|             label|
++---+----+-----+------+------------------+
+|  1|John|   85|     M|High-performing Male|
+|  2|Jane|   40|     F|             Other|
+|  3|Doe |   70|     M|             Other|
+|  4|Sam |   55|     F|             Other|
++---+----+-----+------+------------------+
+```
+
+In this example:
+- **`(F.col("score") >= 80) & (F.col("gender") == "M")`**: This condition checks if the `score` is 80 or above and the `gender` is "M" (male).
+- **`.otherwise("Other")`**: For all other cases, it assigns the label `"Other"`.
+
+### Summary:
+- **`F.when()`** allows you to apply conditional logic on DataFrame columns.
+- You can chain multiple **`F.when()`** statements together to handle multiple conditions.
+- **`F.otherwise()`** is used to provide a fallback value if none of the conditions in **`F.when()`** are met.
+- It’s very useful for creating new columns based on existing data, handling nulls, and categorizing data.
+
+With **`F.when()`**, you can handle complex logic and create derived columns efficiently in PySpark DataFrames.

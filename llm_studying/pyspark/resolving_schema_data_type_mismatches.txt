@@ -1,0 +1,35 @@
+This error usually indicates a schema mismatch for the column `'is_closed_won'` between your DataFrame and the existing Delta table. In other words, even though the column name is the same, its data type or metadata (such as nullability) differs. For example, your DataFrame might have `'is_closed_won'` as a long (or bigint) while the Delta table expects it as an int.
+
+To resolve this, you need to ensure that the data type in your DataFrame exactly matches the one in your Delta table before writing. For instance, if your Delta table defines `'is_closed_won'` as an int, you can cast the column in your DataFrame like so:
+
+```python
+from pyspark.sql import functions as F
+
+df = df.withColumn("is_closed_won", F.col("is_closed_won").cast("int"))
+```
+
+After making sure that the schema (including data types and other properties) matches, you should be able to overwrite the table without encountering the merge error.
+
+**Steps to Debug and Fix:**
+
+1. **Inspect the Schemas:**  
+   Check the schema of your existing Delta table and your DataFrame:
+   ```python
+   spark.table("your_table_name").printSchema()
+   df.printSchema()
+   ```
+   Compare the type for `'is_closed_won'` in both.
+
+2. **Cast the Column:**  
+   If they differ, cast the column in your DataFrame to the correct type:
+   ```python
+   df = df.withColumn("is_closed_won", F.col("is_closed_won").cast("int"))
+   ```
+
+3. **Write with Correct Schema:**  
+   Then write your DataFrame:
+   ```python
+   df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable("your_table_name")
+   ```
+
+This should fix the issue by ensuring that the column definitions are compatible during the schema merge.

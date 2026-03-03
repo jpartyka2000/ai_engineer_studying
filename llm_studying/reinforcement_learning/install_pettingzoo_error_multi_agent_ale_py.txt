@@ -1,0 +1,71 @@
+The error
+
+> Could not build wheels for multi\_agent\_ale\_py, which is required to install pyproject.toml‑based projects
+
+happens because the Atari back‑end (the Multi‑Agent Arcade Learning Environment) ships only as a source distribution, so **pip** needs to compile it locally. To succeed you must first satisfy its native build‑tool and library dependencies.
+
+---
+
+## 1. Install system build tools
+
+### On Debian/Ubuntu‑based Linux
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake swig libsdl2-dev zlib1g-dev
+```
+
+* **`build-essential`** provides `g++` etc.
+* **`cmake`** is used by the ALE build system.
+* **`swig`** generates Python bindings.
+* **`libsdl2-dev`**, **`zlib1g-dev`** are required by the emulator core.
+
+### On macOS
+
+```bash
+brew update
+brew install cmake swig sdl2
+```
+
+---
+
+## 2. (Optionally) pre‑install the Atari package
+
+After installing the system dependencies, you can try installing the ALE Python package on its own:
+
+```bash
+pip install multi-agent-ale-py   # the underlying Atari environment
+pip install pygame               # req’d by PettingZoo’s atari family
+```
+
+If that step succeeds (you see “Successfully built multi\_agent\_ale\_py”), you’re good to go.
+
+---
+
+## 3. Install PettingZoo’s Atari extras
+
+Finally, with the native build dependencies in place, run:
+
+```bash
+pip install "pettingzoo[atari]"
+```
+
+This will pull in `multi_agent_ale_py>=0.1.11` and `pygame>=2.3.0` as documented ([GitHub][1]) and install the PettingZoo Atari environments ([PettingZoo][2]).
+
+---
+
+### 4. If you still hit errors
+
+* **Check your Python version**: PettingZoo requires Python 3.9–3.12.
+* **Use a fresh virtual environment** to avoid conflicting wheels.
+* **Inspect the full build log** for missing headers (e.g. `Python.h` means you need `python3-dev`).
+* As a last resort, use **Conda‑Forge** where many of these native deps come pre‑built:
+
+  ```bash
+  conda install -c conda-forge pettingzoo multi-agent-ale-py pygame
+  ```
+
+Once `multi_agent_ale_py` builds successfully, `pip install 'pettingzoo[atari]'` will complete without that wheel‑build error. Good luck!
+
+[1]: https://github.com/Farama-Foundation/PettingZoo/blob/master/pyproject.toml?utm_source=chatgpt.com "PettingZoo/pyproject.toml at master · Farama-Foundation ... - GitHub"
+[2]: https://pettingzoo.farama.org/environments/atari/?utm_source=chatgpt.com "Atari - PettingZoo Documentation"

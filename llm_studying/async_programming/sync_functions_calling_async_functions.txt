@@ -1,0 +1,396 @@
+# Sync Functions Calling Async Functions: A Complete Guide
+
+One of the most common challenges in Python async programming is when you need to call an async function from regular (synchronous) code. This happens more often than you might think, and understanding how to bridge these two worlds is crucial.
+
+## The Problem: Two Different Worlds
+
+When you have an async function, it doesn't actually run when called - it returns a coroutine object that needs an event loop to execute:
+
+```python
+async def fetch_data():
+    await asyncio.sleep(1)
+    return "data"
+
+def sync_function():
+    result = fetch_data()  # ⚠️ This doesn't run the function!
+    print(type(result))  # <class 'coroutine'>
+    print(result)        # <coroutine object fetch_data at 0x...>
+    # Warning: coroutine 'fetch_data' was never awaited
+```
+
+## Solution 1: `asyncio.run()` - The Simple Bridge
+
+The most straightforward way for sync code to call async code is `asyncio.run()`:
+
+```python
+import asyncio
+
+async def async_calculate(x, y):
+    await asyncio.sleep(1)  # Simulate async work
+    return x + y
+
+def sync_caller():
+    # Sync function calling async function
+    result = asyncio.run(async_calculate(5, 3))
+    print(f"Result: {result}")
+    return result
+
+# This works!
+sync_caller()  # Prints: Result: 8
+```
+
+### When to Use `asyncio.run()`
+- ✅ In your main program entry point
+- ✅ In standalone sync functions
+- ✅ In test functions
+- ✅ In scripts and CLI tools
+
+### When NOT to Use `asyncio.run()`
+- ❌ Inside an already running event loop
+- ❌ In Jupyter notebooks (they have their own event loop)
+- ❌ When you need to call multiple async functions repeatedly
+
+## Solution 2: Reusing an Event Loop
+
+If you need to call async functions multiple times, creating a new event loop each time is inefficient:
+
+```python
+import asyncio
+
+class DatabaseClient:
+    def __init__(self):
+        # Create a persistent event loop
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+    
+    async def _async_query(self, sql):
+        await asyncio.sleep(0.1)  # Simulate DB query
+        return f"Results for: {sql}"
+    
+    def query(self, sql):
+        """Sync method that calls async implementation"""
+        return self.loop.run_until_complete(self._async_query(sql))
+    
+    def close(self):
+        self.loop.close()
+
+# Usage
+db = DatabaseClient()
+print(db.query("SELECT * FROM users"))    # Sync call to async method
+print(db.query("SELECT * FROM products")) # Reuses same event loop
+db.close()
+```
+
+## Solution 3: Thread-Safe Calls from Different Threads
+
+When calling async functions from a different thread than where the event loop runs:
+
+```python
+import asyncio
+import threading
+from concurrent.futures import Future
+
+class AsyncRunner:
+    def __init__(self):
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(target=self._run_loop, daemon=True)
+        self.thread.start()
+    
+    def _run_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+    
+    def run_async(self, coro):
+        """Call async function from any thread"""
+        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        return future.result()  # Blocks until complete
+    
+    def stop(self):
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join()
+
+# Usage
+runner = AsyncRunner()
+
+async def async_work(name):
+    await asyncio.sleep(1)
+    return f"Completed: {name}"
+
+# Call from main thread (sync context)
+result = runner.run_async(async_work("Task 1"))
+print(result)
+
+runner.stop()
+```
+
+## Solution 4: The Hybrid Class Pattern
+
+Create classes that provide both sync and async interfaces:
+
+```python
+import asyncio
+import aiohttp
+import requests
+
+class APIClient:
+    """Client with both sync and async methods"""
+    
+    async def fetch_async(self, url):
+        """Async implementation"""
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.text()
+    
+    def fetch(self, url):
+        """Sync wrapper for async method"""
+        try:
+            # Check if event loop is running
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No loop running, create one
+            return asyncio.run(self.fetch_async(url))
+        else:
+            # Loop exists but we're in sync context
+            # This is tricky - usually means bad design
+            raise RuntimeError(
+                "Cannot call sync method from within async context. "
+                "Use await fetch_async() instead."
+            )
+    
+    # Alternative: Completely separate implementations
+    def fetch_sync_native(self, url):
+        """Pure sync implementation"""
+        response = requests.get(url)
+        return response.text
+
+# Usage
+client = APIClient()
+
+# From sync code
+data = client.fetch("https://api.example.com/data")
+
+# From async code
+async def async_usage():
+    data = await client.fetch_async("https://api.example.com/data")
+    return data
+```
+
+## Solution 5: Dealing with Jupyter/IPython
+
+Jupyter notebooks already have a running event loop, which makes `asyncio.run()` fail:
+
+```python
+# In Jupyter, this fails:
+# asyncio.run(async_function())  # RuntimeError!
+
+# Solution 1: Just await directly (Jupyter supports top-level await)
+await async_function()
+
+# Solution 2: Use nest_asyncio
+import nest_asyncio
+nest_asyncio.apply()
+asyncio.run(async_function())  # Now works!
+
+# Solution 3: Get the existing loop
+loop = asyncio.get_event_loop()
+result = loop.run_until_complete(async_function())
+```
+
+## Real-World Example: Gradual Migration
+
+Here's a pattern for gradually migrating a sync codebase to async:
+
+```python
+import asyncio
+from typing import Optional
+import warnings
+
+class UserService:
+    """Service that's migrating from sync to async"""
+    
+    def __init__(self):
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+    
+    async def get_user_async(self, user_id: int):
+        """New async implementation"""
+        await asyncio.sleep(0.1)  # Simulate async DB call
+        return {"id": user_id, "name": f"User{user_id}"}
+    
+    def get_user(self, user_id: int):
+        """Legacy sync method - wraps async implementation"""
+        warnings.warn(
+            "get_user() is deprecated, use get_user_async() instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        
+        try:
+            # Try to get running loop
+            loop = asyncio.get_running_loop()
+            raise RuntimeError(
+                "Cannot call sync get_user() from async context. "
+                "Use 'await get_user_async()' instead."
+            )
+        except RuntimeError:
+            # No loop running, safe to create one
+            return asyncio.run(self.get_user_async(user_id))
+    
+    async def batch_get_users_async(self, user_ids: list):
+        """Async batch operation"""
+        tasks = [self.get_user_async(uid) for uid in user_ids]
+        return await asyncio.gather(*tasks)
+    
+    def batch_get_users(self, user_ids: list):
+        """Sync wrapper for batch operation"""
+        return asyncio.run(self.batch_get_users_async(user_ids))
+
+# Usage in sync code (legacy)
+service = UserService()
+user = service.get_user(123)  # Shows deprecation warning
+users = service.batch_get_users([1, 2, 3])
+
+# Usage in async code (modern)
+async def modern_code():
+    service = UserService()
+    user = await service.get_user_async(123)
+    users = await service.batch_get_users_async([1, 2, 3])
+    return users
+
+asyncio.run(modern_code())
+```
+
+## Common Pitfalls and Solutions
+
+### Pitfall 1: Nested `asyncio.run()`
+```python
+def sync_function1():
+    return asyncio.run(async_func1())
+
+def sync_function2():
+    result1 = sync_function1()
+    # This works but creates a new event loop each time!
+    result2 = asyncio.run(async_func2())  
+    return result1, result2
+
+# Better: Combine into one async function
+async def combined_async():
+    result1 = await async_func1()
+    result2 = await async_func2()
+    return result1, result2
+
+def sync_function_better():
+    return asyncio.run(combined_async())
+```
+
+### Pitfall 2: Forgotten Event Loop Cleanup
+```python
+# Bad - loop never cleaned up
+def bad_sync_wrapper():
+    loop = asyncio.new_event_loop()
+    return loop.run_until_complete(async_function())
+
+# Good - proper cleanup
+def good_sync_wrapper():
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(async_function())
+    finally:
+        loop.close()
+
+# Best - let asyncio.run() handle it
+def best_sync_wrapper():
+    return asyncio.run(async_function())
+```
+
+### Pitfall 3: Mixing Sync and Async Incorrectly
+```python
+# Problematic: Sync function in the middle of async chain
+async def async_workflow():
+    data = await fetch_data()
+    
+    # This creates a new event loop inside an async function!
+    processed = sync_function_that_calls_async()  # 🚨 Potential issues
+    
+    await save_data(processed)
+
+# Better: Keep everything async
+async def better_async_workflow():
+    data = await fetch_data()
+    processed = await async_process_function()  # Use async version
+    await save_data(processed)
+```
+
+## Performance Considerations
+
+```python
+import time
+import asyncio
+
+async def async_operation():
+    await asyncio.sleep(0.001)
+    return "result"
+
+def benchmark_approaches():
+    iterations = 1000
+    
+    # Approach 1: New event loop each time (SLOW)
+    start = time.time()
+    for _ in range(iterations):
+        asyncio.run(async_operation())
+    print(f"New loop each time: {time.time() - start:.2f}s")
+    
+    # Approach 2: Reuse event loop (FAST)
+    start = time.time()
+    loop = asyncio.new_event_loop()
+    for _ in range(iterations):
+        loop.run_until_complete(async_operation())
+    loop.close()
+    print(f"Reused loop: {time.time() - start:.2f}s")
+
+benchmark_approaches()
+# Output:
+# New loop each time: 3.45s
+# Reused loop: 1.23s
+```
+
+## Decision Tree for Sync→Async Calls
+
+```
+Need to call async from sync?
+│
+├─ Is this the main entry point?
+│  └─ YES → Use asyncio.run()
+│
+├─ Are you in Jupyter/IPython?
+│  └─ YES → Use await directly or nest_asyncio
+│
+├─ Will you call many async functions?
+│  └─ YES → Create and reuse an event loop
+│
+├─ Are you in a different thread?
+│  └─ YES → Use asyncio.run_coroutine_threadsafe()
+│
+└─ Is this a library/framework?
+   └─ YES → Provide both sync and async APIs
+```
+
+## Best Practices
+
+1. **Prefer `asyncio.run()` for simplicity** when calling one-off async functions
+2. **Avoid mixing paradigms** - if you're going async, commit to it
+3. **Provide dual interfaces** when writing libraries that need broad compatibility
+4. **Document clearly** whether methods are sync or async
+5. **Use type hints** to make the distinction clear:
+   ```python
+   from typing import Coroutine
+   
+   def sync_func() -> str:
+       return "sync"
+   
+   async def async_func() -> str:
+       return "async"
+   ```
+
+6. **Consider the context** - web frameworks, testing frameworks, and notebooks all have different event loop requirements
+
+The key insight is that sync→async calls always need an event loop, and the main challenge is managing that loop's lifecycle efficiently and correctly for your use case.

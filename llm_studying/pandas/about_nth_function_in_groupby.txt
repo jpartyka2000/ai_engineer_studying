@@ -1,0 +1,58 @@
+The `GroupBy.nth(n)` method returns the row (or rows, if you pass a list of positions) at position *n* within each group, as a **new DataFrame** (or Series, if you grouped a single column).
+
+– **When you call**
+
+```python
+df.groupby('key').nth(2)
+```
+
+you get a DataFrame consisting of each group’s 3rd row (zero-based index 2).
+
+– **If you call**
+
+```python
+df.groupby('key').nth([0,1,2])
+```
+
+you get each group’s first, second, and third rows concatenated together into one DataFrame.
+
+### Key points
+
+1. **Type**
+
+   * If you grouped the full DataFrame (`df.groupby(...)`), you get a DataFrame back.
+   * If you grouped a single column (`df.groupby(...)[‘col’]`), you get a Series back.
+
+2. **Index**
+
+   * The result is indexed by your grouping key(s). If you had a single grouping column, that becomes the index.
+   * Other original row-indices are lost (unless you reset or preserve them before grouping).
+
+3. **Missing positions**
+
+   * If a group has fewer than *n+1* rows, that group simply doesn’t contribute a row for that position (no error is thrown).
+
+4. **No grouping metadata**
+
+   * The result is no longer a GroupBy object—you can’t call `.transform()` or another `.nth()` on it directly. It’s just the selected slice of the data.
+
+#### Example
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'grp': ['A','A','B','B','B'],
+    'val': [10,20,30,40,50]
+})
+
+# Get the 1st row (position 0) of each group:
+df.groupby('grp').nth(0)
+# -> DataFrame with rows: A→(10), B→(30)
+
+# Get the 1st, 2nd, and 3rd rows (positions 0,1,2) of each group:
+df.groupby('grp').nth([0,1,2]).reset_index()
+# -> A→10,20  ;  B→30,40,50
+```
+
+In short, `.nth(...)` is a quick way to slice out by position within each group and return those rows as a standalone DataFrame/Series.

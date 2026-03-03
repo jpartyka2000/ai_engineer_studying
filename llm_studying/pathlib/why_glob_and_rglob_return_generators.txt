@@ -1,0 +1,93 @@
+═══════════════════════════════════════════════════════════════
+PATHLIB DEEP DIVE: glob() AND rglob() RETURN GENERATORS
+═══════════════════════════════════════════════════════════════
+
+WHAT ARE GENERATORS?
+───────────────────────────────────────────────────────────────
+Generators are lazy iterators — they produce values one at a 
+time, on demand, rather than computing everything upfront and 
+storing it in memory.
+
+WHY DO glob() AND rglob() RETURN GENERATORS?
+───────────────────────────────────────────────────────────────
+Performance and memory efficiency. Imagine searching a directory
+with 100,000 files — loading all matches into a list at once 
+would consume significant memory. Generators let you process 
+files one at a time.
+
+DEMONSTRATION:
+───────────────────────────────────────────────────────────────
+from pathlib import Path
+
+p = Path("/project")
+
+# This returns a GENERATOR, not a list
+result = p.glob("*.py")
+print(type(result))  # <class 'generator'>
+
+# You CANNOT do this with a generator:
+print(len(result))      # TypeError!
+print(result[0])        # TypeError!
+
+# You CAN do these things:
+
+# 1. Iterate directly (most memory-efficient)
+for file in p.glob("*.py"):
+    print(file)
+
+# 2. Convert to list (when you need random access or length)
+files = list(p.glob("*.py"))
+print(len(files))       # Works!
+print(files[0])         # Works!
+
+# 3. Convert to other collections
+file_set = set(p.rglob("*.py"))
+file_tuple = tuple(p.rglob("*.py"))
+
+# 4. Use in comprehensions
+names = [f.name for f in p.rglob("*.py")]
+
+# 5. Use next() to get one item at a time
+gen = p.glob("*.py")
+first = next(gen)       # First match
+second = next(gen)      # Second match
+
+IMPORTANT: GENERATORS ARE EXHAUSTIBLE
+───────────────────────────────────────────────────────────────
+Once you iterate through a generator, it's empty!
+
+gen = p.glob("*.py")
+list1 = list(gen)       # Contains all matches
+list2 = list(gen)       # EMPTY! Generator already exhausted
+
+# If you need to iterate multiple times, either:
+# 1. Convert to list first and reuse the list
+# 2. Call glob() again to get a fresh generator
+
+PRACTICAL PATTERNS:
+───────────────────────────────────────────────────────────────
+# Pattern 1: Process large directories efficiently
+for py_file in Path("/huge/directory").rglob("*.py"):
+    process(py_file)  # Memory-efficient, one file at a time
+
+# Pattern 2: Get count without storing all paths
+count = sum(1 for _ in p.rglob("*.py"))
+
+# Pattern 3: Check if any matches exist
+has_python = any(p.rglob("*.py"))
+
+# Pattern 4: Get first match only
+first_match = next(p.glob("*.py"), None)  # None if no matches
+
+# Pattern 5: Filter while iterating
+large_files = (f for f in p.rglob("*") if f.stat().st_size > 1000)
+
+COMPARISON WITH os.listdir() / os.walk():
+───────────────────────────────────────────────────────────────
+os.listdir()     → Returns a list (all in memory)
+os.walk()        → Returns a generator (lazy)
+Path.glob()      → Returns a generator (lazy)
+Path.rglob()     → Returns a generator (lazy)
+Path.iterdir()   → Returns a generator (lazy)
+
+═══════════════════════════════════════════════════════════════

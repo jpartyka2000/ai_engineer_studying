@@ -1,0 +1,48 @@
+That's where it gets tricky. In a .py file, there are no cells, so everything after `restartPython()` will execute before the restart, then get wiped out — making it essentially useless mid-script.
+
+**Your options:**
+
+1. **Make it the last line of the .py file**
+
+   If you need to restart after some setup (like installing packages), have that be its own .py file that ends with the restart:
+   
+   ```python
+   # setup.py
+   import subprocess
+   subprocess.check_call(["pip", "install", "some-package"])
+   
+   dbutils.library.restartPython()  # Must be last
+   ```
+   
+   Then in your notebook:
+   ```python
+   # Cell 1
+   %run /path/to/setup.py
+   ```
+   ```python
+   # Cell 2
+   %run /path/to/main.py
+   ```
+
+2. **Orchestrate from the notebook**
+
+   Keep `restartPython()` in the notebook and use .py files for your actual logic:
+   
+   ```python
+   # Cell 1
+   %pip install some-package
+   ```
+   ```python
+   # Cell 2
+   dbutils.library.restartPython()
+   ```
+   ```python
+   # Cell 3
+   %run /path/to/your_script.py
+   ```
+
+3. **Use a wrapper notebook**
+
+   If you need everything automated, create a thin orchestration notebook that just handles the restart between .py file runs.
+
+The core issue is that `restartPython()` was designed around the notebook cell execution model. There's no clean way to use it mid-execution in a .py file.

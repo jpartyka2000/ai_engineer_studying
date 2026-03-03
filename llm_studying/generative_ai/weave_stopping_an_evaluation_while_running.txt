@@ -1,0 +1,87 @@
+There's no special "Weave way" to stop an evaluation - you can use standard Python methods:
+
+## Recommended Approaches
+
+### 1. **Keyboard Interrupt (Simplest)**
+Just press `Ctrl+C` in your terminal. This is the cleanest way:
+
+```python
+try:
+    results = await evaluation.evaluate(evaluation_agent, __weave={...})
+except KeyboardInterrupt:
+    print("\n⚠️  Evaluation interrupted by user")
+    return None
+```
+
+### 2. **Conditional Exit in predict()**
+Add logic to stop evaluation based on some condition:
+
+```python
+async def predict(self, customer_id: str, question: str, **kwargs) -> dict:
+    # Check some stop condition
+    if should_stop():
+        raise KeyboardInterrupt("Stopping evaluation")
+    
+    # ... rest of your code
+```
+
+### 3. **Timeout Wrapper**
+Use asyncio timeout if you want automatic stopping after a duration:
+
+```python
+import asyncio
+
+try:
+    results = await asyncio.wait_for(
+        evaluation.evaluate(evaluation_agent, __weave={...}),
+        timeout=300  # 5 minutes
+    )
+except asyncio.TimeoutError:
+    print("⏱️  Evaluation timed out")
+    return None
+```
+
+### 4. **Signal Handling (Advanced)**
+For more graceful shutdown:
+
+```python
+import signal
+import sys
+
+stop_evaluation = False
+
+def signal_handler(sig, frame):
+    global stop_evaluation
+    print("\n⚠️  Stopping evaluation gracefully...")
+    stop_evaluation = True
+
+signal.signal(signal.SIGINT, signal_handler)
+
+# In your predict method:
+async def predict(self, ...):
+    if stop_evaluation:
+        raise KeyboardInterrupt("Evaluation stopped by user")
+    # ... rest of code
+```
+
+## What Happens When You Stop
+
+- **Partial results**: Weave will have logged whatever completed before stopping
+- **UI**: You can still view partial results in the Weave dashboard
+- **No automatic cleanup**: The evaluation won't have a "completed" status
+
+## Best Practice
+
+**Just use `Ctrl+C`** - it's simple, works well, and Weave handles it gracefully. The evaluation will stop, and you'll still be able to see the partial results that completed in the UI.
+
+```python
+async def run_evaluation(config: dict, run_name: str = None):
+    try:
+        results = await evaluation.evaluate(...)
+        return results
+    except KeyboardInterrupt:
+        print("\n⚠️  Evaluation stopped by user. Partial results may be available in Weave UI.")
+        return None
+```
+
+No need for anything more complex unless you have specific requirements!

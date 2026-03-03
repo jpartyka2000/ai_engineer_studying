@@ -1,0 +1,84 @@
+**Creating a MultiIndex by Appending a New Level with `append=True`**
+
+In pandas, you can turn one or more columns into part of your DataFrame’s row index using `.set_index()`. By default, this **replaces** the existing index. If you’d rather **add** a new index level on top of the one you already have, use the `append=True` flag to create a **MultiIndex**.
+
+---
+
+## Basic Usage
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'orig_index': ['a','b','c','d'],
+    'date': pd.date_range('2025-01-01', periods=4, freq='D'),
+    'value': [10,20,30,40]
+})
+
+# By default, set_index replaces the index:
+df1 = df.set_index('date')
+# df1.index is a DatetimeIndex; 'orig_index' is now a column
+
+# Using append=True stacks 'date' below the existing RangeIndex:
+df2 = df.set_index('date', append=True)
+# df2.index is a MultiIndex: level 0 = original RangeIndex, level 1 = date
+```
+
+---
+
+## What Happens Under the Hood
+
+1. **Original index**
+   When you first create `df`, it has a default `RangeIndex(0,1,2,3)`.
+
+2. **`append=True`**
+
+   ```python
+   df2 = df.set_index('date', append=True)
+   ```
+
+   * Level 0 of `df2.index` stays the original `0,1,2,3`.
+   * Level 1 becomes the new `date` values.
+   * The DataFrame’s shape and column set remain unchanged (except that `date` is removed from columns).
+
+3. **Accessing levels**
+
+   ```python
+   df2.index.names
+   # ['orig_index', 'date'] or [None, 'date'] if the original index was unnamed
+
+   df2.index.get_level_values(1)
+   # yields the datetime stamps
+   ```
+
+---
+
+## When to Use
+
+* **Hierarchical lookups**: Quickly slice by combinations of levels:
+
+  ```python
+  df2.loc[(slice(None), '2025-01-03'), :]
+  ```
+* **Pivot-style data**: Represent groups and subgroups in the index without resetting to columns.
+* **Time series plus identifier**: Keep both a business identifier (e.g. store ID) and date in the index for intuitive indexing.
+
+---
+
+## Tips
+
+* You can **append multiple columns** at once:
+
+  ```python
+  df_multi = df.set_index(['date','value'], append=True)
+  ```
+* To **swap** levels:
+
+  ```python
+  df2.swaplevel(0,1).sort_index()
+  ```
+* To **drop** back to a single index, use `reset_index()`.
+
+---
+
+**In summary**, `.set_index(..., append=True)` gives you a clean, two-level (or multi-level) index by tacking the new column(s) on beneath your existing index, enabling powerful hierarchical indexing and slicing.

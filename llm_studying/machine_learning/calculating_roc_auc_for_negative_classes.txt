@@ -1,0 +1,66 @@
+Think of ROC AUC as “the probability that a randomly chosen positive instance is scored higher than a randomly chosen negative one.”  For the **negative** class, you just swap “positive” ↔ “negative”:
+
+1. **Flip the labels**  
+   Define  
+   \[
+     y_{\text{neg}} = 1 - y,
+   \]  
+   so that all the original negatives (y=0) become the “positives” in this flipped problem.
+
+2. **Flip the scores**  
+   Define  
+   \[
+     s_{\text{neg}} = 1 - s_{\text{pos}},
+   \]  
+   where \(s_{\text{pos}}\) is your model’s predicted probability of the original positive class.  Now \(s_{\text{neg}}\) is the model’s implied “score” for the negative class.
+
+3. **Compute AUC on the flipped problem**  
+   ```python
+   roc_auc_neg = roc_auc_score(y_neg, s_neg)
+   # which in code is simply
+   roc_auc_neg = roc_auc_score(1 - y, 1 - y_pred_proba)
+   ```
+
+**Intuitively:**  
+- You’re asking, “What’s the chance that a true negative will get a higher *negative-score* than a true positive?”  
+- That’s exactly the same recipe as for the positive class, just with roles reversed.
+
+Because AUC is symmetric under swapping labels and inverting scores, you’ll actually get the *same* number whether you compute it this way or directly as  
+```python
+roc_auc_score(y, y_pred_proba)
+```  
+—but framing it as “flip labels & flip scores” shows that you’re measuring performance on the negative class in isolation.
+
+------------------------------
+
+Yes—if you literally flip both the labels and the scores as we did, you’ll recover the exact same AUC number.  That’s because ROC AUC for a binary problem is just the probability that a randomly chosen “positive” score exceeds a randomly chosen “negative” score.  When you swap who’s “positive” with who’s “negative,” and also flip \(s\to1-s\), you haven’t changed that probability at all.
+
+---
+
+### A quick intuition
+
+- **Original AUC**  
+  \[
+    \text{AUC}_{\text{pos}}
+    = P\bigl(s(\text{pos}) > s(\text{neg})\bigr).
+  \]
+- **Flipped for negatives**  
+  - Labels: pos ↔ neg, so now “pos” means original negative.  
+  - Scores: \(s_{\text{neg}} = 1 - s_{\text{pos}}\).  
+  Then
+  \[
+    \text{AUC}_{\text{neg}}
+    = P\bigl(s_{\text{neg}}(\text{original neg}) > s_{\text{neg}}(\text{original pos})\bigr)
+    = P\bigl(1 - s(\text{neg}) > 1 - s(\text{pos})\bigr)
+    = P\bigl(s(\text{pos}) > s(\text{neg})\bigr)
+    = \text{AUC}_{\text{pos}}.
+  \]
+
+Because the operation \(x\mapsto1-x\) is just a monotonic inversion and you swap who you call “positive,” the ranking-based AUC is unchanged.
+
+---
+
+### Takeaway
+
+- **You don’t get new information** by computing AUC separately for the negative class in a binary setting—it’ll always match the standard (positive) AUC.  
+- If you want a threshold-independent sense of how well you identify negatives vs. positives *separately*, consider metrics like the **Precision–Recall AUC** (especially for the negative-prior class) or **specificity** at various thresholds.

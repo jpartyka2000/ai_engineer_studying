@@ -1,0 +1,124 @@
+**Sorting a DataFrame by Its Index with `df.sort_index()`**
+
+Pandas’ `.sort_index()` method lets you order your rows (and/or columns) by their index labels. It works seamlessly whether your DataFrame has a simple single‐level `Index` or a hierarchical `MultiIndex`.
+
+---
+
+## 1. Single‐Level Index
+
+### Basic usage
+
+```python
+# Suppose df.index = ['c','a','b']
+df_sorted = df.sort_index()
+```
+
+* **Default**: sorts **rows** by index in ascending order.
+* **Parameters you’ll often use**:
+
+  * `ascending=True|False` → flip to descending order.
+  * `inplace=True|False` → sort the DataFrame in place.
+  * `axis=0|1` → `axis=0` (default) sorts by row index; `axis=1` sorts by column labels.
+
+### Example
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({'x':[1,2,3]}, index=['c','a','b'])
+#    x
+# c  1
+# a  2
+# b  3
+
+df.sort_index()
+#    x
+# a  2
+# b  3
+# c  1
+```
+
+---
+
+## 2. MultiIndex
+
+With a `MultiIndex`, you can choose which levels to sort by and the order in which to apply them.
+
+### Sorting all levels
+
+```python
+# sorts by level 0, then level 1, in ascending order
+df_sorted = df.sort_index()
+```
+
+This is equivalent to:
+
+```python
+df.sort_index(level=list(range(df.index.nlevels)))
+```
+
+### Sorting specific levels
+
+```python
+# only sort by level 1 (leaving level 0’s block order intact)
+df.sort_index(level=1)
+
+# sort level 0 descending, level 1 ascending
+df.sort_index(level=[0,1], ascending=[False, True])
+```
+
+### Example
+
+```python
+arrays = [
+    ['East','East','West','West'],
+    ['2025-02','2025-01','2025-02','2025-01']
+]
+idx = pd.MultiIndex.from_arrays(arrays, names=['region','month'])
+df = pd.DataFrame({'sales':[120,100, 95,90]}, index=idx)
+
+# current order:
+#             sales
+# region month      
+# East   2025-02   120
+#        2025-01   100
+# West   2025-02    95
+#        2025-01    90
+
+# sort by region→month ascending
+df.sort_index()
+#             sales
+# East   2025-01   100
+#        2025-02   120
+# West   2025-01    90
+#        2025-02    95
+
+# sort by month only
+df.sort_index(level='month')
+#             sales
+# East   2025-01   100
+# West   2025-01    90
+# East   2025-02   120
+# West   2025-02    95
+```
+
+---
+
+## 3. Sorting columns
+
+To sort **columns** instead of rows, set `axis=1`:
+
+```python
+df.sort_index(axis=1)
+```
+
+This works identically for single or MultiIndex columns.
+
+---
+
+**Key takeaways**
+
+* **Single‐level**: `.sort_index()` orders by the row labels.
+* **MultiIndex**: you can sort all levels or pick particular ones, with independent ascending/descending flags.
+* **Axis control**: use `axis=1` to sort column labels instead.
+* **In‐place vs. copy**: pass `inplace=True` to modify the DataFrame directly, or leave it out to get a sorted copy.

@@ -1,0 +1,44 @@
+Yes, you can set a default date value that represents "null" while maintaining the date type for your columns. Here's how to do it:
+
+```python
+from pyspark.sql.functions import when, size, array_min, array_max, to_date, lit, col
+import datetime
+
+# Choose a specific date to represent "no purchase" (e.g., 1900-01-01)
+null_date = "1900-01-01"
+
+df_data = df_data.withColumn(
+    "first_purchase_date", 
+    when(size(col("subscription:payment_successful_client_event_times")) > 0, 
+         to_date(array_min(col("subscription:payment_successful_client_event_times")))
+    ).otherwise(to_date(lit(null_date)))
+).withColumn(
+    "last_purchase_date",
+    when(size(col("subscription:payment_successful_client_event_times")) > 0, 
+         to_date(array_max(col("subscription:payment_successful_client_event_times")))
+    ).otherwise(to_date(lit(null_date)))
+)
+```
+
+This approach:
+1. Uses a standard date as a "sentinel value" (commonly 1900-01-01 or 1970-01-01)
+2. Maintains the date type throughout
+3. Allows you to check for "no purchase" with a specific date comparison
+
+Alternatively, you could still use NULL values but ensure the column type is cast to date:
+
+```python
+df_data = df_data.withColumn(
+    "first_purchase_date", 
+    when(size(col("subscription:payment_successful_client_event_times")) > 0, 
+         to_date(array_min(col("subscription:payment_successful_client_event_times")))
+    ).otherwise(lit(None)).cast("date")
+).withColumn(
+    "last_purchase_date",
+    when(size(col("subscription:payment_successful_client_event_times")) > 0, 
+         to_date(array_max(col("subscription:payment_successful_client_event_times")))
+    ).otherwise(lit(None)).cast("date")
+)
+```
+
+The `.cast("date")` ensures the column is of date type even though it may contain null values.

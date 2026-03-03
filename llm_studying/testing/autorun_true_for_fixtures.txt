@@ -1,0 +1,114 @@
+`autouse=True` on a pytest fixture means **“use this fixture automatically”**—every test in its scope gets it without listing it as a parameter.
+
+### Quick example
+
+```python
+# conftest.py (applies to tests under this folder)
+import os
+import pytest
+
+@pytest.fixture(autouse=True)
+def set_test_env(monkeypatch):
+    monkeypatch.setenv("APP_MODE", "test")
+```
+
+All tests now see `APP_MODE=test`—no need to write `def test_x(set_test_env): ...`.
+
+---
+
+### Scope controls where it applies
+
+```python
+@pytest.fixture(scope="function", autouse=True)  # default: each test
+@pytest.fixture(scope="class",    autouse=True)  # once per test class
+@pytest.fixture(scope="module",   autouse=True)  # once per module
+@pytest.fixture(scope="session",  autouse=True)  # once per test session
+```
+
+Put the fixture:
+
+* in **`conftest.py`** to affect a directory subtree,
+* in a **test module** to affect just that file,
+* **inside a test class** to affect only its methods.
+
+---
+
+### Setup/teardown with `yield`
+
+```python
+@pytest.fixture(autouse=True)
+def around_each_test():
+    # setup
+    start_service()
+    yield
+    # teardown
+    stop_service()
+```
+
+---
+
+### Ordering & dependencies
+
+* Autouse fixtures behave as if every test had listed them.
+* If you need ordering, **express it as a dependency**:
+
+  ```python
+  @pytest.fixture(autouse=True)
+  def a(): ...
+
+  @pytest.fixture(autouse=True)
+  def b(a): ...   # a runs before b
+  ```
+* Otherwise, order among same-scope fixtures is not guaranteed.
+
+---
+
+### Parametrized autouse fixtures (powerful but easy to overuse)
+
+You *can* parametrize an autouse fixture:
+
+```python
+@pytest.fixture(autouse=True, params=["v1", "v2"])
+def config_variant(request):
+    use_config(request.param)
+```
+
+This **duplicates tests for each param value** within the fixture’s scope. With wide scope (e.g., `session`), this can explode your test count—use carefully.
+
+---
+
+### When to use autouse
+
+* Global test setup (env vars, temp dirs, logging, seeding RNG).
+* Cross-cutting concerns you truly want everywhere.
+
+### When *not* to use it
+
+* If it hides important test preconditions. Prefer explicit fixtures or `@pytest.mark.usefixtures("name")` on a module/class to keep intent visible.
+
+---
+
+### Limiting/conditionally skipping an autouse fixture
+
+You can make it opt-out with a marker:
+
+```python
+@pytest.fixture(autouse=True)
+def maybe_heavy_setup(request):
+    if request.node.get_closest_marker("no_heavy_setup"):
+        return
+    do_heavy_setup()
+
+@pytest.mark.no_heavy_setup
+def test_fast(): ...
+```
+
+---
+
+### Pro tips
+
+* Give autouse fixtures a **leading underscore** (e.g. `_set_env`) so they’re not suggested in parameter lists.
+* Centralize broad autouse fixtures in **one `conftest.py`** per subtree to avoid surprises.
+* Prefer **narrower scope** than you think—start with `function`.
+
+If you show me what you’re trying to set up globally (env vars, DB, http mocking, etc.), I can sketch the exact autouse fixture (with teardown and scope) for your project.

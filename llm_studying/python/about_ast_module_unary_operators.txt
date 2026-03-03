@@ -1,0 +1,71 @@
+An **`ast.UnaryOp`** node in Python’s AST represents an operation with **exactly one** operand—so things like:
+
+* **Unary minus** (e.g. `-x`)
+* **Unary plus** (e.g. `+x`)
+* **Bitwise inversion** (e.g. `~x`)
+* **Logical NOT** (e.g. `not x`)
+
+It does **not** cover exponentiation (`**`), because exponentiation always has two operands (`base ** exponent`) and so shows up as an **`ast.BinOp`** with `op` of type `ast.Pow`.
+
+---
+
+### Breaking down the code
+
+```python
+elif isinstance(node, ast.UnaryOp):
+    operand = eval_node(node.operand)
+    return allowed_operations[type(node.op)](operand)
+```
+
+1. **`isinstance(node, ast.UnaryOp)`**
+   Checks that this AST node is a unary operation (one of the four above).
+
+2. **`operand = eval_node(node.operand)`**
+   Recursively evaluate whatever is inside (so if you had `- (2 + 3)`, it first evaluates `(2 + 3)`).
+
+3. **`type(node.op)`**
+   `node.op` is itself an AST node object indicating *which* unary operator it is.  Its class will be one of:
+
+   * `ast.UAdd`    (for `+x`)
+   * `ast.USub`    (for `-x`)
+   * `ast.Invert`  (for `~x`)
+   * `ast.Not`     (for `not x`)
+
+4. **`allowed_operations[type(node.op)]`**
+   You’ve set up a dict mapping those AST classes to the actual Python functions that implement them, e.g.:
+
+   ```python
+   import operator
+
+   allowed_operations = {
+       ast.UAdd:    operator.pos,      # +x
+       ast.USub:    operator.neg,      # -x
+       ast.Invert:  operator.invert,   # ~x
+       ast.Not:     operator.not_,     # not x
+   }
+   ```
+
+5. **`(...)(operand)`**
+   Calls that function on the evaluated operand, returning the final result.
+
+---
+
+### What about exponentiation?
+
+* An expression like `2 ** 3` parses to:
+
+  ```python
+  ast.BinOp(
+      left=Constant(2),
+      op=Pow(),           # ast.Pow, *not* a UnaryOp
+      right=Constant(3)
+  )
+  ```
+* You’d handle that in your `eval_node` under the `ast.BinOp` branch, looking up `allowed_operations[ast.Pow]`.
+
+---
+
+### In summary
+
+* **UnaryOp** → one-argument operators (`+x`, `-x`, `~x`, `not x`), handled by mapping `node.op`’s class to a Python function.
+* **Binary operators** (including exponentiation `**`) are **not** `UnaryOp`—they’re `ast.BinOp` with `node.op` of type `ast.Add`, `ast.Mult`, `ast.Pow`, etc.

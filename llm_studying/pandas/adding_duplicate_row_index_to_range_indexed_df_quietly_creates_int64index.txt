@@ -1,0 +1,24 @@
+Pandas won’t throw an error—what it does is quietly “upgrade” your RangeIndex to a generic Int64Index so that it can represent duplicates. A RangeIndex can only exist when your labels are exactly a 0…n–1 contiguous, unique sequence; as soon as you insert anything that breaks that (duplicates, gaps, out‑of‑order labels, etc.), Pandas replaces it with an Int64Index.
+
+---
+
+**Example**
+
+```python
+import pandas as pd
+
+# start with a RangeIndex [0,1,2]
+df = pd.DataFrame({'A': [10,20,30]})
+print(type(df.index), df.index)
+# → <class 'pandas.core.indexes.range.RangeIndex'> RangeIndex(start=0, stop=3, step=1)
+
+# append a row named "1" (duplicate label)
+s = pd.Series({'A': 99}, name=1)
+df2 = pd.concat([df, s.to_frame().T])
+
+print(type(df2.index), df2.index)
+# → <class 'pandas.core.indexes.numeric.Int64Index'> Int64Index([0, 1, 2, 1], dtype='int64')
+```
+
+1. **No error**: you get the new row with index label `1` twice.
+2. **Index type**: you end up with an `Int64Index` that can hold duplicates, rather than the original `RangeIndex`.

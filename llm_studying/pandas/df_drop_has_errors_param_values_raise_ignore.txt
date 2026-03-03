@@ -1,0 +1,80 @@
+---
+
+### Understanding the `errors` Parameter in `DataFrame.drop()`
+
+When you call `df.drop(...)` in pandas to remove rows or columns, you can specify what should happen if some of the labels you ask to drop aren’t present. That’s what the `errors` parameter controls.
+
+---
+
+#### Parameter Signature
+
+```python
+DataFrame.drop(
+    labels=None,
+    axis=0,
+    index=None,
+    columns=None,
+    level=None,
+    inplace=False,
+    errors: {'raise', 'ignore'} = 'raise'
+)
+```
+
+* **`errors='raise'`** (the default)
+
+  * If any of the specified labels are not found along the given axis, pandas will throw a **`KeyError`**.
+  * This is useful when you want to be alerted to typos or logic mistakes in your code.
+
+* **`errors='ignore'`**
+
+  * Missing labels are silently skipped—no exception is raised.
+  * Only the labels that do exist get dropped.
+  * Handy in dynamic pipelines when you’re not certain which columns/rows will be present.
+
+---
+
+#### Example 1: Default (`errors='raise'`)
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'A': [1,2,3],
+    'B': [4,5,6]
+})
+
+# Trying to drop a non-existent column 'C'
+df.drop(columns=['B', 'C'])
+# KeyError: "['C'] not found in axis"
+```
+
+#### Example 2: Ignoring Missing Labels
+
+```python
+# Now with errors='ignore'
+df.drop(columns=['B', 'C'], errors='ignore')
+# Returns a DataFrame with only column 'A'—
+# 'C' is skipped rather than triggering an error.
+```
+
+---
+
+### When to Use Which
+
+* **`raise`**
+
+  * During development and testing: catch mistakes early if you ask to drop something that doesn’t exist.
+  * When your pipeline *must* enforce that certain columns/rows are present.
+
+* **`ignore`**
+
+  * In production or library code: make your function more robust when inputs may vary.
+  * When you’re writing cleanup routines that drop optional or legacy columns.
+
+---
+
+### ✅ Takeaway
+
+Use **`errors='raise'`** (the default) to enforce strict correctness, and **`errors='ignore'`** to make your drop operations fault-tolerant when you’re not 100% sure the labels exist. This simple flag helps you balance safety versus flexibility in your pandas workflows.
+
+---

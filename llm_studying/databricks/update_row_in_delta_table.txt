@@ -1,0 +1,70 @@
+In Databricks, you can programmatically update a given row in a table using **PySpark**. However, it’s important to note that PySpark itself doesn’t have a direct `UPDATE` function like SQL does. Instead, you need to use either **Delta Lake** (if the table is stored as Delta) or an alternative approach that involves filtering, modifying, and rewriting the data.
+
+Here’s how you can update a row programmatically in Databricks using Delta Lake:
+
+### Example: Updating a Table Row Using Delta Lake in PySpark
+
+1. **Enable Delta Lake** (if not already enabled).
+2. **Use Delta Lake's `update` API** for an efficient row update.
+
+### Step 1: Load the Delta Table
+Assume you have a table in the Delta format that you want to update.
+
+```python
+from delta.tables import DeltaTable
+from pyspark.sql import functions as F
+
+# Load the Delta table
+delta_table = DeltaTable.forPath(spark, "/mnt/path_to_your_table")
+```
+
+### Step 2: Update the Row Using `update()` API
+
+Here, we update a row where the `id` is `1` and modify the `customer_name`.
+
+```python
+# Update the table where id is 1
+delta_table.update(
+    condition = F.col("id") == 1,
+    set = {
+        "customer_name": F.lit("New Customer Name"),
+        "json_config": F.lit(None)
+    }
+)
+```
+
+### Step 3: Verify the Update
+You can now query the table to verify that the update was successful.
+
+```python
+# Display the updated table
+delta_table.toDF().show()
+```
+
+### Example without Delta (Regular PySpark Update Approach):
+If you're working with non-Delta tables, the process is more manual:
+1. **Read the table into a DataFrame**.
+2. **Filter and modify** the specific row.
+3. **Rewrite the table**.
+
+Here’s a general approach:
+
+```python
+# Load the table into a PySpark DataFrame
+df = spark.read.format("delta").load("/mnt/path_to_your_table")
+
+# Update specific rows in the DataFrame
+df = df.withColumn(
+    "customer_name", 
+    F.when(F.col("id") == 1, "New Customer Name").otherwise(F.col("customer_name"))
+)
+
+# Write back to the table (overwrite the old data)
+df.write.format("delta").mode("overwrite").save("/mnt/path_to_your_table")
+```
+
+### Conclusion:
+- **Delta Lake** provides an efficient way to update tables directly using the `update()` API.
+- If you're not using Delta Lake, you can manually update the DataFrame and overwrite the table with new data.
+
+This method works programmatically and allows you to update rows in a Databricks environment.

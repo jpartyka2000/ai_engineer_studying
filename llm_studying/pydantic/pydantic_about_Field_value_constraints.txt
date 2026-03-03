@@ -1,0 +1,213 @@
+Yes! Pydantic's `Field()` supports **extensive value constraints** for validation. This is one of its most powerful features.
+
+## Numeric Constraints:
+
+```python
+from pydantic import BaseModel, Field
+
+class Product(BaseModel):
+    # Greater than, less than, etc.
+    price: float = Field(gt=0)  # price > 0
+    discount: float = Field(ge=0, le=100)  # 0 <= discount <= 100
+    quantity: int = Field(gt=0, le=1000)  # 0 < quantity <= 1000
+    
+    # Multiple constraints
+    rating: float = Field(
+        ge=1.0,  # Greater than or equal to 1
+        le=5.0,  # Less than or equal to 5
+        multiple_of=0.5  # Must be 1.0, 1.5, 2.0, etc.
+    )
+    
+    # Using lt (less than) and gt (greater than)
+    temperature: float = Field(gt=-273.15, lt=1000)  # Physical constraints
+
+# Usage
+product = Product(price=10.99, discount=25, quantity=5, rating=4.5, temperature=22)
+# product = Product(price=-5)  # ValidationError: price must be > 0
+# product = Product(rating=4.3)  # ValidationError: not multiple of 0.5
+```
+
+## String Constraints:
+
+```python
+class User(BaseModel):
+    # Length constraints
+    username: str = Field(min_length=3, max_length=20)
+    password: str = Field(min_length=8)
+    
+    # Regex pattern
+    phone: str = Field(pattern=r'^\+?1?\d{9,15}$')
+    
+    # Multiple string constraints
+    email: str = Field(
+        min_length=5,
+        max_length=100,
+        pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    )
+    
+    # Strip whitespace
+    name: str = Field(strip_whitespace=True)  # Auto-strips leading/trailing spaces
+
+# Usage
+user = User(
+    username="john_doe",
+    password="secure123",
+    phone="+1234567890",
+    email="john@example.com",
+    name="  John Doe  "  # Becomes "John Doe"
+)
+```
+
+## Collection Constraints:
+
+```python
+class DataSet(BaseModel):
+    # List/Set/Dict size constraints
+    tags: list[str] = Field(min_length=1, max_length=10)
+    unique_ids: set[int] = Field(min_length=1)
+    
+    # Nested validation
+    scores: list[float] = Field(
+        min_length=3,
+        max_length=100,
+        # Each item in list also validated by type annotation
+    )
+    
+    # Dict constraints
+    metadata: dict = Field(max_length=50)  # Max 50 key-value pairs
+
+# Complex nested example
+class Team(BaseModel):
+    members: list[str] = Field(
+        min_length=2,  # At least 2 members
+        max_length=10,  # At most 10 members
+        description="Team member names"
+    )
+
+team = Team(members=["Alice", "Bob", "Charlie"])
+# team = Team(members=["Alice"])  # ValidationError: min_length=2
+```
+
+## Advanced Constraints:
+
+```python
+from decimal import Decimal
+from datetime import datetime, date
+from typing import Optional
+
+class AdvancedModel(BaseModel):
+    # Decimal precision
+    money: Decimal = Field(
+        gt=0,
+        decimal_places=2,  # Exactly 2 decimal places
+        max_digits=10  # Total digits including decimals
+    )
+    
+    # Allow/Deny None explicitly
+    optional_field: Optional[int] = Field(default=None, ge=0)  # If not None, must be >= 0
+    
+    # Discriminator for union types
+    status: str = Field(discriminator='status_type')
+    
+    # Const - must be exact value
+    version: str = Field(default="1.0", const="1.0")  # Can only be "1.0"
+    
+    # JSON Schema extras
+    percentage: float = Field(
+        ge=0,
+        le=100,
+        json_schema_extra={"example": 75.5}
+    )
+
+class DateConstraints(BaseModel):
+    # Date/datetime constraints (Pydantic v2)
+    future_date: datetime = Field(gt=datetime.now())
+    past_date: date = Field(lt=date.today())
+```
+
+## Combining with Validators:
+
+```python
+class ComplexValidation(BaseModel):
+    # Field constraints run first
+    age: int = Field(gt=0, le=150)
+    
+    # Then custom validators for complex logic
+    @field_validator('age')
+    @classmethod
+    def validate_age_category(cls, v):
+        if v < 18:
+            raise ValueError("Must be 18 or older")
+        return v
+    
+    # Constraints + description + examples
+    score: float = Field(
+        ge=0.0,
+        le=100.0,
+        description="Test score as percentage",
+        examples=[85.5, 92.0],
+        title="Test Score"
+    )
+```
+
+## Constraint Reference Table:
+
+| Constraint | Applies To | Description |
+|------------|------------|-------------|
+| `gt` | numbers | Greater than |
+| `ge` | numbers | Greater than or equal |
+| `lt` | numbers | Less than |
+| `le` | numbers | Less than or equal |
+| `multiple_of` | numbers | Must be multiple of value |
+| `min_length` | string, collections | Minimum length |
+| `max_length` | string, collections | Maximum length |
+| `pattern` | strings | Regex pattern match |
+| `strip_whitespace` | strings | Auto-strip whitespace |
+| `decimal_places` | Decimal | Number of decimal places |
+| `max_digits` | Decimal | Total number of digits |
+| `const` | any | Must be this exact value |
+| `frozen` | any | Cannot be modified (v2) |
+
+## Real-World Example:
+
+```python
+class OrderItem(BaseModel):
+    product_id: str = Field(pattern=r'^PROD-\d{6}$')  # PROD-123456 format
+    quantity: int = Field(gt=0, le=100)  # 1-100 items
+    unit_price: Decimal = Field(gt=0, decimal_places=2, max_digits=10)
+    discount_percent: float = Field(ge=0, le=100, default=0)
+    
+    @property
+    def total_price(self) -> Decimal:
+        return self.unit_price * self.quantity * (1 - self.discount_percent / 100)
+
+class Order(BaseModel):
+    order_id: str = Field(pattern=r'^ORD-\d{10}$')
+    items: list[OrderItem] = Field(min_length=1, max_length=50)
+    notes: Optional[str] = Field(max_length=500, default=None)
+    priority: int = Field(ge=1, le=5, default=3)
+    
+    @field_validator('items')
+    @classmethod
+    def validate_total_items(cls, v):
+        total_quantity = sum(item.quantity for item in v)
+        if total_quantity > 1000:
+            raise ValueError("Total quantity across all items cannot exceed 1000")
+        return v
+```
+
+## Error Messages:
+
+```python
+try:
+    product = Product(price=-10, rating=6)
+except ValidationError as e:
+    print(e)
+    # 2 validation errors for Product
+    # price
+    #   Input should be greater than 0 [type=greater_than, ...]
+    # rating  
+    #   Input should be less than or equal to 5 [type=less_than_equal, ...]
+```
+
+Field constraints make Pydantic incredibly powerful for data validation - you get automatic validation without writing tons of boilerplate code!

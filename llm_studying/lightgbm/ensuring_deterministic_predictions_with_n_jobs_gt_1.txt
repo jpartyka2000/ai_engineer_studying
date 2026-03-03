@@ -1,0 +1,57 @@
+In LightGBM, setting n_jobs > 1 enables multi-threading, which can introduce non-determinism due to:
+
+1. Floating-point arithmetic differences across threads.
+
+
+2. Unordered execution of operations, especially during histogram building and leaf finding.
+
+
+3. Random sampling during bagging (even if random_state is set).
+
+
+
+To guarantee prediction reproducibility even with n_jobs > 1, you need to ensure:
+
+1. Set all randomness-related parameters:
+
+lgb.LGBMClassifier(
+    n_jobs=4,
+    random_state=42,
+    bagging_seed=42,
+    feature_fraction_seed=42,
+    data_random_seed=42,
+    drop_seed=42,
+    extra_trees=False  # Optional: set to False if using
+)
+
+2. Fix the training dataset order:
+
+Ensure the input data is ordered consistently (e.g., use .sort_values() + .reset_index(drop=True)).
+
+3. Avoid non-deterministic environments:
+
+Even with fixed seeds, parallel training may still be non-reproducible across platforms or CPUs due to how threads execute.
+
+4. Use deterministic = True in LightGBM 3.2+:
+
+lgb.LGBMClassifier(
+    deterministic=True,
+    force_row_wise=True,  # Slower but more consistent
+    ...
+)
+
+> Note: deterministic=True is only available in newer versions of LightGBM (>= 3.2.0) and works best with force_row_wise=True.
+
+
+
+
+---
+
+Final Note:
+
+Setting n_jobs=1 is the most robust way to guarantee reproducibility.
+
+If you must use n_jobs > 1, use the steps above — but full reproducibility is not guaranteed on all hardware.
+
+
+Would you like a complete reproducible training example with n_jobs > 1?

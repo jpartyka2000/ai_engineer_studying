@@ -1,0 +1,34 @@
+You can turn your MultiIndex Series into a lookup that you apply to every row in your DataFrame by first building a “tuple‐key” and then using `.map()`. Here’s the pattern:
+
+```python
+# 1) Assume you already have a Series like this:
+#    idx = MultiIndex(levels=[…], codes=[…], names=['DEGREE_OFFERING','YEAR_QUARTER','COHORT_TS'])
+#    series_cohort_rates = pd.Series(data=…, index=idx)
+
+# 2) In your df, build a column of key‐tuples:
+df['lookup_key'] = list(zip(
+    df['DEGREE_OFFERING'],
+    df['YEAR_QUARTER'],
+    df['COHORT_TS']
+))
+
+# 3) Map those tuples through your Series:
+df['seasonal_admit_rate'] = df['lookup_key'].map(series_cohort_rates)
+
+# 4) (Optional) clean up
+df.drop(columns='lookup_key', inplace=True)
+```
+
+### Why it works
+
+* `series_cohort_rates` has an index of 3 levels:
+
+  ```
+  ('usc-dpt','2022-Q3',Timestamp('2024-06-01')) → 0.05985
+  ('usc-dpt','2022-Q3',Timestamp('2023-06-01')) → 0.04387
+   …
+  ```
+* By zipping your three columns into a tuple, you get exactly the same keys that live in `series_cohort_rates.index`.
+* `.map(...)` then looks up each tuple in the Series and returns its value (or `NaN` if the tuple isn’t present).
+
+This is fully vectorized (no row-wise `apply`) and will give you a new column aligned one-to-one with your original DataFrame rows.

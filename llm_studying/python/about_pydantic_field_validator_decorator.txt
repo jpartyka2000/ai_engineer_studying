@@ -1,0 +1,129 @@
+Great question! `field_validator` is a Pydantic decorator that lets you validate and transform field values during model initialization. Let me break down how it works in your code:
+
+## Basic Structure:
+
+```python
+@field_validator("column_metrics", mode="before")
+@classmethod
+def _coerce_numpy(cls, v: Any) -> Any:
+    return _normalize_numpy(v)
+```
+
+## Key Components:
+
+### 1. **The Decorator Parameters**:
+- `"column_metrics"` - Specifies which field(s) to validate
+- `mode="before"` - Runs BEFORE Pydantic's type validation
+
+### 2. **Validation Modes**:
+```python
+# mode="before" - Raw input, before type conversion
+@field_validator("column_metrics", mode="before")
+def validate_raw(cls, v):
+    # v is the raw input value
+    # Good for custom parsing/transformation
+    return transformed_value
+
+# mode="after" - After type conversion (default)
+@field_validator("column_metrics", mode="after")
+def validate_typed(cls, v: Dict[str, Any]):
+    # v is already converted to Dict[str, Any]
+    # Good for validating the typed value
+    return v
+```
+
+### 3. **Why `@classmethod`?**
+Pydantic validators must be classmethods because they're called on the class, not instances:
+```python
+# This is what Pydantic does internally (simplified):
+value = DataScanner._coerce_numpy(raw_value)
+```
+
+## Your Specific Use Case:
+
+Your validator likely handles NumPy type conversion:
+```python
+def _normalize_numpy(v):
+    """Convert numpy types to Python native types"""
+    if isinstance(v, dict):
+        return {
+            k: _normalize_numpy(val) 
+            for k, val in v.items()
+        }
+    elif isinstance(v, np.integer):
+        return int(v)
+    elif isinstance(v, np.floating):
+        return float(v)
+    elif isinstance(v, np.ndarray):
+        return v.tolist()
+    return v
+```
+
+## Multiple Fields & Advanced Usage:
+
+```python
+class DataScanner(BaseModel):
+    source_name: Optional[str] = None
+    column_metrics: Dict[str, Any] = Field(default_factory=dict)
+    row_count: int = 0
+
+    # Validate multiple fields at once
+    @field_validator("column_metrics", "source_name")
+    @classmethod
+    def strip_strings(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    # Access other fields with ValidationInfo
+    @field_validator("row_count")
+    @classmethod
+    def validate_row_count(cls, v, info: ValidationInfo):
+        if info.data.get("source_name") == "test" and v > 1000:
+            raise ValueError("Test sources can't have >1000 rows")
+        return v
+
+    # Validate all fields with *
+    @field_validator("*", mode="before")
+    @classmethod
+    def log_all_inputs(cls, v, info: ValidationInfo):
+        print(f"Setting {info.field_name} = {v}")
+        return v
+```
+
+## Common Patterns:
+
+```python
+# 1. Coercion/normalization (like yours)
+@field_validator("data", mode="before")
+@classmethod
+def normalize_data(cls, v):
+    if isinstance(v, bytes):
+        return v.decode('utf-8')
+    return v
+
+# 2. Business logic validation
+@field_validator("age")
+@classmethod
+def validate_age(cls, v):
+    if v < 0 or v > 150:
+        raise ValueError("Invalid age")
+    return v
+
+# 3. Computing derived values
+@field_validator("slug", mode="before")
+@classmethod
+def generate_slug(cls, v, info: ValidationInfo):
+    if not v and "title" in info.data:
+        return info.data["title"].lower().replace(" ", "-")
+    return v
+```
+
+## Why Use mode="before" for NumPy?
+
+The `mode="before"` is crucial for NumPy conversion because:
+1. NumPy types might not pass Pydantic's default type validation
+2. You need to intercept and convert them before Pydantic checks types
+3. It prevents errors like "np.int64 is not a valid int"
+
+This pattern ensures your model can accept NumPy-heavy data (like from pandas DataFrames) while storing it as regular Python types internally.

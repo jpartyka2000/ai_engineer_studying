@@ -1,0 +1,60 @@
+If I created a DLT function with an expectation to drop rows from a table that do not have unique primary key values before I joined that table to another table - the rows do not get dropped from the original table upon which source table is based, correct?
+
+-------------------
+
+You are correct. When using Delta Live Tables (DLT), the expectations and transformations you define in a function apply to the DataFrame returned by that function, not to the original source tables directly. Here’s how it works:
+
+### How DLT Functions and Expectations Work
+
+1. **Expectations in DLT Functions**:
+   - **Purpose**: Expectations in DLT are used to validate data quality. If an expectation fails, the pipeline will alert you, and depending on configuration, it might prevent the table from being updated with the invalid data.
+   - **Effect on Data**: Expectations do not directly modify or drop rows from the original source tables. Instead, they validate the data after the transformations defined in the function.
+
+2. **Transformation and Filtering**:
+   - **Function Logic**: Any data transformations, such as filtering out rows with duplicate primary keys, occur within the function that is decorated with `@dlt.table`.
+   - **Data Handling**: When you apply transformations like dropping rows with duplicate primary keys, this only affects the DataFrame being processed within that function. It does not alter the original source tables.
+
+3. **Join Operations**:
+   - **Pre-Joint Data**: If you have a function that drops rows with duplicate primary keys before joining, the join operation will be based on the cleaned data returned by the function.
+   - **Source Table**: The original source tables remain unchanged. Any data quality issues or transformations are handled in the context of the function where you define the processing logic.
+
+### Example Scenario
+
+Suppose you have two tables: `source_table1` and `source_table2`. You want to join `source_table1` to `source_table2` but ensure that `source_table1` has unique primary keys.
+
+Here’s how you might set this up:
+
+```python
+import dlt
+from pyspark.sql.functions import col
+
+@dlt.table(
+    comment="Cleaned source table with unique primary keys",
+    expectations=[
+        dlt.expect_column_unique_value_count_to_be_equal_to("primary_key_column", dlt.expect_table_row_count())
+    ]
+)
+def clean_source_table1():
+    df = spark.read.table("source_table1")
+    df_clean = df.dropDuplicates(["primary_key_column"])
+    return df_clean
+
+@dlt.table(
+    comment="Join of cleaned source_table1 with source_table2"
+)
+def joined_table():
+    df1 = dlt.read("clean_source_table1")
+    df2 = spark.read.table("source_table2")
+
+    # Join operation
+    df_joined = df1.join(df2, df1.primary_key_column == df2.primary_key_column)
+    return df_joined
+```
+
+### Summary
+
+- **Transformation Functions**: The function `clean_source_table1()` processes data from `source_table1` and removes duplicates before returning the cleaned DataFrame.
+- **Join Function**: The function `joined_table()` uses the cleaned data from `clean_source_table1()` to perform a join with `source_table2`.
+- **Original Tables**: `source_table1` and `source_table2` remain unchanged in the source; the transformations apply only to the data within the pipeline.
+
+In summary, expectations and transformations in DLT functions operate on the DataFrame being processed within that function. They do not alter the original source tables. The cleaned or transformed data is used for further processing or joins, but the source data remains as is.

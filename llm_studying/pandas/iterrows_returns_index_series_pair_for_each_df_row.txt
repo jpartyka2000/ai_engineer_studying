@@ -1,0 +1,93 @@
+Excellent question — this is one of those subtle Pandas details that’s easy to miss.
+
+Here’s the precise behavior 👇
+
+---
+
+## 🧠 What `df.iterrows()` Returns
+
+`DataFrame.iterrows()` returns an **iterator** (a generator) that yields **(index, Series)** pairs for each row.
+
+### Example:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    "a": [1, 2],
+    "b": [3, 4]
+})
+
+for idx, row in df.iterrows():
+    print(type(idx), type(row))
+```
+
+**Output:**
+
+```
+<class 'int'> <class 'pandas.core.series.Series'>
+<class 'int'> <class 'pandas.core.series.Series'>
+```
+
+So yes ✅ — **each row is a `pd.Series` object**.
+
+---
+
+## 📦 What’s Inside the Series
+
+Each `row` Series:
+
+* Has **index labels** equal to the DataFrame’s column names
+* Contains the **row’s values**
+* Has its **`.name`** attribute set to the DataFrame’s row index
+
+Example:
+
+```python
+for idx, row in df.iterrows():
+    print(row)
+```
+
+Output:
+
+```
+a    1
+b    3
+Name: 0, dtype: int64
+a    2
+b    4
+Name: 1, dtype: int64
+```
+
+---
+
+## ⚠️ Performance Note
+
+`iterrows()` is **slow** — each row is converted into a `Series` object (with dtype upcasting if necessary).
+For large DataFrames, use:
+
+* `itertuples()` → returns a **namedtuple** per row (faster, less overhead)
+* or vectorized operations whenever possible
+
+Example (faster alternative):
+
+```python
+for row in df.itertuples(index=True, name="Row"):
+    print(row.a, row.b)
+```
+
+---
+
+### ✅ Summary
+
+| Feature            | `iterrows()`             | `itertuples()`      |
+| ------------------ | ------------------------ | ------------------- |
+| Returns            | `(index, Series)`        | `namedtuple`        |
+| Row type           | `pd.Series`              | Python `namedtuple` |
+| Keeps column names | ✅ Yes                    | ✅ As attributes     |
+| Keeps dtypes       | ❌ No (upcasts to object) | ✅ Yes               |
+| Performance        | 🐢 Slow                  | ⚡ Fast              |
+
+---
+
+Would you like me to show an example of how `iterrows()` can silently change dtypes compared to `itertuples()`?

@@ -1,0 +1,79 @@
+Absolutely—you can group by your DataFrame’s index levels just as easily as by columns. Pandas lets you specify index levels in your `.groupby()` call, and under the hood it treats them almost identically to column‑based grouping. Here’s how they compare:
+
+---
+
+## 1. Syntax
+
+| Scenario      | Column‑based                              | Index‑based                                     |
+| ------------- | ----------------------------------------- | ----------------------------------------------- |
+| Single key    | `df.groupby('Category').sum()`            | `df.groupby(level='Category').sum()`            |
+| Multiple keys | `df.groupby(['Region','Category']).sum()` | `df.groupby(level=['Region','Category']).sum()` |
+| By position   | —                                         | `df.groupby(level=[0,2]).sum()`                 |
+
+> Note: In a MultiIndex, you can refer to levels by name or by their integer position.
+
+---
+
+## 2. Examples
+
+Assume you’re working with your MultiIndexed `df` from before:
+
+```python
+# MultiIndex on ['Region','Category','Year','Quarter']
+df = df.set_index(['Region','Category','Year','Quarter']).sort_index()
+```
+
+### a. Grouping on a column (after resetting index)
+
+```python
+# bring 'Category' back as a column…
+flat = df.reset_index()
+
+# …then group by it
+flat.groupby('Category')['Revenue'].sum()
+```
+
+### b. Grouping on the index directly
+
+```python
+# group by the 'Category' level of the index
+df.groupby(level='Category')['Revenue'].sum()
+```
+
+Both yield the same sums by category, but (b) works *in place* without disturbing your index.
+
+---
+
+## 3. Key Differences
+
+1. **No need to reset:**
+
+   * **Index grouping** works on your existing index; you don’t have to turn levels back into columns.
+   * **Column grouping** often requires `reset_index()` or accessing `df.index.get_level_values(...)`.
+
+2. **Result indexing:**
+
+   * When you group by index levels, your result keeps those levels in the returned Series/DataFrame index.
+   * When you group by columns, the grouping keys become the returned object’s index (or stay as columns if you specify `as_index=False`).
+
+3. **MultiIndex convenience:**
+
+   * Grouping on multiple index levels is especially neat:
+
+     ```python
+     df.groupby(level=['Region','Year'])['Revenue'].sum()
+     ```
+   * Otherwise you’d need to reset and then pick out those columns.
+
+4. **Performance nuance:**
+
+   * Generally there’s no major speed difference. But grouping on an existing index can save you one pass of data restructuring if you’d otherwise reset it.
+
+---
+
+### Bottom line
+
+* **Use `groupby(level=…)`** when your grouping key is already part of the index—no reshaping needed.
+* **Use `groupby('col')`** when you’re grouping on a column that lives in the DataFrame’s columns.
+
+Both APIs are parallel, so feel free to pick whichever keeps your workflow simplest!

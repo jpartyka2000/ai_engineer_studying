@@ -1,0 +1,44 @@
+Yes, you can map the survival curve back to your user DataFrame by using each user's duration (in days) as the key. The survival curve DataFrame (survival_df) contains survival probabilities indexed by time (days), and you want to assign each user the survival probability corresponding to their duration.
+
+A common approach is to use a "nearest join" where you match each user's duration to the closest time point in survival_df (typically using forward or backward fill). One way to do this in Pandas is with the `merge_asof` function. Here's an example:
+
+```python
+import pandas as pd
+
+# Assume your user DataFrame 'df_users' has a column 'duration' (in days)
+# and survival_df is your Kaplan-Meier output with the index as time (days)
+# and a column 'Survival Function'.
+
+# First, reset the index of survival_df to make the time a column:
+survival_df_reset = survival_df.reset_index().rename(columns={'index': 'time'})
+
+# Ensure that both DataFrames are sorted by the merge key:
+df_users = df_users.sort_values('duration')
+survival_df_reset = survival_df_reset.sort_values('time')
+
+# Use merge_asof to join each user's duration to the closest time point (backward fill)
+df_users_with_survival = pd.merge_asof(
+    df_users,
+    survival_df_reset,
+    left_on='duration',
+    right_on='time',
+    direction='backward'
+)
+
+# Now, df_users_with_survival has a new column (e.g., "Survival Function")
+# which represents the survival probability at each user's duration.
+print(df_users_with_survival.head())
+```
+
+### Explanation
+
+- **Resetting the Index:**  
+  The survival_df DataFrame originally has its index as time. We reset the index so that time becomes a column (named here as "time").
+
+- **Sorting:**  
+  Both DataFrames need to be sorted by the key (user duration and survival curve time) for `merge_asof` to work correctly.
+
+- **Merging:**  
+  `merge_asof` will match each user's duration with the nearest time in the survival curve. The parameter `direction='backward'` ensures that if a user's duration doesn't exactly match a time point, it gets the survival probability from the latest time point that does not exceed the user's duration.
+
+This effectively links the survival probability from the Kaplan-Meier curve to each user based on their duration.

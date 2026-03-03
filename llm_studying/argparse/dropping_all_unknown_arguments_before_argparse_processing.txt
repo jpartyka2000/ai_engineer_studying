@@ -1,0 +1,36 @@
+This error means you're running the script **inside a Databricks notebook** (not the Web Terminal), and the IPython kernel is passing its own arguments that argparse doesn't recognize.
+
+## **Solutions:**
+
+### **Option 1: Use the actual Web Terminal** (Recommended)
+Make sure you're using the **Web Terminal**, not running Python in a notebook cell:
+- In Databricks, go to **Workspace** → **Terminal** (or **Compute** → **Terminal**)
+- This is a bash terminal, not a notebook
+- Your argparse should work fine there
+
+### **Option 2: Make argparse ignore unknown args** (If you must run in notebook)
+Modify your argparse section:
+
+```python
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Kicks off and configures ML Pieces")
+
+    parser.add_argument(
+        "-e",
+        "--environment",
+        choices=["development", "staging", "production"],
+        help="Corresponds to the schema data will be written. Expects 'development', 'staging', or 'production'",
+        default="development",
+    )
+
+    # Change this line:
+    args, unknown = parser.parse_known_args()  # Instead of parse_args()
+    environment = args.environment.lower()
+```
+
+The `parse_known_args()` method ignores the `-f` flag from IPython.
+
+### **Option 3: Switch to dbutils widgets** (Best for notebooks)
+Replace the argparse section entirely as I mentioned earlier.
+
+**Which are you using - Web Terminal or a notebook cell?** If Web Terminal isn't available, Option 2 is your quickest fix.

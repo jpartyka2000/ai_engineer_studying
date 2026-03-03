@@ -1,0 +1,92 @@
+## Permutation Importance
+
+**Permutation importance** measures how much a model's performance degrades when a single feature's values are randomly shuffled. It's a model-agnostic technique—you can use it with any model.
+
+## The intuition
+
+If a feature is important, scrambling its values should break the relationship between that feature and the target, causing the model's predictions to get worse. If a feature doesn't matter, shuffling it won't change much.
+
+## The algorithm
+
+1. Train your model and compute baseline performance (e.g., accuracy, RMSE) on a validation set
+2. For each feature:
+   - Randomly shuffle that feature's values across all observations
+   - Compute model performance with the shuffled feature
+   - Measure the drop in performance
+   - Restore the original values
+3. Rank features by how much shuffling hurt performance
+
+$$\text{Importance}_j = \text{Score}_{\text{baseline}} - \text{Score}_{\text{shuffled } j}$$
+
+Or sometimes expressed as a ratio:
+
+$$\text{Importance}_j = \frac{\text{Score}_{\text{baseline}}}{\text{Score}_{\text{shuffled } j}}$$
+
+## Example
+
+Imagine a model predicting house prices with three features:
+
+| Feature | Baseline RMSE | Shuffled RMSE | Importance |
+|---------|---------------|---------------|------------|
+| Square footage | $25,000 | $89,000 | $64,000 |
+| Bedrooms | $25,000 | $38,000 | $13,000 |
+| House color | $25,000 | $25,500 | $500 |
+
+Square footage is clearly most important—shuffling it devastates predictions. House color barely matters.
+
+## Why permutation importance is useful
+
+**1. Model-agnostic**
+
+Works with any model: linear regression, random forests, neural networks, gradient boosting. You don't need special access to model internals.
+
+**2. Computed on validation data**
+
+Unlike some importance measures (e.g., Gini importance from trees), permutation importance is calculated on held-out data. This means it reflects real predictive value, not just what the model learned to rely on during training.
+
+**3. Captures full predictive contribution**
+
+It accounts for interactions. If a feature is only useful in combination with others, shuffling it still breaks those interactions, and the importance reflects that.
+
+**4. Easy to interpret**
+
+"Shuffling feature X increased error by 30%" is intuitive and explainable to non-technical stakeholders.
+
+## Comparison with other importance measures
+
+| Method | Basis | Model-specific? | Handles interactions? |
+|--------|-------|-----------------|----------------------|
+| **Permutation importance** | Performance drop when shuffled | No (any model) | Yes |
+| **Gini/split importance** | How often used in tree splits | Tree models only | Partially |
+| **Coefficient magnitude** | Size of learned weights | Linear models only | No |
+| **SHAP values** | Game-theoretic contribution | No (any model) | Yes |
+
+## Limitations
+
+**1. Correlated features cause problems**
+
+If two features are highly correlated, shuffling one still leaves the other intact. The model can compensate, making both features appear less important than they really are.
+
+**2. Computationally expensive**
+
+You need to re-evaluate the model once per feature. For models with thousands of features or slow inference, this adds up.
+
+**3. Randomness in results**
+
+Shuffling is random, so importance values vary slightly each run. Running multiple iterations and averaging helps stabilize results.
+
+**4. Only measures importance to *this* model**
+
+A feature might have low permutation importance because the model didn't learn to use it well—not because it's inherently uninformative. The feature could still be useful in a different model.
+
+## Practical usage
+
+```python
+# Scikit-learn makes this simple
+from sklearn.inspection import permutation_importance
+
+result = permutation_importance(model, X_val, y_val, n_repeats=10)
+importance = result.importances_mean
+```
+
+Permutation importance is especially valuable as a sanity check after training. If a feature you expected to matter shows low importance, or a feature that shouldn't matter shows high importance, that's worth investigating.

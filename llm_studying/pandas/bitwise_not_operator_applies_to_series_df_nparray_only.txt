@@ -1,0 +1,62 @@
+The bitwise‐NOT operator (`~`) in Python is really a bitwise complement—which for boolean types works like a logical NOT (i.e. `True → False`, `False → True`). Whether you can write `~x` depends on what `x` is:
+
+| Container Type     | Works?                            | Notes                                                                                      |
+| ------------------ | --------------------------------- | ------------------------------------------------------------------------------------------ |
+| **`pd.Series`**    | ✅ Yes (if `dtype=bool`)           | Returns a Series of inverted booleans.                                                     |
+| **`pd.DataFrame`** | ✅ Yes (if all columns are `bool`) | Applies elementwise to every column, flipping `True↔False`.                                |
+| **`np.ndarray`**   | ✅ Yes (if `dtype=bool`)           | Returns a boolean array of the same shape.                                                 |
+| **Python `list`**  | ❌ No                              | Lists aren’t a “bitwise‐capable” type—`~my_list` throws `TypeError`.                       |
+| **Python `tuple`** | ❌ No                              | Same reason as lists.                                                                      |
+| **Python scalar**  | ▶️ Booleans: `~True == -2`        | Because Python’s `bool` is a subclass of `int`, `~True` is `~1 == -2`. Don’t rely on this! |
+
+---
+
+## Examples
+
+```python
+import pandas as pd, numpy as np
+
+# Pandas Series/DataFrame
+s = pd.Series([True, False, True])
+print(~s)           
+# 0    False
+# 1     True
+# 2    False
+# dtype: bool
+
+df = pd.DataFrame({'a':[True,False], 'b':[False,False]})
+print(~df)
+#        a      b
+# 0  False   True
+# 1   True   True
+
+# NumPy boolean array
+arr = np.array([True, False, False], dtype=bool)
+print(~arr)     
+# [False  True  True]
+
+# Python list
+lst = [True, False, True]
+print(~lst)     
+# TypeError: bad operand type for unary ~: 'list'
+```
+
+---
+
+### If you really need to invert a Python list of booleans:
+
+```python
+lst = [True, False, True]
+inverted = [not x for x in lst]
+# [False, True, False]
+```
+
+Or convert to one of the array types first:
+
+```python
+inverted = (~pd.Series(lst)).tolist()
+```
+
+---
+
+**Bottom line:** use `~` directly on pandas Series/DataFrames or NumPy boolean arrays. For plain Python lists/tuples, first convert (or use a list comprehension with `not`).

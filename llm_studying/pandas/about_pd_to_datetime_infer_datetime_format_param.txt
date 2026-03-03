@@ -1,0 +1,41 @@
+## The `infer_datetime_format` Parameter in `pd.to_datetime()`
+
+**What it does:**
+
+When `infer_datetime_format=True`, pandas examines the first non-null value in your data, attempts to deduce the date format pattern, and then applies that same format to parse all remaining values.
+
+**Why it was useful:**
+
+1. **Performance**: Once pandas knows the format, it doesn't have to re-guess for every single value. This could make parsing significantly faster for large datasets.
+
+2. **Convenience**: You didn't need to manually specify a format string like `"%Y-%m-%d"` or `"%m/%d/%Y"`.
+
+**Example:**
+
+```python
+dates = pd.Series(["2024-01-15", "2024-02-20", "2024-03-10"])
+
+# Without infer_datetime_format, pandas guesses format for each value
+parsed = pd.to_datetime(dates)
+
+# With infer_datetime_format, pandas guesses once from "2024-01-15" 
+# and applies that format to all values
+parsed = pd.to_datetime(dates, infer_datetime_format=True)
+```
+
+**Deprecation:**
+
+This parameter is deprecated as of pandas 2.0. There are two modern replacements:
+
+```python
+# Option 1: Specify the exact format (fastest, most explicit)
+parsed = pd.to_datetime(dates, format="%Y-%m-%d")
+
+# Option 2: Use format='mixed' for varied formats within the same series
+parsed = pd.to_datetime(dates, format='mixed')
+```
+
+**Recommendation:**
+
+- If your dates are in a consistent format, specify it explicitly with the `format` parameter—this is the fastest and most reliable approach.
+- If your dates have mixed formats (e.g., some rows are `"2024-01-15"` and others are `"Jan 15, 2024"`), use `format='mixed'`.

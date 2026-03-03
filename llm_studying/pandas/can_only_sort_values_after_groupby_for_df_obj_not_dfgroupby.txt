@@ -1,0 +1,61 @@
+Great observation — the line you're using is **not valid as written**, and here's why:
+
+### ❌ Why it doesn't work:
+
+```python
+df_seasonal_rates.groupby('COHORT_month')['ADMITTED'].sort_values(by="COHORT_year")
+```
+
+This will raise an error like:
+
+> `TypeError: sort_values() got an unexpected keyword argument 'by'`
+
+### 🔍 Why?
+
+After `groupby('COHORT_month')['ADMITTED']`, you get a **GroupBy Series object**, and `sort_values()` can’t be called with `by=...` unless you're working with a **DataFrame**.
+
+---
+
+### ✅ Correct Approach:
+
+If you want to:
+
+* Group by `'COHORT_month'`
+* Sort by `'COHORT_year'` within each group
+* Then compute some transformation on `'ADMITTED'`
+
+You **must sort the entire DataFrame first**, *before* doing the groupby:
+
+```python
+df_seasonal_rates = df_seasonal_rates.sort_values(['COHORT_month', 'COHORT_year'], ascending=[True, False])
+
+df_seasonal_rates['COHORT_same_month_admit_rate'] = (
+    df_seasonal_rates
+    .groupby('COHORT_month')['ADMITTED']
+    .transform('mean')
+    .round(5)
+)
+```
+
+### 🧠 Why this works:
+
+* Sorting the DataFrame ensures `COHORT_year` is in the desired order within each `COHORT_month`.
+* But `transform('mean')` is **not affected by order**, so sorting is only relevant if you’re planning to use an order-sensitive function like `.cumsum()`, `.rank()`, etc.
+
+---
+
+### 🔁 If you *do* want to use `sort_values()` inside a groupby pipeline:
+
+You must work with a full DataFrame, like this:
+
+```python
+df_seasonal_rates = (
+    df_seasonal_rates
+    .sort_values(['COHORT_month', 'COHORT_year'], ascending=[True, False])
+    .assign(
+        COHORT_same_month_admit_rate = lambda df: df.groupby('COHORT_month')['ADMITTED'].transform('mean').round(5)
+    )
+)
+```
+
+Let me know if you want to compute something like the **most recent** admit rate per group — that would require a different pattern.

@@ -1,0 +1,35 @@
+Yes, exactly. That's Cloudinary's bread and butter. When you upload an image, it automatically returns a unique URL. You can also assign your own custom `public_id` to make the URLs predictable:
+
+```python
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name="your_cloud",
+    api_key="your_key",
+    api_secret="your_secret"
+)
+
+# Option 1: Let Cloudinary auto-generate a unique ID
+result = cloudinary.uploader.upload("album_cover_1.png")
+print(result["secure_url"])
+# https://res.cloudinary.com/your_cloud/image/upload/v1234567890/abc123def.png
+
+# Option 2: Assign your own custom ID
+result = cloudinary.uploader.upload(
+    "album_cover_1.png",
+    public_id="albums/artist_name/album_1_cover"
+)
+print(result["secure_url"])
+# https://res.cloudinary.com/your_cloud/image/upload/v1234567890/albums/artist_name/album_1_cover.png
+```
+
+With option 2, you can build predictable URLs and retrieve them later without needing to store the result — you already know the path. You could organize by artist, album, version, etc.
+
+You can also:
+- **Overwrite** an existing image by uploading with the same `public_id` and `overwrite=True`
+- **Delete** programmatically with `cloudinary.uploader.destroy("albums/artist_name/album_1_cover")`
+- **List** all uploaded assets with `cloudinary.api.resources()`
+- **Tag** images for easy grouping: `tags=["artist_name", "album_covers"]`
+
+So your full workflow would be: upload the original album cover to Cloudinary, get the URL, pass it to Kontext with your prompt, get the new album cover back, and upload that to Cloudinary too if you want to store it.

@@ -1,0 +1,41 @@
+Yes, absolutely! Including the available tools/functions in the system prompt with their parameters will significantly increase the odds that the LLM won't generate tool calls for functions not in that list. Here's why:
+
+## How it helps:
+
+1. **Explicit boundaries**: The model learns during fine-tuning that these specific functions are the complete set of available tools, creating clear boundaries around what's possible.
+
+2. **Pattern recognition**: During training, the model sees the relationship between:
+   - The available tools in the system prompt
+   - The user's request 
+   - The appropriate tool selection from that specific set
+
+3. **Reduced hallucination**: Without explicit tool definitions, models might "hallucinate" function names or invent parameters that don't exist.
+
+## However, there are important caveats:
+
+**It's not 100% guaranteed** - even with fine-tuning, LLMs can still:
+- Generate function names with slight variations (e.g., `get_stock_data` instead of `get_stock_price`)
+- Use incorrect parameter names or structures
+- Occasionally ignore the constraints entirely
+
+**Best practices to maximize effectiveness:**
+
+1. **Consistent formatting** across all training examples
+2. **Include negative examples** in your training data where the model responds with text when no appropriate tool exists
+3. **Clear instructions** like "Only use the tools listed above" in the system prompt
+4. **Sufficient training examples** covering various scenarios
+5. **Validation layer** in your application to catch any invalid tool calls
+
+## Example improvement:
+You could make your system prompt even more explicit:
+
+```
+You are a helpful assistant that can fetch stock prices, weather, and local times.
+
+You have access to ONLY the following tools - do not attempt to use any other functions:
+[your tool definitions here]
+
+If a user requests something that cannot be accomplished with these specific tools, explain what you cannot do rather than attempting to call non-existent functions.
+```
+
+So yes, it definitely helps, but combine it with good training data and runtime validation for best results.

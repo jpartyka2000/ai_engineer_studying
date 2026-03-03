@@ -1,0 +1,47 @@
+There’s no magic “right” count here—it really depends on the algorithm and your variance/budget trade-offs.  Broadly speaking you have two extremes:
+
+---
+
+## 1. Vanilla REINFORCE (episodic Monte Carlo)
+
+* **Minimum**: you could literally use **one trajectory** per gradient update—i.e. run one episode under πₜ, compute
+
+  $$
+    \hat\nabla_\theta J
+    = \sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t)\,G_t
+  $$
+
+  and do θ←θ+α Ĝ.
+
+* **Downside**: that estimator has huge variance, so learning is very noisy.
+
+* **Common practice**: collect **B** full episodes (e.g. B=10, 20 or more), average their gradients
+  $\displaystyle\frac1B\sum_{i=1}^B\hat\nabla J^{(i)}$,
+  then update.  More episodes ⇒ smoother gradient but more samples per update.
+
+---
+
+## 2. Actor–Critic / n-step methods
+
+* Rather than waiting for full returns, you can update **every step** or every n steps using bootstrapped targets (the critic).
+* Here you typically run your policy for a fixed number of **timesteps** (say 1,000 or 2,048) across all agents/environments, then compute advantage estimates for those transitions and do one (or several) SGD passes.
+
+  * E.g. PPO often uses **2,048** steps per actor per update, split into mini-batches of 64–256.
+  * A2C might use **20** steps of each of 16 workers (320 total) before updating.
+
+---
+
+## So: how many?
+
+1. **As few as one** (vanilla MC), but variance will bite you.
+2. **A small batch of full episodes** (tens) to stabilize Monte Carlo.
+3. **A fixed number of timesteps** (hundreds to thousands) in actor-critic, with multiple minibatch passes.
+
+---
+
+### Bottom line
+
+* **Episodes** are the natural unit for pure REINFORCE: you choose a batch size B of episodes per update.
+* **Timesteps** are the unit for actor-critic/PPO: you choose a rollout horizon T (and then minibatch size).
+
+You tune B or T (and your learning rate) until you get acceptable stability vs.\ sample efficiency on your problem.

@@ -1,0 +1,61 @@
+In Databricks SQL, you cannot directly alter an existing table to add a primary key or enable auto-incrementing behavior on a column. Databricks SQL does not currently support the concept of primary keys or auto-incrementing columns in the same way as traditional relational databases. However, you can achieve similar functionality with workarounds.
+
+### Workaround: Creating a New Table with Auto-Incrementing ID
+You can create a new table with an auto-incrementing `id` column using Databricks' **delta tables** and SQL features.
+
+#### Example Steps:
+1. Create a new table with an `id` column that auto-increments:
+   ```sql
+   CREATE TABLE my_table (
+       id BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
+       column1 STRING,
+       column2 STRING
+   )
+   USING DELTA;
+   ```
+
+   - **`GENERATED ALWAYS AS IDENTITY`**: Specifies the auto-incrementing behavior.
+   - **`START WITH 1`**: The initial value for the `id` column.
+   - **`INCREMENT BY 1`**: The step value for the auto-increment.
+
+2. Insert data into the table:
+   ```sql
+   INSERT INTO my_table (column1, column2)
+   VALUES ('value1', 'value2');
+   ```
+
+   The `id` column is populated automatically, so you do not include it in the `INSERT` statement.
+
+3. (Optional) Populate the new table with data from the existing table:
+   ```sql
+   INSERT INTO my_table (column1, column2)
+   SELECT column1, column2 FROM existing_table;
+   ```
+
+### Limitations:
+- **Primary Key Constraints**: Databricks SQL does not enforce primary key constraints. You must ensure uniqueness of the `id` column through your application logic or query design.
+- **Updating an Existing Table**: To add an auto-incrementing column to an existing table, you would need to create a new table with the desired schema and migrate the data.
+
+### If You Want to Update an Existing Table:
+1. Create a new table with the desired schema, including the auto-incrementing `id`.
+2. Copy data from the existing table to the new table.
+3. Drop the old table (if no longer needed) and optionally rename the new table to match the old name.
+
+For example:
+```sql
+CREATE TABLE new_table (
+    id BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
+    column1 STRING,
+    column2 STRING
+)
+USING DELTA;
+
+INSERT INTO new_table (column1, column2)
+SELECT column1, column2 FROM existing_table;
+
+DROP TABLE existing_table;
+
+ALTER TABLE new_table RENAME TO existing_table;
+```
+
+This approach allows you to simulate primary key and auto-increment functionality in Databricks SQL.

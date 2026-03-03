@@ -1,0 +1,59 @@
+Here are three common ways to pull out the first *N* rows of each group **without** “breaking” into a plain Series/DataFrame prematurely:
+
+---
+
+## 1. `GroupBy.apply` with `head`
+
+Keeps you inside the grouping context for the duration of the `apply`, then concatenates the results:
+
+```python
+first_n = (
+    df_seasonal_rates
+      .groupby('COHORT_month')
+      .apply(lambda g: g.head(N))
+      .reset_index(drop=True)
+)
+```
+
+* Inside the `lambda`, `g` is a DataFrame containing only that one group.
+* You get back a DataFrame of the same columns, containing exactly the first *N* rows of each group.
+* You can then continue to do further group-wise computations via another `groupby` or `merge` back onto your original.
+
+---
+
+## 2. `GroupBy.nth`
+
+If your groups aren’t too big and you just need positional slicing, `nth` will pick specific rows by index position within each group:
+
+```python
+# get rows 0, 1, 2 (i.e. first 3) of each group
+first_3 = df_seasonal_rates.groupby('COHORT_month').nth([0, 1, 2]).reset_index()
+```
+
+* The result is a DataFrame indexed by the grouping key (so we `.reset_index()` to turn it back into columns).
+* This is fast because it’s implemented in C.
+
+---
+
+## 3. Boolean mask via `cumcount`
+
+Build a mask that’s `True` for the first *N* rows of each group, then filter:
+
+```python
+mask = df_seasonal_rates.groupby('COHORT_month').cumcount() < N
+first_n = df_seasonal_rates[mask]
+```
+
+* `cumcount()` numbers rows *within each group* starting at 0.
+* The mask selects exactly those rows where that count is less than *N*.
+* You retain the original DataFrame’s shape and index for the selected rows.
+
+---
+
+### When to use which?
+
+* **`apply(lambda g: g.head(N))`** is the most flexible if your selection logic is more complex than just “first *N*.”
+* **`.nth([...])`** is the fastest if you only care about exact positions.
+* **`cumcount` mask** is super‐readable and gives you a boolean selector you can reuse.
+
+Once you have that “first *N* per group” DataFrame, you can **re-group**, **merge**, or **map** any further aggregates back to your full table without ever having called a “breaking” head/transform.

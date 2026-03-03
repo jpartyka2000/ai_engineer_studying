@@ -1,0 +1,80 @@
+In general you’ll find that **minimizing hidden, mutable state**—even as class-level variables—makes your code far more predictable, testable, and thread-safe.  The tradeoffs look something like this:
+
+---
+
+### 🛑 Class-level variables (“hidden state”)
+
+```python
+class Utils:
+    zip_dict = {}      # shared, mutable state
+    def _get_zip_data():
+        Utils.zip_dict = {...}
+```
+
+* **Pros**
+
+  * You don’t have to thread the dictionary through every call.
+  * All methods can grab it “magically” via `Utils.zip_dict`.
+* **Cons**
+
+  * Hard to reason about when or how that variable gets populated.
+  * Two threads or two pipelines could stomp on each other.
+  * Unit-testing is trickier (you have to remember to reset or mock out `Utils.zip_dict`).
+  * It violates *functional purity*—your static methods have side-effects.
+
+---
+
+### ✅ Returning values from static (or module) functions
+
+```python
+def load_zip_data() -> Dict[str, float]:
+    df = spark.table(...).toPandas()
+    return dict(zip(df.zipcode3, df.avg_population_density))
+
+# later…
+zip_dict = load_zip_data()
+do_something(zip_dict)
+```
+
+* **Pros**
+
+  * Every function is *pure*: given the same inputs, you always get the same outputs.
+  * No global or class state to reset or accidentally reuse across calls.
+  * Thread-safe and easy to parallelize.
+  * Tests can simply call `load_zip_data()` or inject a fake mapping.
+  * More explicit: callers see exactly what data they need to pass in.
+* **Cons**
+
+  * You have to pass the mapping around explicitly to every method that needs it.  (But that’s also a feature—your dependencies are clear.)
+
+---
+
+### 🏆 Best Practice
+
+1. **Prefer pure functions** (or instance methods) that **return** their outputs rather than storing them on the class.
+2. If you truly need to share a lookup table across many calls, consider:
+
+   * Loading it once at application startup **into a module-level constant** (not a class).
+   * Or wrapping it in an **instance** of a loader class, so you write:
+
+     ```python
+     loader = ZipDataLoader(spark, "pathahead.twou_ecue.zip_data_for_ml")
+     mapping = loader.load()
+     ```
+
+     and then pass `loader` (or its `mapping`) to the components that need it.
+
+That way, your methods become side-effect-free and easy to reason about:
+
+```python
+def _initial_filtering(df, zip_map):
+    # use zip_map explicitly
+    ...
+
+def prepare_data_for_ml(df):
+    zip_map = load_zip_data_from_delta()
+    df = _initial_filtering(df, zip_map)
+    ...
+```
+
+—everything is explicit, testable, and free from “mystery” shared state.

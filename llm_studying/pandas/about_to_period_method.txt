@@ -1,0 +1,76 @@
+Pandas’ `to_period()` is a quick way to convert a `DatetimeIndex` (or a datetime‐typed column) into a `PeriodIndex` at whatever granularity you need—yearly, quarterly, monthly, weekly, etc.—and then pull out the components of that period easily.
+
+---
+
+## 1. Converting dates to periods
+
+```python
+df['date'] = pd.to_datetime(df['date'])
+```
+
+| Frequency string | Meaning          | Example call                   |
+| ---------------- | ---------------- | ------------------------------ |
+| `'A'` or `'Y'`   | Annual           | `df['date'].dt.to_period('A')` |
+| `'Q'`            | Quarterly        | `df['date'].dt.to_period('Q')` |
+| `'M'`            | Monthly          | `df['date'].dt.to_period('M')` |
+| `'W'`            | Weekly (Mon–Sun) | `df['date'].dt.to_period('W')` |
+| `'D'`            | Daily            | `df['date'].dt.to_period('D')` |
+| `'H'`            | Hourly           | `df['date'].dt.to_period('H')` |
+| …                | …                | …                              |
+
+E.g.:
+
+```python
+df['month']   = df['date'].dt.to_period('M')   # 2025-06, 2025-07, …
+df['quarter'] = df['date'].dt.to_period('Q')   # 2025Q2, 2025Q3, …
+df['year']    = df['date'].dt.to_period('A')   # 2025, 2026, …
+```
+
+---
+
+## 2. Extracting components from periods
+
+Once you’ve got a PeriodIndex or Period‐typed column, you can grab its attributes:
+
+```python
+# Suppose df['month'] = df['date'].dt.to_period('M')
+df['year']    = df['month'].dt.year       # e.g. 2025
+df['month_n'] = df['month'].dt.month      #  1–12
+df['qtr']     = df['quarter'].dt.quarter  #  1–4
+```
+
+You can even do arithmetic on periods:
+
+```python
+# shift everything one month forward
+df['next_month'] = df['month'] + 1
+
+# number of months since start of dataset
+df['month_idx'] = (df['month'] - df['month'].min()).apply(lambda p: p.n)
+```
+
+---
+
+## 3. Why use `to_period()`?
+
+* **Grouping by natural buckets**
+
+  ```python
+  df.groupby(df['date'].dt.to_period('Q'))['sales'].sum()
+  ```
+* **Resampling without filling**
+
+  ```python
+  ts = df.set_index('date')['value']
+  ts.to_period('M').groupby(level=0).mean()
+  ```
+* **Cleaner labels**
+  Periods render as `"2025-06"` instead of `"2025-06-01 00:00:00"`.
+
+---
+
+### TL;DR
+
+1. **Convert** with `df['date'].dt.to_period(freq)`
+2. **Extract** with `.dt.year`, `.dt.month`, `.dt.quarter`, etc.
+3. **Group/resample** using the resulting PeriodIndex for neat, high‐level time‐buckets.

@@ -1,0 +1,229 @@
+============================================================
+GIT HOOKS — WHERE THEY LIVE & HOW TO USE THEM
+============================================================
+
+DEFAULT LOCATION
+------------------------------------------------------------
+All Git hooks live in:
+
+  .git/hooks/
+
+This directory is created automatically when you run 
+`git init` or `git clone`.
+
+
+WHAT'S INSIDE BY DEFAULT
+------------------------------------------------------------
+$ ls .git/hooks/
+
+applypatch-msg.sample
+commit-msg.sample
+fsmonitor-watchman.sample
+post-update.sample
+pre-applypatch.sample
+pre-commit.sample
+pre-merge-commit.sample
+pre-push.sample
+pre-rebase.sample
+pre-receive.sample
+prepare-commit-msg.sample
+push-to-checkout.sample
+update.sample
+
+These .sample files are INACTIVE templates. Git ignores 
+any file with the .sample extension.
+
+
+ACTIVATING A HOOK
+------------------------------------------------------------
+To activate a hook:
+
+1. Remove the .sample extension
+2. Make sure it's executable
+
+Example — enable pre-commit hook:
+  $ cd .git/hooks
+  $ cp pre-commit.sample pre-commit
+  $ chmod +x pre-commit
+
+Or create your own from scratch:
+  $ touch .git/hooks/pre-commit
+  $ chmod +x .git/hooks/pre-commit
+
+
+HOOK FILE REQUIREMENTS
+------------------------------------------------------------
+For a hook to work, it must:
+
+1. Be in the .git/hooks/ directory
+2. Have the EXACT correct name (no extension)
+3. Be executable (chmod +x)
+4. Start with a shebang (#!/bin/bash, #!/usr/bin/env python)
+
+Correct:   .git/hooks/pre-commit
+Wrong:     .git/hooks/pre-commit.sh
+Wrong:     .git/hooks/pre-commit.sample
+Wrong:     .git/hooks/my-pre-commit
+
+
+THE PROBLEM: .git IS NOT TRACKED
+------------------------------------------------------------
+The .git directory (and everything inside it) is never 
+committed to the repository. This means:
+
+- Hooks are LOCAL to each developer's machine
+- Cloning a repo does NOT copy hooks
+- Team members can't share hooks via Git itself
+
+This is a security feature (imagine malicious hooks in a 
+public repo!), but it creates a sharing challenge.
+
+
+SOLUTIONS FOR SHARING HOOKS
+------------------------------------------------------------
+
+METHOD 1: Manual Directory + Symlinks
+--------------------------------------
+Store hooks in a tracked directory, then symlink:
+
+  your-repo/
+  ├── .git/hooks/          ← actual hooks location
+  ├── .githooks/           ← tracked folder with hooks
+  │   ├── pre-commit
+  │   └── commit-msg
+  └── setup.sh             ← script to create symlinks
+
+setup.sh:
+  #!/bin/bash
+  ln -sf ../../.githooks/pre-commit .git/hooks/pre-commit
+  ln -sf ../../.githooks/commit-msg .git/hooks/commit-msg
+
+Team members run `./setup.sh` after cloning.
+
+
+METHOD 2: Configure Custom Hooks Path (Git 2.9+)
+--------------------------------------
+Tell Git to look for hooks in a tracked directory:
+
+  $ git config core.hooksPath .githooks
+
+Now Git uses .githooks/ instead of .git/hooks/
+
+Add to your repo setup docs or run automatically.
+Can be set globally too:
+  $ git config --global core.hooksPath ~/.githooks
+
+
+METHOD 3: Husky (Node.js projects)
+--------------------------------------
+Popular npm package that manages hooks automatically:
+
+  $ npm install husky --save-dev
+  $ npx husky init
+
+Creates:
+  your-repo/
+  └── .husky/
+      ├── pre-commit
+      └── commit-msg
+
+Hooks are tracked and auto-installed via npm install.
+
+package.json:
+  {
+    "scripts": {
+      "prepare": "husky"
+    }
+  }
+
+
+METHOD 4: pre-commit Framework (Python)
+--------------------------------------
+Language-agnostic hook manager:
+
+  $ pip install pre-commit
+  $ pre-commit install
+
+Uses .pre-commit-config.yaml (tracked) to define hooks:
+
+  repos:
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.4.0
+      hooks:
+        - id: trailing-whitespace
+        - id: end-of-file-fixer
+
+
+METHOD 5: Lefthook (Go-based, fast)
+--------------------------------------
+  $ lefthook install
+
+Uses lefthook.yml (tracked):
+
+  pre-commit:
+    parallel: true
+    commands:
+      lint:
+        run: npm run lint
+      test:
+        run: npm test
+
+
+AVAILABLE HOOKS REFERENCE
+------------------------------------------------------------
+CLIENT-SIDE HOOKS:
+
+Commit workflow:
+  pre-commit          Before commit created
+  prepare-commit-msg  Before editor opens, after default msg
+  commit-msg          After message entered, before commit
+  post-commit         After commit created (notification)
+
+Email workflow:
+  applypatch-msg      For git am
+  pre-applypatch      For git am
+  post-applypatch     For git am
+
+Other:
+  pre-rebase          Before rebase starts
+  post-rewrite        After commits rewritten (rebase, amend)
+  post-checkout       After checkout completes
+  post-merge          After merge completes
+  pre-push            Before push to remote
+  pre-auto-gc         Before automatic garbage collection
+
+SERVER-SIDE HOOKS:
+  pre-receive         Before any refs updated
+  update              Once per branch being updated
+  post-receive        After all refs updated
+
+
+CHECKING YOUR HOOKS SETUP
+------------------------------------------------------------
+# See what hooks exist
+ls -la .git/hooks/
+
+# Check if core.hooksPath is set
+git config core.hooksPath
+
+# Test a hook manually (just run it)
+.git/hooks/pre-commit
+
+# Debug: see what Git is doing
+GIT_TRACE=1 git commit -m "test"
+
+
+QUICK REFERENCE
+------------------------------------------------------------
+┌─────────────────────────────┬────────────────────────────┐
+│ Task                        │ Command/Location           │
+├─────────────────────────────┼────────────────────────────┤
+│ Default hooks location      │ .git/hooks/                │
+│ Change hooks location       │ git config core.hooksPath  │
+│ Make hook executable        │ chmod +x .git/hooks/name   │
+│ List existing hooks         │ ls .git/hooks/             │
+│ Skip hooks once             │ git commit --no-verify     │
+│ Skip pre-push               │ git push --no-verify       │
+└─────────────────────────────┴────────────────────────────┘
+
+============================================================

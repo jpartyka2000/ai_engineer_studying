@@ -1,0 +1,37 @@
+When OpenAI calculates accuracy during SFT (Supervised Fine-Tuning), they're measuring the model's ability to predict the next token correctly on a held-out validation set, not the training set. Here's how it works:
+
+## The Accuracy Calculation
+
+1. **Token-Level Prediction**: During training, the model learns to predict the next token given all previous tokens. For each token position in your validation examples, the model outputs a probability distribution over all possible tokens.
+
+2. **Validation Split**: OpenAI automatically splits your data (typically 80-20 or 90-10) into training and validation sets. The accuracy you see is calculated on the validation set - data the model hasn't directly trained on but follows the same format.
+
+3. **Accuracy Formula**: 
+   ```
+   Accuracy = (Number of correctly predicted tokens) / (Total number of tokens in validation set)
+   ```
+   A token is "correctly predicted" if the model's highest probability prediction matches the actual next token.
+
+## For Your Specific Use Case
+
+Since your examples end with assistant responses of "verify" or "compute", the model's accuracy on these decision tokens is particularly important. The dashboard accuracy includes:
+
+- How well it predicts the system message tokens
+- How well it predicts the user expression tokens  
+- **Most importantly**: How well it predicts "verify" vs "compute"
+
+## What Log Loss Tells You
+
+Log loss (cross-entropy) provides more nuanced information than accuracy:
+- **Lower is better** (approaches 0 for perfect predictions)
+- It penalizes confident wrong predictions more than uncertain wrong predictions
+- It considers the entire probability distribution, not just the top prediction
+
+## Why This Matters
+
+During training, you might see patterns like:
+- **Accuracy increasing steadily**: Model is learning the task
+- **Accuracy plateauing**: May indicate you've reached the model's capacity for this task
+- **Accuracy decreasing after initial increase**: Overfitting - the model is memorizing training data rather than generalizing
+
+For binary classification tasks like yours (verify/compute), you'd ideally want to see high accuracy on those final decision tokens specifically, though OpenAI's dashboard shows overall token accuracy rather than task-specific metrics.

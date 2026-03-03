@@ -1,0 +1,102 @@
+A **strict JSON Schema** is simply a JSON Schema that doesn’t just describe the *minimum* shape of your data but also **forbids** anything extra or unexpected. In practice that usually means:
+
+1. **Explicit `type` declarations**
+
+   ```json
+   { "type": "object", … }
+   ```
+
+   Rather than leaving `type` off and allowing any JSON value (object, array, string, number, etc.), you force items to be the kinds you expect.
+
+2. **`properties` + `required`**
+
+   ```json
+   {
+     "properties": {
+       "id":   { "type": "integer" },
+       "name": { "type": "string"  }
+     },
+     "required": ["id", "name"]
+   }
+   ```
+
+   You list every field your application will consume and mark which ones **must** be present.
+
+3. **`additionalProperties: false`**
+
+   ```json
+   { "additionalProperties": false }
+   ```
+
+   This single line says “no other keys beyond those in `properties` are allowed.” Without it, extra fields silently pass validation.
+
+4. **Tighter constraints on values**
+
+   * **Enums**:
+
+     ```json
+     { "type": "string", "enum": ["open", "closed", "pending"] }
+     ```
+   * **Formats & patterns**:
+
+     ```json
+     { "type": "string", "format": "email" }
+     { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+     ```
+   * **Numeric ranges**:
+
+     ```json
+     { "type": "integer", "minimum": 0, "maximum": 100 }
+     ```
+
+5. **No loose catch-alls**
+
+   * Avoid constructs like
+
+     ```json
+     { "type": ["string","null"] }
+     ```
+
+     unless you truly need them.
+   * Don’t omit `additionalProperties` or leave schema definitions open to interpolation.
+
+---
+
+### Example: strict schema for a user record
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "User",
+  "type": "object",
+  "properties": {
+    "id":       { "type": "integer" },
+    "username": { "type": "string", "minLength": 3 },
+    "email":    { "type": "string", "format": "email" },
+    "roles": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["admin","user","guest"] },
+      "minItems": 1
+    }
+  },
+  "required": ["id","username","email","roles"],
+  "additionalProperties": false
+}
+```
+
+With this schema:
+
+* Every user must have exactly those four fields—no more, no fewer.
+* Types, lengths, formats, and allowed values are all enforced.
+* Any object with an extra field (e.g. `"last_login"`) or a typo in the key (e.g. `"usernme"`) will **fail** validation.
+
+---
+
+**Why “strict” schemas matter**
+
+* **Data quality**: You catch typos and malformed records early.
+* **Security**: Reject unexpected fields that might carry injection payloads.
+* **Clarity**: Maintainers know exactly what data shape is supported.
+* **Interoperability**: Downstream consumers can rely on a fixed contract.
+
+In contrast, a *loose* schema might omit `additionalProperties` or `required`, letting through objects that don’t actually meet your application's needs—leading to bugs or data drift over time. A **strict** schema plugs those holes.

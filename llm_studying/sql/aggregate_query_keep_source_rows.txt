@@ -1,0 +1,83 @@
+In SQL, retrieving the source rows that contribute to aggregated results can be done using **window functions** or a combination of aggregate queries and joins. Here's how you can achieve this:
+
+---
+
+### 1. **Using Window Functions**
+Window functions allow you to calculate aggregates without collapsing the rows, so you can see both the aggregated values and the source rows.
+
+#### Example:
+Suppose you have a table `sales`:
+```sql
+CREATE TABLE sales (
+    region VARCHAR,
+    sales_rep VARCHAR,
+    sales_amount DECIMAL
+);
+```
+And you want to see the total sales for each region along with the source rows.
+
+```sql
+SELECT 
+    region,
+    sales_rep,
+    sales_amount,
+    SUM(sales_amount) OVER (PARTITION BY region) AS total_sales_in_region
+FROM sales;
+```
+
+- The `SUM(sales_amount) OVER (PARTITION BY region)` calculates the total sales for each region but does not group the rows, so each source row remains visible.
+
+---
+
+### 2. **Using a Subquery with a Join**
+If you already have a query with aggregate functions, you can use it as a subquery and join it back to the source table to map the aggregated results to the original rows.
+
+#### Example:
+Using the same `sales` table, if your aggregate query is:
+```sql
+SELECT region, SUM(sales_amount) AS total_sales_in_region
+FROM sales
+GROUP BY region;
+```
+
+You can join this back to the `sales` table to retain the source rows:
+```sql
+SELECT 
+    s.region,
+    s.sales_rep,
+    s.sales_amount,
+    agg.total_sales_in_region
+FROM sales s
+JOIN (
+    SELECT region, SUM(sales_amount) AS total_sales_in_region
+    FROM sales
+    GROUP BY region
+) agg
+ON s.region = agg.region;
+```
+
+This will add the total sales for each region alongside the individual rows.
+
+---
+
+### 3. **Storing Source Rows and Aggregates Together**
+If you frequently need source rows and their aggregates, you can create a temporary table or view that combines both:
+```sql
+CREATE VIEW sales_with_totals AS
+SELECT 
+    s.region,
+    s.sales_rep,
+    s.sales_amount,
+    SUM(s.sales_amount) OVER (PARTITION BY s.region) AS total_sales_in_region
+FROM sales s;
+```
+Now, querying `sales_with_totals` will give you both source rows and their aggregates.
+
+---
+
+### Summary
+- **Window Functions** are the most efficient way to calculate aggregates while keeping the source rows.
+- **Subqueries with Joins** allow you to map aggregate results back to source rows when you already have an aggregate query.
+- Using a **view or temporary table** can simplify repeated queries. 
+
+Let me know if you need tailored examples for your specific use case!

@@ -1,0 +1,65 @@
+Excellent — this is one of those subtle but important SQL details 👏
+
+By default, comparisons in `INFORMATION_SCHEMA.COLUMNS` are **case-sensitive** in most databases (including Databricks, PostgreSQL, and Snowflake), even though actual table and column identifiers may not be.
+
+To make your **table or column name comparisons case-insensitive**, you can normalize both sides to the same case — typically **lowercase** — using `LOWER()` (or `UPPER()` equivalently).
+
+---
+
+## ✅ Example: Case-Insensitive Symmetric Difference
+
+Here’s your previous query rewritten to ignore case when comparing table names and column names:
+
+```sql
+(
+  SELECT LOWER(column_name) AS column_name
+  FROM information_schema.columns
+  WHERE LOWER(table_schema) = LOWER('sales')
+    AND LOWER(table_name) = LOWER('table1')
+  EXCEPT
+  SELECT LOWER(column_name)
+  FROM information_schema.columns
+  WHERE LOWER(table_schema) = LOWER('sales')
+    AND LOWER(table_name) = LOWER('table2')
+)
+UNION
+(
+  SELECT LOWER(column_name)
+  FROM information_schema.columns
+  WHERE LOWER(table_schema) = LOWER('sales')
+    AND LOWER(table_name) = LOWER('table2')
+  EXCEPT
+  SELECT LOWER(column_name)
+  FROM information_schema.columns
+  WHERE LOWER(table_schema) = LOWER('sales')
+    AND LOWER(table_name) = LOWER('table1')
+);
+```
+
+---
+
+## ⚙️ Notes
+
+* `LOWER()` (or `UPPER()`) makes both sides comparable without case sensitivity.
+* If you use `AS column_name` after the first `LOWER(column_name)`, you keep the column name consistent in your result set.
+* Works equally well with:
+
+  * `INTERSECT` (for common columns)
+  * `EXCEPT` or `MINUS` (for differences)
+  * `UNION` (for symmetric difference)
+
+---
+
+## 🧩 Example Result
+
+If:
+
+* Table1 has `["CustomerID", "OrderID"]`
+* Table2 has `["customerid", "Address"]`
+
+Then the query above would consider `"CustomerID"` == `"customerid"`,
+and the **symmetric difference** would return only `["OrderID", "Address"]`.
+
+---
+
+Would you like me to show a version that **preserves the original column casing** in the output (even though it compares case-insensitively under the hood)?

@@ -1,0 +1,46 @@
+Yes — you are absolutely right. Even in non-distributed, single-node training, machine learning predictions may not be bit-for-bit reproducible due to floating-point non-associativity and rounding errors inherent in IEEE 754 arithmetic.
+
+Key Points:
+
+1. Floating-point addition is not associative:
+
+(a + b) + c != a + (b + c)
+
+Small differences in the order of operations can lead to slightly different results — especially during summation of gradients, loss accumulation, or matrix multiplications.
+
+
+2. Sources of non-determinism even on a single node:
+
+Multi-threading / parallelism: Operations may execute in a different order across runs.
+
+Non-deterministic libraries: Some BLAS/LAPACK implementations (like OpenBLAS or MKL) can use different execution paths across runs.
+
+Compiler optimizations: May reorder floating-point ops.
+
+Random seeds: If not controlled tightly, random number generation can vary.
+
+Precision differences: For example, mixing float32 and float64 without careful casting can introduce subtle variation.
+
+
+
+3. Effect on reproducibility:
+
+The differences are usually very small, but in sensitive training loops (e.g., deep learning with long epochs), they can lead to diverging weights and predictions over time.
+
+
+
+
+To improve reproducibility:
+
+Set random seeds at all levels (numpy, random, framework-specific).
+
+Use deterministic algorithms if the framework provides them (e.g., torch.use_deterministic_algorithms(True)).
+
+Fix number of threads (OMP_NUM_THREADS, MKL_NUM_THREADS).
+
+Avoid non-deterministic layers or operations (like dropout without seeding).
+
+Use .float32 or .float64 consistently.
+
+
+Would you like a checklist for reproducibility in a specific framework (e.g., PyTorch, TensorFlow)?

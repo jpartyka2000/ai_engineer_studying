@@ -1,0 +1,69 @@
+Here’s a side-by-side look at the two invocation patterns, along with some guidance on when each makes sense.
+
+---
+
+## 1) Databricks Jobs API
+
+### How it works
+
+* You package your MC simulation in a notebook or Python script (e.g. under Repos).
+* You configure a Databricks Job (via UI or API) that points at that notebook/script and passes parameters (e.g. the input Delta table path, budget, iteration count).
+* A client calls the **Jobs REST API** (`/api/2.1/jobs/run-now`), passing the job ID and any run-time parameters.
+* The job runs on a fresh cluster (or a configured job cluster), writes output (e.g. to a Delta table or cloud storage), and returns a run-ID that the client can poll for completion and then fetch results.
+
+### Pros
+
+* **No extra infra**—just notebooks and jobs you’d be running anyway.
+* **Data-in-place**—reads/writes directly from your Delta tables without extra serialization.
+* **Flexible**—easy to chain multiple tasks, attach libraries, or burst to bigger clusters for heavy MC runs.
+* **Built-in scheduling**—you can trigger periodic or conditional runs.
+
+### Cons
+
+* **Higher latency**—spinning up a job cluster (unless you have an always-on job cluster) adds minutes of overhead.
+* **Operational overhead**—clients need to manage job definitions, poll for status, and parse logs or result tables.
+* **Less “real-time”**—best for batch or ad-hoc runs rather than sub-second responses.
+
+---
+
+## 2) MLflow Model Serving
+
+### How it works
+
+* You wrap your simulator in a `mlflow.pyfunc.PythonModel`, log & register it in the Model Registry, and click “Serve” in the UI.
+* Databricks spins up a persistent REST endpoint behind the scenes.
+* Clients do a single HTTP POST (`/model/<name>/Production/invocations`) with a small JSON payload (e.g. parameters or a tiny DataFrame snippet), and get back the results.
+
+### Pros
+
+* **Low latency**—the service is warm, so you get responses in sub-second to single-digit-second range.
+* **Simple client**—one REST call, one JSON payload, one JSON response.
+* **Scalable**—Databricks autoscaled serving clusters handle concurrency.
+* **API consistency**—fits the same pattern as all your other MLflow-served models.
+
+### Cons
+
+* **Data munging**—you’ll need to pass your input as JSON (or upload small blobs), so large tables don’t work directly—you’d have to load the table server-side by embedding the table name in your request or hard-coding.
+* **Resource cost**—the serving cluster is always running, so you pay for that even when idle.
+* **Limited orchestration**—Model Serving is single-request → single-response; complex workflows (reading/writing big tables, ETL) still need to be in a notebook or job.
+
+---
+
+## Which to choose?
+
+| Use-case                                                                       | Best fit           |
+| ------------------------------------------------------------------------------ | ------------------ |
+| **Ad-hoc or scheduled batch runs** of heavy simulations over full Delta tables | **Jobs API**       |
+| **Interactive or near-real-time scoring** (small inputs, fast turn-around)     | **MLflow Serving** |
+| **Data-heavy ETL + simulation in one go**                                      | **Jobs API**       |
+| **Embedding MC in a larger model-serving ecosystem**                           | **MLflow Serving** |
+
+**Recommendation**
+
+* If your clients need to run large, data-intensive MC jobs (pulling millions of rows, writing large result tables) *on demand* or on a schedule, the **Jobs API** is simpler and more natural.
+* If, instead, you want a **low-latency endpoint** for small-scale runs (e.g. up to a few dozen rows of input params) that can be embedded in a web app or microservice, **wrap your simulator in MLflow** and use Model Serving.
+
+You can even **hybridize**:
+
+* Expose a fast “summary” endpoint via MLflow for quick sanity checks or small-scale runs.
+* Use a Job for the full-scale nightly/weekly Monte Carlo.

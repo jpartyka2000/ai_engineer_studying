@@ -1,0 +1,46 @@
+**Explaining how to get the latest model version in MLFlow**
+
+To get the latest version of a model without knowing its exact number, use the `MlflowClient` or `mlflow.get_latest_versions`. The `MlflowClient` is the best practice. Here's an example:
+
+```python
+from mlflow.tracking import MlflowClient
+client = MlflowClient()
+latest = client.get_latest_versions("ModelName", stages=["Production"])[0]
+model_uri = f"models:/{latest.name}/{latest.version}"
+model = mlflow.pyfunc.load_model(model_uri)
+```
+
+This will get the latest model version in the desired stage (e.g., Production).
+
+
+Thought for 4 seconds
+
+
+You can use the `MlflowClient` to look up the latest registered version for you, without hard‑coding the version number. For example, if your model is registered under the name `"MyModel"`, you can do:
+
+```python
+from mlflow.tracking import MlflowClient
+import mlflow
+
+# 1) Point at your tracking server (if not already the default)
+# mlflow.set_tracking_uri("databricks")  # or another URI
+
+client = MlflowClient()
+
+# 2) Fetch the latest versions in the desired stage (e.g. "Production")
+latest = client.get_latest_versions("MyModel", stages=["Production"])[0]
+
+print(f"Latest Production version of MyModel is: {latest.version}")
+
+# 3) Construct the model URI and load it
+model_uri = f"models:/{latest.name}/{latest.version}"
+model = mlflow.pyfunc.load_model(model_uri)
+
+# Now `model` is your loaded PyFunc (you can also do mlflow.sklearn.load_model if you logged a sklearn model)
+```
+
+A few notes:
+
+* `stages` can be any list of registry stages, e.g. `["None"]`, `["Staging"]`, or `["Production","Staging"]`, depending which you consider “latest.”
+* If you don’t care about stage, you can omit that argument and filter the returned list yourself.
+* Once you have the `latest.version`, you can use the standard MLflow URI scheme `models:/<name>/<version>` to load it anywhere.

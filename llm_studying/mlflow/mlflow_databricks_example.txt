@@ -1,0 +1,139 @@
+MLflow Reproducibility with Databricks
+
+This version integrates Databricks and MLflow, ensuring full reproducibility by:
+
+1. Logging model parameters, metrics, artifacts, and datasets.
+
+
+2. Capturing the exact environment for re-execution.
+
+
+3. Storing the model in Databricks' MLflow Model Registry.
+
+
+4. Reloading the model for inference.
+
+
+
+
+---
+
+Step 1: Set Up MLflow in Databricks
+
+In a Databricks notebook, run:
+
+import mlflow
+
+# Ensure MLflow is tracking Databricks experiments
+mlflow.set_tracking_uri("databricks")
+
+# Create or get a Databricks MLflow experiment
+EXPERIMENT_NAME = "/Users/your-email@databricks.com/mlflow_reproducibility"
+mlflow.set_experiment(EXPERIMENT_NAME)
+
+
+---
+
+Step 2: Train a Model and Log Everything
+
+import mlflow.sklearn
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+# Enable autologging (Databricks automatically supports this)
+mlflow.sklearn.autolog()
+
+# Generate synthetic dataset
+X, y = np.random.rand(100, 5), np.random.randint(0, 2, 100)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Start an MLflow run in Databricks
+with mlflow.start_run() as run:
+    model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+    model.fit(X_train, y_train)
+   
+    # Evaluate model
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+
+    # Log manually in case autologging is disabled
+    mlflow.log_metric("accuracy", accuracy)
+
+    # Log dataset as an artifact
+    df = pd.DataFrame(X_train)
+    dataset_path = "/dbfs/tmp/train_data.csv"
+    df.to_csv(dataset_path, index=False)
+    mlflow.log_artifact(dataset_path)
+
+    # Log model in Databricks' MLflow Model Registry
+    model_uri = f"runs:/{run.info.run_id}/random_forest_model"
+    mlflow.sklearn.log_model(model, "random_forest_model", registered_model_name="RandomForest_Classifier")
+
+print(f"Run ID: {run.info.run_id}")
+
+
+---
+
+Step 3: Retrieve Model Lineage in Databricks
+
+After execution:
+
+Go to Databricks UI > Experiments and find mlflow_reproducibility.
+
+Check the run details:
+
+Parameters: n_estimators=100, max_depth=5
+
+Metrics: accuracy
+
+Artifacts: Dataset (train_data.csv)
+
+Model Registry: RandomForest_Classifier
+
+
+
+
+---
+
+Step 4: Reload the Model in Databricks
+
+To reproduce the training run, fetch the logged model from the Databricks Model Registry:
+
+# Load the registered model from MLflow in Databricks
+model_version = "1"  # Change to the latest version in Model Registry
+model_name = "RandomForest_Classifier"
+
+loaded_model = mlflow.pyfunc.load_model(f"models:/{model_name}/{model_version}")
+
+# Verify it produces the same results
+y_loaded_pred = loaded_model.predict(X_test)
+print(f"Reproduced Accuracy: {accuracy_score(y_test, y_loaded_pred)}")
+
+
+---
+
+Step 5: Store Environment Dependencies for Reproducibility
+
+For full environment tracking, log a Conda YAML file with dependencies:
+
+conda_env = mlflow.pyfunc.get_default_conda_env()
+mlflow.log_dict(conda_env, "conda_env.yaml")
+
+Later, you can recreate the exact environment:
+
+conda env create -f conda_env.yaml
+
+
+---
+
+Why This Ensures Reproducibility
+
+✅ Tracked in Databricks: All experiments, artifacts, and metrics are stored centrally.
+✅ Model Versioning: Models are stored and versioned in the Databricks Model Registry.
+✅ Dataset Logged: The dataset is stored as an artifact, allowing re-training.
+✅ Environment Captured: The conda environment is logged to prevent package mismatches.
+
+Would you like to integrate this into a Databricks Job Workflow for automated retraining?

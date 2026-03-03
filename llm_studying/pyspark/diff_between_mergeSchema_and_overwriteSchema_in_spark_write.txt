@@ -1,0 +1,57 @@
+Great question! Let me break down how `mergeSchema` works in Delta Lake:
+
+## Adding New Columns ✅
+**No error** - this works perfectly:
+```python
+spark_df.write.mode("overwrite").option("mergeSchema", "true").saveAsTable(table_name)
+```
+
+If your new DataFrame has additional columns that don't exist in the existing table schema, Delta will:
+- Add those new columns to the table schema
+- For old data rows, those columns will be `NULL`
+- Write proceeds successfully
+
+## Removing Columns (columns exist in old table but not in new data) ⚠️
+**Also no error** - but behavior depends on mode:
+
+With `mode("overwrite")` + `mergeSchema`:
+- Delta will **keep** the old columns in the schema
+- Old data is deleted (because it's overwrite mode)
+- New data is written with `NULL` values for the missing columns
+- The schema retains all columns from both old and new data
+
+**Example:**
+
+```python
+# Original table schema: [col_A, col_B, col_C]
+# New DataFrame schema: [col_A, col_B, col_D]
+
+# After overwrite with mergeSchema:
+# Table schema: [col_A, col_B, col_C, col_D]
+# All rows will have: col_A, col_B, col_D with values, col_C = NULL
+```
+
+## Key Points:
+
+1. **Schema Evolution Direction**: `mergeSchema` is primarily for **additive** changes
+2. **No Data Validation**: It won't throw errors for missing columns
+3. **Schema Union**: Delta creates a union of old and new schemas
+4. **NULL Filling**: Missing columns are automatically filled with NULL
+
+## Potential Issues to Watch:
+
+```python
+# This could cause problems:
+- Type mismatches (col_A was INT, now STRING) → ERROR
+- Column name case sensitivity issues
+- Nested schema changes in structs/arrays
+```
+
+## Best Practice:
+
+If you want to truly replace the schema (remove old columns), use:
+```python
+spark_df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(table_name)
+```
+
+**`overwriteSchema`** completely replaces the old schema with the new one, while **`mergeSchema`** combines them.

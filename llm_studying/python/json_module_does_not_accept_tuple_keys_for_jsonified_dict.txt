@@ -1,0 +1,47 @@
+That error isn’t coming from Python’s dict itself (which happily allows tuples as keys), but from whatever is trying to serialize your dict into JSON (e.g. `json.dumps`, MLflow’s REST API, Spark’s JSON-based Row → struct conversion, etc.).  In JSON (and in Python’s `json` module), object keys must be one of these primitive types:
+
+* `str`
+* `int` / `float`
+* `bool`
+* `None`
+
+A `tuple` is not allowed, so you get:
+
+```text
+TypeError: keys must be str, int, float, bool or None, not tuple
+```
+
+— even though Python dicts themselves are fine with tuple keys.
+
+---
+
+### How to fix
+
+1. **String-ify your tuple keys**
+   Convert `(a, b, c)` → `"a|b|c"` (or any delimiter) before serializing:
+
+   ```python
+   prob_delta_dict_json = {
+       "|".join(key): value
+       for key, value in prob_delta_dict.items()
+   }
+   json_str = json.dumps(prob_delta_dict_json)
+   ```
+
+2. **Switch to a list-of-records**
+   If you really need to preserve each component, turn your dict into a list of objects:
+
+   ```python
+   records = [
+       {"program": k[0], "channel": k[1], "yq": k[2], "delta": v}
+       for k, v in prob_delta_dict.items()
+   ]
+   json_str = json.dumps(records)
+   ```
+
+3. **Use a pickle or binary format**
+   If you control both ends and don’t need JSON, you can serialize with `pickle` (which allows any hashable key), then store/load that blob.
+
+---
+
+So yes—a Python dict can have tuple keys—but the moment you try to emit it as JSON (directly or indirectly), you must convert those keys to one of the allowed JSON key types.

@@ -1,0 +1,127 @@
+Here's how to create a fine-tuned model through the OpenAI API:
+
+## 1. Prepare your training data
+
+First, create a JSONL file with your training examples:
+
+**For chat models (e.g., gpt-4o-mini):**
+```jsonl
+{"messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What's the capital of France?"}, {"role": "assistant", "content": "Paris"}]}
+{"messages": [{"role": "user", "content": "Hello"}, {"role": "assistant", "content": "Hi there!"}]}
+```
+
+## 2. Upload the training file
+
+```python
+import openai
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="your-api-key",
+    organization="your-org-id",  # optional
+    project="jeff_rl"  # specify your project
+)
+
+# Upload the training file
+training_file = client.files.create(
+    file=open("training_data.jsonl", "rb"),
+    purpose="fine-tune"
+)
+
+print(f"File uploaded: {training_file.id}")
+```
+
+## 3. Create the fine-tuning job
+
+```python
+# Create fine-tuning job
+fine_tune_job = client.fine_tuning.jobs.create(
+    training_file=training_file.id,
+    model="gpt-4o-mini-2024-07-18",  # or another base model
+    suffix="jeff-rl-custom",  # optional custom suffix
+    hyperparameters={
+        "n_epochs": 3,  # optional, default is auto
+    }
+)
+
+print(f"Fine-tuning job created: {fine_tune_job.id}")
+```
+
+## 4. Monitor the job
+
+```python
+# Check status
+import time
+
+while True:
+    job_status = client.fine_tuning.jobs.retrieve(fine_tune_job.id)
+    print(f"Status: {job_status.status}")
+    
+    if job_status.status in ["succeeded", "failed", "cancelled"]:
+        break
+    
+    time.sleep(60)  # Check every minute
+
+# Get the final model name
+if job_status.status == "succeeded":
+    print(f"Model ready: {job_status.fine_tuned_model}")
+```
+
+## 5. Use the fine-tuned model
+
+```python
+# Use your fine-tuned model
+response = client.chat.completions.create(
+    model=job_status.fine_tuned_model,  # your ft:... model name
+    messages=[{"role": "user", "content": "Test prompt"}]
+)
+```
+
+## Complete script example:
+
+```python
+from openai import OpenAI
+import time
+
+# Initialize client with project
+client = OpenAI(
+    api_key="your-api-key",
+    project="jeff_rl"  # Important: specify your project
+)
+
+# Upload training file
+training_file = client.files.create(
+    file=open("training_data.jsonl", "rb"),
+    purpose="fine-tune"
+)
+
+# Create fine-tuning job
+fine_tune_job = client.fine_tuning.jobs.create(
+    training_file=training_file.id,
+    model="gpt-4o-mini-2024-07-18",
+    suffix="my-custom-model"
+)
+
+print(f"Job started: {fine_tune_job.id}")
+
+# Wait for completion
+while True:
+    job = client.fine_tuning.jobs.retrieve(fine_tune_job.id)
+    print(f"Status: {job.status}")
+    
+    if job.status == "succeeded":
+        print(f"✅ Model ready: {job.fine_tuned_model}")
+        break
+    elif job.status == "failed":
+        print(f"❌ Job failed: {job.error}")
+        break
+    
+    time.sleep(60)
+```
+
+## Key points:
+- Make sure to specify `project="jeff_rl"` in your client initialization
+- The model name will still include "personal" (your org name) but should be associated with your project
+- You can list all fine-tuning jobs with: `client.fine_tuning.jobs.list()`
+
+Try creating a model this way and see if it appears in your Playground. Sometimes models created via API are more reliably visible than those created through the UI.

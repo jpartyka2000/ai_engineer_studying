@@ -1,0 +1,108 @@
+Below is a breakdown of the `"tool"` message role you’re seeing in OpenAI Python library version 1.99.9 when driving the Chat Completions API with external **tools** instead of plain **functions**.
+
+---
+
+## 1. What Is the `"tool"` Role?
+
+When you supply a list of **tools** (rather than **functions**) to `client.chat.completions.create`, the model may emit structured calls to those tools. After you run the requested tool, you feed its result back into the conversation with a message whose `role` is `"tool"`. This is how the LLM “sees” the actual output of your code.
+
+---
+
+## 2. How It Differs from `"function"` Role
+
+| Role         | Triggered By           | You Append…                                                                      |
+| ------------ | ---------------------- | -------------------------------------------------------------------------------- |
+| `"function"` | `functions=` parameter | `{ role:"function", name:"<fn_name>", content:"…"} `                             |
+| **`"tool"`** | `tools=` parameter     | `{ role:"tool", name:"<tool_name>", tool_call_id:"…", content:"…"} ` ([Zenn][1]) |
+
+* **`"function"`**
+
+  * Used in the classic Function Calling interface (`functions=[…]`).
+  * Carries just `name` + `content`.
+
+* **`"tool"`**
+
+  * Used when you pass `tools=[…]` and `tool_choice="auto"` (or forced).
+  * Includes an extra **`tool_call_id`** to correlate back to the model’s **`tool_calls`** field.
+
+---
+
+## 3. Typical Flow with Tools
+
+1. **User asks** something that a tool can handle.
+2. **Model “plans”** a tool invocation, returning:
+
+   ```json
+   {
+     "role": "assistant",
+     "content": null,
+     "tool_calls": [
+       { "id": "call_123", "function": { "name":"my_tool", "arguments":"{…}" }, "type":"function" }
+     ]
+   }
+   ```
+3. **You run** `my_tool(...)` in your client.
+4. **You append** its output as a `"tool"` message:
+
+   ```jsonc
+   {
+     "role": "tool",
+     "tool_call_id": "call_123",
+     "name": "my_tool",
+     "content": "{…actual tool result…}"
+   }
+   ```
+5. **Re-invoke** the API; the LLM now sees the real tool output and can generate its human-friendly reply.
+
+---
+
+## 4. Why the Extra `tool_call_id`?
+
+The `tool_call_id` lets you map multiple parallel or sequential tool calls back to the right invocation, especially when a single assistant turn issues several tool requests. The model’s subsequent reasoning can then reference exactly which result belongs to which call ([Zenn][1]).
+
+---
+
+### Example Snippet (Python)
+
+```python
+from openai import OpenAI
+import json
+
+client = OpenAI()
+
+# 1) Model asks for tool calls…
+first = client.chat.completions.create(
+    model="gpt-5",
+    messages=[
+      {"role":"system","content":"You are an assistant."},
+      {"role":"user","content":"What’s the weather in Paris and Tokyo?"}
+    ],
+    tools=[get_current_temperature_schema],
+    tool_choice="auto"
+).model_dump()
+
+tool_call = first["choices"][0]["message"]["tool_calls"][0]
+
+# 2) You execute the tool:
+result = get_current_temperature(**json.loads(tool_call["function"]["arguments"]))
+
+# 3) Inject as a “tool” message:
+messages = first["choices"][0]["message"]
+messages.append({
+  "role": "tool",
+  "tool_call_id": tool_call["id"],
+  "name": tool_call["function"]["name"],
+  "content": result
+})
+
+# 4) Continue conversation:
+second = client.chat.completions.create(
+    model="gpt-5",
+    messages=messages
+)
+print(second.choices[0].message.content)
+```
+
+With this pattern, **`"tool"`** messages serve the same grounding purpose as **`"function"`** messages—but in the newer Tools-based interface that the OpenAI Python SDK exposes.
+
+[1]: https://zenn.dev/kun432/scraps/8dcf577261d558 "GPT-5の Preamble を試す"

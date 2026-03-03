@@ -1,0 +1,55 @@
+Here's the overview:
+
+## What PickScore Is
+
+PickScore is a CLIP-based scoring function trained on the Pick-a-Pic dataset — a large, open dataset of over a million text-to-image prompts with real users' preference annotations. It was developed by researchers at Tel Aviv University and the Technion, with support from Stability AI.
+
+## How It Works
+
+The architecture is simple — it's fine-tuned from CLIP-ViT-H-14 (the "huge" variant of CLIP trained by LAION). Like CLIPScore, it uses a dual-encoder approach: encode the image and text separately, normalize the embeddings, then compute a scaled cosine similarity. The key difference is that instead of using vanilla CLIP weights, PickScore's weights have been fine-tuned on hundreds of thousands of real user preference pairs — cases where a human looked at two images for the same prompt and picked which one they preferred.
+
+So it inherits CLIP's speed (dual-encoder, dot product) but learns a much better notion of "what humans actually like."
+
+## Key Stats
+
+- **Architecture:** CLIP ViT-H/14 (~1B params — larger than base CLIP but same inference pattern)
+- **Training data:** Pick-a-Pic v1/v2, over 1M preference examples from real users
+- **Max text length:** 77 tokens (inherited CLIP limitation)
+- **Score output:** Unbounded (like CLIPScore), but higher = better alignment/preference
+- **GPU memory:** ~4-6 GB — very manageable
+- **Latency:** Similar to CLIPScore, roughly 10-20ms per image on GPU
+- **Your M3 Pro:** Will run comfortably, probably sub-second on MPS
+
+## Quality
+
+PickScore aligns better with human judgments than any other publicly-available automatic metric at the time of release, and together with Pick-a-Pic's natural distribution prompts, enables much more relevant text-to-image model evaluation than existing evaluation standards.
+
+From the `imscore` benchmarks, PickScore scores 0.754 average pairwise accuracy across preference benchmarks — beating ImageReward (0.669), HPSv2 (0.734), and CLIPScore (0.601).
+
+## Limitations
+
+The main one is the 77-token limit inherited from CLIP — long, detailed prompts get truncated. It also shares CLIP's compositional weakness: it's better than vanilla CLIP at preference prediction but still struggles with complex spatial/relational prompts compared to VQAScore. And PickScore is trained on prompts from real users often describing artwork, so it may be less well-calibrated for natural photographs or domain-specific imagery.
+
+## Usage
+
+```python
+from transformers import AutoProcessor, AutoModel
+import torch
+
+processor = AutoProcessor.from_pretrained("laion/CLIP-ViT-H-14-laion2B-s32B-b79K")
+model = AutoModel.from_pretrained("yuvalkirstain/PickScore_v1").eval()
+
+# encode image + text, compute cosine similarity
+# (see HuggingFace model card for full calc_probs function)
+```
+
+Or via the `imscore` unified library:
+```python
+from imscore.pickscore.model import PickScorer
+model = PickScorer("yuvalkirstain/PickScore_v1")
+score = model.score(pixels, [prompt])
+```
+
+## Bottom Line for Your Use Case
+
+PickScore is the sweet spot for your M3 Pro setup. It's fast enough for interactive use, accurate enough to meaningfully rank FLUX.2 [max] outputs, fits comfortably in 18GB, and captures both alignment *and* aesthetic preference (since it was trained on what real users actually chose). The main thing it won't catch well is fine-grained compositional errors — for that you'd need VQAScore with a smaller model.

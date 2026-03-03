@@ -1,0 +1,45 @@
+You can’t call `.map(...)` on a 2‑column DataFrame because **`map` is a Series method**, not a DataFrame method, and it only knows how to take each *scalar* value in a Series to another scalar.  A two‑column slice is still a DataFrame, so it doesn’t have `.map`, and even if it did, it wouldn’t know how to digest a `(col1, col2)` row tuple.
+
+---
+
+### What you *can* do
+
+1. **Build a Series of tuple‑keys, then `.map`**
+
+   ```python
+   # create a Series whose values are (degree, ts) tuples
+   keys = df[['DEGREE_OFFERING','most_recent_past_cohort_ts']].apply(
+       lambda row: (row['DEGREE_OFFERING'], row['most_recent_past_cohort_ts']),
+       axis=1
+   )
+   # now map those tuples through your dict
+   df['admit_rate_most_recent_past_cohort'] = keys.map(deg_off_cohort_ts_to_admit_rate_dict)
+   ```
+
+2. **Use a list comprehension** (often the simplest for two columns)
+
+   ```python
+   df['admit_rate_most_recent_past_cohort'] = [
+       deg_off_cohort_ts_to_admit_rate_dict.get((deg, ts), np.nan)
+       for deg, ts in zip(
+           df['DEGREE_OFFERING'],
+           df['most_recent_past_cohort_ts']
+       )
+   ]
+   ```
+
+3. **Join on a MultiIndex Series**
+
+   ```python
+   # turn your dict into a lookup Series
+   lookup = pd.Series(deg_off_cohort_ts_to_admit_rate_dict)
+   # set up your df index and join
+   df = (
+       df
+       .set_index(['DEGREE_OFFERING','most_recent_past_cohort_ts'])
+       .join(lookup.rename('admit_rate_most_recent_past_cohort'))
+       .reset_index()
+   )
+   ```
+
+Any of those will let you map a two‑column key into your admit‑rate dict.

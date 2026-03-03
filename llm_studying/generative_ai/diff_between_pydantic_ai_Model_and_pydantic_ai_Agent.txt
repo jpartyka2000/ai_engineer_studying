@@ -1,0 +1,68 @@
+Great question. Let me clarify the Pydantic AI architecture.
+
+## `pydantic_ai.models.Model`
+
+This is **just an LLM interface** — it's an abstraction layer over different LLM providers. It handles:
+
+- Making API calls to the LLM (OpenAI, Anthropic, Gemini, etc.)
+- Standardizing request/response formats
+- Token counting, retries, etc.
+
+It does **not** include any agent logic. Think of it as a thin wrapper around an API client.
+
+```python
+from pydantic_ai.models.anthropic import AnthropicModel
+from pydantic_ai.models.openai import OpenAIModel
+
+# These are just LLM clients
+claude = AnthropicModel("claude-sonnet-4-20250514")
+gpt = OpenAIModel("gpt-4o")
+```
+
+## `pydantic_ai.Agent`
+
+This is **the actual agent** — it combines:
+
+- A `Model` (the LLM interface)
+- A system prompt
+- Tools/functions the agent can call
+- Result validation (using Pydantic)
+- Conversation/message handling
+
+```python
+from pydantic_ai import Agent
+
+agent = Agent(
+    model="anthropic:claude-sonnet-4-20250514",  # The LLM interface
+    system_prompt="You are a helpful assistant.",
+    tools=[my_tool_function],  # Tools the agent can use
+    result_type=MyResponseSchema,  # Pydantic model for output validation
+)
+
+result = await agent.run("What's the weather?")
+```
+
+## How This Maps to Your Code
+
+```python
+class CueEvaluationAgent(weave.Model):
+    model: Model              # pydantic_ai LLM interface (just the API client)
+    cue_agents: dict[str, CueAgent]  # Actual agents (likely wraps pydantic_ai.Agent)
+```
+
+And in your `predict()` method:
+
+```python
+agent: CueAgent = self.cue_agents[customer_id]
+result = await agent.run(question, message_history=[])  # Agent does the work
+```
+
+## Summary
+
+| Component | What It Is | Analogy |
+|-----------|-----------|---------|
+| `pydantic_ai.models.Model` | LLM API client | The telephone |
+| `pydantic_ai.Agent` | Agent with tools, prompts, logic | The person using the telephone |
+| `weave.Model` | Tracking/evaluation wrapper | A notebook recording the conversation |
+
+Your `CueAgent` likely wraps or extends `pydantic_ai.Agent`, and the `Model` is injected into it to specify which LLM to use for inference.

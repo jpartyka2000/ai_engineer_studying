@@ -1,0 +1,214 @@
+Unfortunately, there's no direct API endpoint in the OpenAI Python SDK to get the organization associated with an API key. However, here are several working methods to determine this:
+
+## Method 1: Check Fine-Tuned Models (Most Reliable)
+
+```python
+from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_org_from_models():
+    try:
+        models = client.models.list()
+        fine_tuned = [m for m in models.data if m.id.startswith('ft:')]
+        
+        if fine_tuned:
+            print("Organization info from fine-tuned models:")
+            for model in fine_tuned:
+                print(f"Model: {model.id}")
+                print(f"Owned by: {model.owned_by}")
+                
+                # Parse model ID: ft:base-model:org:suffix:job-id
+                parts = model.id.split(':')
+                if len(parts) >= 3:
+                    org_part = parts[2]
+                    print(f"Organization from ID: {org_part}")
+                print("-" * 40)
+                
+            return fine_tuned[0].owned_by
+        else:
+            print("No fine-tuned models found to determine organization")
+            return None
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+org_info = get_org_from_models()
+```
+
+## Method 2: Make a Test API Call and Check Response Headers
+
+```python
+import requests
+import os
+
+def get_org_from_api_call():
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    if not api_key:
+        print("No API key found")
+        return None
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        # Make a simple API call
+        response = requests.get(
+            "https://api.openai.com/v1/models",
+            headers=headers
+        )
+        
+        print(f"Response status: {response.status_code}")
+        
+        # Check response headers for org info
+        org_header = response.headers.get('openai-organization')
+        if org_header:
+            print(f"Organization from header: {org_header}")
+            return org_header
+        else:
+            print("No organization header found")
+            
+        # Check if there's organization info in the response
+        if response.status_code == 200:
+            data = response.json()
+            if 'organization' in data:
+                print(f"Organization from response: {data['organization']}")
+                return data['organization']
+                
+    except Exception as e:
+        print(f"Error making API call: {e}")
+    
+    return None
+
+org_from_api = get_org_from_api_call()
+```
+
+## Method 3: Check API Key Format
+
+```python
+import os
+
+def analyze_api_key():
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    if not api_key:
+        print("No API key found")
+        return None
+        
+    print("API Key Analysis:")
+    print(f"Key prefix: {api_key[:15]}...")
+    
+    if api_key.startswith("sk-proj-"):
+        print("✓ PROJECT-SCOPED API key")
+        print("  - This key is tied to a specific project")
+        print("  - Organization context is embedded in the key")
+        return "project-scoped"
+    elif api_key.startswith("sk-"):
+        print("✓ ORGANIZATION-LEVEL API key")  
+        print("  - This key has access to the entire organization")
+        return "organization-level"
+    else:
+        print("? Unknown API key format")
+        return "unknown"
+
+key_type = analyze_api_key()
+```
+
+## Method 4: Try the Models Endpoint with Detailed Inspection
+
+```python
+from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def detailed_model_inspection():
+    try:
+        models = client.models.list()
+        
+        print(f"Total models accessible: {len(models.data)}")
+        
+        # Look for any model that might have organization info
+        sample_models = models.data[:5]  # First 5 models
+        
+        for model in sample_models:
+            print(f"\nModel: {model.id}")
+            print(f"Owned by: {model.owned_by}")
+            print(f"Created: {model.created}")
+            
+            # Check if there are any other attributes
+            model_dict = model.__dict__ if hasattr(model, '__dict__') else {}
+            for key, value in model_dict.items():
+                if 'org' in key.lower():
+                    print(f"  {key}: {value}")
+                    
+    except Exception as e:
+        print(f"Error: {e}")
+
+detailed_model_inspection()
+```
+
+## Method 5: Complete Diagnostic
+
+```python
+from openai import OpenAI
+import os
+
+def complete_org_diagnostic():
+    api_key = os.getenv("OPENAI_API_KEY")
+    client = OpenAI(api_key=api_key)
+    
+    print("=== ORGANIZATION DIAGNOSTIC ===")
+    
+    # 1. API Key type
+    print("1. API Key Analysis:")
+    if api_key:
+        if api_key.startswith("sk-proj-"):
+            print("   Type: Project-scoped")
+        elif api_key.startswith("sk-"):
+            print("   Type: Organization-level")
+        print(f"   Prefix: {api_key[:15]}...")
+    
+    # 2. Model ownership
+    print("\n2. Model Ownership:")
+    try:
+        models = client.models.list()
+        
+        # Get unique owners
+        owners = set()
+        for model in models.data:
+            if hasattr(model, 'owned_by'):
+                owners.add(model.owned_by)
+        
+        print(f"   Unique owners: {list(owners)}")
+        
+        # Look at fine-tuned models specifically
+        fine_tuned = [m for m in models.data if m.id.startswith('ft:')]
+        if fine_tuned:
+            print(f"   Fine-tuned models: {len(fine_tuned)}")
+            for ft_model in fine_tuned[:3]:  # First 3
+                parts = ft_model.id.split(':')
+                if len(parts) >= 3:
+                    print(f"     Org from model ID: {parts[2]}")
+        
+    except Exception as e:
+        print(f"   Error: {e}")
+    
+    print("\n" + "="*50)
+
+complete_org_diagnostic()
+```
+
+## Key Points:
+
+1. **No direct endpoint**: OpenAI doesn't provide a direct way to query organization from API key
+2. **Fine-tuned models**: Most reliable source - check `owned_by` field and parse model IDs
+3. **API key format**: Project-scoped keys (`sk-proj-`) vs organization keys (`sk-`)
+4. **Web dashboard**: Often the most reliable way to see organization/project context
+
+Run the complete diagnostic above to get the most comprehensive view of your API key's organization context.

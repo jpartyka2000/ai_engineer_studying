@@ -1,0 +1,23 @@
+Here’s what each line does in the standard PyTorch training loop:
+
+1. **`opts[agent].zero_grad()`**
+   Clears out (sets to zero) all the accumulated gradients on that agent’s parameters. PyTorch by default **accumulates** gradients from one `.backward()` call into the `.grad` fields of each parameter, so you need to zero them before computing a fresh set of gradients for the current loss.
+
+2. **`policy_loss.backward()`**
+   Computes the **gradient** of `policy_loss` with respect to every `torch.nn.Parameter` in your policy network:
+
+   ```python
+   for param in policies[agent].parameters():
+       # After this call, param.grad contains ∂policy_loss/∂param
+   ```
+
+   Internally, PyTorch builds a computation graph as you do your forward pass, and `.backward()` runs reverse‐mode autodiff on that graph.
+
+3. **`opts[agent].step()`**
+   Tells the optimizer (e.g. Adam) to update the network’s parameters **in place** using the gradients that just landed in each `param.grad`.  For Adam, that means it:
+
+   * Reads `param.grad`
+   * Updates its internal momentum/variance estimates
+   * Adjusts `param.data` by a small step in the (negative) gradient direction, scaled by the learning rate and Adam’s correction terms.
+
+Together, these three lines perform **one gradient‐descent update** on your policy network: clear old gradients, compute new ones, and then apply them to improve your policy.

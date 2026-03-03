@@ -1,0 +1,79 @@
+The **`window`** argument in `Series.rolling()` (and `DataFrame.rolling()`) tells pandas how big of a “look-back” you want for each calculation. You can specify it in several ways:
+
+---
+
+### 1. Fixed-size, row-based window (integer)
+
+```python
+# a 7-row window: for each row, look at that row and the 6 preceding rows
+df['x'].rolling(window=7)
+```
+
+* **`window=7`** means “include the current row and the 6 rows immediately above it” regardless of any time gaps.
+* You can use any positive integer ≥ 1.
+* Works even if your index isn’t a datetime—just counts rows.
+
+---
+
+### 2. Time-based window (offset string)
+
+```python
+# a 7-day calendar window: for each timestamp, include all rows with
+# index ≥ current_timestamp − 7 days
+df.set_index('date')['x'].rolling(window='7d')
+```
+
+* **`window='7d'`**, `'90D'`, `'3M'`, `'1H30T'`, etc., lets you specify a time span.
+* Requires that your DataFrame is indexed by a `DatetimeIndex` or `PeriodIndex`.
+* Pandas will include **all** rows whose timestamp falls within “current\_time − window” up to and including the current row.
+
+---
+
+### 3. Variable window via `on` (for DataFrame)
+
+```python
+# use a datetime column rather than the index
+df.rolling(window='30d', on='timestamp')['value'].mean()
+```
+
+* The `on='timestamp'` argument tells pandas “sort by this column and apply a time-based window on it,” leaving your original index untouched.
+
+---
+
+### 4. Centering and alignment
+
+By default the window is **right-aligned** (the window ends at the current row). You can change that with:
+
+```python
+df['x'].rolling(window=7, center=True)
+```
+
+* **`center=True`** makes the window symmetric around each row (3 rows before, the row itself, then 3 rows after).
+* Useful for smoothing that doesn’t introduce a lag.
+
+---
+
+### 5. Minimum periods
+
+Always pair `window` with `min_periods` to control how many non-NA values you need before you emit a result:
+
+```python
+df['x'].rolling(window=7, min_periods=1).mean()
+```
+
+* **`min_periods=1`** means you’ll start getting averages even if only one value exists in the window (at the top of the series).
+* Default `min_periods=window` yields `NaN` until you’ve accumulated a full window.
+
+---
+
+### Putting it all together
+
+```python
+# 7-row, right-aligned, need at least 3 values
+df['x'].rolling(window=7, min_periods=3).sum()
+
+# 30-day window on a timestamp column, centered
+df.rolling(window='30d', on='timestamp', center=True)['y'].mean()
+```
+
+The **`window`** parameter is your primary way to switch between simple fixed-length smoothing (`int`) and true time-based windows (`offset string`). By combining it with `min_periods`, `center`, and `on`, you get full control over exactly which observations feed into each rolling calculation.

@@ -1,0 +1,56 @@
+Databricks uses a combination of function decorators and metadata to determine which functions to call during the pipeline creation and execution. Here’s a breakdown of how Databricks identifies and manages functions in a Delta Live Tables (DLT) pipeline:
+
+### 1. **Function Decorators**
+
+When defining a table in a DLT pipeline, you use the `@dlt.table` decorator to mark a function that should be used to create or manage a table. The decorator provides metadata about the table, including:
+
+- **Table Name**: This is derived from the function name or can be explicitly set in the decorator’s parameters.
+- **Table Properties**: Comments, expectations, and configurations specified in the decorator.
+
+#### Example
+
+```python
+import dlt
+from pyspark.sql.functions import col
+
+@dlt.table(
+    comment="Table with unique primary keys",
+    expectations=[
+        dlt.expect_column_unique_value_count_to_be_equal_to("primary_key_column", dlt.expect_table_row_count())
+    ]
+)
+def my_custom_table():
+    # Data processing logic
+    df = spark.read.table("source_table")
+    df_clean = df.dropDuplicates(["primary_key_column"])
+    return df_clean
+```
+
+In this example, `@dlt.table` marks `my_custom_table` as a function that should be used to create or manage a Delta table.
+
+### 2. **Pipeline Configuration**
+
+When you create or configure a DLT pipeline, Databricks scans the script or module for functions decorated with `@dlt.table`. It then uses these functions to build the table lineage and manage data transformations.
+
+### 3. **Function Execution**
+
+During pipeline execution:
+
+- **Discovery Phase**: Databricks discovers all functions decorated with `@dlt.table` and extracts metadata such as table names, expectations, and configurations.
+- **Execution Phase**: Databricks executes these functions according to the pipeline's schedule or triggers. Each function is executed to produce the table’s data, following the logic defined within the function.
+
+### 4. **Table Management**
+
+Databricks uses the metadata provided in the `@dlt.table` decorator to manage:
+
+- **Table Creation**: Creates the Delta tables or views based on the function’s logic.
+- **Data Quality**: Applies the expectations specified in the decorator to validate the data.
+- **Lineage Tracking**: Tracks the data transformation lineage for monitoring and debugging.
+
+### Key Points
+
+- **Function Naming**: The function name itself does not directly affect pipeline execution but helps in identifying and managing the function within the codebase.
+- **Decorator Usage**: The `@dlt.table` decorator is crucial for Databricks to recognize which functions should be used for creating and managing tables.
+- **Metadata Handling**: Databricks extracts and uses the metadata from the decorators to configure, validate, and execute the functions during pipeline operations.
+
+In summary, Databricks identifies which functions to call during pipeline creation and execution through the use of function decorators, which provide the necessary metadata and configuration to manage tables and data transformations effectively.

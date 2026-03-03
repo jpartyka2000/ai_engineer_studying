@@ -1,0 +1,34 @@
+LightGBM’s `boosting_type` parameter controls which variant of gradient-boosted decision trees you’ll train. The supported values are:
+
+| Value                | Description                                                                                                                                                                             |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`gbdt`** (default) | **Gradient-Boosting Decision Tree**: Standard tree-by-tree boosting. Each new tree is fit to the negative gradient (“residuals”) of the loss. Very robust and usually the first choice. |
+| **`dart`**           | **Dropouts meet Multiple Additive Regression Trees**: Randomly “drops” (skips) a subset of trees during each iteration to reduce over-fitting, inspired by dropout in neural nets.      |
+| **`goss`**           | **Gradient-based One-Side Sampling**: Keeps all “hard” examples (high gradient magnitude) but samples “easy” ones (low gradient) to speed up training with minimal loss of accuracy.    |
+| **`rf`**             | **Random Forest**: Builds each tree on a bootstrap sample of the data, and uses feature subsampling just like classic Random Forests. Trees are not sequentially dependent.             |
+
+---
+
+### When to pick which
+
+* **`gbdt`** → Default. Good balance of speed and accuracy for most problems.
+* **`dart`** → When you see over-fitting with GBDT and want more regularization via stochastic tree dropping.
+* **`goss`** → For very large datasets where training speed matters, and you still want close-to-GBDT accuracy.
+* **`rf`** → When you prefer bagging over boosting (e.g., to reduce variance, or when boosting over-fits badly).
+
+---
+
+**Usage example:**
+
+```python
+from lightgbm import LGBMClassifier
+
+clf = LGBMClassifier(
+    boosting_type="goss",  # or "gbdt", "dart", "rf"
+    n_estimators=100,
+    learning_rate=0.1,
+)
+clf.fit(X_train, y_train)
+```
+
+That’s all there is to it—just choose the `boosting_type` that best matches your data size, over-/under-fitting risk, and computational constraints.

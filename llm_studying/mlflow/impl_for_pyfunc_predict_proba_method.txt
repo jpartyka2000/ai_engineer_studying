@@ -1,0 +1,82 @@
+You're correct: MLflow's pyfunc interface standardizes on the predict() method, and by default it does not expose predict_proba()—even if the underlying model supports it (e.g. scikit-learn, XGBoost, LightGBM).
+
+However, you can enable predict_proba() support by using a custom MLflow pyfunc model wrapper that explicitly adds that method.
+
+Here’s how to do it:
+
+
+---
+
+Option 1: Wrap Your Model with a Custom PyFunc Model
+
+Use mlflow.pyfunc.PythonModel to wrap your model and expose both predict() and predict_proba().
+
+import mlflow.pyfunc
+import cloudpickle
+
+class ProbabilisticModelWrapper(mlflow.pyfunc.PythonModel):
+    def load_context(self, context):
+        import os
+        with open(os.path.join(context.artifacts["model_path"], "model.pkl"), "rb") as f:
+            self.model = cloudpickle.load(f)
+
+    def predict(self, context, model_input):
+        return self.model.predict(model_input)
+
+    def predict_proba(self, model_input):
+        return self.model.predict_proba(model_input)
+
+Save the model:
+
+import mlflow
+
+artifacts = {"model_path": "/tmp/model"}  # replace with your model's path
+mlflow.pyfunc.save_model(
+    path="model_pyfunc",
+    python_model=ProbabilisticModelWrapper(),
+    artifacts=artifacts
+)
+
+
+---
+
+Option 2: Access Underlying Model Directly
+
+If you're using the MLflow sklearn flavor, you can access the underlying model after loading:
+
+import mlflow.sklearn
+
+# Load as sklearn model
+model = mlflow.sklearn.load_model("models:/YourModelName/Production")
+
+# Now you can call predict_proba
+probs = model.predict_proba(X)
+
+This bypasses the pyfunc abstraction but gives you full access to sklearn APIs.
+
+
+---
+
+Option 3: Monkey Patch predict_proba into PyFunc Wrapper
+
+Not ideal, but you can inject the method manually:
+
+model = mlflow.pyfunc.load_model("models:/YourModelName/Production")
+underlying_model = model._model_impl.python_model.model  # fragile
+
+def patched_predict_proba(X):
+    return underlying_model.predict_proba(X)
+
+model.predict_proba = patched_predict_proba
+
+# Now you can call
+model.predict_proba(X)
+
+
+---
+
+Best Practice:
+
+If you need access to predict_proba frequently, use Option 1 to make it part of your wrapped model class so it travels with the MLflow model artifact.
+
+Would you like me to generate a full example including a training step?

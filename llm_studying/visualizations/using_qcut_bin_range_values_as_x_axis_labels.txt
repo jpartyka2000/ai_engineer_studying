@@ -1,0 +1,79 @@
+You don’t actually need to re‐cut the DataFrame into labeled bins—just keep the integer codes from `qcut`, compute your per‐quartile stats, and then tell seaborn to use your pretty bin‐range strings as the tick labels afterwards.  
+
+Here’s a self‐contained sketch:
+
+```python
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def plot_sloping_with_bin_labels(df):
+
+    df = df.copy()
+
+    # 1) Get integer codes + bin edges in one go:
+    df['quartile_code'], bins = pd.qcut(
+        df['probability'],
+        q=4,
+        retbins=True,
+        labels=False,       # gives codes 0,1,2,3
+        precision=3,
+        duplicates='drop'
+    )
+
+    # 2) Compute mean predicted vs actual per code
+    agg = (
+        df.groupby('quartile_code')
+          .agg(
+            mean_prob = ('probability', 'mean'),
+            obs_rate  = ('is_closed_won', 'mean')
+          )
+          .reset_index()
+    )
+
+    # 3) Turn it into long form for seaborn
+    plot_df = agg.melt(
+        id_vars='quartile_code',
+        value_vars=['mean_prob','obs_rate'],
+        var_name='type',
+        value_name='rate'
+    )
+
+    # 4) Build nice labels from your bins
+    labels = [
+        f"{bins[i]:.3f}–{bins[i+1]:.3f}"
+        for i in range(len(bins)-1)
+    ]
+
+    # 5) Plot using the integer codes, then swap in your labels
+    plt.figure(figsize=(8,5))
+    ax = sns.barplot(
+        x='quartile_code',
+        y='rate',
+        hue='type',
+        data=plot_df,
+        order=agg['quartile_code']
+    )
+
+    # 6) Replace the tick numbers 0,1,2,3 with the bin ranges
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+
+    ax.set_xlabel('Probability Quartile (range)')
+    ax.set_ylabel('Rate')
+    ax.set_title('Predicted vs Actual Win Rate by Probability Quartile')
+    ax.set_ylim(0,1.05)
+    ax.legend(title='', fontsize='small', markerscale=0.7,
+              loc='upper left', bbox_to_anchor=(1.02, 1))
+    plt.tight_layout()
+    plt.show()
+```
+
+**What’s going on?**  
+- **Step 1:** `qcut(..., labels=False, retbins=True)` gives you both the integer bin codes **and** the numeric edges in `bins`.  
+- **Steps 2–3:** You build your aggregated table exactly as before, grouping by those codes.  
+- **Step 4:** You format the `bins` into human‐readable strings.  
+- **Step 5:** You plot against the integer codes so Seaborn knows how to position each bar.  
+- **Step 6:** Finally you call `ax.set_xticklabels(...)` to swap the 0–3 tick labels for your range‐strings.  
+
+This way you never have to do a second `pd.cut()`, and your x‐axis shows the actual numeric ranges.

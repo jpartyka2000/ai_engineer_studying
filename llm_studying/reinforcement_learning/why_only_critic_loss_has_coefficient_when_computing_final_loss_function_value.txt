@@ -1,0 +1,33 @@
+In the combined A2C loss
+
+$$
+\mathcal{L}(\theta,w)
+= \underbrace{\mathcal{L}_{\text{actor}}(\theta)}_{\times1}
+\;+\;c\,\underbrace{\mathcal{L}_{\text{critic}}(w)}_{\times c},
+$$
+
+the actor term carries an implicit coefficient of 1, and the value (critic) term gets the tunable weight $c$.  Here’s why:
+
+1. **Different units & scales**
+
+   * The actor loss is an expectation of $-A\,\log\pi$, which typically lives on a fairly small numerical scale once you average over your batch.
+   * The critic loss is a mean‐squared error $\bigl(R - V(s)\bigr)^2$, which can easily be orders of magnitude larger (or smaller), depending on your rewards and value‐function range.
+   * Without a balancing coefficient, one of those two losses can dominate the gradient and drown out the other.
+
+2. **Priority of objectives**
+
+   * The **primary goal** is to optimize the policy (actor), so it makes sense to give it a “unit” weight and then dial the critic’s influence up or down relative to that.
+   * Setting $c<1$ means “I want the value‐function fit to matter less,” while $c>1$ means “I’m heavily penalizing value‐error to improve my baseline quickly.”
+
+3. **Hyperparameter control**
+
+   * In practice $c$ is a small handful of values—common defaults are $c=0.5$ or $0.25$.
+   * Tuning $c$ lets you trade off **variance reduction** (a stronger critic accelerates learning) against **bias/minor over‐fitting** (too-strong a critic can mis‐shape the policy gradients).
+
+You could equivalently introduce a coefficient $\alpha$ in front of the actor loss and set it to 1; it’s purely a matter of convention to write
+
+$$
+\mathcal{L} = 1\cdot\mathcal{L}_{\text{actor}} + c\cdot\mathcal{L}_{\text{critic}}.
+$$
+
+The key point is that the two terms live on different numerical scales and embody different learning objectives, so you almost always need at least one tunable multiplier (typically on the critic loss) to get stable, well‐balanced updates.

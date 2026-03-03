@@ -1,0 +1,33 @@
+## Client Creation for Qwen3-8B
+
+```python
+openai_client = AsyncOpenAI(base_url=base_url, api_key=api_key)
+```
+
+This line creates an asynchronous OpenAI client, but with a clever twist: instead of connecting to OpenAI's servers, it points to a **Modal-hosted endpoint**.
+
+### Why this works
+
+Modal (and many other LLM serving frameworks like vLLM, Ollama, and LiteLLM) expose an **OpenAI-compatible API**. This means they accept requests in the same format that OpenAI's API expects and return responses in the same format.
+
+By simply changing `base_url`, you can use the official OpenAI Python SDK to talk to any compatible server—no code changes needed beyond the URL.
+
+### What the parameters mean
+
+- **`base_url`**: The Modal server URL (from `MODAL_URL` constant). This redirects all API calls away from `api.openai.com` to your Modal deployment.
+
+- **`api_key`**: The Modal API key for authentication. Even though it's passed to `AsyncOpenAI`, Modal's server validates it—not OpenAI.
+
+### The pattern in context
+
+This is a common pattern for working with open-source models:
+
+```python
+# OpenAI's API
+client = AsyncOpenAI(api_key="sk-...")
+
+# Self-hosted model with OpenAI-compatible API
+client = AsyncOpenAI(base_url="https://your-server.modal.run/v1", api_key="modal-key")
+```
+
+Both clients have identical interfaces, so downstream code (like `pydantic_ai`) doesn't need to know whether it's talking to GPT-4 or Qwen3-8B.

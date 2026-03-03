@@ -1,0 +1,40 @@
+You're absolutely right - this is a significant issue with the reported accuracy metric! The repetitive system prompt artificially inflates the accuracy score, making it less meaningful for evaluating actual task performance.
+
+## Why This Skews Accuracy
+
+If your system prompt is, say, 200 tokens and appears identically in every example, and your actual task-relevant content (expression + decision) is only 10-20 tokens, then:
+
+- **~90-95% of tokens** are identical across all examples
+- The model quickly learns to perfectly predict these repeated tokens
+- Your dashboard might show 95% accuracy even if the model is performing poorly on the actual decision task
+
+## The Real Problem
+
+```
+Example breakdown:
+- System prompt: 200 tokens (identical every time) → ~100% accuracy
+- User expression: 10 tokens (varies) → ~90% accuracy  
+- Assistant decision: 1 token (varies) → 60% accuracy (poor!)
+
+Overall accuracy = (200×100% + 10×90% + 1×60%) / 211 = 95.5%
+```
+
+This looks great on the dashboard but the model is actually failing at the core task!
+
+## Better Approaches
+
+1. **Remove the system prompt from training data** entirely and inject it at inference time instead. Train only on the varying parts:
+   ```json
+   {"messages": [
+     {"role": "user", "content": "((4+5)*2)"},
+     {"role": "assistant", "content": "verify"}
+   ]}
+   ```
+
+2. **Use OpenAI's system prompt feature** if available in their fine-tuning API - this may exclude it from accuracy calculations
+
+3. **Track custom metrics** by running your own evaluation after training, measuring only the decision accuracy
+
+4. **Weight the loss function** (if OpenAI's API allows) to prioritize the final tokens
+
+The accuracy metric you're seeing is likely not representative of your model's true performance on the decision task. A 95% accuracy could mean anything from excellent (95% correct decisions) to terrible (random guessing on decisions, perfect on prompt).

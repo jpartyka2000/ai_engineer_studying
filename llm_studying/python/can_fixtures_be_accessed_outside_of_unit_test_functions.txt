@@ -1,0 +1,72 @@
+No, **pytest fixtures cannot be directly accessed outside of unit test functions** in the same file unless they are explicitly called using `request.getfixturevalue` or used in a pytest test execution context.
+
+---
+
+### **🚨 Why?**
+- Fixtures are **injected** into test functions by pytest at runtime.
+- They are not regular Python variables; instead, they are **resolved dynamically** when pytest runs the test suite.
+- They **do not exist in the module's global namespace** like normal variables.
+
+---
+
+### **✅ How to Access Fixtures Outside of Test Functions**
+1. **Use `request.getfixturevalue` (inside another fixture or a helper function):**
+   ```python
+   import pytest
+
+   @pytest.fixture
+   def sample_fixture():
+       return "Hello from fixture!"
+
+   def test_using_fixture(sample_fixture):  # ✅ Works fine
+       assert sample_fixture == "Hello from fixture!"
+
+   def helper_function(request):  # ✅ Access fixture manually
+       sample_value = request.getfixturevalue("sample_fixture")
+       print(sample_value)
+
+   def test_access_fixture_manually(request):
+       helper_function(request)  # Prints: Hello from fixture!
+   ```
+   - The `request` object is a built-in pytest fixture that lets you retrieve other fixtures dynamically.
+   - `request.getfixturevalue("fixture_name")` retrieves a fixture's value.
+
+2. **Use Fixtures in Other Fixtures:**
+   ```python
+   @pytest.fixture
+   def base_value():
+       return 10
+
+   @pytest.fixture
+   def derived_value(base_value):
+       return base_value * 2  # ✅ Uses another fixture
+   ```
+
+---
+
+### **🚫 What Won’t Work**
+#### ❌ Trying to access a fixture like a global variable:
+```python
+print(sample_fixture)  # ❌ NameError: name 'sample_fixture' is not defined
+```
+- The fixture is only available when pytest **injects it into a test function**.
+
+#### ❌ Using a fixture inside `if __name__ == "__main__"`:
+```python
+if __name__ == "__main__":
+    print(sample_fixture)  # ❌ Will not work, fixture is not a global variable
+```
+- Pytest **manages fixture execution**, and it does not exist in the script's global execution scope.
+
+---
+
+### **📌 Summary**
+| Scenario | Can Access Fixture? | Solution |
+|----------|----------------|------------|
+| Inside a unit test function | ✅ Yes | Inject the fixture as a function argument |
+| Inside another fixture | ✅ Yes | Use fixture chaining (`@pytest.fixture`) |
+| Inside a helper function | ✅ Yes | Use `request.getfixturevalue("fixture_name")` |
+| In global scope | ❌ No | N/A |
+| In `if __name__ == "__main__"` | ❌ No | N/A |
+
+Would you like a more advanced example, like **using fixtures for class-based tests**? 😊

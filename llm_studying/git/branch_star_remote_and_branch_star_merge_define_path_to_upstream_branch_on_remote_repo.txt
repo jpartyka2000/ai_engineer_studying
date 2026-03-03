@@ -1,0 +1,72 @@
+T**Breaking down the upstream relationship:**
+
+When Git needs to know the upstream for a local branch, it combines two pieces of information:
+
+| Setting | What it defines | Example value |
+|---------|-----------------|---------------|
+| `branch.*.remote` | Which remote repository | `origin` |
+| `branch.*.merge` | Which branch on that remote | `refs/heads/main` |
+
+Together they form the full upstream reference: `origin/main`
+
+---
+
+**Concrete example:**
+
+If your `.git/config` contains:
+
+```ini
+[branch "feature-x"]
+    remote = origin
+    merge = refs/heads/feature-x
+```
+
+Git interprets this as: "The local branch `feature-x` tracks `origin/feature-x`."
+
+---
+
+**Why two separate settings?**
+
+This design allows flexibility. Your local branch name doesn't have to match the remote branch name:
+
+```ini
+[branch "my-local-name"]
+    remote = origin
+    merge = refs/heads/different-remote-name
+```
+
+Here, your local branch `my-local-name` tracks `origin/different-remote-name`.
+
+You could also track a branch on a different remote:
+
+```ini
+[branch "feature-x"]
+    remote = upstream
+    merge = refs/heads/feature-x
+```
+
+Now `feature-x` tracks `upstream/feature-x` instead of `origin/feature-x`.
+
+---
+
+**What uses this information?**
+
+These settings control the default behavior of several commands:
+
+| Command | How it uses upstream |
+|---------|---------------------|
+| `git pull` | Fetches from `remote`, merges `merge` into current branch |
+| `git push` | Pushes to `remote`/`merge` (depending on push config) |
+| `git status` | Shows "ahead/behind" relative to upstream |
+| `git branch -vv` | Displays tracking relationship |
+
+---
+
+**View the combined upstream:**
+
+```bash
+git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
+# origin/feature-x
+```
+
+This shows how Git resolves the two settings into a single upstream reference.

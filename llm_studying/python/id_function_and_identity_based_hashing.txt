@@ -1,0 +1,88 @@
+Great question — id() is a fundamental part of Python’s object model, and it plays a key role in how default hashing works.
+
+
+---
+
+🔹 What is id()?
+
+id(obj)
+
+Returns a unique identifier for the object during its lifetime. In CPython (the standard Python implementation), id(obj) is the memory address of the object.
+
+Always an integer
+
+Always unique while the object exists
+
+Doesn’t change during the object’s lifetime
+
+
+So for any object x, you get:
+
+id(x) == id(x)  # Always true while x exists
+
+
+---
+
+🔹 How id() relates to hashing
+
+If you don’t define a custom __hash__() method in your class, Python gives you a default one that uses id():
+
+class Default:
+    pass
+
+obj = Default()
+print(hash(obj))  # Same as hash(id(obj))
+
+This means that by default:
+
+Each object gets a unique hash
+
+That hash stays stable for the life of the object
+
+Two objects are only equal if they’re the same object (a is b)
+
+
+This is fine if you want identity-based hashing, like for objects that represent individual instances or mutable entities.
+
+
+---
+
+🔹 How you can use id() in your own __hash__
+
+Sometimes you want to say: “This object is only equal to itself, even if its contents match another object.”
+
+To enforce that:
+
+class IdentityKey:
+    def __hash__(self):
+        return id(self)
+    def __eq__(self, other):
+        return self is other
+
+Now each instance behaves like a pointer — it’s only equal to itself, and its hash is tied to its unique memory address.
+
+
+---
+
+🔹 Summary: id() and hashing
+
+Concept Meaning
+
+id(obj) Unique identifier for obj, usually its memory address
+Used in default __hash__ Yes — if you don't override __eq__, Python uses id() for hashing
+Guarantees stability Yes — id() doesn’t change while the object is alive
+Useful for identity-based hashing When you want each instance to be distinct even if its contents match
+
+
+
+---
+
+📌 Takeaway
+
+id() is what Python falls back on to make hashing safe and stable by default, especially for mutable objects. It's the simplest way to ensure:
+
+Hash consistency
+
+No accidental equality
+
+Reliable behavior in dict and set when you're not overriding __eq__ or __hash__.

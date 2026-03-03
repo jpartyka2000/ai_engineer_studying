@@ -1,0 +1,102 @@
+Here’s a minimal example showing how to use a compiled `re.Pattern` with `Series.str.contains`:
+
+```python
+import pandas as pd
+import re
+
+# 1) Create a sample DataFrame
+df = pd.DataFrame({
+    'cohort': [
+        'January 2021',
+        'Feb-2020',
+        'March 2019',
+        'future cohort',
+        'Aug 2022'
+    ]
+})
+
+# 2) Compile your regex (e.g. match full month names or abbreviated with optional dash)
+month_re = re.compile(r'(?i)\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|'
+                      r'may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|'
+                      r'oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b')
+
+# 3) Use .str.contains with the compiled pattern
+df['has_month'] = df['cohort'].str.contains(month_re, na=False)
+
+print(df)
+```
+
+Which would output:
+
+```
+           cohort  has_month
+0  January 2021        True
+1      Feb-2020        True
+2   March 2019        True
+3  future cohort       False
+4      Aug 2022        True
+```
+
+Here:
+
+* We compile our regex once (with `re.IGNORECASE` via `(?i)` in the pattern).
+* `.str.contains(month_re, na=False)` applies that compiled pattern to each string.
+* Rows where the pattern matches get `True`, others `False`.
+
+-------------------
+
+No — you don’t need to pre-compile your pattern.  `Series.str.contains` will accept either:
+
+1. **A compiled `re.Pattern`** (what we used above), or
+2. **A plain Python string** containing your regex.
+
+Under the hood, if you pass a string pandas will compile it for you.  Here’s the same example, using a raw string instead of a compiled pattern:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'cohort': [
+        'January 2021',
+        'Feb-2020',
+        'March 2019',
+        'future cohort',
+        'Aug 2022'
+    ]
+})
+
+# raw‐string regex, case-insensitive via (?i)
+month_pattern = r'(?i)\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|' \
+                r'may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|' \
+                r'oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b'
+
+df['has_month'] = df['cohort'].str.contains(month_pattern, na=False)
+
+print(df)
+```
+
+Output:
+
+```
+           cohort  has_month
+0  January 2021        True
+1      Feb-2020        True
+2   March 2019        True
+3  future cohort       False
+4      Aug 2022        True
+```
+
+You can even pass additional arguments, e.g. flags:
+
+```python
+import re
+
+df['has_month'] = df['cohort'].str.contains(
+    r'\b(jan|feb|mar|...)\b',
+    flags=re.IGNORECASE,
+    na=False,
+    regex=True
+)
+```
+
+—but for most cases a simple regex string is enough.

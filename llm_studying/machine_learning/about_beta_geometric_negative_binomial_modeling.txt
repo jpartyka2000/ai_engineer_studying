@@ -1,0 +1,52 @@
+Below is an example using the popular [lifetimes](https://lifetimes.readthedocs.io/) library, which provides an implementation of the BG/NBD model. In this example, we'll assume you have customer data with three key columns:
+
+- **frequency:** Number of repeat transactions (i.e., how many times a customer made a purchase beyond the first).
+- **recency:** The time between the customer's first and last purchase.
+- **T:** The total time period over which the customer has been observed.
+
+First, install the lifetimes package if you haven’t already:
+
+```bash
+pip install lifetimes
+```
+
+Now, here’s some sample code:
+
+```python
+import pandas as pd
+from lifetimes import BetaGeoFitter
+
+# Example customer data (each row is a customer)
+# frequency: number of repeat transactions (not counting the first purchase)
+# recency: time from the first purchase to the last purchase (in weeks, months, etc.)
+# T: age of the customer (time since the first purchase) in the same units as recency
+data = {
+    'frequency': [2, 1, 3, 0, 4],
+    'recency': [1, 0.5, 2, 0, 3],
+    'T': [3, 2, 3, 1, 4]
+}
+
+df = pd.DataFrame(data)
+
+# Initialize and fit the BG/NBD model
+bgf = BetaGeoFitter(penalizer_coef=0.0)  # penalizer_coef can help with overfitting
+bgf.fit(df['frequency'], df['recency'], df['T'])
+
+# Predict the expected number of transactions for the next 12 time units (e.g., weeks, months)
+df['predicted_purchases_12'] = bgf.conditional_expected_number_of_purchases_up_to_time(
+    12, df['frequency'], df['recency'], df['T']
+)
+
+# Show the DataFrame with predictions
+print(df)
+```
+
+### Explanation
+
+- **Fitting the Model:**  
+  The `BetaGeoFitter` is initialized and then fitted with your customer data (`frequency`, `recency`, and `T`). These three parameters allow the model to learn how frequently and how recently customers transact, as well as the length of observation.
+
+- **Predicting Future Transactions:**  
+  Once the model is fitted, you can use `conditional_expected_number_of_purchases_up_to_time()` to forecast the expected number of future transactions over a specified time period (here, 12 time units). This gives you an estimate of future activity, which can be an important component when building a customer lifetime value (CLV) model.
+
+This approach focuses on modeling the purchasing behavior (transaction frequency) and is a common component in many CLV modeling frameworks when combined with additional revenue models such as the Gamma-Gamma model for monetary value prediction.

@@ -1,0 +1,72 @@
+## `weave.publish()` for Datasets
+
+`weave.publish()` lets you **version and share datasets** in W&B, making them reusable across experiments and team members.
+
+### **Basic Dataset Publishing:**
+```python
+import weave
+
+# Create a dataset
+dataset = weave.Dataset(
+    name="customer_feedback",
+    rows=[
+        {"text": "Great product!", "label": "positive"},
+        {"text": "Terrible service", "label": "negative"},
+        {"text": "It's okay", "label": "neutral"}
+    ]
+)
+
+# Publish it with a name
+weave.publish(dataset, "feedback-v1")
+# Returns: weave.ref('weave:///team/project/feedback-v1:hash')
+```
+
+### **Retrieving Published Datasets:**
+```python
+# Later, in another script or by a teammate
+dataset_ref = weave.ref("feedback-v1")
+dataset = dataset_ref.get()
+
+# Use the dataset
+for row in dataset.rows:
+    print(row["text"], row["label"])
+```
+
+### **Versioning Automatically:**
+```python
+# Publish updated version
+dataset_v2 = weave.Dataset(
+    name="customer_feedback",
+    rows=original_rows + new_rows  # Added more data
+)
+
+weave.publish(dataset_v2, "feedback-v1")  # Same name!
+# Creates new version automatically: feedback-v1:new_hash
+```
+
+### **Common Pattern with Evaluations:**
+```python
+# Publish evaluation dataset
+eval_dataset = weave.Dataset(
+    name="llm_eval_questions",
+    rows=[
+        {"question": "What is 2+2?", "expected": "4"},
+        {"question": "Capital of France?", "expected": "Paris"}
+    ]
+)
+
+weave.publish(eval_dataset, "eval-questions-2024-01")
+
+# Team members can run evaluations on same dataset
+dataset = weave.ref("eval-questions-2024-01").get()
+evaluation = weave.Evaluation(dataset=dataset)
+results = evaluation.evaluate(model)
+```
+
+### **Key Benefits:**
+- **Immutable versions** - Each publish creates a unique hash
+- **Team sharing** - Anyone with access can retrieve
+- **Reproducibility** - Exact same data across experiments
+- **Lineage tracking** - See which models used which datasets
+
+**Bottom line**: `weave.publish()` turns your datasets into **versioned artifacts** that can be referenced by name, ensuring everyone uses the exact same data.

@@ -1,0 +1,88 @@
+## How `getattr()` Finds Both Instance and Class Attributes
+
+Python's `getattr(obj, name, default)` searches in a specific order:
+
+### The Lookup Order
+
+1. **Instance `__dict__`** — attributes set on `self`
+2. **Class `__dict__`** — attributes defined on the class
+3. **Parent classes** — following the MRO (Method Resolution Order)
+4. **Default value** — if provided and nothing found
+
+### Example
+
+```python
+class Animal:
+    kingdom: str = "Animalia"  # Class attribute
+
+class Dog(Animal):
+    species: str = "Canis familiaris"  # Class attribute
+    
+    def __init__(self, name: str):
+        self.name = name  # Instance attribute
+
+dog = Dog("Buddy")
+
+# Instance attribute
+getattr(dog, 'name')      # "Buddy" (found in instance __dict__)
+
+# Class attribute
+getattr(dog, 'species')   # "Canis familiaris" (found in Dog.__dict__)
+
+# Parent class attribute
+getattr(dog, 'kingdom')   # "Animalia" (found in Animal.__dict__)
+
+# Missing attribute with default
+getattr(dog, 'color', 'unknown')  # "unknown" (not found, returns default)
+
+# Missing attribute without default
+getattr(dog, 'color')     # Raises AttributeError
+```
+
+### Visualizing the Lookup
+
+```
+getattr(dog, 'species')
+
+  1. Check dog.__dict__        → {'name': 'Buddy'}         ❌ not here
+  2. Check Dog.__dict__        → {'species': 'Canis...'}   ✓ found!
+  
+getattr(dog, 'kingdom')
+
+  1. Check dog.__dict__        → {'name': 'Buddy'}         ❌ not here
+  2. Check Dog.__dict__        → {'species': 'Canis...'}   ❌ not here
+  3. Check Animal.__dict__     → {'kingdom': 'Animalia'}   ✓ found!
+```
+
+### Instance Shadows Class
+
+If an instance attribute has the same name as a class attribute, the instance wins:
+
+```python
+class Counter:
+    count: int = 0  # Class attribute
+    
+    def __init__(self):
+        self.count = 10  # Instance attribute shadows class attribute
+
+c = Counter()
+getattr(c, 'count')   # 10 (instance), not 0 (class)
+```
+
+### Why This Matters for `is_legacy`
+
+```python
+class CueReactAgent:
+    is_legacy: bool = True  # Class attribute
+
+class CueAgent:
+    pass  # No is_legacy attribute
+
+legacy_agent = CueReactAgent(...)
+new_agent = CueAgent(...)
+
+getattr(legacy_agent, 'is_legacy', False)  # True (found on class)
+getattr(new_agent, 'is_legacy', False)     # False (not found, returns default)
+```
+
+This pattern lets you detect agent type without requiring both classes to define the attribute.

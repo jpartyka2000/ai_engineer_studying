@@ -1,0 +1,258 @@
+Great question! Here's a deep dive:
+
+---
+
+## `Annotated` in Python & Pydantic
+
+`Annotated` is a Python typing feature (from `typing` module) that lets you attach **metadata** to type hints. Pydantic leverages this to add validation, transformation, and configuration to fields.
+
+### Basic Concept
+
+```python
+from typing import Annotated
+
+# Syntax: Annotated[BaseType, metadata1, metadata2, ...]
+MyType = Annotated[str, "some metadata", 42]
+```
+
+Plain Python ignores the metadata—it's just `str` to the type checker. But Pydantic *reads* the metadata and acts on it.
+
+### How Pydantic Uses Annotated
+
+```python
+from typing import Annotated
+from pydantic import BaseModel, Field
+
+class User(BaseModel):
+    # These two are equivalent:
+    age: int = Field(ge=0, le=120)
+    age: Annotated[int, Field(ge=0, le=120)]
+```
+
+The `Annotated` style is more powerful because you can create **reusable types**:
+
+```python
+from typing import Annotated
+from pydantic import Field
+
+# Define once
+PositiveInt = Annotated[int, Field(gt=0)]
+Percentage = Annotated[float, Field(ge=0, le=100)]
+ShortStr = Annotated[str, Field(max_length=50)]
+
+# Reuse everywhere
+class Product(BaseModel):
+    quantity: PositiveInt
+    discount: Percentage
+    name: ShortStr
+
+class Order(BaseModel):
+    item_count: PositiveInt
+    tax_rate: Percentage
+```
+
+### Validators with Annotated
+
+```python
+from typing import Annotated
+from pydantic import BaseModel, BeforeValidator, AfterValidator, PlainValidator
+
+def strip_whitespace(v: str) -> str:
+    return v.strip()
+
+def lowercase(v: str) -> str:
+    return v.lower()
+
+CleanStr = Annotated[str, BeforeValidator(strip_whitespace), AfterValidator(lowercase)]
+
+class Form(BaseModel):
+    username: CleanStr
+
+form = Form(username='  ALICE  ')
+print(form.username)  # 'alice'
+```
+
+### Validation Order
+
+```python
+Annotated[str, BeforeValidator(fn1), BeforeValidator(fn2), AfterValidator(fn3)]
+```
+
+Execution order:
+1. `BeforeValidator(fn1)` — runs on raw input
+2. `BeforeValidator(fn2)` — runs on fn1's output
+3. Pydantic's internal validation (coercion to `str`)
+4. `AfterValidator(fn3)` — runs on validated value
+
+### Stacking Multiple Metadata
+
+```python
+from typing import Annotated
+from pydantic import Field, AfterValidator
+
+def must_be_title_case(v: str) -> str:
+    if v != v.title():
+        raise ValueError('must be title case')
+    return v
+
+ProperName = Annotated[
+    str,
+    Field(min_length=1, max_length=50),
+    AfterValidator(must_be_title_case)
+]
+```
+
+### Composing Annotated Types
+
+```python
+from typing import Annotated
+from pydantic import Field, AfterValidator
+
+# Base type with length constraint
+ShortStr = Annotated[str, Field(max_length=20)]
+
+# Extended with additional validation
+Username = Annotated[ShortStr, AfterValidator(lambda v: v.lower())]
+```
+
+---
+
+<details>
+<summary><strong>📋 Copy this: Annotated Type Reference</strong></summary>
+
+```
+PYTHON/PYDANTIC: Annotated Type
+===============================
+
+PURPOSE:
+Attach metadata to type hints. Pydantic reads this metadata
+to add validation, transformation, and configuration.
+
+BASIC SYNTAX:
+-------------
+from typing import Annotated
+Annotated[BaseType, metadata1, metadata2, ...]
+
+PYDANTIC USAGE:
+---------------
+from typing import Annotated
+from pydantic import BaseModel, Field
+
+# These are equivalent:
+age: int = Field(ge=0)
+age: Annotated[int, Field(ge=0)]
+
+CREATING REUSABLE TYPES:
+------------------------
+from typing import Annotated
+from pydantic import Field
+
+PositiveInt = Annotated[int, Field(gt=0)]
+Percentage = Annotated[float, Field(ge=0, le=100)]
+ShortStr = Annotated[str, Field(max_length=50)]
+
+class Product(BaseModel):
+    quantity: PositiveInt   # Reusable!
+    discount: Percentage
+    name: ShortStr
+
+VALIDATORS WITH ANNOTATED:
+--------------------------
+from pydantic import BeforeValidator, AfterValidator
+
+def strip_spaces(v: str) -> str:
+    return v.strip()
+
+def to_lower(v: str) -> str:
+    return v.lower()
+
+CleanStr = Annotated[str, BeforeValidator(strip_spaces), AfterValidator(to_lower)]
+
+class User(BaseModel):
+    username: CleanStr
+
+User(username='  ALICE  ').username  # 'alice'
+
+VALIDATION ORDER:
+-----------------
+Annotated[str, BeforeValidator(fn1), BeforeValidator(fn2), AfterValidator(fn3)]
+
+1. BeforeValidator(fn1) — raw input
+2. BeforeValidator(fn2) — fn1's output
+3. Pydantic internal validation (str coercion)
+4. AfterValidator(fn3) — validated value
+
+VALIDATOR TYPES:
+----------------
+BeforeValidator(fn)  — Before Pydantic's validation
+AfterValidator(fn)   — After Pydantic's validation
+PlainValidator(fn)   — Replaces Pydantic's validation entirely
+WrapValidator(fn)    — Wraps Pydantic's validation (full control)
+
+STACKING METADATA:
+------------------
+ProperName = Annotated[
+    str,
+    Field(min_length=1, max_length=50),
+    AfterValidator(must_be_title_case)
+]
+
+COMPOSING TYPES:
+----------------
+ShortStr = Annotated[str, Field(max_length=20)]
+Username = Annotated[ShortStr, AfterValidator(str.lower)]
+
+COMMON PATTERNS:
+----------------
+# Constrained numbers
+PositiveInt = Annotated[int, Field(gt=0)]
+Probability = Annotated[float, Field(ge=0, le=1)]
+
+# Constrained strings 
+NonEmptyStr = Annotated[str, Field(min_length=1)]
+Email = Annotated[str, Field(pattern=r'.+@.+\..+')]
+
+# Transformed values
+TrimmedStr = Annotated[str, BeforeValidator(str.strip)]
+LowerStr = Annotated[str, AfterValidator(str.lower)]
+
+# Combined
+CleanEmail = Annotated[
+    str,
+    BeforeValidator(str.strip),
+    AfterValidator(str.lower),
+    Field(pattern=r'.+@.+\..+')
+]
+
+BENEFITS:
+---------
+1. Reusable type definitions
+2. Self-documenting code
+3. Composable validations
+4. Cleaner model definitions
+5. Separation of type logic from model logic
+```
+
+</details>
+
+---
+
+Now, ready to answer **Question 17**?
+
+```python
+from typing import Annotated
+from pydantic import BaseModel, BeforeValidator, AfterValidator
+
+def add_prefix(v):
+    return f"PREFIX_{v}"
+
+def add_suffix(v):
+    return f"{v}_SUFFIX"
+
+CustomStr = Annotated[str, BeforeValidator(add_prefix), AfterValidator(add_suffix)]
+
+class Item(BaseModel):
+    label: CustomStr
+
+item = Item(label='hello')
+print(item.label)

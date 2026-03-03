@@ -1,0 +1,25 @@
+You don’t actually “define” your tool schemas inside any message role—you pass them to the API via the `functions=` (or `tools=`) parameter, not in the message list.
+
+That said, you can still use your messages to:
+
+* **`system`** ― set the assistant’s overall persona and high-level rules (“You are a data analysis agent. Use tools in order …”).
+* **`developer`** ― give more detailed instructions or hints about *how* to use those tools (“Here’s the list of available tools and their parameters…”).
+
+But the *formal* tool definitions (name/description/parameter schema and/or Python callables) belong in the SDK call:
+
+```python
+response = client.chat.completions.create(
+  model="gpt-3.5-turbo",
+  messages=messages,          # system + developer + user + any history
+  functions=functions,        # or tools=tools
+  function_call="auto"        # or tool_choice="auto"
+)
+```
+
+In practice:
+
+1. **System message**: “You are a helpful agent. Always cite sources. Keep JSON valid.”
+2. **Developer message**: “Here’s how I expect you to chain your tool calls.”
+3. **functions/tools parameter**: your actual machine-readable registry of `name`, `description`, `parameters` (and, if using the preview client, `function` callables).
+
+Putting the registry purely in a message risks the model “forgetting” which parameters are required and makes your integration brittle—it’s best to drive execution from the dedicated `functions`/`tools` argument.

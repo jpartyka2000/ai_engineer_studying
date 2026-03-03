@@ -1,0 +1,21 @@
+In PyTorch, every `nn.Module` (like your `PolicyNet`) overrides the special method `__call__`, so that when you do
+
+```python
+logits = policies[agent](obs)
+```
+
+you’re actually invoking
+
+```python
+policies[agent].__call__(obs)
+```
+
+and under the hood `__call__` does a few things (hook processing, prepending/appending buffers, handling training vs. eval mode) and then calls your module’s **`forward()`** method with the arguments you passed.
+
+So by writing `policies[agent](obs)` you’re:
+
+1. Retrieving the `PolicyNet` instance for that agent
+2. Using Python’s “call” syntax on the module object
+3. Having PyTorch’s `Module.__call__` automatically invoke your custom `forward(obs)`
+
+This is why you never write `policies[agent].forward(obs)` directly (it would bypass all the nice bookkeeping PyTorch does); instead you just “call” the module, and PyTorch routes that to your `forward`.

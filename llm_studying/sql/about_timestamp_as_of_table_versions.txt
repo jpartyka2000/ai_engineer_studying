@@ -1,0 +1,89 @@
+The `TIMESTAMP AS OF` clause in Delta Lake SQL lets you “time-travel” a table to the state it had at (or just before) a given wall-clock timestamp, rather than referring to a numeric version. Under the hood Delta Lake stores every commit’s timestamp, so when you say:
+
+```sql
+SELECT *
+FROM my_table
+TIMESTAMP AS OF '2025-08-05T14:00:00.000Z';
+```
+
+Delta will find the most recent table commit **at or before** that UTC datetime and return the data as it existed then.
+
+---
+
+## Syntax
+
+```sql
+SELECT <columns>
+FROM <catalog>.<schema>.<table>
+TIMESTAMP AS OF <timestamp_literal_or_expression>
+[WHERE …];
+```
+
+* `<timestamp_literal_or_expression>` can be:
+
+  * **A string literal** in ISO 8601 (e.g. `'2025-08-05T14:00:00.000Z'`)
+  * **A timestamp column or SQL function**, e.g. `current_timestamp() - interval 5 minutes`
+  * **Any expression** that evaluates to a `TIMESTAMP` type.
+
+---
+
+## Examples
+
+### 1) Fixed timestamp
+
+```sql
+-- “Freeze” the table as of exactly 2 PM UTC on August 5, 2025
+SELECT *
+FROM sales_data
+TIMESTAMP AS OF '2025-08-05T14:00:00.000Z';
+```
+
+### 2) Relative to now
+
+```sql
+-- Show the table as it was 10 minutes ago
+SELECT *
+FROM user_events
+TIMESTAMP AS OF (current_timestamp() - INTERVAL 10 MINUTES);
+```
+
+### 3) In a CTE for joins
+
+```sql
+WITH snapshot AS (
+  SELECT id, value
+  FROM config_table
+  TIMESTAMP AS OF '2025-07-31T23:59:59.000Z'
+)
+SELECT e.*, s.value
+FROM events e
+JOIN snapshot s
+  ON e.config_id = s.id;
+```
+
+---
+
+## How it differs from `VERSION AS OF`
+
+* **`VERSION AS OF <n>`** peeks at the table commit with version number `n`.
+* **`TIMESTAMP AS OF <t>`** finds whichever version had its commit time ≤ `t`.
+
+Under the covers, Delta will scan the table’s transaction log to find the correct version for your timestamp.
+
+---
+
+## Notes & best practices
+
+* **Retention window**: you can only time-travel as far back as your Delta table’s **`delta.logRetentionDuration`** and **`delta.deletedFileRetentionDuration`** settings allow (default \~30 days).
+* **Performance**: time-travel queries still read data files, but may need to scan earlier log files. Keeping retention modest prevents log bloat.
+* **Use in Spark API**: you can also time-travel in PySpark/Scala via:
+
+  ```python
+  spark.read.format("delta") \
+     .option("timestampAsOf", "2025-08-05T14:00:00.000Z") \
+     .load("/path/to/table")
+  ```
+
+---
+
+With `TIMESTAMP AS OF` you get a human-friendly, wall-clock way to query historical table states—no need to remember exact version numbers.

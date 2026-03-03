@@ -1,0 +1,101 @@
+The `.sort_index()` method on a pandas `DataFrame` (or `Series`) will reorder your rows (or columns) in ascending (by default) order of their **index labels**, rather than by the values in any particular column.
+
+---
+
+### Signature
+
+```python
+DataFrame.sort_index(
+    axis: int | str = 0,
+    level: None | int | str | Sequence[int | str] = None,
+    ascending: bool | list[bool] = True,
+    inplace: bool = False,
+    kind: str = "quicksort",
+    na_position: str = "last",
+    sort_remaining: bool = True,
+    ignore_index: bool = False,
+)
+```
+
+| Param               | What it does                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| **axis**            | `0` or `"index"` to sort rows; `1` or `"columns"` to sort columns                                    |
+| **level**           | If your index is a MultiIndex, pick which level(s) to sort by                                        |
+| **ascending**       | `True` (default) for low→high labels, `False` for high→low, or a list for each level in a MultiIndex |
+| **inplace**         | If `True`, perform the sort in place and return `None`; otherwise returns a **new** DataFrame        |
+| **kind**            | Sorting algorithm: `"quicksort"` (default), `"mergesort"`, or `"heapsort"`                           |
+| **na\_position**    | Where to put missing labels: `"first"` or `"last"`                                                   |
+| **ignore\_index**   | If `True`, reset the index to `RangeIndex(0, …, n)` after sorting                                    |
+| **sort\_remaining** | When sorting a MultiIndex by one level, whether to also sort the others (default `True`)             |
+
+---
+
+### What it does
+
+Given:
+
+```python
+# before:
+#    CREATED_DATE   value
+# 2   2024-01-05     10
+# 0   2023-12-22      7
+# 1   2024-02-10     23
+```
+
+If you call
+
+```python
+df_data = df_data.sort_index()
+```
+
+you’ll get:
+
+```text
+# after sort_index():
+#    CREATED_DATE   value
+# 0   2023-12-22      7
+# 1   2024-02-10     23
+# 2   2024-01-05     10
+```
+
+It does **not** change which rows live at index labels 0, 1, 2—it simply reorders them so their labels ascend.
+
+---
+
+### Common use-cases
+
+1. **Restore “original” order**
+   After you’ve done a `sort_values(...)`, you can “undo” that reordering by sorting back on the index:
+
+   ```python
+   df_sorted_by_date = df.sort_values("CREATED_DATE")
+   df_original_order = df_sorted_by_date.sort_index()
+   ```
+
+2. **Sort hierarchical indices**
+   If you’ve got a `MultiIndex`, you can sort by one specific level:
+
+   ```python
+   df.sort_index(level="year_quarter")
+   ```
+
+3. **Reset labels as you sort**
+   If you’d rather not keep the old labels, pass `ignore_index=True`:
+
+   ```python
+   df.sort_index(ignore_index=True)
+   # now index is 0,1,2,... in the new sorted order
+   ```
+
+---
+
+### Return value & side-effects
+
+* By default, `.sort_index()` **returns a new** DataFrame with rows (or columns) re-ordered.
+* If you pass `inplace=True`, it will modify the existing `df_data` and return `None`.
+
+---
+
+### Key takeaway
+
+Use `.sort_index()` whenever you want your rows (or columns) laid out in the natural ascending order of their index labels. If you’ve just sorted by a column and need to go back, or if you’re working with hierarchical indices and want to ensure a particular index-based ordering, `.sort_index()` is your tool.

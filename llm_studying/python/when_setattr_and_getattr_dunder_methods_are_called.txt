@@ -1,0 +1,109 @@
+Yes, you're remembering correctly! Let me clarify the confusion.
+
+---
+
+## 📋 When Are `__setattr__` and `__getattr__` Called?
+
+---
+
+### They're Opposites in Behavior
+
+| Method | When Called |
+|--------|-------------|
+| `__setattr__` | **EVERY time** you set an attribute |
+| `__getattr__` | **ONLY when** attribute is NOT found normally |
+
+This asymmetry is confusing but intentional.
+
+---
+
+### `__setattr__` — Called EVERY Time
+
+```python
+class Demo:
+    def __setattr__(self, name, value):
+        print(f"Setting {name} = {value}")
+        object.__setattr__(self, name, value)
+
+d = Demo()
+d.x = 10      # "Setting x = 10" — called!
+d.x = 20      # "Setting x = 20" — called again!
+d.y = 30      # "Setting y = 30" — called!
+```
+
+**Every** assignment goes through `__setattr__`. No exceptions.
+
+---
+
+### `__getattr__` — Called ONLY When Not Found
+
+```python
+class Demo:
+    def __init__(self):
+        object.__setattr__(self, 'x', 10)  # x exists in __dict__
+    
+    def __getattr__(self, name):
+        print(f"Looking for {name}")
+        return "NOT FOUND"
+
+d = Demo()
+print(d.x)        # 10 — found normally, __getattr__ NOT called
+print(d.y)        # "Looking for y" → "NOT FOUND" — __getattr__ called
+```
+
+---
+
+### Why the Difference?
+
+**Setting:** Python needs a way to intercept ALL assignments for validation, logging, etc.
+
+**Getting:** Python only needs a fallback when normal lookup fails. Intercepting every access would be expensive (that's what `__getattribute__` does).
+
+---
+
+### The Full Picture
+
+```python
+obj.x = 10    # ALWAYS calls __setattr__
+
+obj.x         # First tries normal lookup:
+              #   1. Data descriptors in class
+              #   2. obj.__dict__
+              #   3. Non-data descriptors in class
+              # If ALL fail → calls __getattr__
+```
+
+---
+
+### Back to Question 24
+
+```python
+class ProtectedDict:
+    def __init__(self):
+        self._data = {}  # Calls __setattr__('_data', {})
+    
+    def __setattr__(self, name, value):
+        if name == '_data':
+            object.__setattr__(self, name, value)  # Stores in __dict__
+        else:
+            self._data[name] = value  # Stores in the dict, NOT in __dict__
+```
+
+So:
+- `_data` → stored in `obj.__dict__` → found normally → `__getattr__` NOT called
+- `username` → stored inside `_data` dict → NOT in `obj.__dict__` → `__getattr__` IS called
+
+---
+
+### Quick Reference
+
+| Action | Method Called | When |
+|--------|---------------|------|
+| `obj.x = 10` | `__setattr__` | Always |
+| `obj.x` | Normal lookup | First |
+| `obj.x` | `__getattr__` | Only if normal lookup fails |
+| `obj.x` | `__getattribute__` | Always (if defined) |
+
+---
+
+Does that clear up the confusion?

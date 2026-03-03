@@ -1,0 +1,46 @@
+Here's a quick script to do that:
+
+```python
+import inspect
+
+def list_methods(cls):
+    for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+        if not name.startswith('_'):  # skip dunder/private methods
+            sig = inspect.signature(method)
+            print(f"def {name}{sig}:")
+
+list_methods(MyClass)
+```
+
+This would output something like:
+
+```
+def get_row_and_column_info(cls, df: SparkDataFrame, return_as_df: bool = True) -> SparkDataFrame | dict:
+def create_days_range_flag_columns(cls, df: pd.DataFrame, days_between_column_list: list[str], range_tuple_list: list[tuple]) -> pd.DataFrame:
+```
+
+If you want to include the docstring too (useful for GenAI context):
+
+```python
+def list_methods(cls):
+    for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+        if not name.startswith('_'):
+            sig = inspect.signature(method)
+            print(f"def {name}{sig}:")
+            if method.__doc__:
+                print(f'    """{method.__doc__.strip()}"""')
+            print()
+```
+
+If you want to strip `cls` and `self` from the signatures to keep it cleaner:
+
+```python
+def list_methods(cls):
+    for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+        if not name.startswith('_'):
+            sig = inspect.signature(method)
+            params = [p for p in sig.parameters if p not in ('self', 'cls')]
+            clean_sig = ', '.join(str(sig.parameters[p]) for p in params)
+            ret = f" -> {sig.return_annotation}" if sig.return_annotation != inspect.Parameter.empty else ""
+            print(f"def {name}({clean_sig}){ret}:")
+```

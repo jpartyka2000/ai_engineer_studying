@@ -1,0 +1,66 @@
+**Saving pandas DF as an artifact**
+
+You can save a Pandas DataFrame as an artifact in MLflow. The best approach is to save it as an HTML or CSV file. For example:
+
+```python
+df.to_csv("df.csv", index=False)
+mlflow.log_artifact("df.csv", artifact_path="dataframes")
+```
+
+Alternatively, using `df.to_html()` or `df.style.render` to convert it to HTML before logging it might be nicer for visualization in the MLflow UI. On Databricks, HTML files are viewable, but other MLflow servers may block HTML for safety.
+
+
+Thought for 5 seconds
+
+
+Yes—you can log any file as an MLflow artifact, so the trick is to serialize your DataFrame to disk (CSV, HTML, Parquet, etc.) and then call `mlflow.log_artifact` (or the newer `mlflow.log_table`).  Here are two approaches:
+
+---
+
+### 1) Log as CSV or HTML
+
+```python
+import mlflow
+import pandas as pd
+
+# assume `win_rate_table` is your pandas DataFrame
+
+with mlflow.start_run():
+    # … your params/metrics/model logging …
+
+    # 1a) write out to CSV
+    win_rate_table.to_csv("win_rate_table.csv", index=False)
+    mlflow.log_artifact("win_rate_table.csv", artifact_path="tables")
+
+    # 1b) (optionally) also write it as HTML for nicer viewing
+    win_rate_table.to_html("win_rate_table.html", index=False)
+    mlflow.log_artifact("win_rate_table.html", artifact_path="tables")
+```
+
+Once the run completes, go to the **Artifacts → tables** folder in the MLflow UI and you’ll see both files.  Clicking on the `.html` will render the table right in your browser.
+
+---
+
+### 2) (MLflow ≥2.6) Log as a “table” artifact
+
+If you’re on a recent MLflow version, you can do:
+
+```python
+import mlflow
+
+with mlflow.start_run():
+    # … your params/metrics/model logging …
+
+    # Log the DataFrame directly as a table (Parquet under the hood)
+    mlflow.log_table(
+        pandas_df=win_rate_table,
+        artifact_file="win_rate_table.parquet",
+        artifact_path="tables"      # optional subfolder
+    )
+```
+
+Then in the MLflow UI you’ll see a **Tables** section under Artifacts, and clicking the Parquet will give you an interactive table preview.
+
+---
+
+Both methods will let you browse your DataFrame right from the MLflow run’s artifacts.

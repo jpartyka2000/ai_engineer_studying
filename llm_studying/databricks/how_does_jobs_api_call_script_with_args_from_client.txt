@@ -1,0 +1,44 @@
+Not quite—`argparse` has no built-in awareness of the Databricks Jobs API.  It simply parses whatever command-line arguments the Python process was launched with (i.e. `sys.argv`).
+
+Here’s what really happens:
+
+1. **You call the Jobs API** with a payload like:
+
+   ```json
+   {
+     "job_id": 123,
+     "python_params": [
+       "--overall_budget", "250000",
+       "--n_iterations",   "10000",
+       "--pct_min_max",    "0.5",
+       "--input_table",    "db.table.path"
+     ]
+   }
+   ```
+2. **Databricks** starts your job cluster and runs something equivalent to:
+
+   ```bash
+   python /Workspace/.../mc_sim.py \
+     --overall_budget 250000 \
+     --n_iterations   10000 \
+     --pct_min_max    0.5 \
+     --input_table    db.table.path
+   ```
+3. **Inside `mc_sim.py`**, you have:
+
+   ```python
+   import argparse
+
+   parser = argparse.ArgumentParser()
+   parser.add_argument("--overall_budget", type=float, required=True)
+   # … other args …
+   args = parser.parse_args()  # looks at sys.argv
+   ```
+4. **`argparse`** reads `sys.argv` (the list of strings after `python mc_sim.py`) and pulls out `args.overall_budget`, `args.n_iterations`, etc.
+
+So in short:
+
+* **Jobs API** is responsible for launching your script **with** those flag-value pairs on the command line.
+* **`argparse`** simply parses that command line to give you a nice `args` object.
+
+`argparse` doesn’t talk to the Jobs API—Databricks injects the flags into the process’s `sys.argv`, and `argparse` handles the rest.

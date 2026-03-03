@@ -1,0 +1,65 @@
+When using MLflow with Unity Catalog, you must log your model along with a complete signature that describes both the input and output schemas. A model signature provides metadata about the expected input types (column names and data types) and the output types, which helps ensure that models are used consistently and safely in production.
+
+### Steps to Log a Model with a Signature
+
+1. **Generate a Signature:**  
+   You can generate a signature automatically from a sample of input data and the model’s predictions using MLflow's `infer_signature` function. For example:
+
+   ```python
+   import mlflow
+   import mlflow.sklearn
+   from mlflow.models.signature import infer_signature
+
+   # Assume X_train is a Pandas DataFrame or numpy array of your training data
+   # and y_pred is the model's predictions on X_train
+   y_pred = model.predict(X_train)
+   signature = infer_signature(X_train, y_pred)
+   ```
+
+   This creates a signature object that contains information about the input and output schemas.
+
+2. **Log the Model with the Signature:**  
+   Pass the signature to your logging function. For example, if you're using a scikit-learn model:
+
+   ```python
+   mlflow.sklearn.log_model(model, artifact_path="model", signature=signature)
+   ```
+
+   Now the model is logged with both input and output type specifications.
+
+3. **Register the Model:**  
+   Once logged with a valid signature, you can register your model in MLflow's Model Registry without encountering the signature error.
+
+### Why Is This Required?
+
+Unity Catalog enforces that all models have a valid signature so that downstream consumers of the model (for example, model serving or batch inference) can reliably verify that the model is being used with the correct input and output formats. This additional safety check helps prevent runtime errors and improves overall model governance.
+
+### Complete Example
+
+Here's a complete snippet:
+
+```python
+import mlflow
+import mlflow.sklearn
+from mlflow.models.signature import infer_signature
+import pandas as pd
+
+# Suppose X_train is your training input and model is your trained model.
+# Convert X_train to a DataFrame if it isn’t already.
+X_train = pd.DataFrame(X_train)
+
+# Generate predictions for signature inference.
+y_pred = model.predict(X_train)
+
+# Infer the model signature.
+signature = infer_signature(X_train, y_pred)
+
+# Log the model with the signature.
+with mlflow.start_run():
+    mlflow.sklearn.log_model(model, artifact_path="model", signature=signature)
+    # Log other parameters and metrics as needed.
+```
+
+After logging the model with a valid signature, you should be able to register it without seeing the signature metadata error.
+
+This is how you satisfy the Unity Catalog requirement for complete model signature metadata.

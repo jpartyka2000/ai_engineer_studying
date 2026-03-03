@@ -1,0 +1,41 @@
+`weave.Model` subclasses **Pydantic's `BaseModel`**, not `pydantic_ai.Model`.
+
+## The Distinction
+
+| Class | Library | Purpose |
+|-------|---------|---------|
+| `pydantic.BaseModel` | Pydantic | Data validation and serialization |
+| `weave.Model` | Weights & Biases (Weave) | Wraps ML models for tracking/evaluation (inherits from `pydantic.BaseModel`) |
+| `pydantic_ai.models.Model` | Pydantic AI | Abstract interface for LLM providers (OpenAI, Anthropic, etc.) |
+
+## In Your Code
+
+You actually have both:
+
+```python
+class CueEvaluationAgent(weave.Model):  # Inherits from pydantic.BaseModel
+    model_name: str
+    agent_version: str
+    # ...
+    model: Model  # This is pydantic_ai.models.Model — an LLM interface
+```
+
+So:
+- `CueEvaluationAgent` is a `weave.Model` (which is a Pydantic `BaseModel`) — this gives you field validation, serialization, and Weave's tracking capabilities
+- The `model` attribute inside it is a `pydantic_ai.models.Model` — this is the actual LLM client you use to make inference calls
+
+## Why Weave Uses Pydantic
+
+Weave inherits from `pydantic.BaseModel` to get:
+1. **Validation** — ensures your model config is correct at instantiation
+2. **Serialization** — makes it easy to publish/version models with `weave.publish()`
+3. **Schema generation** — automatic documentation of your model's parameters
+
+You can verify this yourself:
+
+```python
+import weave
+from pydantic import BaseModel
+
+print(issubclass(weave.Model, BaseModel))  # True
+```

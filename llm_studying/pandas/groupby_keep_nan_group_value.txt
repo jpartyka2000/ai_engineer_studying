@@ -1,0 +1,57 @@
+By default, `groupby` in pandas **drops** any groups whose key is `NaN`. So if you do:
+
+```python
+df = pd.DataFrame({
+    'campaign_name': ['A', None, 'B', None],
+    'value': [1, 2, 3, 4]
+})
+
+print(df.groupby('campaign_name').sum())
+```
+
+you’ll get only:
+
+```
+               value
+campaign_name       
+A                  1
+B                  3
+```
+
+(no “`NaN`” row).
+
+---
+
+### Including `NaN` as its own group
+
+Starting in pandas 1.1.0 you can pass `dropna=False` to keep `NaN` keys:
+
+```python
+df.groupby('campaign_name', dropna=False).sum()
+```
+
+which yields:
+
+```
+               value
+campaign_name       
+A                  1
+B                  3
+NaN                6
+```
+
+---
+
+### Alternatives
+
+- **Fill before grouping**  
+  If you’d rather treat missing as a real label, you can `df['campaign_name'].fillna('Unknown')` first.
+
+- **Filter out missing**  
+  If you don’t want to include them at all, leave the default `dropna=True` (or explicitly do `df.dropna(subset=['campaign_name'])` before your `.groupby()`).
+
+---
+
+**Bottom line:**  
+- **Default:** No separate `NaN` group.  
+- **With `dropna=False`:** Yes, you’ll get a group for the `NaN` key.

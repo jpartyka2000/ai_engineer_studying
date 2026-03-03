@@ -1,0 +1,65 @@
+You simply declare them as **class attributes** (i.e. variables at the top‐level of the class block), and then refer to them by name inside your static methods (via the class name). For example:
+
+```python
+class TransformCustomerData:
+    # class‑level variables (shared by all methods, no instances needed)
+    _DEFAULT_COLUMNS = ['customer_id', 'first_name', 'last_name', 'order_amount']
+    SCALING_FACTOR   = 1.0
+
+    @staticmethod
+    def transform_data(df):
+        # refer to them by the class name
+        cols = TransformCustomerData._DEFAULT_COLUMNS
+        factor = TransformCustomerData.SCALING_FACTOR
+
+        df = TransformCustomerData._select_columns(df, cols)
+        df = TransformCustomerData._scale_amount(df, factor)
+        return df
+
+    @staticmethod
+    def _select_columns(df, cols):
+        return df[cols]
+
+    @staticmethod
+    def _scale_amount(df, factor):
+        df['order_amount'] = df['order_amount'] * factor
+        return df
+```
+
+### A few extra tips
+
+1. **Private vs public**
+
+   * Use a single leading underscore (`_DEFAULT_COLUMNS`) to signal “internal use only.”
+   * No enforcement happens—you’re just following the convention.
+
+2. **Alternative with `@classmethod`**
+   If you find you want to refer to the class more generically (so subclasses pick up the right variable), you can make your entry point a classmethod:
+
+   ```python
+   class TransformCustomerData:
+       THRESHOLD = 100
+
+       @classmethod
+       def transform_data(cls, df):
+           # now you can use cls.THRESHOLD even in subclasses
+           if df['order_amount'].max() > cls.THRESHOLD:
+               ...
+   ```
+
+3. **Module‑level constants**
+   If the values really don’t belong conceptually to the class, you can also define them at the top of your module:
+
+   ```python
+   DEFAULT_COLUMNS = [...]
+   SCALING_FACTOR = 1.0
+
+   class TransformCustomerData:
+       @staticmethod
+       def transform_data(df):
+           df = df[DEFAULT_COLUMNS]
+           df['order_amount'] *= SCALING_FACTOR
+           return df
+   ```
+
+But for a purely static class namespace, **class attributes** are the Pythonic way to give all (static) methods shared configuration or constants.

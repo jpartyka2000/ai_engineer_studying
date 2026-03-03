@@ -1,0 +1,55 @@
+To verify whether null values in a given stage mean that all the following stages are also null (as per the pipeline order you specified), you can write a PySpark query that iterates over the `stage_columns_list`. The idea is to check if, for each row, when a stage is null, all subsequent stages are also null.
+
+### Plan:
+1. **Iterate** through each pair of adjacent stages.
+2. For each stage, filter rows where that stage is null and check whether all subsequent stages are also null.
+3. If any rows violate this condition, you will know that the assumption is incorrect.
+
+### PySpark Code:
+
+```python
+from pyspark.sql import functions as F
+
+# Your list of sales pipeline stages in order
+stage_columns_list = ['qualified','consensus_building_scoping','proposal__negotiation','contracting','deal_closing']
+
+# Initialize a DataFrame to store stages that violate the null assumption
+violations = None
+
+# Iterate over stages, except the last one
+for i in range(1, len(stage_columns_list)):
+    current_stage = stage_columns_list[i]
+    following_stages = stage_columns_list[i+1:]
+    
+    # Build a condition where the current stage is null but any of the subsequent stages is not null
+    condition = (F.col(current_stage).isNull()) & F.expr(" OR ".join([f"{col} IS NOT NULL" for col in following_stages]))
+    
+    # Filter rows that violate the condition
+    violation_check = df.filter(condition)
+    
+    # Collect any violations
+    if violations is None:
+        violations = violation_check
+    else:
+        violations = violations.union(violation_check)
+
+# Show any violations found
+if violations.count() > 0:
+    print("Violations found where a stage is null but a later stage is not null:")
+    violations.show()
+else:
+    print("No violations found. All null stages correctly propagate to subsequent stages.")
+```
+
+### Explanation:
+1. **Loop through Stages**: For each stage starting from the second one (`i=1`), check whether any subsequent stages are not null when the current stage is null.
+2. **Condition**: The condition ensures that if a current stage is `null`, all subsequent stages should also be `null`. The PySpark expression checks for non-null values in the subsequent stages.
+3. **Violation Check**: If any rows violate this condition, they are stored in the `violations` DataFrame.
+4. **Output**: If violations are found, they are displayed. If no violations are found, a message indicates that the assumption holds.
+
+### Key Notes:
+- The first stage (`'qualified'`) is not included in the check since there are no null values in this stage.
+- The logic ensures that any violation of the rule (i.e., a non-null value in a later stage when an earlier stage is null) is captured.
+
+### Result:
+This code will check whether the assumption that all subsequent stages are `null` after a null stage holds true across your DataFrame.

@@ -1,0 +1,64 @@
+That error is coming from the OpenAI Python client when it validates the `tools` you’ve passed in to `ChatCompletion.create`. Here’s what’s happening, step by step:
+
+1. **Where it fails**
+
+   ```python
+   raise self._make_status_error_from_response(err.response) from None
+   openai.BadRequestError: Error code: 400 – { … 'param': 'tools[0].function', … }
+   ```
+
+   The client made an HTTP request, got back a 400 “Bad Request,” and is re-raising it. The payload it sent included a `tools` array, but the *first* entry (`tools[0]`) was missing its required `function` field.
+
+2. **What `tools[0].function` means**
+   When you integrate your own “tools”/“functions” with Chat Completions, the client expects each tool definition to look something like:
+
+   ```python
+   {
+     "name": "my_tool",
+     "description": "Does something useful.",
+     "function": my_python_callable,        # ← this is mandatory
+     "parameters": { /* JSON-schema for arguments */ }
+   }
+   ```
+
+   The `"function"` key must point to the actual Python function object that the client will invoke when the model *chooses* to call that tool.
+
+3. **Why it’s required**
+   Without `"function"`, the client doesn’t know *how* to execute your tool if the model decides to call it. So the library refuses to send the request.
+
+4. **How to fix it**
+   Make sure every entry in your `tools` list includes a `function` attribute. For example:
+
+   ```python
+   def lookup_stock_price(symbol):
+       # …fetch price…
+       return price
+
+   response = openai.ChatCompletion.create(
+     model="gpt-4o-mini",
+     messages=[{ "role": "user", "content": "What’s NVDA trading at?" }],
+     tools=[
+       {
+         "name": "lookup_stock_price",
+         "description": "Returns the current price for a given ticker symbol.",
+         "function": lookup_stock_price,       # ← must include this
+         "parameters": {
+           "type": "object",
+           "properties": {
+             "symbol": { "type": "string", "description": "Ticker symbol" }
+           },
+           "required": ["symbol"]
+         }
+       }
+     ],
+     # Optionally enable function calling…
+     function_call="auto"
+   )
+   ```
+
+5. **Double-check your call**
+
+   * If you’re passing `tools=[ … ]`, ensure each dict has `"function": <callable>`.
+   * If you *aren’t* actually trying to register a Python callable, but just want to define function metadata for the model, use the newer `functions=[ … ]` parameter instead of `tools`. (In that case the key is `"functions"` and you provide JSON Schemas, not Python callables.)
+
+Once every tool entry has its `function`, the client will accept your request and—if the model asks to call that tool—it will invoke your Python function under the hood.

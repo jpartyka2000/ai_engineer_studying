@@ -1,0 +1,47 @@
+## `HallucinationFreeScorer` in Weave
+
+`HallucinationFreeScorer` is a Weave evaluation component that **checks if an LLM's response contains information not present in the provided context** - essentially detecting when the model "makes things up."
+
+## What It Does:
+
+```python
+# It evaluates if the answer is grounded in the context
+context = "Python was created by Guido van Rossum in 1991."
+response = "Python was created by Guido van Rossum in 1991 in the Netherlands."
+# Score: Lower (hallucination detected - Netherlands not in context)
+
+response = "Python was created by Guido van Rossum."  
+# Score: Higher (all info is from context)
+```
+
+## Common Use Case - RAG Systems:
+
+```python
+from weave.scorers import HallucinationFreeScorer
+
+class RAGEvaluator:
+    def __init__(self):
+        self.hallucination_scorer = HallucinationFreeScorer()
+    
+    @weave.op()
+    def evaluate(self, question: str, context: str, answer: str):
+        # Check if answer only uses info from context
+        score = self.hallucination_scorer.score(
+            context=context,
+            output=answer
+        )
+        return score  # 1.0 = no hallucination, 0.0 = hallucinated
+
+# Example
+context = "Our store opens at 9 AM and closes at 5 PM."
+answer = "The store is open from 9 AM to 5 PM, located downtown."
+# "located downtown" = hallucination (not in context)
+```
+
+## Key Purpose:
+
+- **RAG validation** - Ensures responses stick to retrieved documents
+- **Factual grounding** - Prevents model from adding unverified info
+- **Safety** - Critical for applications where accuracy matters
+
+**Bottom line**: `HallucinationFreeScorer` measures whether an LLM is inventing information beyond what's in its given context - essential for reliable RAG and question-answering systems.

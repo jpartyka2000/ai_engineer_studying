@@ -1,0 +1,54 @@
+## RawResponsesStreamEvent Structure
+
+Note: The field is actually `.data`, not `.item`. Here's the full hierarchy:
+
+```
+RawResponsesStreamEvent
+└── .data: ResponseOutputItemDoneEvent
+    └── .item: OutputItem
+        ├── .type: "message" | "function_call" | "function_call_output"
+        └── (type-specific fields)
+```
+
+---
+
+### When `item.type == "message"`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `item.type` | `str` | `"message"` |
+| `item.content` | `list` | Array of content parts |
+| `item.content[].type` | `str` | e.g., `"output_text"` |
+| `item.content[].text` | `str` | The actual text content |
+
+---
+
+### When `item.type == "function_call"`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `item.type` | `str` | `"function_call"` |
+| `item.name` | `str` | Tool/function name |
+| `item.arguments` | `str` | JSON-encoded arguments |
+| `item.call_id` | `str` | Unique ID for this call |
+
+---
+
+### When `item.type == "function_call_output"`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `item.type` | `str` | `"function_call_output"` |
+| `item.output` | `str` | The tool's return value |
+| `item.call_id` | `str` | Links back to the originating `function_call` |
+
+---
+
+### Access Pattern in Code
+
+```python
+event  # RawResponsesStreamEvent
+event.data  # ResponseOutputItemDoneEvent
+event.data.item  # The output item
+event.data.item.type  # "message", "function_call", or "function_call_output"
+```

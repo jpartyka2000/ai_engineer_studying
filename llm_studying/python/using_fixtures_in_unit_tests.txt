@@ -1,0 +1,135 @@
+In **pytest**, a fixture is a way to set up reusable **test data, resources, or dependencies** that your test functions need. Fixtures are useful for initializing objects, setting up databases, or preparing any state required before running tests.
+
+---
+
+### **🔹 Basic Example: Using a Fixture in Pytest**
+Let's say you're testing a function that adds two numbers.
+
+#### **1️⃣ Define a Fixture**
+Fixtures are defined using the `@pytest.fixture` decorator.
+
+```python
+import pytest
+
+@pytest.fixture
+def sample_data():
+    return {"a": 2, "b": 3}
+```
+
+---
+
+#### **2️⃣ Use the Fixture in a Test**
+To use the fixture, pass it as an argument to the test function.
+
+```python
+def test_addition(sample_data):
+    result = sample_data["a"] + sample_data["b"]
+    assert result == 5
+```
+
+✅ Pytest automatically detects that `sample_data` is a fixture and provides its return value to the test.
+
+---
+
+### **🔹 Using Fixtures for More Complex Setups**
+You can use fixtures for **setting up resources like databases, files, or API clients**.
+
+#### **Example: Setting Up a Temporary File**
+```python
+import pytest
+import tempfile
+
+@pytest.fixture
+def temp_file():
+    with tempfile.NamedTemporaryFile(delete=False, mode='w') as f:
+        f.write("Hello, pytest!")
+        return f.name
+```
+
+✅ This fixture **creates a temp file** before the test runs and provides its filename.
+
+#### **Using the Temp File Fixture**
+```python
+def test_read_temp_file(temp_file):
+    with open(temp_file, "r") as f:
+        content = f.read()
+    assert content == "Hello, pytest!"
+```
+
+---
+
+### **🔹 Fixtures with `yield` for Cleanup**
+If a fixture requires **teardown/cleanup**, use `yield`.
+
+#### **Example: Cleaning Up After a Test**
+```python
+@pytest.fixture
+def db_connection():
+    # Setup: Open a mock database connection
+    conn = "Database Connected"
+    yield conn  # Provide the fixture to the test
+    # Teardown: Close the connection after the test
+    print("\nClosing database connection")
+```
+
+#### **Using the Fixture in a Test**
+```python
+def test_db_query(db_connection):
+    assert db_connection == "Database Connected"
+```
+
+✅ After the test runs, `Closing database connection` is printed, demonstrating teardown.
+
+---
+
+### **🔹 Parameterized Fixtures**
+You can pass different values to the same fixture using `@pytest.fixture(params=[...])`.
+
+#### **Example: Running the Same Test with Different Data**
+```python
+@pytest.fixture(params=[(2, 3, 5), (4, 5, 9), (1, 1, 2)])
+def test_cases(request):
+    return request.param
+```
+
+```python
+def test_addition_cases(test_cases):
+    a, b, expected = test_cases
+    assert a + b == expected
+```
+
+✅ This will **run the test three times**, once for each parameter set.
+
+---
+
+### **🔹 Using Fixtures in Multiple Tests**
+One fixture can be **shared across multiple tests**.
+
+```python
+@pytest.fixture
+def user():
+    return {"name": "Alice", "age": 30}
+
+def test_user_name(user):
+    assert user["name"] == "Alice"
+
+def test_user_age(user):
+    assert user["age"] == 30
+```
+
+✅ The `user` fixture is reused in both tests.
+
+---
+
+## **🚀 Summary: Why Use Fixtures?**
+| Feature | Benefit |
+|---------|---------|
+| **Reusable Setup** | Avoids duplicate setup code across tests |
+| **Automatic Teardown** | Ensures cleanup after test execution |
+| **Parameterization** | Allows testing multiple cases efficiently |
+| **Shared Resources** | One fixture can be used by multiple tests |
+| **Better Readability** | Keeps tests concise and maintainable |
+
+---
+
+Would you like help applying fixtures to a specific test you’re working on? 😊

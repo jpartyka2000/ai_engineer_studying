@@ -1,0 +1,40 @@
+**What causes `SettingWithCopyWarning`:**
+When you take a **view** (not a copy) of a DataFrame—such as via chained indexing like `df2 = df[df['A'] > 0]`—and then assign into it, pandas isn’t sure if you mean to modify the original `df` or just the temporary slice `df2`. Because that slice might be just a view into the original memory, your assignment may silently do nothing on the real data. To warn you, pandas emits `SettingWithCopyWarning`.
+
+---
+
+**How to safely modify a subset without the warning:**
+
+1. **Use `.loc` on the original DataFrame**
+   Directly index-and-assign in one step so pandas knows you’re touching the source:
+
+   ```python
+   # unsafe → may warn
+   df2 = df[df['A'] > 0]
+   df2['B'] = 42
+
+   # safe → no warning
+   df.loc[df['A'] > 0, 'B'] = 42
+   ```
+
+2. **Make an explicit copy before modifying**
+   If you really want a separate object, copy it:
+
+   ```python
+   df2 = df[df['A'] > 0].copy()
+   df2['B'] = 42  # no warning, because df2 is independent
+   ```
+
+3. **Avoid chained indexing altogether**
+   Always prefer one clean indexing step rather than mixing `[]` twice:
+
+   ```python
+   # bad: df[df['A'] > 0]['B'] = 42
+   # good:
+   mask = df['A'] > 0
+   df.loc[mask, 'B'] = 42
+   ```
+
+---
+
+By using `.loc[...]` or making an explicit `.copy()`, you eliminate ambiguity about whether you’re working on a view or a copy, and stop pandas from warning you.

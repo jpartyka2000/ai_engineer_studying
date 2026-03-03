@@ -1,0 +1,30 @@
+In LightGBM, setting
+
+```
+deterministic=True  
+```
+
+turns on a special “bit‑for‑bit reproducible” mode on **CPU** that does two things:
+
+1. **Eliminates thread‑ordering nondeterminism**
+
+   * By default, LightGBM will build histograms and do floating‑point reductions in parallel across multiple threads.
+   * Different thread‑scheduling or race conditions can lead to tiny rounding differences, which then cascade into different split choices and ultimately different trees.
+   * **`deterministic=True`** forces LightGBM to fix the order of those operations so that—even if you change `num_threads`—you get the *exact* same training run every time. ([LightGBM][1])
+
+2. **Disables any extra “auto‑tuning” randomness**
+
+   * LightGBM’s “auto‑mode” for choosing row‑wise vs. column‑wise histograms involves a small timing test that can flip between runs.
+   * In deterministic mode, you must also explicitly pin one method (via `force_row_wise=true` or `force_col_wise=true`) to avoid that hidden variability. ([LightGBM][1])
+
+---
+
+### A few important notes
+
+* **Only on CPU**: This parameter has no effect in GPU mode.
+* **May slow training**: Enforcing a fixed ordering can prevent some parallel optimizations.
+* **Combine with** `force_row_wise` **or** `force_col_wise`: Without one of those, tiny numerical instabilities can still creep in from the auto‑benchmarking phase.
+
+With these in place, two runs with the same data, same seed, *and* any number of threads will build *identical* trees and give *identical* predictions.
+
+[1]: https://lightgbm.readthedocs.io/en/latest/Parameters.html "Parameters — LightGBM 4.6.0.99 documentation"

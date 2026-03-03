@@ -1,0 +1,61 @@
+**`asyncio.Semaphore`: Controlling Concurrency in Async Code**
+
+An **`asyncio.Semaphore`** is a synchronization primitive that limits the number of concurrent coroutines accessing a shared resource. You initialize it with a “counter” (the maximum number of simultaneous holders), and each coroutine must **acquire** the semaphore before proceeding and **release** it when done.
+
+```python
+sem = asyncio.Semaphore(3)  # at most 3 coroutines can hold it at once
+```
+
+---
+
+### Key Methods
+
+* **`await sem.acquire()`**
+  Decrements the internal counter by 1 if it’s positive; otherwise, suspends the caller until another task calls `release()`.
+
+* **`sem.release()`**
+  Increments the counter by 1 and wakes up one waiter (if any).
+
+* **`sem.locked()`**
+  Returns `True` if the counter is zero (i.e. the maximum number of concurrent holders is reached).
+
+---
+
+### Typical Usage Pattern
+
+```python
+import asyncio
+
+async def worker(n, sem):
+    async with sem:  # context‐manager shorthand for acquire/release
+        print(f"Task {n} acquired semaphore")
+        await asyncio.sleep(1)  # simulate I/O-bound work
+    print(f"Task {n} released semaphore")
+
+async def main():
+    sem = asyncio.Semaphore(2)  # only 2 workers at a time
+    tasks = [asyncio.create_task(worker(i, sem)) for i in range(5)]
+    await asyncio.gather(*tasks)
+
+asyncio.run(main())
+```
+
+* **`async with sem:`** is equivalent to:
+
+  ```python
+  await sem.acquire()
+  try:
+      ...
+  finally:
+      sem.release()
+  ```
+
+---
+
+### When to Use
+
+* **Rate-limiting**: limit concurrent calls to an external API or database.
+* **Resource pooling**: control the number of in-flight operations using a finite resource (e.g., file handles, connections).
+* **Backpressure**: prevent your application from spawning more tasks than your downstream services can handle.
+
+By gating access with a semaphore, you keep your async application both efficient and well-behaved under load.

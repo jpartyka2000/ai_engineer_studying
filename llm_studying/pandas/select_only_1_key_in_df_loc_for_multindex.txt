@@ -1,0 +1,82 @@
+Here’s a focused mini‑post on how `.loc` handles MultiIndex slicing when you only care about the top‐level (level 0) key:
+
+---
+
+## Pulling Out Just the Level 0 Key with `.loc`
+
+When you have a MultiIndexed DataFrame, you **don’t** need to supply a full tuple of keys at every level if you only want to slice on the top level. Pandas will implicitly fill in “all” for the unspecified deeper levels.
+
+### 1. Setup: MultiIndex on three levels
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'Country': ['US','US','CA','CA','MX','MX'],
+    'City':    ['NY','LA','Toronto','Montreal','Mexico City','Guadalajara'],
+    'Month':   ['Jan','Feb','Jan','Feb','Jan','Feb'],
+    'Sales':   [200,180,150,140,100,  90]
+})
+
+# Create a three‑level index
+df = df.set_index(['Country','City','Month']).sort_index()
+```
+
+Our index levels are:
+
+```
+Level 0 → Country
+Level 1 → City
+Level 2 → Month
+```
+
+### 2. Slicing only on level 0
+
+#### Explicit tuple (verbose)
+
+If you wanted to be 100% explicit, you could write:
+
+```python
+# “CA” at level 0, all cities (slice(None)), all months (slice(None))
+ca_df = df.loc[('CA', slice(None), slice(None)), :]
+```
+
+#### Shorthand: single key
+
+Because you only care about the **Country** level, you can omit the deeper levels:
+
+```python
+# Pandas understands this as “CA at level 0, everything below”
+ca_df = df.loc['CA']
+```
+
+It’s exactly equivalent to the verbose form above.
+
+### 3. Why it works
+
+* **Single‐key lookup**: When `.loc` receives a scalar (not a tuple) on a MultiIndex, it treats that scalar as selecting for the *first* level.
+* **Implicit “all”**: Unspecified lower levels default to a full slice `slice(None)`.
+
+### 4. More examples
+
+```python
+# Get all US data:
+us_df = df.loc['US']
+
+# Get all Mexico City sales (Country = MX, City = Mexico City):
+mex_city = df.loc[('MX','Mexico City')]
+
+# Contrast: pulling out one month within that city:
+mex_feb = df.loc[('MX','Mexico City','Feb'), 'Sales']
+```
+
+* `df.loc['MX']` → all City/Month under MX
+* `df.loc[('MX','Mexico City')]` → all Month under that city
+* `df.loc[('MX','Mexico City','Feb')]` → a single scalar value
+
+---
+
+### Takeaway
+
+> **You only ever need to fully specify as many levels as you actually care about.**
+> Remaining levels are automatically treated as “all values.”

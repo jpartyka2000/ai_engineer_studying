@@ -1,0 +1,83 @@
+Excellent question — ISO 8601 defines several **standardized ways to express time zones** within timestamps.
+
+Here’s a complete breakdown 👇
+
+---
+
+## 🕒 ISO 8601 Time Zone Indicators
+
+ISO 8601 timestamps can include **one of three types of timezone information**:
+
+### 1. **UTC “Zulu” indicator**
+
+```
+2025-10-20T14:33:05Z
+```
+
+* The **`Z`** stands for **Zulu time**, which means **UTC+00:00**.
+* It’s the simplest and most common way to mark a timestamp as UTC.
+
+---
+
+### 2. **Numeric UTC offset**
+
+```
+2025-10-20T14:33:05+00:00   → UTC (same as Z)
+2025-10-20T14:33:05-05:00   → U.S. Central Standard Time (UTC−5)
+2025-10-20T14:33:05+09:00   → Japan Standard Time (UTC+9)
+2025-10-20T14:33:05+05:30   → India Standard Time (UTC+5:30)
+```
+
+* The part after the time (`+hh:mm` or `-hh:mm`) indicates **hours and minutes offset from UTC**.
+* A positive offset means “ahead of UTC,” and a negative offset means “behind UTC.”
+
+---
+
+### 3. **No timezone indicator (naive timestamp)**
+
+```
+2025-10-20T14:33:05
+```
+
+* No `Z` or offset → interpreted as **local time** (no explicit timezone info).
+* Depending on your context or parser (like Pandas or Python’s `datetime`), this is treated as **“naive”**, meaning it has **no tzinfo attached**.
+
+---
+
+## 💡 Variants and Notes
+
+| Example                     | Meaning | Notes                                      |
+| --------------------------- | ------- | ------------------------------------------ |
+| `2025-10-20T14:33:05Z`      | UTC     | Uses “Zulu” suffix                         |
+| `2025-10-20T14:33:05+00:00` | UTC     | Equivalent to `Z`                          |
+| `2025-10-20T14:33:05-0400`  | UTC−4   | Compact form without colon (allowed)       |
+| `2025-10-20T14:33:05+09`    | UTC+9   | Hour-only offset (allowed but less common) |
+| `2025-10-20T14:33:05`       | Local   | No timezone indicator                      |
+
+---
+
+## ⚙️ How Pandas Handles This
+
+When you use:
+
+```python
+pd.to_datetime(timestamps, format='ISO8601', utc=True)
+```
+
+Pandas:
+
+* Automatically detects the timezone part (`Z`, `+05:00`, `-0800`, etc.)
+* Converts everything to **UTC**
+* Returns timezone-aware datetimes (`datetime64[ns, UTC]`)
+
+Then if you call:
+
+```python
+.dt.tz_localize(None)
+```
+
+you **drop** the timezone and make them naive (`datetime64[ns]`).
+
+---
+
+Would you like a quick table showing how each of these timezone indicators looks before and after Pandas conversion (`utc=True` vs `.tz_localize(None)`)?

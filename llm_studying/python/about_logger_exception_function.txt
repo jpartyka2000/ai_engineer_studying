@@ -1,0 +1,78 @@
+## `logger.exception()` and Exceptions
+
+No, `logger.exception()` does **NOT require** an exception object as a parameter - it **automatically captures** the current exception from `sys.exc_info()`.
+
+## How It Works:
+
+```python
+try:
+    1 / 0
+except Exception as e:
+    # These are equivalent:
+    logger.exception("Error occurred")  # Auto-captures exception
+    logger.error("Error occurred", exc_info=True)  # Same thing
+    
+    # You CAN pass the exception in the message, but not required:
+    logger.exception("Error occurred: %s", e)  # Optional
+```
+
+## What `exception()` Does:
+
+```python
+try:
+    risky_operation()
+except Exception as e:
+    logger.exception("Operation failed")
+    
+    # This logs:
+    # ERROR: Operation failed
+    # Traceback (most recent call last):
+    #   File "script.py", line 2, in <module>
+    #     risky_operation()
+    # ZeroDivisionError: division by zero
+```
+
+## Common Patterns:
+
+### Standard Usage (No Exception Needed):
+```python
+try:
+    data = json.loads(bad_json)
+except:
+    logger.exception("Failed to parse JSON")  # That's it!
+```
+
+### With Additional Context:
+```python
+try:
+    process_user(user_id)
+except Exception as e:
+    # The %s is just for extra context, not required
+    logger.exception("Failed to process user %s: %s", user_id, e)
+```
+
+### Outside Exception Handler (Won't Work):
+```python
+# This logs but NO traceback (not in exception handler)
+logger.exception("Something bad")  # No traceback available!
+
+# Only use exception() inside except blocks
+```
+
+## Key Points:
+
+1. **Must be called inside `except` block** to capture traceback
+2. **Exception object NOT required** as parameter
+3. **Automatically includes full traceback**
+4. **The `%s, e` is optional** for adding exception message to your log
+
+## Your Code Example:
+```python
+except Exception as e:
+    logger.exception("Error during run_to_queue: %s", e)
+    #                                            ^^^^^^
+    # This %s is optional - just adds the exception message
+    # The traceback is captured automatically
+```
+
+**Bottom line**: `logger.exception()` automatically captures the current exception and traceback - you just need to call it inside an `except` block with your message. The exception parameter is optional extra context.

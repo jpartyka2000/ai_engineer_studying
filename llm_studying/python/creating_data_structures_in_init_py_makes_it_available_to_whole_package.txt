@@ -1,0 +1,65 @@
+## Yes, It Makes `FUND_SCORERS` Package-Wide
+
+Putting this in `__init__.py` makes `FUND_SCORERS` accessible from the package level, allowing clean imports from other files.
+
+## How It Works:
+
+```python
+# __init__.py creates these at package import time
+FUND_SCORERS = {...}  # Available to any file that imports the package
+
+# From another file in the project:
+from cue_eval import FUND_SCORERS  # Clean import!
+
+# Or
+from cue_eval.scorers import FUND_SCORERS
+
+# Use it
+scorer = FUND_SCORERS["tool_success"]
+```
+
+## Why Do This?
+
+### 1. **Single Source of Truth**
+```python
+# All scorers configured in one place
+# Instead of each file creating its own instances
+FUND_SCORERS = {
+    "tool_success": tool_success_scorer,
+    "coherence": coherence_scorer,
+    "hallucination": hallucination_scorer,
+}
+# Everyone uses the same configured instances
+```
+
+### 2. **Prevent Duplicate Instantiation**
+```python
+# Without __init__.py pattern (BAD):
+# file1.py
+scorer = ToolSuccessScorer(name="tool_success")  # Instance 1
+
+# file2.py  
+scorer = ToolSuccessScorer(name="tool_success")  # Instance 2 (duplicate!)
+
+# With __init__.py pattern (GOOD):
+# Both files use the SAME instance from FUND_SCORERS
+```
+
+### 3. **Clean API**
+```python
+# Users of your package get a nice interface:
+from cue_eval import FUND_SCORERS
+
+# Instead of:
+from cue_eval.scorers.fundamental.success import ToolSuccessScorer
+scorer = ToolSuccessScorer(name="tool_success")  # They have to instantiate
+```
+
+### 4. **Lazy Loading Control**
+```python
+# Scorers are created once when package loads
+# Not recreated every time they're needed
+# Good for expensive initializations (loading models, etc.)
+```
+
+**Bottom line**: This pattern creates a **shared registry** of pre-configured scorers that any part of your codebase can access without recreating them - it's like a singleton pattern for your scorer instances.

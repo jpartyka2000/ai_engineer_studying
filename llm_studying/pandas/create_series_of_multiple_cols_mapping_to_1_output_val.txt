@@ -1,0 +1,76 @@
+You can turn any DataFrame with “key‐columns → value‐column” into a MultiIndex Series in two main ways:
+
+---
+
+### 1) Using `set_index` + column selection
+
+If you already have a DataFrame `df_lookup` that has exactly one row per unique key triple, say:
+
+| DEGREE\_OFFERING | YEAR\_QUARTER | COHORT\_TS | ADMITTED |
+| ---------------- | ------------- | ---------- | -------- |
+| usc-dpt          | 2022-Q3       | 2024-06-01 | 0.05985  |
+| usc-dpt          | 2022-Q3       | 2023-06-01 | 0.04387  |
+| …                | …             | …          | …        |
+
+you can immediately make a Series with a 3-level index like this:
+
+```python
+series_cohort_rates = (
+    df_lookup
+      .set_index(['DEGREE_OFFERING','YEAR_QUARTER','COHORT_TS'])['ADMITTED']
+)
+```
+
+* **What you get**:
+
+  ```python
+  >>> series_cohort_rates.index
+  MultiIndex([
+    ('usc-dpt', '2022-Q3', Timestamp('2024-06-01')),
+    ('usc-dpt', '2022-Q3', Timestamp('2023-06-01')),
+    …  
+  ], names=['DEGREE_OFFERING','YEAR_QUARTER','COHORT_TS'])
+  ```
+* **Lookup**: now you can do
+
+  ```python
+  series_cohort_rates.loc[('usc-dpt','2022-Q3', pd.Timestamp('2024-06-01'))]
+  ```
+
+---
+
+### 2) Building it directly via `groupby`
+
+If you need to aggregate first (e.g. take a mean or sum) so that there’s exactly one value per key triple, do:
+
+```python
+series_cohort_rates = (
+    df_all_cohort_rates
+      .groupby(['DEGREE_OFFERING','YEAR_QUARTER','COHORT_TS'])['ADMITTED']
+      .mean()
+)
+```
+
+* **What you get**: a Series whose index is exactly that 3-tuple and whose values are your per-cohort admit-rates.
+* **Use it to map**:
+
+  ```python
+  df_seasonal_rates['admit_rate_1yr'] = df_seasonal_rates.apply(
+      lambda r: series_cohort_rates.loc[
+          (r.DEGREE_OFFERING,
+           r.YEAR_QUARTER,
+           r.prior_1_year_most_recent_COHORT_TS)
+      ],
+      axis=1
+  )
+  ```
+
+---
+
+### Key points
+
+* **MultiIndex**: any pandas object with an index made of more than one level is a MultiIndex.
+* **`set_index([...])`** is the quickest way to turn several columns into a MultiIndex.
+* **`groupby([...])['val'].mean()`** auto-aggregates and returns a Series with a MultiIndex of your grouping columns.
+
+Once you have a MultiIndex Series, you can `.loc[...]` by a full key tuple, or you can `.reindex(multiindex_of_keys)`, or you can `.map()` it against a Series of tuple-keys.

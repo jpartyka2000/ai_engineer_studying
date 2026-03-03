@@ -1,0 +1,26 @@
+Yes—unless you explicitly pin one method via `force_row_wise=true` or `force_col_wise=true`, LightGBM will **auto‑benchmark** a small slice of your data at startup and **choose whichever histogram builder is fastest** for that run.
+
+* **How it works by default**
+  When both `force_row_wise` **and** `force_col_wise` are `false`, LightGBM will internally run **both** the row‑wise and column‑wise builders on a tiny subset and measure their wall‑clock time, then pick the winner for the full training job ([LightGBM Documentation][1]).
+
+* **Why it can flip between runs**
+  That microbenchmark is subject to OS scheduling, CPU load, and even small variations in how your data slice hashes into cache. One run might find row‑wise wins by 0.002 s, the next might see column‑wise win by 0.001 s—so LightGBM silently switches methods ([GitHub][2]).
+
+* **Implication for reproducibility**
+  Because row‑wise and column‑wise do floating‑point adds in different orders (per‑row vs. per‑column, and across threads), the tiny rounding differences can cascade into different split decisions, different trees, and ultimately different predictions—even with the same seed.
+
+* **To prevent it**
+  Set one of the flags to `true` so there’s no head‑to‑head test:
+
+  ```python
+  model = LGBMClassifier(
+      …,
+      force_row_wise=True,   # skip the benchmark, always use row-wise
+      # or force_col_wise=True to lock in column-wise instead
+  )
+  ```
+
+  That way, LightGBM won’t swap algorithms between runs, and you’ll get bit‑identical behavior every time.
+
+[1]: https://lightgbm.readthedocs.io/en/latest/Parameters.html?utm_source=chatgpt.com "Parameters — LightGBM 4.6.0.99 documentation"
+[2]: https://github.com/microsoft/LightGBM/issues/3346?utm_source=chatgpt.com "Parameter min_data_in_leaf ignored by lightgbm.cv() #3346 - GitHub"

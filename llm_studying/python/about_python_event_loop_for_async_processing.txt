@@ -1,0 +1,45 @@
+An **event loop** is the core of Python’s `asyncio` framework—it’s the thing that actually runs your coroutines, schedules them, and switches between them whenever one is waiting on I/O or a timer. Here’s how it works and how it relates to `async`/`await`:
+
+---
+
+## 1. What the event loop does
+
+1. **Holds a queue of “tasks”** (coroutine objects wrapped in `asyncio.Task`)
+2. **Drives each task** by calling its `__anext__()` or sending it data until it hits an `await`
+3. **Suspends** that task when it’s waiting on I/O (network, file, sleep, etc.)
+4. **Polls** OS-level watchers or callbacks to know when the I/O is ready
+5. **Resumes** the suspended task by sending it back the result of the I/O
+6. **Repeats** until all tasks are complete or the loop is stopped
+
+Because of this cooperatively‐scheduled workflow, a single thread can handle many concurrent operations without the overhead of threads.
+
+---
+
+## 2. Relation to `async`/`await`
+
+* **`async def` functions** define coroutines that the loop can schedule.
+* **`await some_awaitable`** tells the coroutine to suspend itself, yielding control to the loop until that awaitable completes.
+* The loop itself is started via functions like `asyncio.run(main())`, which:
+
+  1. Creates an event loop
+  2. Schedules your top‐level coroutine (`main()`) as a task
+  3. Runs the loop until that task (and any subtasks) are done
+  4. Closes the loop
+
+Without an event loop, `async`/`await` do nothing—you’d just get coroutine objects that never execute. The loop is the “engine” that actually drives your asynchronous logic.
+
+---
+
+## 3. Does it only apply to `asyncio`?
+
+* **In Python**, yes: the standard event loop is `asyncio`. All built-in async networking, subprocesses, timers, etc., hook into that one loop (or subsidiary loops you create manually).
+* **Outside Python**, many other environments use event loops too (e.g. Node.js has its own loop for JavaScript’s async model, GUI toolkits like Qt have their own loops for event-driven UI).
+* But **in Python code**, when you see `async`/`await`, you’re implicitly relying on an `asyncio` event loop under the covers.
+
+---
+
+### TL;DR
+
+* The **event loop** is what actually runs and switches between your coroutines.
+* **`async`/`await`** give you a syntax to write pausing/resuming code, but it’s the loop that schedules it.
+* Without the loop, your async functions never execute; with it, you get scalable, non-blocking concurrency in a single thread.

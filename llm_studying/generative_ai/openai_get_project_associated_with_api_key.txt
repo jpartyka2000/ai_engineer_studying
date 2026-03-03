@@ -1,0 +1,140 @@
+Yes! You can get the project information associated with your API key. Here's how:
+
+## Method 1: List Projects (if you have access)
+
+```python
+from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+try:
+    # Get organization/project information
+    # Note: This endpoint may not be available for all API key types
+    projects = client.projects.list()
+    
+    print("Available projects:")
+    for project in projects.data:
+        print(f"- ID: {project.id}")
+        print(f"  Name: {project.name}")
+        print(f"  Status: {project.status}")
+        print()
+        
+except Exception as e:
+    print(f"Could not list projects: {e}")
+```
+
+## Method 2: Check API Key Format
+
+```python
+import os
+
+api_key = os.getenv("OPENAI_API_KEY")
+
+if api_key:
+    if api_key.startswith("sk-proj-"):
+        print("This is a project-scoped API key")
+        # Project-scoped keys contain project info in the key itself
+        print("Project context is embedded in the key")
+    elif api_key.startswith("sk-"):
+        print("This is an organization-level API key")
+        print("May have access to multiple projects")
+    else:
+        print("Unknown API key format")
+else:
+    print("No API key found")
+```
+
+## Method 3: Try to Get Organization/Project Info via Models
+
+```python
+from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+try:
+    # List models and check their ownership
+    models = client.models.list()
+    
+    # Check fine-tuned models to see organization info
+    fine_tuned_models = [model for model in models.data if model.id.startswith('ft:')]
+    
+    if fine_tuned_models:
+        print("Fine-tuned models and their context:")
+        for model in fine_tuned_models:
+            print(f"Model: {model.id}")
+            print(f"Owned by: {model.owned_by}")
+            
+            # Extract org info from model ID (format: ft:base-model:org:suffix:job-id)
+            parts = model.id.split(':')
+            if len(parts) >= 3:
+                org_info = parts[2]
+                print(f"Organization/Project: {org_info}")
+            print()
+    else:
+        print("No fine-tuned models found to determine project context")
+        
+except Exception as e:
+    print(f"Error checking models: {e}")
+```
+
+## Method 4: Get Current User/Organization Info
+
+```python
+from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+try:
+    # This might work depending on API permissions
+    response = client.organizations.list()
+    print("Organizations you have access to:")
+    for org in response.data:
+        print(f"- ID: {org.id}")
+        print(f"  Name: {org.name}")
+        print()
+except Exception as e:
+    print(f"Could not get organization info: {e}")
+```
+
+## Most Reliable Approach
+
+The most reliable way is to check your fine-tuned models' ownership:
+
+```python
+from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_project_context():
+    try:
+        models = client.models.list()
+        fine_tuned = [m for m in models.data if m.id.startswith('ft:')]
+        
+        if fine_tuned:
+            # Get organization from first fine-tuned model
+            first_model = fine_tuned[0]
+            print(f"API key is associated with: {first_model.owned_by}")
+            
+            # Parse model ID for more info
+            parts = first_model.id.split(':')
+            if len(parts) >= 3:
+                context = parts[2]
+                return context
+        else:
+            print("No fine-tuned models found - cannot determine project context")
+            return None
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+project_context = get_project_context()
+if project_context:
+    print(f"Project/Organization context: {project_context}")
+```
+
+**Note**: The exact endpoints available depend on your API key permissions and OpenAI's current API structure. The model ownership method is usually the most reliable for determining project context.

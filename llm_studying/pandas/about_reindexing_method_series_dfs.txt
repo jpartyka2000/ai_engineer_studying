@@ -1,0 +1,126 @@
+### **Primer on `reindex()` in Pandas**
+The `reindex()` function in Pandas allows you to **change the index of a Series or DataFrame**, ensuring a specific ordering or adding/removing index labels. If a label is missing, you can specify how to handle it using the `fill_value` parameter.
+
+---
+
+## **Syntax**
+```python
+df.reindex(labels, fill_value=0)
+```
+or
+```python
+series.reindex(labels, fill_value=0)
+```
+
+---
+
+## **Key Parameters**
+| Parameter | Description |
+|-----------|-------------|
+| **`labels`** | New index values to apply. Can be a list, array, or Index object. |
+| **`fill_value`** | The value to use for missing labels in the new index (default: `NaN`). |
+| **`method`** | Fills missing values using `'ffill'` (forward fill) or `'bfill'` (backward fill). |
+| **`axis`** | `0` (rows) or `1` (columns); useful for DataFrames. |
+| **`copy`** | If `False`, tries to avoid making a copy of data. |
+
+---
+
+## **Example 1: `reindex()` with `fill_value` (for missing values)**
+```python
+import pandas as pd
+
+# Original Series
+s = pd.Series([10, 20, 30], index=["a", "b", "d"])
+print(s)
+```
+**Output:**
+```
+a    10
+b    20
+d    30
+dtype: int64
+```
+Now, let's **reindex** and fill missing values:
+```python
+new_index = ["a", "b", "c", "d", "e"]
+s_reindexed = s.reindex(new_index, fill_value=0)
+print(s_reindexed)
+```
+**Output:**
+```
+a    10
+b    20
+c     0
+d    30
+e     0
+dtype: int64
+```
+- The missing labels `"c"` and `"e"` are **filled with `0`**.
+
+---
+
+## **Example 2: `reindex()` with Forward Fill (`method="ffill"`)**
+Instead of `fill_value`, you can use **`method="ffill"`** to fill missing values with the previous value:
+```python
+s_reindexed_ffill = s.reindex(new_index, method="ffill")
+print(s_reindexed_ffill)
+```
+**Output:**
+```
+a    10
+b    20
+c    20
+d    30
+e    30
+dtype: int64
+```
+- The missing `"c"` takes **previous value `20`**.
+- The missing `"e"` takes **previous value `30`**.
+
+---
+
+## **Example 3: `reindex()` for DataFrames (Affecting Rows and Columns)**
+For DataFrames, `reindex()` works on both rows and columns.
+```python
+df = pd.DataFrame({
+    "A": [1, 2, 3],
+    "B": [4, 5, 6]
+}, index=["x", "y", "z"])
+
+# Reindex rows with fill_value
+df_reindexed = df.reindex(["x", "y", "a", "z"], fill_value=-1)
+print(df_reindexed)
+```
+**Output:**
+```
+   A  B
+x  1  4
+y  2  5
+a -1 -1
+z  3  6
+```
+- `"a"` was missing, so it was **filled with `-1`**.
+
+### **Reindexing Columns**
+```python
+df_reindexed_cols = df.reindex(columns=["A", "C"], fill_value=0)
+print(df_reindexed_cols)
+```
+**Output:**
+```
+   A  C
+x  1  0
+y  2  0
+z  3  0
+```
+- Column `"C"` was missing and was **filled with `0`**.
+
+---
+
+## **Key Takeaways**
+- `reindex()` is useful for **ensuring a fixed index order**.
+- `fill_value` prevents missing values from becoming `NaN`.
+- `method` (`"ffill"` or `"bfill"`) can propagate existing values.
+- Works on **both Series and DataFrames**, affecting **rows and columns**.
+
+Let me know if you need further clarification! 🚀

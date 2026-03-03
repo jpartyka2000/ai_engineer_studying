@@ -1,0 +1,65 @@
+Yes—you can absolutely register more than one model in the same MLflow “repository” (i.e. tracking server + artifact store). MLflow’s design expects you to have:
+
+1. **A single tracking URI / artifact root**
+   You configure your client once:
+
+   ```python
+   mlflow.set_tracking_uri("http://my-tracking-server:5000")
+   mlflow.set_experiment("MyExperiment")
+   ```
+
+   All runs you create (for any models) will live under that server and use that same artifact store.
+
+2. **Multiple registered‐model names**
+   In the Model Registry you can create as many distinct models as you like, e.g.:
+
+   ```python
+   # after logging a run
+   run_id = mlflow.active_run().info.run_id
+
+   # register model “churn_model”
+   mlflow.register_model(f"runs:/{run_id}/model", "churn_model")
+
+   # register another model “fraud_model”
+   mlflow.register_model(f"runs:/{run_id}/model", "fraud_model")
+   ```
+
+   Each name (`"churn_model"`, `"fraud_model"`) gets its own entry in the registry, with its own version history, but they all share the same backend.
+
+3. **Multiple models per run**
+   You can log more than one “artifact” per run too. For example, you might do:
+
+   ```python
+   with mlflow.start_run() as run:
+       mlflow.sklearn.log_model(model_A, "modelA")
+       mlflow.sklearn.log_model(model_B, "modelB")
+   ```
+
+   Then register them separately:
+
+   ```python
+   mlflow.register_model(f"runs:/{run_id}/modelA", "ModelA_Name")
+   mlflow.register_model(f"runs:/{run_id}/modelB", "ModelB_Name")
+   ```
+
+4. **Directory structure under the hood**
+   Behind the scenes, MLflow stores artifacts under
+
+   ```
+   <artifact-root>/
+     <experiment-id>/
+       <run-id>/
+         model/
+         modelA/
+         modelB/
+   ```
+
+   and the registry keeps pointers into that tree. You never have to carve out separate “repositories” on disk.
+
+---
+
+### In short
+
+* You point MLflow at one tracking server + artifact store.
+* You create as many **experiments**, **runs**, and **registered‐model names** as you like.
+* Each registered model is isolated by its name (and version history), but they all live under the same MLflow “roof.”

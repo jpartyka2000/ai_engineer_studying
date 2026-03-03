@@ -1,0 +1,49 @@
+No, if you don't parameterize `RunContext`, it cannot access any model fields. Here's why:
+
+## Without Type Parameter
+
+```python
+@agent.tool
+def verify(ctx: RunContext, expr: str, guess: float) -> Dict[str, Any]:
+    # This would cause an AttributeError at runtime:
+    ctx.deps.verification_attempts += 1  # Error: No type info, no guarantee deps exists
+    ctx.deps.total_cost += 1  # Error: Even if deps exists, no guarantee these fields exist
+```
+
+Without the type parameter:
+- Python doesn't know what type `ctx.deps` is
+- No IDE autocomplete
+- No type checking
+- You'd get runtime `AttributeError` when trying to access fields
+
+## With Type Parameter
+
+```python
+@agent.tool
+def verify(ctx: RunContext[State], expr: str, guess: float) -> Dict[str, Any]:
+    ctx.deps.verification_attempts += 1  # Works: Type system knows deps is State
+    ctx.deps.total_cost += 1  # Works: Type system knows State has this field
+```
+
+## What RunContext Provides Without Parameterization
+
+Even without parameterization, `RunContext` still has some basic attributes:
+
+```python
+@agent.tool
+def my_tool(ctx: RunContext) -> str:
+    # These might still work (depending on PydanticAI version):
+    # ctx.retry - retry attempt number
+    # ctx.messages - conversation history
+    
+    # But this won't work:
+    # ctx.deps - Would exist but with type 'Any', no field access
+    return "result"
+```
+
+The parameterization with `RunContext[State]` is what creates the type contract that:
+1. Ensures `deps` is passed when calling `agent.run()`
+2. Guarantees `deps` is of type `State`
+3. Provides type-safe access to all `State` fields
+
+Without it, you lose all type safety and field access for your state management.

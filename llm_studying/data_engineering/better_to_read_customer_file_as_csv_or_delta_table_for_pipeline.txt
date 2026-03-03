@@ -1,0 +1,28 @@
+For a small, truly static lookup like zip-to-density/income you’ll see both patterns in the wild, but in a production ML pipeline it’s more common—and more robust—to treat that reference data as a managed Delta table rather than an ad-hoc CSV. Here’s why:
+
+1. **Governance & discoverability**
+
+   * **Delta table**: lives alongside your other tables in the lakehouse; it’s documented in your metastore, controlled via Unity Catalog or Hive, and visible to everyone who has access.
+   * **CSV**: you have to track where it lives (S3/ADLS path), potentially version it yourself, and make sure every job picks up the same file.
+
+2. **Schema enforcement & evolution**
+
+   * **Delta**: enforces the schema at read/write time, so you can’t accidentally flip a column type or drop a field without noticing.
+   * **CSV**: schema is implicit; adding or removing a column can silently break downstream code or cause subtle type conversions.
+
+3. **Performance & scalability**
+
+   * **Delta**: supports predicate push-down, data skipping, and caching. Even a small table benefits when many concurrent jobs read it.
+   * **CSV**: will be re-parsed on every job, with no caching or indexing.
+
+4. **Reproducibility & lineage**
+
+   * **Delta**: you can time-travel to a specific table version in case of a pipeline replay or back-test.
+   * **CSV**: if someone overwrites or deletes the file, you lose your “known good” reference.
+
+5. **Operational simplicity**
+
+   * **Delta**: your orchestration (Airflow/Databricks Jobs) already reads from tables; adding one more table is trivial.
+   * **CSV**: you need extra logic to locate, mount, validate, and possibly re-upload it if you ever update.
+
+That said, for local development or a quick prototype, a CSV is totally fine. But as soon as you’re hand­ing it off to other teams, running scheduled retrains, or aiming for long-term maintainability, loading that lookup into a Delta table (even a small one) is the industry-standard approach.

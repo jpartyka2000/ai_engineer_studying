@@ -1,0 +1,108 @@
+When you configure an Eval with a **custom data source**, the **`item_schema`** and **`include_sample_schema`** flags work together to let the Eval service:
+
+1. **Validate** incoming examples
+2. **Template** both prompt inputs and grader expressions
+3. **Grade** model outputs against your ground truth
+
+Here’s how each piece plays its role:
+
+---
+
+## 1. `item_schema` – defining your examples
+
+```json
+"item_schema": {
+  "type": "object",
+  "properties": {
+    "ticket_text":   { "type": "string" },
+    "correct_label": { "type": "string" }
+  },
+  "required": ["ticket_text", "correct_label"]
+}
+```
+
+* **Validation**
+
+  * Every record you upload (or stream) into the Eval must match this JSON Schema.
+  * If an example is missing `ticket_text` or has a non-string `correct_label`, the Eval setup will reject it early so you don’t run against malformed data.
+
+* **Templating context**
+
+  * In your prompt templates or grader definitions, you can reference any field via `{{ item.FIELD_NAME }}`.
+  * Example user prompt template:
+
+    ```jinja
+    Q: {{ item.ticket_text }}
+    A:
+    ```
+
+* **Ground truth binding**
+
+  * The Eval engine stores `item.correct_label` as the authoritative answer for each example.
+
+---
+
+## 2. `include_sample_schema` – capturing model outputs
+
+```json
+"include_sample_schema": true
+```
+
+* **What it does**
+
+  * Tells the Eval runner to capture the **raw text** the model produces for each example as `sample.output_text`.
+  * Without it, your graders only see `item.*` fields; they can’t compare to what the model actually said.
+
+* **Templating context**
+
+  * In your `testing_criteria`, you can now write expressions against `{{ sample.output_text }}`.
+  * For example, to check exact equality:
+
+    ```json
+    {
+      "type": "string_check",
+      "name": "Matches label",
+      "input": "{{ sample.output_text }}",
+      "operation": "eq",
+      "reference": "{{ item.correct_label }}"
+    }
+    ```
+
+---
+
+## 3. Putting it all together: validation → templating → grading
+
+1. **Data ingestion & validation**
+
+   * You call the Evals API with your examples (file or inline).
+   * The service validates each record against `item_schema`; bad records are flagged or rejected.
+
+2. **Prompt generation**
+
+   * For each validated example, the Eval service renders your model prompt by substituting `{{ item.* }}` fields into your Jinja-like template(s).
+
+3. **Model execution**
+
+   * The configured model runs on those prompts; its raw replies become `sample.output_text`.
+
+4. **Grader execution**
+
+   * Each `testing_criteria` item is run with both contexts available:
+
+     * **`item.*`** (ground truth)
+     * **`sample.output_text`** (model answer)
+   * The service evaluates operations (`eq`, `contains`, numeric comparisons, custom code, etc.) to produce pass/fail or scores.
+
+5. **Result aggregation**
+
+   * You get back per-example results plus overall metrics (accuracy, F1, mean score) so you can assess your model against your custom task.
+
+---
+
+### Why this matters
+
+* **Early error catching**: Bad data is rejected before you burn compute.
+* **Full transparency**: You see exactly what the model said (`sample.output_text`) and compare it to your truth.
+* **Flexible grading**: Mix JSON Schema fields, string ops, numeric checks, or custom callbacks—everything templated off your `item_schema`.
+
+By defining a clear `item_schema` and opting into `include_sample_schema`, your Eval pipelines become robust, self-validating, and fully traceable end-to-end from prompt through grading.

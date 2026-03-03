@@ -1,0 +1,94 @@
+Method #2 is all about keeping your code concise by chaining operations together, without assigning intermediate variables. There are two main flavors of this in pandas:
+
+---
+
+### A) Inline Boolean Indexing with a Lambda
+
+You can pass a **callable** to the indexing operator `[]`. pandas will call it with the DataFrame and then use the returned Boolean mask:
+
+```python
+df_filtered = (
+    filter_cohorts_with_month(df_data)
+    [lambda df: df["my_column"] == "some_value"]
+)
+```
+
+**Why it’s useful**
+
+* **No temporary names**: you don’t need to write
+
+  ```python
+  df_good = filter_cohorts_with_month(df_data)
+  df_good = df_good[df_good["my_column"]=="some_value"]
+  ```
+* **Deferred evaluation**: the lambda only runs once the previous step has produced its DataFrame.
+* **Readability**: each “step” in the chain is a transformation, just like in a dplyr or method‑chaining pipeline.
+
+---
+
+### B) Using `.pipe()`
+
+Another pandas idiom is `.pipe()`, which lets you insert *any* function into a chain:
+
+```python
+def keep_active(df):
+    return df[df["status"] == "active"]
+
+df_filtered = (
+    filter_cohorts_with_month(df_data)
+    .pipe(keep_active)
+    .pipe(lambda df: df[df["month"] >= 6])
+)
+```
+
+Or inline:
+
+```python
+df_filtered = (
+    filter_cohorts_with_month(df_data)
+    .pipe(lambda df: df[df["year"] == 2024])
+    .pipe(lambda df: df[df["my_column"] > 0.5])
+)
+```
+
+**Benefits of `.pipe()`**
+
+* You can inject *arbitrary* functions (not just methods) into a chain.
+* It preserves the “DataFrame‑in, DataFrame‑out” style.
+* Good for readability when you have complex multi‑step transformations.
+
+---
+
+### C) Common Caveats
+
+1. **Don’t call the source function twice**:
+
+   ```python
+   # ❌ This calls filter_cohorts_with_month twice:
+   df[ filter_cohorts_with_month(df_data)["col"] > 0 ]
+   ```
+
+   Always wrap it once, then use that result in downstream lambdas or pipes.
+
+2. **Complex conditions**:
+   You can combine multiple conditions either with multiple lambdas, or a single one:
+
+   ```python
+   df_filtered = (
+     filter_cohorts_with_month(df_data)
+     [lambda df: (df["year"]==2024) & (df["month"]>=6)]
+   )
+   ```
+
+3. **Debugging**:
+   If something goes wrong it can be harder to insert a breakpoint mid‑chain. In those cases, you can temporarily assign an intermediate.
+
+---
+
+### When to use it
+
+* You want **concise**, **declarative** code that reads like a pipeline.
+* You’re comfortable with lambdas and indexing operators.
+* You have a sequence of simple filters or transformations.
+
+If your pipeline grows very long or needs complex logic, it may become clearer to assign named intermediate DataFrames or split out helper functions. But for quick, one‑off filtering, method #2 keeps your code tight and expressive.

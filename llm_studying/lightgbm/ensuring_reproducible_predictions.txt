@@ -1,0 +1,62 @@
+**Ensuring reproducible LightGBM predictions**
+
+To ensure the same predictions in LightGBM for the same data, you should set the `random_state` in the estimator for consistent results. Reproducibility can also be improved by fixing the input data order and tackling potential multithreading variability—since LightGBM uses OpenMP parallelization, you can set `num_threads=1` or `n_jobs=1` to make threading deterministic. Use the `deterministic=True` option in LightGBM 4.x, and also set seed parameters like `random_state`, `bagging_seed`, and `feature_fraction_seed`.
+
+**Ensuring reproducible LightGBM predictions**
+
+To make predictions reproducible in LightGBM, it's important to set several parameters. Firstly, set the `random_state` to ensure consistent results. Lock threading by setting `n_jobs=1` to avoid non-deterministic multi-threading behavior. Starting from LightGBM 3.3, you can also set `deterministic=True` for a deterministic algorithm. Don’t shuffle your data or set `shuffle=False` to keep the order fixed. Lastly, use appropriate seed parameters like `bagging_seed` and `feature_fraction_seed` to ensure reproducibility.
+
+Thought for 22 seconds
+
+To get bit‐for‐bit identical predictions on the same data, you need to remove *all* sources of randomness and parallel nondeterminism:
+
+1. **Seed every RNG**  
+   - In the sklearn wrapper, set `random_state` (alias for LightGBM’s `seed`).  
+   - If you’re using row‑ or feature‑sampling, also set  
+     ```python
+     bagging_seed=42,
+     feature_fraction_seed=42,
+     data_random_seed=42
+     ```  
+     to fix those samplers.
+
+2. **Disable nondeterministic parallelism**  
+   - Use a single thread: `n_jobs=1` (or `num_threads=1`).  
+   - Turn on LightGBM’s deterministic mode (available in 3.3+ / 4.x):  
+     ```python
+     deterministic=True,
+     force_row_wise=True,  # or force_col_wise=True
+     ```  
+     which forces a stable histogram algorithm regardless of thread scheduling citeturn1search2.
+
+---
+
+### Example
+
+```python
+from lightgbm import LGBMClassifier
+
+clf = LGBMClassifier(
+    objective='binary',
+    n_estimators=500,
+    learning_rate=0.05,
+    num_leaves=31,
+    
+    # 1) Seed all randomness
+    random_state=42,
+    bagging_seed=42,
+    feature_fraction_seed=42,
+    data_random_seed=42,
+
+    # 2) Disable nondeterministic threading
+    n_jobs=1,
+    deterministic=True,
+    force_row_wise=True
+)
+
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_eval)
+y_prob = clf.predict_proba(X_eval)[:, 1]
+```
+
+With that setup, every call to `.fit()` on the **same** `X_train, y_train` (and same LightGBM version and hardware) will produce identical trees and thus identical `.predict()` / `.predict_proba()` outputs.

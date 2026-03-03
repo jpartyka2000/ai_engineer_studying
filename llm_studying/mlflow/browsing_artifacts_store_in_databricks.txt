@@ -1,0 +1,74 @@
+Thought for a couple of seconds
+
+
+You have a few straightforward ways to poke around the actual files backing your MLflow artifacts in Databricks:
+
+---
+
+### 1) Via the MLflow Runs UI
+
+1. In your Databricks workspace, go to **Experiments** → pick your experiment → pick a run.
+2. Under **Artifacts**, you’ll see a file‑tree of everything logged in that run (models, metrics tables, plots, etc.).
+3. You can click folders to expand, download individual files, or view text/HTML directly in the browser.
+
+---
+
+### 2) Via the DBFS browser in the Data UI
+
+1. In the left sidebar click **Data** → **DBFS**.
+2. Navigate to `/databricks/mlflow-tracking/` (or wherever your workspace is configured to store artifacts).
+3. Drill into the run folders by their run IDs, e.g.
+
+   ```
+   /databricks/mlflow-tracking/1234567890abcdefabcdef1234567890/artifacts/model
+   ```
+4. You can preview or download files directly from that tree.
+
+---
+
+### 3) With `%fs` or `dbutils.fs` in a notebook
+
+```python
+# List the runs root
+display(dbutils.fs.ls("dbfs:/databricks/mlflow-tracking"))
+
+# Or list a specific run’s artifacts
+display(dbutils.fs.ls("dbfs:/databricks/mlflow-tracking/<run_id>/artifacts/model"))
+```
+
+You can also use `%fs ls …` if you prefer magic syntax.
+
+---
+
+### 4) Using the Databricks CLI
+
+From your local shell (once you’ve `databricks configure`d):
+
+```bash
+# List the root of the MLflow artifacts store
+databricks fs ls dbfs:/databricks/mlflow-tracking/
+
+# Download a whole model folder locally
+databricks fs cp -r dbfs:/databricks/mlflow-tracking/<run_id>/artifacts/model ./local_model
+```
+
+---
+
+### 5) Programmatically via MLflow Artifacts API
+
+```python
+from mlflow import artifacts
+
+# List files under a run’s artifact path
+files = artifacts.list_artifacts(f"runs:/{run_id}/model")
+for f in files:
+    print(f.path, f.is_dir)
+```
+
+---
+
+**In summary:**
+
+* The MLflow **Artifacts** tab is the easiest one‑click view of exactly what you logged.
+* For more raw directory browsing/download, use the **DBFS** section under **Data** or the `%fs`/`dbutils.fs` commands.
+* You can also script it with the CLI or the MLflow Artifacts API.

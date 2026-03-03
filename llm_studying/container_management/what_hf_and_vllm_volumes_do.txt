@@ -1,0 +1,44 @@
+## Modal Volumes
+
+```python
+hf_cache_vol = modal.Volume.from_name("huggingface-cache", create_if_missing=True)
+vllm_cache_vol = modal.Volume.from_name("vllm-cache", create_if_missing=True)
+```
+
+These create two persistent storage volumes that get mounted into the container:
+
+```python
+volumes={
+    "/root/.cache/huggingface": hf_cache_vol,
+    "/root/.cache/vllm": vllm_cache_vol,
+}
+```
+
+## What they store
+
+**`huggingface-cache`** mounted at `/root/.cache/huggingface`:
+- Downloaded model weights (~16GB for Qwen3-8B)
+- Tokenizer files
+- Model configuration JSON
+- Any other files pulled from Hugging Face Hub
+
+**`vllm-cache`** mounted at `/root/.cache/vllm`:
+- Compiled CUDA kernels
+- Optimized attention kernels from flashinfer
+- Any runtime caches vLLM creates
+
+## Why this matters
+
+Without volumes, Modal containers are ephemeral — everything disappears when the container shuts down. In a scale-to-zero setup like this (where containers spin down after 30 seconds of idle), that would mean:
+
+1. First request comes in → container starts → downloads 16GB of weights → serves request
+2. 30 seconds of no traffic → container shuts down → everything deleted
+3. Next request → downloads 16GB again
+
+With volumes, the flow becomes:
+
+1. First request ever → downloads weights → saves to volume → serves request
+2. Container shuts down → volume persists
+3. Next request → container starts → weights already in volume → serves immediately
+
+The volumes essentially act as a shared disk that persists across container lifetimes, eliminating redundant downloads.

@@ -1,0 +1,27 @@
+No – seaborn doesn’t *always* force you into long (tidy) form, but many of its “grammar of graphics”–style functions assume a long DataFrame so you can map variables to axes or aesthetics by name. Here’s the breakdown:
+
+* **Long (tidy) form** (one observation per row, one variable per column) is the *native* input for most high‑level functions like `relplot`, `catplot`, `boxplot`, `violinplot`, etc.  You give it a DataFrame plus `x=`, `y=`, (and maybe `hue=`, `col=`, `row=`) so seaborn can internally split and aggregate.
+
+* **Wide form** (each column is a different variable, one column per “group”) is still accepted by some functions, provided you use the right signature:
+
+  * **`heatmap`** expects a matrix or pivoted DataFrame.
+  * **`pairplot`** and **`pairgrid`** take a wide DataFrame and plot all pairwise relationships.
+  * **`boxplot`**, **`violinplot`**, **`barplot`**, etc., will accept multiple arrays or a DataFrame without `x`/`y` keywords (they’ll treat each column as a separate “group”) but that API is a bit less flexible.
+  * Low‑level functions like **`sns.lineplot(x, y)`** or **`sns.scatterplot(x, y)`** also happily take two 1‑d arrays.
+
+In practice, if you want to use faceting, hue‑grouping, or bind multiple variables together, long form is by far the easiest. But if you only have a “wide” summary table or matrix, you can either:
+
+1. Pass it to one of the wide‑form–friendly functions (e.g. `heatmap`, `pairplot`).
+2. Melt it yourself:
+
+   ```python
+   df_long = df_wide.melt(id_vars='index', var_name='category', value_name='value')
+   sns.barplot(data=df_long, x='category', y='value')
+   ```
+3. Or call a lower‑level interface with raw arrays:
+
+   ```python
+   sns.barplot(x=['A','B','C'], y=[1.2, 3.4, 2.1])
+   ```
+
+So: no strict requirement, but long form is the *default* and most convenient for seaborn’s higher‑level plotting functions.

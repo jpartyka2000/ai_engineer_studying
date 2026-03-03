@@ -1,0 +1,59 @@
+Even though LightGBM is a tree‑based method and doesn’t learn a global vector of coefficients like linear models do, it still learns a set of **leaf scores** $w_t^l$ (the output value at each leaf $l$ of each tree $t$).  Both L1 (lasso) and L2 (ridge) regularization in LightGBM are applied **directly** to those leaf scores via the `reg_alpha` and `reg_lambda` hyperparameters.
+
+---
+
+### 1. The regularized objective
+
+LightGBM minimizes at each boosting iteration an approximate objective of the form
+
+$$
+  \mathcal{L}
+  \;=\;
+  \sum_{i=1}^n \Bigl[\ell\bigl(y_i, \hat y_i^{(t-1)} + f_t(x_i)\bigr)\Bigr]
+  \;+\;
+  \sum_{l=1}^{L_t} \Bigl[\tfrac12\,\lambda\,w_t^l{}^2 \;+\; \alpha\,|w_t^l|\Bigr]
+$$
+
+* $\ell$ is the per‑instance loss (e.g. logistic).
+* $f_t$ is tree $t$’s prediction, which is constant $w_t^l$ on leaf $l$.
+* The **second sum** is over all $L_t$ leaves in tree $t$:
+
+  * **$\tfrac12\lambda\,w^2$** is an L2 penalty on each leaf weight ($\lambda=\mathtt{reg\_lambda}$).
+  * **$\alpha\,|w|$** is an L1 penalty on each leaf weight ($\alpha=\mathtt{reg\_alpha}$).
+
+---
+
+### 2. How it changes split scoring
+
+When LightGBM evaluates a candidate split, it computes for each side (left/right) the sums of gradients $G$ and Hessians $H$.  Without regularization, the **gain** from that split would be
+
+$$
+  \text{Gain}
+  = \frac{1}{2}\Bigl(\tfrac{G_L^2}{H_L} + \tfrac{G_R^2}{H_R} - \tfrac{(G_L+G_R)^2}{H_L+H_R}\Bigr).
+$$
+
+With L2 (ridge), each $H$ is replaced by $H + \lambda$.  With L1 (lasso), you also subtract $\alpha$ from the gain if $|G| < \alpha$, and otherwise you shrink the optimal leaf weight by $\alpha$.  Concretely, the optimal weight for a leaf becomes
+
+$$
+  w^*
+  = \begin{cases}
+    \displaystyle
+    \frac{-\bigl(\,|G|-\alpha\bigr)\,\mathrm{sign}(G)}{\,H + \lambda\,}
+    & \text{if } |G| > \alpha,\\[6pt]
+    0 & \text{otherwise.}
+  \end{cases}
+$$
+
+That zeroing‐out when $|G|\le \alpha$ is exactly the lasso’s feature of driving small weights to zero.
+
+---
+
+### 3. Practical upshot
+
+* **`reg_lambda`** (L2) stabilizes leaf weights—large $\lambda$ makes each $w^*$ smaller (more conservative splits).
+* **`reg_alpha`** (L1) can force some leaf weights to **exactly zero**, effectively pruning small “bumps” in your tree’s predictions.
+* You tune them exactly like you would in a linear model, but they operate on the **per‑leaf predictions** rather than on global feature coefficients.
+
+---
+
+So even though there’s no global “coefficient vector” in GBDTs, LightGBM implements ridge and lasso by **penalizing the size** (and in the L1 case the very existence) of each leaf’s output value.

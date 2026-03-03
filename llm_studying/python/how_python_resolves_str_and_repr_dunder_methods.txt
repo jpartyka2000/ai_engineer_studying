@@ -1,0 +1,231 @@
+## 📋 Deep Dive: How Python Resolves `__str__` and `__repr__`
+
+---
+
+### The Lookup Chain
+
+When Python needs a string representation of an object, it follows a specific resolution order depending on the context:
+
+| Context | First tries | Falls back to |
+|---------|-------------|---------------|
+| `print(obj)` | `__str__` | `__repr__` |
+| `str(obj)` | `__str__` | `__repr__` |
+| `f"{obj}"` | `__str__` | `__repr__` |
+| `repr(obj)` | `__repr__` | Default `<ClassName object at 0x...>` |
+| REPL (interactive) | `__repr__` | Default `<ClassName object at 0x...>` |
+| Debuggers | `__repr__` | Default `<ClassName object at 0x...>` |
+| Containers (`[obj]`, `{obj}`) | `__repr__` | Default `<ClassName object at 0x...>` |
+
+---
+
+### Demonstration
+
+```python
+class Demo:
+    def __str__(self):
+        return "I am __str__"
+    
+    def __repr__(self):
+        return "I am __repr__"
+
+d = Demo()
+
+# These call __str__
+print(d)              # I am __str__
+print(str(d))         # I am __str__
+print(f"{d}")         # I am __str__
+print("{}".format(d)) # I am __str__
+
+# These call __repr__
+print(repr(d))        # I am __repr__
+print([d])            # [I am __repr__]
+print({d: 1})         # {I am __repr__: 1}
+```
+
+In the REPL:
+```python
+>>> d
+I am __repr__
+>>> print(d)
+I am __str__
+```
+
+---
+
+### The Fallback Behavior
+
+#### When only `__repr__` is defined:
+
+```python
+class OnlyRepr:
+    def __repr__(self):
+        return "OnlyRepr()"
+
+obj = OnlyRepr()
+
+print(obj)       # OnlyRepr()  ← falls back to __repr__
+print(str(obj))  # OnlyRepr()  ← falls back to __repr__
+print(repr(obj)) # OnlyRepr()
+```
+
+**Key point:** `__str__` falls back to `__repr__`, so defining only `__repr__` covers both cases.
+
+#### When only `__str__` is defined:
+
+```python
+class OnlyStr:
+    def __str__(self):
+        return "Friendly string"
+
+obj = OnlyStr()
+
+print(obj)       # Friendly string  ← uses __str__
+print(str(obj))  # Friendly string  ← uses __str__
+print(repr(obj)) # <__main__.OnlyStr object at 0x...>  ← default, NOT __str__
+```
+
+**Key point:** `__repr__` does NOT fall back to `__str__`. It uses the default representation.
+
+#### When neither is defined:
+
+```python
+class Neither:
+    pass
+
+obj = Neither()
+
+print(obj)       # <__main__.Neither object at 0x...>
+print(str(obj))  # <__main__.Neither object at 0x...>
+print(repr(obj)) # <__main__.Neither object at 0x...>
+```
+
+---
+
+### Why Containers Use `__repr__`
+
+When objects are inside containers, Python uses `__repr__` to keep representations unambiguous:
+
+```python
+class Person:
+    def __init__(self, name):
+        self.name = name
+    
+    def __str__(self):
+        return self.name
+    
+    def __repr__(self):
+        return f"Person({self.name!r})"
+
+people = [Person("Alice"), Person("Bob")]
+
+print(people)           # [Person('Alice'), Person('Bob')]  ← __repr__
+print(people[0])        # Alice  ← __str__
+
+for person in people:
+    print(person)       # Alice, Bob  ← __str__
+```
+
+This makes sense because:
+- `[Alice, Bob]` would be ambiguous — are those variable names or strings?
+- `[Person('Alice'), Person('Bob')]` is unambiguous and informative
+
+---
+
+### The `!r` and `!s` Format Specifiers
+
+You can explicitly choose which method to call in f-strings:
+
+```python
+class Example:
+    def __str__(self):
+        return "str version"
+    
+    def __repr__(self):
+        return "repr version"
+
+e = Example()
+
+print(f"{e}")    # str version   ← default calls __str__
+print(f"{e!s}")  # str version   ← explicit __str__
+print(f"{e!r}")  # repr version  ← explicit __repr__
+```
+
+This is useful when building `__repr__` methods:
+
+```python
+class Dog:
+    def __init__(self, name):
+        self.name = name
+    
+    def __repr__(self):
+        # {self.name!r} ensures proper quoting
+        return f"Dog(name={self.name!r})"
+
+d = Dog("Buddy")
+print(repr(d))  # Dog(name='Buddy')  ← quotes around string
+```
+
+---
+
+### Summary Flowchart
+
+```
+print(obj) / str(obj) / f"{obj}"
+          │
+          ▼
+    Has __str__?
+     /        \
+   Yes         No
+    │           │
+    ▼           ▼
+ Return     Has __repr__?
+__str__()    /        \
+           Yes         No
+            │           │
+            ▼           ▼
+        Return      Return default
+      __repr__()   <Class object at 0x...>
+
+
+repr(obj) / REPL / containers
+          │
+          ▼
+    Has __repr__?
+     /        \
+   Yes         No
+    │           │
+    ▼           ▼
+ Return      Return default
+__repr__()  <Class object at 0x...>
+```
+
+---
+
+### Best Practice
+
+Always implement `__repr__`. Optionally add `__str__` if you need a user-friendly version:
+
+```python
+class Product:
+    def __init__(self, name, price):
+        self.name = name
+        self.price = price
+    
+    def __repr__(self):
+        # For developers — unambiguous, ideally recreatable
+        return f"Product(name={self.name!r}, price={self.price!r})"
+    
+    def __str__(self):
+        # For users — friendly and readable
+        return f"{self.name}: ${self.price:.2f}"
+
+p = Product("Coffee", 4.99)
+
+print(repr(p))  # Product(name='Coffee', price=4.99)
+print(str(p))   # Coffee: $4.99
+print([p])      # [Product(name='Coffee', price=4.99)]
+```
+
+---
+
+Ready for Question 6?

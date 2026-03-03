@@ -1,0 +1,50 @@
+**Parentheses in `df.filter()` Conditions**
+
+Always wrap each condition in parentheses when combining them. This isn't just a style choice—it's required for correct behavior.
+
+**The Problem: Operator Precedence**
+
+In Python, bitwise operators (`&`, `|`) have higher precedence than comparison operators (`>`, `<`, `==`, `>=`, `<=`). This means expressions are grouped in unexpected ways without parentheses.
+
+**Example of the bug:**
+
+```python
+# What you write:
+df.filter(F.col("age") >= 30 & F.col("age") <= 50)
+
+# How Python parses it (due to precedence):
+df.filter(F.col("age") >= (30 & F.col("age")) <= 50)
+
+# This produces an error or wrong results
+```
+
+**The fix:**
+
+```python
+df.filter((F.col("age") >= 30) & (F.col("age") <= 50))
+```
+
+**More examples:**
+
+```python
+# Wrong
+df.filter(F.col("a") > 1 & F.col("b") < 10)
+df.filter(F.col("x") == "yes" | F.col("y") == "no")
+df.filter(~F.col("status") == "inactive")
+
+# Correct
+df.filter((F.col("a") > 1) & (F.col("b") < 10))
+df.filter((F.col("x") == "yes") | (F.col("y") == "no"))
+df.filter(~(F.col("status") == "inactive"))
+```
+
+**Python operator precedence (relevant subset, highest to lowest):**
+
+1. `~` (bitwise NOT)
+2. `&` (bitwise AND)
+3. `|` (bitwise OR)
+4. `>`, `<`, `>=`, `<=`, `==`, `!=` (comparisons)
+
+**Rule of thumb:**
+
+When combining conditions in PySpark, put parentheses around every individual condition. It's never wrong to add them, and it prevents subtle bugs.

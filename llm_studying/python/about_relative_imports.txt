@@ -1,0 +1,198 @@
+Relative imports in Python are a way to import modules relative to the current module's location in the package hierarchy, rather than using absolute paths from the project root. Here's a comprehensive explanation:
+
+## Basic Syntax
+
+Relative imports use dots (`.`) to indicate the relative position:
+- `.` means "current package/directory"
+- `..` means "parent package/directory"
+- `...` means "grandparent package/directory"
+
+```python
+# From a module in mypackage/subpackage/module.py
+
+from . import sibling_module           # Same directory
+from .sibling_module import something  # Specific item from sibling
+from .. import parent_module           # Parent directory
+from ..other_subpackage import module  # Sibling directory
+from ... import grandparent_module     # Grandparent directory
+```
+
+## Example Project Structure
+
+```
+project/
+├── __init__.py
+├── main.py
+└── mypackage/
+    ├── __init__.py
+    ├── module_a.py
+    └── subpackage/
+        ├── __init__.py
+        ├── module_b.py
+        └── module_c.py
+```
+
+In `module_c.py`, you could use:
+
+```python
+# Absolute import
+from mypackage.module_a import function_a
+from mypackage.subpackage.module_b import function_b
+
+# Relative import (same thing)
+from ..module_a import function_a
+from .module_b import function_b
+```
+
+## Key Rules and Limitations
+
+### 1. **Only work in packages**
+Relative imports require the file to be part of a package (directory with `__init__.py`):
+
+```python
+# This will fail in a standalone script
+from . import something  # ImportError
+```
+
+### 2. **Cannot go beyond top-level package**
+You can't use relative imports to go outside the package root:
+
+```python
+# If you're in project/package/submodule.py
+from .... import something  # Error - can't go beyond package root
+```
+
+### 3. **Script vs Module execution**
+Relative imports don't work when running a file directly as a script:
+
+```bash
+# This will fail if module.py uses relative imports
+python mypackage/subpackage/module.py
+
+# This works
+python -m mypackage.subpackage.module
+```
+
+## Absolute vs Relative Imports
+
+### Absolute Imports
+```python
+# Always from project root or sys.path
+from myproject.utils.helpers import utility_function
+from myproject.models.user import User
+```
+
+**Pros:**
+- Explicit and clear about where modules come from
+- Work regardless of where you run the code from
+- Easier to understand for newcomers
+
+**Cons:**
+- Longer import statements
+- Need to change if package name changes
+- Can be redundant within the same package
+
+### Relative Imports
+```python
+# From current module's perspective
+from .helpers import utility_function
+from ..models.user import User
+```
+
+**Pros:**
+- Shorter, cleaner within packages
+- Package remains portable (can rename without changing imports)
+- Makes internal package structure clear
+
+**Cons:**
+- Can be confusing to trace
+- Don't work when running files as scripts
+- Limited to within package boundaries
+
+## Common Patterns and Best Practices
+
+### 1. **Within a package, prefer relative imports**
+```python
+# Inside mypackage/views/user_view.py
+from ..models.user import User  # Good for internal package imports
+from ..utils.validators import validate_email
+```
+
+### 2. **For external packages, use absolute imports**
+```python
+# Always use absolute for external packages
+import numpy as np
+from django.db import models
+from requests import Session
+```
+
+### 3. **Explicit relative imports in __init__.py**
+```python
+# mypackage/__init__.py
+from .module_a import ClassA
+from .module_b import function_b
+
+# Now users can do: from mypackage import ClassA
+```
+
+### 4. **Avoid wildcard imports with relative imports**
+```python
+# Bad
+from . import *
+
+# Good
+from . import specific_module
+from .specific_module import specific_function
+```
+
+## Debugging Import Issues
+
+Common error messages and solutions:
+
+### 1. **ImportError: attempted relative import with no known parent package**
+```python
+# Running: python module.py (wrong)
+# Fix: python -m package.module (right)
+```
+
+### 2. **ValueError: attempted relative import beyond top-level package**
+```python
+# Too many dots for package depth
+from .... import something  # Error
+# Fix: Use absolute import or restructure
+```
+
+### 3. **ModuleNotFoundError with relative imports**
+```python
+# Often missing __init__.py files
+# Fix: Ensure all directories have __init__.py
+```
+
+## Your Specific Case
+
+In your `analysis_tools.py` situation:
+
+```python
+# Current (broken):
+from customers.databricks_utils import detect_date_col
+
+# Option 1: Absolute import (recommended for clarity)
+from cue_training.agent.customers.databricks_utils import detect_date_col
+
+# Option 2: Relative import (since you're in agent/)
+from .customers.databricks_utils import detect_date_col
+```
+
+The relative import with `.customers` works because:
+- `analysis_tools.py` is in the `agent` directory
+- `.` refers to the current package (`agent`)
+- `.customers` means "the customers subpackage within agent"
+
+Remember to run your module correctly:
+```bash
+# Good - runs as module
+uv run python -m cue_training.agent.analysis_tools
+
+# Bad - runs as script (relative imports will fail)
+uv run python cue_training/agent/analysis_tools.py
+```

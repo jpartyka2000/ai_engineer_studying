@@ -1,0 +1,29 @@
+Yes—it’s a real and commonly observed phenomenon. Fine-tuned endpoints (SFT’d models) can exhibit higher latency and a longer tail of slow responses compared to the corresponding base models. The main reasons are:
+
+1. **Heavier request processing**
+
+   * **Longer or richer prompts:** Many SFT setups prepend system prompts or few-shot examples to every call so the model “remembers” its new behavior. That extra context adds tokens, and every token takes processing time.
+   * **Structured output enforcement:** If you’re conditioning on strict JSON output, the model may spend extra decoding effort ensuring it conforms, which can stretch out generation.
+
+2. **Dedicated serving resources**
+
+   * Base models like “gpt-4.1” share a large, optimized pool of servers built to handle massive traffic with aggressive performance tuning. Fine-tuned endpoints often run on separate, smaller clusters or even on-the-fly loading of custom weights, which can have less caching, fewer optimized kernels, and less spare capacity under load.
+
+3. **Model architecture quirks**
+
+   * The addition of a fine-tuning head (even a lightweight one) can interfere with certain low-level optimizations (quantization kernels, fused operators) that apply out of the box to the base model. This can bump up per-token generation time, especially when generating dozens or hundreds of tokens.
+
+4. **Longer outputs**
+
+   * If your SFT’d model is configured (via training or prompts) to give more detailed, verbose answers—say, explicit JSON arrays, tool-call chains, or step-by-step reasoning—it will simply have more tokens to emit, and thus more opportunity to hit your timeout threshold.
+
+---
+
+**What you can do**
+
+* **Trim your prompts** to the essentials, or move few-shot examples into the fine-tune itself.
+* **Lower your timeout window** only slightly, or increase the client-side timeout if you can.
+* **Use streaming** so you get partial results as they arrive and can cancel early.
+* **Profile both endpoints** on identical prompts to quantify the difference, then decide if the improved correctness from the fine-tune is worth the extra latency.
+
+In practice, a small latency increase is expected with SFT, but if it’s a deal-breaker you might experiment with parameter-efficient methods (LoRA/adapters) or pushing more behavior into your prompt rather than into a full weight-update fine-tune.

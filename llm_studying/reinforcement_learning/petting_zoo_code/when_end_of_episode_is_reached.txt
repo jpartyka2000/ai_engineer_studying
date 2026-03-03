@@ -1,0 +1,32 @@
+In PettingZoo’s AEC (turn-based) API, you drive the environment with this loop:
+
+```python
+for agent in env.agent_iter():
+    obs, reward, done, trunc, info = env.last()
+    if done or trunc:
+        action = None
+    else:
+        action = policy.choose(obs)
+    env.step(action)
+```
+
+Here’s what “end of episode” really means:
+
+1. **Per-agent done/trunc flags**
+
+   * On each call to `env.last()`, you get back two booleans:
+
+     * **`done`**: the environment says “this agent has reached a terminal state” (e.g. game over for that player).
+     * **`trunc`**: the environment says “I’m truncating this agent’s life” (e.g. a time-limit or max-steps hit).
+
+2. **Loop termination condition**
+
+   * Under the hood, `env.agent_iter()` keeps yielding agent turns as long as **any** agent still needs to act.
+   * **Once every agent** has returned `done=True` (or you fed `action=None` for them), `agent_iter()` will exhaust, and your `for`-loop ends.
+
+3. **Practical takeaway**
+
+   * **“End of episode”** = the moment when, over the course of cycling through all agents, each one’s `done` or `trunc` has become `True`.
+   * That’s when you exit the `for agent in env.agent_iter():` loop and can run your end-of-episode learning update.
+
+So in your tennis example, as soon as the underlying Atari game says “game over” (for both players) or hits a truncation limit, both agents will be marked done/trunc, `agent_iter()` stops, and you move on to compute returns and update your policy.

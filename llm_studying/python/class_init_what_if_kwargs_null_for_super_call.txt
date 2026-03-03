@@ -1,0 +1,48 @@
+## When `kw = {}` and `super().__init__(**kw)`
+
+When `kw` is an empty dict `{}`, calling `super().__init__(**kw)` is equivalent to:
+
+```python
+super().__init__()  # Called with no arguments
+```
+
+## What Happens:
+
+The `**kw` unpacks the empty dictionary into... nothing. So the parent class `Scorer`'s `__init__` is called with no arguments.
+
+## Example Breakdown:
+
+```python
+class Scorer:  # Parent class
+    def __init__(self, name=None, enabled=True):  # Has defaults
+        self.name = name
+        self.enabled = enabled
+
+class CoherenceOnAnswer(Scorer):
+    def __init__(self, **kw):  # kw = {}
+        super().__init__(**kw)  # Same as super().__init__()
+        # Parent gets: name=None, enabled=True (defaults)
+        self._inner = WeaveCoherenceScorerV1()
+
+# When instantiated:
+scorer = CoherenceOnAnswer()  # No args, so kw = {}
+# Result: Scorer.__init__() called with defaults
+```
+
+## Why Use `**kw` Pattern?
+
+It allows **optional pass-through** of parent arguments:
+
+```python
+# With arguments:
+scorer = CoherenceOnAnswer(name="coherence_check", enabled=False)
+# kw = {"name": "coherence_check", "enabled": False}
+# These get passed to Scorer.__init__
+
+# Without arguments:
+scorer = CoherenceOnAnswer()  
+# kw = {}
+# Scorer.__init__ uses its defaults
+```
+
+**Bottom line**: When `kw = {}`, the `**kw` unpacks to nothing, so `super().__init__()` is called with no arguments, using whatever defaults the parent class has.

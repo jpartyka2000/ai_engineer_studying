@@ -1,0 +1,27 @@
+It looks like you're encountering an issue with your BG/NBD model implementation. The error is happening because you're trying to pass Spark DataFrame columns directly to the BetaGeoFitter, but it's expecting numeric values, not Spark Column objects.
+
+The specific errors:
+- `ValueError: setting an array element with a sequence` - This typically occurs when you try to use a complex data structure where a simple value is expected
+- `TypeError: int() argument must be a string, a bytes-like object or a real number, not 'Column'` - This confirms that you're passing Column objects when numeric values are needed
+
+Here's how to fix it:
+
+1. If you're using PySpark, you need to convert your Spark DataFrame to a pandas DataFrame first:
+
+```python
+# Convert Spark DataFrame to pandas DataFrame
+pandas_df = df_data.toPandas()
+
+# Then fit the model using the pandas DataFrame columns
+bgf = BetaGeoFitter(penalizer_coef=0.0)
+bgf.fit(pandas_df['subscription:payment_successful_client_event_times_count'], 
+        pandas_df['subscription:payment_successful_client_event_times_recency_days'], 
+        pandas_df['subscription:payment_successful_client_event_times_age_days'])
+```
+
+2. If your DataFrame is already quite large, you might want to consider:
+   - Processing it in batches
+   - Using a sample of your data for initial model fitting
+   - Running the transformation on a Spark cluster using a UDF if needed
+
+Does this solution resolve your issue?

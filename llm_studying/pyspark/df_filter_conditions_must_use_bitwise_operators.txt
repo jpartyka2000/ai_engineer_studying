@@ -1,0 +1,42 @@
+Yes, in PySpark you must use bitwise operators (`&`, `|`, `~`) for combining conditions, not Python's logical operators (`and`, `or`, `not`).
+
+**Correct:**
+
+```python
+df.filter((F.col("age") > 30) & (F.col("salary") > 50000))
+df.filter((F.col("status") == "active") | (F.col("role") == "admin"))
+df.filter(~F.col("name").isNull())
+```
+
+**Incorrect (will error or behave unexpectedly):**
+
+```python
+df.filter(F.col("age") > 30 and F.col("salary") > 50000)  # Won't work
+df.filter(F.col("status") == "active" or F.col("role") == "admin")  # Won't work
+```
+
+**Important: parentheses are required**
+
+Bitwise operators have higher precedence than comparison operators, so without parentheses you get unexpected results:
+
+```python
+# Wrong – & binds before >=
+df.filter(F.col("age") >= 30 & F.col("age") <= 50)
+
+# Correct
+df.filter((F.col("age") >= 30) & (F.col("age") <= 50))
+```
+
+**Why?**
+
+Python's `and`/`or` evaluate truthiness of objects and can't be overloaded. PySpark column objects overload the bitwise operators to return new column expressions representing the combined condition.
+
+**Summary:**
+
+| Logic | PySpark Operator |
+|-------|------------------|
+| AND | `&` |
+| OR | `\|` |
+| NOT | `~` |
+
+Always wrap each condition in parentheses when combining them.

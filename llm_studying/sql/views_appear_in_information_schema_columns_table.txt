@@ -1,0 +1,88 @@
+Excellent follow-up — yes, absolutely ✅
+
+You **can** get common columns between a **table and a view** using the same approach, because in most SQL engines (including Databricks, PostgreSQL, Snowflake, BigQuery, etc.), **views appear in `INFORMATION_SCHEMA.COLUMNS`** just like tables do.
+
+---
+
+## 🧠 Why This Works
+
+Both **tables** and **views** register their column metadata in `INFORMATION_SCHEMA.COLUMNS`.
+That view lists:
+
+* `table_catalog`
+* `table_schema`
+* `table_name`
+* `column_name`
+* `data_type`
+* and more — for **both tables and views**.
+
+So your query can stay identical — you just need to ensure you’re referencing the correct schema and names.
+
+---
+
+## ✅ Example
+
+Let’s say:
+
+* You have a **table** called `sales.transactions`
+* And a **view** called `sales.active_transactions_view`
+
+You can do this:
+
+```sql
+SELECT column_name
+FROM information_schema.columns
+WHERE table_schema = 'sales' AND table_name = 'transactions'
+INTERSECT
+SELECT column_name
+FROM information_schema.columns
+WHERE table_schema = 'sales' AND table_name = 'active_transactions_view';
+```
+
+That will return the list of **column names that both the table and the view share**.
+
+---
+
+## ⚙️ Databricks (Unity Catalog) Example
+
+If you’re using Unity Catalog, you might need to include the catalog name explicitly:
+
+```sql
+SELECT column_name
+FROM my_catalog.information_schema.columns
+WHERE table_schema = 'sales' AND table_name = 'transactions'
+INTERSECT
+SELECT column_name
+FROM my_catalog.information_schema.columns
+WHERE table_schema = 'sales' AND table_name = 'active_transactions_view';
+```
+
+---
+
+## 🧩 Python / PySpark Version (for any combo of tables and views)
+
+You can also compare schemas programmatically:
+
+```python
+cols_table = set([c.name for c in spark.table("sales.transactions").schema])
+cols_view = set([c.name for c in spark.table("sales.active_transactions_view").schema])
+
+common_cols = cols_table & cols_view
+print(sorted(common_cols))
+```
+
+Spark treats both tables and views as `DataFrame` sources, so `.schema` works for both.
+
+---
+
+### 🔍 Summary
+
+| Case           | Works? | Method                                              |
+| -------------- | ------ | --------------------------------------------------- |
+| Table vs Table | ✅      | `INFORMATION_SCHEMA.COLUMNS` or schema intersection |
+| Table vs View  | ✅      | Same method works — views are included              |
+| View vs View   | ✅      | Same again                                          |
+
+---
+
+Would you like me to show a version of the SQL query that also returns **column data types** (so you can see if shared columns have matching types)?

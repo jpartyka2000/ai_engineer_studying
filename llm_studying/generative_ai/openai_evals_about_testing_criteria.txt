@@ -1,0 +1,137 @@
+Within an Eval spec, **`testing_criteria`** is the list of checks or graders that run **after** the model produces its `sample.output_text`. Each entry defines:
+
+1. **What to examine** (an “input” expression)
+2. **What to compare against** (a “reference” expression or value)
+3. **How to compare** (the operation)
+4. **What to call this check** (a name for reporting)
+
+Here are the common built-in criterion types and how you configure them:
+
+---
+
+## 1. `string_check`
+
+Compare two strings (exact or fuzzy).
+
+```json
+{
+  "type": "string_check",
+  "name": "Exact match label",
+  "input":     "{{ sample.output_text }}",
+  "operation": "eq",                   // eq, ieq, contains, regex, startswith, endswith
+  "reference": "{{ item.correct_label }}"
+}
+```
+
+* **`eq`**: case-sensitive exact equality
+* **`ieq`**: case-insensitive equality
+* **`contains`**: checks if input contains reference substring
+* **`regex`**: applies a regular expression match
+* **`startswith`/`endswith`**
+
+---
+
+## 2. `number_check`
+
+Parse a numeric value from the output and compare ranges or exact values.
+
+```json
+{
+  "type": "number_check",
+  "name": "Correct total",
+  "input":     "{{ sample.output_text | float }}",  
+  "operation": "eq",                   // eq, ne, lt, le, gt, ge, in_range
+  "reference": "{{ item.expected_value }}"
+}
+```
+
+* **`in_range`**: expects `reference` to be a two-element array `[min, max]`
+
+---
+
+## 3. `classification_check`
+
+Use when your model picks from a fixed set of labels:
+
+```json
+{
+  "type": "classification_check",
+  "name": "Category correct",
+  "input":     "{{ sample.output_text }}",
+  "candidates": ["billing", "technical", "account"],
+  "reference": "{{ item.correct_label }}"
+}
+```
+
+This will normalize and map the output to the nearest candidate before comparing.
+
+---
+
+## 4. `semantic_similarity_check`
+
+For free-form answers where you want ideas or paraphrase matching:
+
+```json
+{
+  "type": "semantic_similarity_check",
+  "name": "Definition match",
+  "input":     "{{ sample.output_text }}",
+  "reference": "{{ item.reference_text }}",
+  "threshold": 0.8
+}
+```
+
+* Uses an embedding model under the hood. Pass if cosine ≥ `threshold`.
+
+---
+
+## 5. `function_call_check`
+
+Ensure the model invoked your function correctly:
+
+```json
+{
+  "type": "function_call_check",
+  "name": "Called get_weather",
+  "function_name": "get_current_weather"
+}
+```
+
+* Checks that the model produced a function call to that name.
+
+---
+
+## 6. `custom`
+
+Drop into arbitrary Python code for complex logic:
+
+```json
+{
+  "type": "custom",
+  "name": "Complex validation",
+  "eval": "| \n"
+       "def check(item, sample):\n"
+       "    # your Python logic here\n"
+       "    return sample.output_text.startswith(item.prefix)\n"
+}
+```
+
+* The code runs with `item` and `sample` dicts in scope; must return `True`/`False`.
+
+---
+
+### How it all runs
+
+1. **After** the model reply is captured as `sample.output_text`, each criterion is evaluated in order.
+2. You get a **pass/fail** (or score) per criterion per example.
+3. The Evals dashboard or API aggregates these into overall metrics (accuracy, pass rate, mean score, etc.).
+
+### Tips for robust criteria
+
+* Always trim whitespace or case: use `| trim | lower` in your Jinja if needed.
+* For numeric parsing, guard against parse errors (`| float(default=nan)`).
+* Review a few **sample outputs** to see if you need `regex` or `contains` instead of `eq`.
+* Use `classification_check` whenever you have a closed set of labels—helps normalize synonyms.
+* For very open tasks (summaries, code), consider `semantic_similarity_check` or custom graders.
+
+By combining these building blocks, you can fully automate grading of virtually any NLP or LLM task—from exact label matching to fuzzy, semantic-level comparisons.

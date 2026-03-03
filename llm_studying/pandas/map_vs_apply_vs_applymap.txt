@@ -1,0 +1,58 @@
+Here’s the quick rundown:
+
+1. **`Series.map()`**
+
+   * **Input:** A **mapping** (dict or another Series) or a **function** that takes a **single scalar** and returns a scalar.
+   * **Operation:** Purely **element-wise**. For each value `v` in your Series it does `map(v)`.
+   * **Use when:** You have a clean one-to-one mapping (e.g. remapping categories via a dict, or looking up values in another Series).
+
+2. **`Series.apply()`**
+
+   * **Input:** A **function** that takes a **single scalar** (or optionally the full Series if you tell it).
+   * **Operation:** Also **element-wise by default**, but you can pass things like `result_type='expand'` to return sequences per element, or you can write functions that inspect the whole Series if you set `raw=False`.
+   * **Use when:** You need more flexibility than `map()`—for example, your function needs to return different types (lists, dicts, numbers) or you need to inspect the element’s context in the Series.
+
+3. **`DataFrame.applymap()`**
+
+   * **Input:** A **function** that takes a **single scalar cell** and returns a scalar.
+   * **Operation:** **Element-wise** over every cell in the entire DataFrame.
+   * **Use when:** You want to transform **every** value of a DataFrame uniformly (e.g. formatting every cell, converting types, censoring values).
+
+> **Don’t confuse**
+>
+> * `DataFrame.apply()` (applies a function **by row** or **by column**, returning a Series or DataFrame)
+> * with `DataFrame.applymap()` (applies **cell-by-cell**).
+
+---
+
+| Method                  | Scope           | Function signature      | Returns                  |
+| ----------------------- | --------------- | ----------------------- | ------------------------ |
+| `Series.map(m)`         | Series → val    | `m(v)` for each `v`     | Series of same length    |
+| `Series.apply(f)`       | Series → val    | `f(v)` (or full Series) | Series (flexible return) |
+| `DataFrame.applymap(f)` | DataFrame → val | `f(v)` for each cell    | DataFrame same shape     |
+
+---
+
+**Example**:
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+  'A': [1,2,3],
+  'B': [10,20,30]
+})
+
+# 1) map: multiply by 2 only on col A via a function
+df['A2'] = df['A'].map(lambda x: x*2)
+
+# 2) apply: add the row’s A and B
+df['sum'] = df.apply(lambda row: row.A + row.B, axis=1)
+
+# 3) applymap: format every cell as a string with ‘$’
+df_fmt = df.applymap(lambda x: f'${x}')
+```
+
+* Use **`map`** for straightforward value-to-value lookups.
+* Use **`Series.apply`** when you need per-element flexibility or row-level logic (with `axis=1`).
+* Use **`applymap`** when you want the same transformation on **every** cell of a DataFrame.

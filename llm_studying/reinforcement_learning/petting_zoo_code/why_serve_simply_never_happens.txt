@@ -1,0 +1,47 @@
+What you’re seeing—a perpetual volley on one side and no serve—is actually a classic “safe‐policy” failure mode.  Here’s what’s going on and how to fix it:
+
+---
+
+### Why it happens
+
+1. **Sparse, all-or-nothing rewards**
+
+   * In Tennis-v3 you only get +1 when you win a rally and –1 when you lose one.  There is no reward for simply serving, and doing a random serve early almost always loses you the point (so it looks like –1).
+   * **So the agent quickly learns:** “If I never press FIRE to start the point, I never lose (and I never get +1, but I also never get –1).”
+   * Doing nothing (or dodging the serve) yields a steady 0 reward, which is strictly higher than the expected negative reward of a bad serve.  PPO therefore converges to that “do-nothing” policy.
+
+2. **Local optimum**
+
+   * Your policy has found a zero-variance, zero-reward plateau.  It’s better than a risky serve that usually costs you a point.  Since PPO is on-policy and you never explore enough to see a handful of successful serves, it never learns that “FIRE” can be +1 in expectation.
+
+---
+
+### How to fix it
+
+1. **Encourage exploration on serve**
+
+   * **Raise your entropy coefficient.**  Try bumping `entropy_coef` from 0.01 up to 0.1 or 0.2.  That stronger entropy bonus will force the policy to keep sampling “FIRE” often enough to actually learn its true value.
+2. **Shape the serve reward**
+
+   * Give a small positive bonus whenever the serve action is taken in a “no‐ball‐in‐play” state.
+
+     ```python
+     if state_is_serve_phase and action == FIRE:
+         reward += +0.1
+     ```
+   * This breaks the 0 vs –1 deadlock and makes exploring serve worthwhile.
+3. **Bias the initial policy**
+
+   * Initialize your policy head bias so that “FIRE” starts off a little more likely than uniform.  For example:
+
+     ```python
+     dmodels[ag].policy.bias.data[FireActionIndex] = +1.0
+     ```
+   * That gives you more positive serve samples early on.
+4. **Separate train/eval**
+
+   * If you want to watch a good policy play, train headless until you’ve accumlated enough successful serves, then render only in evaluation mode.
+
+---
+
+In short, the agent has learned that “never serve” is the safest way to avoid losing points.  You need to *incentivize* or *enforce* some serve attempts—either via stronger entropy, reward-shaping, or an initial bias—so that it discovers that successful serves can actually win you the point.

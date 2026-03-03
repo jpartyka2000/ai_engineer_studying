@@ -1,0 +1,89 @@
+**Swapping Index Levels in a pandas DataFrame**
+
+When you have a **MultiIndex** on your DataFrame (i.e. multiple levels of row labels), you can swap the positions of two levels with the **`.swaplevel()`** method. This is useful when you want a different hierarchy or slicing order without rebuilding the index from scratch.
+
+---
+
+## 1. The Basics: `swaplevel(i, j)`
+
+```python
+df_swapped = df.swaplevel(i, j)
+```
+
+* **`i`** and **`j`** can be either the **integer positions** of the levels (0-based) or the **level names**.
+* Returns a new DataFrame (or Series) whose index levels `i` and `j` have exchanged places.
+* **Does not** sort the index—you’ll often follow it with `.sort_index()` to restore lexicographic order.
+
+---
+
+## 2. Example
+
+```python
+import pandas as pd
+
+# Create a MultiIndex DataFrame
+arrays = [
+    ['Store1','Store1','Store2','Store2'],
+    ['2025-01','2025-02','2025-01','2025-02']
+]
+index = pd.MultiIndex.from_arrays(arrays, names=['store','month'])
+df = pd.DataFrame({'sales': [100,120, 80,90]}, index=index)
+
+# Original index levels: 0='store', 1='month'
+print(df)
+```
+
+```
+               sales
+store  month        
+Store1 2025-01   100
+       2025-02   120
+Store2 2025-01    80
+       2025-02    90
+```
+
+Swap the order so that `month` is the outer level:
+
+```python
+df2 = df.swaplevel('store','month').sort_index()
+print(df2)
+```
+
+```
+               sales
+month   store       
+2025-01 Store1   100
+        Store2    80
+2025-02 Store1   120
+        Store2    90
+```
+
+---
+
+## 3. Why Swap Levels?
+
+* **Slicing flexibility**: You can do
+
+  ```python
+  df2.loc['2025-02']        # all stores in Feb
+  ```
+
+  instead of having to specify the first level.
+
+* **Pivoting & reshaping**: Certain reshapes (`unstack`, `stack`) are easier when your desired key is on the correct level.
+
+---
+
+## 4. Alternative: `reorder_levels()` for more than two
+
+If you need a new arbitrary order of *all* levels, use:
+
+```python
+df_reordered = df.reorder_levels(['month','store'])
+```
+
+This accepts a list of level names (or positions) and reassembles the MultiIndex accordingly.
+
+---
+
+**In summary**, `.swaplevel()` is a quick, in-place-style way to flip just two levels of a MultiIndex, giving you immediate access patterns on the newly promoted level without recreating the index.

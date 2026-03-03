@@ -1,0 +1,79 @@
+That error isn’t coming from PyTorch or your policy code at all, but from the fact that **no Atari ROM** for Tennis is found on your machine.  The underlying **`multi_agent_ale_py`** package needs the Atari game ROMs installed before you can launch any of the Atari environments.
+
+---
+
+## 1. Install the ROMs via AutoROM
+
+The simplest way is to use the Farama-Foundation AutoROM tool.  From your shell:
+
+```bash
+# 1) install the AutoROM helper
+pip install AutoROM[accept-rom-license]
+
+# 2) download and install all Atari ROMs (including tennis)
+#    the --accept-license flag auto-agrees to the ROM license
+autorom --accept-license
+```
+
+This will place every required `.bin` into the default AutoROM directory so that **`multi_agent_ale_py`** can find them ([GitHub][1]).
+
+---
+
+## 2. (Re)run your Tennis env
+
+Now your code can import and run the Tennis environment just like Pong:
+
+```python
+from pettingzoo.atari import tennis_v3
+
+env = tennis_v3.env(render_mode="human")   # ← now Tennis, not Pong
+env.reset(seed=42)
+```
+
+If for some reason you installed ROMs to a custom folder, point PettingZoo at it:
+
+```python
+env = tennis_v3.env(
+    render_mode="human",
+    rom_path="/full/path/to/AutoROM/ROM/tennis"  # adjust as needed
+)
+```
+
+---
+
+## 3. Plugging in your policy-optimization agent
+
+Once the ROMs are in place, the loop is identical.  Suppose you have a policy class with a method `select_action(obs)` (e.g. a trained PPO or REINFORCE agent).  You’d do:
+
+```python
+from pettingzoo.atari import tennis_v3
+
+env = tennis_v3.env(render_mode="human")
+env.reset(seed=42)
+
+# assume `agents` is a dict mapping each agent name to your policy instance
+# and each policy has a `select_action(obs)` method
+for agent in env.agent_iter():
+    obs, reward, termination, truncation, info = env.last()
+
+    if termination or truncation:
+        action = None
+    else:
+        action = agents[agent].select_action(obs)  # ← your policy here
+
+    env.step(action)
+
+env.close()
+```
+
+That single line
+
+```python
+action = agents[agent].select_action(obs)
+```
+
+is all you need to “slot in” whatever model-free, policy-optimization routine you’ve built (REINFORCE, PPO, SAC, etc.).  Just make sure each agent’s policy object implements `select_action()` to take the raw observation and return an integer action.
+
+With the ROMs installed and your policy hooked in, Tennis should render and your learned agents will start playing!
+
+[1]: https://github.com/Farama-Foundation/PettingZoo/issues/1160?utm_source=chatgpt.com "[Bug Report] Rom not found after installing AutoRom #1160 - GitHub"

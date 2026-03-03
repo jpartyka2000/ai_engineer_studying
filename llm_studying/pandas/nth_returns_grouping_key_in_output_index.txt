@@ -1,0 +1,56 @@
+No—`.nth()` doesn’t “remember” your DataFrame’s original row‐labels. Instead, it builds a new object whose index is the grouping key (repeated if you ask for multiple positions).
+
+* **For a full DataFrameGroupBy**
+
+  ```python
+  df_new = df.groupby('COHORT_month').nth([1,2])
+  ```
+
+  `df_new.index` will be the values of `COHORT_month` (once or repeated) — **not** the original row indices.
+
+* **For a SeriesGroupBy**
+
+  ```python
+  s_new = df.groupby('COHORT_month')['ADMITTED'].nth([1,2])
+  ```
+
+  `s_new.index` will likewise be the `COHORT_month` values.
+
+If you ever see original row labels creep back in, it’s because you broke out of the GroupBy (for example by using `.apply(...)` or `.head()` on the GroupBy and then later reset or merged), and then reset the index on that plain DataFrame/Series.
+
+---
+
+### How to preserve original row labels if you need them
+
+1. **Include them as a column before grouping**
+
+   ```python
+   df = df.reset_index().rename(columns={'index':'orig_row_id'})
+   df_nth = (
+     df.groupby('COHORT_month')
+       .nth([1,2])
+       .reset_index()            # brings back COHORT_month
+       [['orig_row_id','COHORT_month', ...]]
+   )
+   ```
+
+2. **Use a Boolean mask with `cumcount()`**
+
+   ```python
+   mask = df.groupby('COHORT_month').cumcount().isin([1,2])
+   df_nth = df[mask]
+   # df_nth still has the original index
+   ```
+
+3. **`groupby.apply(lambda g: g.iloc[[1,2]])`**
+
+   ```python
+   df_nth = (
+     df.groupby('COHORT_month', as_index=False)
+       .apply(lambda g: g.iloc[[1,2]])
+       .reset_index(drop=True)
+   )
+   # you’ll still see the original columns, including any index column you carried in
+   ```
+
+But by design, `.nth()` itself drops your old row‐labels and only returns the grouping key as its index.

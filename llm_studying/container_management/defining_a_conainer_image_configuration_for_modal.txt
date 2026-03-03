@@ -1,0 +1,27 @@
+This code defines a container image configuration for Modal (a serverless GPU platform). Let me break it down:
+
+## What it does
+
+**`modal.Image.from_registry("nvidia/cuda:12.8.0-devel-ubuntu22.04", add_python="3.12")`**
+- Starts from NVIDIA's official CUDA 12.8 development image on Ubuntu 22.04
+- Adds Python 3.12 to the base image
+
+**`.entrypoint([])`**
+- Clears the default entrypoint so Modal can run the server in-process rather than spawning a separate process
+
+**`.uv_pip_install(...)`**
+- Uses `uv` (a fast Python package installer) to install:
+  - `vllm` - the inference engine for serving LLMs
+  - `huggingface-hub` - for downloading model weights
+  - `flashinfer-python` - optimized attention kernels for faster inference
+  - `fastapi` and `uvicorn` - the web framework and ASGI server
+
+**`.env({...})`**
+- Sets environment variables:
+  - `HF_HUB_ENABLE_HF_TRANSFER` / `HF_XET_HIGH_PERFORMANCE` - enables faster model downloads from HuggingFace
+  - `TOKENIZERS_PARALLELISM=false` - avoids tokenizer warnings/deadlocks in multiprocessing
+  - `TORCH_CPP_LOG_LEVEL=FATAL` - suppresses verbose PyTorch C++ logs
+
+## Why it matters
+
+This creates a reproducible, GPU-ready container image that Modal will use to run the vLLM server. The image is built once and cached, so subsequent deployments start quickly. The method chaining pattern (each `.method()` returns a new image) is Modal's declarative way of defining container layers.

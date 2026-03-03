@@ -1,0 +1,60 @@
+Absolutely! Let me break down the formula step by step:
+
+```sql
+budget = total_spend * (1 + (RAND() * 0.2 - 0.1))
+```
+
+## Step-by-Step Breakdown
+
+### Step 1: `RAND()`
+- Generates a random decimal number between **0 and 1**
+- Examples: 0.0, 0.25, 0.5, 0.75, 1.0, or any value in between
+
+### Step 2: `RAND() * 0.2`
+- Multiplies the random number by 0.2
+- This **scales** the range from [0, 1] to [0, 0.2]
+- Examples:
+  - If RAND() = 0 → 0 * 0.2 = **0**
+  - If RAND() = 0.5 → 0.5 * 0.2 = **0.1**
+  - If RAND() = 1 → 1 * 0.2 = **0.2**
+
+### Step 3: `RAND() * 0.2 - 0.1`
+- Subtracts 0.1 from the result
+- This **shifts** the range from [0, 0.2] to [-0.1, +0.1]
+- Examples:
+  - If previous result = 0 → 0 - 0.1 = **-0.1** (which is -10%)
+  - If previous result = 0.1 → 0.1 - 0.1 = **0** (which is 0%)
+  - If previous result = 0.2 → 0.2 - 0.1 = **+0.1** (which is +10%)
+
+### Step 4: `1 + (RAND() * 0.2 - 0.1)`
+- Adds 1 to the result
+- This converts the percentage adjustment to a **multiplier**
+- Range becomes [0.9, 1.1]
+- Examples:
+  - 1 + (-0.1) = **0.9** (multiply by 0.9 = 90% of original)
+  - 1 + (0) = **1.0** (multiply by 1.0 = 100% of original)
+  - 1 + (0.1) = **1.1** (multiply by 1.1 = 110% of original)
+
+### Step 5: `total_spend * (1 + ...)`
+- Multiplies total_spend by the random multiplier
+- This gives the final budget value
+
+## Concrete Example
+
+Let's say `total_spend = 1000`:
+
+| RAND() | × 0.2 | - 0.1 | + 1 | × 1000 | Result |
+|--------|-------|-------|-----|--------|--------|
+| 0.0    | 0.0   | -0.1  | 0.9 | 900    | **$900** (10% lower) |
+| 0.25   | 0.05  | -0.05 | 0.95| 950    | **$950** (5% lower) |
+| 0.5    | 0.1   | 0.0   | 1.0 | 1000   | **$1000** (same) |
+| 0.75   | 0.15  | 0.05  | 1.05| 1050   | **$1050** (5% higher) |
+| 1.0    | 0.2   | 0.1   | 1.1 | 1100   | **$1100** (10% higher) |
+
+## Why This Approach?
+
+This formula ensures:
+- ✅ Budget is always within ±10% of total_spend
+- ✅ The distribution is uniform (every value between 90% and 110% is equally likely)
+- ✅ Can be higher OR lower than total_spend
+- ✅ Simple one-line formula

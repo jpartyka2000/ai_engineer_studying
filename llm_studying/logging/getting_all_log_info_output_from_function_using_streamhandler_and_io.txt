@@ -1,0 +1,93 @@
+Yes — you can capture **all** `logging.info()` output from inside a function into a string by using Python’s `logging` + `io.StringIO` (or `logging.Handler`) without modifying every `log.info()` call.
+
+The idea is:
+
+* Temporarily attach a `logging.StreamHandler` with a `StringIO` buffer to your logger.
+* Run the function normally.
+* Grab everything from the buffer afterward.
+
+---
+
+### Example: Capture `log.info()` output into a string
+
+```python
+import logging
+import io
+
+# Set up a logger
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+
+def capture_logs(func, *args, **kwargs):
+    # Create a buffer and a temporary handler
+    buf = io.StringIO()
+    handler = logging.StreamHandler(buf)
+    handler.setLevel(logging.INFO)
+
+    # Attach handler
+    log.addHandler(handler)
+
+    try:
+        func(*args, **kwargs)
+    finally:
+        # Remove handler after execution
+        log.removeHandler(handler)
+
+    # Get log output as string
+    return buf.getvalue().strip()
+
+# Example function with log.info calls
+def my_function():
+    log.info("Starting process...")
+    log.info("Processing step 1")
+    log.info("Processing step 2")
+    log.info("Done.")
+
+# Capture logs
+log_output = capture_logs(my_function)
+print("Captured log output:")
+print(log_output)
+```
+
+**Output:**
+
+```
+Captured log output:
+Starting process...
+Processing step 1
+Processing step 2
+Done.
+```
+
+---
+
+### Why this is "Pythonic"
+
+* Doesn’t require rewriting your `log.info()` calls — works for any existing function.
+* Uses the logging framework as intended (no hacks like replacing `log.info` temporarily).
+* Easily reusable — you can wrap **any** function and get a single string.
+
+---
+
+If you want the **function itself** to return the string automatically instead of printing logs normally, you could wrap the logic **inside the function** with the same `StringIO` trick:
+
+```python
+def my_function():
+    buf = io.StringIO()
+    handler = logging.StreamHandler(buf)
+    handler.setLevel(logging.INFO)
+    log.addHandler(handler)
+
+    log.info("One")
+    log.info("Two")
+    log.info("Three")
+
+    log.removeHandler(handler)
+    return buf.getvalue().strip()
+
+print(my_function())
+```
+
+---
+
+If you’d like, I can show you a **decorator version** so you can just slap `@capture_logs_decorator` on any function and have it return the logs as a string automatically. That would keep your code very clean. Would you like me to write that?

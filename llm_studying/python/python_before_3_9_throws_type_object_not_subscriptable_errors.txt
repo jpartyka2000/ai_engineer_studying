@@ -1,0 +1,107 @@
+## Python 3.8 Typing Errors
+
+Python 3.8 throws **`TypeError: 'type' object is not subscriptable`** when you use brackets with built-in types in annotations.
+
+## The Problem:
+
+```python
+# Python 3.8 - These all FAIL at runtime:
+def process(items: list[str]) -> dict[str, int]:  # TypeError!
+    pass
+
+queue: asyncio.Queue[dict] = asyncio.Queue()  # TypeError!
+
+data: tuple[int, str] = (1, "hello")  # TypeError!
+
+# Error message:
+# TypeError: 'type' object is not subscriptable
+```
+
+## Why It Happens:
+
+In Python 3.8, built-in types like `list`, `dict`, `tuple` **cannot use brackets** in type hints. This feature was added in Python 3.9.
+
+```python
+# Python 3.8 reality:
+list[str]  # list.__getitem__("str") - but list doesn't support this!
+```
+
+## Solutions for Python 3.8:
+
+### Solution 1: Use `typing` Module
+```python
+# Instead of built-in types, use typing versions
+from typing import List, Dict, Tuple, Set
+
+# Python 3.8 - WORKS:
+def process(items: List[str]) -> Dict[str, int]:
+    pass
+
+queue: "asyncio.Queue[Dict]" = asyncio.Queue()
+data: Tuple[int, str] = (1, "hello")
+```
+
+### Solution 2: String Annotations
+```python
+# Put the type in quotes
+def process(items: "list[str]") -> "dict[str, int]":
+    pass
+
+queue: "asyncio.Queue[dict]" = asyncio.Queue()
+```
+
+### Solution 3: Future Import
+```python
+from __future__ import annotations
+
+# Now you can use modern syntax even in Python 3.8
+def process(items: list[str]) -> dict[str, int]:  # Works!
+    pass
+
+queue: asyncio.Queue[dict] = asyncio.Queue()  # Works!
+```
+
+## Common Python 3.8 Type Errors:
+
+```python
+# ALL these fail in Python 3.8 without fixes:
+
+# Built-in generics
+x: list[int] = []  # TypeError
+y: dict[str, str] = {}  # TypeError
+z: set[float] = set()  # TypeError
+
+# Union syntax
+value: int | str = 42  # SyntaxError (needs 3.10+)
+
+# Standard library generics  
+path: pathlib.Path[str]  # TypeError
+q: asyncio.Queue[dict]  # TypeError
+```
+
+## Quick Reference Table:
+
+| Python 3.8 (Fails) | Fix Option 1 | Fix Option 2 |
+|-------------------|--------------|--------------|
+| `list[str]` | `List[str]` | `"list[str]"` |
+| `dict[K, V]` | `Dict[K, V]` | `"dict[K, V]"` |
+| `tuple[int, ...]` | `Tuple[int, ...]` | `"tuple[int, ...]"` |
+| `set[T]` | `Set[T]` | `"set[T]"` |
+| `int \| str` | `Union[int, str]` | N/A |
+
+## Best Practice for Multi-Version Support:
+
+```python
+# At the top of your file
+from __future__ import annotations  # Solves most issues
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Modern syntax for type checkers only
+    queue_type = asyncio.Queue[dict]
+else:
+    # Runtime doesn't care
+    queue_type = asyncio.Queue
+```
+
+**Bottom line**: Python 3.8 can't subscript built-in types like `list[int]` - use `typing.List[int]`, string annotations `"list[int]"`, or add `from __future__ import annotations` to fix it.

@@ -1,0 +1,69 @@
+### Silencing Parsing Errors with `errors='coerce'`
+
+When you convert data to datetime (or numeric) in Pandas, invalid entries can raise exceptions by default. The `errors='coerce'` option tells Pandas to **turn unparseable values into “missing”** (`NaT` for datetime, `NaN` for numeric) instead of blowing up.
+
+---
+
+#### 1. `pd.to_datetime(..., errors='coerce')`
+
+```python
+import pandas as pd
+
+# Mixed valid & invalid date strings
+s = pd.Series(['2025-01-01', 'not-a-date', '2025-03-15'])
+
+# Without coercion: raises an exception
+# pd.to_datetime(s)  
+
+# With coercion: invalid → NaT
+dt = pd.to_datetime(s, errors='coerce')
+print(dt)
+```
+
+```
+0   2025-01-01
+1          NaT
+2   2025-03-15
+dtype: datetime64[ns]
+```
+
+* **Valid dates** parse normally.
+* **Invalid strings** become `NaT`, allowing downstream vectorized operations (e.g. `.dt.normalize()`) without interruption.
+
+---
+
+#### 2. `pd.to_numeric(..., errors='coerce')`
+
+Works the same for numeric conversion:
+
+```python
+nums = pd.Series(['10', 'foo', '30'])
+clean = pd.to_numeric(nums, errors='coerce')
+print(clean)
+```
+
+```
+0    10.0
+1     NaN
+2    30.0
+dtype: float64
+```
+
+---
+
+#### 3. Why Use `errors='coerce'`?
+
+* **Robust pipelines:** your ETL or data‑cleaning code won’t break if some rows are malformed.
+* **Easy filtering:** you can drop or flag all the coerced entries via `.isna()`.
+* **Vectorized performance:** no Python loops or manual `try/except` in row‑by‑row logic.
+
+---
+
+#### 4. Common Pattern
+
+```python
+df['parsed'] = pd.to_datetime(df['raw_dates'], errors='coerce').dt.normalize()
+# All invalid dates → NaT at 00:00:00
+```
+
+Use `errors='coerce'` whenever you expect “dirty” data and want parsing errors to become harmless missing values.

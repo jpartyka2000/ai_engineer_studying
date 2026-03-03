@@ -1,0 +1,219 @@
+## `asyncio.run()` - The Entry Point to Async Python
+
+`asyncio.run()` is the primary way to execute async code in Python. It's a high-level function that handles the entire lifecycle of an async program.
+
+## What It Does
+
+```python
+import asyncio
+
+async def main():
+    print("Hello")
+    await asyncio.sleep(1)
+    print("World")
+
+asyncio.run(main())  # This runs the async function
+```
+
+`asyncio.run()` performs these steps:
+1. **Creates a new event loop**
+2. **Runs the async function** until completion
+3. **Closes the event loop**
+4. **Returns the result** of the async function
+
+## Key Characteristics
+
+### 1. **Creates a Fresh Event Loop**
+```python
+# Each call to asyncio.run() creates a NEW event loop
+asyncio.run(main())  # Creates event loop #1
+asyncio.run(main())  # Creates event loop #2 (completely separate)
+```
+
+### 2. **Blocks Until Complete**
+```python
+async def slow_operation():
+    await asyncio.sleep(5)
+    return "Done"
+
+# This will block for 5 seconds
+result = asyncio.run(slow_operation())
+print(result)  # Prints: "Done"
+```
+
+### 3. **Handles Cleanup Automatically**
+```python
+async def main():
+    tasks = [asyncio.create_task(work()) for _ in range(10)]
+    await asyncio.gather(*tasks)
+
+# asyncio.run() will:
+# - Cancel any remaining tasks
+# - Close async generators
+# - Close the event loop
+asyncio.run(main())
+```
+
+## Common Patterns
+
+### Running Multiple Coroutines
+```python
+async def fetch_data(id):
+    await asyncio.sleep(1)
+    return f"Data {id}"
+
+async def main():
+    # Run multiple coroutines concurrently
+    results = await asyncio.gather(
+        fetch_data(1),
+        fetch_data(2),
+        fetch_data(3)
+    )
+    return results
+
+results = asyncio.run(main())
+print(results)  # ['Data 1', 'Data 2', 'Data 3']
+```
+
+### Timeout Handling
+```python
+async def long_task():
+    await asyncio.sleep(10)
+    return "Completed"
+
+async def main():
+    try:
+        result = await asyncio.wait_for(long_task(), timeout=3.0)
+    except asyncio.TimeoutError:
+        return "Task timed out"
+
+result = asyncio.run(main())  # Returns: "Task timed out"
+```
+
+## When NOT to Use `asyncio.run()`
+
+### 1. **Inside Existing Async Code**
+```python
+# WRONG - already in async context
+async def outer():
+    result = asyncio.run(inner())  # This will raise an error!
+
+# RIGHT
+async def outer():
+    result = await inner()
+```
+
+### 2. **In Jupyter Notebooks**
+```python
+# Jupyter already has an event loop running
+# Use await directly:
+await main()
+
+# Or use nest_asyncio if you must:
+import nest_asyncio
+nest_asyncio.apply()
+asyncio.run(main())
+```
+
+### 3. **When You Need Loop Control**
+```python
+# If you need fine control over the event loop:
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+try:
+    loop.run_until_complete(main())
+finally:
+    loop.close()
+```
+
+## Python Version Differences
+
+### Python 3.7+ (when `asyncio.run()` was introduced)
+```python
+# Modern, clean approach
+asyncio.run(main())
+```
+
+### Python 3.6 and earlier
+```python
+# Old approach (still works but deprecated)
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+loop.close()
+```
+
+## Debug Mode
+
+```python
+# Enable debug mode for better error messages
+asyncio.run(main(), debug=True)
+
+# Or set environment variable
+# PYTHONASYNCIODEBUG=1 python script.py
+```
+
+## Complete Example: Web Scraper
+
+```python
+import asyncio
+import aiohttp
+
+async def fetch_url(session, url):
+    async with session.get(url) as response:
+        return await response.text()
+
+async def main():
+    urls = [
+        'https://example.com',
+        'https://httpbin.org/delay/1',
+        'https://httpbin.org/delay/2'
+    ]
+    
+    async with aiohttp.ClientSession() as session:
+        # Fetch all URLs concurrently
+        tasks = [fetch_url(session, url) for url in urls]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for url, result in zip(urls, results):
+            if isinstance(result, Exception):
+                print(f"{url}: Error - {result}")
+            else:
+                print(f"{url}: {len(result)} bytes")
+    
+    return "All fetches complete"
+
+# Single entry point to async code
+final_result = asyncio.run(main())
+print(final_result)
+```
+
+## Important Gotchas
+
+1. **Can't be called when loop is running**:
+   ```python
+   # This will raise RuntimeError
+   async def nested():
+       asyncio.run(another_async_func())  # ERROR!
+   ```
+
+2. **Creates new loop each time**:
+   ```python
+   # Tasks from first run don't exist in second run
+   asyncio.run(create_background_task())
+   asyncio.run(check_background_task())  # Won't find the task!
+   ```
+
+3. **Thread safety**:
+   ```python
+   # asyncio.run() is NOT thread-safe
+   # Use asyncio.run_coroutine_threadsafe() for threading
+   ```
+
+## Best Practices
+
+1. **Use `asyncio.run()` as your main entry point** - typically called once at the program's top level
+2. **Keep all async logic inside the main coroutine** - don't mix sync and async unnecessarily  
+3. **Let it handle cleanup** - don't try to manage the event loop manually unless you have specific requirements
+4. **Return values from main()** - `asyncio.run()` will return whatever your main function returns
+
+`asyncio.run()` simplifies async programming by handling the boilerplate of event loop management, making it the recommended way to run async code in Python 3.7+.

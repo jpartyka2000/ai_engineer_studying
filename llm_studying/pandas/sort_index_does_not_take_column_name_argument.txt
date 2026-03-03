@@ -1,0 +1,51 @@
+### Sorting by Index vs. Sorting by Column in Pandas
+
+Pandas offers two complementary methods for ordering your data:
+
+| Method              | Purpose                                            | Key Parameter(s)                                                                                                 |
+| ------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **`sort_index()`**  | Reorders rows (or columns) according to the index  | • `axis` (0 for rows, 1 for cols)<br>• `level` (name or position of index level)<br>• `ascending`, `na_position` |
+| **`sort_values()`** | Reorders rows by the values in one or more columns | • `by` (string or list of column names)<br>• `axis`, `ascending`, `na_position`                                  |
+
+---
+
+#### Why you **can’t** pass a column name to `sort_index()`
+
+* **`sort_index()`** is designed to work **only** with the index (row labels or column labels), not the DataFrame’s regular columns.
+* Its signature doesn’t include a `by` argument; passing a column name will raise:
+
+  ```python
+  df.sort_index('my_column')
+  # TypeError: sort_index() got an unexpected positional argument 'my_column'
+  ```
+* To sort by a **level** of a MultiIndex, use:
+
+  ```python
+  # sort by the second level of a MultiIndex
+  df.sort_index(level=1)
+  ```
+
+---
+
+#### Sorting by column values: use `sort_values()`
+
+If your goal is to order the DataFrame by the contents of one (or more) columns, switch to **`sort_values()`**:
+
+```python
+# Sort rows in place by the 'Sales' column, descending
+df.sort_values(by='Sales', ascending=False, inplace=True)
+
+# Multi‑column sort (first by Region, then by Revenue)
+df.sort_values(by=['Region','Revenue'], ascending=[True, False])
+```
+
+---
+
+#### Common Pitfall & Takeaway
+
+> **Pitfall:** Trying to pass a column name into `sort_index()` will error because that method has no knowledge of “columns” as data—only of labels on its axis.
+>
+> **Takeaway:**
+>
+> * Use **`sort_index()`** when you need to reorder based on **index labels** (e.g. dates, MultiIndex levels, column names when `axis=1`).
+> * Use **`sort_values(by=…)`** when you need to reorder based on the **data values** within one or more columns.

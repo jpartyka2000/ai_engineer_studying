@@ -1,0 +1,77 @@
+Totally doable. Here’s the **clean, modern way** to set up AWS SSO (IAM Identity Center) for the AWS CLI v2.
+
+# 1) Run the SSO wizard
+
+```bash
+aws configure sso --profile my-profile
+```
+
+The wizard will ask for:
+
+* **SSO start URL** (your org’s sign-in URL)
+* **SSO region** (the Identity Center region, e.g., `us-west-2`)
+* Pick the **account** and **role**
+* Default CLI **region** and **output**
+  This creates a named profile that uses SSO. ([AWS Documentation][1])
+
+# 2) Log in
+
+```bash
+aws sso login --profile my-profile
+```
+
+A browser window opens; complete the sign-in. The CLI caches a token under `~/.aws/sso/cache`. ([AWS Documentation][2], [Repost][3])
+
+# 3) Use the profile
+
+```bash
+aws sts get-caller-identity --profile my-profile
+```
+
+If that returns your ARN/account, you’re good.
+
+---
+
+## What the config looks like (new-style `sso-session`)
+
+The wizard may create (or you can create) an `sso-session` block and point multiple profiles at it:
+
+`~/.aws/config`
+
+```ini
+[sso-session corp-sso]
+sso_start_url = https://your-company.awsapps.com/start
+sso_region = us-west-2
+sso_registration_scopes = sso:account:access
+
+[profile dev]
+sso_session = corp-sso
+sso_account_id = 111122223333
+sso_role_name = Developer
+region = us-west-2
+output = json
+
+[profile prod]
+sso_session = corp-sso
+sso_account_id = 444455556666
+sso_role_name = ReadOnly
+region = us-west-2
+output = json
+```
+
+Now one `aws sso login --profile dev` sign-in refreshes the session used by both `dev` and `prod` profiles. ([AWS Documentation][1])
+
+---
+
+## Common tips & gotchas
+
+* **Wrong region**: Your **Identity Center region** (SSO region) can differ from your workload region. If they don’t match what your org uses, login will fail. ([AWS Documentation][1])
+* **Multiple accounts/roles**: Re-run `aws configure sso --profile <name>` to add more profiles, or hand-edit the config using the `sso_session` pattern above. ([AWS Documentation][1])
+* **Re-login/expire**: Tokens expire; just run `aws sso login --profile <name>` again. Logout with `aws sso logout`. ([AWS Documentation][2])
+* **Verify who you are**: `aws sts get-caller-identity --profile <name>`.
+
+If you tell me your start URL and Identity Center region, I can hand you the exact `[sso-session]` and `[profile]` stanzas to paste into `~/.aws/config`.
+
+[1]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html?utm_source=chatgpt.com "Configuring IAM Identity Center authentication with the ..."
+[2]: https://docs.aws.amazon.com/cli/latest/reference/sso/login.html?utm_source=chatgpt.com "login — AWS CLI 2.28.6 Command Reference"
+[3]: https://repost.aws/knowledge-center/sso-temporary-credentials?utm_source=chatgpt.com "Get temporary credentials for IAM Identity Center users with ..."

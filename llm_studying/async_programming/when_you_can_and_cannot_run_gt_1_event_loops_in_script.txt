@@ -1,0 +1,42 @@
+You can—as long as you’re *not* already inside an active event loop, each call to `asyncio.run()` will spin up its own loop, run your coroutine to completion, then tear it down. For example, this works just fine in a normal script:
+
+```python
+import asyncio
+
+async def first():
+    print("First")
+    await asyncio.sleep(0.1)
+
+async def second():
+    print("Second")
+    await asyncio.sleep(0.1)
+
+if __name__ == "__main__":
+    asyncio.run(first())
+    asyncio.run(second())
+```
+
+Each `asyncio.run(...)` invocation:
+
+1. Creates a fresh event loop
+2. Runs the given coroutine to completion
+3. Closes the loop
+
+---
+
+### When you **can’t** call it again
+
+* **Inside an already running loop** (e.g. inside an `async def` or a Jupyter notebook’s top-level loop), `asyncio.run()` will fail with
+
+  ```
+  RuntimeError: asyncio.run() cannot be called from a running event loop
+  ```
+
+  because it refuses to nest loops.
+
+---
+
+### Best practice
+
+* **Standalone scripts:** You *can* call `asyncio.run()` multiple times at the top level, but most codebases do one “main” entry point and then `await` other coroutines from within it.
+* **Long‐running applications:** If you need multiple phases of async work, it’s usually cleaner to create *one* event loop (via `asyncio.run(main())`) and then `await` all your sub‐tasks inside that single `main` coroutine, rather than starting/stopping loops multiple times.

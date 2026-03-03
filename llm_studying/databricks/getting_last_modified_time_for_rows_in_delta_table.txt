@@ -1,0 +1,79 @@
+Delta Lake does **not** automatically stamp each row with its last-modified time, so there is no built-in “last update” column you can query with pure Spark SQL—unless you’ve explicitly captured it yourself (e.g. via a `last_modified` timestamp column in your upserts) or you turn on the **Change Data Feed** feature.
+
+---
+
+## 1. Without any extra columns or CDF
+
+By default, Delta only records history at the **table** level. You can see when *the table* was changed via:
+
+```sql
+DESCRIBE HISTORY my_db.my_table
+```
+
+—but that only gives you commit timestamps **per transaction**, not per row. There is no SQL function like `LAST_MODIFIED(row)`.
+
+---
+
+## 2. With an explicit audit column
+
+The most fool-proof pattern is to add your own `last_modified` column in every update:
+
+```sql
+ALTER TABLE my_db.my_table
+  ADD COLUMNS (last_modified timestamp);
+
+-- then when you write/upsert rows:
+MERGE INTO my_db.my_table t
+USING updates u
+  ON t.id = u.id
+WHEN MATCHED THEN
+  UPDATE SET
+    t.colA              = u.colA,
+    t.last_modified     = current_timestamp()
+WHEN NOT MATCHED THEN
+  INSERT *
+```
+
+Then you can simply:
+
+```sql
+SELECT last_modified
+FROM my_db.my_table
+WHERE id = 1234
+```
+
+---
+
+## 3. Using Delta Change Data Feed (CDF)
+
+If you’re on **Delta Lake ≥ 0.8** and have enabled the Change Data Feed for your table:
+
+```sql
+ALTER TABLE my_db.my_table SET TBLPROPERTIES (
+  delta.enableChangeDataFeed = true
+);
+```
+
+you can then query all changes (in SQL) and pick out the last one for your row:
+
+```sql
+-- start from version 0 (or some recent version), up to latest:
+SELECT _commit_timestamp, *
+FROM table_changes('my_db.my_table', 0)
+WHERE id = 1234       -- your primary‐key filter
+  AND _change_type <> 'update_preimage'  
+ORDER BY _commit_timestamp DESC
+LIMIT 1;
+```
+
+This returns, for that `id`, the most recent change—including the `_commit_timestamp` of the transaction that inserted or updated it.
+
+---
+
+### Summary
+
+* **No**, there’s *no* built-in per-row “last update” field in vanilla Delta.
+* **Yes**, you can get row-level update times if you either
+
+  1. maintain your own `last_modified` timestamp in your DML, or
+  2. turn on the **Change Data Feed** and use the SQL `table_changes` function to pick out the latest `_commit_timestamp` for a given primary key.

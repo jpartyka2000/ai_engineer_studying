@@ -1,0 +1,54 @@
+If you don't want the `deque` to automatically remove elements when it exceeds a certain size, you can simply **not** set the `maxlen` parameter when initializing the `deque`. This way, the `deque` will not enforce any size limit on its own.
+
+You can then manage the removal of messages manually based on your specific needs. Here's how you can modify your class to implement this:
+
+1. Use a `deque` without a `maxlen` limit.
+2. Implement a custom method to remove the oldest messages, such as removing the oldest 2 messages when necessary.
+
+### Example:
+
+```python
+from collections import deque
+
+class LLMMessageList:
+    def __init__(self, max_history_length=10):
+        self.max_history_length = max_history_length
+        self.message_list = deque()
+
+    def add_message(self, role, content):
+        # Add the new message to the deque
+        self.message_list.append({"role": role, "content": content})
+        
+        # If the deque exceeds the max history length, remove the oldest 2 messages
+        if len(self.message_list) > self.max_history_length:
+            print("History length exceeded, removing 2 oldest messages...")
+            # Remove the oldest 2 messages manually
+            self.message_list.popleft()  # Remove the oldest message
+            self.message_list.popleft()  # Remove the second oldest message
+
+    def get_messages(self):
+        return list(self.message_list)  # Convert deque to list if needed
+```
+
+### Key Points:
+- **Manual Removal:** Instead of relying on the `maxlen` property of the `deque`, you are manually removing the oldest 2 messages inside the `add_message` method.
+- **Flexibility:** This allows you to tailor the behavior for message removal based on your specific criteria, such as removing exactly 2 messages or any other number.
+
+### Usage Example:
+
+```python
+messages = LLMMessageList(max_history_length=5)
+
+# Adding messages
+messages.add_message("user", "Hello")
+messages.add_message("assistant", "Hi there!")
+messages.add_message("user", "How are you?")
+messages.add_message("assistant", "I'm doing great, thanks!")
+messages.add_message("user", "What's the weather like today?")
+messages.add_message("assistant", "It's sunny and warm today!")
+
+# Now the message history should only contain the 5 most recent messages
+print(messages.get_messages())  # Check current messages
+```
+
+This method gives you full control over how the history is managed and when to remove messages manually.

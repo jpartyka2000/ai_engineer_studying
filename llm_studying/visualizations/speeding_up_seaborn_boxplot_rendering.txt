@@ -1,0 +1,126 @@
+Here are a few strategies to speed up boxplot rendering in Seaborn (and in Matplotlib more generally):
+
+---
+
+### 1. Pre‑aggregate your data
+
+Seaborn’s `boxplot` will compute quartiles and outliers itself for each category. If you do that once in Pandas and feed only the summary stats to Matplotlib, you avoid repeated heavy calculations:
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Suppose df has columns 'category' and 'value'
+grouped = df.groupby('category')['value'].agg(
+    q1=lambda s: s.quantile(0.25),
+    med=lambda s: s.quantile(0.50),
+    q3=lambda s: s.quantile(0.75),
+    lo=lambda s: s.quantile(0.05),   # or min
+    hi=lambda s: s.quantile(0.95)    # or max
+).reset_index()
+
+# Build the “boxplot stats” list
+stats = []
+for _, row in grouped.iterrows():
+    stats.append({
+        'label': row['category'],
+        'whislo': row['lo'],
+        'q1':     row['q1'],
+        'med':    row['med'],
+        'q3':     row['q3'],
+        'whishi': row['hi'],
+        'fliers': []
+    })
+
+fig, ax = plt.subplots()
+ax.bxp(stats, showfliers=False)
+plt.show()
+```
+
+* **Pros:** All the heavy quartile/outlier logic happens once in Pandas.
+* **`ax.bxp`** draws boxes from your precomputed stats.
+
+---
+
+### 2. Down‑sample or bin your raw data
+
+If you have tens or hundreds of thousands of points per category, you don’t need every single value to estimate quartiles. Randomly sample a fraction (e.g. 10 %) before plotting:
+
+```python
+sampled = df.groupby('category').sample(frac=0.1, random_state=42)
+sns.boxplot(x='category', y='value', data=sampled)
+```
+
+---
+
+### 3. Switch to plain Matplotlib boxplot
+
+Seaborn is a thin layer over Matplotlib and adds overhead. If you don’t need Seaborn’s aesthetics, call
+
+```python
+plt.boxplot([group["value"].values for name, group in df.groupby("category")])
+```
+
+directly:
+
+```python
+categories = df["category"].unique()
+data = [df.loc[df.category==c, "value"] for c in categories]
+
+fig, ax = plt.subplots()
+ax.boxplot(data, labels=categories, showfliers=False)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+```
+
+* **Pros:** Avoids Seaborn’s extra layering and styling.
+
+---
+
+### 4. Disable outliers if not needed
+
+Drawing every “flier” marker can be expensive. In Seaborn:
+
+```python
+sns.boxplot(x='category', y='value', data=df, showfliers=False)
+```
+
+---
+
+### 5. Reduce plot complexity
+
+* **One figure per category**: rather than a single giant multi‑category plot, create small multiples in a grid. Smaller axes = faster draw.
+* **Lower figure DPI**:
+
+  ```python
+  plt.figure(dpi=80)
+  ```
+
+  will render more quickly than a 300 dpi canvas.
+
+---
+
+### 6. Use faster backends
+
+If you’re on a Jupyter notebook, switch from the default inline SVG to a raster backend:
+
+```python
+%matplotlib inline
+plt.rcParams['figure.dpi'] = 80
+```
+
+or even `%matplotlib agg` (non‑interactive) can speed up.
+
+---
+
+### 7. Precompute and cache
+
+If you’re re‐drawing the same plot during exploratory analysis, cache the computed quartiles/statistics in a dict or file so you don’t recompute them on each refresh.
+
+---
+
+**Bottom line:**
+
+* The biggest wins come from **pre‑aggregating** (so Seaborn/Matplotlib doesn’t re‐scan your full dataset), **down‑sampling** raw points, or dropping outlier plotting.
+* If you still need every data point’s summary, switch to Matplotlib’s `ax.bxp` with precomputed stats or use `plt.boxplot` on grouped arrays.

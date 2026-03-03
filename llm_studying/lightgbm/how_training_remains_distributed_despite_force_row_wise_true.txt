@@ -1,0 +1,30 @@
+Yes—turning on `force_row_wise=True` **only** fixes which histogram‑building algorithm LightGBM uses; it does **not** turn off threading or distributed training. Here’s roughly how it works under the hood:
+
+1. **Data partitioned by rows across threads (or workers)**
+
+   * LightGBM will still split your training set’s rows into chunks—one chunk per thread (for `n_jobs > 1`) or per machine (in a multi‑node run).
+   * Each thread/worker processes its own slice of rows *in row‑order*, building a **local** row‑wise histogram over its chunk.
+
+2. **Local histograms are merged**
+
+   * Once every thread has scanned its rows and updated its local bin counts, LightGBM performs an efficient reduction (all‑reduce) to sum up those partial histograms into a **global** histogram for each feature.
+   * That global histogram is then used to find the best split, just as in column‑wise mode.
+
+3. **Other stages remain parallel**
+
+   * Computing gradients/hessians, finding leaf indexes, updating predictions, and so on—all still happen in parallel across threads or machines.
+   * Only the method of accumulating the histogram (row‑wise rather than column‑wise) has been locked in.
+
+4. **Why it stays reproducible**
+
+   * Because each thread’s row‑chunk assignment and local histogram loop order are deterministic given a fixed seed, and because the final merge is a simple summation, you avoid the non‑determinism of thread‑raced floating‑point reductions in the column‑wise builder. ([LightGBM Documentation][1])
+   * You still get full multicore (and multi‑machine) speedups everywhere else in training.
+
+---
+
+**In short:**
+
+* **`force_row_wise=True`** → makes the histogram pass use a row‑wise algorithm.
+* **`n_jobs=-1`** (or a distributed setup) → still splits rows across threads/machines, so your training remains parallel and scalable while staying bit‑for‑bit reproducible.
+
+[1]: https://lightgbm.readthedocs.io/en/latest/Parameters.html?utm_source=chatgpt.com "Parameters — LightGBM 4.6.0.99 documentation"

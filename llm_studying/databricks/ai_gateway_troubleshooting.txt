@@ -1,0 +1,126 @@
+If you've enabled inference logging and configured a Delta table (`open_ai_payload`) to store the request details but are not seeing any new rows, there are several potential issues to investigate. Here’s a checklist to troubleshoot the issue:
+
+---
+
+### **1. Check if Logging is Enabled for the Correct Endpoint**
+- Ensure that "Enable Inference Tables" is enabled specifically for the OpenAI LLM endpoint you're querying. Each endpoint has its own logging configuration.
+
+**How to Verify:**
+- In the Databricks UI, go to the **AI Gateway** section.
+- Check the specific endpoint's settings to ensure inference tables are enabled.
+
+---
+
+### **2. Confirm Delta Table Configuration**
+- Verify that the `open_ai_payload` Delta table is configured as the target for inference logging.
+
+**How to Verify:**
+- Check the table configuration in the endpoint settings under "Inference Tables."
+- Ensure the table name (`open_ai_payload`) and database/schema are specified correctly.
+
+---
+
+### **3. Validate Endpoint Usage**
+- Ensure that the endpoint receiving queries is the same one configured for inference logging. If you're querying a different endpoint or directly calling OpenAI's API (bypassing the Databricks endpoint), the logs won't be recorded in `open_ai_payload`.
+
+**How to Verify:**
+- Cross-check the URL used in your query code. The URL should point to your Databricks endpoint, not OpenAI's native endpoint.
+
+Example of a Databricks endpoint URL:
+```plaintext
+https://<databricks-instance>/model/<model-name>/1/invocations
+```
+
+---
+
+### **4. Check Table Write Permissions**
+- Ensure the Databricks service has write permissions to the Delta table (`open_ai_payload`).
+
+**How to Verify:**
+- Check the table's permissions in the Databricks UI or query the table's metadata:
+  ```sql
+  SHOW GRANTS ON TABLE open_ai_payload;
+  ```
+- Ensure the necessary permissions (e.g., `INSERT`) are granted to the appropriate roles or users.
+
+---
+
+### **5. Verify That Queries Generate Logs**
+- Some configurations might log only specific requests or response types. For example, if logging is configured for errors only, successful responses might not appear in the table.
+
+**How to Verify:**
+- Review the logging configuration for your endpoint in the Databricks UI under **AI Gateway > Inference Logging**. Ensure it’s set to log all requests/responses.
+
+---
+
+### **6. Check for Backend Errors**
+- There could be issues in the AI Gateway or logging mechanism that prevent logs from being written.
+
+**How to Verify:**
+- Check the Databricks cluster logs for errors related to the AI Gateway or inference logging.
+- Query the `inference` database (if created) to see if logs are being written elsewhere:
+  ```sql
+  SHOW TABLES IN inference;
+  ```
+
+---
+
+### **7. Test with a Manual Query**
+Run a test query against the endpoint and manually inspect the `open_ai_payload` table for any new entries:
+```python
+import requests
+import json
+
+# Endpoint URL and token
+endpoint_url = "https://<databricks-instance>/model/<model-name>/1/invocations"
+token = "<your-databricks-token>"
+
+# Test payload
+payload = {
+    "inputs": {
+        "model": "gpt-4",
+        "messages": [
+            {"role": "user", "content": "Test logging payload"}
+        ]
+    }
+}
+
+# Headers
+headers = {
+    "Authorization": f"Bearer {token}",
+    "Content-Type": "application/json"
+}
+
+# Make the request
+response = requests.post(endpoint_url, headers=headers, json=payload)
+
+# Check the response
+if response.status_code == 200:
+    print("Request succeeded.")
+else:
+    print(f"Error: {response.status_code}, {response.text}")
+```
+
+After making the request, query the Delta table:
+```sql
+SELECT * FROM open_ai_payload ORDER BY request_time DESC LIMIT 10;
+```
+
+---
+
+### **8. Check for Table Updates**
+If the table exists but is not showing the new rows, it could be related to caching or transaction delays. Try refreshing the table:
+```sql
+REFRESH TABLE open_ai_payload;
+```
+
+---
+
+### **9. Contact Databricks Support**
+If you’ve verified all of the above and the issue persists, it could be a bug or configuration issue specific to your workspace. Reach out to Databricks Support with:
+- Details about the endpoint configuration.
+- Any error logs or anomalies you’ve observed.
+
+---
+
+By systematically checking these areas, you should be able to identify why your logs aren't appearing in the `open_ai_payload` table. Let me know if you need help debugging further!

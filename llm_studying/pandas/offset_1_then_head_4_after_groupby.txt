@@ -1,0 +1,50 @@
+Yes—once your groups are already sorted newest‐first, you can simply skip the first row in each group and then take the next four. Here are two common patterns:
+
+---
+
+### 1) `apply(...)` + `iloc`
+
+```python
+df_next4 = (
+    df_cohort_rates
+      # make sure newest COHORT_TS is first
+    .sort_values(
+        ['DEGREE_OFFERING', 'YEAR_QUARTER', 'COHORT_TS'],
+        ascending=[True, True, False]
+    )
+      # for each (degree, yq), grab rows 1–4 (i.e. skip index 0)
+    .groupby(
+        ['DEGREE_OFFERING', 'YEAR_QUARTER'],
+        group_keys=False
+    )
+    .apply(lambda g: g.iloc[1:5])
+    .reset_index(drop=True)
+)
+```
+
+---
+
+### 2) `cumcount()` + boolean mask
+
+```python
+df2 = (
+    df_cohort_rates
+    .sort_values(
+        ['DEGREE_OFFERING', 'YEAR_QUARTER', 'COHORT_TS'],
+        ascending=[True, True, False]
+    )
+    .copy()
+)
+
+# assign a 0-based rank within each group
+df2['rank'] = df2.groupby(
+    ['DEGREE_OFFERING', 'YEAR_QUARTER']
+).cumcount()
+
+# keep only ranks 1–4 (i.e. the 2nd through 5th rows in each group)
+df_next4 = df2[df2['rank'].between(1, 4)].drop(columns='rank')
+```
+
+---
+
+Both give you, for each `(DEGREE_OFFERING, YEAR_QUARTER)`, the **next** four cohorts **after** the most recent one.

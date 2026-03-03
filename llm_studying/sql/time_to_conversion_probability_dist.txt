@@ -1,0 +1,54 @@
+Here’s a query to generate a **probability distribution** for the **time to convert (in days)** for open opportunities, using the prior SQL query context:
+
+```sql
+SELECT 
+  DATEDIFF(opportunity_close_date, qualified) AS time_to_convert_days,
+  COUNT(*) AS opportunity_count,
+  COUNT(*) * 1.0 / SUM(COUNT(*)) OVER () AS probability
+FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps
+WHERE is_closed_won = 0
+  AND is_closed_lost = 0
+  AND qualified IS NOT NULL
+  AND QUARTER(opportunity_close_date) = QUARTER(CURRENT_DATE)
+  AND YEAR(opportunity_close_date) = YEAR(CURRENT_DATE)
+GROUP BY DATEDIFF(opportunity_close_date, qualified)
+ORDER BY time_to_convert_days;
+```
+
+---
+
+### **Explanation**:
+
+1. **`DATEDIFF(opportunity_close_date, qualified)`**:
+   - Calculates the **time to convert** in days for each open opportunity by subtracting the `qualified` date from the `opportunity_close_date`.
+
+2. **Filter for Open Opportunities**:
+   - `is_closed_won = 0`: Excludes closed-won opportunities.
+   - `is_closed_lost = 0`: Excludes closed-lost opportunities.
+   - `qualified IS NOT NULL`: Ensures the opportunity has entered the **qualified stage**.
+   - `QUARTER(opportunity_close_date) = QUARTER(CURRENT_DATE)`: Focuses on opportunities in the **current quarter**.
+   - `YEAR(opportunity_close_date) = YEAR(CURRENT_DATE)`: Ensures opportunities are in the **current year**.
+
+3. **Group by `DATEDIFF`**:
+   - Groups opportunities by their time to convert (in days).
+
+4. **Count Opportunities**:
+   - `COUNT(*) AS opportunity_count`: Counts the number of opportunities for each `time_to_convert_days`.
+
+5. **Calculate Probability**:
+   - `COUNT(*) * 1.0 / SUM(COUNT(*)) OVER () AS probability`:
+     - Divides the count of opportunities for each `time_to_convert_days` by the total number of open opportunities.
+     - The `SUM(COUNT(*)) OVER ()` ensures that the total count is calculated over the entire dataset.
+
+6. **Order by Time to Convert**:
+   - `ORDER BY time_to_convert_days`: Arranges the output in ascending order of days.
+
+---
+
+### **Output**:
+The query generates a table with:
+- `time_to_convert_days`: The number of days from qualification to the expected close date.
+- `opportunity_count`: The count of open opportunities for each time bucket.
+- `probability`: The probability of an opportunity converting within that specific number of days, expressed as a fraction of the total opportunities.
+
+This provides a probability distribution for time to convert for all open opportunities in the current period.

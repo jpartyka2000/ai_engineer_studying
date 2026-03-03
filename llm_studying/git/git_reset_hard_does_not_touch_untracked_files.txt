@@ -1,0 +1,93 @@
+============================================================
+GIT RESET --HARD AND UNTRACKED FILES — OVERVIEW
+============================================================
+
+THE COMMON MISCONCEPTION
+------------------------------------------------------------
+Many people think `git reset --hard` wipes everything and 
+gives you a perfectly clean directory.
+
+NOT TRUE! It only affects TRACKED files.
+
+WHAT git reset --hard ACTUALLY DOES
+------------------------------------------------------------
+✅ Resets tracked files to match the specified commit
+✅ Discards staged changes
+✅ Discards unstaged changes to tracked files
+
+❌ Does NOT delete untracked files
+❌ Does NOT delete untracked directories
+❌ Does NOT touch ignored files
+
+EXAMPLE SCENARIO
+------------------------------------------------------------
+Your repo state:
+  app.js         ← tracked, modified
+  README.md      ← tracked, staged changes
+  temp.txt       ← untracked (new file)
+  build/         ← untracked directory
+  node_modules/  ← ignored
+
+$ git reset --hard HEAD
+
+After reset:
+  app.js         ← restored to last commit ✓
+  README.md      ← restored to last commit ✓
+  temp.txt       ← STILL THERE (untracked)
+  build/         ← STILL THERE (untracked)
+  node_modules/  ← STILL THERE (ignored)
+
+HOW TO ACTUALLY CLEAN EVERYTHING
+------------------------------------------------------------
+To get a truly clean working directory:
+
+# Reset tracked files
+$ git reset --hard HEAD
+
+# Remove untracked files and directories
+$ git clean -fd
+
+# Or combine into one line
+$ git reset --hard HEAD && git clean -fd
+
+TO ALSO REMOVE IGNORED FILES:
+------------------------------------------------------------
+# Reset + clean + remove ignored files
+$ git reset --hard HEAD && git clean -fdx
+
+The -x flag tells git clean to also delete ignored files 
+(like node_modules/, build artifacts, etc.)
+
+⚠️ Be careful with -x! You may need to reinstall 
+dependencies or rebuild.
+
+SAFE PREVIEW FIRST
+------------------------------------------------------------
+# See what clean would delete before doing it
+$ git clean -fd -n
+
+Would remove temp.txt
+Would remove build/
+
+# Then actually clean
+$ git clean -fd
+
+QUICK COMPARISON
+------------------------------------------------------------
+┌─────────────────────┬───────────┬───────────┬───────────┐
+│ Command             │ Tracked   │ Untracked │ Ignored   │
+├─────────────────────┼───────────┼───────────┼───────────┤
+│ git reset --hard    │ ✓ Resets  │ ✗ Keeps   │ ✗ Keeps   │
+│ git clean -fd       │ ✗ Ignores │ ✓ Deletes │ ✗ Keeps   │
+│ git clean -fdx      │ ✗ Ignores │ ✓ Deletes │ ✓ Deletes │
+│ reset + clean -fd   │ ✓ Resets  │ ✓ Deletes │ ✗ Keeps   │
+│ reset + clean -fdx  │ ✓ Resets  │ ✓ Deletes │ ✓ Deletes │
+└─────────────────────┴───────────┴───────────┴───────────┘
+
+KEY TAKEAWAY
+------------------------------------------------------------
+git reset --hard = "Reset what Git knows about"
+git clean = "Delete what Git doesn't know about"
+
+Use them together for a truly clean slate.
+============================================================

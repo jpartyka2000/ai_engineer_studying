@@ -1,0 +1,59 @@
+Yes—there are two common ways to pull the feature names (your “predictors”) back out of a logged model in MLflow:
+
+---
+
+## 1. Use the MLflow signature you logged
+
+If you used `infer_signature(X_train, …)` when you logged the model, MLflow stored an **input schema** that lists exactly the feature columns. You can load that signature like this:
+
+```python
+from mlflow.models import Model
+import mlflow
+
+# point at your tracking server if needed
+# mlflow.set_tracking_uri("databricks")
+
+# 1) Build the model‐registry URI for the version you want
+model_uri = "models:/MyModel/Production"
+
+# 2) Load just the MLmodel metadata (no need to pull the full artifact)
+mlmodel = Model.load(model_uri)
+
+# 3) Pull out the Schema object
+sig = mlmodel.signature
+
+# 4) Get the list of input names
+predictors = [inp.name for inp in sig.inputs]
+
+print("Predictors:", predictors)
+```
+
+That will print exactly the column names you passed into `infer_signature`.
+
+---
+
+## 2. Inspect the underlying ML framework object
+
+If you logged a scikit‑learn, LightGBM, XGBoost, etc. model, you can load it normally and use its built‑in attribute:
+
+```python
+# for a scikit‐learn or LightGBM model
+sk_model = mlflow.sklearn.load_model(model_uri)
+
+# scikit‐learn >=0.24 provides
+cols = list(sk_model.feature_names_in_)
+
+# LightGBMClassifier stores its feature names here
+# cols = sk_model.booster_.feature_name()
+
+print("Predictors:", cols)
+```
+
+---
+
+### When to use which
+
+* Use **(1)** if you just want the MLflow‐recorded schema (no need to load a potentially large model).
+* Use **(2)** if you didn’t log a signature but you know your model object itself carries `feature_names_in_` or the equivalent.
+
+Either way, you can recover exactly which predictors your registered model expects, without hard‑coding them again.

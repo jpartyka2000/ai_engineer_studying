@@ -1,0 +1,70 @@
+You can use `rename_axis()` with either a **list** of new names (for all levels in order) or with a **dict** that maps just the old names (or level numbers) you want to change.
+
+---
+
+### 1) Rename all levels at once
+
+If you know all your MultiIndex level names and want to replace them in one go:
+
+```python
+# suppose df.index.names == ['level0','level1','level2']
+df = df.rename_axis(['region','city','time'], axis=0)
+```
+
+Now your levels will be named `['region','city','time']` in that exact order.
+
+---
+
+### 2) Rename just one (or some) levels with a dict
+
+If you only want to touch one level and leave the others alone, pass a dict to the `index` (or `axis`) argument:
+
+```python
+# rename the second level from 'old_name' → 'new_name'
+df = df.rename_axis(index={'old_name': 'new_name'})
+```
+
+Or, if your levels don’t yet have names, you can refer to them by **position** (0-based):
+
+```python
+# rename level 2 (the third level) to 'time'
+df = df.rename_axis(index={2: 'time'})
+```
+
+You can mix both in the same call:
+
+```python
+df = df.rename_axis(
+    index={
+        'old_region_level': 'region',
+        2:                   'time'
+    }
+)
+```
+
+---
+
+### Examples
+
+```python
+import pandas as pd
+
+# create an unnamed 2-level index
+arrays = [
+    ['A','A','B','B'],
+    [1,2,1,2]
+]
+df = pd.DataFrame([10,20,30,40], index=pd.MultiIndex.from_arrays(arrays))
+
+# give names to each level in one shot:
+df1 = df.rename_axis(['alpha','beta'], axis=0)
+print(df1.index.names)
+# ['alpha', 'beta']
+
+# later, tweak just the second level:
+df2 = df1.rename_axis(index={'beta':'number'})
+print(df2.index.names)
+# ['alpha', 'number']
+```
+
+That way you never have to reconstruct your entire MultiIndex—just target the specific level(s) you want to rename.

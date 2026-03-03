@@ -1,0 +1,76 @@
+Out‐of‐Bag (OOB) Estimation: An Overview
+Out‑of‑bag estimation is a built‑in “free” validation method for bagging ensembles (e.g. Random Forests, Extra‑Trees) that requires no separate hold‑out set. When you train each tree on a bootstrap sample of your data, roughly one‑third of the samples are left out of that bootstrap. Those “left‑out” samples become that tree’s out‑of‑bag set. Aggregating predictions over all trees’ OOB samples provides an estimate of generalization performance on unseen data .
+
+
+---
+
+1. How OOB Error Is Computed
+
+1. Bootstrap sampling: For each tree , you draw a sample of size  with replacement from the training set of  observations.
+
+
+2. OOB set for tree : The observations not selected in that draw (on average ~36.8% of the data) are “out‑of‑bag” for .
+
+
+3. Per‑sample prediction: For a given observation , find all trees where  was OOB, and let each of those trees predict a label (or regression value).
+
+
+4. Aggregate:
+
+Classification: Use majority vote over those OOB‐trees’ predictions.
+
+Regression: Take the average of those predictions.
+
+
+
+5. OOB error: Compare aggregated OOB predictions against true labels for all , and compute accuracy (or MSE/R²) .
+
+
+
+
+---
+
+2. Enabling & Accessing OOB in scikit‑learn
+
+In scikit‑learn’s tree‐based bagging estimators (e.g. RandomForestClassifier, ExtraTreesClassifier), you enable OOB like so:
+
+from sklearn.ensemble import ExtraTreesClassifier
+
+# Turn on bootstrap sampling and OOB scoring
+model = ExtraTreesClassifier(
+    n_estimators=100,
+    bootstrap=True,      # draw samples with replacement
+    oob_score=True       # compute OOB score after fit
+)
+model.fit(X_train, y_train)
+
+# Classification accuracy on OOB samples
+print("OOB accuracy:", model.oob_score_)
+
+# For class‑probabilities (classification only):
+# model.oob_decision_function_  gives array of shape (n_samples, n_classes)
+
+oob_score_ holds the overall accuracy (classification) or R² (regression) on the OOB data.
+
+oob_decision_function_ (classifier only) provides per‑class probability estimates from OOB trees .
+
+
+
+---
+
+3. Using OOB for Hyperparameter Tuning
+
+On‑the‑fly evaluation: Because OOB scores are updated as trees are added, you can inspect OOB error vs. n_estimators and pick the point where it stabilizes—much like early stopping in boosting but at no extra cost .
+
+Grid/Random Search: You can even pass an OOB‑scored estimator into GridSearchCV by setting refit=False and using a custom scoring function that reads est.oob_score_ after each fit.
+
+
+
+---
+
+4. Pros & Cons of OOB Estimation
+
+
+---
+
+In summary, out‑of‑bag estimation gives you a built‑in validation metric for bagged trees by leveraging the bootstrap process itself—no extra data splitting required—making it a convenient way to monitor generalization performance and tune hyperparameters like the number of trees.

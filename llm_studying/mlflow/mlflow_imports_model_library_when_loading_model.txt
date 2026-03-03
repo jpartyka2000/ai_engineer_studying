@@ -1,0 +1,28 @@
+When you call `mlflow.pyfunc.load_model("…")` (or let the Databricks Serving endpoint pull from the registry) on a LightGBM‐flavored model, under the hood MLflow does something like:
+
+```python
+from lightgbm import Booster
+booster = Booster(model_file=…)
+```
+
+—even if your own inference code never says `import lightgbm`—so the moment it tries to import that flavor it must have the `lightgbm` package available. If your execution environment (whether that’s your local pipeline, a CI job, or the serving container) doesn’t have `lightgbm` installed, you’ll get a “No module named 'lightgbm'” error.
+
+**Why you didn’t have to import it yourself**
+In your training script you probably did `import lightgbm as lgb` to fit the model. MLflow captured that model and “remembers” its LightGBM flavor. Your downstream code only ever calls MLflow’s PyFunc API, so you never wrote an explicit `import lightgbm` in your scoring script—but MLflow’s flavor code still needs it.
+
+---
+
+### How to fix
+
+1. **Add it to your model’s pip/conda requirements** when you log it:
+
+   ```python
+   mlflow.lightgbm.log_model(
+       booster, 
+       artifact_path="model", 
+       pip_requirements=["lightgbm==3.3.2", ...]
+   )
+   ```
+2. **Or install it in your serving/runtime environment**—e.g. add `lightgbm==3.3.2` (or whichever version you trained with) to your cluster’s library list or to the `pip_requirements`/`conda.yaml` that Databricks uses to build the inference image.
+
+Once `lightgbm` is present, the MLflow loader can import the Booster class and your pipeline will stop failing with “module not found.”

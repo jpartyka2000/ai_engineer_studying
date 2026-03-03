@@ -1,0 +1,71 @@
+`git fetch --prune` fetches the latest from the remote and removes any remote-tracking branches that no longer exist on the remote.
+
+**Basic usage:**
+
+```bash
+git fetch --prune
+
+# Or prune all remotes
+git fetch --all --prune
+```
+
+**The problem it solves:**
+
+When a branch is deleted on the remote (e.g., after a PR is merged), your local remote-tracking branch sticks around:
+
+```
+Remote (GitHub)          Your local repo
+---------------          ---------------
+main                     origin/main
+feature-login            origin/feature-login
+                         origin/old-feature    ← deleted on remote, still here locally
+                         origin/stale-branch   ← deleted on remote, still here locally
+```
+
+Over time, you accumulate stale branches that clutter your branch list.
+
+**Example:**
+
+```bash
+# Before pruning
+git branch -r
+# origin/main
+# origin/feature-login
+# origin/old-feature       ← was deleted on GitHub last week
+# origin/stale-branch      ← was deleted on GitHub last month
+
+# Prune
+git fetch --prune
+
+# After pruning
+git branch -r
+# origin/main
+# origin/feature-login
+```
+
+**Just prune without fetching:**
+
+```bash
+git remote prune origin
+```
+
+**See what would be pruned (dry run):**
+
+```bash
+git remote prune origin --dry-run
+```
+
+**Make pruning automatic:**
+
+```bash
+# Set globally — every fetch will prune
+git config --global fetch.prune true
+```
+
+With this setting, `git fetch` behaves like `git fetch --prune` automatically.
+
+**Note:** This only removes remote-tracking branches (`origin/...`). It doesn't delete your local branches. If you have a local branch tracking a deleted remote, you'll need to delete it manually:
+
+```bash
+git branch -d <local-branch-name>
+```

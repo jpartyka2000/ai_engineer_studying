@@ -1,0 +1,43 @@
+The only real “syntax” error here is that you’re trying to filter on an aggregate in your **WHERE** clause:
+
+```sql
+… 
+WHERE  
+  YEAR_QUARTER IN (…)
+  AND ROUND(SUM(adjusted_probability) - SUM(SUBMITTED_APPLICATION_day_7), 3) < 0
+GROUP BY …
+…
+```
+
+SQL doesn’t allow `SUM(…)` (or any other aggregate) in **WHERE**.  You have to push that filter into a **HAVING** after your `GROUP BY`, e.g.:
+
+```sql
+SELECT
+  DEGREE_OFFERING,
+  LEAD_TRACK,
+  YEAR_MONTH,
+  ROUND(SUM(adjusted_probability), 3)                 AS sum_probs,
+  ROUND(SUM(SUBMITTED_APPLICATION_day_7), 3)          AS sum_actuals,
+  ROUND(SUM(adjusted_probability)
+        - SUM(SUBMITTED_APPLICATION_day_7), 3)        AS sum_diff,
+  COUNT(adjusted_probability)                         AS opp_count
+FROM pathahead.twou_ecue.ml_output_submit_day_7
+WHERE
+  YEAR_QUARTER IN (
+    '2022-Q1','2022-Q2', /* … etc … */ '2024-Q4'
+  )
+GROUP BY
+  DEGREE_OFFERING,
+  LEAD_TRACK,
+  YEAR_MONTH
+HAVING
+  ROUND(SUM(adjusted_probability)
+        - SUM(SUBMITTED_APPLICATION_day_7), 3) < 0
+ORDER BY
+  sum_diff DESC;
+```
+
+– **WHERE** filters rows **before** aggregation
+– **HAVING** filters groups **after** aggregation
+
+Moving your `SUM(...)<0` predicate into `HAVING` will both compile and do exactly what you intended.

@@ -1,0 +1,117 @@
+## 📋 Deep Dive: `NotImplemented` in Python
+
+---
+
+### What is `NotImplemented`?
+
+`NotImplemented` is a special built-in constant (singleton) in Python. It's **not** an exception — it's a signal value that tells Python's interpreter: "This operation isn't supported for these types; try something else."
+
+---
+
+### `NotImplemented` vs `NotImplementedError`
+
+| `NotImplemented` | `NotImplementedError` |
+|------------------|----------------------|
+| A constant/value | An exception |
+| **Returned** from methods | **Raised** in methods |
+| Used in binary operations (`__eq__`, `__add__`, etc.) | Used to mark abstract methods that subclasses must override |
+| Tells Python to try the reflected operation | Stops execution with an error |
+
+```python
+# CORRECT - return NotImplemented
+def __eq__(self, other):
+    if not isinstance(other, Temperature):
+        return NotImplemented
+    return self.celsius == other.celsius
+
+# WRONG for comparison methods
+def __eq__(self, other):
+    if not isinstance(other, Temperature):
+        raise NotImplementedError  # Don't do this!
+```
+
+---
+
+### How Python Uses `NotImplemented`
+
+When you write `a == b`, Python does the following:
+
+1. Calls `a.__eq__(b)`
+2. If that returns `NotImplemented`, Python tries `b.__eq__(a)` (the reflected operation)
+3. If both return `NotImplemented`, Python falls back to default behavior (identity comparison for `==`, raises `TypeError` for arithmetic)
+
+**Example:**
+
+```python
+class Meters:
+    def __init__(self, value):
+        self.value = value
+    
+    def __eq__(self, other):
+        if isinstance(other, Meters):
+            return self.value == other.value
+        if isinstance(other, Feet):
+            return self.value == other.value / 3.281
+        return NotImplemented
+
+class Feet:
+    def __init__(self, value):
+        self.value = value
+    
+    def __eq__(self, other):
+        if isinstance(other, Feet):
+            return self.value == other.value
+        if isinstance(other, Meters):
+            return self.value == other.value * 3.281
+        return NotImplemented
+
+m = Meters(1)
+f = Feet(3.281)
+print(m == f)  # True - Meters.__eq__ handles it
+print(f == m)  # True - Feet.__eq__ handles it
+print(m == "hello")  # False - both return NotImplemented, Python uses default
+```
+
+---
+
+### When to Return `NotImplemented`
+
+Return it in any binary operation dunder method when the other operand is an incompatible type:
+
+- Comparison: `__eq__`, `__ne__`, `__lt__`, `__le__`, `__gt__`, `__ge__`
+- Arithmetic: `__add__`, `__sub__`, `__mul__`, `__truediv__`, etc.
+- Reflected arithmetic: `__radd__`, `__rsub__`, `__rmul__`, etc.
+
+---
+
+### Common Mistake
+
+```python
+# BAD - returns False for incompatible types
+def __eq__(self, other):
+    if not isinstance(other, MyClass):
+        return False  # Prevents other class from handling comparison
+    return self.value == other.value
+
+# GOOD - gives other class a chance
+def __eq__(self, other):
+    if not isinstance(other, MyClass):
+        return NotImplemented
+    return self.value == other.value
+```
+
+---
+
+### Quick Reference
+
+```python
+# Template for comparison methods
+def __eq__(self, other):
+    if not isinstance(other, self.__class__):
+        return NotImplemented
+    return self.attribute == other.attribute
+```
+
+---
+
+Want me to continue with Question 3?

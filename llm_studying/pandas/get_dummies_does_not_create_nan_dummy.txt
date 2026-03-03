@@ -1,0 +1,57 @@
+By default, `pd.get_dummies()` treats `NaN` values as “missing” and does **not** include them in the list of categories it one‐hot‐encodes. In other words:
+
+1. **Unique‐value enumeration ignores NaN**
+   When you call
+
+   ```python
+   pd.get_dummies(df['some_column'])
+   ```
+
+   pandas first collects the set of unique, non-null values in `df['some_column']`. Any `NaN` entries are skipped in that pass, so they never become a separate dummy column.
+
+2. **`dummy_na=False` is the default**
+   Under the hood, `get_dummies` has a parameter `dummy_na`. Its signature is roughly:
+
+   ```python
+   pd.get_dummies(data, prefix=None, prefix_sep='_', dummy_na=False, …)
+   ```
+
+   * Because `dummy_na=False`, pandas will not generate a “**nan**” column.
+   * If you explicitly set `dummy_na=True`, then pandas *will* add an extra column named something like `col_nan` to indicate where NaN occurred.
+
+3. **Resulting columns only cover actual labels**
+   Suppose you have a series like:
+
+   ```python
+   s = pd.Series(['A', 'B',  'A',  None, 'C', None])
+   pd.get_dummies(s)
+   ```
+
+   By default this produces three columns—`A`, `B`, and `C`—and rows where `s` was `None` (or `np.nan`) end up as all zeros:
+
+   ```
+      A  B  C
+   0  1  0  0
+   1  0  1  0
+   2  1  0  0
+   3  0  0  0   ← None → all zeros
+   4  0  0  1
+   5  0  0  0   ← None → all zeros
+   ```
+
+4. **Why this matters for out-of-range bins**
+   In your GPA example, `pd.cut(..., labels=…)` produces `NaN` for any GPA outside your bin ranges. When you immediately do:
+
+   ```python
+   pd.get_dummies(df_data['gpa_bucket'])
+   ```
+
+   pandas only sees the eight valid bucket labels (since it ignores the `NaN` rows), so it creates exactly eight dummy columns. Any row whose `gpa_bucket` is `NaN` ends up with zeros in all eight columns—no “NaN” column appears.
+
+---
+
+**In short:**
+
+* By default, `get_dummies` excludes NaN from the categories it encodes.
+* Only if you pass `dummy_na=True` will pandas create a separate column to mark `NaN` entries.
+* Thus, with `dummy_na=False` (the default), all missing or out-of-range values simply become rows of zeros across your one-hot columns.

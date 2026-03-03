@@ -1,0 +1,97 @@
+Great question! Let me clarify what you're asking about.
+
+---
+
+## 📋 Classes Without Descriptor Methods
+
+If a class doesn't define `__get__`, `__set__`, or `__delete__`, it is simply **not a descriptor at all**. There's no special term for it — it's just a regular class (or a "plain" class).
+
+---
+
+### The Terminology
+
+| What the class defines | What it's called |
+|------------------------|------------------|
+| `__get__` + (`__set__` or `__delete__`) | **Data descriptor** |
+| Only `__get__` | **Non-data descriptor** |
+| None of the above | **Not a descriptor** (just a regular class) |
+
+---
+
+### Example
+
+```python
+class RegularClass:
+    """This is NOT a descriptor — no __get__, __set__, or __delete__"""
+    def __init__(self, value):
+        self.value = value
+
+class NonDataDescriptor:
+    """This IS a non-data descriptor — has __get__ only"""
+    def __get__(self, obj, objtype=None):
+        return "from descriptor"
+
+class DataDescriptor:
+    """This IS a data descriptor — has __get__ and __set__"""
+    def __get__(self, obj, objtype=None):
+        return "from descriptor"
+    def __set__(self, obj, value):
+        pass
+
+class MyClass:
+    regular = RegularClass(42)
+    nondata = NonDataDescriptor()
+    data = DataDescriptor()
+
+obj = MyClass()
+
+# Regular class — just returns the object itself
+print(obj.regular)        # <RegularClass object at 0x...>
+print(obj.regular.value)  # 42
+
+# Non-data descriptor — __get__ is called
+print(obj.nondata)        # "from descriptor"
+
+# Data descriptor — __get__ is called
+print(obj.data)           # "from descriptor"
+```
+
+---
+
+### Key Point
+
+When you access a class attribute that is an instance of a **regular class** (not a descriptor):
+
+- Python finds it in the class `__dict__`
+- Since it has no `__get__`, Python just returns the object directly
+- No special behavior is triggered
+
+```python
+class Container:
+    def __init__(self, value):
+        self.value = value
+
+class MyClass:
+    thing = Container(100)
+
+obj = MyClass()
+
+# No __get__, so we just get the Container instance
+print(obj.thing)        # <Container object>
+print(type(obj.thing))  # <class 'Container'>
+
+# We can access its attributes normally
+print(obj.thing.value)  # 100
+```
+
+---
+
+### Why This Matters
+
+The descriptor protocol is **opt-in**. Only objects that define the descriptor methods participate in the special attribute lookup behavior. Everything else is just a plain attribute that gets returned as-is.
+
+This is why you can store any object as a class attribute and it "just works" — Python only invokes the descriptor machinery when the object actually implements the protocol.
+
+---
+
+Ready for Question 6?

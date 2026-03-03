@@ -1,0 +1,62 @@
+The SQL function
+
+```sql
+NULLIF(expr1, expr2)
+```
+
+compares its two arguments and:
+
+* **Returns `NULL`** if `expr1 = expr2`
+* **Otherwise returns `expr1`**
+
+---
+
+### Why it’s useful
+
+A classic use is to **avoid division‑by‑zero** in expressions like:
+
+```sql
+SELECT total_spend / NULLIF(order_count, 0)
+FROM ...
+```
+
+* If `order_count` is 0, `NULLIF(order_count, 0)` yields `NULL`, so the division yields `NULL` instead of throwing an error.
+* If `order_count` is non‑zero, you divide normally.
+
+---
+
+### More examples
+
+1. **Turn “empty” strings into NULLs**
+
+   ```sql
+   SELECT NULLIF(username, '') AS username_or_null
+   FROM users;
+   ```
+
+   * If `username = ''` (an empty string), you get `NULL`.
+   * Otherwise you get the actual `username`.
+
+2. **Suppress specific sentinel values**
+
+   ```sql
+   SELECT
+     product_id,
+     NULLIF(discount_percentage, 0) AS discount_or_null
+   FROM products;
+   ```
+
+   * If `discount_percentage` is 0 (no discount), you get `NULL`.
+   * If it’s > 0, you get the real discount.
+
+---
+
+### Key points
+
+* `NULLIF(a, b)` is equivalent to:
+
+  ```sql
+  CASE WHEN a = b THEN NULL ELSE a END
+  ```
+* It’s supported in all major SQL dialects.
+* Handy for guarding against invalid operations (like divide‑by‑zero) or for normalizing sentinel values into true SQL `NULL`s.

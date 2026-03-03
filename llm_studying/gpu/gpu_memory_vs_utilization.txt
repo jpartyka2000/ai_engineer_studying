@@ -1,0 +1,47 @@
+# GPU Memory vs. GPU Utilization
+
+These are two distinct metrics that measure different aspects of GPU usage.
+
+## GPU Memory Used
+
+**What it measures:** How much of the GPU's VRAM is occupied.
+
+Think of it like **hard drive space**—it's about storage. This includes:
+- Model weights
+- KV cache for each sequence
+- Activations during forward pass
+- CUDA kernels and buffers
+
+**Example:** A 24GB GPU with 18GB used has 75% memory utilization.
+
+## GPU Utilization %
+
+**What it measures:** How busy the GPU's compute cores (SMs) are over time.
+
+Think of it like **CPU usage**—it's about how hard the processor is working. A GPU can have:
+- 100% memory used but 10% utilization (data loaded but cores idle/waiting)
+- 50% memory used but 100% utilization (cores maxed out on a smaller workload)
+
+## Analogy
+
+| Metric | Analogy |
+|--------|---------|
+| **Memory Used** | How full is the warehouse? |
+| **Utilization %** | How busy are the workers? |
+
+You can have a full warehouse with idle workers, or a half-empty warehouse with everyone working frantically.
+
+## In vLLM Context
+
+- `gpu_memory_utilization=0.9` controls **memory**—how much VRAM vLLM is allowed to allocate
+- `max_num_seqs` indirectly affects **utilization**—more concurrent sequences generally means the compute cores stay busier (better throughput)
+
+## Monitoring
+
+```bash
+nvidia-smi
+```
+
+Shows both:
+- **Memory:** `18432MiB / 24576MiB`
+- **Utilization:** `GPU-Util: 87%`

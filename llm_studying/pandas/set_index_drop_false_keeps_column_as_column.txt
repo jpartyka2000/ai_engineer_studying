@@ -1,0 +1,62 @@
+**Using `drop=False` with `set_index()`**
+
+When you call:
+
+```python
+df = df.set_index('date', drop=False)
+```
+
+pandas will:
+
+1. **Replace the DataFrame’s index** with the values from the `'date'` column (as usual).
+2. **Keep the `'date'` column** in the DataFrame’s columns—because you passed `drop=False`.
+
+---
+
+## What `drop` controls
+
+* **`drop=True`** (the default)
+
+  * Remove the column(s) you’re turning into the index from the DataFrame’s column list.
+  * The DataFrame ends up indexed by `'date'`, and you no longer see `'date'` as a column.
+
+* **`drop=False`**
+
+  * Do **not** remove those column(s).
+  * You still have `'date'` as a regular column, **and** it becomes your row index.
+
+---
+
+## Why use `drop=False`?
+
+* **Dual access**: You can both index by date (`df.loc['2025-01-03']`) and still refer to `df['date']` in calculations or plots without resetting the index.
+* **Avoid data duplication steps**: No need to keep a separate copy of the date column before indexing.
+
+---
+
+## Example
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'date': pd.date_range('2025-01-01', periods=3),
+    'value': [100, 200, 300]
+})
+
+# Default (drop=True)
+df1 = df.set_index('date')
+print(df1.columns)  # Index(['value'], dtype='object')
+
+# With drop=False
+df2 = df.set_index('date', drop=False)
+print(df2.columns)  # Index(['date', 'value'], dtype='object')
+```
+
+* In `df1`, `'date'` is gone from `.columns` (it’s now only the index).
+* In `df2`, you still have the `'date'` column alongside the new DatetimeIndex.
+
+---
+
+**Key takeaway:**
+Use `drop=False` when you want to promote a column to the index **but still keep it** as a regular column in your DataFrame.

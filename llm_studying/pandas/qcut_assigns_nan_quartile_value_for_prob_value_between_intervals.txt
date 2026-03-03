@@ -1,0 +1,84 @@
+When you see “missing” rows in your calibration plot, it almost always isn’t pandas “throwing them away” in the plotting call, but rather:
+
+1. **`pd.qcut` can return NaN for some values**
+
+   * If you have a few `probability` values that are exactly equal to the bin edges that got collapsed when you set `duplicates='drop'`, or if you have actual `NaN` probabilities, then `qcut` will assign `NaN` in your new quartile column for those rows.
+   * By default, when you do
+
+     ```python
+     df.groupby('probability_quartile')...
+     ```
+
+     pandas **drops** all rows whose group key is `NaN` (because `groupby`’s default `dropna=True`).
+
+2. **It’s not “dropping duplicates” that loses rows**
+
+   * `duplicates='drop'` simply collapses identical cut‑points so you may end up with fewer than 4 bins, but it does **not** delete rows.
+   * The rows that become `NaN` in the quartile column are the ones that didn’t fit cleanly into any of the surviving intervals.
+
+---
+
+### How to confirm
+
+Right after your `qcut`, check:
+
+```python
+n_missing = df['probability_quartile'].isna().sum()
+print(f"{n_missing} rows got no quartile assignment")
+```
+
+Or look at the unique values / value\_counts of the quartile column:
+
+```python
+df['probability_quartile'].value_counts(dropna=False)
+```
+
+You’ll see how many `NaN` bins you have.
+
+---
+
+### How to include or handle those rows
+
+1. **Explicitly include them in your grouping**
+
+   ```python
+   df_agg = (
+     df
+     .groupby('probability_quartile', dropna=False)
+     .agg(…)
+   )
+   ```
+
+   That will give you one extra row in your aggregate for `NaN` quartiles, which you can label “missing.”
+
+2. **Fill the NaNs with a “catch‑all” label before grouping**
+
+   ```python
+   df['probability_quartile'] = (
+     df['probability_quartile']
+     .cat.add_categories('unbinned')
+     .fillna('unbinned')
+   )
+   ```
+
+   Then you’ll see an “unbinned” bar in your plot.
+
+3. **Filter them out up‑front if you don’t care**
+
+   ```python
+   df = df[df['probability'].notna()]
+   ```
+
+   or
+
+   ```python
+   df = df[df['probability_quartile'].notna()]
+   ```
+
+   so only fully‑binned rows go into your plotting DataFrame.
+
+---
+
+#### TL;DR
+
+No, it’s not `duplicates='drop'` itself deleting rows—it’s the fact that some values couldn’t be assigned to any bin (so `qcut` made them `NaN`), and then your default grouping/plotting silently ignored those `NaN` quartiles. Checking for `isna()` on your new quartile column will reveal exactly how many rows were left un‑binned.

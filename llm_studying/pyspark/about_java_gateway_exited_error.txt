@@ -1,0 +1,13 @@
+Under the hood, PySpark (and Spark’s Python API generally) runs the “real” Spark engine inside the JVM—but your driver code is in Python.  To let your Python code call into Java, PySpark uses **Py4J**, which launches a little Java process called the **Java gateway** (or Py4J GatewayServer).  That gateway:
+
+1. Spins up a JVM alongside your Python process.
+2. Listens on a TCP port.
+3. Marshals calls and data back and forth between your Python code and the SparkContext (and other Spark objects) running in Java.
+
+So when you see the error
+
+```
+[JAVA_GATEWAY_EXITED] Java gateway process exited before sending its port number.
+```
+
+it means that PySpark tried to launch that helper JVM process, but it died (or never started) before it could tell Python which port to talk to.  Without that gateway, Python can’t invoke any Spark APIs in Java, so you get an immediate failure.

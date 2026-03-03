@@ -1,0 +1,70 @@
+### `.notnull()` / `.notna()`: The Logical Opposite of `.isnull()` / `.isna()`
+
+Pandas provides two pairs of methods to detect missing values in Series or DataFrame objects:
+
+* **`isnull()`** (alias **`isna()`**): returns `True` for missing entries.
+* **`notnull()`** (alias **`notna()`**): returns `True` for non-missing entries.
+
+They are exact logical inverses of each other:
+
+```python
+import pandas as pd
+import numpy as np
+
+s = pd.Series([1, np.nan, None, pd.NA, 5])
+
+# isna/isnull: marks missing values
+print(s.isna())
+# 0    False
+# 1     True
+# 2     True
+# 3     True
+# 4    False
+# dtype: boolean
+
+# notna/notnull: marks non-missing values
+print(s.notna())
+# 0     True
+# 1    False
+# 2    False
+# 3    False
+# 4     True
+# dtype: boolean
+
+# Confirm they’re opposites
+print((s.isna() == ~s.notna()).all())  # True
+```
+
+#### Key Points
+
+* **Aliases**
+
+  * `s.isnull()` ≡ `s.isna()`
+  * `s.notnull()` ≡ `s.notna()`
+
+* **Use Cases**
+
+  * **Filter out missing**:
+
+    ```python
+    df_clean = df[df['col'].notna()]
+    ```
+  * **Select only missing**:
+
+    ```python
+    df_missing = df[df['col'].isna()]
+    ```
+
+* **Chaining**
+  They work seamlessly in method chains:
+
+  ```python
+  (df
+    .loc[df['value'].notna(), ['id','value']]
+    .assign(log_value=lambda d: np.log(d['value']))
+  )
+  ```
+
+#### Bottom Line
+
+> Whenever you need the complement of a missing-value check, use `.notnull()` / `.notna()`. They simply invert the boolean mask produced by `.isnull()` / `.isna()`, making your data‑filtering logic clear and concise.

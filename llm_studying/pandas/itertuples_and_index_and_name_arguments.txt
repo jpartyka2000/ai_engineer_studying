@@ -1,0 +1,52 @@
+`DataFrame.itertuples()` is a super-fast, C-optimized way to iterate over rows, yielding each row as a tuple. By default, it returns a **namedtuple** with the type name `"Pandas"` (unless your DataFrame has a name):
+
+```python
+for row in df.itertuples():
+    # row is like: Pandas(Index=0, A=10, B=20)
+    print(row.A, row.B)
+```
+
+### Key arguments
+
+* **`index`**
+
+  * `True` (default): the first element of each tuple is the row’s index label.
+  * `False`: drop the index—tuples contain only column values.
+
+* **`name`**
+
+  * A string: makes each tuple a namedtuple of that type, so you can access fields by name.
+  * `None`: returns **plain tuples** (no named fields), slightly faster and saves memory.
+
+### Examples
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({'A':[1,2], 'B':[3,4]}, index=['x','y'])
+
+# 1) Default: namedtuple including index
+for t in df.itertuples():
+    print(type(t), t)
+# → <class 'pandas.core.frame.Pandas'> Pandas(Index='x', A=1, B=3)
+
+# 2) Drop index, keep namedtuple
+for t in df.itertuples(index=False):
+    print(type(t), t)
+# → <class 'pandas.core.frame.Pandas'> Pandas(A=1, B=3)
+
+# 3) Plain Python tuples
+for t in df.itertuples(index=False, name=None):
+    print(type(t), t)
+# → <class 'tuple'> (1, 3)
+```
+
+### When to use which
+
+* **Namedtuple (default)**:
+  Great for readability when you want to access fields by name (`row.A`) and don’t mind the small overhead.
+
+* **Plain tuple (`name=None`)**:
+  Best when you just need the raw values and want maximum speed or need to feed into APIs expecting simple tuples.
+
+In most hot loops, `df.itertuples(index=False, name=None)` is the fastest way to get row-by-row access in pure Python.

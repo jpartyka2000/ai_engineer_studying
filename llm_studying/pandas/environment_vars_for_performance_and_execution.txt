@@ -1,0 +1,55 @@
+Perfect 👏 — here’s a concise but powerful reference:
+The most **performance-relevant** Pandas environment variables you can set (via `os.environ[...] = ...`) before importing `pandas`.
+
+---
+
+## ⚡ **Pandas Performance & Execution Environment Variables**
+
+| Variable                        | Typical Values               | Purpose / Effect                                                                                                                                                                    |
+| ------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`PANDAS_BACKEND`**            | `"pyarrow"` or `"default"`   | Uses the **PyArrow backend** for DataFrame storage and operations (available in Pandas ≥2.0). PyArrow backend often accelerates joins, groupbys, and type conversions.              |
+| **`NUMEXPR_MAX_THREADS`**       | Integer (e.g. `"4"`, `"8"`)  | Controls how many CPU threads **NumExpr** (used internally by Pandas for vectorized math and Boolean filters) can use. Increasing this can boost performance on multicore machines. |
+| **`OMP_NUM_THREADS`**           | Integer                      | Sets the number of threads for **OpenMP** parallel sections used by NumPy and underlying BLAS/LAPACK math libraries — affects Pandas indirectly through computations.               |
+| **`PYARROW_IGNORE_TIMEZONE`**   | `"1"` or `"0"`               | When reading Arrow or Parquet data, ignores timezone information if `"1"` (can improve interoperability and slightly speed up conversions).                                         |
+| **`PANDAS_CYTHON_DEBUG`**       | `"1"`                        | Enables detailed Cython debugging output — not faster, but helpful to diagnose performance bottlenecks in Pandas internals.                                                         |
+| **`NUMEXPR_NUM_THREADS`**       | Integer                      | Similar to `NUMEXPR_MAX_THREADS`; fine-tunes the number of threads NumExpr can use.                                                                                                 |
+| **`NUMEXPR_MAX_THREADS`**       | Integer                      | Hard cap on NumExpr thread count — typically matches the number of CPU cores.                                                                                                       |
+| **`OMP_SCHEDULE`**              | e.g. `"static"`, `"dynamic"` | Affects scheduling of parallel tasks in low-level math libraries. Usually best left to system defaults.                                                                             |
+| **`PANDAS_VENDORED_LIBRARIES`** | `"0"` or `"1"`               | Controls whether Pandas uses its internal (vendored) helper libs like `dateutil` or external installed versions — can slightly affect import speed and dependency management.       |
+
+---
+
+## 🧩 Example — Optimized Runtime Setup
+
+```python
+import os
+
+# Use the faster PyArrow backend
+os.environ["PANDAS_BACKEND"] = "pyarrow"
+
+# Use 8 threads for NumExpr / BLAS math
+os.environ["NUMEXPR_MAX_THREADS"] = "8"
+os.environ["OMP_NUM_THREADS"] = "8"
+
+# Ignore timezones when reading Arrow or Parquet data
+os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
+
+import pandas as pd
+```
+
+---
+
+### 💡 Tips
+
+* Always set these **before importing Pandas** — they’re read at import time.
+* If you’re on **Databricks** or a **multi-core workstation**, tuning `NUMEXPR_MAX_THREADS` and `OMP_NUM_THREADS` often gives the largest speedups.
+* To check the current threading setup at runtime:
+
+  ```python
+  import numexpr
+  numexpr.print_versions()
+  ```
+
+---
+
+Would you like me to show a benchmark comparison — e.g., how setting these improves speed on a heavy numeric operation or Parquet load?

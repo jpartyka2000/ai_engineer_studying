@@ -1,0 +1,64 @@
+The `data_source_config` field tells the Evals service **where** your evaluation examples come from and **how** they’re structured. It has three key sub-fields:
+
+1. **`type`**
+
+   * **`"custom"`**: You’ll be uploading a file (via the Files API) or passing records directly in your client.
+   * **`"stored_completions"`**: Use responses you’ve already logged with the OpenAI Usage API.
+   * (Other types like `"file"` or future built-in sources may appear over time.)
+
+2. **`item_schema`** (when `type="custom"`)
+
+   * A **JSON Schema** describing each example (“item”) you’ll evaluate.
+   * Defines the fields you’ll reference in your grading criteria via `{{ item.field_name }}`.
+   * Example for IT tickets:
+
+     ```json
+     {
+       "type": "object",
+       "properties": {
+         "ticket_text":   { "type": "string" },
+         "correct_label": { "type": "string" }
+       },
+       "required": ["ticket_text", "correct_label"]
+     }
+     ```
+
+   ([OpenAI Platform][1], [OpenAI Cookbook][2])
+
+3. **`include_sample_schema`**
+
+   * When `true`, the Eval will also expose a `{{ sample.output_text }}` variable containing the model’s generated response.
+   * You can then refer to that in your `testing_criteria` (for instance, comparing `{{ sample.output_text }}` to `{{ item.correct_label }}`).
+
+---
+
+## Example
+
+```json
+"data_source_config": {
+  "type": "custom",
+  "item_schema": {
+    "type": "object",
+    "properties": {
+      "ticket_text":   { "type": "string" },
+      "correct_label": { "type": "string" }
+    },
+    "required": ["ticket_text", "correct_label"]
+  },
+  "include_sample_schema": true
+}
+```
+
+* **What it enables**:
+
+  * **`{{ item.ticket_text }}`** in your prompt templates or graders
+  * **`{{ sample.output_text }}`** for the model’s answer
+* **How it’s used**:
+
+  1. The Eval validates incoming examples against `item_schema`.
+  2. During each Run, it substitutes `item.*` and `sample.*` into your `testing_criteria`.
+
+That configuration is what allows the Evals API to **validate**, **template**, and **grade** your model’s outputs against your ground truth data.
+
+[1]: https://platform.openai.com/docs/guides/evals?utm_source=chatgpt.com "Evaluating model performance - OpenAI API"
+[2]: https://cookbook.openai.com/examples/evaluation/use-cases/bulk-experimentation?utm_source=chatgpt.com "Evals API Use-case - Bulk model and prompt ..."

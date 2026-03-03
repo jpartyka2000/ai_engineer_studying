@@ -1,0 +1,134 @@
+**Weighted Relative Accuracy (WRAcc)** is a popular quality measure in subgroup‐discovery and rule‐mining algorithms. It balances two competing goals:
+
+1. **High precision**: the subgroup should have a higher target‐class proportion than the overall dataset.
+2. **Sufficient coverage**: the subgroup shouldn’t be trivially small.
+
+---
+
+## 1. Definitions
+
+* Let $N$ = total number of records in your dataset.
+* Let $n_s$ = number of records covered by the subgroup (i.e.\ its support).
+* Let $p$ = overall prevalence of the positive class:
+
+  $$
+    p \;=\; \frac{\text{# positive records in the whole dataset}}{N}.
+  $$
+* Let $p_s$ = prevalence of the positive class *within* the subgroup:
+
+  $$
+    p_s \;=\; \frac{\text{# positive records in the subgroup}}{n_s}.
+  $$
+
+---
+
+## 2. Formula
+
+Weighted Relative Accuracy is defined as:
+
+$$
+\mathrm{WRAcc}(S)
+\;=\;
+\frac{n_s}{N}\;\times\;(p_s - p)
+$$
+
+Equivalently,
+
+$$
+\mathrm{WRAcc}(S)
+\;=\;
+\underbrace{\frac{n_s}{N}}_{\text{coverage}}
+\;\times\;
+\underbrace{\Bigl(p_s - p\Bigr)}_{\substack{\text{precision lift}\\\text{over baseline}}}.
+$$
+
+---
+
+## 3. Intuition
+
+1. **Coverage term** $\tfrac{n_s}{N}$
+
+   * Rewards larger subgroups (more examples covered).
+   * Prevents tiny “one‐off” rules from dominating (even if they’re 100% precise).
+
+2. **Lift term** $(p_s - p)$
+
+   * Measures how much better the subgroup’s precision is compared to the global average.
+   * A subgroup that has the same positive‐rate as the dataset ($p_s = p$) scores zero, no matter its size.
+
+By multiplying them, WRAcc favors subgroups that are both **accurate** (better than baseline) and **useful** (cover a non‐negligible share).
+
+---
+
+## 4. Range and Interpretation
+
+* **Minimum**:
+
+  * Can be negative if the subgroup’s positive rate is *below* the global rate ($p_s < p$).
+  * E.g.\ a large subgroup with unusually low target rate yields a negative WRAcc.
+
+* **Maximum**:
+
+  * The absolute upper bound occurs when $p_s = 1$ and $n_s = N$, giving
+    $\mathrm{WRAcc} = 1 \times (1 - p) = 1 - p.$
+  * For a rare target ($p\ll1$), you can approach nearly 1.
+
+* **Zero**:
+
+  * Any subgroup whose precision matches the global baseline ($p_s = p$).
+
+---
+
+## 5. Why Use WRAcc?
+
+* **Balances precision vs. coverage**
+
+  * Unlike *raw* precision, it penalizes very small rules.
+  * Unlike *support*, it penalizes large but low‐precision rules.
+
+* **Smooth trade-off**
+
+  * A rule can compensate a small coverage by having a large lift, or compensate lower precision by covering more records.
+
+* **Easy to compute**
+
+  * Only needs simple counts and proportions.
+
+---
+
+## 6. Example
+
+Suppose:
+
+* Dataset has $N=1000$ records, of which $p=0.10$ (100 positives).
+* You find a subgroup with $n_s=200$ records and $p_s=0.25$ (50 of them positive).
+
+Then
+
+$$
+\mathrm{WRAcc} 
+= \frac{200}{1000} \times (0.25 - 0.10) 
+= 0.20 \times 0.15 
+= 0.03.
+$$
+
+Compare that to a tiny subgroup of 10 records all positive ($n_s=10,\,p_s=1$):
+
+$$
+\mathrm{WRAcc} 
+= \frac{10}{1000} \times (1 - 0.10) 
+= 0.01 \times 0.90 
+= 0.009.
+$$
+
+Even though its precision is perfect, its WRAcc (0.009) is lower because it covers so few records.
+
+---
+
+## 7. Alternatives & Extensions
+
+* **Relative Accuracy** = $p_s - p$ (ignores support).
+* **Weighted Likelihood Ratio** or **Lift** = $p_s / p$.
+* **Growth Rate** = $\frac{p_s(1-p)}{p(1-p_s)}$ (odds ratio style).
+
+WRAcc remains a good default for subgroup discovery when you want **interpretable**, balanced rules that generalize beyond tiny pockets.

@@ -1,0 +1,64 @@
+In MLflow, whenever you start a run with `with mlflow.start_run() as run:`, the variable `run` is an instance of `mlflow.entities.Run`, which bundles two parts:
+
+1. **`run.info`** (`mlflow.entities.RunInfo`)
+2. **`run.data`** (`mlflow.entities.RunData`)
+
+---
+
+## 1. `run.info` (`RunInfo`)
+
+This is the *metadata* for the run—fields that describe *where* and *when* and *how* MLflow tracked it.  Key attributes include:
+
+| Attribute         | Type  | Description                                                                              |
+| ----------------- | ----- | ---------------------------------------------------------------------------------------- |
+| `run_id`          | `str` | Unique identifier for this run (UUID-style).                                             |
+| `experiment_id`   | `str` | The MLflow experiment under which this run was logged.                                   |
+| `user_id`         | `str` | OS username (or MLflow user) that launched the run.                                      |
+| `status`          | `str` | One of `RUNNING`, `FINISHED`, `FAILED`, `KILLED`.                                        |
+| `start_time`      | `int` | Unix epoch milliseconds when the run started.                                            |
+| `end_time`        | `int` | Unix epoch milliseconds when the run ended (or 0 if still running).                      |
+| `lifecycle_stage` | `str` | Either `active` or `deleted`.                                                            |
+| `artifact_uri`    | `str` | Base URI where artifacts for this run are stored (e.g. `dbfs:/...` or `file:///...`).    |
+| `run_name`        | `str` | An optional human-readable name you can set via `mlflow.set_tag("mlflow.runName", ...)`. |
+
+You can inspect these in Python:
+
+```python
+with mlflow.start_run() as run:
+    info = run.info
+    print("Run ID:       ", info.run_id)
+    print("Experiment:   ", info.experiment_id)
+    print("Started at:   ", info.start_time)
+    print("Artifact URI: ", info.artifact_uri)
+    # ...
+```
+
+---
+
+## 2. `run.data` (`RunData`)
+
+By contrast, `run.data` holds your *logged parameters, metrics, and tags*:
+
+```python
+print("Params:  ", run.data.params)   # dict of param_name→value
+print("Metrics: ", run.data.metrics)  # dict of metric_name→latest_value
+print("Tags:    ", run.data.tags)     # dict of tag_key→value
+```
+
+---
+
+### Why use `run.info`?
+
+* **Reproduceability**: you can record exactly which experiment and artifacts location were used.
+* **Audit & lineage**: status and timestamps let you build dashboards of “in-progress vs finished vs failed” runs.
+* **Programmatic retrieval**: if you know a `run_id`, you can fetch its info via the Python client:
+
+```python
+from mlflow.tracking import MlflowClient
+client = MlflowClient()
+info = client.get_run(run_id).info
+```
+
+---
+
+That’s the essence of MLflow’s `run.info` object—a small, fast, immutable snapshot of *where* and *when* your run happened, separate from the *what* (parameters, metrics) in `run.data`.

@@ -1,0 +1,61 @@
+## The `pd.api.types.is_datetime64_any_dtype()` Function
+
+This is a pandas type-checking utility that returns `True` if the input has any datetime64 dtype.
+
+**Why "any" dtype?**
+
+Datetime columns in pandas can have several different dtype variations:
+
+| Dtype | Description |
+|-------|-------------|
+| `datetime64[ns]` | Standard nanosecond-precision datetime |
+| `datetime64[us]` | Microsecond-precision datetime |
+| `datetime64[ms]` | Millisecond-precision datetime |
+| `datetime64[s]` | Second-precision datetime |
+| `datetime64[ns, UTC]` | Timezone-aware datetime (UTC) |
+| `datetime64[ns, US/Eastern]` | Timezone-aware datetime (specific tz) |
+
+The `is_datetime64_any_dtype()` function returns `True` for **all** of these variants, so you don't have to check each one individually.
+
+**Example:**
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'naive_date': pd.to_datetime(['2024-01-15', '2024-02-20']),
+    'aware_date': pd.to_datetime(['2024-01-15', '2024-02-20']).tz_localize('UTC'),
+    'not_a_date': ['hello', 'world']
+})
+
+pd.api.types.is_datetime64_any_dtype(df['naive_date'])  # True
+pd.api.types.is_datetime64_any_dtype(df['aware_date'])  # True
+pd.api.types.is_datetime64_any_dtype(df['not_a_date'])  # False
+```
+
+**Related functions:**
+
+```python
+# Only matches non-timezone-aware datetimes
+pd.api.types.is_datetime64_dtype(series)
+
+# Only matches timezone-aware datetimes
+pd.api.types.is_datetime64tz_dtype(series)
+
+# Matches any datetime (same as is_datetime64_any_dtype)
+pd.api.types.is_datetime64_any_dtype(series)
+```
+
+**Why use this instead of checking dtype directly?**
+
+Comparing dtypes directly can be brittle:
+
+```python
+# This might miss timezone-aware columns or different precisions
+if df[col].dtype == 'datetime64[ns]':  # Too specific
+
+# This catches all datetime variants
+if pd.api.types.is_datetime64_any_dtype(df[col]):  # Robust
+```
+
+The `pd.api.types` module contains many similar utilities like `is_numeric_dtype()`, `is_bool_dtype()`, `is_string_dtype()`, etc., providing a consistent and reliable way to check column types.

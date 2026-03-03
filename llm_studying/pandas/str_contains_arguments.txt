@@ -1,0 +1,69 @@
+On a `pd.Series` (of strings), the `.str.contains()` accessor has this signature:
+
+```python
+Series.str.contains(
+    pat: str | re.Pattern,
+    case: bool = True,
+    flags: int = 0,
+    na: bool | None = None,
+    regex: bool = True
+) → Series[bool]
+```
+
+Here’s what each argument does:
+
+* **`pat`**
+  – The pattern you’re looking for. Can be a Python string or a compiled `re.Pattern`.
+
+* **`case`** (`bool`, default `True`)
+  – If `False`, the match is case-insensitive.
+
+* **`flags`** (`int`, default `0`)
+  – Any `re` flags (e.g. `re.IGNORECASE`, `re.MULTILINE`) you want to pass to the underlying regex engine.
+
+* **`na`** (`bool` or `None`, default `None`)
+  – What to fill in for missing (NaN) values. If you set `na=False`, any NaN in the original series will be treated as “no match” (`False`) rather than propagating as `NaN`.
+
+* **`regex`** (`bool` or `True`, default `True`)
+  – If `False`, `pat` is treated as a literal substring, not a regex.
+
+---
+
+```python
+import pandas as pd, re
+
+s = pd.Series(["Apple", "banana", None, "Cherry"])
+
+# simple substring search (case-sensitive):
+s.str.contains("an")
+# 0    False
+# 1     True
+# 2      NaN
+# 3    False
+# dtype: object
+
+# case-insensitive, fill NaNs with False:
+s.str.contains("an", case=False, na=False)
+# 0    False
+# 1     True
+# 2    False
+# 3    False
+# dtype: bool
+
+# using a compiled pattern with flags:
+pattern = re.compile(r"^[A-C]", re.IGNORECASE)
+s.str.contains(pattern, na=False)
+# 0     True  # "Apple"
+# 1    False  # "banana"
+# 2    False
+# 3     True  # "Cherry"
+# dtype: bool
+```
+
+If you want to apply it “across” a `DataFrame`, you’d typically do something like:
+
+```python
+df[df["col_name"].str.contains(pat, na=False)]
+```
+
+or broadcast with `applymap` / `stack` if you really wanted to test *every* cell.

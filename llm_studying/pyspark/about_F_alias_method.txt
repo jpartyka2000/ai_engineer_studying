@@ -1,0 +1,105 @@
+**`F.alias()` in PySpark**
+
+Renames a column expression, giving it a new name in the output.
+
+**Syntax:**
+
+```python
+column_expression.alias(new_name)
+```
+
+**Basic example:**
+
+```python
+from pyspark.sql import functions as F
+
+df.select(
+    F.col("first_name").alias("name")
+)
+```
+
+**Common use cases:**
+
+**1. Renaming in `select`:**
+
+```python
+df.select(
+    F.col("employee_id").alias("id"),
+    F.col("full_name").alias("name")
+).show()
+```
+
+**2. Naming computed columns:**
+
+```python
+df.select(
+    (F.col("price") * F.col("quantity")).alias("total"),
+    (F.col("salary") * 12).alias("annual_salary")
+).show()
+```
+
+**3. Naming aggregation results:**
+
+```python
+df.groupBy("department").agg(
+    F.sum("salary").alias("total_salary"),
+    F.avg("salary").alias("avg_salary"),
+    F.count("*").alias("employee_count")
+).show()
+```
+
+**4. Naming function outputs:**
+
+```python
+df.select(
+    F.upper(F.col("name")).alias("name_upper"),
+    F.regexp_extract(F.col("email"), r"@(\w+)", 1).alias("domain"),
+    F.datediff(F.current_date(), F.col("hire_date")).alias("days_employed")
+).show()
+```
+
+**Without alias:**
+
+If you don't use `.alias()`, Spark auto-generates column names which can be ugly:
+
+```python
+df.select(F.col("price") * F.col("quantity")).show()
+```
+
+```
++------------------+
+|(price * quantity)|
++------------------+
+|               100|
++------------------+
+```
+
+**With alias:**
+
+```python
+df.select((F.col("price") * F.col("quantity")).alias("total")).show()
+```
+
+```
++-----+
+|total|
++-----+
+|  100|
++-----+
+```
+
+**Alternative: `.name()`**
+
+`.name()` does the same thing:
+
+```python
+F.col("salary").alias("pay")
+F.col("salary").name("pay")  # Equivalent
+```
+
+**In `withColumn` you don't need it:**
+
+```python
+# The first argument already names the column
+df.withColumn("total", F.col("price") * F.col("quantity"))
+```

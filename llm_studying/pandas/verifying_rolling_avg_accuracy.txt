@@ -1,0 +1,77 @@
+You can validate that your “enrolled\_last\_100” really is the mean of the prior 100 “ENROLLED” values for each group by spot-checking (or even unit-testing) the calculation on a small slice of the data.  Here’s a recipe:
+
+1. **Pick one group and one row**
+
+   ```python
+   grp = "SomeDegree"
+   dfg = df_data[df_data["DEGREE_OFFERING"] == grp].sort_values("CREATED_DATE")
+   # pick, say, the 150th row in that group
+   idx = dfg.index[149]
+   computed = df_data.loc[idx, "enrolled_last_100"]
+   ```
+2. **Manually slice the prior 100 “ENROLLED” values and take the mean**
+
+   ```python
+   # get the block of the 100 rows immediately before idx
+   block = dfg.loc[:idx, "ENROLLED"].iloc[-100:]    # if there are <100 rows, it will be smaller
+   expected = block.mean()
+   ```
+3. **Compare**
+
+   ```python
+   print("computed:", computed)
+   print("expected:", expected)
+   assert np.isclose(computed, expected, atol=1e-6)
+   ```
+
+   If that assertion passes for several different `idx` and even for small‐group edge cases (where your `min_periods` or the `.fillna(…)` kicks in), you can be confident your rolling logic is correct.
+
+---
+
+### Automating the check with a small unit test
+
+If you want to be extra‐sure in production code, carve out a tiny DataFrame where you *know* what the rolling means should be, e.g.:
+
+```python
+import pandas as pd, numpy as np
+
+# toy data: two groups A and B, ENROLLED is just 0,1,2,3,...
+toy = pd.DataFrame({
+    "DEGREE_OFFERING": ["A"] * 10 + ["B"] * 8,
+    "CREATED_DATE": pd.date_range("2025-01-01", periods=18, freq="D"),
+    "ENROLLED": list(range(10)) + list(range(8)),
+})
+toy = toy.sort_values(["DEGREE_OFFERING","CREATED_DATE"]).reset_index(drop=True)
+
+# apply your logic with window=3 for simplicity
+toy["enrolled_last_3"] = (
+    toy
+    .groupby("DEGREE_OFFERING")["ENROLLED"]
+    .rolling(window=3, min_periods=1)
+    .mean()
+    .shift(1)
+    .reset_index(level=0, drop=True)
+    .fillna(method="bfill")
+)
+
+# now manually build the “truth”
+truth = []
+for grp, sub in toy.groupby("DEGREE_OFFERING"):
+    vals = sub["ENROLLED"].values
+    out = []
+    for i in range(len(vals)):
+        if i == 0:
+            out.append(vals[0])                # back-filled
+        else:
+            window = vals[max(0, i-3):i]
+            out.append(window.mean())
+    truth.extend(out)
+
+toy["truth"] = truth
+
+# compare
+assert np.allclose(toy["enrolled_last_3"], toy["truth"])
+print("✅ rolling logic matches expected")
+```
+
+If that toy‐test passes, then swap `window=3` back to `100` (and your real `min_periods`) and you can be confident it’s doing what you think.

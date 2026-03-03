@@ -1,0 +1,84 @@
+Thought for a couple of seconds
+
+Row‐level filtering in PySpark is analogous to the `df[df["col"] > value]` pattern in pandas, but you use the DataFrame’s `.filter()` (or its alias `.where()`) method instead. Below are the most common ways:
+
+---
+
+## 1. Filter with Column expressions
+
+```python
+from pyspark.sql import functions as F
+
+# Single condition
+filtered = df.filter(F.col("some_numeric_col") > 100)
+
+# Multiple conditions (use bitwise operators, not `and`/`or`)
+filtered = df.filter(
+    (F.col("some_numeric_col") > 100) & 
+    (F.col("category_col") == "A")
+)
+```
+
+Under the hood, `F.col("…")` returns a Column object; Spark builds the predicate and only keeps rows where it’s true.
+
+You can also write:
+
+```python
+filtered = df.filter(df.some_numeric_col > 100)
+```
+
+since `df.some_numeric_col` is shorthand for `F.col("some_numeric_col")`.
+
+---
+
+## 2. Filter using SQL expressions
+
+If you find SQL‐style strings more concise:
+
+```python
+# Equivalent to WHERE some_numeric_col > 100 AND category_col = 'A'
+filtered = df.where("some_numeric_col > 100 AND category_col = 'A'")
+```
+
+Or:
+
+```python
+filtered = df.filter("some_numeric_col > 100")
+```
+
+---
+
+## 3. Chaining filters
+
+You can chain multiple `.filter()` calls:
+
+```python
+filtered = (
+    df
+    .filter(F.col("some_numeric_col") > 100)
+    .filter(F.col("category_col") == "A")
+)
+```
+
+---
+
+## 4. Comparison to pandas
+
+| pandas                                | pyspark                                      |
+|---------------------------------------|-----------------------------------------------|
+| `df[df["x"] > 5]`                     | `df.filter(df.x > 5)`                         |
+| `df[(df["x"] > 5) & (df["y"] == "foo")]` | `df.filter((df.x > 5) & (df.y == "foo"))`     |
+| `df.query("x > 5 and y == 'foo'")`    | `df.where("x > 5 AND y = 'foo'")`             |
+
+---
+
+### Finally: Showing results
+
+After filtering, you can call:
+
+```python
+filtered.show()        # prints rows to console
+filtered.count()       # returns the number of rows
+```
+
+That’s it—use `.filter()`/`.where()` with Column expressions or SQL strings to replicate pandas‐style row filtering in PySpark.

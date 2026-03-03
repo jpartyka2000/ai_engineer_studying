@@ -1,0 +1,79 @@
+Python lists are not thread-safe by default. If multiple threads modify a list simultaneously without proper synchronization, it can lead to data corruption or unexpected behavior.
+
+Why Lists Are Not Thread-Safe
+
+1. GIL (Global Interpreter Lock):
+
+In CPython, the GIL ensures that only one thread executes Python bytecode at a time. While this offers some protection against data corruption, it does not guarantee thread safety for complex operations.
+
+For example, operations like append or extend might seem atomic, but if multiple threads perform these operations concurrently, you could still encounter issues.
+
+
+
+2. Composite Operations:
+
+Non-atomic operations involving lists (e.g., reading and writing or iterating while modifying) can lead to race conditions and undefined behavior.
+
+
+
+
+Example of Non-Thread-Safe Behavior
+
+import threading
+
+my_list = []
+
+def add_to_list(n):
+    for i in range(n):
+        my_list.append(i)
+
+threads = [threading.Thread(target=add_to_list, args=(1000,)) for _ in range(10)]
+
+for thread in threads:
+    thread.start()
+
+for thread in threads:
+    thread.join()
+
+# The list may not have the expected 10,000 elements
+print(len(my_list))
+
+Solutions for Thread Safety
+
+1. Use a Lock: Use threading.Lock to synchronize access to the list.
+
+import threading
+
+my_list = []
+lock = threading.Lock()
+
+def safe_add_to_list(n):
+    for i in range(n):
+        with lock:  # Synchronize access
+            my_list.append(i)
+
+
+2. Use Thread-Safe Collections:
+
+Use queue.Queue or other thread-safe data structures from the queue module.
+
+Example:
+
+from queue import Queue
+
+my_queue = Queue()
+
+def add_to_queue(n):
+    for i in range(n):
+        my_queue.put(i)
+
+
+
+3. Avoid Shared State:
+
+Minimize shared data between threads by copying or partitioning data.
+
+
+
+
+By implementing these measures, you can handle concurrent operations on lists or other shared resources safely.

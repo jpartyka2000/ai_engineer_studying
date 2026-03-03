@@ -1,0 +1,33 @@
+Yes, exactly! That's the confusing part about `pd.NaT` (Not a Time).
+
+When you use `fillna(pd.NaT)`, you're actually:
+1. Replacing `NaN` or `None` values with `pd.NaT`
+2. But `pd.NaT` is **still treated as a null/missing value** by pandas
+
+So when you `display(my_df)` or check with `my_df[grouping_column].isna()`, it will **still show as missing/null** because `pd.NaT` is pandas' way of representing missing datetime values.
+
+You can verify this:
+
+```python
+import pandas as pd
+
+# Create a test DataFrame
+df = pd.DataFrame({
+    'date_col': [pd.Timestamp('2025-01-01'), None, pd.Timestamp('2025-01-03')]
+})
+
+print("Before fillna:")
+print(df)
+print(f"Null count: {df['date_col'].isna().sum()}")
+
+# Fill with NaT
+df['date_col'] = df['date_col'].fillna(pd.NaT)
+
+print("\nAfter fillna(pd.NaT):")
+print(df)
+print(f"Null count: {df['date_col'].isna().sum()}")  # Still shows 1!
+```
+
+The output will show that the null count remains the same because `pd.NaT` is still considered null.
+
+**Bottom line:** If you want to eliminate missing values for grouping purposes, you need to fill with an actual value like a string (`'Unknown'`), a specific date (`pd.Timestamp('1900-01-01')`), or drop those rows entirely.

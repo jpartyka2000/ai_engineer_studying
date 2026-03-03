@@ -1,0 +1,88 @@
+In Python’s built-in exception hierarchy, **`BaseException`** sits at the very top—every exception derives (directly or indirectly) from it.  **`Exception`** is the next level down and is where most “normal” error types live. Here’s how they differ:
+
+---
+
+## 1. The hierarchy
+
+```
+BaseException
+ ├─ SystemExit
+ ├─ KeyboardInterrupt
+ ├─ GeneratorExit
+ └─ Exception
+     ├─ ArithmeticError
+     │   ├─ ZeroDivisionError
+     │   └─ OverflowError
+     ├─ LookupError
+     │   ├─ IndexError
+     │   └─ KeyError
+     ├─ ValueError
+     ├─ TypeError
+     └─ …and many more…
+```
+
+* **`BaseException`**
+
+  * **Purpose:** the root of *all* exceptions, including those used by the interpreter itself to control flow (like `SystemExit` and `KeyboardInterrupt`).
+  * **Not intended** for you to catch in normal application code—catching `BaseException` will intercept things you usually want to let bubble out (e.g. a Ctrl-C).
+
+* **`Exception`**
+
+  * **Purpose:** the base for *most* user-defined and runtime errors that represent actual problems in your code or environment.
+  * When you write
+
+    ```python
+    try:
+        ...
+    except Exception:
+        handle_error()
+    ```
+
+    you’ll catch nearly every error you typically care about—but you’ll *not* catch `SystemExit`, `KeyboardInterrupt`, or `GeneratorExit`.
+
+---
+
+## 2. Why you usually catch `Exception`, not `BaseException`
+
+* **Avoid swallowing Ctrl-C**
+
+  * If your code does
+
+    ```python
+    except BaseException:
+        pass
+    ```
+
+    then a user’s `KeyboardInterrupt` (Ctrl-C) gets absorbed, making your program unresponsive to cancellation.
+
+* **Allow clean shutdowns**
+
+  * Letting `SystemExit` propagate ensures `sys.exit()` actually stops the program.
+
+* **Semantic clarity**
+
+  * `Exception` means “I’m handling genuine errors.”
+  * `BaseException` means “I’m catching absolutely everything,” which is almost never what you want.
+
+---
+
+## 3. When you might catch `BaseException`
+
+* **Frameworks or REPL loops** that need to guarantee cleanup even on shutdown signals:
+
+  ```python
+  try:
+      main_loop()
+  except BaseException:
+      cleanup_resources()
+      raise  # re-raise after cleanup
+  ```
+* **Debugging** tools that need to log or trace every exit condition.
+
+---
+
+### TL;DR
+
+* **`BaseException`** is the root of *all* exceptions (including system-level signals).
+* **`Exception`** is the root of *normal* runtime and user errors.
+* **Best practice:** `except Exception:` to catch application errors but let interrupts and exits pass through.

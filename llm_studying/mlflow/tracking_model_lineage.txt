@@ -1,0 +1,85 @@
+Sure! Reproducibility and Model Lineage in MLflow ensures that you can trace back how a model was trained, including the dataset, hyperparameters, and environment dependencies. Below is a simple example of how MLflow enables this.
+
+
+---
+
+Example: Tracking Model Lineage for Reproducibility
+
+We'll:
+
+1. Log model parameters, metrics, and artifacts.
+
+
+2. Capture the environment (dependencies).
+
+
+3. Register the trained model.
+
+
+4. Retrieve and reload the model for inference.
+
+
+
+Step 1: Install Dependencies
+
+pip install mlflow scikit-learn
+
+Step 2: Train a Model and Log Everything
+
+import mlflow
+import mlflow.sklearn
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+# Enable autologging to capture parameters and artifacts automatically
+mlflow.sklearn.autolog()
+
+# Load dataset
+X, y = np.random.rand(100, 5), np.random.randint(0, 2, 100)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Start MLflow run
+with mlflow.start_run() as run:
+    model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+    model.fit(X_train, y_train)
+   
+    # Predictions and evaluation
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+   
+    # Log manually in case autologging is off
+    mlflow.log_metric("accuracy", accuracy)
+
+    # Log model explicitly
+    mlflow.sklearn.log_model(model, "random_forest_model")
+   
+    # Log dataset (can be useful for lineage tracking)
+    df = pd.DataFrame(X_train)
+    df.to_csv("train_data.csv", index=False)
+    mlflow.log_artifact("train_data.csv")
+
+print(f"Run ID: {run.info.run_id}")
+
+
+---
+
+Step 3: Retrieve Model Lineage
+
+Once the model is logged, you can check its details in the MLflow UI:
+
+mlflow ui
+
+Go to http://localhost:5000/ and inspect:
+
+Parameters (n_estimators, max_depth)
+
+Metrics (accuracy)
+
+Artifacts (model, dataset)
+
+Source Code Version
+
+Environment Dependencies

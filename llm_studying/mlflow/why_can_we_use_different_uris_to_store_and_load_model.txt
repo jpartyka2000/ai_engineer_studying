@@ -1,0 +1,55 @@
+Thought for a few seconds
+
+
+Yes—that’s right. However, those two URIs are just two different *entry points* into the very same serialized model artifact that lives in your tracked artifact store. Here’s what’s happening under the hood:
+
+---
+
+## 1. You log and “register” the model from a run
+
+```python
+with mlflow.start_run() as run:
+    mlflow.sklearn.log_model(clf, "model")
+    run_id   = run.info.run_id
+    model_uri = f"runs:/{run_id}/model"
+    mv = mlflow.register_model(model_uri, "MyModel")
+    # mv.current_stage == "None" by default
+```
+
+* **`runs:/{run_id}/model`** tells MLflow: “Go look in the artifact store for run `<run_id>`, under the folder `model/`—that’s my model pickle, signature, etc.”
+* **`register_model`** creates a new “version” record in the Model Registry.  As part of that record MLflow stores:
+
+  * The *source URI* (`runs:/{run_id}/model`)
+  * The artifact location (e.g. `dbfs:/.../runs/<run_id>/model`)
+  * The name you gave it (`MyModel`)
+  * Its assigned version number (e.g. `1`)
+  * Its stage (`None` initially)
+
+---
+
+## 2. You load it later via the registry URI
+
+```python
+# in your scoring notebook
+import mlflow
+
+model = mlflow.pyfunc.load_model("models:/MyModel/None")
+```
+
+* When MLflow sees the prefix **`models:/…`**, it knows to:
+
+  1. **Query the Model Registry** for the entry named `"MyModel"` in the `"None"` stage
+  2. Read that registry entry’s stored *source URI* (which is still `runs:/{run_id}/model`)
+  3. Resolve the artifact location in DBFS/S3/etc.
+  4. Download/unpickle the model from that location
+
+The net result is you end up loading exactly the same artifact you originally logged, even though you referred to it by its *registry name/stage* instead of by its *run ID*.
+
+---
+
+### In short
+
+* **`runs:/…` URIs** point directly at a model artifact inside a particular run’s folder.
+* **`models:/…` URIs** point at a registry entry, which under the covers stores (and later re‑uses) the original runs\:/ URI that you registered.
+
+Both resolve to the *same* file in your artifact store—MLflow just uses a different lookup mechanism (artifact‑store vs. registry database) to find it.

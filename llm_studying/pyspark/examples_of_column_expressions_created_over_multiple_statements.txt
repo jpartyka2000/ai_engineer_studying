@@ -1,0 +1,56 @@
+Here's an example of building a column expression across multiple statements:
+
+```python
+from pyspark.sql import functions as F
+
+# Start the expression
+bucket_expr = F.when(F.col("age") < 18, "minor")
+
+# Chain additional conditions
+bucket_expr = bucket_expr.when(F.col("age") < 30, "young_adult")
+bucket_expr = bucket_expr.when(F.col("age") < 50, "middle_aged")
+bucket_expr = bucket_expr.when(F.col("age") < 65, "mature")
+
+# Add the default
+bucket_expr = bucket_expr.otherwise("senior")
+
+# Use it
+df.withColumn("age_group", bucket_expr).show()
+```
+
+**Why this works:**
+
+Each `.when()` and `.otherwise()` returns a new `Column` object, so you can reassign it to the same variable.
+
+**Practical use case – building conditions dynamically:**
+
+```python
+# Start with a base case
+score_expr = F.when(F.col("score") >= 90, "A")
+
+# Add more conditions from a mapping
+grade_thresholds = [(80, "B"), (70, "C"), (60, "D")]
+
+for threshold, grade in grade_thresholds:
+    score_expr = score_expr.when(F.col("score") >= threshold, grade)
+
+score_expr = score_expr.otherwise("F")
+
+df.withColumn("grade", score_expr).show()
+```
+
+**Another pattern – conditional logic based on flags:**
+
+```python
+price_expr = F.col("base_price")
+
+if apply_discount:
+    price_expr = F.when(F.col("member"), price_expr * 0.9).otherwise(price_expr)
+
+if apply_tax:
+    price_expr = price_expr * 1.08
+
+df.withColumn("final_price", price_expr)
+```
+
+This multi-statement approach is useful when conditions are complex, dynamic, or built programmatically.

@@ -1,0 +1,29 @@
+Yes—right now you’re learning your per‐group deltas from
+
+```python
+proba_train = model.predict_proba(X_train)
+```
+
+which is literally the **same data** the model just saw. That makes your “calibration” optimistically biased—it’s in‐sample, not out‐of‐sample.
+
+### Why that matters
+
+* **In‐sample predictions** are almost always closer to the true labels (because the model overfits its training data to some degree).
+* Your computed `delta = actual_rate – pred_rate` on those in-sample probs underestimates the true miscalibration you’d see on unseen data.
+
+### How to fix
+
+Do your calibration **strictly on out-of-fold predictions**. Two common patterns:
+
+1. **Post-CV calibration**
+
+   * Run your 5-fold CV to collect **one OOF probability** per row (`y_pred_proba[val_idx] = proba_val`).
+   * After the loop completes, you have a full `y_pred_proba` (and `y`). Compute your group deltas on that OOF set.
+   * Apply those deltas to your final test set or new data.
+
+2. **Nested CV for per‐fold calibration**
+
+   * Inside each fold, split `X_train` again into a small “calibration” hold-out.
+   * Fit on the inner training split, predict on that inner val to get out-of-sample `proba_cali`, compute deltas there, and apply them to your outer validation `proba_val`.
+
+Either way, the key is: **compute deltas only on predictions that were made by models that never saw those rows in training**. That will give you a true measure of calibration error and avoid leakage.

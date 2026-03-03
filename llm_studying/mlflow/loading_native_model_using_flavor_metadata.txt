@@ -1,0 +1,48 @@
+Yes—rather than monkey‑patching the PyFunc wrapper, the simplest approach is to load the model with its **native flavor** so you get back the original estimator (which already has `predict_proba()`). For example, if you logged a scikit‑learn model:
+
+```python
+import mlflow
+import mlflow.sklearn
+
+model_uri = "models:/MyModel/Production"
+
+# This returns your original sklearn estimator
+sk_model = mlflow.sklearn.load_model(model_uri)
+
+# Now you can call both predict() and predict_proba()
+probs = sk_model.predict_proba(X_new)[:,1]
+preds = sk_model.predict(X_new)
+```
+
+Or, if you used LightGBM:
+
+```python
+import mlflow.lightgbm
+
+lgb_model = mlflow.lightgbm.load_model(model_uri)
+probs     = lgb_model.predict_proba(X_new)[:,1]
+```
+
+If you don’t know ahead of time which flavor you used, you can inspect the PyFunc metadata and dispatch accordingly:
+
+```python
+from mlflow.models import Model
+from mlflow.pyfunc import load_model as load_pyfunc
+
+model_uri = "models:/MyModel/Production"
+pyfunc_model = load_pyfunc(model_uri)
+
+# Peek at the logged flavors
+flvs = pyfunc_model.metadata.flavors
+if "sklearn" in flvs:
+    real_model = mlflow.sklearn.load_model(model_uri)
+elif "lightgbm" in flvs:
+    real_model = mlflow.lightgbm.load_model(model_uri)
+else:
+    raise ValueError(f"Unknown flavor in {flvs}")
+
+# Now you have the real_model with predict_proba
+probs = real_model.predict_proba(X_new)[:,1]
+```
+
+This way you never have to monkey‑patch—just load the flavor‑specific model and you automatically get all of its native methods.

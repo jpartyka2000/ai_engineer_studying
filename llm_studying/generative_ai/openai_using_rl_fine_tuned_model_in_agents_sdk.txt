@@ -1,0 +1,59 @@
+When you fine-tune an RL model with OpenAI’s Reinforcement Learning Fine-Tuning (RFT) workflow, you get back a new model identifier (for example `"ft:rl–stars-2025-08-14"`). All you have to do to plug that into the Agents SDK is tell your Agent to use that model for its LLM calls instead of the default GPT-4 or GPT-3.5.
+
+Here’s a minimal example in Python:
+
+```python
+from openai import OpenAI
+from openai.agents import Tool, Agent
+
+# 1) Initialize the OpenAI client with your API key
+client = OpenAI()
+
+# 2) Define any tools your agent will use
+tools = [
+    Tool(
+        name="search_web",
+        func=lambda query: web_search(query),  # your search function
+        description="Use this to look up facts on the web",
+    ),
+    # ... add other tools here ...
+]
+
+# 3) Create the Agent, specifying your RL-fine-tuned model as the `model` on the LLM
+agent = Agent(
+    client=client,
+    tools=tools,
+    # Use your RL-FT model here instead of "gpt-4"
+    model="ft:rl–stars-2025-08-14",
+    temperature=0.0,      # or whatever you tuned for
+    max_tokens=512,
+)
+
+# 4) Run your agent loop
+response = agent.run("What’s the weather in Tokyo tomorrow?")
+print(response)
+```
+
+### What’s happening under the hood
+
+* **`model="ft:…"`**
+  Tells every ChatCompletion call inside your Agent to be routed to your RL-fine-tuned model.
+
+* **`Agent(...)`**
+  Sets up the standard planning → tool-calling → final-response loop. All of those Chat calls now use your custom model.
+
+* **`agent.run()`**
+  Takes your natural-language input, uses the RL model to decide on actions (e.g. “I should call `search_web`”), executes tools, and finally assembles the user-facing answer—all powered by your RL-FT policy.
+
+You can also mix models if you want the agent’s planning stage on one model and the answer generation on another, e.g.:
+
+```python
+agent = Agent(
+    client=client,
+    tools=tools,
+    planner_model="gpt-4",
+    executor_model="ft:rl–stars-2025-08-14",
+)
+```
+
+That way you keep your pretrained planner but let your RL-trained executor handle the final answer.

@@ -1,0 +1,105 @@
+It’s not unusual to see a logistic‐regression classifier turn in very high precision but noticeably lower recall—especially if:
+
+* **Your positive class is relatively rare** (class imbalance).
+* **You’re using the default decision threshold (0.5) without tuning.**
+* **The features only do a good job “separating” a subset of positives**, so the model is conservative about calling something a “1.”
+
+Below are the main reasons why logistic regression often exhibits “precision ≫ recall” in practice, along with what you can do if you want to change that behavior.
+
+---
+
+## 1. The default 0.5 threshold tends to favor precision
+
+By training, logistic regression learns a probability estimate
+
+$$
+\hat p(x) = \sigma\bigl(w^T x + b\bigr)\in (0,1),
+$$
+
+and then (by default) it predicts “positive” whenever $\hat p(x) ≥ 0.5$.
+
+* If your model only feels confident in a handful of cases—i.e., $\hat p(x)$ exceeds 0.5 for just the clearest positives—those few positive calls will tend to be correct (high precision).
+* But every time a true positive ends up with $\hat p(x)<0.5$, it’s counted as a false negative, which drags recall down.
+
+In other words:
+
+* **High precision** arises because most predictions it does make as “1” really are 1.
+* **Lower recall** arises because it literally never “risks” calling borderline cases positive, even if they truly are.
+
+### What to check/adjust
+
+1. **Plot the Precision–Recall (PR) curve** (or look at the $\hat p(x)$ distribution for positives vs. negatives).
+
+   * If positives cluster around, say, $\hat p(x)=0.4$–$0.6$, then using a 0.5 cutoff will miss many positives.
+2. **Move the decision threshold**.
+
+   * For example, try $\hat p(x)≥0.3$ instead of 0.5.
+   * Lowering your threshold will (usually) increase recall at the expense of precision.
+   * Raising the threshold (e.g. 0.7) will shrink recall even more, but drive precision higher.
+
+---
+
+## 2. Class imbalance (rare positives)
+
+If only 5% of your samples truly are positive to begin with:
+
+* A logistic model can be “right” 95% of the time by simply predicting all zeros—which technically gives precision undefined (no predicted positives) and recall 0.
+* In practice, once you force it to predict some positives, it will choose only the most “obviously positive” cases first, so the first handful of predicted positives tend to be very accurate (high precision) but still miss many of the other true positives (low recall).
+
+#### Remedies
+
+* **Up-sample or down-sample** your training set to reduce imbalance (e.g. oversample positives).
+* **Use a class‐weighted loss** (e.g. `class_weight='balanced'` in scikit-learn’s `LogisticRegression`) so that misclassifying a positive carries more penalty than misclassifying a negative.
+* **Evaluate with F-score** or area under the PR curve instead of just “accuracy / 0.5-threshold metrics.”
+
+---
+
+## 3. Logistic regression’s linear decision boundary
+
+Logistic regression draws a *linear* decision boundary in feature space. If the true positive class is actually spread out or only “weakly” separable from negatives, the model’s fitted hyperplane might only give probabilities above 0.5 in a small region:
+
+* In that small region, it’s very confident (hence those predictions are almost always correct → high precision).
+* But points that are “somewhat” positive may land on the wrong side of the boundary (hence many true positives are missed → lower recall).
+
+By contrast, a more flexible model (e.g. an ensemble of trees) might carve out a shape that captures more of those “weak positives,” boosting recall—at the possible cost of letting in more false positives (lower precision).
+
+---
+
+## 4. Regularization (penalty strength)
+
+If you use L2 or L1 regularization with a fairly large penalty (e.g. `C=0.01` in scikit-learn’s `LogisticRegression`), the weights $w$ become small. A smaller‐magnitude $w$ makes $\hat p(x)$ hug 0.5 more closely for ambiguous samples. Concretely:
+
+* Many borderline positives will end up with $\hat p(x)\approx 0.4$ or $0.3$ instead of pushing above 0.5.
+* Thus, the model only crosses $\hat p(x)≥0.5$ for very clear positives (boosting precision), but it never flags the borderline ones (hurting recall).
+
+If you reduce regularization strength (increase `C`), the model can afford more extreme weights. That can expand the region where $\hat p(x)$ crosses 0.5, improving recall (but possibly lowering precision).
+
+---
+
+## 5. “Optimized for log-loss,” not for F1/recall
+
+Logistic regression minimizes the logistic (cross-entropy) loss:
+
+$$
+\mathcal{L} = -\frac{1}{N}\sum_i \Bigl[y_i\log \hat p(x_i) + (1-y_i)\log\bigl(1 - \hat p(x_i)\bigr)\Bigr].
+$$
+
+It does **not** directly optimize F1 or recall. As a result:
+
+* The fitted $w,b$ may be such that the model is very “sure” about the positives it *does* call, keeping log-loss low.
+* It may willingly sit on many true positives with $\hat p(x)<0.5$ if forcing $\hat p(x)$ higher for those would hurt the overall cross-entropy more.
+
+---
+
+## TL;DR
+
+* **Yes**, it’s quite common for a vanilla logistic regression (with default threshold 0.5, un-tuned reg strength, and some class imbalance) to give you very high precision and noticeably lower recall.
+* **Why?** Because comparisons like $\hat p(x)>0.5$ automatically drop all null/uncertain/“weak” positives—only the most confident positives stay, so your precision is high but you miss a lot of true positives.
+* **How to “fix” it** (or at least control the trade-off):
+
+  1. Tune your decision threshold (inspect ROC/PR curves, pick a point on the PR curve that balances precision vs. recall).
+  2. Adjust class weights or resample your data if positives are rare.
+  3. Loosen regularization so borderline positives can cross the 0.5 barrier more often.
+  4. Consider a more flexible model if a linear boundary simply can’t capture enough true positives without also inviting too many false positives.
+
+Once you’re aware that logistic regression is tuned to minimize log-loss (and that threshold=0.5 is arbitrary), you’ll see that **precision ≫ recall** is a straightforward consequence of how that probability cutoff interacts with class‐imbalance, regularization, and feature separability.

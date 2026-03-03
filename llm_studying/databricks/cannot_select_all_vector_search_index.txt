@@ -1,0 +1,90 @@
+The error you’re encountering (`DATA_SOURCE_NOT_FOUND`) occurs because **vector search indexes** in Databricks are not directly queryable using `SELECT *` queries. Vector search indexes are not standalone tables but indexing structures designed for similarity search, optimized for specific query patterns (like nearest neighbor or similarity-based searches).
+
+Here’s what’s likely happening:
+
+---
+
+### **1. Vector Search Indexes Are Not Queryable Like Tables**
+- A vector search index is an auxiliary structure that works alongside your Delta table. It is not a traditional table, so you cannot perform `SELECT *` queries directly on it.
+- Instead, the index is used internally when you query the **Delta table** for vector similarity.
+
+---
+
+### **2. How to Properly Query the Table with the Index**
+To leverage the vector search index, you must query the **Delta table** where the embeddings are stored. The index will be utilized automatically when performing similarity searches on the `VECTOR` column.
+
+#### Example: Correct Query with Similarity Search
+```sql
+WITH user_query AS (
+    SELECT array(0.1, 0.23, 0.21, ..., 0.91) AS embedding  -- Replace with your query embedding
+)
+
+SELECT id, question, cosine_similarity(user_query.embedding, embedding) AS similarity
+FROM questions_with_embeddings
+ORDER BY similarity DESC
+LIMIT 1;
+```
+
+This query runs against the `questions_with_embeddings` table. The index (`questions_index`) is used internally to accelerate the similarity computation.
+
+---
+
+### **3. Key Points to Avoid the Error**
+1. **Do Not Query the Index Directly**:
+   - The `questions_index` (or any vector index) cannot be used in `SELECT` queries.
+   - Instead, always query the associated Delta table (`questions_with_embeddings` in this case).
+
+2. **Ensure the Vector Index Is Created Properly**:
+   - The vector search index must reference the `VECTOR` column in your Delta table.
+   - Confirm the index creation:
+     ```sql
+     CREATE INDEX questions_index
+     ON TABLE questions_with_embeddings (embedding)
+     AS 'VECTOR';
+     ```
+
+3. **Compatible Queries**:
+   - The index supports operations like `cosine_similarity`, `euclidean_distance`, etc.
+   - Ensure your queries involve vector-based operations (e.g., similarity search).
+
+---
+
+### **4. Debugging Steps**
+If the issue persists, check the following:
+- **Spark Version**: Ensure your Databricks runtime supports vector search (Databricks Runtime 12.2 ML or above is recommended).
+- **Index Status**: Verify the index was created successfully:
+  ```sql
+  SHOW INDEXES FROM questions_with_embeddings;
+  ```
+- **Correct Table Name**: Ensure you’re querying the Delta table, not the index.
+
+---
+
+### **5. Example: Troubleshooting the Workflow**
+#### Create Table and Index:
+```sql
+CREATE TABLE questions_with_embeddings (
+    id STRING,
+    question STRING,
+    embedding VECTOR(768)
+)
+USING DELTA;
+
+CREATE INDEX questions_index
+ON TABLE questions_with_embeddings (embedding)
+AS 'VECTOR';
+```
+
+#### Perform a Vector Search Query:
+```sql
+WITH user_query AS (
+    SELECT array(0.1, 0.23, 0.21, ..., 0.91) AS embedding
+)
+
+SELECT id, question, cosine_similarity(user_query.embedding, embedding) AS similarity
+FROM questions_with_embeddings
+ORDER BY similarity DESC
+LIMIT 1;
+```
+
+This ensures you’re querying the **Delta table** while leveraging the **vector search index** for efficient retrieval.

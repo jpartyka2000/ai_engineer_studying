@@ -1,0 +1,79 @@
+In Python’s `async`/`await` world, an object becomes an **asynchronous iterator** by defining two special methods (the “dunders” for async iteration):
+
+1. **`__aiter__(self)`**
+
+   * Called once when you do `async for x in obj:`.
+   * Must return an **asynchronous iterator** object—often just `self`.
+
+2. **`__anext__(self)`**
+
+   * Called repeatedly by the event loop to get each next item.
+   * Must return an **awaitable** (i.e. a coroutine or `Future`) that, when awaited, yields the next value.
+   * If there are no more items, it must raise a `StopAsyncIteration` (just like `__next__` in sync iterators).
+
+---
+
+### How it works with an `asyncio.Queue`
+
+Under the hood, `asyncio.Queue` lets you write things like:
+
+```python
+async def producer(q):
+    await q.put(1)
+    await q.put(2)
+    await q.put(None)  # sentinel
+
+async def consumer(q):
+    async for item in q:
+        if item is None:
+            break
+        print(item)
+```
+
+Here’s roughly what the queue does:
+
+```python
+class AsyncQueueIterator:
+    def __init__(self, queue: asyncio.Queue):
+        self._q = queue
+
+    def __aiter__(self):
+        return self   # the iterator is self
+
+    async def __anext__(self):
+        item = await self._q.get()
+        if item is None:               # your chosen end-of-stream marker
+            raise StopAsyncIteration()
+        return item
+```
+
+* **`await self._q.get()`** suspends the coroutine until the loop has an item ready.
+* Once it wakes, it returns that item into your `async for` loop as `item`.
+
+---
+
+### Bonus: `__await__` for awaitables
+
+Objects that can be directly awaited (e.g. coroutines, `asyncio.Future`, or any custom awaitable) implement:
+
+* **`__await__(self)`**
+
+  * Returns an iterator that the event loop will drive to completion.
+  * You almost never write this yourself unless you’re building very low-level awaitables.
+
+---
+
+### Putting it all together
+
+When you write:
+
+```python
+async for event in agent.act(...):
+    ...
+```
+
+* Python calls `ait = agent.act(...).__aiter__()`.
+* Then in a loop it does `item = await ait.__anext__()`.
+* If `__anext__()` raises `StopAsyncIteration`, the loop ends.
+
+By implementing those two dunder methods, any class can hook into Python’s async iteration machinery and pull items off of an event-driven queue one at a time.

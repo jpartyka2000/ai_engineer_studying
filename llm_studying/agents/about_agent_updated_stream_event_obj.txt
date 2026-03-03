@@ -1,0 +1,54 @@
+`AgentUpdatedStreamEvent` is one of the structured event types you’ll see when you drive an agent via the OpenAI Agents SDK’s streaming interface. It represents a **partial update** to the agent’s internal state or output that you can observe as it’s happening, rather than only at the end.
+
+---
+
+## Where it fits in the Agents SDK
+
+When you do something like:
+
+```python
+async for event in agent.act(input_item):
+    ...
+```
+
+you’ll get back a sequence of events, each of which is an instance of a subclass of `AgentEventBase`. Common ones include:
+
+* **`ResponseFunctionToolCall`**: the agent is about to call a tool.
+* **`ResponseFunctionToolReturn`**: the result has come back from that tool.
+* **`AgentFinish`**: the agent has completed its reasoning and is producing its final answer.
+* **`AgentUpdatedStreamEvent`**: a checkpoint update—often a chunk of text in a streaming response, or an incremental change in the agent’s plan or internal memory.
+
+---
+
+## What you can do with it
+
+* **Partial output rendering**
+  If you’re building a UI that streams token-by-token or step-by-step reasoning, you catch `AgentUpdatedStreamEvent` to render each new piece as it arrives.
+
+* **Real-time logging**
+  Log these events so you can replay exactly how the agent’s internal state evolved over time.
+
+* **Conditional branching**
+  You could inspect these updates and even interrupt the stream early if you detect certain keywords or tool calls.
+
+---
+
+### Example snippet
+
+```python
+from openai.agents.events import AgentUpdatedStreamEvent
+
+async for event in agent.act(my_input):
+    if isinstance(event, AgentUpdatedStreamEvent):
+        print("Got an incremental update:", event.update)
+    elif isinstance(event, AgentFinish):
+        print("Final answer:", event.output)
+```
+
+Here, `event.update` might be a string chunk (“…the likelihood of conversion is …”) or a small dict describing an internal state change, depending on how the agent is configured.
+
+---
+
+### Bottom line
+
+Yes—`AgentUpdatedStreamEvent` is **part of the official OpenAI Agents SDK** (you’ll find it under `openai.agents.events`). It’s the mechanism by which streaming progress gets communicated to your code so you can handle partial outputs, UI updates, or real-time monitoring of the agent’s thought process.

@@ -1,0 +1,66 @@
+It depends on how the sandbox is configured.
+
+### Typical Sandbox Scenarios
+
+| Sandbox Type | Network Access | `pip install` Works? |
+|--------------|----------------|----------------------|
+| Docker (default) | Usually yes | ✅ Yes |
+| Docker (no network) | No | ❌ No |
+| Claude Code `--sandbox` flag | Allowlisted domains | ✅ Usually yes (pypi.org often allowed) |
+| Air-gapped / fully isolated | No | ❌ No |
+
+### If Your Sandbox Blocks Network
+
+You have a few workarounds:
+
+**Option 1: Pre-install dependencies before sandboxing**
+
+Set up the environment outside the sandbox, then mount it:
+
+```bash
+# Outside sandbox
+python -m venv .venv
+source .venv/bin/activate
+pip install mesa networkx pydantic typer pandas jinja2
+
+# Then run Claude Code with the venv mounted
+```
+
+**Option 2: Vendor dependencies locally**
+
+Download packages to a local directory:
+
+```bash
+pip download -d ./vendor mesa networkx pydantic typer pandas jinja2
+```
+
+Then in your CLAUDE.md:
+
+```markdown
+## Dependency Installation (Offline)
+
+This project vendors dependencies in `./vendor/`. Install with:
+
+```bash
+pip install --no-index --find-links=./vendor -e ".[dev]"
+```
+```
+
+**Option 3: Allow specific domains**
+
+If your sandbox supports domain allowlisting, permit:
+- `pypi.org`
+- `files.pythonhosted.org`
+
+These are the only domains pip needs.
+
+---
+
+### What I'd Recommend
+
+Since your *project* is standalone (no runtime network access), but you still need to *develop* it:
+
+1. Allow `pypi.org` and `files.pythonhosted.org` in the sandbox during development
+2. Or pre-install dependencies before entering the sandbox
+
+Which sandbox setup are you planning to use—Docker, Claude Code's built-in sandbox, or something else?

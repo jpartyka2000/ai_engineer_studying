@@ -1,0 +1,36 @@
+### Vectorization in Pandas: No Dedicated “Vectorized” Class
+
+Pandas doesn’t introduce a special `Vectorized` or `Vectorizable` class to mark objects as vectorized. Instead, vectorized behavior is baked into its core abstractions:
+
+---
+
+#### 1. **`NDFrame`**
+
+* **What it is:** The abstract base class for both **`Series`** and **`DataFrame`**
+* **Why it matters:** All vectorized arithmetic (`+`, `-`, `*`, `/`, etc.), boolean masking, and ufunc support are defined here.
+* **How to spot it:**
+
+  ```python
+  from pandas.core.generic import NDFrame
+  isinstance(pd.Series([1,2,3]), NDFrame)     # True
+  isinstance(pd.DataFrame({'A':[1,2]}), NDFrame)  # True
+  ```
+
+#### 2. **`IndexOpsMixin`**
+
+* **What it is:** A mixin that implements the operator methods (`__add__`, `__eq__`, etc.) for **`Series`**, **`DataFrame`**, and **`Index`**
+* **Why it matters:** It ensures that expressions like `df + 5` or `s > 0` are applied element‑wise.
+
+---
+
+#### 3. Under the Hood: NumPy Arrays
+
+* Every `Series` and the underlying blocks of a `DataFrame` store data in **NumPy `ndarray`s** (or an ExtensionArray interface).
+* The heavy lifting of vectorization (broadcasting, ufuncs) is actually done by NumPy.
+
+---
+
+### What This Means for You
+
+* **Anything** that subclasses `NDFrame` (i.e., `Series` or `DataFrame`) supports vectorized operations out of the box.
+* You don’t need to look for or instantiate a special “vectorized” class—just work with `Series` and `DataFrame`, and leverage their methods (or the operators) for element‑wise, fast computations.

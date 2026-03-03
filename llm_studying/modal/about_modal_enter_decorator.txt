@@ -1,0 +1,23 @@
+This code is part of Modal's **memory snapshot** feature for fast cold starts.
+
+## What it does
+
+The `@modal.enter(snap=False)` decorator marks a method that runs **after** a container is restored from a snapshot, but **not** during the initial snapshot creation.
+
+Here's the lifecycle:
+
+1. **Snapshot creation** (`snap=True`): The `_warm_and_snapshot` method runs, loads the model into GPU memory, then calls `await self._engine.sleep()` to put the engine into a low-power state before the snapshot is taken.
+
+2. **Container restore** (`snap=False`): When a new request comes in and Modal restores a container from the snapshot, `_enter` runs and calls `await self._engine.wake_up()` to reactivate the engine.
+
+## Why this pattern?
+
+vLLM's `sleep()` / `wake_up()` API (enabled via `enable_sleep_mode=True` in the engine args) allows the model to:
+
+- **Sleep**: Release GPU memory or enter a hibernation state that's snapshot-friendly
+- **Wake up**: Restore the engine to a ready state for inference
+
+This gives you the benefits of:
+- **Fast cold starts**: The heavy model loading is captured in the snapshot
+- **Efficient resource usage**: The engine isn't fully active until actually needed
+- **Clean state restoration**: The wake-up ensures the engine is properly initialized after being restored from frozen memory

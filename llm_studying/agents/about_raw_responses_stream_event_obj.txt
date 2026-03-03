@@ -1,0 +1,49 @@
+`RawResponsesStreamEvent` is one of the low-level streaming event types emitted by the Agents SDK when you ask an agent to act in **raw streaming** mode. It carries the unprocessed chunks of the model’s own token stream—before any agent logic (tool-calling, reasoning steps, plan updates) has been applied.
+
+---
+
+### Where it lives
+
+```python
+from openai.agents.stream_events import RawResponsesStreamEvent
+```
+
+It inherits from the SDK’s common `StreamEvent` base, alongside things like `AgentUpdatedStreamEvent` and `ToolResponseStreamEvent`.
+
+---
+
+### What it contains
+
+* **`event.content`**: a string containing the next piece of the LLM’s raw text output (e.g. a few tokens or words).
+* **`event.delta`**: the exact token(s) just generated (if you need token-level control).
+* **`event.is_finished`**: a boolean you can check to know when the raw response has completed streaming.
+
+---
+
+### How it fits into streaming
+
+When you do:
+
+```python
+async for event in agent.stream_responses(input_item):
+    if isinstance(event, RawResponsesStreamEvent):
+        # this is the LLM’s raw generated text
+        print(event.content, end="", flush=True)
+    elif isinstance(event, AgentUpdatedStreamEvent):
+        # this is the agent’s parsed update (tool calls, plan, etc.)
+        handle_agent_update(event)
+    # ... other event types like ToolResponseStreamEvent ...
+```
+
+* **`RawResponsesStreamEvent`** gives you exactly what the LLM is saying, as it says it.
+* Other event types wrap or interpret those raw tokens into agent actions (like: “now call tool X” or “append this to the final answer”).
+
+---
+
+### When to use it
+
+* **Custom rendering UIs**: stitch together raw tokens into a chat bubble, code editor, or terminal output.
+* **Logging/debugging**: capture the pure model output stream before any agent post-processing.
+* **Latency optimization**: display the model’s text immediately, even if the agent hasn’t finished its reasoning pipeline.
+
+In short, `RawResponsesStreamEvent` is your window into the bare LLM response as it streams, letting you see exactly what the model is generating in real time.

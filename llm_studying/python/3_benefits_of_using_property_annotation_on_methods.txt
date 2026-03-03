@@ -1,0 +1,55 @@
+A few practical reasons:
+
+**1. Backward compatibility — change implementation without breaking callers:**
+
+```python
+# Version 1: simple attribute
+class User:
+    def __init__(self, name):
+        self.name = name
+
+# Version 2: need to add validation, but don't break existing code
+class User:
+    def __init__(self, name):
+        self._name = name
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @name.setter
+    def name(self, value):
+        if not value.strip():
+            raise ValueError("Name cannot be empty")
+        self._name = value
+
+# All existing code still works:
+user.name = "Alice"    # Not user.set_name("Alice")
+print(user.name)       # Not user.get_name()
+```
+
+**2. Read-only attributes:**
+
+```python
+class Order:
+    @property
+    def total(self):
+        return sum(item.price for item in self.items)
+
+order.total         # Works
+order.total = 50    # AttributeError — can't set it
+```
+
+**3. Cleaner API for computed values:**
+
+```python
+# Without property — caller must know what's stored vs computed
+user.get_age()           # Computed
+user.name                # Stored
+
+# With property — uniform access
+user.age                 # Computed (but looks the same)
+user.name                # Stored
+```
+
+Basically: it lets you hide whether something is stored or computed, and add logic later without changing how callers use your class.

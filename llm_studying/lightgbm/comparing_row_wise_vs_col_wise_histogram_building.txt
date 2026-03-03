@@ -1,0 +1,55 @@
+In this toy example, we binned a single feature into three buckets over the ranges `[0.0–0.3)`, `[0.3–0.7)`, and `[0.7–1.0)`. Each row has a pseudo‑gradient (`grad`) and a pseudo‑hessian (`hess`). We then built two histograms:
+
+1. **Row‑wise**:
+   Loop over each data point, find its bin, and add its gradient and hessian to that bin.
+2. **Column‑wise**:
+   Loop over each bin, filter the rows belonging to that bin, and sum their gradients and hessians.
+
+As you can see in the table, both methods yield **identical** results:
+
+| bin        | row\_sum\_grad | row\_sum\_hess | col\_sum\_grad | col\_sum\_hess |
+| ---------- | -------------- | -------------- | -------------- | -------------- |
+| \[0.0,0.3) | 0.15           | 2.0            | 0.15           | 2.0            |
+| \[0.3,0.7) | 0.05           | 2.0            | 0.05           | 2.0            |
+| \[0.7,1.0) | 0.30           | 1.0            | 0.30           | 1.0            |
+
+* **Row‑wise** is effectively doing one pass over the rows, updating bins on the fly.
+* **Column‑wise** groups rows by bin first, then sums across those groups.
+
+LightGBM’s internal “auto” mode will test a small subset of your data at startup, measure which approach is faster, and pick that for the full training run—unless you force one or the other via `force_row_wise` or `force_col_wise`.
+
+This illustrates that functionally both methods compute exactly the same per‑bin gradient/hessian sums; the difference is purely in how the loops are ordered and in their performance/memory trade‑offs.
+
+-------------------------------------
+
+Here’s when you’d choose one over the other (beyond letting LightGBM auto‑pick):
+
+* **force\_col\_wise** (column‑wise histograms) ([LightGBM Documentation][1])
+
+  * **Many features or many bins.** If your model has a large number of columns (or each feature gets quantized into lots of bins), column‑wise—building one feature’s histogram at a time—tends to be faster and more cache‑friendly.
+  * **High parallelism.** When you’re using lots of threads (e.g. `num_threads > 20`), column‑wise scales better across cores.
+  * **Memory‑sensitive.** It uses less temporary buffer memory than row‑wise, so if you’re tight on RAM, column‑wise can help.
+
+* **force\_row\_wise** (row‑wise histograms) ([LightGBM Documentation][1], [GitHub][2])
+
+  * **Huge datasets, few bins.** If you have very many training examples but each feature is discretized into relatively few bins, it’s more efficient to scan rows once and update all bins on the fly.
+  * **Lower thread‑counts.** When you’re running with only a handful of threads (e.g. `num_threads ≤ 16`), the row‑wise loop has lower coordination overhead.
+  * **Aggressive sampling (bagging/GOSS).** If you’re subsampling rows (via `bagging_fraction` or GOSS), row‑wise applies that sampling inline and can be noticeably faster.
+
+* **Auto‑mode**
+  By default (`force_col_wise=false`, `force_row_wise=false`), LightGBM will **benchmark** both methods on a small subset of your data and pick the winner. Only “force” if you’ve measured that the auto‑test adds too much startup overhead, or if you know your workload fits one pattern above.
+
+---
+
+**Quick decision guide:**
+
+| Scenario                                                      | Recommend                  |
+| ------------------------------------------------------------- | -------------------------- |
+| Lots of columns/bins & ≥ 20 threads                           | `force_col_wise=true`      |
+| Very large #rows & few bins, ≤ 16 threads, using GOSS/bagging | `force_row_wise=true`      |
+| Unsure / startup‑overhead too big                             | leave both off (auto‑mode) |
+
+That way you get the fastest histogram building strategy for your particular data shape and cluster setup.
+
+[1]: https://lightgbm.readthedocs.io/en/latest/Parameters.html?utm_source=chatgpt.com "Parameters — LightGBM 4.6.0.99 documentation"
+[2]: https://github.com/microsoft/LightGBM/issues/2791?utm_source=chatgpt.com "[Discussion] efficiency improvements #2791 - GitHub"

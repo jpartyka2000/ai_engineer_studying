@@ -1,0 +1,20 @@
+In Python, a `for` loop can have an `else` clause attached, and that `else` runs **only if** the loop completes “naturally” (i.e. without ever hitting a `break`). Here’s how it applies to your code:
+
+```python
+for attempt in range(1, max_retries + 1):
+    …
+    if valid_response:
+        break
+    …
+else:
+    # ← This runs only if we never broke out of the loop
+    print(f"All {max_retries} retries failed; moving on.")
+    NUM_LLM_FAILURES += 1
+    TOTAL_RETRIES += max_retries
+    pred_obj = {}
+```
+
+* **When you hit `break`** (i.e. when you get a good `pred_obj` and do `break` out of the loop), Python **skips** the `else` entirely and jumps to whatever code follows the `for…else` block.
+* **If you never hit `break`**—for example, every attempt either raises or returns an “invalid response” and you fall off the bottom of the `for` after `attempt == max_retries`—then the `else` block runs exactly once, immediately after the last iteration.
+
+So in your retry loop, the `else:` section executes **only if** all `max_retries` attempts fail to produce a valid response (and thus no `break` ever occurred). It’s there to handle the “exhausted all retries” case.

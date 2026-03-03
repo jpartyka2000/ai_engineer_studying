@@ -1,0 +1,25 @@
+Databricks Serving Endpoints bake your model (and its conda-env + code) into a container at deploy time, so any code changes you make afterward won’t be picked up by a running endpoint. You have two options:
+
+1. **Redeploy the same endpoint**
+   You don’t have to delete & recreate it—you can simply point your existing endpoint at the new model version (or re-register the MLflow model and then call the “Update” action). Under the hood that will rebuild the container image with your updated `mc_simulator_pyfunc.py` and spin up fresh workers.
+
+   * **UI**: Go to your Serving Endpoint → “Edit” → swap in the new Model version (or click “Refresh” if you’re using the same registry name/stage) → “Save & Deploy.”
+   * **CLI/API**:
+
+     ```bash
+     databricks serving-endpoints update \
+       --name monte_carlo \
+       --model-name your_registered_model \
+       --model-version <new-version-number>
+     ```
+
+     That kicks off a rebuild/redeploy of the endpoint in place.
+
+2. **Create a brand-new endpoint**
+   If you want zero downtime or to test side-by-side, you can also spin up a second endpoint (e.g. `monte_carlo_v2`) pointing at your new model, validate it, then retire the old one.
+
+---
+
+**Bottom line:**
+
+> You don’t need to tear down the endpoint entirely or change its URL, but you **do** need to trigger a redeploy (via the UI or CLI/API) so that Databricks rebuilds the container with your updated code.

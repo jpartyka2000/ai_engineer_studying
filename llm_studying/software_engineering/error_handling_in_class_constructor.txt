@@ -1,0 +1,136 @@
+You're correct that you can't return an error message from a constructor in Python, as constructors do not return values. However, there are several other strategies you can use to indicate an error occurred during the execution of the constructor while avoiding the use of `sys.exit(0)`.
+
+### 1. **Raise a Custom Exception**
+If an error occurs during initialization, you can raise an exception to indicate failure. This is the most Pythonic approach.
+
+#### Updated Constructor Code:
+```python
+class MetaRouterError(Exception):
+    """Custom exception for MetaRouter errors."""
+    pass
+
+class MetaRouter:
+    def __init__(self):
+        logger.info("[llm_router.MetaRouter.__init__]: Instantiating new MetaRouter object")
+
+        # Embedding model being used to calculate semantic similarity
+        try:
+            self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("[llm_router.MetaRouter.__init__]: Instantiated embedding model")
+        except Exception as e:
+            error_msg = f"[llm_router.MetaRouter.__init__]: Error instantiating embedding model - {str(e)}"
+            logger.error(error_msg)
+            raise MetaRouterError(error_msg)
+
+        # Representative question lists for each route
+        self.opportunity_question_list = []
+        self.dbscanner_question_list = []
+        self.ingest_question_list = []
+        self.marketing_question_list = []
+
+        # We select the top k most similar questions to the user question for each route
+        self.top_k_questions = 5
+
+        # File paths for question banks
+        self.fpath_dbscanner_question_bank = "router_question_bank/dbscanner_question_bank.txt"
+        self.fpath_greeting_question_bank = "router_question_bank/greeting_question_bank.txt"
+        self.fpath_ingest_status_question_bank = "router_question_bank/ingest_status_question_bank.txt"
+        self.fpath_opportunity_question_bank = "router_question_bank/opportunity_question_bank.txt"
+
+        # Read in question banks
+        self._load_question_bank(self.fpath_opportunity_question_bank, self.opportunity_question_list)
+        self._load_question_bank(self.fpath_dbscanner_question_bank, self.dbscanner_question_list)
+        self._load_question_bank(self.fpath_ingest_status_question_bank, self.ingest_question_list)
+
+        # Dictionary to store question embeddings for each route
+        self.route_to_embedding_obj_dict = {}
+
+        logger.info("[llm_router.MetaRouter.__init__]: Finished instantiating new MetaRouter object")
+        logger.info('----------')
+
+    def _load_question_bank(self, file_path, question_list):
+        try:
+            with open(file_path, "r") as readfile:
+                question_list.extend(readfile.read().splitlines())
+                logger.info(f"[llm_router.MetaRouter.__init__]: Finished reading file {file_path}")
+        except Exception as e:
+            error_msg = f"[llm_router.MetaRouter.__init__]: Error reading file {file_path} - {str(e)}"
+            logger.error(error_msg)
+            raise MetaRouterError(error_msg)
+```
+
+---
+
+### Key Changes:
+1. **Custom Exception Class**:
+   - A `MetaRouterError` exception is defined for better error identification.
+   - This makes it clear that the issue is related to the `MetaRouter` class.
+
+2. **Raise Exceptions Instead of `sys.exit(0)`**:
+   - If an error occurs, an exception is raised with a meaningful error message.
+   - This allows the calling code to handle the error gracefully.
+
+3. **Refactored File Reading into a Helper Method**:
+   - `_load_question_bank()` handles file reading logic, reducing code duplication and making the constructor cleaner.
+
+---
+
+### Example Usage:
+```python
+try:
+    router = MetaRouter()
+except MetaRouterError as e:
+    logger.error(f"Failed to initialize MetaRouter: {e}")
+    # Handle error (e.g., exit gracefully or log further diagnostics)
+```
+
+---
+
+### Alternative: Use a `ready` Flag (Non-Exception-Based)
+If you prefer not to raise exceptions, you can introduce a `self.ready` flag in the object to indicate whether it was successfully initialized. However, this approach requires the calling code to always check the flag before using the object.
+
+#### Example:
+```python
+class MetaRouter:
+    def __init__(self):
+        logger.info("[llm_router.MetaRouter.__init__]: Instantiating new MetaRouter object")
+        self.ready = False  # Default to not ready
+        try:
+            self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("[llm_router.MetaRouter.__init__]: Instantiated embedding model")
+
+            # Representative question lists
+            self.opportunity_question_list = []
+            self.dbscanner_question_list = []
+            self.ingest_question_list = []
+
+            # File paths
+            self.fpath_opportunity_question_bank = "router_question_bank/opportunity_question_bank.txt"
+
+            # Load question banks
+            self._load_question_bank(self.fpath_opportunity_question_bank, self.opportunity_question_list)
+
+            self.ready = True  # Mark as ready if no exceptions occur
+        except Exception as e:
+            logger.error(f"[llm_router.MetaRouter.__init__]: Initialization error: {str(e)}")
+
+    def _load_question_bank(self, file_path, question_list):
+        try:
+            with open(file_path, "r") as readfile:
+                question_list.extend(readfile.read().splitlines())
+                logger.info(f"[llm_router.MetaRouter.__init__]: Finished reading file {file_path}")
+        except Exception as e:
+            logger.error(f"[llm_router.MetaRouter.__init__]: Error reading file {file_path} - {str(e)}")
+            raise
+
+# Usage:
+router = MetaRouter()
+if not router.ready:
+    logger.error("MetaRouter is not ready. Exiting.")
+```
+
+---
+
+### Recommendation:
+- **Use Exceptions**: This is the preferred, Pythonic way to handle constructor errors.
+- **Avoid Silent Failures**: By raising exceptions, you ensure that errors are not overlooked, making debugging easier and the code more robust.

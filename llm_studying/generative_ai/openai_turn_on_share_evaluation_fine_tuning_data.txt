@@ -1,0 +1,45 @@
+When you’re creating (or updating) a fine-tuning or evaluation job in the OpenAI UI or via the API, you get a simple toggle (or parameter) that controls whether your data can be used by OpenAI to improve its base models. Here’s how to turn it on:
+
+---
+
+## In the Web Console
+
+1. **Go to Fine-tuning** (or **Evaluations**) at [https://platform.openai.com/fine-tuning](https://platform.openai.com/fine-tuning)
+2. Click **Create fine-tune** (or **Create eval**).
+3. In the form you’ll see a section labeled **Data handling** or **Data sharing**.
+4. Flip the switch for:
+
+   * **“Share data to improve OpenAI models”** (this covers both evaluation feedback and fine-tuning examples)
+5. Continue filling out the rest of the form and click **Submit**.
+
+Once enabled, your training or eval data (prompts, responses, grades) will be available in aggregate to OpenAI’s model-improvement pipelines—but **this does not affect** your billing or inference rates.
+
+---
+
+## Via the API
+
+When you create a fine-tuning job, include these boolean flags in your JSON payload:
+
+```json
+POST https://api.openai.com/v1/fine_tuning/jobs
+{
+  "training_file": "file-abc123",
+  "model": "o4-mini-2025-04-16",
+  "share_fine_tuning_data": true,    // <-- enable sharing
+  "share_evaluation_data": true       // <-- enable sharing of evals
+}
+```
+
+* `share_fine_tuning_data`: if `true`, your training examples can be reused to improve base models.
+* `share_evaluation_data`: if `true`, your evaluation results and feedback may also be ingested.
+
+If you omit these, the default is usually **off** (data is kept private to your org). You can later update an existing job or model via the API to change these flags by calling the update endpoint with the same fields.
+
+---
+
+### Where to check
+
+* **Organization Settings → Data Sharing** will show you a summary of which projects have sharing enabled.
+* **Audit logs** will record when you toggled these flags, but they’ll never expose the data itself.
+
+Turning these on can help OpenAI improve the overall model quality over time, but your data stays under the governance and permissions of your account.

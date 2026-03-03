@@ -1,0 +1,21 @@
+When you did:
+
+```python
+df_data["COHORT_TS"] = df_data["COHORT"].map(parse_cohort)
+```
+
+any string that `parse_cohort` can’t turn into a valid `pd.Timestamp` comes back as `NaT` (“Not a Time”), which is pandas’ datetime equivalent of `NaN`.
+
+Calling
+
+```python
+df_data["COHORT_TS"].notna()
+```
+
+is exactly checking “is this *not* missing?”  Since `NaT` is considered missing, `.notna()` returns `False` for every row where `COHORT_TS == NaT`.  When you do:
+
+```python
+df_data = df_data.loc[df_data["COHORT_TS"].notna()]
+```
+
+you keep only the rows whose parse succeeded (i.e. real timestamps) and drop everything that ended up as `NaT`—that includes `"Future Cohort"`, `"3-6"`, `"6-12"`, or any other string your parser couldn’t coerce into a date.

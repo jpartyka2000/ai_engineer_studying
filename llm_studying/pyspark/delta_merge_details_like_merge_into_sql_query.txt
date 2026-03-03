@@ -1,0 +1,70 @@
+When you write:
+
+```python
+.delta_table.alias("tgt") \
+  .merge(
+    source=df_data_spark.alias("src"),
+    condition="tgt.LEAD_ID = src.LEAD_ID"
+  ) \
+  .whenMatchedUpdate(
+    set={
+      **{ col: f"src.{col}" for col in df_data_spark.columns if col != "LEAD_ID" }
+    }
+  ) \
+  .execute()
+```
+
+– here’s what’s happening step-by-step:
+
+1. **`alias("tgt")` / `alias("src")`**
+   We give the target Delta table the alias `tgt` and the incoming Spark DataFrame the alias `src`, so that in our SQL expressions we can refer to `tgt.<col>` versus `src.<col>`.
+
+2. **`condition="tgt.LEAD_ID = src.LEAD_ID"`**
+   This is the equality predicate that decides which rows “match.”  Whenever a row in the target has the same `LEAD_ID` as a row in the source, that pair is considered a match.
+
+3. **`.whenMatchedUpdate(set=...)`**
+   In the `set` argument you pass a **Python dict** where **keys** are the target-table column names, and **values** are the SQL expressions you want to assign to them.
+
+4. **Dictionary comprehension**
+
+   ```python
+   { col: f"src.{col}" for col in df_data_spark.columns if col != "LEAD_ID" }
+   ```
+
+   expands into something like:
+
+   ```python
+   {
+     "CREATED_DATE": "src.CREATED_DATE",
+     "YEAR_QUARTER": "src.YEAR_QUARTER",
+     "probability": "src.probability",
+     "prediction": "src.prediction",
+     # …and so on for every column in your DataFrame except LEAD_ID…
+   }
+   ```
+
+   The double-asterisk `**{ … }` just inlines all of those key↦value pairs directly into the outer `set={ … }` dict.
+
+5. **Resulting behavior**
+   For **each** matching row (same `LEAD_ID`), Delta will execute an `UPDATE` that sets every one of those columns in the target table to the corresponding value from the source (`src.<col>`).  You’ve explicitly omitted `LEAD_ID` itself so you don’t try to overwrite your primary key.
+
+---
+
+### Why this is convenient
+
+* You don’t have to hand-list dozens of columns by name.
+* If your schema evolves (you add columns), as long as they’re in `df_data_spark.columns` they’ll automatically be included in the update.
+* The merge remains concise, and you avoid typos or omissions when you’re syncing many columns.
+
+In SQL terms it’s equivalent to:
+
+```sql
+MERGE INTO target AS tgt
+USING source AS src
+  ON tgt.LEAD_ID = src.LEAD_ID
+WHEN MATCHED THEN UPDATE SET
+  tgt.CREATED_DATE = src.CREATED_DATE,
+  tgt.YEAR_QUARTER  = src.YEAR_QUARTER,
+  -- etc. for every column except LEAD_ID
+;
+```

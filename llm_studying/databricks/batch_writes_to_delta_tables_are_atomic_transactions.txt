@@ -1,0 +1,33 @@
+Delta Lake’s batch writes are **transactional**, so you generally don’t have to worry about “half-baked” updates if you cancel mid-run. Here’s what happens in the usual cases:
+
+1. **Single DataFrame write (batch)**
+
+   ```python
+   df.write.format("delta").mode("append").saveAsTable("my_delta")
+   ```
+
+   Spark stages all the new data files in a temporary location, then in one atomic transaction it updates the `_delta_log` to point to them. If you hit Cancel **before** that transaction commits, none of your new files will be recorded in the log, and the table will look exactly as it did before you started.
+
+2. **Overwrite mode**
+
+   ```python
+   df.write.format("delta").mode("overwrite").saveAsTable("my_delta")
+   ```
+
+   Under the hood this also stages the “replace all” files, then atomically swaps the pointers in the transaction log. Cancel before the commit → no change.
+
+3. **Multiple writes in one notebook**
+   If you have several separate write commands in different cells, each one is its own transaction. Cancelling in the middle will still leave any **earlier** commits intact—but the one you were running when you hit Cancel will not apply.
+
+4. **Structured streaming**
+   Streaming is different: each micro-batch is its own transaction. If you cancel a long-running stream, all fully completed micro-batches remain, and only the in-flight batch is abandoned. So you’ll get a partial (but consistent) append of all batches that finished before you hit Cancel.
+
+---
+
+### In practice
+
+* **Batch jobs → all-or-nothing**. You won’t end up with half of your DataFrame written.
+* **Repeated writes → earlier ones stick** (but the one you cancel doesn’t).
+* **Streaming → committed up to the last successful batch**.
+
+So unless you’re in streaming mode, canceling the notebook while a write is in progress will leave your Delta table untouched by that failed write.

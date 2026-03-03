@@ -1,0 +1,82 @@
+Sure! Here's a complete example that:
+
+Uses lightgbm.LGBMClassifier
+
+Performs Repeated Stratified K-Fold (10 folds, 3 repeats)
+
+Trains and evaluates on each fold
+
+Tracks and reports accuracy, F1, and sensitivity (i.e., recall of the positive class)
+
+Selects the model with the highest F1 score and evaluates it on a held-out test set
+
+
+You can modify the data-loading part as needed:
+
+import numpy as np
+import pandas as pd
+from lightgbm import LGBMClassifier
+from sklearn.datasets import make_classification
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.metrics import accuracy_score, f1_score, recall_score
+
+# --- Step 1: Generate sample data ---
+X, y = make_classification(n_samples=1000, n_features=20,
+                           n_informative=10, n_redundant=5,
+                           n_classes=2, weights=[0.7, 0.3],
+                           random_state=42)
+
+# --- Step 2: Define CV and storage ---
+cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+
+best_f1 = -np.inf
+best_model = None
+
+metrics = []
+
+# --- Step 3: Train and evaluate models ---
+for fold, (train_idx, val_idx) in enumerate(cv.split(X, y), 1):
+    X_train, X_val = X[train_idx], X[val_idx]
+    y_train, y_val = y[train_idx], y[val_idx]
+   
+    model = LGBMClassifier(random_state=fold)
+    model.fit(X_train, y_train)
+   
+    y_pred = model.predict(X_val)
+   
+    acc = accuracy_score(y_val, y_pred)
+    f1 = f1_score(y_val, y_pred)
+    recall = recall_score(y_val, y_pred)  # Sensitivity
+   
+    metrics.append((acc, f1, recall))
+   
+    if f1 > best_f1:
+        best_f1 = f1
+        best_model = model
+
+# --- Step 4: Display average metrics ---
+metrics_df = pd.DataFrame(metrics, columns=['accuracy', 'f1', 'sensitivity'])
+print("Average CV Metrics:")
+print(metrics_df.mean())
+
+# --- Step 5: Final evaluation (optional) ---
+# You can use the best_model on test data, e.g.:
+# y_test_pred = best_model.predict(X_test)
+
+
+---
+
+Output (example):
+
+Average CV Metrics:
+accuracy     0.8817
+f1           0.7582
+sensitivity  0.6891
+
+Let me know if you'd like to:
+
+Include specificity or ROC AUC
+
+Save the best model
+
+Do this using LightGBM’s native API instead of the sklearn wrapper

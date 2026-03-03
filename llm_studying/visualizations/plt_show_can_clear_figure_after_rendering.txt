@@ -1,0 +1,32 @@
+When you call `plt.show()`, Matplotlib will render the current figure and—in many backends—then clear it out of memory. That means if you’re relying on the stateful API and you do:
+
+```python
+plt.plot(…)
+plt.show()
+plt.savefig("figure1.png")
+```
+
+the `savefig` may write an empty image, because `show()` has already flushed and closed the figure. In a desktop GUI backend, `plt.show()` will also block your script until you manually close the window—defeating any automated loop that’s trying to generate and save dozens of plots.
+
+**If your goal is to save individual figures programmatically:**
+
+1. **Create and save before showing:**
+
+   ```python
+   fig, ax = plt.subplots()
+   ax.plot(…)
+   fig.savefig("figure1.png")
+   plt.show()  # optional, for interactive inspection
+   ```
+2. **Use non-blocking show** (if you still want to pop up windows):
+
+   ```python
+   plt.show(block=False)
+   ```
+3. **Explicitly close figures** once you’re done, to free up memory:
+
+   ```python
+   plt.close(fig)
+   ```
+
+By calling `savefig()` on a `Figure` object before `show()` (or by using non-blocking display and explicit closes), you’ll avoid both the blocking behavior and the inadvertent clearing of your saved images.

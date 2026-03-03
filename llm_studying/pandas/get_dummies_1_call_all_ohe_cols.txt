@@ -1,0 +1,59 @@
+You can one‑hot encode all of your string columns in a single call by passing them to the `columns=` parameter of `pd.get_dummies`. For example, if you want to encode every column in `COLUMNS_LT_10_VALS_LIST`, you can do:
+
+```python
+import pandas as pd
+
+# suppose df_data is your original DataFrame
+df_ohe = pd.get_dummies(
+    df_data,
+    columns=COLUMNS_LT_10_VALS_LIST,   # list of all the columns you want to encode
+    prefix=COLUMNS_LT_10_VALS_LIST,    # prefixes each new col accordingly
+    prefix_sep='_',                    # so you'll get e.g. "colA_value1"
+    dummy_na=False                     # you can include NaNs as a category if you like
+)
+
+# df_ohe now contains all the original columns 
+# plus the new one‑hot columns for each category in each string column
+print(df_ohe.columns.tolist())
+```
+
+That single line replaces the need for a loop + concat, preserves your original index, and guarantees perfect alignment.
+
+-----------------------
+
+You can grab the new one‑hot columns by simply comparing the OHE DataFrame’s columns against your original columns. For example:
+
+```python
+# after you’ve done:
+df_ohe = pd.get_dummies(
+    df_data,
+    columns=COLUMNS_LT_10_VALS_LIST,
+    prefix=COLUMNS_LT_10_VALS_LIST,
+    prefix_sep='_',
+    dummy_na=False
+)
+
+# 1) original vs new
+orig_cols  = set(df_data.columns)
+ohe_cols   = set(df_ohe.columns)
+
+# 2) dummy columns are those in df_ohe but not in df_data
+new_ohe_cols = list(ohe_cols - orig_cols)
+
+print(new_ohe_cols)
+# → ['colA_val1', 'colA_val2', ..., 'colB_valX', 'Other', ...]
+
+# (optional) turn into a DataFrame for display
+import pandas as pd
+df_ohe_cols = pd.DataFrame({'ohe_column': new_ohe_cols})
+display(df_ohe_cols)
+```
+
+Or, more concisely using `.difference()` on the Index:
+
+```python
+new_ohe_cols = df_ohe.columns.difference(df_data.columns).tolist()
+```
+
+Either way you’ll get exactly the list (or a tiny DataFrame) of all the newly generated dummy columns.
+

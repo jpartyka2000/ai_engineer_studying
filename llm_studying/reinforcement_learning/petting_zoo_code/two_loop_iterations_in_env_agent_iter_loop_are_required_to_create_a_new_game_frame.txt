@@ -1,0 +1,17 @@
+Yes—because you’re using the **turn-based (AEC) API**, each call to `env.step(action)` only feeds in **one agent’s** move. The underlying Atari env only advances its real “timestep” (i.e. the next game frame or physics update) once **all** agents have had their turn.
+
+Concretely, in your two-player Tennis example:
+
+1. **Iteration 1** of the loop:
+
+   * `agent_iter()` yields `"first_0"`.
+   * You sample and step `action` for player 1 via `env.step(action)`.
+   * No actual game-frame advance yet—Tennis is waiting for player 2.
+
+2. **Iteration 2** of the loop:
+
+   * `agent_iter()` now yields `"second_0"`.
+   * You sample and step `action` for player 2 via `env.step(action)`.
+   * Now that **both** agents have acted, the wrapper calls the underlying Atari env’s `step` once, producing the next frame, new observations, rewards, etc.
+
+So **each real environment timestep (game frame)** in a two-agent AEC setup corresponds to **two** iterations of your loop—and in general, one loop iteration per agent.

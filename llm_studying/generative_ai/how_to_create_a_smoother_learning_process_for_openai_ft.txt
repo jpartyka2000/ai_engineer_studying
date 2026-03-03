@@ -1,0 +1,37 @@
+The oscillating accuracy pattern you're seeing is quite common in fine-tuning, especially with smaller datasets or when there's high variance between batches. The sharp ups and downs suggest your model is experiencing significant gradient variance between updates.
+
+Here are several strategies to smooth the training curve:
+
+## Immediate fixes to try:
+
+1. **Lower the learning rate** - This is often the most effective solution. Try reducing it by a factor of 2-10. The oscillations suggest the optimizer might be overshooting optimal points.
+
+2. **Increase batch size further** - While you've tried up to 15, going higher (32, 64, or even 128 if possible) will reduce gradient noise. Each batch will be more representative of your full dataset.
+
+3. **Add gradient accumulation** - If memory limits your batch size, accumulate gradients over multiple forward passes before updating. This effectively increases batch size without memory cost.
+
+4. **Use learning rate warmup** - Start with a very low learning rate and gradually increase it over the first 10-20% of training steps.
+
+## Dataset considerations:
+
+The oscillations might indicate:
+- **High diversity within your dataset** - If examples vary significantly in difficulty or pattern, random batch sampling creates high variance
+- **Imbalanced classes/patterns** - Some batches might contain mostly "easy" examples while others have "hard" ones
+- **Conflicting examples** - If your dataset has examples with similar inputs but different expected outputs
+
+For these issues, consider:
+- Stratified sampling to ensure balanced batches
+- Curriculum learning (ordering examples by difficulty)
+- Data cleaning to remove contradictory examples
+
+## Why some datasets show this pattern:
+
+This is indeed more pronounced with certain datasets, particularly those with:
+- Small size (high sampling variance)
+- Heterogeneous difficulty levels
+- Multiple distinct sub-tasks or patterns
+- Label noise or ambiguity
+
+Your standardized tool-call dataset might have high variance because different questions require very different tool sequences, making each batch quite different from others.
+
+The fact that accuracy generally trends upward despite oscillations suggests the model is learning, just with high variance. Focus on learning rate reduction first - it's usually the quickest fix for this pattern.

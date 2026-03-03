@@ -1,0 +1,48 @@
+Yes—LightGBM will happily consume boolean features, treating them as 0/1 numerics under the hood. Here’s what you need to know:
+
+1. **Pandas/Numpy bool → numeric**
+   If your DataFrame has a column of dtype `bool` (or `numpy.bool_`), LightGBM will see it as a numeric feature with values `0`/`1`. No special handling is required:
+
+   ```python
+   import pandas as pd
+   from lightgbm import LGBMClassifier
+
+   # sample data
+   df = pd.DataFrame({
+       'flag': [True, False, True, False],
+       'x1' : [1.2, 3.4, 5.6, 7.8],
+       'y'  : [0,    1,     0,    1]
+   })
+
+   X = df[['flag','x1']]
+   y = df['y']
+
+   model = LGBMClassifier()
+   model.fit(X, y)
+   ```
+
+2. **Pandas “BooleanDtype” with missing values**
+   If you’re using the nullable pandas Boolean dtype (`dtype="boolean"`), LightGBM will coerce the column to its internal numeric representation (`0`, `1`, and `nan`).  If `nan`s appear, you can leave them—LightGBM handles missing values natively—or fill/encode them as you prefer:
+
+   ```python
+   df['flag'] = df['flag'].astype('boolean')
+   # LightGBM will treat the missing entries as “missing” and handle them in split finding
+   model.fit(df[['flag','x1']], y)
+   ```
+
+3. **Treating booleans as categorical (optional)**
+   Sometimes you’d rather have LightGBM treat a boolean as a true “categorical” feature. You can do that by casting to `category` and passing its column index/name in `categorical_feature`:
+
+   ```python
+   df['flag_cat'] = df['flag'].astype('category')
+   model = LGBMClassifier(categorical_feature=['flag_cat'])
+   model.fit(df[['flag_cat','x1']], y)
+   ```
+
+---
+
+### Bottom line
+
+* **Yes**, boolean predictors work out of the box as 0/1 numeric features.
+* If you need to handle missing booleans, use the nullable `boolean` dtype or fill them beforehand.
+* If you want to force tree splits to treat them as categorical, cast to `category` and declare them in `categorical_feature`.

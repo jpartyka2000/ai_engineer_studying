@@ -1,0 +1,86 @@
+You really have two options if you want to share that same `Logger` class across two otherwise‑independent repos:
+
+---
+
+## 1) Package & install it as a dependency
+
+1. **Extract** your `Logger` into its own repo, e.g. `github.com/you/logging-lib`.
+
+2. In that repo, add a minimal `setup.py` (or `pyproject.toml`) so it becomes a real Python package:
+
+   ```python
+   # setup.py
+   from setuptools import setup, find_packages
+
+   setup(
+     name="logging_lib",
+     version="0.1.0",
+     packages=find_packages(),
+     install_requires=[],
+   )
+   ```
+
+3. **Publish** it somewhere both projects can reach:
+
+   * Public PyPI (if it can be open‑source), or
+   * A private build artifact repo (Artifactory, Nexus, or Azure Artifacts), or
+   * Directly from Git (no “publishing” step needed).
+
+4. In **Repo A** and **Repo B**, add it as a dependency. For example in `requirements.txt`:
+
+   ```text
+   # if you published to PyPI:
+   logging_lib>=0.1.0
+
+   # or if you want to pull straight from GitHub:
+   git+https://github.com/you/logging-lib.git@v0.1.0#egg=logging_lib
+   ```
+
+5. Now in either repo you just:
+
+   ```python
+   from logging_lib.logger import Logger
+   ```
+
+   and `pip install -r requirements.txt` will fetch it.
+
+---
+
+## 2) Vendor it in via Git submodule (or subtree)
+
+If you don’t want to fuss with packaging:
+
+1. Turn your shared logger into its own repo (`logging-lib`).
+
+2. In **Repo A** and **Repo B**, add it as a Git submodule:
+
+   ```bash
+   git submodule add https://github.com/you/logging-lib.git vendor/logging_lib
+   ```
+
+3. Add `vendor/logging_lib` to your Python path. In each project’s root, e.g. in your entrypoint:
+
+   ```python
+   import sys, os
+   sys.path.insert(0, os.path.join(os.path.dirname(__file__), "vendor", "logging_lib"))
+
+   from logger import Logger
+   ```
+
+4. Whenever you update `logging-lib`, you run:
+
+   ```bash
+   git submodule update --remote vendor/logging_lib
+   ```
+
+   to pull in the latest.
+
+---
+
+### Why packaging is usually better
+
+* **Versioning**: you can tag releases (v0.1, v0.2) and pin exactly what you need.
+* **Isolation**: no more fiddling with `sys.path` hacks.
+* **Ecosystem**: you get all of pip’s dependency resolution, virtual environments, etc.
+
+That said, submodules or subtrees work fine for small teams or private codebases where you’d rather not manage an artifact repository.

@@ -1,0 +1,102 @@
+No – you don’t have to use pandas at all; scikit‑learn’s `StratifiedKFold.split` just needs any “array‑like” X and y that support:
+
+1. `len(X)`
+2. integer‐position indexing (`X[idx]` and `y[idx]`)
+
+Below are a few common alternatives:
+
+---
+
+## 1. NumPy arrays
+
+Convert your features/target to NumPy and slice those directly:
+
+```python
+# if X_feat is a pandas DataFrame, for example…
+X_np = X_feat.to_numpy()          # shape (n_samples, n_features)
+y_np = y.to_numpy()               # shape (n_samples,)
+
+cv = StratifiedKFold(...)
+for train_idx, val_idx in cv.split(X_np, y_np):
+    X_train, X_val = X_np[train_idx], X_np[val_idx]
+    y_train, y_val = y_np[train_idx], y_np[val_idx]
+    # … train your model …
+```
+
+You can also start from a Spark DF by doing
+
+```python
+pdf = df_spark.toPandas()
+X_np = pdf[MODEL_PREDICTOR_LIST].to_numpy()
+y_np = pdf[outcome_variable_str].to_numpy()
+```
+
+---
+
+## 2. SciPy sparse matrices
+
+If your data are sparse you can convert to a CSR/CSC matrix; slicing by integer indices works out‑of‑the‑box:
+
+```python
+from scipy import sparse
+
+X_sp = sparse.csr_matrix(X_np)  # or build it directly
+for train_idx, val_idx in cv.split(X_sp, y_np):
+    X_train = X_sp[train_idx]
+    X_val   = X_sp[val_idx]
+    # …
+```
+
+---
+
+## 3. Other pandas‑like libraries
+
+* **Modin DataFrame** (on Ray or Dask) implements the full pandas `.iloc[...]` API, including list‑of‑indices.
+* **cuDF** (RAPIDS) supports fancy indexing on the GPU.
+
+They behave identically to pandas from scikit‑learn’s perspective.
+
+---
+
+## 4. Pure Spark → distributed cross‑validation
+
+If you want to stay in the Spark world and never pull data to the driver, switch to the Spark‑ML toolkit:
+
+```python
+from pyspark.ml.classification import RandomForestClassifier
+from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+from pyspark.ml.feature import VectorAssembler
+
+# 1) assemble your features into a vector column
+va = VectorAssembler(inputCols=MODEL_PREDICTOR_LIST, outputCol="features")
+rf = RandomForestClassifier(labelCol=outcome_variable_str, featuresCol="features")
+
+# 2) set up a Spark ML pipeline
+from pyspark.ml import Pipeline
+pipe = Pipeline(stages=[va, rf])
+
+# 3) define a grid & cross‑validator
+paramGrid = ParamGridBuilder() \
+    .addGrid(rf.numTrees, [50, 100]) \
+    .build()
+
+cv = CrossValidator(
+    estimator=pipe,
+    estimatorParamMaps=paramGrid,
+    evaluator=BinaryClassificationEvaluator(labelCol=outcome_variable_str),
+    numFolds=5,
+    seed=42
+)
+
+# 4) run it
+cvModel = cv.fit(df_data)
+```
+
+---
+
+### TL;DR
+
+* **You don’t *need* pandas** – any object with `len` and integer indexing works (NumPy, SciPy, Modin, cuDF, even plain Python lists).
+* **Pure Spark?**  Use `pyspark.ml.tuning.CrossValidator` instead of scikit‑learn.
+* **If you hit “no iloc” on something like Koalas**, either convert to pandas (`.toPandas()`) or switch to a library (Modin/cuDF) whose `.iloc` supports list‑of‑indices.

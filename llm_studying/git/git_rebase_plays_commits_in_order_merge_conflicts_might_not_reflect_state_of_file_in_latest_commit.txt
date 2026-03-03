@@ -1,0 +1,26 @@
+The conflict exists because of how rebase works and your Git history.
+
+**What's happening:**
+
+1. At some point in your branch's history, commit `bddff1e` modified `eval-run` to use the `uv run python -m cue_eval.runner` approach with `use_legacy_agent`.
+
+2. Meanwhile, main modified `eval-run` to use the bash script approach with `EXEC_ENV=modal`.
+
+3. Even though your *current* branch has `eval-run-orig` (you renamed it), Git is replaying your commits one by one. When it gets to `bddff1e`, it tries to apply that old commit's changes on top of main—and that's where the conflict occurs.
+
+**The key insight:** Rebase replays your commits in order. Your later commit that renamed `eval-run` to `eval-run-orig` hasn't been applied yet. You're currently stuck at the earlier commit that still called it `eval-run`.
+
+**To resolve this:**
+
+Since your current branch already has the command renamed to `eval-run-orig`, you probably want to keep main's version of `eval-run` (the bash script) and let your later commit add `eval-run-orig` separately. So accept the "HEAD" (main's) version for the `eval-run` block:
+
+```yaml
+eval-run run_name="" config="development_harness" use_legacy_agent="":
+    @if [ -n "{{run_name}}" ]; then \
+        EXEC_ENV=modal RUN_NAME="{{run_name}}" CONFIG_PATH="cue_eval/configs/{{config}}.yaml" bash cue_eval/run_eval_harness.sh; \
+    else \
+        EXEC_ENV=modal CONFIG_PATH="cue_eval/configs/{{config}}.yaml" bash cue_eval/run_eval_harness.sh; \
+    fi
+```
+
+Then continue the rebase and your later commits should add `eval-run-orig` cleanly.

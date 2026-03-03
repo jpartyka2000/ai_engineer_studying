@@ -1,0 +1,93 @@
+Proper scoring rules are functions that assess the quality of **probabilistic forecasts** by assigning a numerical score based on the predicted distribution and the event that actually occurs.  They have two key properties:
+
+1. **Properness**:  The expected score is **optimized** (e.g. minimized for a loss, maximized for a reward) when you report your **true** beliefs (i.e. the distribution you actually think is correct).  
+2. **Strict properness**:  You do strictly worse if you report *any* distribution other than your true one.
+
+That means proper scoring rules **encourage honest**, calibrated probabilities rather than just “picking the most likely class.”
+
+---
+
+## Common Proper Scoring Rules
+
+### 1. Logarithmic Score (Log Loss / Cross‐Entropy)  
+\[
+\text{LogLoss} = -\frac1N\sum_{i=1}^N\bigl[y_i\log p_i + (1-y_i)\log(1-p_i)\bigr].
+\]  
+- **Strictly proper.**  
+- Heavily penalizes confident but wrong predictions.  
+- Ubiquitous for binary and multi‐class classification.
+
+### 2. Brier Score (Quadratic Score)  
+\[
+\text{Brier} = \frac1N\sum_{i=1}^N (p_i - y_i)^2,
+\]  
+- Proper but **not** strictly proper unless you weight classes equally.  
+- Penalizes squared error in probabilities—more forgiving of small mistakes than log-loss.  
+- Equivalently decomposes into **reliability**, **resolution**, and **uncertainty**.
+
+### 3. Spherical Score  
+\[
+\text{Spherical} = -\frac1N\sum_{i=1}^N\frac{p_i}{\sqrt{p_i^2 + (1-p_i)^2}}.
+\]  
+- Less common, but another strictly proper option, normalizing the prediction vector.
+
+### 4. Continuous Ranked Probability Score (CRPS)  
+For **continuous** targets with full predictive CDF \(F\):
+\[
+\text{CRPS}(F, y) 
+= \int_{-\infty}^{+\infty}\bigl(F(x)-\mathbf{1}\{y\le x\}\bigr)^2\,dx.
+\]  
+- Generalizes Brier score to continuous outcomes or full‐distribution forecasts.  
+- Proper and widely used in meteorology and probabilistic forecasting.
+
+---
+
+## Why Use Proper Scoring Rules?
+
+- **Calibration check**: They penalize miscalibration (e.g. when your reported \(p\) systematically deviates from observed frequency).  
+- **Comparability**: You can directly compare two models’ probability estimates on the **same** scale.  
+- **Training objectives**: Many learning algorithms (logistic regression, neural nets with cross‐entropy loss, gradient boosting with “binary:logistic” objective) are explicitly minimizing a proper scoring rule.
+
+---
+
+## Decomposition (Brier Score Example)
+
+The Brier score can be **decomposed** as:
+
+\[
+\text{Brier} 
+= \underbrace{\sum f_k(\bar y_k - \bar p_k)^2}_{\text{Reliability}}
++ \underbrace{\sum f_k\bar p_k (1-\bar p_k)}_{\text{Resolution}}
++ \underbrace{\bar p(1-\bar p)}_{\text{Uncertainty}}
+\]
+
+- **Reliability**: how close forecast probabilities \(\bar p_k\) are to observed frequencies \(\bar y_k\).  
+- **Resolution**: how much your bins differ from the overall base‐rate (higher is better).  
+- **Uncertainty**: inherent unpredictability of the event.
+
+---
+
+## When to Choose Which
+
+| Scenario                                   | Recommended Rule      |
+|--------------------------------------------|-----------------------|
+| Binary / multi‐class classification        | **Log Loss** (strict) |
+| Well‐calibrated probabilistic ranking      | **Brier**             |
+| Full predictive distribution (continuous)  | **CRPS**              |
+| Want bounded [–1,0] reward rather than loss| **Spherical**         |
+
+---
+
+### Quick scikit‐learn snippet
+
+```python
+from sklearn.metrics import log_loss, brier_score_loss
+
+y_true = [...]
+y_proba = [...]
+
+print("Log Loss:  ", log_loss(y_true, y_proba))
+print("Brier:     ", brier_score_loss(y_true, y_proba))
+```
+
+Proper scoring rules give you a rigorous, principled way to evaluate not just **what** your model predicts, but **how well** its probability estimates reflect reality.

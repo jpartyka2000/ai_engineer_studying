@@ -1,0 +1,44 @@
+In Python’s logging system, the **root logger** is the default “top-of-hierarchy” logger that all other loggers inherit from unless you explicitly configure otherwise. Here are its key characteristics:
+
+1. **Name and hierarchy**
+
+   * It has the empty string as its name (`logging.getLogger()` with no arguments returns it).
+   * All other loggers like `"myapp.module"` are children in the hierarchy and, by default, propagate their records up to the root logger.
+
+2. **Default level and handlers**
+
+   * If you never call `basicConfig()` or add any handlers yourself, the root logger has a special **last-resort** handler installed that will emit `ERROR`-level (and above) messages to `sys.stderr`.
+   * Its default level is `WARNING`, so it will ignore `DEBUG` and `INFO` records unless you lower its level.
+
+3. **Configuration via `basicConfig()`**
+
+   * Calling `logging.basicConfig(...)` the first time you log will:
+
+     1. Set the root logger’s level (if you passed `level=`).
+     2. Attach a `StreamHandler` (or file handler) with the formatter you specify.
+   * Subsequent calls to `basicConfig()` do nothing unless you pass `force=True` in Python 3.8+.
+
+4. **Propagation behavior**
+
+   * Child loggers (`logging.getLogger("a.b")`) by default have `propagate=True`, so their records bubble up to the root logger’s handlers.
+   * You can disable this on a child logger by setting `propagate=False`, in which case the root logger won’t see its messages.
+
+5. **Accessing and modifying**
+
+   ```python
+   import logging
+
+   root = logging.getLogger()        # the root logger
+   root.setLevel(logging.INFO)       # now captures INFO and above
+   for handler in root.handlers:
+       handler.setFormatter(my_fmt)  # customize formatting
+   ```
+
+6. **When you don’t need it**
+
+   * In larger applications, you often configure your own handlers on specific loggers and disable propagation, effectively bypassing the root logger.
+   * But in quick scripts or simple modules, relying on the root logger plus `basicConfig()` is a fast way to get console-based logging.
+
+---
+
+**In summary**, the root logger is the ultimate sink for log messages in Python’s logging hierarchy. It provides a simple default setup (warnings and errors to stderr) and can be configured once (via `basicConfig` or directly) to control logging behavior application-wide.

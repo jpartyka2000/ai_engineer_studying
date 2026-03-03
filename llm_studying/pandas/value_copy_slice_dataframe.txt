@@ -1,0 +1,89 @@
+The warning you're seeing, **"A value is trying to be set on a copy of a slice from a DataFrame"**, occurs when you attempt to modify a **view** or a **copy** of a Pandas DataFrame. This typically happens when you're working with a subset of the DataFrame, and Pandas isn't sure if you're trying to modify the original DataFrame or a copy.
+
+To prevent this warning and ensure you're modifying the original DataFrame, you should use **`.loc[]`** or **`.copy()`** explicitly, depending on your intent.
+
+### 1. **Using `.loc[]` to Modify the Original DataFrame**:
+If you're slicing a DataFrame and want to modify the original data, always use the `.loc[]` accessor to avoid this warning. This explicitly selects the rows and columns you're trying to update.
+
+#### Example:
+
+```python
+# Correct way to modify using .loc
+df.loc[mask, 'column_name'] = value
+```
+
+In this case:
+- `mask`: A condition or boolean mask that selects the rows you want to modify.
+- `'column_name'`: The column you're updating.
+- `value`: The new value you're assigning.
+
+### 2. **Using `.copy()` When You Want to Work on a Copy**:
+If you intend to modify a **copy** of the DataFrame (not the original), explicitly use `.copy()` when creating the subset.
+
+#### Example:
+
+```python
+# Creating a copy of a slice
+df_copy = df[['column1', 'column2']].copy()
+
+# Modify the copy safely
+df_copy['column1'] = new_value
+```
+
+Using `.copy()` makes it clear that you're working on a separate copy of the DataFrame, and changes will not affect the original DataFrame.
+
+### Example Fix for Your Case:
+Let’s say you had code like this that causes the warning:
+
+```python
+subset_df = df[df['column'] > 10]  # Subsetting
+subset_df['new_column'] = 'new_value'  # Trying to assign new values
+```
+
+You can resolve the warning by either:
+
+#### Option 1: Using `.loc[]` (to modify the original DataFrame):
+```python
+df.loc[df['column'] > 10, 'new_column'] = 'new_value'
+```
+
+#### Option 2: Using `.copy()` (to create a copy and modify it):
+```python
+subset_df = df[df['column'] > 10].copy()
+subset_df['new_column'] = 'new_value'
+```
+
+### Conclusion:
+- **Use `.loc[]`** when modifying a subset of a DataFrame to ensure that you're modifying the original DataFrame safely.
+- **Use `.copy()`** if you want to work with a copy of a subset and avoid modifying the original DataFrame.
+
+Both of these methods will prevent the warning message from appearing.
+
+-------------------------
+
+If you just want to **suppress the warning** without changing your code, you can use the **`pd.options.mode.chained_assignment`** setting to control whether the warning is displayed.
+
+To suppress the warning, set this option to `'none'`:
+
+### Suppress the Warning:
+```python
+import pandas as pd
+
+# Suppress the SettingWithCopyWarning
+pd.options.mode.chained_assignment = None  # Default is 'warn'
+```
+
+This will suppress the **"A value is trying to be set on a copy of a slice from a DataFrame"** warning.
+
+### Important Notes:
+- Suppressing the warning will not fix any potential issues with modifying copies of DataFrames. If you're working with a copy of a DataFrame, you might still be making unintended modifications to a slice.
+- It's always better to resolve the root cause by using `.loc[]` or `.copy()`, as discussed earlier, but if you're sure about your operations, this will stop the warning from being printed.
+
+### Reset the Warning (Optional):
+If you want to restore the warning after suppressing it:
+
+```python
+pd.options.mode.chained_assignment = 'warn'
+```
+
+This will bring back the default behavior where the warning is shown.

@@ -1,0 +1,42 @@
+MLflow parameters (and tags) are really meant for small bits of metadata (strings ≤ 65 KB). When you try to do something like:
+
+```python
+mlflow.log_param("big_payload", very_big_string)
+```
+
+and that string is over 65535 bytes, you’ll get exactly that error:
+
+```
+MlflowException: INVALID_PARAMETER_VALUE: Param value … exceeds size threshold 65535 bytes.
+```
+
+### What to do instead
+
+1. **Keep params small.**
+   Only log things like hyper‐parameter values, short IDs, flags, etc.
+
+2. **For large blobs, use artifacts.**
+   Artifacts are how you store anything bigger than a few dozen characters:
+
+   ```python
+   # if it's just text
+   mlflow.log_text(very_big_string, artifact_file="big_payload.txt")
+
+   # if it's JSON/dict
+   mlflow.log_dict(my_big_dict, artifact_file="big_payload.json")
+
+   # arbitrary files
+   with open("/tmp/data.pkl", "wb") as f:
+       pickle.dump(my_large_object, f)
+   mlflow.log_artifact("/tmp/data.pkl")
+   ```
+
+3. **If you really need it as a “parameter”:**
+   Slice, compress, hash, or otherwise reduce it to a tiny summary (e.g. an SHA-256 hash or a short ID) and log *that*.
+
+---
+
+#### TL;DR
+
+> **Don’t** jam large strings or blobs into `log_param`.
+> **Do** put them into artifacts with `mlflow.log_text`, `mlflow.log_dict` or `mlflow.log_artifact`, and reserve `log_param` for small, concise values.

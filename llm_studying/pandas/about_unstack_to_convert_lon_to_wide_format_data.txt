@@ -1,0 +1,106 @@
+Here’s an unstack overview without diving into “multi-level index” jargon—just plain row-to-column reshaping.
+
+---
+
+## What `unstack()` Does
+
+- **Turns one set of row labels into column headings.**  
+  If your data is organized so that each row is labeled by, say, “Campaign” and “Plan,” calling `unstack('Plan')` will spread each unique plan out into its own column, with campaigns remaining down the rows.  
+- **Reshapes “long” data into a “wide” table.**  
+
+---
+
+## Signature
+
+```python
+# on a Series of values indexed by one or more labels
+Series.unstack(level=-1, fill_value=None) → DataFrame
+
+# on a DataFrame whose rows carry one or more labels
+DataFrame.unstack(level=-1, fill_value=None) → DataFrame
+```
+
+- **`level`**  
+  - Which row-label to lift out into columns  
+  - Can be the name of that label or its 0-based position  
+  - Defaults to the last label if you don’t specify  
+- **`fill_value`**  
+  - What to put in missing spots (default `None` → `NaN`)  
+
+---
+
+## Basic Example (Series → DataFrame)
+
+```python
+import pandas as pd
+
+# start with a Series that’s counted by two labels: campaign & plan
+df = pd.DataFrame({
+    'campaign': ['A','A','B','B','B'],
+    'plan':     ['x','y','x','y','z'],
+    'value':    [10, 20, 30, 40, 50]
+})
+counts = df.groupby(['campaign','plan']).size()  
+# counts looks like:
+# campaign  plan
+# A         x       1
+#           y       1
+# B         x       1
+#           y       1
+#           z       1
+# dtype: int64
+
+# now spread each 'plan' into its own column
+wide = counts.unstack(level='plan', fill_value=0)
+print(wide)
+```
+
+```
+plan       x  y  z
+campaign          
+A          1  1  0
+B          1  1  1
+```
+
+- Rows are still campaigns  
+- Columns are the unique plan names  
+- Empty spots become 0 (because of `fill_value=0`)
+
+---
+
+## Direct on a DataFrame’s Row Labels
+
+If your DataFrame already has those two labels along its rows:
+
+```python
+# suppose df2 has 'campaign' and 'plan' as its row labels
+df2 = (
+    df
+    .set_index(['campaign','plan'])  # turn columns into row labels
+    ['value']                        # pick the series of values
+    .unstack(level='plan')           # move 'plan' labels into columns
+)
+```
+
+---
+
+## Common Tips
+
+1. **Pick which labels to spread**  
+   - `level=-1` (the last one) by default  
+   - Or pass a name/number for any row-label  
+2. **Fill missing**  
+   - `fill_value=0` if you want zeros instead of NaN  
+3. **Reverse with `stack()`**  
+   - To go back from wide → long  
+4. **No in-place**  
+   - Returns a new DataFrame  
+
+---
+
+## When to Use
+
+- After a `groupby(...).size()` or `value_counts()` step, to get one column per category  
+- Any time you need to convert from a tall, label-heavy table into a tidy, wide format for reporting or plotting  
+
+That’s it—`unstack()` is your one-line reshape from long to wide by lifting row labels into columns!

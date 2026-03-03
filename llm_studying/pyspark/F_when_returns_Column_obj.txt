@@ -1,0 +1,42 @@
+`F.when()` returns a `Column` object representing a conditional expression.
+
+In your example:
+
+```python
+bucket_expr = F.when(F.col(input_column_name).isNull(), F.lit("nan"))
+```
+
+`bucket_expr` is a `Column` that evaluates to `"nan"` when the condition is true, and `null` when false (since there's no `.otherwise()`).
+
+**This is why you can chain:**
+
+```python
+bucket_expr = F.when(F.col("x").isNull(), "nan") \
+               .when(F.col("x") < 0, "negative") \
+               .otherwise("positive")
+```
+
+Each `.when()` returns a new `Column` with the added condition.
+
+**Using the result:**
+
+Since it's a `Column`, you can use it anywhere a column is expected:
+
+```python
+# In withColumn
+df.withColumn("bucket", bucket_expr)
+
+# In select
+df.select("id", bucket_expr.alias("bucket"))
+
+# Combined with other expressions
+df.withColumn("result", bucket_expr.cast("string"))
+```
+
+**Verification:**
+
+```python
+bucket_expr = F.when(F.col("x").isNull(), F.lit("nan"))
+print(type(bucket_expr))
+# <class 'pyspark.sql.column.Column'>
+```

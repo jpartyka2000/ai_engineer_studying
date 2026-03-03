@@ -1,0 +1,156 @@
+Below is a **small, concrete example** with just two training points illustrating how \(\mathbf{K}^{-1}\) “de-correlates” them when weighting their contributions to a Gaussian Process posterior. We’ll see in the final weights that **high correlation** between points forces the GP to “downweight” each point’s unique contribution relative to the case where they would be uncorrelated.
+
+---
+
+## 1. Setup
+
+### Training Points
+Let’s say we have two training inputs:
+\[
+\mathbf{x}_1,\;\mathbf{x}_2 
+\]
+and two corresponding observed outputs:
+\[
+y_1,\; y_2.
+\]
+We collect them into vectors:
+\[
+\mathbf{X} = \{\mathbf{x}_1, \mathbf{x}_2\}, 
+\quad 
+\mathbf{y} = \begin{pmatrix}y_1 \\ y_2\end{pmatrix}.
+\]
+
+### Covariance Matrix \(\mathbf{K}\)
+For a Gaussian Process, we have a kernel function \(k(\cdot,\cdot)\) giving rise to a covariance matrix \(\mathbf{K}\) among these points:
+\[
+\mathbf{K}(\mathbf{X}, \mathbf{X}) 
+= 
+\begin{pmatrix}
+k(\mathbf{x}_1,\mathbf{x}_1) & k(\mathbf{x}_1,\mathbf{x}_2) \\
+k(\mathbf{x}_2,\mathbf{x}_1) & k(\mathbf{x}_2,\mathbf{x}_2)
+\end{pmatrix}.
+\]
+
+#### Example Numerical Values
+Let’s pick a simple scenario:
+\[
+\mathbf{K}(\mathbf{X}, \mathbf{X}) 
+= 
+\begin{pmatrix}
+1.0 & 0.8 \\
+0.8 & 1.0
+\end{pmatrix}.
+\]
+- Diagonal entries are each 1.0, indicating each point is perfectly correlated with itself.
+- Off-diagonal entries are 0.8, indicating **high correlation** between \(\mathbf{x}_1\) and \(\mathbf{x}_2\).
+
+Finally, imagine the observed outputs:
+\[
+\mathbf{y} 
+= 
+\begin{pmatrix}
+1.0 \\
+1.0
+\end{pmatrix}.
+\]
+
+---
+
+## 2. Weighting by \(\mathbf{K}^{-1}\)
+
+When making predictions at a new point (in a noiseless GP for simplicity), the **posterior mean** at a test location \(\mathbf{x}_*\) can be written as:
+
+\[
+\mu(\mathbf{x}_*) 
+= 
+\mathbf{k}_*(\mathbf{x}_*)^\top \,\mathbf{K}^{-1}\,\mathbf{y},
+\]
+
+where \(\mathbf{k}_*(\mathbf{x}_*)\) is the vector of covariances between \(\mathbf{x}_*\) and the training points, and 
+\(\mathbf{K}^{-1}\mathbf{y}\) gives the effective *weights* for each observation \(y_i\).
+
+### Calculate \(\mathbf{K}^{-1}\)
+For our \(2\times2\) example,
+\[
+\mathbf{K} 
+= 
+\begin{pmatrix}
+1.0 & 0.8 \\
+0.8 & 1.0
+\end{pmatrix}.
+\]
+The determinant is:
+\[
+\det(\mathbf{K}) = 1.0 \times 1.0 - 0.8 \times 0.8 = 1 - 0.64 = 0.36.
+\]
+The inverse of a \(2\times2\) matrix \(\begin{pmatrix}a & b \\ b & a\end{pmatrix}\) is
+\[
+\mathbf{K}^{-1}
+=
+\frac{1}{a^2 - b^2}
+\begin{pmatrix}
+a & -b \\
+-b & a
+\end{pmatrix}.
+\]
+Thus,
+\[
+\mathbf{K}^{-1}
+=
+\frac{1}{0.36}
+\begin{pmatrix}
+1.0 & -0.8 \\
+-0.8 & 1.0
+\end{pmatrix}
+=
+\begin{pmatrix}
+2.777\ldots & -2.222\ldots \\
+-2.222\ldots & 2.777\ldots
+\end{pmatrix}.
+\]
+
+### Multiply by \(\mathbf{y}\)
+Now compute 
+\[
+\mathbf{\alpha} 
+= 
+\mathbf{K}^{-1}\mathbf{y}
+=
+\begin{pmatrix}
+2.777\ldots & -2.222\ldots \\
+-2.222\ldots & 2.777\ldots
+\end{pmatrix}
+\begin{pmatrix}
+1.0 \\
+1.0
+\end{pmatrix}
+=
+\begin{pmatrix}
+2.777 - 2.222 \\
+-2.222 + 2.777
+\end{pmatrix}
+=
+\begin{pmatrix}
+0.555\ldots \\
+0.555\ldots
+\end{pmatrix}.
+\]
+So, each training point’s output gets a final “weight” of about \(0.555\). Notice that **both are less than 1.0**, which indicates that the GP is *downweighting* each individual point because they provide largely **redundant information** (they are 80% correlated in the kernel). 
+
+> **If** \(\mathbf{K}\) were the identity matrix (no correlation), then \(\mathbf{K}^{-1} = \mathbf{I}\), and the weights would just be \(\mathbf{y} = (1,1)^\top\). That would mean each point is counted “fully,” with weight = 1. But here, the high correlation 0.8 means “We’ve basically seen the same information twice,” so each point's unique contribution is smaller.
+
+---
+
+## 3. Interpretation: De-Correlation
+
+- The off-diagonal \((0.8)\) entries in \(\mathbf{K}\) say: “\(y_1\) and \(y_2\) are strongly correlated—knowing one tells me a lot about the other.”  
+- By inverting \(\mathbf{K}\), we **cancel out** the parts of \(y_1\) that are explained by \(y_2\) (and vice versa).  
+- The resulting weights \(\mathbf{\alpha}\) reflect each training point’s *unique* information—no double-counting.
+
+Hence, **\(\mathbf{K}^{-1}\) “de-correlates” the training data** by adjusting their weights to avoid overemphasizing points that are highly redundant in the kernel space.
+
+---
+
+## 4. Key Takeaway
+
+This example, though tiny, illustrates the essential idea: **when two data points are strongly correlated, the inverse covariance matrix reduces each point’s direct influence.** This is precisely how Gaussian Processes avoid double-counting redundant observations and maintain a sensible posterior mean.

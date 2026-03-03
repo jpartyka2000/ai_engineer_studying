@@ -1,0 +1,237 @@
+I'll help you set up Claude Code with the Ralph plugin in a cloud VM. Let me search for the current setup instructions first.Great question! Here's how to set up Claude Code with the Ralph plugin in a cloud VM to keep your desktop safe:
+
+## Quick Overview
+
+The **Ralph Wiggum plugin** is a Claude Code plugin that creates interactive self-referential AI loops for iterative development, allowing Claude to work on the same task repeatedly until completion. It's essentially "a Bash loop" that repeatedly feeds an AI agent a prompt file, allowing it to iteratively improve its work.
+
+## Step-by-Step Setup in Cloud VM
+
+### 1. Choose and Set Up Your Cloud VM
+
+Popular options:
+- **AWS EC2** (t3.medium or larger recommended)
+- **Google Cloud Compute Engine**
+- **DigitalOcean Droplets**
+- **Vultr** (mentioned in search results as working well)
+- **Linode/Akamai**
+
+Recommended specs:
+- **OS**: Ubuntu 22.04 or 24.04 LTS
+- **RAM**: 4GB minimum, 8GB recommended
+- **Storage**: 20GB+ SSD
+- **vCPUs**: 2+
+
+### 2. Connect to Your VM
+
+```bash
+# SSH into your VM
+ssh your-username@your-vm-ip
+
+# Or use a tool like:
+# - Termius (works on mobile too!)
+# - VS Code Remote SSH
+# - mosh for better mobile connections
+```
+
+### 3. Install Claude Code on the VM
+
+The native installation is the recommended method:
+
+```bash
+# Install Claude Code (native installer - recommended)
+curl -fsSL https://claude.ai/install.sh | bash
+
+# Add to PATH if needed
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify installation
+claude --version
+```
+
+### 4. Authenticate Claude Code
+
+```bash
+# Start authentication
+claude
+
+# This will give you a URL to authenticate
+# Copy the URL and open it in your browser
+# Complete the OAuth process
+```
+
+**Authentication options:**
+- Claude Pro/Max subscription ($20-100/month)
+- Anthropic API with billing enabled (pay-per-use)
+
+### 5. Install the Ralph Plugin
+
+The Ralph plugin should be available in the official Claude Code plugins. Enable it:
+
+```bash
+# Navigate to your project directory
+cd ~/projects/your-project
+
+# Enable the Ralph plugin
+claude plugin enable ralph
+
+# Or install from the plugins directory if needed
+# Check available plugins:
+claude plugin list
+```
+
+### 6. Configure Permissions for Autonomous Operation
+
+For Ralph to work autonomously without constantly asking for permission:
+
+```bash
+# Option 1: Use permissions file (recommended for safety)
+# Create .claude/settings.json in your project:
+mkdir -p .claude
+cat > .claude/settings.json << 'EOF'
+{
+  "permissions": {
+    "allow": [
+      "bash",
+      "edit",
+      "write",
+      "read"
+    ],
+    "deny": [
+      "rm -rf /",
+      "sudo"
+    ]
+  }
+}
+EOF
+
+# Option 2: For full automation (use in isolated VM only!)
+claude --permission-mode=dontAsk
+
+# Option 3: Dangerous but effective (isolated VM only!)
+claude --dangerously-skip-permissions
+```
+
+### 7. Use Ralph for Autonomous Development
+
+```bash
+# Start a Ralph loop
+/ralph-loop
+
+# Then give Claude a task:
+# "Build a REST API for a todo app with full test coverage.
+# Keep working until all tests pass."
+
+# Cancel if needed:
+/cancel-ralph
+```
+
+## Advanced Setup: Automated VM Management
+
+If you want a more sophisticated setup:
+
+### Option A: Use the claude-code-vm Project
+
+There's an automated deployment system for Claude Code on Debian VMs with 4-tier progressive deployment architecture:
+
+```bash
+# On your desktop (controlling the VM)
+git clone https://github.com/intelligentcode-ai/claude-code-vm.git
+cd claude-code-vm
+
+# Setup configuration
+make setup
+nano config/.env  # Add your credentials
+
+# Deploy (choose tier based on needs)
+make deploy-enhanced VM_HOST=your-vm-ip TARGET_USER=your-username
+```
+
+### Option B: Mobile Development Setup
+
+You can even run multiple Claude Code agents from your phone using Termius, mosh, and a cloud VM with auto-start/stop scripts:
+
+```bash
+# Create start/stop scripts
+cat > ~/vm-start.sh << 'EOF'
+#!/bin/bash
+# Start VM via cloud provider API
+# Wait for Tailscale/VPN
+# Connect via mosh
+EOF
+
+cat > ~/vm-stop.sh << 'EOF'
+#!/bin/bash
+# Stop VM to save costs
+EOF
+
+chmod +x ~/vm-*.sh
+```
+
+## Safety Considerations
+
+**Why use a VM?**
+1. **Isolation**: Ralph runs autonomously and could make mistakes
+2. **Cost control**: Cloud VMs can be stopped when not in use
+3. **Experimentation**: Safe to test without risking your desktop
+4. **Parallelization**: Run 5+ Claude Code sessions in parallel
+
+**Best practices:**
+- Start with `--permission-mode=dontAsk` rather than `--dangerously-skip-permissions`
+- Use project-specific `.claude/settings.json` to control allowed operations
+- Set up Git properly so changes are tracked
+- Create VM snapshots before major experiments
+- Use budget alerts on your cloud provider
+
+## Verification Setup
+
+The most important thing to get great results: give Claude a way to verify its work through browser testing, test suites, or phone simulators - verification 2-3x the quality of the final result.
+
+```bash
+# Install testing tools in your VM
+sudo apt-get update
+sudo apt-get install -y python3-pytest nodejs npm
+
+# Set up automated testing
+# Ralph will use these to verify its work
+```
+
+## Cost Management
+
+```bash
+# Stop VM when not in use
+# AWS example:
+aws ec2 stop-instances --instance-ids i-1234567890abcdef0
+
+# Or set up auto-shutdown after idle time
+sudo apt-get install -y tmux
+# Use tmux for persistent sessions that survive disconnects
+```
+
+## Example Workflow
+
+```bash
+# 1. SSH into VM
+ssh ubuntu@your-vm-ip
+
+# 2. Start Claude Code
+cd ~/projects/new-project
+claude
+
+# 3. Enable Ralph and start loop
+/ralph-loop
+
+# 4. Give it a complex task
+> "Create a Python FastAPI application with:
+> - User authentication
+> - CRUD endpoints for todos
+> - SQLite database
+> - Full test coverage
+> - Docker configuration
+> Keep iterating until all tests pass and the app runs successfully."
+
+# 5. Ralph will work autonomously until completion
+# 6. Check progress periodically via SSH or web-based code viewer
+```
+
+This setup keeps your desktop safe while letting you experiment with autonomous AI development! The VM isolation means even if something goes wrong, it's contained and easily fixable.

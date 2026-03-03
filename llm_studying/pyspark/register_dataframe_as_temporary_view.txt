@@ -1,0 +1,28 @@
+You can register your DataFrame as a temporary view and then run a SQL query against that view. For example:
+
+```python
+# Register the DataFrame as a temporary view
+df.createOrReplaceTempView("temp_df")
+
+# Initialize an empty list to hold columns with all nulls
+all_null_columns = []
+
+# Loop through each column and count non-null values using a SQL query
+for col_name in df.columns:
+    query = f"SELECT COUNT({col_name}) AS cnt FROM temp_df"
+    result = spark.sql(query).collect()[0]["cnt"]
+    if result == 0:
+        all_null_columns.append(col_name)
+
+print("Columns with all null values:", all_null_columns)
+```
+
+In this snippet, we register `df` as `"temp_df"` and then loop over every column name. For each column, we run a SQL query that counts the non-null values (since SQL’s `COUNT(column)` only counts non-null values). If the count is 0, the column is entirely null, and we add it to our list.
+
+-------------
+
+No—the temporary view will persist for the duration of your Spark session (or until you explicitly drop it). In other words, registering a DataFrame as a temporary view using `createOrReplaceTempView` makes it available in the session catalog, and it won’t automatically disappear when your function finishes executing. If you want to remove it after you're done, you can call:
+
+```python
+spark.catalog.dropTempView("temp_df")
+```

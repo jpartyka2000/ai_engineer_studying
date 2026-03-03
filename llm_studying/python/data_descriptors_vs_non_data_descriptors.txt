@@ -1,0 +1,386 @@
+## 📋 Deep Dive: Data Descriptors vs Non-Data Descriptors
+
+---
+
+### What Are Descriptors?
+
+Descriptors are objects that customize attribute access by implementing one or more of these methods:
+
+```python
+__get__(self, obj, objtype=None)   # Called when attribute is accessed
+__set__(self, obj, value)          # Called when attribute is assigned
+__delete__(self, obj)              # Called when attribute is deleted
+```
+
+The key distinction is **which** of these methods a descriptor implements.
+
+---
+
+### The Two Types
+
+| Type | Methods Defined | Priority vs Instance `__dict__` |
+|------|-----------------|--------------------------------|
+| **Data Descriptor** | `__get__` AND (`__set__` and/or `__delete__`) | **Higher** — cannot be shadowed |
+| **Non-Data Descriptor** | Only `__get__` | **Lower** — can be shadowed |
+
+This distinction has profound implications for how Python resolves attribute access.
+
+---
+
+### Data Descriptors
+
+A data descriptor defines `__get__` plus at least one of `__set__` or `__delete__`. Data descriptors **always take priority** over instance attributes.
+
+```python
+class DataDescriptor:
+    """A data descriptor — defines __get__ AND __set__"""
+    
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return obj.__dict__.get('_value', 'default')
+    
+    def __set__(self, obj, value):
+        print(f"DataDescriptor.__set__ called with {value}")
+        obj.__dict__['_value'] = value
+
+class MyClass:
+    attr = DataDescriptor()
+
+obj = MyClass()
+
+# Assignment goes through the descriptor
+obj.attr = 42  # Prints: DataDescriptor.__set__ called with 42
+
+# Even if we force a value into __dict__ with the same name...
+obj.__dict__['attr'] = "I'm in the instance dict!"
+
+# ...the descriptor STILL wins on access
+print(obj.attr)  # 42 (from descriptor), NOT "I'm in the instance dict!"
+print(obj.__dict__)  # {'_value': 42, 'attr': "I'm in the instance dict!"}
+```
+
+**Common data descriptors:**
+- `property`
+- `__slots__` attributes
+- ORMs like Django/SQLAlchemy model fields
+
+---
+
+### Non-Data Descriptors
+
+A non-data descriptor defines **only** `__get__`. Non-data descriptors **can be shadowed** by instance attributes.
+
+```python
+class NonDataDescriptor:
+    """A non-data descriptor — defines only __get__"""
+    
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return "from non-data descriptor"
+
+class MyClass:
+    attr = NonDataDescriptor()
+
+obj = MyClass()
+
+# Initially, descriptor is used
+print(obj.attr)  # "from non-data descriptor"
+
+# But we can shadow it with an instance attribute
+obj.attr = "instance value"
+print(obj.attr)  # "instance value" — instance wins!
+
+# The descriptor is still there on the class
+print(MyClass.attr)  # <NonDataDescriptor object>
+
+# Delete instance attribute to "reveal" descriptor again
+del obj.attr
+print(obj.attr)  # "from non-data descriptor"
+```
+
+**Common non-data descriptors:**
+- Functions (which become bound methods)
+- `staticmethod`
+- `classmethod`
+
+---
+
+### Why Does This Matter?
+
+The distinction enables two important patterns:
+
+#### 1. Properties That Cannot Be Bypassed
+
+Data descriptors ensure controlled access:
+
+```python
+class Temperature:
+    @property
+    def celsius(self):
+        return self._celsius
+    
+    @celsius.setter
+    def celsius(self, value):
+        if value < -273.15:
+            raise ValueError("Temperature below absolute zero!")
+        self._celsius = value
+
+t = Temperature()
+t.celsius = 25  # Goes through setter (validation runs)
+
+# Even trying to bypass won't work
+t.__dict__['celsius'] = -500  # Sneak it in
+print(t.celsius)  # Still uses property! Validation intact.
+```
+
+#### 2. Cacheable/Lazy Properties
+
+Non-data descriptors enable caching by allowing instance `__dict__` to shadow them:
+
+```python
+class LazyProperty:
+    """Compute once, then cache in instance __dict__"""
+    
+    def __init__(self, func):
+        self.func = func
+        self.name = func.__name__
+    
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        # Compute value
+        value = self.func(obj)
+        # Store in instance __dict__ — this shadows the descriptor!
+        obj.__dict__[self.name] = value
+        return value
+
+class DataProcessor:
+    def __init__(self, data):
+        self.data = data
+    
+    @LazyProperty
+    def expensive_result(self):
+        print("Computing expensive result...")
+        return sum(x ** 2 for x in self.data)
+
+proc = DataProcessor([1, 2, 3, 4, 5])
+
+print(proc.expensive_result)  # "Computing expensive result..." → 55
+print(proc.expensive_result)  # 55 (no message — cached in __dict__)
+print(proc.expensive_result)  # 55 (still cached)
+
+# Proof it's in __dict__ now
+print('expensive_result' in proc.__dict__)  # True
+```
+
+---
+
+### How Python Checks Descriptor Type
+
+Python determines descriptor type by checking for the presence of methods:
+
+```python
+def is_data_descriptor(obj):
+    """Check if obj is a data descriptor"""
+    return hasattr(type(obj), '__get__') and (
+        hasattr(type(obj), '__set__') or 
+        hasattr(type(obj), '__delete__')
+    )
+
+def is_non_data_descriptor(obj):
+    """Check if obj is a non-data descriptor"""
+    return (
+        hasattr(type(obj), '__get__') and
+        not hasattr(type(obj), '__set__') and
+        not hasattr(type(obj), '__delete__')
+    )
+
+# Examples
+class Data:
+    def __get__(self, obj, objtype=None): pass
+    def __set__(self, obj, value): pass
+
+class NonData:
+    def __get__(self, obj, objtype=None): pass
+
+def func(): pass
+
+print(is_data_descriptor(Data()))      # True
+print(is_data_descriptor(property()))  # True
+
+print(is_non_data_descriptor(NonData()))  # True
+print(is_non_data_descriptor(func))       # True (functions are non-data!)
+```
+
+---
+
+### Functions Are Non-Data Descriptors
+
+This is how methods work in Python:
+
+```python
+def my_function(self):
+    return "called!"
+
+# Functions have __get__ but not __set__
+print(hasattr(my_function, '__get__'))  # True
+print(hasattr(my_function, '__set__'))  # False
+
+class MyClass:
+    method = my_function
+
+obj = MyClass()
+
+# When accessed on instance, __get__ creates a bound method
+print(obj.method)  # <bound method my_function of <MyClass object>>
+
+# Because functions are non-data descriptors, we can shadow them
+obj.method = lambda: "shadowed!"
+print(obj.method())  # "shadowed!"
+```
+
+---
+
+### Read-Only Data Descriptors
+
+You can create a data descriptor that allows getting but not setting by raising an error in `__set__`:
+
+```python
+class ReadOnly:
+    """Data descriptor that prevents assignment"""
+    
+    def __init__(self, value):
+        self.value = value
+    
+    def __get__(self, obj, objtype=None):
+        return self.value
+    
+    def __set__(self, obj, value):
+        raise AttributeError("This attribute is read-only")
+
+class Config:
+    version = ReadOnly("1.0.0")
+
+c = Config()
+print(c.version)  # "1.0.0"
+
+c.version = "2.0.0"  # AttributeError: This attribute is read-only
+
+# Can't bypass via __dict__ either — data descriptor wins
+c.__dict__['version'] = "hacked"
+print(c.version)  # Still "1.0.0"
+```
+
+**Note:** `property` without a setter works exactly this way.
+
+---
+
+### Comparison Table
+
+| Aspect | Data Descriptor | Non-Data Descriptor |
+|--------|-----------------|---------------------|
+| Required methods | `__get__` + (`__set__` or `__delete__`) | Only `__get__` |
+| Priority | Higher than `obj.__dict__` | Lower than `obj.__dict__` |
+| Can be shadowed | No | Yes |
+| Use case | Controlled access, validation | Lazy evaluation, caching |
+| Examples | `property`, `__slots__`, ORM fields | Functions, `staticmethod`, `classmethod` |
+
+---
+
+### The Lookup Order Visualized
+
+```
+obj.attr access:
+        │
+        ▼
+┌───────────────────────────────────┐
+│ 1. DATA DESCRIPTOR in class MRO? │
+│    (has __get__ + __set__/__del__)│
+└───────────────────────────────────┘
+        │ Yes → Call descriptor.__get__(), DONE
+        │ No
+        ▼
+┌───────────────────────────────────┐
+│ 2. Key in obj.__dict__?           │
+└───────────────────────────────────┘
+        │ Yes → Return obj.__dict__[attr], DONE
+        │ No
+        ▼
+┌───────────────────────────────────┐
+│ 3. NON-DATA DESCRIPTOR in MRO?    │
+│    (has only __get__)             │
+└───────────────────────────────────┘
+        │ Yes → Call descriptor.__get__(), DONE
+        │ No
+        ▼
+┌───────────────────────────────────┐
+│ 4. Class variable in MRO?         │
+└───────────────────────────────────┘
+        │ Yes → Return class variable, DONE
+        │ No
+        ▼
+    AttributeError (or __getattr__ if defined)
+```
+
+---
+
+### Practical Example: Validated Attributes
+
+```python
+class Validated:
+    """Data descriptor for validated attributes"""
+    
+    def __init__(self, validator, name=None):
+        self.validator = validator
+        self.name = name
+    
+    def __set_name__(self, owner, name):
+        self.name = name
+    
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return obj.__dict__.get(self.name)
+    
+    def __set__(self, obj, value):
+        if not self.validator(value):
+            raise ValueError(f"Invalid value for {self.name}: {value}")
+        obj.__dict__[self.name] = value
+
+class Person:
+    name = Validated(lambda x: isinstance(x, str) and len(x) > 0)
+    age = Validated(lambda x: isinstance(x, int) and 0 <= x <= 150)
+
+p = Person()
+p.name = "Alice"  # OK
+p.age = 30        # OK
+
+p.name = ""       # ValueError: Invalid value for name: 
+p.age = -5        # ValueError: Invalid value for age: -5
+
+# Cannot bypass validation
+p.__dict__['age'] = -999
+print(p.age)  # Still goes through descriptor — but note: this returns -999
+              # because __get__ reads from __dict__. 
+              # To truly protect, store in a different key!
+```
+
+---
+
+### Summary
+
+| If you want... | Use... |
+|----------------|--------|
+| Attribute that **cannot** be shadowed | Data descriptor |
+| Controlled/validated access | Data descriptor |
+| Attribute that **can** be cached/shadowed | Non-data descriptor |
+| Lazy evaluation with caching | Non-data descriptor |
+| Methods that become bound | Non-data descriptor (functions) |
+
+Understanding this distinction is essential for advanced Python programming, especially when building frameworks, ORMs, or any system that needs fine-grained control over attribute access.
+
+---
+
+Ready for Question 6?

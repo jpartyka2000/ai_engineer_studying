@@ -1,0 +1,137 @@
+Let’s step through a small, concrete example of SAG “by hand.” We’ll use a toy one-dimensional squared‐error loss so the gradients are easy to compute:
+
+$$
+f_i(w) \;=\; \tfrac12 (w - x_i)^2
+\quad\Longrightarrow\quad
+\nabla f_i(w) \;=\; w - x_i.
+$$
+
+Assume:
+
+* Dataset size $n=3$, with points $x_1=2,\;x_2=4,\;x_3=6$.
+* Initial weight $w^{(0)} = 0$.
+* Initial gradient memory $g_i^{(0)}=0$ for all $i$.
+* Running sum $S^{(0)} = \sum_i g_i^{(0)} = 0$.
+* Constant step‐size $\alpha = 1$.
+
+At each iteration $t$, we:
+
+1. Pick an index $i_t$.
+2. Compute $g_{i_t}^{(t)} = \nabla f_{i_t}(w^{(t-1)}) = w^{(t-1)} - x_{i_t}$.
+3. Update the running sum:
+
+   $$
+     S^{(t)} = S^{(t-1)} - g_{i_t}^{(t-1)} + g_{i_t}^{(t)}.
+   $$
+4. Update weights:
+
+   $$
+     w^{(t)} = w^{(t-1)} \;-\;\frac{\alpha}{n}\;S^{(t)}.
+   $$
+
+---
+
+### Iteration 1 ($t=1$, pick $i_1=1$)
+
+* **Compute new gradient**
+
+  $$
+    g_1^{(1)} = w^{(0)} - x_1 = 0 - 2 = -2.
+  $$
+* **Update sum**
+
+  $$
+    S^{(1)} = S^{(0)} - g_1^{(0)} + g_1^{(1)}
+            = 0 - 0 + (-2)
+            = -2.
+  $$
+* **Update weight**
+
+  $$
+    w^{(1)} = w^{(0)} - \frac1{3}S^{(1)}
+            = 0 - \frac{-2}{3}
+            = \tfrac{2}{3} \approx 0.667.
+  $$
+
+---
+
+### Iteration 2 ($t=2$, pick $i_2=2$)
+
+* **Compute new gradient**
+
+  $$
+    g_2^{(2)} = w^{(1)} - x_2 = 0.667 - 4 = -3.333.
+  $$
+* **Update sum**
+
+  $$
+    S^{(2)} = S^{(1)} - g_2^{(1)} + g_2^{(2)}
+            = (-2) - 0 + (-3.333)
+            = -5.333.
+  $$
+* **Update weight**
+
+  $$
+    w^{(2)} = 0.667 - \frac{-5.333}{3}
+            = 0.667 + 1.778
+            = 2.445.
+  $$
+
+---
+
+### Iteration 3 ($t=3$, pick $i_3=3$)
+
+* **Compute new gradient**
+
+  $$
+    g_3^{(3)} = w^{(2)} - x_3 = 2.445 - 6 = -3.555.
+  $$
+* **Update sum**
+
+  $$
+    S^{(3)} = S^{(2)} - g_3^{(2)} + g_3^{(3)}
+            = (-5.333) - 0 + (-3.555)
+            = -8.888.
+  $$
+* **Update weight**
+
+  $$
+    w^{(3)} = 2.445 - \frac{-8.888}{3}
+            = 2.445 + 2.963
+            = 5.408.
+  $$
+
+---
+
+### Iteration 4 ($t=4$, pick $i_4=1$ again)
+
+* **Compute new gradient**
+
+  $$
+    g_1^{(4)} = w^{(3)} - x_1 = 5.408 - 2 = 3.408.
+  $$
+* **Update sum** (we remove the *old* $g_1^{(3)}=-2$, add new)
+
+  $$
+    S^{(4)} = S^{(3)} - g_1^{(3)} + g_1^{(4)}
+            = (-8.888) - (-2) + 3.408
+            = -8.888 + 2 + 3.408
+            = -3.480.
+  $$
+* **Update weight**
+
+  $$
+    w^{(4)} = 5.408 - \frac{-3.480}{3}
+            = 5.408 + 1.160
+            = 6.568.
+  $$
+
+---
+
+### What you should notice
+
+* **Memory “warms up”**: until you’ve visited every example at least once, some $g_i$ remain zero, so the average gradient is biased.
+* **Running average**: $S^{(t)}/n$ is always the *average* of the most recent gradients for each sample.
+* **Per‐iteration cost**: just one new gradient computation $\nabla f_{i_t}$ plus an $O(1)$ update of $S$.
+
+Over many iterations—once each $g_i$ has been refreshed—you converge linearly (for strongly convex losses), combining the cheap per‐step cost of SGD with the variance reduction of full‐batch gradient descent.

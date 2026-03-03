@@ -1,0 +1,17 @@
+When you pass a list of paths into `code_paths`, MLflow treats each entry as a filesystem path (either relative to your current working directory or an absolute path) and simply **copies whatever you point it at** into the model’s artifact bundle at log time. Internally:
+
+1. **Resolution at log time**
+
+   * MLflow looks for each entry in your `code_paths` list on the local filesystem where you called `log_model()`.
+   * If it’s a file, it stages that one file.  If it’s a directory, it recursively stages everything under it.
+
+2. **Bundling into the model**
+
+   * Those files end up under a `code/` (or `python_env/` → `site-packages/…`) subfolder in the logged model directory.
+
+3. **Adding to PYTHONPATH at serve/load time**
+
+   * The pyfunc flavor writes a small `.pth` file so that when Python starts up in the serving container, that bundled `code/` folder is automatically on `sys.path`.
+   * This makes `import mc_simulator_pyfunc` (or whatever modules you bundled) resolve correctly.
+
+If MLflow can’t find one of your `code_paths` entries when logging, you’ll get a “file not found” error right away. Beyond that, all it does is copy your code into the model and set up Python so it’s importable at serve time.

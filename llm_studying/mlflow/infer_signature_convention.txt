@@ -1,0 +1,37 @@
+**Clarifying infer\_signature usage**
+
+The user is trying to understand the convention for using the `infer_signature` function. The first argument should be the input features (predictor columns), and the second argument should contain the model’s outputs—predictions or probabilities—not the original target (outcome variable) from the training data. So, instead of passing the target variable, they should pass the predictions or probabilities, which can be a pandas Series or a numpy array, depending on the situation.
+
+
+Thought for 5 seconds
+
+
+The two arguments to `infer_signature` aren’t “the features” and “the ground‐truth labels” per se, but rather “a representative batch of model inputs” and “a representative batch of **model outputs**.” In other words:
+
+```python
+# WRONG if you want the signature to match your model’s *outputs*:
+signature = infer_signature(X_train, y_train)
+
+# RIGHT if you want the signature to reflect what your model.predict() (or .predict_proba()) actually emits:
+y_pred  = clf.predict(X_train)
+signature = infer_signature(X_train, y_pred)
+
+# OR, for a probability‐outputting classifier:
+y_prob  = clf.predict_proba(X_train)[:, 1]
+signature = infer_signature(X_train, y_prob)
+```
+
+Concretely in your case:
+
+```python
+# let X = closed_df_copy[predictor_cols]   # only your feature columns
+probs = closed_df_with_preds_probs["probability"]
+signature = infer_signature(X, probs)
+```
+
+That way MLflow records:
+
+* **Input schema** matching the columns in `X`, and
+* **Output schema** matching the shape & dtype of your `probs` Series
+
+This is the convention most folks follow—signature = (model inputs, model outputs)—so that the MLflow UI and serving layers know exactly what goes in and what comes out.

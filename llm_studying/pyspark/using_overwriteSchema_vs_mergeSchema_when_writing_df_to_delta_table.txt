@@ -1,0 +1,22 @@
+That's the issue right there. Since you're using `mergeSchema=true`, Delta is **preserving** the existing table schema and merging in any new columns from your DataFrame. Those 6 columns exist in the table's schema from previous runs, so they persist with NULLs even though your DataFrame no longer has them.
+
+## The Fix
+
+Since you're already doing a full `overwrite`, just swap `mergeSchema` for `overwriteSchema`:
+
+```python
+final_df_spark.write.format("delta").mode("overwrite").option(
+    "overwriteSchema", "true"
+).saveAsTable(OUTPUT_TABLE_NAME)
+```
+
+**What this does:** On every write, the table schema will exactly match your DataFrame's schema. Those 6 columns will be gone on the next run, and if your predictors change in the future, the schema will stay in sync automatically.
+
+## Quick Comparison
+
+| Option | Behavior |
+|--------|----------|
+| `mergeSchema=true` | Keeps all existing columns + adds new ones (columns accumulate) |
+| `overwriteSchema=true` | Replaces schema entirely with DataFrame's schema |
+
+Since you're overwriting all the data anyway, `overwriteSchema` is the right choice here—it ensures your table always reflects exactly what your pipeline produces.

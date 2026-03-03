@@ -1,0 +1,48 @@
+Great question — you’ll often hear “pick a batch size like 8, 16, 32, 64…” when training or fine-tuning large models. The reason isn’t anything mystical about machine learning itself, but about how the hardware and software underneath work:
+
+---
+
+## 1. GPU & Memory Alignment
+
+* GPUs work with memory in **blocks (cache lines, warps, vector widths)** that are almost always powers of 2.
+* When the batch dimension is also a power of 2, tensors align nicely in memory, so fewer padding or remainder operations are needed.
+* This reduces wasted cycles and improves throughput.
+
+---
+
+## 2. CUDA / cuDNN Optimizations
+
+* NVIDIA’s CUDA libraries (and AMD equivalents) contain many hand-tuned kernels for matrix multiplies, convolutions, etc.
+* These kernels are usually optimized for dimensions that are multiples of 8, 16, 32, etc.
+* If your batch size isn’t aligned, the libraries may internally pad to the next multiple, which wastes memory and time.
+
+---
+
+## 3. Parallelization Efficiency
+
+* GPUs schedule threads in groups (NVIDIA calls them **warps**, typically 32 threads).
+* If your batch size divides evenly into these thread groups, you minimize idle threads.
+* Example: a batch size of 30 on a warp of 32 leaves 2 threads idle per warp, reducing efficiency.
+
+---
+
+## 4. Historical Convention
+
+* Early deep learning frameworks and hardware strongly encouraged power-of-2 sizes for stability.
+* Although modern hardware is more flexible, the habit stuck, and powers of 2 remain a safe default.
+
+---
+
+## 5. Practical Reality Today
+
+* **It’s not strictly required.** Many models train fine with odd batch sizes, especially if constrained by GPU memory.
+* But if you can choose freely, powers of 2 tend to give **slightly better throughput** and **more predictable GPU utilization**.
+* Some people even go for “mixed” rules of thumb: multiples of 8 are usually enough (because tensor cores like dimensions divisible by 8 or 16).
+
+---
+
+✅ **In short:** Powers of 2 (or at least multiples of 8/16) make GPUs and their libraries happiest — better memory alignment, better thread utilization, and slightly faster training. That’s why they’re recommended as batch sizes when fine-tuning LLMs.
+
+---
+
+Would you like me to also show you a quick benchmark script (PyTorch) that measures training step time for batch sizes 30 vs 32 vs 64 so you can *see* the difference?

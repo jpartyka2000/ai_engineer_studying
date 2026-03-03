@@ -1,0 +1,56 @@
+When you call
+
+```python
+df_data['year_quarter'] = df_data['lead_createddate'].dt.to_period('Q')
+```
+
+Pandas gives you a **Period**‐typed column, not a plain string or datetime. The dtype you’re seeing:
+
+```
+period[Q-DEC]
+```
+
+means “quarterly periods anchored on a December year‐end” (i.e. Q1 = Jan–Mar, Q2 = Apr–Jun, Q3 = Jul–Sep, Q4 = Oct–Dec). That’s the default calendar quarter frequency in pandas.
+
+---
+
+### Why this is actually useful
+
+* **Period arithmetic**: You can do things like
+
+  ```python
+  df_data['year_quarter'] + 1  # gives the next quarter
+  ```
+* **Grouping**:
+
+  ```python
+  df_data.groupby('year_quarter').agg(…)
+  ```
+
+  automatically bins by quarter.
+
+---
+
+### If you just want a string “YYYY-Qn”
+
+Convert the Period to string:
+
+```python
+df_data['year_quarter_str'] = df_data['lead_createddate'] \
+  .dt.to_period('Q') \
+  .astype(str)
+# e.g. "2024Q2"
+```
+
+Or format it yourself:
+
+```python
+df_data['year_quarter_str'] = (
+  df_data['lead_createddate'].dt.year.astype(str)
+  + '-Q'
+  + df_data['lead_createddate'].dt.quarter.astype(str)
+)
+# e.g. "2024-Q2"
+```
+
+Either way, seeing `period[Q-DEC]` is completely expected when you use `.to_period('Q')`. It’s pandas telling you “this column holds quarterly Period objects, with year‐end December.”

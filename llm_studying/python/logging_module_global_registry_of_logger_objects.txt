@@ -1,0 +1,53 @@
+Great question! The key is that Python's `logging` module maintains a **global internal registry** of loggers.
+
+## How it works under the hood
+
+```python
+logging.getLogger("question_generation")
+```
+
+This doesn't create a new logger each time. Instead it:
+
+1. Looks up `"question_generation"` in an internal dictionary
+2. If it exists → returns the **same object**
+3. If it doesn't exist → creates one, stores it, and returns it
+
+So the logger isn't really "declared" in main—it's **registered globally** by the logging module itself.
+
+## Demonstration
+
+```python
+# module_a.py
+import logging
+logger_a = logging.getLogger("my_app")
+print(id(logger_a))  # e.g., 140234866481920
+
+# module_b.py
+import logging
+logger_b = logging.getLogger("my_app")
+print(id(logger_b))  # e.g., 140234866481920  ← same object!
+```
+
+## What `setup_logger()` actually does
+
+It doesn't "create" the logger in a way that main.py "owns" it. It just:
+
+1. Retrieves the logger from the global registry (or creates an entry if first time)
+2. Configures it (sets level, adds handlers)
+
+After that, **any module** calling `get_logger()` (which is just `logging.getLogger("question_generation")`) retrieves that same configured logger from the registry.
+
+## Order matters
+
+The only thing you need to ensure is that `setup_logger()` runs **before** any logging calls happen. That's why it goes at the top of `main()`:
+
+```python
+def main():
+    setup_logger()  # Configure first
+    
+    # Now when generator.py imports and calls get_logger(),
+    # it gets the already-configured logger
+    generator = QuestionGenerator(config)
+```
+
+The logging module's global registry is what makes this sharing possible—no magic required.

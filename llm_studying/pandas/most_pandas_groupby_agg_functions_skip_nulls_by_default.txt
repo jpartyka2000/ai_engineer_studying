@@ -1,0 +1,69 @@
+**Using `.max()` After `groupby()` Ignores Nulls**
+
+When you call the **`max()`** aggregation on a pandas `GroupBy` object, pandas will automatically **skip any null (`NaN`) values** in the column you’re aggregating. This means the maximum is taken only over the *non-null* entries in each group.
+
+---
+
+## Why nulls are ignored
+
+Pandas uses the `skipna=True` default for most aggregation methods (including `max`, `min`, `sum`, `mean`, etc.). Under the hood, when you do:
+
+```python
+result = df.groupby('key')['value'].max()
+```
+
+pandas will:
+
+1. Partition your DataFrame by `key` into sub-DataFrames.
+2. For each group, pull the `value` column into a contiguous array.
+3. Ignore any `NaN` entries in that array.
+4. Compute the maximum of the remaining (non-null) numbers.
+5. Return a scalar per group.
+
+If *all* entries in a group are `NaN`, then `max()` will return `NaN` for that group.
+
+---
+
+## Example
+
+```python
+import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    'key':   ['A','A','A','B','B'],
+    'value': [3, np.nan, 7, np.nan, np.nan]
+})
+
+# Group A has [3, NaN, 7] → max = 7
+# Group B has [NaN, NaN]    → max = NaN
+
+print(df.groupby('key')['value'].max())
+```
+
+```
+key
+A    7.0
+B    NaN
+Name: value, dtype: float64
+```
+
+* **Group A**: the null is dropped, so the max over `[3, 7]` is `7`.
+* **Group B**: every value was null, so the result is `NaN`.
+
+---
+
+## Consistent behavior across aggregators
+
+By default, these methods all skip nulls:
+
+* `sum()`  → sum of non-null values (or `0` if none, unless you set `min_count`)
+* `mean()` → average of non-null values (or `NaN` if none)
+* `median()`, `min()`, `max()`, `prod()`, etc.
+
+You can override this behavior in some cases via parameters (e.g., `sum(min_count=1)` requires at least one non-null), but the default is always to ignore `NaN`s.
+
+---
+
+**Bottom line:**
+Using `df.groupby(...)[col].max()` gives you the true maximum of your data without being skewed by missing values—pandas silently drops them so you don’t have to filter them out manually beforehand.

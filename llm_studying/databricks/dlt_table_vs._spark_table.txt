@@ -1,0 +1,55 @@
+The key difference between **`spark.table()`** and **`dlt.table()`** (or **`dlt.read()`**) lies in how they are used in **Delta Live Tables (DLT)** pipelines versus regular Apache Spark operations. Here's a breakdown of both:
+
+### 1. **`spark.table()`**:
+   - **Purpose**: This is a standard PySpark method used to read a table (typically a Delta, Hive, or Parquet table) that already exists in the metastore or external storage (e.g., DBFS, S3, ADLS).
+   - **Usage**: It is used in regular Apache Spark code and is not specific to DLT.
+   - **Functionality**: 
+     - `spark.table()` loads an existing table into a DataFrame for further operations.
+     - You provide the fully qualified table name or simply the table name, depending on the context (e.g., `"database_name.table_name"`).
+  
+   **Example**:
+   ```python
+   df = spark.table("my_database.my_table")
+   ```
+
+   - **When to use**: You use `spark.table()` when working outside of Delta Live Tables pipelines, or when you need to interact with a table that exists in the metastore but is not managed by DLT.
+
+### 2. **`dlt.read()` (previously referred to as `dlt.table()`)**:
+   - **Purpose**: This is specific to **Delta Live Tables (DLT)** pipelines and is used to read tables that are **defined within the pipeline**.
+   - **Usage**: It is part of the DLT framework, where it reads data from other tables or views that are part of the same DLT pipeline. It ensures that DLT manages dependencies between tables and orchestrates the pipeline execution.
+   - **Functionality**:
+     - `dlt.read()` (formerly `dlt.table()`) reads a table or view that has already been defined as part of the DLT pipeline.
+     - It ensures that the pipeline handles table dependencies and enforces data quality checks, transformations, and expectations between the steps.
+
+   **Example**:
+   ```python
+   df = dlt.read("source_table")
+   ```
+
+   - **When to use**: You use `dlt.read()` inside DLT pipelines to reference other tables or views defined in the pipeline. It ensures that the dependencies between steps are managed properly, and it also integrates with DLT's data quality checks and orchestration.
+
+### Key Differences:
+
+| Feature               | `spark.table()`                                       | `dlt.read()` (formerly `dlt.table()`)                             |
+|-----------------------|-------------------------------------------------------|--------------------------------------------------------------------|
+| **Context**            | Regular Spark operations                              | Delta Live Tables (DLT) pipelines                                  |
+| **Used for**           | Reading tables from metastore, Delta, Hive, or other storage | Reading tables defined within the DLT pipeline                     |
+| **Pipeline Management**| No pipeline management or orchestration               | Manages pipeline dependencies, data quality, and transformations   |
+| **Function**           | Loads an existing table into a DataFrame              | Reads tables/views defined in the DLT pipeline, ensures orchestration |
+| **Use Case**           | Standard Spark queries on existing tables             | Within a DLT pipeline to process tables defined by other DLT steps |
+
+### Example Use in DLT Pipeline:
+
+```python
+import dlt
+
+# Reading a table within the pipeline using dlt.read
+@dlt.table
+def transform_table():
+    df = dlt.read("source_table")  # Reads a table defined in the DLT pipeline
+    return df.filter(df["column"] > 0)
+```
+
+In summary:
+- **`spark.table()`**: Used for reading existing tables in non-DLT Spark contexts.
+- **`dlt.read()`**: Used within DLT pipelines to manage dependencies and read tables defined in the pipeline.

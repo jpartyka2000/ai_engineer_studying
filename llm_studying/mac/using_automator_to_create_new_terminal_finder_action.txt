@@ -1,0 +1,71 @@
+Yes—macOS lets you add a Finder “Quick Action” (formerly called a Service) so that when you right-click (or control-click) on a folder in Finder, you’ll see an option like **“New Terminal at Folder”** (or “New iTerm at Folder”). Here’s how to set it up:
+
+---
+
+## 1. Enable the Built-In Terminal Service (macOS Catalina+)
+
+Recent macOS versions already include this, but it may be turned off by default:
+
+1. Open **System Settings** (or **System Preferences**) → **Keyboard** → **Keyboard Shortcuts** (or “Shortcuts”).
+2. Select **Services** (or **Quick Actions**) in the sidebar.
+3. Scroll down to the “Files and Folders” section.
+4. Check **New Terminal at Folder** (and/or **New Terminal Tab at Folder**).
+5. You can even assign it a keyboard shortcut here.
+
+Now when you right-click a folder in Finder, you should see:
+
+> **New Terminal at Folder**
+> **New Terminal Tab at Folder**
+
+Selecting that will open Terminal with your working directory set to the folder you clicked.
+
+---
+
+## 2. Create a Custom Quick Action via Automator (if yours isn’t available)
+
+If you don’t see those services in your macOS version, you can make one yourself:
+
+1. **Open Automator** (in `/Applications`).
+2. Click **New Document** → choose **Quick Action**.
+3. At the top, set “Workflow receives current” → **folders** in **Finder.app**.
+4. From the library, drag **“Run Shell Script”** into the workflow pane.
+5. In that action:
+
+   * **Shell:** `/bin/zsh`
+   * **Pass input:** **as arguments**
+   * Script body:
+
+     ```bash
+     for folder in "$@"; do
+       open -a Terminal "$folder"
+     done
+     ```
+6. Save (⌘S) and name it e.g. **“New Terminal Here”**.
+
+After saving, go back to Finder, right-click on any folder, and under the **Quick Actions** submenu you’ll see **New Terminal Here**. That will launch Terminal pointed at the folder you right-clicked.
+
+---
+
+### Bonus: iTerm2 Integration
+
+If you prefer iTerm2 instead of Apple Terminal:
+
+1. In Automator’s shell script, replace `open -a Terminal` with:
+
+   ```bash
+   open -a iTerm "$folder"
+   ```
+2. Or use iTerm’s Python API:
+
+   ```bash
+   #!/usr/bin/env bash
+   for dir in "$@"; do
+     osascript -e 'tell application "iTerm"
+       create window with default profile command "cd '"$dir"'"
+     end tell'
+   done
+   ```
+
+---
+
+Now you’ve got a super-handy Finder shortcut—no more `cd`-ing by hand every time. Enjoy!

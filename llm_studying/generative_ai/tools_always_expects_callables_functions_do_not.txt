@@ -1,0 +1,45 @@
+You can’t: the old `tools=` API always expects real Python callables under the hood, so you’ll always end up passing a live `function` object (and run into serialization errors if you try to JSON-dump it yourself).
+
+The pure-JSON style (i.e. “declare only metadata, no actual code”) lives under the `functions=` parameter. Here’s a quick comparison:
+
+```python
+# ❌ This will still require a Python function and choke on json.dumps:
+response = openai.ChatCompletion.create(
+    model="gpt-4o-mini",
+    messages=[{"role":"user","content":"Price of MSFT?"}],
+    tools=[    # legacy “tools” API always wants callables
+      {
+        "name": "get_price",
+        "description": "Fetches stock price",
+        "parameters": { … },
+        # "function": get_price  ← required
+      }
+    ],
+    function_call="auto"
+)
+```
+
+```python
+# ✅ This is the pure-JSON approach—you never pass a Python function,
+# so everything in the request is serializable.
+response = openai.ChatCompletion.create(
+    model="gpt-4o-mini",
+    messages=[{"role":"user","content":"Price of MSFT?"}],
+    functions=[      # modern API for JSON-only declarations
+      {
+        "name": "get_price",
+        "description": "Fetches stock price",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "symbol": {"type":"string","description":"Ticker symbol"}
+          },
+          "required": ["symbol"]
+        }
+      }
+    ],
+    function_call="auto"
+)
+```
+
+**Bottom line:** if you want no-callable, JSON-only function metadata, you must use `functions=` rather than `tools=`.

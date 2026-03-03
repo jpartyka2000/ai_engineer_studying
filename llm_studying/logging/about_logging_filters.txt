@@ -1,0 +1,65 @@
+In Python’s logging framework, a **Filter** is an object you can attach to a **Logger** or a **Handler** to decide whether a particular `LogRecord` should be processed (and optionally to inject or modify attributes).
+
+---
+
+## Key points
+
+1. **Interface**
+
+   * A filter is any object with a method
+
+     ```python
+     def filter(self, record: logging.LogRecord) -> bool
+     ```
+   * If it returns `True`, the record is allowed through; if `False`, it’s dropped.
+
+2. **Where you attach them**
+
+   * **Logger-level**: controls which records a logger will hand to its handlers.
+
+     ```python
+     logger.addFilter(my_filter)
+     ```
+   * **Handler-level**: controls which records a handler will emit.
+
+     ```python
+     handler.addFilter(my_filter)
+     ```
+
+3. **Built-in and custom**
+
+   * The standard library provides `logging.Filter`, which lets you filter by logger name patterns:
+
+     ```python
+     f = logging.Filter("myapp.module")  # only allow records from loggers named "myapp.module" or its children
+     ```
+   * You can subclass `logging.Filter` or implement your own object with a `filter(record)` method to enforce any logic (e.g. drop messages containing sensitive data, only allow records during business hours, etc.).
+
+4. **Use cases**
+
+   * **Selective logging**: e.g. allow DEBUG messages for one module but only WARNING+ for others.
+   * **Dynamic criteria**: e.g. enable verbose logging when a debug flag file exists.
+   * **Augmentation**: you could even inject extra attributes into `record` before it reaches formatters or handlers.
+
+---
+
+### Example
+
+```python
+import logging
+import datetime
+
+class BusinessHoursFilter:
+    def filter(self, record):
+        now = datetime.datetime.now().hour
+        return 9 <= now < 17  # only log between 9 AM and 5 PM
+
+logger = logging.getLogger("myapp")
+handler = logging.StreamHandler()
+handler.addFilter(BusinessHoursFilter())
+
+logger.addHandler(handler)
+logger.warning("This will only show up if it's business hours")
+```
+
+Here, any log outside 9 AM–5 PM is simply dropped by the handler’s filter.

@@ -1,0 +1,82 @@
+At a high level, `pd.merge()` is your “relational-algebra” join operator (think SQL `JOIN`), whereas `pd.concat()` is your “stacking” operator (think UNIX `cat` or Excel’s Power Query “Append”/“Merge Queries as New” on whole tables).
+
+---
+
+### `pd.merge()`
+
+* **Purpose**: Combine two (or more) DataFrames by matching on one or more key columns or indices.
+* **Behavior**:
+
+  * Defaults to an inner join (`how='inner'`), but you can do `left`, `right`, or `outer`.
+  * Aligns rows based on the values of the “on” columns (or index).
+  * Can add suffixes for overlapping column names.
+* **When to use**:
+
+  * “I have two tables that share a common key and I want rows where the key matches (or all keys, etc.).”
+
+```python
+import pandas as pd
+
+df_users = pd.DataFrame({
+    'user_id': [1, 2, 3],
+    'name': ['Alice','Bob','Carol']
+})
+df_orders = pd.DataFrame({
+    'user_id': [2,2,3,4],
+    'order_id': [101,102,103,104]
+})
+
+# only orders for users in df_users:
+pd.merge(df_users, df_orders, on='user_id', how='inner')
+#   user_id   name  order_id
+# 0        2    Bob       101
+# 1        2    Bob       102
+# 2        3  Carol       103
+```
+
+---
+
+### `pd.concat()`
+
+* **Purpose**: Stack (concatenate) entire DataFrames **end-to-end** along rows or columns.
+* **Behavior**:
+
+  * Joins on the *axes* (row index or column labels), does **not** match on a key column.
+  * Can do `axis=0` (append rows) or `axis=1` (align by index, add columns).
+  * Offers options like `ignore_index=True` (reset the result’s index) or `join='inner'/'outer'` (when concatenating columns).
+* **When to use**:
+
+  * “I have a bunch of files or partitions that all have the same schema and I want to stack them into one big table.”
+  * “I have disjoint pieces of a wide table and I want to glue them side by side by index.”
+
+```python
+# stacking two tables with the same columns:
+df1 = pd.DataFrame({'A':[1,2], 'B':[3,4]})
+df2 = pd.DataFrame({'A':[5,6], 'B':[7,8]})
+
+pd.concat([df1, df2], axis=0, ignore_index=True)
+#    A  B
+# 0  1  3
+# 1  2  4
+# 2  5  7
+# 3  6  8
+
+# concatenating side-by-side by index:
+pd.concat([df1, df2], axis=1)
+#    A  B  A  B
+# 0  1  3  5  7
+# 1  2  4  6  8
+```
+
+---
+
+#### Key differences
+
+| Aspect           | `pd.merge()` (join)        | `pd.concat()` (stack)                                       |
+| ---------------- | -------------------------- | ----------------------------------------------------------- |
+| Primary use case | SQL-style joins on keys    | Appending/stacking whole tables                             |
+| Axis default     | N/A—it aligns on keys      | `axis=0` (rows), or `axis=1` (cols)                         |
+| Index handling   | Can join on index if asked | Aligns on existing index or reindexes                       |
+| Output shape     | Depends on join type       | Sum of row counts (axis=0) or sum of column counts (axis=1) |
+
+Use **merge** when you need to match and combine rows by value. Use **concat** when you just want to glue DataFrames together end-to-end.

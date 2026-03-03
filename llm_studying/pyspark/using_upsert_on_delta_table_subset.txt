@@ -1,0 +1,46 @@
+You won’t get “write only column X, Y, Z and magically leave all the others alone” by using the normal DataFrameWriter APIs (append/overwrite) — any missing columns in your DataFrame will either be added as all-NULL (if you append) or, in overwrite mode, you’ll end up rewriting the whole table with just the schema you shipped.
+
+The idiomatic way in Delta Lake is to use a **MERGE** (a “UPSERT”) and tell it exactly which columns to update.  For example, in Python:
+
+```python
+from delta.tables import DeltaTable
+
+# assume df_new has columns: LEAD_ID, probability, prediction, …other stuff…
+delta_table = DeltaTable.forName(spark, "ml_lead_features")
+
+delta_table.alias("tgt").merge(
+    source = df_new.alias("src"),
+    condition = "tgt.LEAD_ID = src.LEAD_ID"
+).whenMatchedUpdate(
+    set = {
+      # for each column in df_new except the key, update tgt.col = src.col
+      **{ col: f"src.{col}" for col in df_new.columns if col != "LEAD_ID" }
+    }
+).whenNotMatchedInsertAll()  # optional, if you also want to insert brand-new keys
+ .execute()
+```
+
+What this does:
+
+1. **Matches** on your primary key (`LEAD_ID` in this example).
+2. **Updates only** the columns you list in the `set={…}` map — you don’t have to supply all of the table’s columns, only the ones you want to overwrite.
+3. (Optionally) **Inserts** any new rows if you include `.whenNotMatchedInsertAll()`.
+
+You can also omit the insert clause if you only ever want to update existing rows:
+
+```python
+delta_table.alias("tgt").merge(
+    df_new.alias("src"), "tgt.LEAD_ID = src.LEAD_ID"
+).whenMatchedUpdate(
+    set={ c: f"src.{c}" for c in df_new.columns if c != "LEAD_ID" }
+).execute()
+```
+
+---
+
+### Why you can’t just `.write(append/overwrite)` a subset of columns
+
+* **`append`** will add new rows, and for any column you didn’t include in your DataFrame it will write NULLs.
+* **`overwrite`** will drop the existing files and rewrite the table schema to match your DataFrame (so columns you left out get dropped).
+
+If you truly just want to “patch” a handful of columns across existing rows, **MERGE** is the right tool.

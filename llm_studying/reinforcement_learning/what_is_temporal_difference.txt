@@ -1,0 +1,71 @@
+A **Temporal-Difference (TD) estimate** is a way of approximating the “true” return by **bootstrapping** from your current value function, rather than waiting until the end of an episode.  The simplest form, often called **TD(0)**, works as follows:
+
+---
+
+## 1. The core idea
+
+Instead of using the full Monte-Carlo return
+
+$$
+G_t = r_{t+1} + \gamma\,r_{t+2} + \gamma^2\,r_{t+3} + \cdots,
+$$
+
+you use the **one-step** estimate
+
+$$
+\underbrace{r_{t+1} + \gamma\,V(s_{t+1})}_{\text{TD target}}
+$$
+
+to update your value at $s_t$.
+
+---
+
+## 2. The TD error
+
+Define the **TD error**
+
+$$
+\delta_t = r_{t+1} + \gamma\,V(s_{t+1}) \;-\; V(s_t).
+$$
+
+* If $\delta_t>0$, the next state $s_{t+1}$ turned out better than your old estimate predicted.
+* If $\delta_t<0$, it was worse.
+
+---
+
+## 3. The update rule
+
+You then adjust your value function $V$ (or parameters $w$) by moving a bit toward the TD target:
+
+$$
+V(s_t)\;\leftarrow\;V(s_t) \;+\;\alpha\,\delta_t.
+$$
+
+In a parametric setting you’d write
+
+$$
+w \;\leftarrow\;w \;+\;\alpha\,\delta_t\,\nabla_w V_w(s_t).
+$$
+
+---
+
+## 4. Why it’s powerful
+
+* **Online**: you can learn **step by step** without waiting for episode termination.
+* **Bootstrapping**: reuses your own current estimates $V(s_{t+1})$ to build new ones, which drastically lowers variance compared to Monte Carlo.
+* **Convergence**: under standard conditions (linear function approximation, decaying learning rates), TD(0) converges to the true value function.
+
+---
+
+## 5. Extensions
+
+* **TD(λ)** blends multi-step returns (from 1 up to “infinite”) into a single estimate via **eligibility traces**, trading off bias vs variance.
+* **SARSA** applies the same one-step TD idea to **action-values** $Q(s,a)$ using the next action actually taken.
+* **Q-learning** uses a one-step TD target but bootstraps from the **greedy** action:
+  $\delta_t = r_{t+1} + \gamma\,\max_{a'}Q(s_{t+1},a') - Q(s_t,a_t)$.
+
+---
+
+### TL;DR
+
+A **TD estimate** uses the immediate reward plus your **current** estimate of the next state’s value as a proxy for the full future return—enabling fast, low-variance, online updates.

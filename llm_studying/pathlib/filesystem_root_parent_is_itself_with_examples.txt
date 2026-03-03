@@ -1,0 +1,54 @@
+ROOT'S PARENT IS ITSELF — UNDERSTANDING THE EDGE CASE
+=====================================================
+
+THE BEHAVIOR:
+-------------
+    from pathlib import Path
+    
+    root = Path("/")
+    root.parent  →  Path("/")   # Returns itself!
+
+WHY THIS HAPPENS:
+-----------------
+The filesystem root "/" has no parent directory — it's the top of the tree.
+Rather than raising an error or returning None, pathlib returns the root 
+itself. This is by design and matches how the filesystem conceptually works.
+
+PRACTICAL IMPLICATIONS:
+-----------------------
+1. Infinite loop risk when traversing upward:
+
+    # DANGEROUS — infinite loop!
+    p = Path("/some/file.txt")
+    while p != p.parent:      # This works because root == root.parent
+        p = p.parent
+    
+    # SAFE version — this terminates correctly
+    p = Path("/some/file.txt")
+    while p != p.parent:
+        print(p)
+        p = p.parent
+    # Loop exits when p is "/" because Path("/") == Path("/").parent
+
+2. Checking if you've reached the root:
+
+    def is_root(path):
+        return path == path.parent
+    
+    is_root(Path("/"))           →  True
+    is_root(Path("/home"))       →  False
+    is_root(Path("C:\\"))        →  True  (Windows)
+
+3. The `parents` sequence is finite:
+
+    p = Path("/a/b/c")
+    list(p.parents)  →  [Path("/a/b"), Path("/a"), Path("/")]
+    # Stops at root — doesn't include infinite roots
+
+COMPARISON WITH RELATIVE PATHS:
+-------------------------------
+    Path(".").parent      →  Path(".")     # Current dir's parent is itself
+    Path("..").parent     →  Path(".")     # Parent of ".." is "."
+    Path("a").parent      →  Path(".")     # Single component → "."
+    
+    # These also "anchor" at their conceptual root

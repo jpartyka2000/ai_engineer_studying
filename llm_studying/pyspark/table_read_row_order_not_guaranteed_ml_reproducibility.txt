@@ -1,0 +1,44 @@
+Spark DataFrames (and the underlying RDDs) are fundamentally **unordered collections** of rows. Here’s why:
+
+1. **Partitioned storage & parallel compute**  
+   - Spark splits a table into multiple partitions, processes each partition independently, and then concatenates the results—without any global sort.  
+   - Different query plans or cluster loads can change how partitions are read or merged.
+
+2. **Lack of implicit ORDER BY**  
+   - Unless you explicitly call `.orderBy(...)` (or SQL’s `ORDER BY`), Spark is free to return rows in whatever sequence is most efficient.  
+   - Even a simple `.filter()` or `.select()` can reorder rows as it prunes and projects data.
+
+---
+
+### How this breaks ML reproducibility
+
+When you do:
+
+```python
+df_spark = spark.table("…")
+df_pandas = df_spark.toPandas()
+```
+
+you inherit **whatever arbitrary row order** Spark shipped down. If that order changes run-to-run, then:
+
+- Your Pandas index shifts,  
+- Your `StratifiedKFold(shuffle=True, random_state=…)` sees a *different* sequence of rows →  
+- You get different train/test splits →  
+- Your out-of-fold predictions, fitted trees, thresholds, and final metrics can all change.
+
+---
+
+### The fix
+
+Make the Spark→Pandas handoff **deterministic** by immediately sorting on a stable, unique key:
+
+```python
+df_pandas = (
+    spark.table("…")
+         .toPandas()
+         .sort_values(by="your_unique_id_column")
+         .reset_index(drop=True)
+)
+```
+
+That way, every run sees the **same** row order in Pandas, and your seeded train/test splits and model fits will be perfectly reproducible.

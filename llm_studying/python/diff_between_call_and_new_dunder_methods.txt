@@ -1,0 +1,98 @@
+In Python’s object model, `__new__` and `__call__` play very different roles:
+
+---
+
+## 1. `__new__`: The Allocator/Constructor
+
+* **When it runs**
+  When you write `obj = MyClass(arg1, arg2)`, Python internally does:
+
+  1. **`MyClass.__new__(MyClass, arg1, arg2)`**
+     – Responsible for **allocating** (and returning) the new instance object.
+     – Must return an instance of `MyClass` (or a subclass).
+  2. If `__new__` returned an instance, Python then calls
+     **`MyClass.__init__(that_instance, arg1, arg2)`**
+     – Responsible for **initializing** the instance’s state.
+
+* **Typical use**
+
+  * You almost never override `__new__` unless you need to control instance creation itself (e.g. implementing singletons, immutable types, pooling).
+
+* **Signature**
+
+  ```python
+  def __new__(cls, *args, **kwargs):
+      # cls is the class object
+      instance = super().__new__(cls)
+      # optional: tweak instance
+      return instance
+  ```
+
+---
+
+## 2. `__call__`: Making Instances Callable
+
+* **When it runs**
+  Once you have an object `obj`, writing `result = obj(some_arg)` invokes
+  **`type(obj).__call__(obj, some_arg)`**, which by default does:
+
+  1. Calls any registered “pre-call” hooks.
+  2. Invokes `obj.__call__(some_arg)`.
+  3. Calls any “post-call” hooks.
+
+* **Typical use**
+
+  * Classes that want their instances to behave like functions implement `__call__`.
+  * Common in decorators, functors, or frameworks where you write `instance(input)` instead of `instance.run(input)`.
+
+* **Signature**
+
+  ```python
+  class MyFunctor:
+      def __call__(self, x, y):
+          # do something with x, y
+          return ...
+  ```
+
+---
+
+## 3. Putting it Together
+
+```python
+class A:
+    def __new__(cls, *args):
+        print("Allocating A")
+        instance = super().__new__(cls)
+        return instance
+
+    def __init__(self, value):
+        print("Initializing A with", value)
+        self.value = value
+
+    def __call__(self, increment):
+        print("Calling A, incrementing by", increment)
+        self.value += increment
+        return self.value
+
+# Instantiation
+a = A(10)
+# Output:
+#   Allocating A
+#   Initializing A with 10
+
+# Invocation
+result = a(5)
+# Output:
+#   Calling A, incrementing by 5
+# result == 15
+```
+
+* **`A(10)`** triggers `__new__` then `__init__`, producing an initialized object.
+* **`a(5)`** triggers `__call__`, letting the instance act like a function.
+
+---
+
+### In a Nutshell
+
+* **`__new__`** is about **creating** the instance (runs at “class call” time, before `__init__`).
+* **`__call__`** is about **invoking** an existing instance as a function (runs when you use parentheses on an object).

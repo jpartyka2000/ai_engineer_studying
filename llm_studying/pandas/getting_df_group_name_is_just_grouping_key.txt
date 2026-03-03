@@ -1,0 +1,56 @@
+When you do something like:
+
+```python
+gb = df.groupby(['colA','colB'])
+gb.apply(func)
+```
+
+then inside your `func(grp)`:
+
+* **`grp`** is the sub-DataFrame for one group
+* **`grp.name`** is the **group key** that identifies that sub-DataFrame
+
+–– so:
+
+* If you grouped on a **single** column, `grp.name` is just the scalar value for that column.
+* If you grouped on **multiple** columns, `grp.name` is a **tuple** of those values, in the same order you passed to `.groupby([...])`.
+
+---
+
+### Example
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'colA': ['X','X','Y','Y'],
+    'colB': [1,1,2,2],
+    'val': [10,20,30,40]
+})
+
+def show_name(grp):
+    print("Group name:", grp.name)
+    return grp
+
+df.groupby(['colA','colB']).apply(show_name)
+```
+
+Output:
+
+```
+Group name: ('X', 1)
+Group name: ('Y', 2)
+```
+
+Here you can see that for the group where `colA=='X'` and `colB==1`, `grp.name` is the tuple `('X', 1)`.
+
+---
+
+So **yes**, if you have a set of “bad keys” that are tuples like `('A',2020)`, you can test
+
+```python
+if grp.name in bad_keys:
+    # skip this group
+```
+
+because `grp.name` will exactly match those tuples.

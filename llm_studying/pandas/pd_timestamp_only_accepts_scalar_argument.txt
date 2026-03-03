@@ -1,0 +1,36 @@
+When you do this:
+
+```python
+pd.Timestamp(df_final_stats['COHORT'])
+```
+
+you’re calling **`pd.Timestamp`** on an entire **Series**, but `Timestamp` only accepts a **scalar** (a single string, datetime, etc.). To get a **vectorized** result you need to convert the whole column at once and use the `.dt` accessor to normalize it. For example:
+
+```python
+# 1. Turn your “COHORT” column into a datetime Series
+cohort_dates = pd.to_datetime(df_final_stats['COHORT'])
+
+# 2. Normalize each datetime to midnight
+cohort_midnight = cohort_dates.dt.normalize()
+
+# 3. Fill in the missing COHORT_TS values with those normalized dates
+df_final_stats['COHORT_TS'] = df_final_stats['COHORT_TS'] \
+    .fillna(cohort_midnight)
+```
+
+Or, in one line:
+
+```python
+df_final_stats['COHORT_TS'] = df_final_stats['COHORT_TS'] \
+    .fillna(pd.to_datetime(df_final_stats['COHORT']).dt.normalize())
+```
+
+---
+
+### Why this works
+
+* **`pd.to_datetime(...)`** converts the entire Series into a `DatetimeIndex`/`Series` of `Timestamp` objects.
+* **`.dt.normalize()`** brings every timestamp to midnight (00:00:00).
+* **`.fillna(...)`** can accept a **Series** of the same length, so each `NaN` in `COHORT_TS` is replaced by the corresponding normalized cohort date.
+
+That vectorized approach is both concise and efficient—no need for Python loops or per‐row lambdas.

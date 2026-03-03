@@ -1,0 +1,178 @@
+You **could** inherit from `dict`, but it wouldn't give you the static type checking benefits you want. Let me explain why TypedDict is the better choice here:
+
+## Option 1: Inheriting from dict (Doesn't Work Well)
+
+```python
+from typing import Generic, TypeVar
+
+# This doesn't actually type individual keys!
+class SourceStoreData(dict):
+    def __init__(self):
+        super().__init__()
+        self["type"]: StoreKind  # This doesn't enforce types!
+        self["data_store_id"]: str
+        self["sql"]: str
+        # These type hints don't actually do anything
+
+# Problems:
+data = SourceStoreData()
+data["type"] = "wrong type"  # No type checking!
+data["typo_key"] = "value"  # No error for wrong keys!
+print(data["missing_key"])  # No type checker warning!
+```
+
+## Option 2: Generic Dict (Still Not What You Want)
+
+```python
+from typing import Dict, Union
+
+# This says ALL values have the same type union
+SourceStoreData = Dict[str, Union[StoreKind, str, list, None]]
+
+# Problems:
+data: SourceStoreData = {
+    "type": StoreKind.SOURCE,
+    "name": "test",
+    "grain": ["customer_id"]
+}
+
+# Type checker doesn't know which key has which type
+data["type"].upper()  # Type checker: "StoreKind | str | list | None" might not have .upper()
+data["grain"].append("x")  # Type checker: "StoreKind | str | list | None" might not have .append()
+```
+
+## Option 3: Custom Class Inheriting from dict (Complex & Problematic)
+
+```python
+class SourceStoreData(dict):
+    """Trying to add type safety to dict - gets messy fast"""
+    
+    def __setitem__(self, key, value):
+        # Manual runtime validation
+        if key == "type" and not isinstance(value, StoreKind):
+            raise TypeError(f"type must be StoreKind")
+        elif key == "grain" and not isinstance(value, list):
+            raise TypeError(f"grain must be list")
+        super().__setitem__(key, value)
+    
+    def __getitem__(self, key):
+        # Could add validation here too
+        return super().__getitem__(key)
+
+# Problems:
+# 1. No static type checking - only runtime
+# 2. Lots of boilerplate
+# 3. Type checkers still don't understand the structure
+# 4. Easy to mess up
+```
+
+## Why TypedDict is Superior:
+
+```python
+from typing import TypedDict
+
+class SourceStoreData(TypedDict):
+    type: StoreKind
+    data_store_id: str
+    sql: str
+    grain: list[str]
+    name: str
+
+# Benefits:
+data: SourceStoreData = {
+    "type": StoreKind.SOURCE,
+    "data_store_id": "123",
+    "sql": "SELECT *",
+    "grain": ["customer_id"],
+    "name": "test"
+}
+
+# Type checker knows everything!
+data["type"]  # Type checker knows this is StoreKind
+data["grain"].append("x")  # Type checker knows this is list[str]
+data["missing"]  # Type error: "missing" is not a valid key
+data["type"] = "wrong"  # Type error: must be StoreKind
+```
+
+## Comparison of Approaches:
+
+| Feature | `dict` Subclass | Generic `Dict` | `TypedDict` | Pydantic |
+|---------|----------------|----------------|-------------|----------|
+| **Type checking per key** | ❌ | ❌ | ✅ | ✅ |
+| **IDE autocomplete** | ❌ | ❌ | ✅ | ✅ |
+| **Runtime validation** | Manual | ❌ | ❌ | ✅ |
+| **Stays a dict** | ✅ | ✅ | ✅ | ❌ |
+| **No boilerplate** | ❌ | ✅ | ✅ | ✅ |
+
+## If You Really Want a Custom dict Subclass:
+
+```python
+# You could combine approaches, but it's complicated
+from typing import TypedDict, get_type_hints
+
+class SourceStoreDataSchema(TypedDict):
+    type: StoreKind
+    data_store_id: str
+    grain: list[str]
+
+class ValidatedDict(dict):
+    """A dict that validates against a TypedDict schema"""
+    schema: type[TypedDict]
+    
+    def __init__(self, data: dict):
+        # Could add runtime validation using the schema
+        hints = get_type_hints(self.schema)
+        for key, value in data.items():
+            if key in hints:
+                # Validate type (complex to do properly!)
+                pass
+        super().__init__(data)
+    
+    def __setitem__(self, key, value):
+        # Runtime validation on set
+        hints = get_type_hints(self.schema)
+        if key not in hints:
+            raise KeyError(f"Invalid key: {key}")
+        # Would need complex logic to validate types
+        super().__setitem__(key, value)
+
+class SourceStoreData(ValidatedDict):
+    schema = SourceStoreDataSchema
+
+# This is basically reimplementing Pydantic poorly!
+```
+
+## The Real Question: Why Not Pydantic?
+
+If you want runtime validation AND type checking:
+
+```python
+from pydantic import BaseModel
+
+class SourceStoreData(BaseModel):
+    type: StoreKind
+    data_store_id: str
+    sql: str
+    grain: list[str]
+    name: str
+    
+    # If you need dict-like behavior
+    def __getitem__(self, key):
+        return getattr(self, key)
+    
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+# Or just convert when needed
+data = SourceStoreData(...)
+dict_version = data.model_dump()  # When you need a dict
+```
+
+## Bottom Line:
+
+- **Inheriting from `dict`** doesn't give you per-key typing
+- **Generic `Dict[K, V]`** only supports uniform types
+- **TypedDict** gives you static typing for each key (compile-time)
+- **Pydantic BaseModel** gives you both static AND runtime validation
+
+TypedDict exists specifically because you **can't** properly type individual dictionary keys by inheriting from `dict`. It's the right tool for typed dictionary structures where you need to stay a pure dict at runtime!

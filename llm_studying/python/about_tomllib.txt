@@ -1,0 +1,69 @@
+## `tomllib` Overview
+
+`tomllib` is Python's **built-in TOML parser** (added in Python 3.11) for reading TOML configuration files. It's **read-only** - it can parse TOML but cannot write/create TOML files.
+
+## Basic Usage:
+
+```python
+import tomllib
+
+# Read TOML file
+with open("config.toml", "rb") as f:  # Must open in binary mode!
+    config = tomllib.load(f)
+
+# Or parse TOML string
+toml_string = """
+[database]
+host = "localhost"
+port = 5432
+"""
+config = tomllib.loads(toml_string)  # Note: loads() not load()
+```
+
+## Critical Points:
+
+### 1. **Binary Mode Required**
+```python
+# ✅ Correct - binary mode
+with open("config.toml", "rb") as f:
+    data = tomllib.load(f)
+
+# ❌ Wrong - text mode causes error
+with open("config.toml", "r") as f:
+    data = tomllib.load(f)  # Error!
+```
+
+### 2. **Read-Only**
+```python
+# Can read TOML
+config = tomllib.load(f)  # ✅
+
+# Cannot write TOML
+tomllib.dump(config, f)  # ❌ No such method!
+
+# Need a third-party library to write:
+# pip install toml or tomli-w
+```
+
+### 3. **Returns Regular Python Types**
+```python
+# TOML becomes standard Python objects
+config = tomllib.loads("""
+[server]
+ports = [8000, 8001]
+debug = true
+""")
+
+print(type(config))  # dict
+print(type(config["server"]["ports"]))  # list
+print(type(config["server"]["debug"]))  # bool
+```
+
+**Common Use Case**: Reading `pyproject.toml` or app configuration files:
+```python
+with open("pyproject.toml", "rb") as f:
+    project = tomllib.load(f)
+    dependencies = project["project"]["dependencies"]
+```
+
+**Bottom line**: Use `tomllib` for reading TOML configs in Python 3.11+. For writing TOML or Python <3.11, use third-party libraries like `toml` or `tomli`.

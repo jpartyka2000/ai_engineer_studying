@@ -1,0 +1,69 @@
+You’re exactly right: if you want to call `main()` directly on the class without first creating an instance, you should turn it into either a `@staticmethod` or a `@classmethod`.
+
+I’d actually lean toward a **`@classmethod`**, because then you can write:
+
+```python
+class CampaignMCSimulator:
+    # … all your existing methods …
+
+    @classmethod
+    def main(cls):
+        args = cls.parse_args()     # note: now parse_args must also be @classmethod or @staticmethod
+        spark = SparkSession.builder.getOrCreate()
+        df = spark.table(args.input_table).toPandas()
+
+        # instantiate using cls
+        sim = cls(
+            overall_budget=args.overall_budget,
+            n_iterations=args.n_iterations,
+            pct_min_max=args.pct_min_max,
+            ctr=args.ctr,
+            df=df
+        )
+        results = sim.run_simulation()
+        out = "/dbfs/tmp/mc_results.csv"
+        results.to_csv(out, index=False)
+        print(f"Wrote results to {out}")
+
+    @staticmethod
+    def parse_args():
+        p = argparse.ArgumentParser()
+        p.add_argument("--overall_budget", type=float, required=True)
+        p.add_argument("--n_iterations",   type=int,   required=True)
+        p.add_argument("--pct_min_max",    type=float, required=True)
+        p.add_argument("--ctr",            type=float, required=True)
+        p.add_argument("--input_table",    type=str,   required=True)
+        return p.parse_args()
+
+if __name__ == "__main__":
+    CampaignMCSimulator.main()
+```
+
+### Why `@classmethod` vs `@staticmethod`?
+
+* **`@staticmethod`**:
+
+  ```python
+  @staticmethod
+  def main():
+      args = CampaignMCSimulator.parse_args()
+      # …
+      sim = CampaignMCSimulator(…)
+      # …
+  ```
+
+  Works fine, but you hard-code the class name inside the method.
+
+* **`@classmethod`**:
+
+  ```python
+  @classmethod
+  def main(cls):
+      args = cls.parse_args()
+      sim = cls(…)
+      # …
+  ```
+
+  Is more flexible if you ever subclass `CampaignMCSimulator`—`main()` will automatically use the subclass constructor.
+
+Either approach will let you do **`CampaignMCSimulator.main()`** at the bottom without ever having to write `sim = CampaignMCSimulator(...)` outside.

@@ -1,0 +1,36 @@
+That line takes your Python list of scalar tensors:
+
+```python
+returns = [G₀, G₁, G₂, …]
+```
+
+and stitches them together into one single `torch.Tensor`.  Concretely:
+
+* If each `Gₖ` is a 0‐d tensor (a scalar), then
+
+  ```python
+  returns = torch.stack(returns)
+  ```
+
+  produces a 1‐d tensor of shape `(T,)` whose entries are `[G₀, G₁, G₂, …]`.
+
+* You need to do this because later you call things like
+
+  ```python
+  returns.mean()
+  ```
+
+  and
+
+  ```python
+  returns.std()
+  ```
+
+  and you can only do those on a single tensor, not on a Python list.
+
+Under the hood, `torch.stack`:
+
+1. Checks that all tensors in the list have the same shape.
+2. Adds a new dimension (by default at dim=0) and concatenates along it.
+
+So for scalar tensors it’s equivalent to converting your list of scalars into a vector.

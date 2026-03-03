@@ -1,0 +1,38 @@
+A **canonical path** is simply the one unambiguous, absolute pathname for a file or directory—stripped of any symbolic-link indirection, `.` or `..` components, and made fully absolute.  In other words:
+
+1. **Absolute**
+   It always starts from the root of the filesystem (e.g. `/` on Unix, or `C:\` on Windows), not relative to whatever your current working directory is.
+
+2. **Normalized**
+   All `.` (same-directory) and `..` (parent-directory) segments have been collapsed away:
+
+   ```
+   /home/user/../user/project/./src  →  /home/user/project/src
+   ```
+
+3. **Symlink-resolved**
+   Any symbolic links in the path are “followed” so you end up at the real, physical location on disk.  That means
+
+   ```
+   /mnt/data/latest  (a symlink to /mnt/data/v1.2.3)
+     →  /mnt/data/v1.2.3
+   ```
+
+Most languages and frameworks give you a way to compute a canonical path:
+
+* **Python / pathlib**:
+
+  ```python
+  p = Path("some/relative/../file.txt")
+  canonical = p.resolve()  
+  # now canonical is an absolute, symlink-resolved, normalized Path
+  ```
+
+* **Unix shell**:
+
+  ```bash
+  realpath ./some/../path/file.txt  
+  # prints /full/absolute/normalized/path/file.txt
+  ```
+
+Using canonical paths is important when you need a **single, consistent identifier** for a file or directory (e.g. caching, deduplication, configuration lookup) that won’t be confused by different relative references or mounted links.

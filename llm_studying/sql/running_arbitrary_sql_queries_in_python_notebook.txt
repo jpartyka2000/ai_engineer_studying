@@ -1,0 +1,42 @@
+In your Python notebook you can just drop the SQL straight into a `spark.sql(…)` call. For example:
+
+```python
+# (1) If you haven’t already, make sure the Delta table is registered as a temp or permanent view.
+# If it’s not in the catalog you can do:
+spark.read.format("delta") \
+    .load("/path/to/two_u_ecue_staging/ml_output_submit_day_7") \
+    .createOrReplaceTempView("ml_output_submit_day_7")
+
+# (2) Build and run your query
+sql = """
+SELECT ROUND(SUM(sum_diff), 3) AS total_diff
+FROM (
+  SELECT
+    DEGREE_OFFERING,
+    YEAR_MONTH,
+    ROUND(SUM(adjusted_probability), 3)  AS sum_probs,
+    ROUND(SUM(SUBMITTED_APPLICATION_day_7), 3) AS sum_actuals,
+    ROUND(SUM(adjusted_probability) - SUM(SUBMITTED_APPLICATION_day_7), 3) AS sum_diff,
+    COUNT(adjusted_probability) AS opp_count
+  FROM ml_output_submit_day_7
+  WHERE YEAR_QUARTER IN (
+    '2022-Q1','2022-Q2','2022-Q3','2022-Q4',
+    '2023-Q1','2023-Q2','2023-Q3','2023-Q4',
+    '2024-Q1','2024-Q2','2024-Q3','2024-Q4'
+  )
+  GROUP BY DEGREE_OFFERING, YEAR_MONTH
+  ORDER BY sum_diff DESC
+) AS compute_table
+"""
+
+df_result = spark.sql(sql)
+
+# (3) Inspect or pull into Python
+df_result.show()
+
+# If you just want the scalar back in Python:
+total_diff = df_result.collect()[0]["total_diff"]
+print("Rounded total diff:", total_diff)
+```
+
+That will run your exact SQL against the Spark catalog (or your temp view), give you a Spark DataFrame, and then you can `.show()`, or `.collect()` into native Python for further use.

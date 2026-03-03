@@ -1,0 +1,92 @@
+Yes—you can absolutely group by a column and then aggregate that same column in one go. Conceptually, you’re just applying your aggregation function to the group’s key values. Here are a few patterns and things to watch out for:
+
+---
+
+## 1. Simple Series aggregation
+
+```python
+# Suppose df is:
+#   col1  revenue
+#0     A      100
+#1     B      150
+#2     A      200
+#3     B      250
+
+# Group by col1, then sum the col1 values within each group
+# (you'll get value*count per group)
+s = df.groupby('col1')['col1'].sum()
+
+# s is a Series indexed by col1:
+# col1
+# A    'A' + 'A'  -> since it's string, sum concatenates: 'AA'
+# B    'B' + 'B'  -> 'BB'
+# (for numeric keys, you'd get key*count)
+```
+
+More common numeric example:
+
+```python
+df = pd.DataFrame({'x':[1,1,2,2,3]})
+# Group by the values in x, then sum x within each group:
+df.groupby('x')['x'].sum()
+# x
+# 1    2   # 1+1
+# 2    4   # 2+2
+# 3    3   # just 3
+# Name: x, dtype: int64
+```
+
+---
+
+## 2. DataFrame `.agg()` including the grouping key
+
+If you want both the sum of the key *and* other aggregates:
+
+```python
+df = pd.DataFrame({
+    'A': [1,1,2,2,3],
+    'B': [10,20,30,40,50]
+})
+
+# Group on A, then sum A itself and mean of B:
+result = df.groupby('A').agg(
+    SumOfA=('A','sum'),
+    MeanOfB=('B','mean')
+)
+
+# result:
+#    SumOfA  MeanOfB
+# A
+# 1       2     15.0
+# 2       4     35.0
+# 3       3     50.0
+```
+
+Here, `SumOfA` is the sum of the grouping key values within each group.
+
+---
+
+## 3. Watch out for name collisions
+
+By default, if you do
+
+```python
+df.groupby('col1', as_index=False).agg({'col1':'sum', 'col2':'mean'})
+```
+
+you’ll end up with two columns both named `col1` (one is the grouping key, one the aggregation). That works, but is confusing. Better to use **named aggregation**:
+
+```python
+df.groupby('col1', as_index=False).agg(
+    TotalCol1=('col1','sum'),
+    AvgCol2=('col2','mean')
+)
+```
+
+---
+
+### Key takeaways
+
+* **Yes**, you can aggregate on the same column you group by—the function simply gets applied to each group’s key values.
+* For numeric keys, summing gives `key * count`, averaging returns the key itself, etc.
+* Use **named aggregation** (the `new_name = (col, func)` syntax) to avoid duplicate column names and to get a clean output.

@@ -1,0 +1,35 @@
+Your policy gets “run” every time you step the environment—and then it gets **updated once per episode, once for each agent**. Concretely in your code:
+
+1. **Execution (forward pass & action sampling):**
+
+   ```python
+   for agent in env.agent_iter():
+       …
+       logits = policies[agent](obs)         # ← policy.forward(obs)
+       dist   = Categorical(logits=logits)
+       action = dist.sample().item()
+       …
+       env.step(action)
+   ```
+
+   * Every time `env.step(action)` is called, the loop immediately asks your policy for the next action.
+   * If your episode is $T$ total environment steps (across all agents), you’ll do roughly $T$ forward-passes and samplings.
+
+2. **Updates (gradient step):**
+
+   ```python
+   for agent in agents:
+       … 
+       policy_loss.backward()
+       opts[agent].step()                    # ← one optimizer.step() per agent
+   ```
+
+   * Once the episode finishes (after you exit the `agent_iter()` loop), you compute discounted returns for each agent and then call `.backward()` + `.step()` exactly **one time per agent**.
+   * If you have two agents (`agents = ['first_0','second_0']`), that’s **two** parameter-updates per episode—one to each network.
+
+---
+
+### Summary
+
+* **Policy is executed** (forward pass + sampling) on *every* environment step.
+* **Policy is updated** (gradient descent) **once per episode per agent**—so with two agents you get two update steps at the end of each episode.

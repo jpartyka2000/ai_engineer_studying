@@ -1,0 +1,45 @@
+Here’s a rough cost comparison between the two patterns in Databricks, in terms of cluster‐compute usage (DBUs) and practical billing considerations:
+
+---
+
+## 1) Jobs API
+
+| Factor                    | Detail                                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Cluster uptime**        | Spun up per job run (unless you use an always-on “job cluster”).                               |
+| **Billing window**        | Billed in 1-minute increments from cluster start to termination.                               |
+| **DBU rate**              | Whatever your selected node type charges—for example, a  Standard\_D3\_v2 node at 0.75 DBU/hr. |
+| **Total cost per run**    | $\text{runtime (hr)} \times \text{DBU/hr} \times \text{#nodes}$.                               |
+| **Idle cost**             | Zero if clusters tear down immediately after each run.                                         |
+| **Scale‐out flexibility** | You choose node count/size per run—big overnight runs can burst to 20–50 nodes.                |
+| **Example**               | 10 min on 4 x Standard\_D3\_v2 →  (4 × 0.75 DBU/hr) × (10/60 hr) = 0.5 DBU → \~\$0.06          |
+
+---
+
+## 2) MLflow Model Serving
+
+| Factor                    | Detail                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| **Cluster uptime**        | Always-on serving cluster(s).                                                          |
+| **Billing window**        | Billed continuously while the endpoint is deployed, in 1-minute increments.            |
+| **DBU rate**              | Depends on serving SKU (e.g. Standard\_DS3\_v2 at \~1.0 DBU/hr) and number of workers. |
+| **Total cost per hour**   | $\text{#workers} \times \text{DBU/hr}$.                                                |
+| **Idle cost**             | Full DBU rate even if you get zero traffic.                                            |
+| **Scale‐out flexibility** | Autoscaling available, but you pay for the minimal and max workers you set.            |
+| **Example**               | 2 workers of DS3\_v2 → 2 × 1.0 DBU/hr = 2 DBU/hr → \~\$2.40/hr standing cost           |
+
+---
+
+### Key takeaways
+
+| Concern                    | Jobs API                             | Model Serving                         |
+| -------------------------- | ------------------------------------ | ------------------------------------- |
+| **For sporadic batch**     | **Cheaper:** spin up/down per run    | **Expensive:** idle cluster costs     |
+| **For real-time / online** | Not practical (high startup latency) | **Ideal:** sub-second latency         |
+| **Data volume**            | Unlimited (large tables on cluster)  | Best for small payloads (<10 MB JSON) |
+| **Operational simplicity** | Moderate (manage jobs, clusters)     | Simple (one endpoint)                 |
+
+**Which should you pick?**
+
+* If your Monte Carlo runs are **infrequent** (daily, weekly batches) or **data-heavy**, use the **Jobs API** and pay only when you run.
+* If you need a **low-latency, always-available** endpoint for ad-hoc parameterized runs (small inputs), use **MLflow Serving**, accepting the ongoing “standing” DBU cost.

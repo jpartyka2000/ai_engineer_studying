@@ -1,0 +1,23 @@
+You don’t have to pull the entire table into driver memory just because you did a `spark.table()`. Spark’s DataFrame API is lazy, so no data is actually read until you run an action (e.g. `.show()`, `.collect()`, `.toPandas()`, etc.). To work with only a handful of rows, just add a limit (or filter) before your action.
+
+For example, to preview 10 rows:
+
+```python
+df = spark.table("my_db.my_table")      # no data read yet
+df_limit = df.limit(10)                 # still just a logical plan
+df_limit.show()                         # Spark will only fetch 10 rows
+```
+
+If you need those in a Pandas DataFrame:
+
+```python
+pdf = df.limit(10).toPandas()           # only 10 rows are pulled into the driver
+```
+
+You can also use:
+
+* `.filter(...)` to push down a WHERE clause
+* `.sample(fraction=0.01)` to grab \~1% of the data
+* `.head(10)` or `.take(10)` to get a Python list of the first 10 Rows
+
+—all without ever shuffling or collecting the rest of the table.

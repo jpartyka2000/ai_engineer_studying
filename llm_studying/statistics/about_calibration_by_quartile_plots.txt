@@ -1,0 +1,63 @@
+A **calibration-by-quartiles** plot (sometimes called a “binned calibration” or “coarse calibration” plot) is a simple, intuitive way to check whether your model’s predicted probabilities line up with the actual outcome rates—on a coarse, quartile‐level scale rather than point-by-point.  
+
+---
+
+## 1. What It Is  
+- **Binning** your predicted probabilities into four equally‐sized groups (quartiles).  
+- **Summarizing** in each quartile:  
+  - The **mean predicted probability** (what the model thinks the win-rate is).  
+  - The **observed win-rate** (the fraction of actual successes).  
+- **Plotting** those two numbers side by side (or as a line) for each quartile bin.
+
+---
+
+## 2. Why Use It  
+- **Quick sanity check** of calibration without needing dozens of bins or a smooth curve.  
+- Highlights **systematic biases**:  
+  - If the model **over-predicts** in low bins, the “predicted” bars will be noticeably higher than the “observed” bars in quartile 1.  
+  - If it **under-predicts** in high bins, the observed win-rate will exceed the mean probability in quartile 4.  
+- Easy for non-technical stakeholders to grasp: “In the top 25% of scores, we actually win 80% of the time, yet the model only predicts 70%.”
+
+---
+
+## 3. How to Construct  
+
+1. **Compute quartile codes**  
+   ```python
+   df['quartile'] = pd.qcut(df['probability'], 4, labels=False)
+   ```  
+2. **Aggregate per quartile**  
+   ```python
+   summary = (
+     df.groupby('quartile')
+       .agg(
+         mean_pred = ('probability','mean'),
+         obs_rate   = ('outcome',    'mean')
+       )
+       .reset_index()
+   )
+   ```  
+3. **Plot**  
+   - **Grouped bars**: one bar for `mean_pred`, one for `obs_rate` in each quartile.  
+   - **Line plot**: two lines (predicted vs. observed) connected across quartile centers.
+
+---
+
+## 4. How to Read It  
+- **Perfect calibration** ⇒ both bars (or lines) coincide in all four bins.  
+- **Slope** ⇒ you expect both predicted and observed to **increase** monotonically from quartile 1 → 4 if the model has any discriminative power.  
+- **Gaps** ⇒ vertical distance between predicted vs. observed in each bin shows **calibration error**.  
+
+---
+
+## 5. Best Practices & Variations  
+
+- **More bins**: use deciles (10 bins) for finer-grained calibration at the cost of higher variance per bin.  
+- **Confidence intervals**: add error bars showing uncertainty in each observed rate (e.g., Wilson intervals).  
+- **Combined plot**: overlay the “perfectly calibrated” diagonal line (45°) and draw your observed vs. predicted points connected, yielding a simplified “calibration curve.”  
+- **Display counts**: annotate each bin with the number of samples it contains (should be roughly equal if true quartiles).
+
+---
+
+### In a Nutshell  
+A calibration-by-quartiles plot gives you a **high-level snapshot** of how well your model’s probability estimates reflect reality—easy to compute, easy to explain, and powerful enough to catch major mis-calibration or ranking issues at a glance.

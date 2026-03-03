@@ -1,0 +1,89 @@
+In Python’s typing system, `Callable` is a **generic type hint** that describes *any* object you can “call” like a function—not just plain functions themselves. Under the hood, “calling” something means it implements the `__call__` method.
+
+---
+
+### 1. Basic form
+
+```python
+from typing import Callable
+
+# A function that takes an int and returns a str
+f: Callable[[int], str]
+
+# A function taking no arguments, returning None
+g: Callable[[], None]
+```
+
+* The bracketed list (`[Arg1Type, Arg2Type, …]`) specifies argument types.
+* The final type after the arrow (`ReturnType`) specifies what it returns.
+* If you don’t care about signatures you can write `Callable[..., Any]`.
+
+---
+
+### 2. What counts as “callable”?
+
+Anything for which `callable(obj)` is `True`, including:
+
+1. **Normal functions**
+
+   ```python
+   def foo(x: float) -> bool: ...
+   ```
+
+2. **Lambda expressions**
+
+   ```python
+   lam: Callable[[int], int] = lambda x: x + 1
+   ```
+
+3. **Instance methods**
+
+   ```python
+   class A:
+       def method(self, s: str) -> int: ...
+   ```
+
+4. **Classes** themselves (calling a class constructs an instance)
+
+   ```python
+   cls: Callable[..., A] = A
+   ```
+
+5. **Objects with a `__call__` method**
+
+   ```python
+   class Adder:
+       def __init__(self, n): self.n = n
+       def __call__(self, x): return self.n + x
+
+   plus_five: Callable[[int], int] = Adder(5)
+   ```
+
+So `Callable` isn’t *reserved* only for functions—any object you can put parentheses after qualifies.
+
+---
+
+### 3. When to use `Callable` hints
+
+* **API design**: if you accept a callback or hook, type it as `Callable`.
+* **Higher‑order code**: when you pass functions around (e.g. `map`, `filter`, custom pipelines).
+* **Tracking signatures**: you can ensure the right argument/return types.
+
+```python
+from typing import Callable, List
+
+def apply_twice(f: Callable[[int], int], values: List[int]) -> List[int]:
+    return [f(f(v)) for v in values]
+```
+
+---
+
+### 4. Limitations
+
+* **Runtime**: type hints don’t enforce anything at runtime—you’d still need to *try* calling it or use static tools (mypy, PyCharm) to check.
+* **Variadic signatures**: you can’t express all kinds of call signatures (e.g. keyword‑only args) with plain `Callable`; in those cases people often fall back to `Callable[..., Any]`.
+
+---
+
+**Bottom line:**
+Use `typing.Callable` whenever you want to hint that *any* invokable object with a particular signature can be passed in—or returned—from your functions. It covers functions, methods, classes, and functor objects alike.

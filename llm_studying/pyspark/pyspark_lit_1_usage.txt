@@ -1,0 +1,36 @@
+No, the statements `transition_flag = F.lit(1)` and `transition_flag = 1` are **not equivalent** in PySpark, and here’s why:
+
+### 1. **`F.lit(1)`**:
+   - **Definition**: `F.lit(1)` is a PySpark expression that creates a **literal column** with a constant value of `1`. It is used when you need to include a constant value in a PySpark operation.
+   - **Usage**: This is particularly useful for transformations in a distributed data processing context, such as adding a column with a constant value to a DataFrame.
+   - **PySpark Context**: `F.lit(1)` is a column expression, and it can be part of a DataFrame transformation, such as:
+     ```python
+     df.withColumn('new_column', F.lit(1))
+     ```
+     This is interpreted by the PySpark engine during distributed operations.
+
+### 2. **`1`**:
+   - **Definition**: `1` is a Python integer and has no special meaning in PySpark transformations.
+   - **Usage**: It can be used in standard Python logic or comparisons but cannot be directly used in PySpark DataFrame column transformations or operations that expect PySpark column expressions.
+   - **PySpark Context**: Using `1` on its own is only valid within Python operations but **cannot** be directly used in PySpark's `withColumn` or other column-based operations.
+
+### Example of Usage:
+
+If you try to use a Python integer `1` where PySpark expects a column expression, it will raise an error.
+
+#### Correct Use with `F.lit(1)`:
+```python
+df = df.withColumn('flag_column', F.when(F.col('some_column') == 'value', F.lit(1)).otherwise(0))
+```
+
+#### Incorrect Use with `1`:
+```python
+df = df.withColumn('flag_column', F.when(F.col('some_column') == 'value', 1).otherwise(0))
+# This may raise an error depending on how it's used, because PySpark expects column expressions in DataFrame transformations.
+```
+
+### Conclusion:
+- **`F.lit(1)`** creates a **PySpark column expression** with a constant value of `1`.
+- **`1`** is a regular Python integer that cannot be used in PySpark transformations.
+
+If you are working with DataFrame column transformations or expressions in PySpark, always use `F.lit()` to create constant values.

@@ -1,0 +1,81 @@
+A mixin *is* a class — there's no special syntax for it. The difference is in intent and design.
+
+---
+
+**Regular class:** Designed to stand on its own or serve as a base in an inheritance hierarchy.
+
+```python
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+    def speak(self):
+        raise NotImplementedError
+```
+
+**Mixin:** Designed to add specific, reusable functionality to other classes. It's not meant to be used on its own.
+
+```python
+class JsonMixin:
+    def to_json(self):
+        import json
+        return json.dumps(self.__dict__)
+
+class TimestampMixin:
+    def set_timestamp(self):
+        from datetime import datetime
+        self.updated_at = datetime.now()
+```
+
+**Combining them:**
+
+```python
+class User(JsonMixin, TimestampMixin):
+    def __init__(self, name, email):
+        self.name = name
+        self.email = email
+
+user = User("Alice", "alice@example.com")
+user.set_timestamp()
+print(user.to_json())
+```
+
+---
+
+**Key differences in design philosophy:**
+
+| | Regular class | Mixin |
+|--|---------------|-------|
+| Used standalone | Yes | No |
+| Has `__init__` | Usually | Rarely |
+| Manages its own state | Yes | Minimal or none |
+| Purpose | Model a thing | Add a capability |
+| Inheritance | "is a" | "can do" |
+
+---
+
+**Conventions that signal a mixin:**
+
+- Name ends with `Mixin` (e.g., `LoggingMixin`)
+- No `__init__` method
+- Small and focused — does one thing
+- Doesn't depend on specific attributes (or documents what it expects)
+
+---
+
+**Real-world example from Django:**
+
+```python
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+
+class DashboardView(LoginRequiredMixin, ListView):
+    model = Report
+    template_name = "dashboard.html"
+```
+
+`LoginRequiredMixin` adds authentication checking. `ListView` is the "real" base class. Neither mixin nor base class works well alone for this purpose — together they compose the behavior you need.
+
+---
+
+**Bottom line:** A mixin is a design pattern, not a language feature. It's a class that's intentionally small and incomplete, built to be mixed into other classes through multiple inheritance to add a specific capability.

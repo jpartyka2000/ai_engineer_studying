@@ -1,0 +1,83 @@
+Not quite – if you do
+
+```python
+df[ 'this_column' ] = df[ 'this_column' ].cat.codes
+```
+
+you’ve **replaced** your categorical column with plain integers, and the `.cat` accessor (and its `.categories` list) is gone. You can’t then do
+
+```python
+df[ 'this_column' ] = df[ 'this_column' ].cat.categories
+```
+
+because at that point `df['this_column']` no longer has any `.cat` to speak of, and `cat.categories` itself is an **Index** of length *number of categories*, not a row‐by‐row mapping.
+
+---
+
+## How to do it correctly
+
+### 1. View or extract codes without destroying the original column
+
+If you just want to *see* the integer codes:
+
+```python
+codes = df['this_column'].cat.codes
+print(codes)  
+# 0    2
+# 1    0
+# 2    1
+# ...
+```
+
+Or store them in a **new** column:
+
+```python
+df['this_column_codes'] = df['this_column'].cat.codes
+```
+
+Your original `this_column` (still categorical, still showing strings) is untouched.
+
+---
+
+### 2. Convert the *same* column to integers and back
+
+If you really want to overwrite it, you must *save* the category‐list first, then rebuild the categorical (or string) column later:
+
+```python
+# 1) Save the categories
+cats = df['this_column'].cat.categories
+
+# 2) Overwrite with codes
+df['this_column'] = df['this_column'].cat.codes
+
+# … do your integer‐based work …
+
+# 3a) If you want the original strings back as a categorical column:
+df['this_column'] = pd.Categorical.from_codes(
+    df['this_column'],    # these are the integer codes
+    categories=cats
+)
+
+# or 3b) If you just want them back as plain Python strings:
+df['this_column'] = df['this_column'].map(lambda code: cats[code])
+```
+
+---
+
+### 3. The easy “display as strings” trick
+
+If you never need to keep it categorical, and just want to convert back to strings:
+
+```python
+df['this_column'] = df['this_column'].astype(str)
+```
+
+That will turn every value (internally code or category) into its string form.
+
+---
+
+### TL;DR
+
+* **`.cat.codes`** gives you an **integer** Series without touching the original column.
+* **`.cat.categories`** is the **list of unique labels**, not a per‐row mapping.
+* To round‐trip, you must save `categories` first, then rebuild with `pd.Categorical.from_codes` (for categorical) or map codes back through that `categories` list (for plain strings).

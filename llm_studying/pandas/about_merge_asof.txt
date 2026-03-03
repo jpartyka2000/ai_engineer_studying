@@ -1,0 +1,56 @@
+`pd.merge_asof` performs an "as-of" merge, which is a type of join used primarily for time-series or ordered data. It matches each row in the left DataFrame to the last row in the right DataFrame whose key is less than or equal to the left row’s key. In other words, instead of requiring an exact key match, it finds the nearest match on or before the key value. 
+
+Key points about `merge_asof`:
+
+- **Nearest Key Matching:**  
+  It matches based on the nearest key value that does not exceed the key in the left DataFrame.
+
+- **Sorted Data Requirement:**  
+  Both DataFrames must be sorted by the merge key.
+
+- **Direction Parameter:**  
+  You can control the direction of matching:
+  - `direction='backward'` (default): Matches the last row in the right DataFrame where the key is less than or equal to the left key.
+  - `direction='forward'`: Matches the first row where the right key is greater than or equal to the left key.
+  - `direction='nearest'`: Finds the nearest row regardless of whether it is before or after.
+
+- **Tolerance:**  
+  You can also specify a `tolerance` to restrict how far apart keys can be in order to be considered a match.
+
+This is especially useful for joining time-series data where an exact timestamp match is rare, but you want to "carry forward" the last known value.
+
+For example, if you have a DataFrame of events with timestamps and another DataFrame of measurements taken at irregular intervals, `merge_asof` can join each event with the most recent measurement prior to the event.
+
+A simple example:
+
+```python
+import pandas as pd
+
+# Left DataFrame: events at specific times
+df_events = pd.DataFrame({
+    'event_time': pd.to_datetime(['2023-01-02', '2023-01-05', '2023-01-08']),
+    'event': ['A', 'B', 'C']
+})
+
+# Right DataFrame: measurements taken at irregular times
+df_measurements = pd.DataFrame({
+    'measurement_time': pd.to_datetime(['2023-01-01', '2023-01-04', '2023-01-07']),
+    'value': [100, 200, 300]
+})
+
+# Ensure both DataFrames are sorted by their time columns
+df_events = df_events.sort_values('event_time')
+df_measurements = df_measurements.sort_values('measurement_time')
+
+# Merge as-of: for each event, get the most recent measurement (event_time >= measurement_time)
+merged_df = pd.merge_asof(df_events, df_measurements,
+                          left_on='event_time', right_on='measurement_time',
+                          direction='backward')
+
+print(merged_df)
+```
+
+This will match each event with the most recent measurement whose timestamp is less than or equal to the event time.
+
+In summary, `pd.merge_asof` is a powerful tool for merging datasets based on nearest key values rather than exact matches.
+

@@ -1,0 +1,83 @@
+For SFT you want each training example to teach the model exactly **which function to call next**, so your JSONL entry should look like this:
+
+1. **`messages`**: Everything up through the *last function response* that the model has already produced or seen.
+2. **`completion`**: A single assistant‐role message whose *entire* content is the next `function_call` you want it to emit.
+
+---
+
+### Corrected example
+
+Given your conversation, you’d build your training example like this:
+
+```jsonl
+{  
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant that can fetch stock prices, weather, and local times."
+    },
+    {
+      "role": "developer",
+      "content": "Always cite your data sources when returning external data."
+    },
+    {
+      "role": "user",
+      "content": "What is the current price of GOOGL, the weather in London, and the local time in Tokyo?"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "function_call": {
+        "name": "get_stock_price",
+        "arguments": "{\"ticker\": \"GOOGL\"}"
+      }
+    },
+    {
+      "role": "function",
+      "name": "get_stock_price",
+      "content": "{\"ticker\":\"GOOGL\",\"price\":2798.21,\"currency\":\"USD\"}"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "function_call": {
+        "name": "get_weather",
+        "arguments": "{\"location\": \"London, UK\"}"
+      }
+    },
+    {
+      "role": "function",
+      "name": "get_weather",
+      "content": "{\"location\":\"London, UK\",\"temperature\":15,\"unit\":\"C\",\"condition\":\"Cloudy\"}"
+    }
+  ],
+  "completion": {
+    "role": "assistant",
+    "function_call": {
+      "name": "get_local_time",
+      "arguments": "{\"location\":\"Tokyo, Japan\"}"
+    }
+  }
+}
+```
+
+* Notice that **we stopped the `messages` array right after** the weather function’s response.
+* The **`completion`** field is *only* the assistant’s next `function_call` (no extra fields, no tool role, no function response yet).
+
+When you later fine-tune on this JSONL, the model will learn:
+
+> “Given everything up through the weather reply, *my next message* should be exactly this `function_call` to `get_local_time`.”
+
+---
+
+### Putting it all together
+
+1. Assemble one JSON object per line in `train.jsonl`, each with that structure.
+2. Run:
+
+   ```bash
+   openai api fine_tunes.create \
+     -t train.jsonl \
+     -m gpt-3.5-turbo
+   ```
+3. Use your fine-tuned model with the same `functions=[…]` you declared originally and `function_call="auto"`. It will now choose `get_local_time` at precisely the right moment.

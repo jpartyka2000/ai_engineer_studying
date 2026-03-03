@@ -1,0 +1,88 @@
+You don’t need to dig through your notebook logs or the Spark UI to see “how many rows were updated/inserted/deleted” by your Delta Merge — it’s all recorded in the Delta transaction log and exposed via the table’s history.  You can surface it in three easy ways:
+
+---
+
+### 1. SQL:
+
+```sql
+DESCRIBE HISTORY your_database.your_table
+```
+
+That will give you a table of all commits, including the ones where you ran `MERGE`.  The columns you’ll care about are:
+
+* **version** – the transaction number
+* **timestamp** – when it ran
+* **operation** – “MERGE” (or “WRITE”, “UPDATE”, etc.)
+* **operationParameters** – how you called it (e.g. the `condition`)
+* **operationMetrics** – a map with keys like
+  `numRowsInserted`, `numRowsUpdated`, `numRowsDeleted`, etc.
+
+You can wrap that in another query to grab just the last merge, e.g.:
+
+```sql
+SELECT
+  version,
+  timestamp,
+  operationMetrics['numRowsInserted']    AS inserted,
+  operationMetrics['numRowsUpdated']     AS updated,
+  operationMetrics['numRowsDeleted']     AS deleted
+FROM
+  (DESCRIBE HISTORY your_database.your_table)
+WHERE operation = 'MERGE'
+ORDER BY version DESC
+LIMIT 1;
+```
+
+---
+
+### 2. Python / PySpark:
+
+```python
+from delta.tables import DeltaTable
+
+dt = DeltaTable.forName(spark, "your_database.your_table")
+
+# get full history
+history_df = dt.history()  
+
+# show just the last MERGE
+(
+  history_df
+    .filter("operation = 'MERGE'")
+    .select("version", "timestamp", "operationMetrics")
+    .orderBy("version", ascending=False)
+    .limit(1)
+    .show(truncate=False)
+)
+```
+
+You can even pull out individual metrics:
+
+```python
+from pyspark.sql.functions import col
+
+last_merge = (
+  history_df
+    .filter("operation = 'MERGE'")
+    .orderBy(col("version").desc())
+    .limit(1)
+    .collect()[0]
+)
+
+metrics = last_merge.operationMetrics
+print(f"Inserted: {metrics['numRowsInserted']}, Updated: {metrics['numRowsUpdated']}, Deleted: {metrics['numRowsDeleted']}")
+```
+
+---
+
+### 3. Databricks Data UI:
+
+1. In the sidebar click **Data ➔ Tables**
+2. Find your table and click it
+3. Switch to the **History** tab
+
+There you’ll get the same info in a friendly UI: each commit (MERGE) shows when it ran, by whom, and what the delta metrics were.
+
+---
+
+All of these read directly from the `_delta_log` transaction history — no need to hunt through raw JSON or Spark event logs.

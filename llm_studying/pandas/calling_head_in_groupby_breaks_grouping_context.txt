@@ -1,0 +1,21 @@
+Yes—calling `.head(n)` on a GroupBy always returns a plain Series or DataFrame of the first *n* rows per group, not a new GroupBy object. Once you do:
+
+```python
+grouped = df.groupby('key')['val']
+top3 = grouped.head(3)
+```
+
+`top3` is just a Series (or DataFrame) of rows, with no grouping metadata attached. Any subsequent pandas operation (like `.transform()`, `.mean()` on that object) will act on it as a regular Series/DataFrame, not “per group.”
+
+If you need to compute something like “the mean of the first 3 values in each group,” you have to preserve the grouping, for example:
+
+```python
+# yields one mean per group
+means_of_first3 = (
+    df
+    .groupby('key')['val']
+    .apply(lambda s: s.head(3).mean())
+)
+```
+
+Here, `.apply(…)` runs inside each group and returns a Series indexed by group key, so you don’t lose the grouping context.

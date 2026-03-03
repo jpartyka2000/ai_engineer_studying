@@ -1,0 +1,61 @@
+You don’t *have* to use `reset_index()`—you just need to make sure the result of your rolling‐mean has the *same* index as your original `df_data` if you want to assign it back directly.  The reason people often do
+
+```python
+…rolling(..).mean().shift(1).reset_index(level=0, drop=True)
+```
+
+is that after
+
+```python
+s = df_data.groupby("COHORT")["ENROLLED"]\
+           .rolling(window=100, min_periods=MIN_PERIOD_LENGTH)\
+           .mean()\
+           .shift(1)
+```
+
+`s` is a **Series** whose index is a **MultiIndex** `(COHORT, original_row_index)`.  Resetting level 0 (the cohort key) drops that extra level and leaves you with just the original row index, so that
+
+```python
+df_data["enrolled_last_100"] = s.reset_index(level=0, drop=True)
+```
+
+assigns cleanly.
+
+---
+
+### Alternatives to `reset_index(...)`
+
+1. **`.droplevel(0)`**
+   Right after your `.mean().shift(1)`, you can do:
+
+   ```python
+   s2 = s.droplevel(0)
+   df_data["enrolled_last_100"] = s2.fillna(method="bfill").round(5)
+   ```
+
+   This also strips off the cohort level and keeps your original index.
+
+2. **Use `transform` instead of `rolling` on a groupby**
+   `transform` always produces a Series whose index exactly matches the caller’s:
+
+   ```python
+   df_data["enrolled_last_100"] = (
+       df_data
+         .groupby("COHORT")["ENROLLED"]
+         .transform(lambda x: x
+                            .rolling(window=100, min_periods=MIN_PERIOD_LENGTH)
+                            .mean()
+                            .shift(1))
+         .fillna(method="bfill")
+         .round(5)
+   )
+   ```
+
+   Now you never have a MultiIndex, so there’s no need to reset or drop any levels—your original `df_data.index` is preserved.
+
+---
+
+**Bottom line**
+
+* If you stick with `.groupby(...).rolling(...).mean()`, *you do* need to strip off that extra group‐level index (via `reset_index(level=0, drop=True)` or `droplevel(0)`).
+* If you’d prefer to keep things simpler (and keep the original index automatically), use `.transform(...)` instead.

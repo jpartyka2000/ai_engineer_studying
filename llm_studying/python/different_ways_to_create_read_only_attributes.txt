@@ -1,0 +1,49 @@
+No, there are a few other ways:
+
+**1. `__setattr__` override:**
+```python
+class Frozen:
+    def __init__(self, value):
+        object.__setattr__(self, '_value', value)
+    
+    def __setattr__(self, name, value):
+        raise AttributeError("Read-only")
+```
+
+**2. `namedtuple` (immutable by design):**
+```python
+from collections import namedtuple
+
+Point = namedtuple('Point', ['x', 'y'])
+p = Point(3, 4)
+p.x = 5    # AttributeError
+```
+
+**3. Frozen dataclass:**
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Point:
+    x: float
+    y: float
+
+p = Point(3, 4)
+p.x = 5    # FrozenInstanceError
+```
+
+**Comparison:**
+
+| Approach | Scope | Mutability |
+|----------|-------|------------|
+| `@property` | Per-attribute | Rest of object can be mutable |
+| `__setattr__` | Whole object | Fully custom control |
+| `namedtuple` | Whole object | Completely immutable |
+| `frozen=True` dataclass | Whole object | Completely immutable |
+
+**Truth is:** Python doesn't have truly enforced read-only. All of these can be bypassed:
+```python
+object.__setattr__(obj, '_value', 'hacked')
+```
+
+Python's philosophy is "we're all consenting adults" — these mechanisms signal intent rather than enforce it.

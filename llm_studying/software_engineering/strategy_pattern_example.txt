@@ -1,0 +1,129 @@
+The **Strategy Pattern** is a behavioral design pattern that allows you to define a family of algorithms, encapsulate each one as a class, and make them interchangeable. This pattern is particularly useful when you want to vary the behavior of an object dynamically without altering the object's class. It promotes composition over inheritance and allows you to swap out algorithms based on runtime decisions.
+
+### Example: Strategy Pattern for Sorting Algorithms
+
+Let’s demonstrate the Strategy Pattern using a scenario where you have multiple sorting strategies (e.g., bubble sort, quick sort, and merge sort), and you want to mix and match these algorithms dynamically for different datasets.
+
+### Step-by-Step Breakdown:
+
+1. **Define a Strategy Interface**: This interface will declare a common method for all strategies.
+2. **Create Concrete Strategies**: Implement different sorting algorithms as separate classes.
+3. **Context Class**: This class will use a reference to the strategy object to perform the task, allowing different strategies to be swapped out.
+
+### Example Code in Python:
+
+#### 1. Strategy Interface
+```python
+from abc import ABC, abstractmethod
+
+class SortStrategy(ABC):
+    @abstractmethod
+    def sort(self, data):
+        pass
+```
+
+#### 2. Concrete Strategies (Sorting Algorithms)
+```python
+class BubbleSort(SortStrategy):
+    def sort(self, data):
+        print("Sorting using Bubble Sort")
+        # Bubble sort algorithm (simplified version)
+        n = len(data)
+        for i in range(n):
+            for j in range(0, n-i-1):
+                if data[j] > data[j+1]:
+                    data[j], data[j+1] = data[j+1], data[j]
+        return data
+
+class QuickSort(SortStrategy):
+    def sort(self, data):
+        print("Sorting using Quick Sort")
+        # Quick sort algorithm (simplified version)
+        if len(data) <= 1:
+            return data
+        pivot = data[0]
+        less = [x for x in data[1:] if x <= pivot]
+        greater = [x for x in data[1:] if x > pivot]
+        return self.sort(less) + [pivot] + self.sort(greater)
+
+class MergeSort(SortStrategy):
+    def sort(self, data):
+        print("Sorting using Merge Sort")
+        # Merge sort algorithm (simplified version)
+        if len(data) <= 1:
+            return data
+        mid = len(data) // 2
+        left = self.sort(data[:mid])
+        right = self.sort(data[mid:])
+        return self.merge(left, right)
+
+    def merge(self, left, right):
+        result = []
+        i = j = 0
+        while i < len(left) and j < len(right):
+            if left[i] < right[j]:
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+        result.extend(left[i:])
+        result.extend(right[j:])
+        return result
+```
+
+#### 3. Context Class (That Uses a Strategy)
+```python
+class SortContext:
+    def __init__(self, strategy: SortStrategy):
+        self._strategy = strategy
+
+    def set_strategy(self, strategy: SortStrategy):
+        self._strategy = strategy
+
+    def sort_data(self, data):
+        return self._strategy.sort(data)
+```
+
+#### 4. Client Code (Mix and Match Strategies)
+```python
+# Example list to sort
+data = [64, 34, 25, 12, 22, 11, 90]
+
+# Context using BubbleSort
+context = SortContext(BubbleSort())
+sorted_data = context.sort_data(data.copy())
+print("Sorted Data:", sorted_data)
+
+# Switching to QuickSort
+context.set_strategy(QuickSort())
+sorted_data = context.sort_data(data.copy())
+print("Sorted Data:", sorted_data)
+
+# Switching to MergeSort
+context.set_strategy(MergeSort())
+sorted_data = context.sort_data(data.copy())
+print("Sorted Data:", sorted_data)
+```
+
+### Output:
+```
+Sorting using Bubble Sort
+Sorted Data: [11, 12, 22, 25, 34, 64, 90]
+Sorting using Quick Sort
+Sorted Data: [11, 12, 22, 25, 34, 64, 90]
+Sorting using Merge Sort
+Sorted Data: [11, 12, 22, 25, 34, 64, 90]
+```
+
+### How It Works:
+- **Strategy Interface** (`SortStrategy`): Declares a `sort()` method that all concrete strategies must implement.
+- **Concrete Strategies** (`BubbleSort`, `QuickSort`, `MergeSort`): Each implements its own sorting algorithm.
+- **Context Class** (`SortContext`): Accepts a `SortStrategy` object and uses it to sort data. The `set_strategy()` method allows you to swap strategies at runtime.
+  
+### Benefits of the Strategy Pattern:
+- **Interchangeable Algorithms**: You can swap different sorting algorithms without changing the core logic in the context class.
+- **Open/Closed Principle**: The `SortContext` is open for extension (new algorithms can be added) but closed for modification.
+- **Separation of Concerns**: Each sorting algorithm is encapsulated in its own class, making it easy to manage and test independently.
+
+This pattern is useful in situations where you may need to dynamically switch between different algorithms or behaviors during runtime, providing flexibility and scalability in your code.

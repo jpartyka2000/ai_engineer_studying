@@ -1,0 +1,104 @@
+The **`inspect`** module in Python’s standard library lets you **introspect** live objects—classes, functions, modules, tracebacks, frames, and code objects—so you can retrieve their source, signature, documentation, and more. It’s invaluable for debugging, documentation tools, REPL exploration, and metaprogramming. Here’s a high-level tour:
+
+---
+
+## 1. Retrieving Source & Documentation
+
+* **`inspect.getsource(object)`**
+  Return the original source code (as a string) for a module, class, method, or function. Raises if the object wasn’t defined in Python (e.g. built-in).
+
+* **`inspect.getdoc(object)`**
+  Fetch the cleaned-up docstring. Equivalent to `object.__doc__`, but with indentation trimmed and inheritance of docstrings (for classes/methods).
+
+* **`inspect.getfile(object)`** / **`inspect.getsourcefile(object)`**
+  Return the filename where the object was defined. Useful in REPLs or when walking project trees.
+
+---
+
+## 2. Examining Call Signatures & Parameters
+
+* **`inspect.signature(callable)`**
+  Returns a `Signature` object describing its parameters (names, defaults, annotations, varargs, varkw). You can do:
+
+  ```python
+  sig = inspect.signature(my_func)
+  for name, param in sig.parameters.items():
+      print(name, param.default, param.kind)
+  ```
+* **`inspect.getfullargspec(func)`** (older API)
+  Gives you `args`, `varargs`, `varkw`, `defaults`, `kwonlyargs`, `annotations`, etc.
+
+---
+
+## 3. Listing Members & Attributes
+
+* **`inspect.getmembers(object, [predicate])`**
+  Returns a sorted list of `(name, value)` pairs for attributes matching an optional predicate (e.g. `inspect.isfunction`, `inspect.ismethod`, `inspect.isclass`).
+
+* **Predicates** like `inspect.isfunction`, `inspect.ismethod`, `inspect.isclass`, `inspect.ismodule`, `inspect.isgeneratorfunction`, etc., help you filter those members.
+
+---
+
+## 4. Stack & Frame Inspection
+
+* **`inspect.stack()`**
+  Returns a list of `FrameInfo` for the current call stack. Each entry has `(frame, filename, lineno, function, code_context, index)`.
+
+* **`inspect.currentframe()`**
+  Grab the current execution frame; you can walk up via `frame.f_back`.
+
+* **Use cases**: building custom debuggers, logging utilities that include caller info, or implementing your own `@deprecated` decorator to print who called a function.
+
+---
+
+## 5. Code Objects & AST
+
+* **`inspect.getsourcefile`** / **`inspect.findsource`**
+  Under the hood, these help you locate the file and lines where a code object lives.
+
+* **`inspect.getblock(lines, offset)`**
+  Given source lines and a starting index, extract a logical block (e.g. a `def` or `class` body).
+
+* **`inspect.cleandoc`**
+  Remove indentation from a docstring or a block of text.
+
+---
+
+## 6. Practical Example
+
+```python
+import inspect
+
+def foo(a, b=2, *args, **kwargs):
+    """Foo does X, Y, Z."""
+    pass
+
+# Source & docs
+print(inspect.getsource(foo))
+print(inspect.getdoc(foo))
+
+# Signature
+sig = inspect.signature(foo)
+print(sig)             # (a, b=2, *args, **kwargs)
+print(sig.parameters)  # ordered mapping of Parameter objects
+
+# Class introspection
+class Bar:
+    def method(self): pass
+
+print(inspect.getmembers(Bar, inspect.isfunction))
+# [('method', <function Bar.method at ...>)]
+```
+
+---
+
+### When to reach for `inspect`
+
+* **REPL exploration**: quickly peek at a function’s implementation or docs.
+* **Frameworks**: routers (Flask/FastAPI) auto-generate endpoints by inspecting function parameters.
+* **Testing & Debugging**: build intelligent test-discovery or enhanced logging that prints caller filenames/line numbers.
+* **Metaprogramming**: decorators that adapt based on a function’s signature or annotations.
+
+---
+
+**In short**, `inspect` is your go-to toolbox for Pythonic self-reflection—letting code discover code.

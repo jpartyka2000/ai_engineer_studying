@@ -1,0 +1,86 @@
+Every dataclass in Python carries a special class‐level attribute named `__dataclass_fields__`. It’s a dictionary that holds metadata about each field you declared in the class. Here’s what you need to know:
+
+---
+
+## 1. What it contains
+
+* **Keys**: the field names as strings
+* **Values**: `Field` objects (instances of `dataclasses.Field`) that describe each attribute’s configuration
+
+Each `Field` object has properties like:
+
+* `name`: the field’s name
+* `type`: the annotated type
+* `default`: the default value (or `dataclasses.MISSING` if none was provided)
+* `default_factory`: a callable to produce a default (or `dataclasses.MISSING`)
+* `init`: whether to include it in the generated `__init__` signature (bool)
+* `repr`: whether to include it in the generated `__repr__` (bool)
+* `compare`: whether to include it in comparisons (bool)
+* `metadata`: an immutable mapping for arbitrary user metadata
+
+---
+
+## 2. How it’s structured
+
+```python
+from dataclasses import dataclass, fields
+
+@dataclass
+class Point:
+    x: float
+    y: float = 0.0
+    label: str = "A"
+
+# Inspect the raw dict
+for name, fld in Point.__dataclass_fields__.items():
+    print(name, fld, fld.type, fld.default)
+```
+
+Output roughly:
+
+```
+x Field(name='x',type=<class 'float'>,default=<dataclasses.MISSING>,...) <class 'float'> <dataclasses.MISSING>
+y Field(name='y',type=<class 'float'>,default=0.0,...) <class 'float'> 0.0
+label Field(name='label',type=<class 'str'>,default='A',...) <class 'str'> A
+```
+
+You can also use the higher‐level `fields()` helper, which returns a tuple of these `Field` objects:
+
+```python
+for fld in fields(Point):
+    print(fld.name, fld.default, fld.init)
+```
+
+---
+
+## 3. Common uses
+
+1. **Custom serialization/deserialization**
+   Walk `__dataclass_fields__` to know exactly which attributes to include, their types, defaults, and any `metadata` you attached.
+
+2. **Validation frameworks**
+   Automatically generate validators by reading field types and metadata (e.g. `metadata={"max_length": 10}`).
+
+3. **Dynamic form or CLI generators**
+   Build interactive prompts by enumerating each field, knowing whether it’s required (`default is MISSING`) or optional.
+
+---
+
+## 4. Things to watch out for
+
+* **Inherited dataclasses**
+  Subclasses inherit and extend `__dataclass_fields__`. Fields from the base come first, then subclass fields.
+
+* **Order matters**
+  The dictionary preserves insertion order: the order you declared fields in your class definition.
+
+* **Mutation**
+  While technically you *can* modify `__dataclass_fields__`, doing so can break the guarantees of the generated methods (`__init__`, `__repr__`, etc.). It’s best treated as read-only metadata.
+
+---
+
+### TL;DR
+
+* `__dataclass_fields__` is the internal dict mapping field names → `Field` descriptors for a dataclass.
+* It drives how the class’s `__init__`, `__repr__`, comparison methods, and helpers like `asdict()` behave.
+* For most purposes, use the public `fields()` helper, but `__dataclass_fields__` is there if you need raw access to every aspect of your dataclass’s configuration.

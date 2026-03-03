@@ -1,0 +1,51 @@
+Yes, you can access the `spark` session within a method of the `CoreMLColumnSet` class if the `spark` object is defined globally (above the class definition, as in your example). 
+
+Here’s how it works:
+
+Since `spark` is defined in the global scope (outside and above the class), it is accessible from within any class or method unless shadowed by a local variable of the same name. If you need to use it within a method of the class, you can directly refer to `spark`.
+
+### Example:
+
+```python
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("MLPipeline") \
+    .getOrCreate()
+
+class CoreMLColumnSet:
+    def __init__(self, customer_name):
+        self.customer_name = customer_name.lower()
+
+    def process_data(self):
+        # Access the globally defined Spark session
+        df = spark.read.csv("/path/to/data.csv")
+        df.show()
+
+# Example usage
+core_ml = CoreMLColumnSet("example_customer")
+core_ml.process_data()
+```
+
+In the above code:
+- `spark` is defined globally and can be accessed inside the `process_data` method without explicitly passing it to the class or method.
+- The `spark.read.csv()` call inside the method works because `spark` is already defined in the global scope.
+
+### If you want `spark` to be passed as an argument:
+Another option is to pass the `spark` session explicitly to the class and store it as an instance variable. This is useful if you want more flexibility in managing multiple Spark sessions.
+
+```python
+class CoreMLColumnSet:
+    def __init__(self, customer_name, spark_session):
+        self.customer_name = customer_name.lower()
+        self.spark = spark_session  # Store the passed Spark session
+
+    def process_data(self):
+        df = self.spark.read.csv("/path/to/data.csv")
+        df.show()
+
+# Example usage
+core_ml = CoreMLColumnSet("example_customer", spark)
+core_ml.process_data()
+```
+
+This approach gives you more control, especially if you're dealing with different Spark configurations or multiple sessions.

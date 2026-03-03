@@ -1,0 +1,35 @@
+Shuffling your data between epochs (and before forming new mini‐batches) is a simple yet critical trick to get stable, efficient learning:
+
+1. **Breaks up ordering biases**
+
+   * Real-world datasets often come sorted (by time, label, file order, etc.).  If you don’t shuffle, every mini-batch might end up seeing the same pattern (e.g. all “cats” then all “dogs”), which can bias gradient estimates and slow or destabilize learning.
+
+2. **Makes each mini-batch an (approximately) IID sample**
+
+   * Stochastic gradient methods rely on each mini-batch giving an independent, unbiased estimate of the full‐data gradient.  Shuffling helps ensure that the composition of each mini‐batch is representative of the whole.
+
+3. **Reduces gradient variance and cycles**
+
+   * If you process data in the same fixed order, you can induce “sawtooth” or cyclic patterns in your loss/gradient updates.  Randomizing the order smooths out those oscillations and helps gradients consistently point downhill.
+
+4. **Improves generalization**
+
+   * Random ordering acts as a mild regularizer: the network can’t “memorize” a fixed sequence of updates, so it learns features that work across the whole distribution.
+
+---
+
+### How it works in practice
+
+```python
+# pseudo‐code for one PPO/A2C iteration
+data = collect_rollout()     # list of (s,a,r,logp,advantage) tuples
+
+for epoch in range(PPO_epochs):
+    random.shuffle(data)      # ← shuffle the entire batch
+    for start in range(0, len(data), minibatch_size):
+        batch_mb = data[start:start+minibatch_size]
+        loss = compute_loss(batch_mb)
+        loss.backward(); optimizer.step()
+```
+
+Each epoch sees the same data, but in a different order, so your multiple mini‐batch passes are all “fresh” stochastic estimates—leading to faster, more robust convergence.

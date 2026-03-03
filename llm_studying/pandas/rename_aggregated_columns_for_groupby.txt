@@ -1,0 +1,79 @@
+You have a couple of options. One common approach is to perform the grouping/aggregation and then rename the columns afterward. Another, more concise approach (available in modern Pandas versions) is to use the named aggregation syntax to specify both the source column and the aggregation function along with the new column name. Here are both methods:
+
+---
+
+### Option 1: Rename After Aggregation
+
+First, do your aggregation as you are doing and then call `.rename(columns={...})` on the resulting DataFrame. For example:
+
+```python
+df_joined_final = df_joined_data.groupby('campaign').agg({
+    'total_amount_paid': lambda x: round(x.mean(), 3),
+    'CLV_real_30': lambda x: round(x.mean(), 3),
+    'CLV_real_60': lambda x: round(x.mean(), 3),
+    'CLV_fp_30': lambda x: round(x.mean(), 3),
+    'CLV_fp_60': lambda x: round(x.mean(), 3),
+    'CLV_fp_365': lambda x: round(x.mean(), 3),
+    'clicks': 'first',
+    'spend': 'first',
+    'conversions': 'first',
+    'all_conversions': 'first',
+    'teal_plus_1_month_non_recurring': 'first',
+    'teal_plus_1_month_recurring': 'first',
+    'teal_plus_1_week_non_recurring': 'first',
+    'teal_plus_1_week_recurring': 'first',
+    'teal_plus_1_year_non_recurring': 'first',
+    'teal_plus_1_year_recurring': 'first',
+    'teal_plus_3_months_non_recurring': 'first',
+    'teal_plus_3_months_recurring': 'first'
+}).reset_index().rename(columns={
+    'total_amount_paid': 'total_amount_paid_rounded',
+    'CLV_real_30': 'CLV_real_30_rounded',
+    'CLV_real_60': 'CLV_real_60_rounded',
+    'CLV_fp_30': 'CLV_fp_30_rounded',
+    'CLV_fp_60': 'CLV_fp_60_rounded',
+    'CLV_fp_365': 'CLV_fp_365_rounded'
+})
+```
+
+In this approach, after the aggregation (which uses lambda functions to round the means), the resulting DataFrame is renamed so that the columns that were aggregated with lambdas receive the new names.
+
+---
+
+### Option 2: Use Named Aggregation
+
+Pandas supports a named aggregation syntax in the `agg()` function, which lets you define new column names along with the source column and the aggregation function. For example:
+
+```python
+df_joined_final = df_joined_data.groupby('campaign').agg(
+    total_amount_paid_rounded=('total_amount_paid', lambda x: round(x.mean(), 3)),
+    CLV_real_30_rounded=('CLV_real_30', lambda x: round(x.mean(), 3)),
+    CLV_real_60_rounded=('CLV_real_60', lambda x: round(x.mean(), 3)),
+    CLV_fp_30_rounded=('CLV_fp_30', lambda x: round(x.mean(), 3)),
+    CLV_fp_60_rounded=('CLV_fp_60', lambda x: round(x.mean(), 3)),
+    CLV_fp_365_rounded=('CLV_fp_365', lambda x: round(x.mean(), 3)),
+    clicks=('clicks', 'first'),
+    spend=('spend', 'first'),
+    conversions=('conversions', 'first'),
+    all_conversions=('all_conversions', 'first'),
+    teal_plus_1_month_non_recurring=('teal_plus_1_month_non_recurring', 'first'),
+    teal_plus_1_month_recurring=('teal_plus_1_month_recurring', 'first'),
+    teal_plus_1_week_non_recurring=('teal_plus_1_week_non_recurring', 'first'),
+    teal_plus_1_week_recurring=('teal_plus_1_week_recurring', 'first'),
+    teal_plus_1_year_non_recurring=('teal_plus_1_year_non_recurring', 'first'),
+    teal_plus_1_year_recurring=('teal_plus_1_year_recurring', 'first'),
+    teal_plus_3_months_non_recurring=('teal_plus_3_months_non_recurring', 'first'),
+    teal_plus_3_months_recurring=('teal_plus_3_months_recurring', 'first')
+).reset_index()
+```
+
+In this version, each aggregation is defined as a tuple where the first element is the source column and the second element is the aggregation function. The key on the left is the new column name.
+
+---
+
+### Which to Use?
+
+- **Option 1** is useful if you already have the aggregation defined in a dictionary and simply want to rename a few columns afterward.
+- **Option 2** is more concise and uses a feature introduced in Pandas 0.25+, which can make your code a bit cleaner.
+
+Both methods yield the same result: a DataFrame grouped by `campaign` with aggregated (and rounded) values and extra columns preserved (using the `'first'` aggregation) with new, more descriptive names.

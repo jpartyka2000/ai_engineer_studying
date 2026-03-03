@@ -1,0 +1,31 @@
+Yes—in MLflow an **Experiment** is simply a folder of **Runs**, and **Runs** are where you log and register your models. So you can absolutely:
+
+1. Put both of your customer’s models into **the same experiment** (i.e. use the same `experiment_id` or the same experiment name when you call `mlflow.set_experiment("CustomerX")`).
+2. Log each model in its own run (`with mlflow.start_run() as run:` … `mlflow.lightgbm.log_model(…)`).
+
+Then in the **Experiment** UI (or via `mlflow.search_runs(experiment_ids=[...])`), you’ll see two separate runs—one per model. Clicking into each run, you can inspect:
+
+* The run’s parameters/metrics
+* The model artifact in the **Artifacts** pane
+* Any registration info (if you called `mlflow.register_model()` inside that run, you’ll see a link to the Model Registry version)
+
+So yes—you’ll “find” both models under that experiment, each as its own run. If you want to list them programmatically:
+
+```python
+import mlflow
+
+# get all runs in your experiment
+runs = mlflow.search_runs("CustomerX")  
+
+for _, run in runs.iterrows():
+    print(run.run_id, run.status)
+    # to see if it registered a model, you can inspect tags or
+    # use the registry API to find versions whose source_run_id == run_id
+```
+
+And of course, even though both runs live in the same experiment, you can still register them under different names (or the same name to get multiple versions) in the **Model Registry**. The two concepts are orthogonal:
+
+* **Experiment → Runs** (where you record training history, metrics, artifacts)
+* **Registry → Models** (where you give a permanent name to one or more run artifacts)
+
+But yes—group your customer’s two distinct models into the same experiment by giving them the same `experiment_id`, start two runs, and you’ll easily see both in that experiment’s dashboard.

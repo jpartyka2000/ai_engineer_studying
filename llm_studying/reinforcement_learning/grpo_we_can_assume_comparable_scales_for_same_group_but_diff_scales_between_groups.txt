@@ -1,0 +1,115 @@
+Excellent — that’s a *very* perceptive question, and you’re thinking exactly like someone who’s internalizing what GRPO is really doing under the hood.
+
+Let’s unpack it carefully 👇
+
+---
+
+## 🧩 Step 4 Recap (from GRPO)
+
+We’re sampling a **group of actions** (or completions)
+[
+a_1, a_2, \dots, a_G \sim \pi_{\text{old}}(a|s)
+]
+for a given prompt or state (s).
+
+Then we compute the **group-relative advantage**:
+[
+A_j = \frac{r(s,a_j) - \mu(s)}{\sigma(s)}
+]
+where (\mu(s)) and (\sigma(s)) are the mean and standard deviation of the rewards ({r(s,a_i)}) for *this same prompt (s)*.
+
+---
+
+## 🧠 Your question
+
+> “Do we only have to consider magnitude? Can we assume that all of the actions in the group have the same scale or context?”
+
+In short:
+✅ **Yes — within a single group (same (s)), you can assume the scale and context are the same.**
+But 🚫 **not necessarily across different prompts/states.**
+
+Let’s break that down.
+
+---
+
+### ✅ Within a single state (s)
+
+* All the sampled actions (a_1, \dots, a_G) come from the **same prompt / environment state**.
+* They are **comparable** — they were evaluated by the **same reward model** or task objective, on the same contextual input.
+* So the **reward scale** is consistent *within that group*.
+* Therefore, you can safely compute a *z-score* (group-relative advantage) based purely on magnitude — the spread and mean are meaningful relative to each other.
+
+So inside one group:
+
+> "Magnitude" refers to *reward magnitude* in a consistent context — that’s valid.
+
+---
+
+### 🚫 Across different states or prompts
+
+Across groups (different (s_1, s_2, …)):
+
+* Reward magnitudes may have *different ranges* or *different baselines*.
+
+  * e.g., a factual QA prompt might get rewards between [−0.1, 0.3],
+    while a creative writing prompt might get [2, 9].
+* If you compared raw rewards across those prompts, the large-range task would dominate training.
+
+That’s **exactly why GRPO normalizes per group**:
+each group’s z-scoring (dividing by σ) ensures that updates from each prompt are **on a comparable scale**, even if the absolute reward ranges differ.
+
+So:
+
+* **Within-group:** assume same scale/context ✅
+* **Across groups:** don’t assume comparable magnitude 🚫
+
+---
+
+### 🧮 Why this works conceptually
+
+GRPO’s philosophy is:
+
+> “I don’t care about absolute reward magnitudes across tasks —
+> I only care which actions were relatively better within each context.”
+
+This lets the model learn *how to make relatively better decisions* for each kind of prompt,
+without one reward type overwhelming the others due to scale differences.
+
+---
+
+### ⚙️ Example
+
+Let’s illustrate:
+
+| Prompt                | Rewards for sampled actions | μ    | σ    | z-scores (A_j)                 |
+| --------------------- | --------------------------- | ---- | ---- | ------------------------------ |
+| “Translate to French” | [0.1, 0.2, 0.25, 0.3, 0.35] | 0.24 | 0.09 | [−1.5, −0.4, +0.1, +0.7, +1.1] |
+| “Write a poem”        | [4.0, 5.0, 6.0, 7.0, 8.0]   | 6.0  | 1.4  | [−1.4, −0.7, 0.0, +0.7, +1.4]  |
+
+Notice that:
+
+* Raw reward scales differ wildly (0–0.3 vs 4–8).
+* But after z-scoring, the *relative advantages* are on the same scale — the “+1σ above mean” responses are equally rewarded, despite different raw magnitudes.
+
+That’s what makes GRPO robust to heterogeneous prompts and reward distributions.
+
+---
+
+### 🧭 Summary
+
+| Level                          | Are scales comparable?  | Why                                                   |
+| ------------------------------ | ----------------------- | ----------------------------------------------------- |
+| Within a single group (same s) | ✅ Yes                   | Same task/context and reward model                    |
+| Across groups (different s)    | 🚫 No                   | Rewards may have different ranges or semantics        |
+| Therefore...                   | Use per-group z-scoring | To normalize and equalize contribution across prompts |
+
+---
+
+So your instinct was right:
+
+* Within one group, you only need to consider *relative magnitude* (they share context).
+* But normalization (dividing by σ) is crucial to prevent cross-prompt scale mismatch when aggregating updates across many groups in a training batch.
+
+---
+
+Would you like me to show a **visual (chart or diagram)** of how per-group z-scoring equalizes scales across prompts during GRPO updates? It’s a neat way to see this intuition geometrically.

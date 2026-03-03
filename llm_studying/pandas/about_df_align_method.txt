@@ -1,0 +1,69 @@
+The `DataFrame.align()` method is a quick way to “line up” two pandas objects (Series or DataFrames) so that they share the same index (and/or columns) before you do element-wise arithmetic or comparisons.
+
+```python
+left_aligned, right_aligned = df1.align(
+    df2,
+    join='outer',     # how to combine their indexes (and columns if axis=1)
+    axis=0,           # 0 = align on rows (index), 1 = align on columns
+    fill_value=0      # what value to use where one side is missing
+)
+```
+
+### Key parameters
+
+* **`join`**
+
+  * `'outer'` (default) ⇒ keep the **union** of labels from both.
+  * `'inner'` ⇒ keep only labels **common** to both.
+  * `'left'` ⇒ keep labels from the **caller** (`df1`).
+  * `'right'` ⇒ keep labels from the **other** (`df2`).
+
+* **`axis`**
+
+  * `0` (or `'index'`): align **row labels** (index).
+  * `1` (or `'columns'`): align **column labels**.
+    You can call `.align()` twice (once per axis) if you need to align both.
+
+* **`fill_value`**
+  The scalar to use for any positions where one side has no data (i.e. after alignment, missing spots). Defaults to `NaN`.
+
+### When to use `.align()` instead of `merge`/`concat`
+
+* **Element-wise operations**: If you’re about to do `df1 + df2`, `df1.mul(df2)`, or compare `df1 == df2`, calling `.align()` first guarantees you won’t silently drop or mis-align any rows/columns.
+* **No new rows/columns added** beyond what you specify in `join`—you’re not combining datasets, just synchronizing their labels.
+* **Cleaner code** when you don’t want the overhead or semantic baggage of a SQL-style join: you’re not “merging tables,” you’re “lining up data” for arithmetic or logical ops.
+
+---
+
+**Example:**
+
+```python
+import pandas as pd
+
+df1 = pd.DataFrame({'A':[1,2]}, index=['x','y'])
+df2 = pd.DataFrame({'A':[10,20]}, index=['y','z'])
+
+# align on index, outer join, filling missing with 0
+l, r = df1.align(df2, join='outer', axis=0, fill_value=0)
+
+# l:
+#      A
+# x    1
+# y    2
+# z    0
+
+# r:
+#      A
+# x    0
+# y   10
+# z   20
+
+sum_df = l + r
+# sum_df:
+#      A
+# x    1
+# y   12
+# z   20
+```
+
+Here, `align()` ensures that `x`, `y`, and `z` all appear in both `l` and `r` before we add them together—no missing-index surprises.

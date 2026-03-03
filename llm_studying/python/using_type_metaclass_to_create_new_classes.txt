@@ -1,0 +1,125 @@
+
+Jeffrey Partyka <jpartyka2000@gmail.com>
+5:03 PM (51 minutes ago)
+to me
+
+In Python, type is not just the function you call to check the type of an object — it’s also the default metaclass that Python uses to create new classes.
+
+Let’s unpack that.
+
+
+---
+
+1. Two roles of type
+
+type serves two different purposes in Python:
+
+a) As a type-checking function
+
+When you do:
+
+type(42)         # <class 'int'>
+type("hello")    # <class 'str'>
+
+you’re asking Python: "What class is this object an instance of?"
+
+
+---
+
+b) As a metaclass (class factory)
+
+When you call type with three arguments, it creates a new class:
+
+MyClass = type("MyClass", (object,), {"x": 42})
+obj = MyClass()
+print(obj.x)  # 42
+
+Here:
+
+"MyClass" → name of the class
+
+(object,) → tuple of base classes
+
+{"x": 42} → class attributes dictionary
+
+
+This is exactly what Python does behind the scenes when you write:
+
+class MyClass(object):
+    x = 42
+
+It’s just that the class keyword is syntactic sugar for calling type with those three arguments.
+
+
+---
+
+2. What is a metaclass?
+
+A metaclass is the class of a class.
+
+Instances are created from classes.
+
+Classes themselves are created from metaclasses.
+
+
+Normally, type is the metaclass for user-defined classes:
+
+class A:
+    pass
+
+print(type(A))         # <class 'type'>
+print(isinstance(A, type))  # True
+
+That means every normal class is an instance of type (unless you explicitly set a different metaclass).
+
+
+---
+
+3. Custom metaclasses
+
+You can subclass type to change class creation behavior:
+
+class MyMeta(type):
+    def __new__(mcs, name, bases, namespace):
+        namespace['greeting'] = lambda self: "Hello!"
+        return super().__new__(mcs, name, bases, namespace)
+
+class MyClass(metaclass=MyMeta):
+    pass
+
+obj = MyClass()
+print(obj.greeting())  # Hello!
+
+When MyClass is defined:
+
+1. Python calls MyMeta.__new__ instead of type.__new__.
+
+
+2. That lets you modify attributes, enforce rules, or register classes.
+
+
+
+
+---
+
+4. Why type matters
+
+Everything in Python is an object, including classes themselves.
+
+type is the root metaclass from which all others derive.
+
+It’s the reason you can dynamically create classes at runtime.
+
+Advanced frameworks (Django ORM, SQLAlchemy, dataclasses) heavily use custom metaclasses.
+
+
+
+---
+
+💡 Mental model:
+
+Object → created by a class
+
+Class → created by a metaclass
+
+Default metaclass = type

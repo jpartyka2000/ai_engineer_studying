@@ -1,0 +1,70 @@
+Sure! Here’s a simple example of using SHAP interaction values with a tree-based model like LightGBM. We’ll use the classic adult income dataset from sklearn, train a model to predict whether income >50K, and analyze SHAP interaction effects.
+
+
+---
+
+Step-by-step Example with SHAP Interaction Values
+
+import shap
+import lightgbm as lgb
+import pandas as pd
+import numpy as np
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+
+# 1. Load dataset
+data = fetch_openml("adult", version=2, as_frame=True)
+X = data.data
+y = (data.target == ">50K").astype(int)  # binary classification
+
+# 2. Preprocessing: label encode categoricals
+for col in X.select_dtypes(include="category").columns:
+    X[col] = LabelEncoder().fit_transform(X[col].astype(str))
+
+# 3. Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 4. Fit a LightGBM model
+model = lgb.LGBMClassifier()
+model.fit(X_train, y_train)
+
+# 5. Create a SHAP explainer
+explainer = shap.TreeExplainer(model)
+
+# 6. Compute SHAP interaction values
+interaction_values = explainer.shap_interaction_values(X_test)
+
+# 7. Plot top interaction pairs for one example
+shap.summary_plot(interaction_values, X_test, max_display=10)
+
+
+---
+
+Explanation
+
+interaction_values is a 3D array: [samples, features, features].
+
+Each cell [i][j][k] quantifies how much features j and k interact in prediction i.
+
+The summary_plot automatically extracts and ranks the most important interactions averaged over the test set.
+
+
+
+---
+
+Optional: Visualize One Interaction Pair
+
+To zoom in on one interaction pair:
+
+# Visualize interaction between 'age' and 'education-num'
+shap.dependence_plot(
+    ("age", "education-num"), interaction_values, X_test
+)
+
+This plot shows how the SHAP value of age depends on both age and education-num.
+
+
+---
+
+Would you like me to generate a CSV output of the top interaction pairs? Or tailor this to your dataset?

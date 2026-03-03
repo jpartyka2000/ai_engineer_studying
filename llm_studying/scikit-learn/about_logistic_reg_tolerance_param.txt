@@ -1,0 +1,89 @@
+The short answer is:
+
+* **Yes**, in `LogisticRegression`, `tol` is the minimum change in the optimizer’s stopping criterion (typically the regularized loss) between iterations.
+* **No fixed “number of rounds”**—the solver keeps going until either
+
+  1. the change in the loss falls below your `tol`, **or**
+  2. it hits `max_iter` epochs/iterations.
+
+---
+
+### 1. What exactly is `tol` measuring?
+
+* For solvers like **`sag`/`saga`** and **`lbfgs`**, scikit-learn tracks the value of the objective function (the regularized logistic loss) at each step.
+* After each update (an epoch for SAG/SAGA, or a quasi-Newton step for LBFGS), it computes
+
+  ```text
+  | loss_new − loss_old |  <  tol × (1 + |loss_old|)
+  ```
+* Once that condition is satisfied, the solver declares “converged” and stops.
+
+---
+
+### 2. How many “rounds” does it take?
+
+There’s no predetermined number—it depends on
+
+* **Your data** (scale, conditioning)
+* **Your penalty & C** (stronger regularization can make the loss surface “steeper” and harder to dial in)
+* **Your solver** (some converge faster than others)
+
+By default, `max_iter=100`. If you see a `ConvergenceWarning`, it means you hit that cap **before** your loss change fell below `tol`, so you need to:
+
+1. **Increase** `max_iter`
+2. (Or) **Loosen** `tol`
+3. (And) **Scale** your features—with solvers like SAG/LBFGS, feature‐scaling often slashes the epochs needed.
+
+---
+
+### 3. Inspecting how many iterations you actually used
+
+After `.fit()`, you can look at the `n_iter_` attribute:
+
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.exceptions import ConvergenceWarning
+import warnings
+
+# Example setup
+model = LogisticRegression(
+    solver='sag',
+    tol=1e-4,
+    max_iter=1000,
+    random_state=42,
+    n_jobs=-1
+)
+
+# Optionally treat convergence warnings as errors, so you catch them
+warnings.filterwarnings("error", category=ConvergenceWarning)
+
+try:
+    model.fit(X_train, y_train)
+except ConvergenceWarning:
+    print("Did NOT converge in 1000 epochs; consider upping max_iter or loosening tol")
+
+# See how many epochs it actually ran
+print("Solver ran for", model.n_iter_, "iterations per class")
+```
+
+* For **binary** classification, `model.n_iter_` is a single integer (number of epochs).
+* For **multiclass**, it’s an array of length equal to the number of one-vs-rest problems.
+
+---
+
+### 4. Rules of thumb
+
+| Action                        | Effect                                                     |
+| ----------------------------- | ---------------------------------------------------------- |
+| **Raise** `max_iter`          | Gives the solver more room to converge                     |
+| **Loosen** `tol` (e.g. 1e-3)  | Stops earlier (fewer epochs, faster fit)                   |
+| **Tighten** `tol` (e.g. 1e-6) | Drives loss smaller (more precise), but more epochs needed |
+| **Scale** features            | Often speeds up convergence dramatically                   |
+
+---
+
+**In summary:**
+
+* **`tol`** is the minimum *loss change* per iteration to keep going.
+* **Stop condition**: when that change < `tol`, or you hit `max_iter`.
+* **Actual # of rounds**: you can only know it *after* fitting, by inspecting `model.n_iter_`.

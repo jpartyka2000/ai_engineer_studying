@@ -1,0 +1,36 @@
+LightGBM can indeed *natively* handle categorical features—so you don’t have to one‑hot encode them yourself—but there are two requirements:
+
+1. **Tell it which columns are categorical**
+
+   * In the **scikit‑learn API** (`LGBMClassifier`, `LGBMRegressor`), pass the column names or indices via the `categorical_feature` argument to `.fit(...)`:
+
+     ```python
+     model = LGBMClassifier(...)
+     model.fit(
+         X_train, y_train,
+         categorical_feature=['color', 'region', 'tier']
+     )
+     ```
+   * In the **low‑level API** (`lgb.Dataset`), give the same list when you construct your dataset:
+
+     ```python
+     dtrain = lgb.Dataset(
+         X_train, label=y_train,
+         categorical_feature=['color','region','tier']
+     )
+     ```
+2. **Represent them as integer codes (or pandas `category` dtype)**
+
+   * LightGBM stores each category internally as an integer. If you have strings, either convert the column to pandas `category` (so that `cat.codes` gives 0…K–1) **or** manually map each unique string to an integer.
+   * E.g.
+
+     ```python
+     # pandas category
+     X_train['color'] = X_train['color'].astype('category')
+
+     # or manual map
+     mapping = {'red':0,'green':1,'blue':2}
+     X_train['color'] = X_train['color'].map(mapping)
+     ```
+
+Once you’ve done that, LightGBM’s histogram‑based split search will consider *category‑aware* splits (it tries to find the best “subset” of categories to send left vs right) rather than treating them as ordinal. Internally it uses a greedy algorithm that orders categories by their average gradient and then finds an optimal cut point, giving you most of the benefit of one‑hot or target‑encoding but much more efficiently.

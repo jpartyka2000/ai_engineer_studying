@@ -1,0 +1,54 @@
+Thought for a couple of seconds
+
+Yes—especially in imbalanced settings, it can be very informative to look at the F1 for both “positive” and “negative” classes separately, because it tells you how well your model is balancing precision and recall on each side of the label decision. By default most libraries compute F1 only for the “positive” label, but you can call something like
+
+```python
+f1_pos = f1_score(y_true, y_pred, pos_label=1)
+f1_neg = f1_score(y_true, y_pred, pos_label=0)
+```
+
+to get the class‑specific F1s.  
+
+However, if your goal is a single summary metric you might instead report:
+
+- **Macro‑averaged F1**: the unweighted mean of per‑class F1s, which treats both classes equally  
+- **Weighted‑average F1**: weights each class’s F1 by its support (frequency) in the data  
+
+These aggregate measures ensure you don’t inadvertently over‑optimize for the majority or minority class, while still giving you insight into per‑class trade‑offs when you need it.
+
+-----------------
+
+Thought for 4 seconds
+
+You absolutely can—and often should—break down both recall and accuracy by class, just as you do for F1:
+
+1. **Recall**  
+   - **Positive recall** (a.k.a. sensitivity):  
+     ```python
+     recall_pos = recall_score(y_true, y_pred, pos_label=1)
+     ```  
+   - **Negative recall** (a.k.a. specificity):  
+     ```python
+     recall_neg = recall_score(y_true, y_pred, pos_label=0)
+     ```  
+
+2. **Accuracy**  
+   - **Overall accuracy** is the usual `(TP + TN) / (total samples)`.  
+   - **Per‑class accuracy** is just “correct within that class” divided by “total in that class,” e.g.:  
+     ```python
+     # build the confusion matrix
+     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+     # class‑specific accuracy
+     acc_neg = tn / (tn + fp)   # how often we correctly predict 0 when the true label is 0
+     acc_pos = tp / (tp + fn)   # how often we correctly predict 1 when the true label is 1
+     ```  
+   - Note that `acc_neg` and `acc_pos` are exactly the same numbers you’d call “negative accuracy” or “positive accuracy” in your metrics table.
+
+Putting it all together, you can build a small DataFrame like:
+
+| Class    | Accuracy | Recall (Sens/Spec) | F1    |
+|----------|----------|--------------------|-------|
+| Negative | acc_neg  | recall_neg         | f1_neg|
+| Positive | acc_pos  | recall_pos         | f1_pos|
+
+…or you can report **balanced accuracy** (the average of the two recall rates) or **macro‑accuracy** (the average of the two class‑accuracies) for a single summary number that treats both classes equally.

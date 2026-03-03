@@ -1,0 +1,242 @@
+# Difference Between `__name__` and `__file__`
+
+These are both special Python variables, but they serve very different purposes:
+
+## `__name__`
+
+**What it is:** The **name** of the current module as a string
+
+**Value depends on how the module is used:**
+- If the file is **run directly**: `__name__ = "__main__"`
+- If the file is **imported**: `__name__ = "module_name"` (the actual module name)
+
+### Example with `__name__`
+
+**File: `my_module.py`**
+```python
+print(f"__name__ is: {__name__}")
+
+def greet():
+    print("Hello!")
+
+if __name__ == "__main__":
+    print("This file is being run directly")
+    greet()
+else:
+    print("This file is being imported")
+```
+
+**When run directly:**
+```bash
+$ python my_module.py
+```
+**Output:**
+```
+__name__ is: __main__
+This file is being run directly
+Hello!
+```
+
+**When imported:**
+```python
+# In another file
+import my_module
+
+# Output:
+# __name__ is: my_module
+# This file is being imported
+```
+
+## `__file__`
+
+**What it is:** The **file path** to the current Python file
+
+**Value:** Always the path to the file (relative or absolute, depending on how Python was invoked)
+
+### Example with `__file__`
+
+**File: `/home/user/project/src/utils/helper.py`**
+```python
+print(f"__file__ is: {__file__}")
+
+# Common uses:
+import os
+from pathlib import Path
+
+# Get the directory containing this file
+file_dir = os.path.dirname(__file__)
+print(f"This file's directory: {file_dir}")
+
+# Get the absolute path
+abs_path = os.path.abspath(__file__)
+print(f"Absolute path: {abs_path}")
+
+# Using pathlib (modern approach)
+file_path = Path(__file__)
+print(f"File name: {file_path.name}")
+print(f"Parent directory: {file_path.parent}")
+```
+
+**Output (when run directly):**
+```
+__file__ is: helper.py
+This file's directory: .
+Absolute path: /home/user/project/src/utils/helper.py
+File name: helper.py
+Parent directory: /home/user/project/src/utils
+```
+
+**Output (when imported from elsewhere):**
+```
+__file__ is: src/utils/helper.py  (or full path, depending on context)
+...
+```
+
+## Side-by-Side Comparison
+
+| Aspect | `__name__` | `__file__` |
+|--------|------------|------------|
+| **Type** | String (module name) | String (file path) |
+| **Purpose** | Identify the module | Locate the file |
+| **When run directly** | `"__main__"` | Path to the file |
+| **When imported** | Module name (e.g., `"my_module"`) | Path to the file |
+| **Common use** | Entry point detection | File path operations |
+| **Example value** | `"my_module"` or `"__main__"` | `"/path/to/my_module.py"` |
+
+## Practical Examples
+
+### Using `__name__` for Entry Point Detection
+
+```python
+# utils.py
+
+def process_data():
+    print("Processing data...")
+
+def main():
+    print("Running as main program")
+    process_data()
+
+# This only runs when executed directly, not when imported
+if __name__ == "__main__":
+    main()
+```
+
+```bash
+# Run directly
+$ python utils.py
+# Output: Running as main program
+#         Processing data...
+
+# Import in another file
+>>> import utils
+>>> utils.process_data()
+# Output: Processing data...
+# (main() doesn't run automatically)
+```
+
+### Using `__file__` for File System Operations
+
+```python
+# config_loader.py
+import os
+from pathlib import Path
+
+# Get the directory containing this script
+SCRIPT_DIR = Path(__file__).parent
+
+# Build paths relative to this file
+CONFIG_FILE = SCRIPT_DIR / "config.json"
+DATA_DIR = SCRIPT_DIR / "data"
+LOG_FILE = SCRIPT_DIR / "logs" / "app.log"
+
+print(f"Config file location: {CONFIG_FILE}")
+print(f"Data directory: {DATA_DIR}")
+
+# This works regardless of where the script is called from!
+```
+
+### Using `__name__` for Logging
+
+```python
+# my_module.py
+import logging
+
+# Create a logger named after this module
+logger = logging.getLogger(__name__)
+
+def my_function():
+    logger.info("Function called")
+
+# When used in different files:
+# In main.py: logger name is "my_module"
+# In package/submodule.py: logger name is "package.submodule"
+```
+
+## Combined Example
+
+```python
+# analyzer.py
+import os
+import logging
+from pathlib import Path
+
+# Use __name__ for logger identification
+logger = logging.getLogger(__name__)
+
+# Use __file__ for file operations
+SCRIPT_DIR = Path(__file__).parent
+DATA_FILE = SCRIPT_DIR / "data.csv"
+
+def analyze():
+    logger.info(f"Analyzing data from {DATA_FILE}")
+    # ... analysis code ...
+
+def main():
+    logging.basicConfig(level=logging.INFO)
+    logger.info(f"Module name: {__name__}")
+    logger.info(f"File location: {__file__}")
+    analyze()
+
+if __name__ == "__main__":  # Use __name__ to detect direct execution
+    main()
+```
+
+**When run directly:**
+```
+INFO:__main__:Module name: __main__
+INFO:__main__:File location: /home/user/project/analyzer.py
+INFO:__main__:Analyzing data from /home/user/project/data.csv
+```
+
+**When imported:**
+```python
+import analyzer
+analyzer.analyze()
+
+# Output:
+# INFO:analyzer:Analyzing data from /home/user/project/data.csv
+```
+
+## Important Note About `__file__`
+
+In some special cases, `__file__` might not be available:
+- Interactive Python interpreter
+- Some frozen applications (e.g., PyInstaller)
+- `__main__` module in certain contexts
+
+Always handle it safely:
+```python
+try:
+    script_dir = Path(__file__).parent
+except NameError:
+    # __file__ not available (e.g., in interactive mode)
+    script_dir = Path.cwd()
+```
+
+## Summary
+
+- **`__name__`**: "What is this module called?" → Used for entry point detection and logger naming
+- **`__file__`**: "Where is this file located?" → Used for file path operations and finding resources
+
+Both are incredibly useful, but serve completely different purposes!

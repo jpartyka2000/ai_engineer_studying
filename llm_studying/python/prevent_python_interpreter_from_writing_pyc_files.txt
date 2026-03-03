@@ -1,0 +1,58 @@
+Short version: **`-B` is a *Python* switch, not a pytest flag.** It tells Python **not to write `.pyc` files** (so no `__pycache__`), which is handy on read-only filesystems like Databricks Workspace.
+
+### What `-B` does
+
+* Prevents Python from writing bytecode cache files (`.pyc`) to disk.
+* Python **still compiles** modules to bytecode in memory; it just doesn’t save them.
+* Side effect: slightly slower startup on repeated runs (usually negligible).
+
+### How to use it with pytest
+
+Because `-B` belongs to the interpreter, call pytest **through Python**:
+
+```bash
+python -B -m pytest
+```
+
+Examples:
+
+```bash
+# Standard
+python -B -m pytest tests -q
+
+# Your Databricks-style invocation
+%sh
+python -B -m pytest \
+  /Workspace/Users/jeff@pathahead.ai/cue_reinforcement_learning/cue_react/tests/test_cue_react_agent.py::test_cue_react_agent_local \
+  -q --disable-warnings --maxfail=1 -s \
+  -o log_cli=True -o log_cli_level=INFO
+```
+
+### Equivalent env var (often easier)
+
+Instead of `-B`, set:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+pytest …                 # works because Python sees the env var
+```
+
+This is great for notebooks/CI where you can’t easily change the launcher command.
+
+### Things that *won’t* work
+
+* `pytest -B …` → pytest doesn’t recognize `-B` (it’s not a pytest option).
+* Putting `-B` in `pytest.ini`’s `addopts` → those are pytest args, not Python’s.
+
+### Other ways (less common)
+
+* Early in your test bootstrap (e.g., a very early import), set:
+
+  ```python
+  import sys
+  sys.dont_write_bytecode = True
+  ```
+
+  But this must run **before** imports you want to affect; using `-B` or the env var is more reliable.
+
+**Why you might use it:** on Databricks, Workspace paths don’t support creating `__pycache__`, so `-B` (or `PYTHONDONTWRITEBYTECODE=1`) avoids `OSError: Operation not supported` during `conftest.py` import.

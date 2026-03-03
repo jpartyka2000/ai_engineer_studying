@@ -1,0 +1,93 @@
+The primary reason for defining `test_files` as a **list containing a dictionary** instead of just a dictionary is to support the flexibility and scalability of `pytest.mark.parametrize`. Let's explore this decision:
+
+---
+
+### 1. **Supporting Multiple Test Cases**
+The `@pytest.mark.parametrize` decorator is designed to iterate over a sequence of test cases. If `test_files` is just a single dictionary (and not wrapped in a list), you won't be able to easily add additional test cases.
+
+For example, wrapping the dictionary in a list allows for this:
+```python
+@pytest.mark.parametrize(
+    "test_files",
+    [
+        {
+            "opportunity_file": "./test_data/opportunity_test_file_1.json",
+            "dbscanner_file": "./test_data/dbscanner_test_file_1.json",
+            "ingest_file": "./test_data/ingest_test_file_1.json",
+        },
+        {
+            "opportunity_file": "./test_data/opportunity_test_file_2.json",
+            "dbscanner_file": "./test_data/dbscanner_test_file_2.json",
+            "ingest_file": "./test_data/ingest_test_file_2.json",
+        }
+    ]
+)
+def test_similarity_score(meta_router, test_files):
+    # Test for each set of files
+    with open(test_files["opportunity_file"], "r") as opp_file:
+        opportunity_questions = opp_file.readlines()
+    with open(test_files["dbscanner_file"], "r") as dbscanner_file:
+        dbscanner_questions = dbscanner_file.readlines()
+    with open(test_files["ingest_file"], "r") as ingest_file:
+        ingest_questions = ingest_file.readlines()
+
+    # Assertions as needed...
+```
+Here, each test run will use a different set of files, enabling you to parameterize and test multiple scenarios.
+
+---
+
+### 2. **Consistency with `pytest.mark.parametrize` Design**
+The `@pytest.mark.parametrize` decorator always expects a sequence of test data. Even if you're testing only one case, the input must be iterable (like a list or tuple).
+
+If you define `test_files` as a single dictionary:
+```python
+@pytest.mark.parametrize(
+    "test_files",
+    {
+        "opportunity_file": "./test_data/opportunity_test_file.json",
+        "dbscanner_file": "./test_data/dbscanner_test_file.json",
+        "ingest_file": "./test_data/ingest_test_file.json",
+    }
+)
+```
+This will raise a `TypeError` because `pytest.mark.parametrize` attempts to iterate over `test_files` but finds a dictionary, not a sequence.
+
+---
+
+### 3. **Extending for Additional Parameters**
+By using a list, you can easily add more parameters to each test case without changing the structure.
+
+For example:
+```python
+@pytest.mark.parametrize(
+    "test_files, expected_result_count",
+    [
+        (
+            {
+                "opportunity_file": "./test_data/opportunity_test_file_1.json",
+                "dbscanner_file": "./test_data/dbscanner_test_file_1.json",
+                "ingest_file": "./test_data/ingest_test_file_1.json",
+            },
+            100  # Expected result count for this test case
+        ),
+        (
+            {
+                "opportunity_file": "./test_data/opportunity_test_file_2.json",
+                "dbscanner_file": "./test_data/dbscanner_test_file_2.json",
+                "ingest_file": "./test_data/ingest_test_file_2.json",
+            },
+            200  # Expected result count for this test case
+        )
+    ]
+)
+def test_similarity_score(meta_router, test_files, expected_result_count):
+    # Test logic here...
+```
+
+---
+
+### Summary:
+- Wrapping the dictionary in a list makes the code scalable and compatible with multiple test cases.
+- `pytest.mark.parametrize` requires an iterable, even if you’re providing only one test case.
+- This structure is consistent with pytest’s philosophy of supporting flexibility in testing.

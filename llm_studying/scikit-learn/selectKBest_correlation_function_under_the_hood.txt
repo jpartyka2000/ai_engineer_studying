@@ -1,0 +1,63 @@
+When you use `SelectKBest` in scikit-learn, it internally passes the feature matrix \( X \) and the target vector \( y \) to the custom scoring function (`custom_correlation()` in this case) during the `.fit()` or `.fit_transform()` process.
+
+### How `X` and `y` Are Passed to `custom_correlation()`
+
+1. **Feature Matrix \( X \)**: This is the matrix of your input features. It has the shape `(n_samples, n_features)`, where:
+   - `n_samples` is the number of rows (data points).
+   - `n_features` is the number of columns (features).
+
+2. **Target Vector \( y \)**: This is the vector of your target values (labels). It has the shape `(n_samples,)`, where:
+   - `n_samples` is the number of rows (data points).
+
+### Breakdown of How It Works in `SelectKBest`
+
+- When you call `selector.fit_transform(X, y)`, scikit-learn:
+  1. Extracts the feature matrix \( X \) and the target vector \( y \).
+  2. Passes \( X \) and \( y \) as arguments to your custom function (`custom_correlation()`).
+  3. The function calculates a score for each feature based on the correlation with the target.
+  4. Selects the top `k` features based on the scores and transforms \( X \) to include only those features.
+
+### Example of How `custom_correlation()` Is Called
+Here’s a simplified explanation of what happens under the hood:
+
+```python
+# Internally, scikit-learn does something similar to this:
+scores, p_values = custom_correlation(X, y)
+```
+
+- `X` is a 2D array (or DataFrame) containing all feature columns.
+- `y` is a 1D array (or Series) containing the target variable.
+
+### Example Walkthrough
+Let's break down what happens in the example code provided:
+
+```python
+selector = SelectKBest(score_func=custom_correlation, k=2)
+X_new = selector.fit_transform(X, y)
+```
+
+1. **`fit_transform()`** is called on `X` and `y`.
+   - Here, `X` is a DataFrame containing columns `feature1`, `feature2`, and `feature3`.
+   - `y` is a Series containing the target values.
+
+2. **`custom_correlation(X, y)`** is executed:
+   - The function receives:
+     - \( X \): a DataFrame with shape `(n_samples, n_features)` (e.g., `(5, 3)`).
+     - \( y \): a Series with shape `(n_samples,)` (e.g., `(5,)`).
+   - The function calculates the correlation between each feature in \( X \) and the target \( y \).
+
+3. The scores returned by `custom_correlation()` are used by `SelectKBest` to select the top `k` features.
+
+### Debugging Tip
+If you are unsure how \( X \) and \( y \) are passed to your custom function, you can add a `print()` statement inside your function to see their shapes:
+
+```python
+def custom_correlation(X, y):
+    print("X shape:", X.shape)
+    print("y shape:", y.shape)
+    y_series = pd.Series(y)
+    scores = [X[col].corr(y_series) for col in X.columns]
+    return np.array(scores), np.zeros_like(scores)
+``` 
+
+This will help you understand how the data is being passed during the execution.

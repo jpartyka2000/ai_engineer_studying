@@ -1,0 +1,27 @@
+Calling `dist.sample()` returns a **PyTorch tensor** (even if it contains just a single integer). For example:
+
+```python
+>>> sample = dist.sample()
+>>> type(sample)
+<class 'torch.Tensor'>
+>>> sample.shape
+torch.Size([])    # a zero-dim tensor (a scalar)
+```
+
+However, when you interact with the environment’s API (e.g. `env.step(action)`) or store the action in Python lists, you usually need a **plain Python integer**, not a tensor. Calling `.item()` on a 0-dim tensor extracts its value as a native Python number:
+
+```python
+>>> action = dist.sample().item()
+>>> type(action)
+<class 'int'>
+```
+
+So using `.item()` ensures:
+
+1. **Compatibility** with APIs expecting a Python `int`.
+2. **Avoiding unwanted tensors** in your data structures, which can complicate things like JSON serialization, logging, or NumPy conversions.
+
+In short:
+
+* **`dist.sample()`** → gives you a `torch.Tensor`(e.g. `tensor(3)`).
+* **`dist.sample().item()`** → gives you the Python scalar `3`, which you can safely pass to `env.step()`, append to lists, etc.

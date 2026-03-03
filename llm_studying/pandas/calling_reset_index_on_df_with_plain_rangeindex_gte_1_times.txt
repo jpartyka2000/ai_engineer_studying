@@ -1,0 +1,44 @@
+Each time you call `df.reset_index()` without `drop=True`, pandas takes whatever your current index is and turns it into a column—then replaces the index with a fresh `RangeIndex`. So if you do it repeatedly, you’ll keep accumulating those old indexes as new columns:
+
+```python
+import pandas as pd
+
+# Start with a simple df
+df = pd.DataFrame({'A': [10, 20, 30]})
+#   A
+# 0 10
+# 1 20
+# 2 30
+
+# 1st reset_index:
+df = df.reset_index()
+#   index   A
+# 0     0  10
+# 1     1  20
+# 2     2  30
+
+# 2nd reset_index:
+df = df.reset_index()
+#   index  level_0   A
+# 0     0        0  10
+# 1     1        1  20
+# 2     2        2  30
+```
+
+* **After the first call**, you get an `index` column holding the old 0–2.
+* **After the second call**, pandas sees you already have an `index` column, so when it resets the new RangeIndex it names the old one `level_0` by default (to avoid a name clash), and creates a fresh `index` column of 0–2 again.
+
+If you keep doing `reset_index()` you’ll keep piling on new columns named `index`, `level_0`, `level_1`, etc., each capturing the index state at that moment.
+
+---
+
+### How to avoid the clutter
+
+* **Only reset once**, or
+* Use `drop=True` when you don’t actually need to preserve the old index:
+
+  ```python
+  df = df.reset_index(drop=True)
+  ```
+
+That way, you get back to a clean `RangeIndex` without adding any extra columns.

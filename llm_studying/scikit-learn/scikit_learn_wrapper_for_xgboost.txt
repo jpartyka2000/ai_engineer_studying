@@ -1,0 +1,62 @@
+Thought for a couple of seconds
+
+Yes—XGBoost provides native scikit‑learn–style wrappers in the main package. The two most common are:
+
+```python
+from xgboost import XGBClassifier, XGBRegressor
+```
+
+These classes implement the usual `.fit()`, `.predict()`, `.predict_proba()`, and support all the sklearn conventions (e.g. `fit(X, y)`, `get_params()`, `set_params()`, etc.).
+
+---
+
+### Example usage
+
+```python
+from xgboost import XGBClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, roc_auc_score
+
+# 1) Split data
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 2) Instantiate the sklearn‐wrapper classifier
+clf = XGBClassifier(
+    objective='binary:logistic',  # binary classification
+    eval_metric='auc',            # built‑in eval metric
+    use_label_encoder=False,      # suppress warning
+    n_estimators=500,
+    learning_rate=0.05,
+    max_depth=6,
+    random_state=42,
+    n_jobs=-1
+)
+
+# 3) Fit with early stopping
+clf.fit(
+    X_train, y_train,
+    eval_set=[(X_val, y_val)],
+    early_stopping_rounds=50,
+    verbose=100
+)
+
+# 4) Predictions
+y_prob = clf.predict_proba(X_val)[:, 1]
+y_pred = clf.predict(X_val)
+
+# 5) Metrics
+print("Accuracy:", accuracy_score(y_val, y_pred))
+print("AUC:     ", roc_auc_score(y_val, y_prob))
+```
+
+---
+
+### Key points
+
+- **Classes:** `xgboost.XGBClassifier` and `xgboost.XGBRegressor`.  
+- **Fit signature** supports `eval_set`, `early_stopping_rounds`, and `verbose`.  
+- **Predict methods**:  
+  - `.predict()` → hard labels  
+  - `.predict_proba()` → class probabilities (for classifiers)  
+  
+This makes it seamless to drop XGBoost into any sklearn pipeline or cross‑validation workflow.

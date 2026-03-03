@@ -1,0 +1,57 @@
+You have two easy options to exclude the current day from your 7-day look-back:
+
+---
+
+## 1) Use `closed='left'` in a time-based rolling
+
+When you use an offset window (like `'7d'`), pandas lets you choose which endpoints are included via the `closed` parameter:
+
+```python
+df = df.sort_values(['store_id','date'])
+
+df['rolling_7d_excl_today'] = (
+    df
+      .set_index('date')
+      .groupby('store_id')['revenue']
+      .rolling(
+          window='7d',
+          min_periods=1,
+          closed='left'      # <— drop the right endpoint (i.e. today)
+      )
+      .mean()
+      .reset_index(level=0, drop=True)
+)
+```
+
+* **`closed='left'`** means “include only dates **<** the current row’s date and within the last 7 days.”
+* The average at date D now covers D−7 days **up to but not including** D.
+
+---
+
+## 2) Shift the series by one day before rolling
+
+If you prefer to use a row-count window or don’t want to think about `closed`, just shift your data one step so “today” moves out of the window:
+
+```python
+df = df.sort_values(['store_id','date'])
+
+df['rolling_7d_excl_today'] = (
+    df
+      .set_index('date')
+      .groupby('store_id')['revenue']
+      .apply(lambda s: 
+          # shift values down so each rolling window ends at "yesterday"
+          s.shift(1)
+           .rolling(window='7d', min_periods=1)
+           .mean()
+      )
+      .reset_index(level=0, drop=True)
+)
+```
+
+* `s.shift(1)` means the value at date D is now in the window for date D+1, so the rolling at D only sees up to D−1.
+* You get the same “preceding 7 days (excluding today)” behavior.
+
+---
+
+Both approaches will give you a right-aligned 7-day average **without** including the current row’s value.

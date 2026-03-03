@@ -1,0 +1,122 @@
+============================================================
+GIT REFLOG — COMPREHENSIVE OVERVIEW
+============================================================
+
+WHAT IS REFLOG?
+------------------------------------------------------------
+Reflog (reference log) is Git's local diary that records 
+every time HEAD moves in your repository. Think of it as 
+Git's "undo history" — it tracks actions even when commits 
+seem deleted or lost.
+
+Unlike git log (which shows commit history), reflog shows 
+YOUR ACTIONS: commits, resets, checkouts, rebases, merges, 
+cherry-picks, and more.
+
+
+BASIC COMMAND
+------------------------------------------------------------
+git reflog
+
+Sample output:
+  a1b2c3d HEAD@{0}: commit: Add login feature
+  f4e5d6c HEAD@{1}: checkout: moving from main to feature
+  9h8i7j6 HEAD@{2}: reset: moving to HEAD~2
+  k1l2m3n HEAD@{3}: commit: Fix bug in checkout
+  p5q6r7s HEAD@{4}: rebase (finish): returning to refs/heads/main
+  
+Format: <hash> HEAD@{n}: <action>: <description>
+
+HEAD@{0} = most recent action
+HEAD@{1} = one action ago
+...and so on
+
+
+COMMON USE CASES
+------------------------------------------------------------
+1. RECOVER FROM ACCIDENTAL RESET
+   You ran: git reset --hard HEAD~3
+   Recovery:
+     git reflog                    # find the lost commit
+     git reset --hard HEAD@{1}     # go back to before reset
+
+2. RECOVER DELETED BRANCH
+   You ran: git branch -D feature
+   Recovery:
+     git reflog                    # find last commit on branch
+     git checkout -b feature a1b2c3d
+
+3. UNDO A BAD REBASE
+   Your rebase went wrong
+   Recovery:
+     git reflog                    # find pre-rebase state
+     git reset --hard HEAD@{5}     # return to that state
+
+4. FIND "LOST" COMMITS
+   After merge, rebase, or any history rewrite
+   Recovery:
+     git reflog                    # all commits still visible
+     git cherry-pick <hash>        # recover specific commits
+
+
+USEFUL REFLOG COMMANDS
+------------------------------------------------------------
+git reflog
+  Show reflog for HEAD (default)
+
+git reflog show main
+  Show reflog for a specific branch
+
+git reflog --all
+  Show reflog for all refs
+
+git reflog -n 10
+  Show only last 10 entries
+
+git reflog --date=iso
+  Show entries with full timestamps
+
+git reflog --date=relative
+  Show entries with relative time (2 hours ago, etc.)
+
+git reflog expire --expire=now --all
+  Clear reflog (use with caution!)
+
+
+REFLOG VS LOG
+------------------------------------------------------------
+┌─────────────────┬─────────────────────────────────────────┐
+│ git log         │ git reflog                              │
+├─────────────────┼─────────────────────────────────────────┤
+│ Commit history  │ Action history                          │
+│ Shared (remote) │ Local only (never pushed)               │
+│ Permanent       │ Expires after ~90 days (configurable)   │
+│ Shows ancestry  │ Shows HEAD movements                    │
+│ Lost on reset   │ Survives reset, rebase, etc.            │
+└─────────────────┴─────────────────────────────────────────┘
+
+
+KEY THINGS TO REMEMBER
+------------------------------------------------------------
+- Reflog is LOCAL ONLY — it's never shared or pushed
+- Entries expire after ~90 days by default
+- It's your safety net for almost any Git mistake
+- "Git never forgets" (at least for 90 days locally)
+- You can reference reflog entries directly:
+    git show HEAD@{3}
+    git diff HEAD@{0} HEAD@{3}
+    git reset --hard HEAD@{2}
+
+
+INTERVIEW TIP
+------------------------------------------------------------
+"How would you recover commits after an accidental 
+git reset --hard?"
+
+Answer: "I'd use git reflog to find the SHA of the commit 
+before the reset, then git reset --hard <sha> or create a 
+new branch at that commit with git checkout -b recovery <sha>."
+
+This demonstrates understanding of Git's internal safety 
+mechanisms and confident recovery skills.
+============================================================

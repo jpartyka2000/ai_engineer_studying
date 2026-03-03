@@ -1,0 +1,117 @@
+Yes, what you're describing — **model underprediction for specific subsets** (e.g., `degree_offering` + `year_quarter`) — is a **common real-world calibration problem**, especially in **imbalanced classification tasks**.
+
+And yes — there are **valid ways to reduce underprediction**, either by **adjusting thresholds per subgroup**, **post-processing predictions**, or **incorporating group-awareness into training**.
+
+---
+
+## ✅ Why underprediction happens in subsets
+
+Even with 5-fold CV and a globally optimal threshold, the model:
+
+* Optimizes for **global performance** (not per-group)
+* May struggle with **minority subsets** that have:
+
+  * Few training examples
+  * Different feature distributions
+  * Temporal drift (`year_quarter` often proxies seasonality)
+
+So even if the model is **globally well-calibrated**, some subsets can be **underpredicted or overpredicted**.
+
+---
+
+## ✅ Valid Strategies to Reduce Subset Underprediction
+
+### ✅ 1. **Per-subgroup prediction thresholds (post hoc)**
+
+You can compute and apply **custom thresholds per group** like `(degree_offering, year_quarter)`.
+
+#### Example:
+
+```python
+thresholds = (
+    df.groupby(["degree_offering", "year_quarter"])
+      .apply(lambda g: get_optimal_prediction_threshold(g['actual'], g['probability']))
+)
+```
+
+Then apply these thresholds per row during final prediction.
+
+**Pros**:
+
+* Simple and interpretable
+* No model retraining required
+
+**Cons**:
+
+* Risk of overfitting to small groups
+* Thresholds can fluctuate wildly for small-n groups
+
+---
+
+### ✅ 2. **Train a meta-calibration model (probability adjustment)**
+
+Train a second-stage regression model to adjust predicted probabilities per group:
+
+```python
+df["adjusted_prob"] = calibrator_model.predict(df[["probability", "degree_offering", "year_quarter"]])
+```
+
+Can be a:
+
+* **Gradient boosting regressor**
+* **Isotonic regression per group**
+* **Platt-style logistic model with interaction terms**
+
+---
+
+### ✅ 3. **Train group-aware models**
+
+If some groups consistently underperform:
+
+* Add `degree_offering` and `year_quarter` as **categorical features**
+* Use LightGBM with `categorical_feature=...`
+* Optionally train **group-specific models** for large-enough groups
+
+---
+
+### ✅ 4. **Weighted loss or instance-level weighting**
+
+If you want the model to focus more on underperforming groups:
+
+* Track underpredicted groups
+* Assign higher weights to those instances in training
+* LightGBM supports `sample_weight` per instance
+
+---
+
+### ✅ 5. **Hybrid: keep global threshold but audit bias**
+
+Keep a single threshold, but:
+
+* Measure **per-group calibration curves**
+* Use **bias correction** formulas or intercept shifts post-training
+* Flag or re-score subgroups with consistently poor recall
+
+---
+
+## 🧠 Strategy Selection Cheat Sheet
+
+| Strategy                | Best for                      | Complexity | Risk of Overfitting |
+| ----------------------- | ----------------------------- | ---------- | ------------------- |
+| Per-subgroup thresholds | Medium/large groups           | Low–Med    | Medium              |
+| Meta-calibration model  | Prob. smoothing across groups | Medium     | Low–Med             |
+| Group-aware training    | Stable, structural underpred. | High       | Low                 |
+| Weighted training       | Rare but important groups     | Medium     | Medium              |
+
+---
+
+### ✅ TL;DR
+
+> Yes — you can reduce underprediction per group by applying **custom thresholds**, **calibrating**, or **training smarter models**.
+
+✅ Per-subgroup thresholding is valid if:
+
+* You have enough samples per group
+* You're careful about not overfitting
+
+Let me know if you want sample code for per-group thresholding or for building a meta-calibrator!

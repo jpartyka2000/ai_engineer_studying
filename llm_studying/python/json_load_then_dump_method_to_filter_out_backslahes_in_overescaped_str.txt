@@ -1,0 +1,44 @@
+When you accidentally double-escape JSON inside a JSONL line, you end up with sequences like `\\\"` instead of the single `\"` needed to embed quotes. To clean this up, you can:
+
+1. **Parse** the over-escaped line with `json.loads()`.
+
+   * This turns the outer JSON into a Python dict, and collapses the inner escaped string into a normal Python string (with only single-level escapes).
+2. **Re-serialize** it with `json.dumps()`.
+
+   * Python will automatically escape only what’s necessary for valid JSON, removing the redundant backslashes.
+   * Using `separators=(',',':')` makes the output compact by dropping extra spaces.
+
+---
+
+### Concrete Example
+
+```python
+import json
+
+# 1) Here’s a JSONL line where the "arguments" field is over-escaped:
+raw_line = r'{"messages":[{"role":"assistant","tool_calls":[{"id":"abc123","type":"function","function":{"name":"foo","arguments":"{\\\"x\\\":\\\"1\\\",\\\"y\\\":\\\"two\\\"}"}}]}]}'
+
+# Notice how inside the arguments string every quote is prefixed by double backslashes (\\").
+
+# 2) Parse it into a Python object:
+parsed = json.loads(raw_line)
+
+# Now parsed["messages"][0]["tool_calls"][0]["function"]["arguments"]
+# is the Python string '{"x":"1","y":"two"}'  —  no double backslashes.
+
+# 3) Re-serialize to clean JSON:
+clean_line = json.dumps(parsed, separators=(',',':'))
+
+print(clean_line)
+```
+
+**Output (`clean_line`) will be:**
+
+```json
+{"messages":[{"role":"assistant","tool_calls":[{"id":"abc123","type":"function","function":{"name":"foo","arguments":"{\"x\":\"1\",\"y\":\"two\"}"}}]}]}
+```
+
+* The inner `arguments` value now uses `\"` to escape its quotes—exactly one layer of escaping.
+* All spurious `\\` sequences are gone.
+
+This two-step “load then dump” is a quick way to normalize any JSONL line that’s been over-escaped.

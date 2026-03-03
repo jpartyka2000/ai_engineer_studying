@@ -1,0 +1,48 @@
+`asdict()` will happily recurse through nested dataclasses—but it treats `Enum` members just like any other object, leaving them intact rather than converting them to their `.value` or `.name`.
+
+```python
+from dataclasses import dataclass, asdict
+from enum import Enum
+
+class Color(Enum):
+    RED = "red"
+    BLUE = "blue"
+
+@dataclass
+class Inner:
+    count: int
+
+@dataclass
+class Outer:
+    flag: bool
+    color: Color
+    inner: Inner
+
+o = Outer(flag=True, color=Color.RED, inner=Inner(count=3))
+print(asdict(o))
+# → {'flag': True, 'color': <Color.RED: 'red'>, 'inner': {'count': 3}}
+```
+
+* **Nested dataclasses** (`inner` above) become nested dicts.
+* **Enum fields** remain as the enum member (`<Color.RED: 'red'>`).
+
+If you want Enums to turn into their `.value` (or `.name`), you’ll need a small post-processing step, e.g.:
+
+```python
+def dataclass_to_dict(obj):
+    def _convert(val):
+        if isinstance(val, Enum):
+            return val.value
+        elif is_dataclass(val):
+            return dataclass_to_dict(val)
+        elif isinstance(val, list):
+            return [_convert(v) for v in val]
+        elif isinstance(val, dict):
+            return {k: _convert(v) for k,v in val.items()}
+        else:
+            return val
+
+    return {f.name: _convert(getattr(obj, f.name)) for f in fields(obj)}
+```
+
+That gives you full recursive conversion of dataclasses plus turning enums into plain values.

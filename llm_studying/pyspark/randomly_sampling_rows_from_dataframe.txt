@@ -1,0 +1,38 @@
+You can use PySpark’s built‑in sampling methods to grab an approximate 10% of your rows. Two of the most common approaches are:
+
+1. **Using DataFrame.sample()**
+
+   ```python
+   # approximate 10% sample, no replacement, reproducible via seed
+   sample_df = df.sample(withReplacement=False, fraction=0.10, seed=42)
+   ```
+
+   * `withReplacement=False` ensures you don’t pick the same row twice.
+   * `fraction=0.10` requests \~10% of the rows.
+   * `seed` makes it deterministic so you get the same sample each time.
+
+2. **Using DataFrame.randomSplit()**
+
+   ```python
+   # splits into [10%, 90%] and returns a list of two DataFrames
+   small_df, _ = df.randomSplit([0.1, 0.9], seed=42)
+   ```
+
+   This also gives you an approximate 10% slice (`small_df`) and the remaining 90% (discarded here with `_`).
+
+---
+
+### If you need an **exact** 10% of rows
+
+Sampling methods above are *probabilistic*—the exact count will vary around 10%. If you absolutely must get exactly 10% (say N = int(df.count() × 0.1)), you can do:
+
+```python
+from pyspark.sql.functions import rand
+
+N = int(df.count() * 0.1)
+exact_sample = df
+  .orderBy(rand(seed=42))  \
+  .limit(N)
+```
+
+This orders the entire DataFrame randomly (using `rand()`), then takes the top N rows. It’s more expensive (requires a full shuffle and count), but guarantees the precise number.

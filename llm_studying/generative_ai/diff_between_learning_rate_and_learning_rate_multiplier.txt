@@ -1,0 +1,63 @@
+Good question — these two terms are related but not the same thing. Here’s how they differ:
+
+---
+
+## **1. Learning Rate (LR)**
+
+* The **base step size** used by your optimizer to update model parameters.
+* Controls how big a jump you make in the direction of the gradient each step.
+* Example: in SGD,
+
+  $$
+  \theta_{t+1} = \theta_t - \eta \cdot \nabla L(\theta_t)
+  $$
+
+  where $\eta$ = learning rate.
+* Typical values: $10^{-5}$ to $10^{-1}$, depending on model and optimizer.
+
+---
+
+## **2. Learning Rate Multiplier (LR multiplier)**
+
+* A **scaling factor** applied on top of the base learning rate.
+* Used to adjust the learning rate for:
+
+  * Specific layers (e.g., train head faster than backbone in transfer learning).
+  * Certain parameter groups (e.g., biases vs. weights).
+  * Schedulers or fine-tuning strategies.
+* Example:
+
+  ```python
+  base_lr = 1e-4
+  param_group = {"params": model.head.parameters(), "lr": base_lr * 10}
+  ```
+
+  Here, the **multiplier is 10** for the head, so its effective learning rate is `1e-3`.
+
+---
+
+## **3. Why Use Multipliers?**
+
+* **Transfer learning:** Freeze backbone or give it a small multiplier (e.g., 0.1×) while training the new head with a larger multiplier (e.g., 10×).
+* **Fine-tuning LLMs:** Sometimes only adapter layers (LoRA, prefixes) get a higher multiplier to adapt quickly, while the main model stays slow/stable.
+* **Custom schedulers:** Some frameworks let you define a base LR schedule and apply per-layer multipliers without writing separate schedules.
+
+---
+
+## **4. Summary**
+
+| Term                         | Meaning                                                                                    | Example                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| **Learning rate**            | The actual step size used by the optimizer for updates.                                    | `1e-4`                                   |
+| **Learning rate multiplier** | A factor applied to the base learning rate to modify it for specific parameters or groups. | multiplier = 0.1 → effective LR = `1e-5` |
+
+---
+
+✅ **In short:**
+
+* The **learning rate** is the raw step size in training.
+* A **learning rate multiplier** scales that base rate for specific parameters, layers, or phases of training.
+
+---
+
+Would you like me to show you how this looks **concretely in PyTorch**, with an optimizer that has two parameter groups using different multipliers?

@@ -1,0 +1,96 @@
+You can derive a “year–month” field two main ways: using built-in SQL functions in Spark SQL, or with the DataFrame API. Here are both approaches:
+
+---
+
+## 1. Spark SQL
+
+Assume your table is called `events` and has a `ts` column of `TIMESTAMP` type.
+
+1. **Simple `yyyyMM` string**
+
+   ```sql
+   SELECT
+     *,
+     date_format(ts, 'yyyyMM') AS year_month
+   FROM events;
+   ```
+
+2. **With a dash `yyyy-MM`**
+
+   ```sql
+   SELECT
+     *,
+     date_format(ts, 'yyyy-MM') AS year_month
+   FROM events;
+   ```
+
+3. **As an integer**
+
+   ```sql
+   SELECT
+     *,
+     CAST(year(ts) * 100 + month(ts) AS INT) AS year_month
+   FROM events;
+   ```
+
+4. **Persisting into a new table**
+
+   ```sql
+   CREATE TABLE events_with_ym AS
+   SELECT
+     *,
+     date_format(ts, 'yyyyMM') AS year_month
+   FROM events;
+   ```
+
+---
+
+## 2. DataFrame API (PySpark)
+
+First import the functions:
+
+```python
+from pyspark.sql import functions as F
+```
+
+1. **String `yyyyMM`**
+
+   ```python
+   df2 = df.withColumn(
+       "year_month",
+       F.date_format("ts", "yyyyMM")
+   )
+   ```
+
+2. **String with dash `yyyy-MM`**
+
+   ```python
+   df2 = df.withColumn(
+       "year_month",
+       F.date_format("ts", "yyyy-MM")
+   )
+   ```
+
+3. **Integer `YYYYMM`**
+
+   ```python
+   df2 = df.withColumn(
+       "year_month",
+       (F.year("ts") * 100 + F.month("ts")).cast("int")
+   )
+   ```
+
+4. **Write it back**
+
+   ```python
+   df2.write.mode("overwrite").saveAsTable("events_with_yearmonth")
+   ```
+
+---
+
+### Why choose one over the other?
+
+* **`date_format`** is simplest for string output and parses back easily if you ever need a proper date.
+* **`year*100 + month`** gives you a numeric value that sorts naturally and can be treated as an integer partition key.
+
+Either approach will give you a convenient `year_month` column you can use for grouping, partitioning, or filtering your data.

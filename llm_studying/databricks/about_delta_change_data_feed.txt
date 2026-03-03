@@ -1,0 +1,115 @@
+Delta Change Data Feed (CDF) is a built-in Delta Lake feature that lets you reliably track row-level changes (inserts, updates, deletes) over time without having to maintain your own audit columns. Here’s what you need to know:
+
+---
+
+## 1. What is Change Data Feed?
+
+* **Row-level history**: Whereas `DESCRIBE HISTORY` shows you only table-level commits, CDF exposes each row’s before- and after-images.
+* **Streaming & batch**: You can consume changes as a stream (Structured Streaming) or via batch Spark/SQL.
+* **Built into Delta**: No external CDC system required—just flip a table property.
+
+---
+
+## 2. How to Enable
+
+```sql
+ALTER TABLE my_db.my_table
+  SET TBLPROPERTIES (
+    delta.enableChangeDataFeed = true
+  );
+```
+
+* **One-time**: You only need to do this once per table.
+* **Existing data**: Only changes from that point forward are recorded; historical commits prior to enabling CDF are not retroactively exposed.
+
+---
+
+## 3. Retention and Cleanup
+
+* **Retention window**: By default, CDF retains change files for **30 days**. You can override:
+
+  ```sql
+  ALTER TABLE my_db.my_table
+    SET TBLPROPERTIES (
+      delta.changeDataFeedRetentionDuration = 'interval 7 days'
+    );
+  ```
+* **Vacuuming**: Running `VACUUM my_db.my_table` with a retention shorter than the CDF window **will** delete change files, so be careful not to vacuum them prematurely.
+
+---
+
+## 4. Querying Changes in SQL
+
+Use the `table_changes` function:
+
+```sql
+-- Show all changes between version 100 and the latest
+SELECT *
+FROM table_changes('my_db.my_table', 100);
+```
+
+Each row in the result includes:
+
+| Column                | Meaning                                                             |
+| --------------------- | ------------------------------------------------------------------- |
+| `_change_type`        | `insert`, `update_preimage`, `update_postimage`, or `delete`        |
+| `_commit_version`     | The Delta table version of the change                               |
+| `_commit_timestamp`   | The timestamp of the transaction                                    |
+| *…your table columns* | Before‐image columns appear for preimage, after‐image for postimage |
+
+**Example: last change for a given key**
+
+```sql
+SELECT *
+FROM (
+  SELECT *,
+         ROW_NUMBER() OVER (
+           PARTITION BY id
+           ORDER BY _commit_timestamp DESC
+         ) AS rn
+  FROM table_changes('my_db.my_table', 0)
+  WHERE id = 1234
+)
+WHERE rn = 1;
+```
+
+---
+
+## 5. Using CDF in Structured Streaming
+
+You can read the change feed as a stream:
+
+```python
+spark.readStream
+    .format("delta")
+    .option("readChangeFeed", "true")
+    .option("startingVersion", 5)
+    .table("my_db.my_table")
+    .writeStream
+    .format("parquet")
+    …
+```
+
+This gives you a continuously updating stream of row-level changes.
+
+---
+
+## 6. Common Use Cases
+
+* **CDC replication**: Propagate Delta changes to external sinks (e.g. Kafka, Elastic).
+* **Auditing & debugging**: Reconstruct how a row evolved over time.
+* **Incremental pipelines**: Only process new or updated rows, rather than full scans.
+* **Time-travel joins**: Combine CDF with time-travel to back-fill missed updates.
+
+---
+
+## 7. Caveats & Best Practices
+
+* **Storage overhead**: Each change writes a small Parquet file; plan storage accordingly.
+* **Vacuum discipline**: Keep your `delta.changeDataFeedRetentionDuration` ≤ your vacuum retention.
+* **Compatibility**: CDF is supported on Delta Lake ≥ 0.8 (Databricks Runtime ≥ 7.x).
+* **Schema evolution**: If you ALTER your table schema, CDF will reflect the new schema for changes after that point.
+
+---
+
+**In summary**, Delta Change Data Feed gives you fine-grained, row-level change tracking without manual audit columns. Just enable it on your table, mind your retention settings, and then use `table_changes` or Structured Streaming to consume inserts, updates, and deletes.

@@ -1,0 +1,162 @@
+Yes, absolutely! Pre-checks can be a valuable addition to this process. Let me explain how pre-checks would work and their benefits:
+
+## Pre-Checks in the Tool Selection Process
+
+### What Are Pre-Checks?
+
+Pre-checks are optimizations applied **before** the base LLM generates initial trajectories. They analyze the expressions and make strategic adjustments to improve the quality of the initial trajectory generation.
+
+### Types of Pre-Checks
+
+**1. Complexity-Based Pre-Filtering**
+```python
+def apply_complexity_precheck(expressions):
+    """Force certain decisions based on extreme complexity."""
+    pre_decisions = {}
+    for expr in expressions:
+        complexity = calculate_complexity(expr)
+        
+        # Ultra-simple: always verify
+        if complexity <= 2:
+            pre_decisions[expr] = 'verify'
+        
+        # Ultra-complex: always compute
+        elif complexity >= 25:
+            pre_decisions[expr] = 'compute'
+        
+        # Middle range: let LLM decide
+        else:
+            pre_decisions[expr] = None
+    
+    return pre_decisions
+```
+
+**2. Pattern Recognition Pre-Checks**
+```python
+def apply_pattern_precheck(expr):
+    """Identify patterns that strongly suggest one approach."""
+    
+    # Multiple nested parentheses with divisions - high error risk
+    if expr.count('(') >= 3 and '/' in expr:
+        return 'compute'
+    
+    # Simple addition/subtraction only
+    if all(op in ['+', '-'] for op in re.findall(r'[\+\-\*\/\*\*]', expr)):
+        return 'verify'
+    
+    # Expressions with decimal results from division
+    if '/' in expr and not any(x in expr for x in ['**', '(', ')']):
+        # Simple division, might have decimals
+        return 'compute'
+    
+    return None  # Let LLM decide
+```
+
+**3. Historical Performance Pre-Checks**
+```python
+def apply_historical_precheck(expr, historical_accuracy):
+    """Use historical accuracy data to guide decisions."""
+    complexity = calculate_complexity(expr)
+    
+    # If we have historical data showing <20% accuracy at this complexity
+    if complexity in historical_accuracy:
+        if historical_accuracy[complexity] < 0.20:
+            return 'compute'
+        elif historical_accuracy[complexity] > 0.95:
+            return 'verify'
+    
+    return None
+```
+
+### How Pre-Checks Differ from Post-Checks
+
+| Aspect | Pre-Checks | Post-Checks |
+|--------|-----------|-------------|
+| **Timing** | Before trajectory generation | After trajectory generation |
+| **Purpose** | Prevent obvious mistakes | Correct inconsistencies |
+| **Data Used** | Expression features only | Generated trajectories + outcomes |
+| **Confidence** | High (only obvious cases) | Variable (pattern-based) |
+| **Impact** | Reduces LLM errors upfront | Fixes LLM errors after the fact |
+
+### Implementation Strategy
+
+```python
+async def process_expression_with_prechecks(expr, i, semaphore, pre_decisions):
+    """Process expression with pre-check decisions."""
+    
+    async with semaphore:
+        complexity = calculate_complexity(expr)
+        
+        # Check if pre-check made a decision
+        if expr in pre_decisions and pre_decisions[expr] is not None:
+            decision = pre_decisions[expr]
+            decision_source = "pre-check"
+        elif USE_RANDOM_DECISION:
+            decision = await llm_decide_action(expr, complexity)
+            decision_source = "llm"
+        else:
+            decision = decide_between_guess_or_compute_deterministic(complexity)
+            decision_source = "deterministic"
+        
+        # Track decision source in trajectory
+        trajectory = {
+            "expression": expr,
+            "complexity": complexity,
+            "decision_source": decision_source,
+            "optimal_action": decision,
+            # ... rest of trajectory
+        }
+        
+        # Continue with normal processing...
+```
+
+### Benefits of Pre-Checks
+
+1. **Cost Reduction**: Prevent obvious bad decisions before they happen
+2. **Consistency**: Ensure extreme cases are always handled appropriately
+3. **Efficiency**: Reduce LLM calls for obvious decisions
+4. **Learning Signal**: Create cleaner training data by removing noise from obvious cases
+
+### Combined Pre-Check and Post-Check Flow
+
+```
+1. Pre-Checks
+   ↓
+2. LLM Trajectory Generation (for non-obvious cases)
+   ↓
+3. Post-Checks (correct remaining inconsistencies)
+   ↓
+4. Final Optimized Dataset
+   ↓
+5. Fine-Tuning
+```
+
+### Example Scenarios
+
+**Scenario 1: Ultra-Simple Expression**
+- Expression: `2 + 3`
+- Pre-check: Forces "verify" (complexity 2)
+- Result: Saves LLM call, guarantees correct decision
+
+**Scenario 2: Ultra-Complex Expression**
+- Expression: `((234 ** 3) + (567 * 89)) / (123 - 45)`
+- Pre-check: Forces "compute" (complexity 28)
+- Result: Avoids likely $8 cost from failed verifies
+
+**Scenario 3: Middle Complexity**
+- Expression: `(45 + 17) * 3`
+- Pre-check: No decision (complexity 13)
+- Result: LLM makes decision based on its judgment
+
+### Key Insight
+
+Pre-checks and post-checks serve complementary roles:
+- **Pre-checks**: Prevent predictable errors (proactive)
+- **Post-checks**: Fix unexpected inconsistencies (reactive)
+
+Together, they create a robust system that:
+1. Handles obvious cases correctly upfront
+2. Lets the LLM learn from interesting middle cases
+3. Corrects any remaining inconsistencies afterward
+
+This multi-stage optimization ensures the training data is both high-quality and contains meaningful learning signals for the fine-tuned model.

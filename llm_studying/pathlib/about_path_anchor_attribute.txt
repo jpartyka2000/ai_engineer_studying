@@ -1,0 +1,189 @@
+═══════════════════════════════════════════════════════════════
+PATHLIB DEEP DIVE: .anchor PROPERTY
+═══════════════════════════════════════════════════════════════
+
+BASIC SYNTAX:
+───────────────────────────────────────────────────────────────
+Path.anchor  # Returns a string (not a Path object!)
+
+WHAT IS .anchor?
+───────────────────────────────────────────────────────────────
+The .anchor property returns the "root" portion of an absolute 
+path — the part that anchors the path to a specific location 
+in the filesystem.
+
+For relative paths, .anchor returns an empty string.
+
+UNIX/LINUX/macOS EXAMPLES:
+───────────────────────────────────────────────────────────────
+from pathlib import Path
+
+# Absolute paths — anchor is "/"
+Path("/home/user/docs").anchor          # '/'
+Path("/").anchor                        # '/'
+Path("/var/log/syslog").anchor          # '/'
+
+# Relative paths — anchor is empty string
+Path("home/user/docs").anchor           # ''
+Path("./documents").anchor              # ''
+Path("../parent/file.txt").anchor       # ''
+Path("file.txt").anchor                 # ''
+
+WINDOWS EXAMPLES:
+───────────────────────────────────────────────────────────────
+# Drive letter paths
+Path("C:/Users/docs").anchor            # 'C:\\'
+Path("D:/Data").anchor                  # 'D:\\'
+Path("C:/").anchor                      # 'C:\\'
+
+# UNC paths (network shares)
+Path("//server/share/file").anchor      # '\\\\server\\share\\'
+
+# Relative paths — still empty
+Path("Users/docs").anchor               # ''
+Path("./file.txt").anchor               # ''
+
+.anchor vs .root vs .drive:
+───────────────────────────────────────────────────────────────
+Pathlib has three related properties. On Unix, they mostly 
+overlap, but on Windows they differ:
+
+Property | Unix "/"  | Unix "rel" | Win "C:/x" | Win "//s/sh/x"
+---------|-----------|------------|------------|----------------
+.anchor  | '/'       | ''         | 'C:\\'     | '\\\\s\\sh\\'
+.root    | '/'       | ''         | '\\'       | '\\'
+.drive   | ''        | ''         | 'C:'       | '\\\\s\\sh'
+
+The relationship:
+  anchor = drive + root
+
+Examples:
+───────────────────────────────────────────────────────────────
+# Unix
+p = Path("/home/user")
+p.drive   # ''           (Unix has no drive letters)
+p.root    # '/'
+p.anchor  # '/'          ('' + '/' = '/')
+
+# Windows drive path
+p = Path("C:/Users/docs")
+p.drive   # 'C:'
+p.root    # '\\'
+p.anchor  # 'C:\\'       ('C:' + '\\' = 'C:\\')
+
+# Windows UNC path
+p = Path("//server/share/folder")
+p.drive   # '\\\\server\\share'
+p.root    # '\\'
+p.anchor  # '\\\\server\\share\\'
+
+PRACTICAL USE CASES:
+───────────────────────────────────────────────────────────────
+# Use Case 1: Check if path is absolute (alternative method)
+def is_absolute_via_anchor(path):
+    return bool(Path(path).anchor)
+
+Path("/home/user").anchor      # '/' → truthy → absolute
+Path("home/user").anchor       # '' → falsy → relative
+
+# Note: .is_absolute() is clearer for this purpose
+Path("/home/user").is_absolute()  # True (preferred)
+
+# Use Case 2: Get the root/drive of any path
+def get_filesystem_root(path):
+    """Get the root filesystem location of a path."""
+    anchor = Path(path).anchor
+    if anchor:
+        return Path(anchor)
+    return None
+
+get_filesystem_root("/home/user/docs")  # PosixPath('/')
+get_filesystem_root("C:/Users")         # WindowsPath('C:/')
+get_filesystem_root("relative/path")    # None
+
+# Use Case 3: Strip the anchor to get relative portion
+p = Path("/home/user/docs/file.txt")
+relative_portion = Path(*p.parts[1:])   # PosixPath('home/user/docs/file.txt')
+
+# Or using .relative_to() if you know the anchor
+p.relative_to(p.anchor)  # PosixPath('home/user/docs/file.txt')
+
+# Use Case 4: Rebuild path with different root
+def change_root(path, new_root):
+    """Change the root/anchor of an absolute path."""
+    p = Path(path)
+    if not p.anchor:
+        raise ValueError("Path must be absolute")
+    relative = Path(*p.parts[1:])
+    return Path(new_root) / relative
+
+change_root("/home/user/docs", "/mnt/backup")
+# PosixPath('/mnt/backup/home/user/docs')
+
+# Use Case 5: Cross-platform path handling
+def normalize_for_platform(path_str):
+    """Extract the non-anchor portion for cross-platform use."""
+    p = Path(path_str)
+    if p.anchor:
+        # Return everything after the anchor
+        return Path(*p.parts[1:])
+    return p
+
+# Works with both Unix and Windows paths
+normalize_for_platform("/home/user/docs")      # PosixPath('home/user/docs')
+normalize_for_platform("C:/Users/docs")        # PosixPath('Users/docs')
+
+RELATIONSHIP WITH .parts:
+───────────────────────────────────────────────────────────────
+The anchor (if present) is always the first element of .parts:
+
+p = Path("/home/user/docs")
+p.parts   # ('/', 'home', 'user', 'docs')
+p.anchor  # '/'
+p.parts[0] == p.anchor  # True (when path is absolute)
+
+p = Path("home/user/docs")
+p.parts   # ('home', 'user', 'docs')
+p.anchor  # ''
+# p.parts[0] is 'home', not anchor (relative path)
+
+EDGE CASES:
+───────────────────────────────────────────────────────────────
+# Root path only
+Path("/").anchor                    # '/'
+Path("/").parts                     # ('/',)
+
+# Empty path
+Path("").anchor                     # ''
+Path(".").anchor                    # ''
+
+# Path with only drive (Windows)
+Path("C:").anchor                   # 'C:'  (no root slash)
+Path("C:/").anchor                  # 'C:\\'
+Path("C:relative").anchor           # 'C:'  (drive-relative path)
+
+# Note: "C:relative" is a special Windows path that's relative
+# to the current directory ON drive C:
+
+COMPARISON WITH OTHER PROPERTIES:
+───────────────────────────────────════════════════════════════
+p = Path("/home/user/documents/report.pdf")
+
+p.anchor    # '/'                          Root/drive
+p.parts     # ('/', 'home', 'user', 'documents', 'report.pdf')
+p.parent    # PosixPath('/home/user/documents')
+p.parents   # <PosixPath.parents>          Sequence of all parents
+p.name      # 'report.pdf'                 Final component  
+p.stem      # 'report'                     Name without extension
+p.suffix    # '.pdf'                       Extension
+p.suffixes  # ['.pdf']                     All extensions
+
+REMEMBER:
+───────────────────────────────────────────────────────────────
+- .anchor returns a STRING, not a Path object
+- .anchor = .drive + .root
+- Empty string for relative paths
+- On Unix, .anchor is either '/' or ''
+- On Windows, .anchor includes drive letter or UNC server/share
+
+═══════════════════════════════════════════════════════════════

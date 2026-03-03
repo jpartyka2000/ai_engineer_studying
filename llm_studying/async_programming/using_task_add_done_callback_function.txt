@@ -1,0 +1,50 @@
+**Using `Task.add_done_callback()` in `asyncio`**
+
+When you schedule a coroutine with `asyncio.create_task()`, you often want to trigger some follow-up action as soon as that background work completes—without necessarily awaiting it at that moment. That’s exactly what `Task.add_done_callback()` is for:
+
+```python
+import asyncio
+
+async def fetch_data():
+    await asyncio.sleep(1)
+    return {"key": "value"}
+
+def on_complete(task: asyncio.Task):
+    try:
+        result = task.result()
+        print("Fetch completed:", result)
+    except Exception as e:
+        print("Fetch failed with:", e)
+
+async def main():
+    task = asyncio.create_task(fetch_data())
+    task.add_done_callback(on_complete)
+    print("Doing other work while data is fetched...")
+    await asyncio.sleep(2)  # ensure fetch_data has time to finish
+
+asyncio.run(main())
+```
+
+**Key points:**
+
+1. **Signature**
+
+   ```python
+   task.add_done_callback(fn: Callable[[Task], None])
+   ```
+
+   You pass a callback `fn` that accepts the finished `Task` as its only argument.
+
+2. **Execution Timing**
+   The callback is invoked *once* the task is done—whether it succeeded, raised an exception, or was canceled.
+
+3. **Error Handling**
+   Inside your callback, calling `task.result()` will either return the coroutine’s return value or re-raise its exception. You can catch exceptions there to handle failures gracefully.
+
+4. **Use Cases**
+
+   * **Logging or metrics:** Record completion time or outcome without interrupting your main flow.
+   * **Cleanup:** Close resources or perform teardown steps tied to that task’s lifecycle.
+   * **Chaining work:** Trigger another function or schedule a new task based on the finished result, without blocking in your main coroutine.
+
+By attaching callbacks directly to `Task` objects, you get fine-grained control over post-completion behavior while keeping your main async logic clear and non-blocking.

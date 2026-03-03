@@ -1,0 +1,76 @@
+Here are your main options for “sentinel” values in a datetime-typed column, along with their trade-offs:
+
+---
+
+## 1. Use pandas’ built-in “null” for datetimes: `pd.NaT`
+
+* **What it is:** pandas’ own “Not a Time” missing-value marker.
+* **Pros:**
+
+  * Native support in all datetime operations (you don’t have to special-case it).
+  * Automatically ignored by most time-series methods (`resample`, `rolling`, etc.).
+* **Cons:**
+
+  * If you really need a non-null placeholder (e.g. downstream systems can’t handle `NaT`), you’ll have to convert it later.
+
+```python
+df["ts"].fillna(pd.NaT)
+```
+
+---
+
+## 2. A very old date (e.g. 1900-01-01)
+
+* **Example sentinel:**
+
+  ```python
+  SENTINEL = pd.Timestamp("1900-01-01")
+  df["ts"].fillna(SENTINEL, inplace=True)
+  ```
+* **Pros:**
+
+  * Easily recognizable in plots or exports as “obviously fake.”
+  * Still a valid `datetime64[ns]` value.
+* **Cons:**
+
+  * If your real data might plausibly include that date, you’ll get collisions.
+  * You’ll need to remember to filter it back out when doing real time-based logic.
+
+---
+
+## 3. Unix epoch (1970-01-01) or another conventional “zero” point
+
+* **Example:**
+
+  ```python
+  EPOCH = pd.Timestamp(0)   # 1970-01-01 00:00:00
+  df["ts"].fillna(EPOCH, inplace=True)
+  ```
+* **Pros & cons** similar to “1900-01-01,” but sometimes easier if your stack already normalizes to Unix timestamps.
+
+---
+
+## 4. Far-future date (e.g. 9999-12-31)
+
+* **Example:**
+
+  ```python
+  FAR_FUTURE = pd.Timestamp("9999-12-31")
+  df["ts"].fillna(FAR_FUTURE, inplace=True)
+  ```
+* **Pros:**
+
+  * Easy to spot and guaranteed not to collide with any realistic event date.
+* **Cons:**
+
+  * Some systems (or formats) can’t handle dates that far out.
+  * Sorting places these at the extreme end, which may not be what you want.
+
+---
+
+## ✅ Recommendation
+
+* **Default:** stick with **`pd.NaT`** whenever you can—it’s what pandas is built for.
+* **If you must use a placeholder:** pick a date **well outside** your real data range (e.g. `1900-01-01` or `9999-12-31`) **and document it clearly** so downstream code knows to treat it as “missing.”
+
+That way you preserve dtype integrity and keep your pipelines consistent.

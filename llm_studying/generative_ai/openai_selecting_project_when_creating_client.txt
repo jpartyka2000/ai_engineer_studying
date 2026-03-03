@@ -1,0 +1,90 @@
+Yes! You can specify the project context when creating the OpenAI client. Here are the ways to do it:
+
+## Method 1: Using Project ID in Client Constructor
+
+```python
+from openai import OpenAI
+import os
+
+# Option A: Pass project ID directly
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    project="proj_your_project_id_here"  # Replace with your actual project ID
+)
+
+# Option B: Use environment variable for project
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    project=os.getenv("OPENAI_PROJECT_ID")  # Set OPENAI_PROJECT_ID in your environment
+)
+
+# Now list models - should show models from the specified project
+models = client.models.list()
+fine_tuned_models = [model.id for model in models.data if model.id.startswith('ft:')]
+print("Fine-tuned models in this project:", fine_tuned_models)
+```
+
+## Method 2: Set Project ID as Environment Variable
+
+```python
+import os
+from openai import OpenAI
+
+# Set the project ID in your environment
+os.environ["OPENAI_PROJECT_ID"] = "proj_your_project_id_here"
+
+# Client will automatically pick up the project ID
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+models = client.models.list()
+```
+
+## Method 3: Use Project-Scoped API Key (Recommended)
+
+```python
+from openai import OpenAI
+import os
+
+# Use a project-scoped API key (starts with sk-proj-)
+# This automatically scopes to the correct project
+client = OpenAI(api_key="sk-proj-your_project_scoped_key_here")
+
+models = client.models.list()
+```
+
+## Finding Your Project ID
+
+You can find your project ID in the OpenAI Dashboard:
+1. Go to your project settings
+2. Look for "Project ID" - it will be something like `proj_abc123def456`
+3. Or check the URL when you're in the project - it often contains the project ID
+
+## Complete Example
+
+```python
+from openai import OpenAI
+import os
+
+# Method 1: Explicit project specification
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    project="proj_your_jeff_rl_fine_tuning_id"  # Replace with actual project ID
+)
+
+try:
+    models = client.models.list()
+    
+    print(f"Models in 'Jeff_rl_fine_tuning' project:")
+    fine_tuned_models = [model for model in models.data if model.id.startswith('ft:')]
+    
+    if fine_tuned_models:
+        for model in fine_tuned_models:
+            print(f"- {model.id}")
+    else:
+        print("No fine-tuned models found in this project.")
+        
+except Exception as e:
+    print(f"Error: {e}")
+```
+
+The **project-scoped API key approach (Method 3)** is usually the cleanest since the key itself contains the project context and you don't need to manage project IDs separately.

@@ -1,0 +1,84 @@
+Your idea of nudging the model’s raw probabilities for small “problem” slices is basically a form of **group‐level calibration** — and yes, it can be valid so long as you **estimate your adjustment factors without peeking at the same data you’ll ultimately score** (i.e. no leakage).
+
+Here’s a recipe that “does the right thing”:
+
+1. **For each group** $`degree_offering`, `year_quarter`$ in your **training** data (or better yet, in an out-of-fold/hold-out split):
+
+   ```python
+   # how many truly submitted in this group?
+   actual_rate = df_group["SUBMITTED_APPLICATION"].mean()
+   # how many submits did your model expect?
+   pred_rate   = df_group["probability"].mean()
+   # the gap you want to close:
+   delta       = actual_rate - pred_rate
+   ```
+2. **Define your adjusted probability** for **any** row in that group as:
+
+   ```python
+   new_prob = probability + delta
+   ```
+
+   or, if you prefer **multiplicative** scaling:
+
+   ```python
+   scale_factor = actual_rate / pred_rate
+   new_prob     = probability * scale_factor
+   ```
+3. **Clip** back into `[0,1]` so you don’t produce impossible values:
+
+   ```python
+   new_prob = np.clip(new_prob, 0, 1)
+   ```
+4. **Apply** this mapping in your post-processing pass (on truly unseen/test data), **using only the deltas/scales you computed on train/OoF**.
+
+---
+
+### Why this works
+
+* **Additive**: `delta = actual_rate – pred_rate` shifts the mean prediction to match the observed frequency.
+* **Multiplicative**: `scale = actual_rate / pred_rate` rescales your entire probability distribution to match the group’s prevalence.
+
+Either way, you’re not hard-coding a constant like the median; you’re **closing the calibration gap** specific to each slice.
+
+---
+
+### Sketch of the code inside your loop
+
+```python
+# assume df_train has your TRAINING fold
+grouped = (df_train
+           .groupby(['DEGREE_OFFERING', 'YEAR_QUARTER'])
+           .agg(actual_rate = ('SUBMITTED_APPLICATION', 'mean'),
+                pred_rate   = ('probability', 'mean'))
+           .reset_index())
+
+# build a lookup
+grouped['delta'] = grouped['actual_rate'] - grouped['pred_rate']
+lookup = grouped.set_index(['DEGREE_OFFERING','YEAR_QUARTER'])['delta'].to_dict()
+
+# then in your adjust function:
+mask = (
+    (X['DEGREE_OFFERING'] == degree) &
+    (X['YEAR_QUARTER']    == year_quarter)
+)
+delta = lookup.get((degree, year_quarter), 0)
+X.loc[mask, 'probability_new'] = np.clip(
+    X.loc[mask, 'probability'] + delta,
+    0, 1
+)
+```
+
+---
+
+### Caveats
+
+* **No leakage**: compute `lookup` only on data your model has seen in training (or via proper out-of-fold CV).
+* **Small groups**: if some slices have very few examples, `actual_rate` will be noisy—consider smoothing or a minimum-count threshold before applying an adjustment.
+
+---
+
+#### TL;DR
+
+* **Yes**, you can and should automatically adjust by the **difference between observed and predicted mean** for each slice.
+* Use **additive** (`+ delta`) or **multiplicative** (`* scale`) recalibration, then **clip**.
+* **Compute those deltas/scales on training/OoF data** only, and apply them at scoring time to avoid leakage.

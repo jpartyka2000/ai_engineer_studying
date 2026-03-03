@@ -1,0 +1,55 @@
+Yes, this is typical for the OpenAI Agents SDK streaming API. Here's what you're seeing:
+
+## Event Flow Breakdown
+
+**Many `RawResponsesStreamEvent`s** — These include:
+- `ResponseTextDeltaEvent` — token-by-token text streaming
+- `ResponseFunctionCallArgumentsDeltaEvent` — streaming function call args
+- `ResponseOutputItemDoneEvent` — a complete item (message, function_call, etc.)
+- `ResponseCompletedEvent` — response finished
+
+**One `RunItemStreamEvent`** — The SDK's higher-level abstraction that fires when a logical "item" is complete (a message, a tool call, etc.)
+
+**Final output** — The `message_output_item` at the end is the agent's final response.
+
+## The Concern: Missing Tool Return
+
+Looking at your trajectory output:
+
+```python
+trajectory=[
+    {'role': 'assistant', 'content': {'tool_name': 'call_sql_agent', 'args': '...'}},  # Tool call
+    {'role': 'assistant', 'content': "Executive Summary..."}  # Final message
+]
+```
+
+There's **no tool return** between the tool call and the final message. A complete trajectory should look like:
+
+1. Tool call (`call_sql_agent`)
+2. **Tool return** (the result from the SQL agent) ← Missing!
+3. Assistant's final response
+
+This means your parsing isn't capturing the `function_call_output` event. This could affect your metrics—especially `context_chunks` which relies on tool returns.
+
+## Likely Cause
+
+The tool output might be coming through as a different event type or structure than what you're checking for. Add more specific debugging:
+
+```python
+if event_type == "RawResponsesStreamEvent":
+    data = getattr(event, "data", None)
+    data_type = type(data).__name__
+    print(f"[DEBUG] RawResponse data_type: {data_type}")
+    
+    if data_type == "ResponseOutputItemDoneEvent":
+        item = getattr(data, "item", None)
+        item_type = getattr(item, "type", None)
+        print(f"[DEBUG]   item_type: {item_type}, item: {item}")
+
+elif event_type == "RunItemStreamEvent":
+    item = getattr(event, "item", None)
+    item_type = getattr(item, "type", None)
+    print(f"[DEBUG] RunItem item_type: {item_type}, item: {item}")
+```
+
+This will help identify where the tool output is hiding.

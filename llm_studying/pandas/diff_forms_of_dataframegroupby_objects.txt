@@ -1,0 +1,62 @@
+A **`DataFrameGroupBy`** object is produced any time you call `.groupby()` on a **DataFrame** and **do not** immediately reduce it to a single column. In contrast, selecting one column (either before or immediately after `.groupby`) gives you a **`SeriesGroupBy`**.
+
+Here are the most common ways to get a **`DataFrameGroupBy`**:
+
+1. **Group by one or more column names**
+
+   ```python
+   df.groupby('col1')                # single key
+   df.groupby(['col1','col2'])       # composite key
+   ```
+
+2. **Group by a `Series` or array­-like of the same length**
+
+   ```python
+   df.groupby(df['col1'] > 10)       # boolean mask
+   df.groupby(some_series)           # external Series
+   df.groupby([df['col1'], df['col2']])  # multiple arrays
+   ```
+
+3. **Group by a function of the index (or of the rows)**
+
+   ```python
+   df.groupby(lambda idx: idx.year)  # index→year
+   df.groupby(lambda _, row: row['col1'][:1], axis=0)  # first letter of col1
+   ```
+
+4. **Group by index‐level on a MultiIndex**
+
+   ```python
+   df.set_index(['A','B']).groupby(level='A')  
+   df.set_index(['A','B']).groupby(level=0)      # by first level
+   ```
+
+5. **Group by a pandas `Grouper`** (e.g. date‐freq)
+
+   ```python
+   df.groupby(pd.Grouper(key='date_col', freq='M'))       # monthly
+   df.groupby([pd.Grouper(key='date'), 'other_col'])
+   ```
+
+6. **Group along columns instead of rows** (with `axis=1`)
+
+   ```python
+   df.groupby({'colA':'grp1','colB':'grp1','colC':'grp2'}, axis=1)
+   df.groupby(level=0, axis=1)  # e.g. group MultiIndexed columns
+   ```
+
+As long as you call:
+
+```python
+grouped = df.groupby(...)
+```
+
+and *don’t* immediately do something like `['some_col']` (i.e. you keep the full DataFrame), `grouped` will be a `DataFrameGroupBy`. You can then do things like:
+
+```python
+grouped.agg({'colA':'sum','colB':'mean'})
+grouped.filter(lambda g: g['x'].sum()>100)
+grouped.transform(lambda g: (g - g.mean())/g.std())
+```
+
+all of which operate on the entire DataFrame’s non‐grouping columns.

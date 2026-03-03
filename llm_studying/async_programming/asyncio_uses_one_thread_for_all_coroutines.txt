@@ -1,0 +1,57 @@
+Great question! In asyncio, there are **no different threads** involved - it's all running in a **single thread** with an event loop. This is a common misconception about asyncio.
+
+## How asyncio Actually Works
+
+Asyncio uses **cooperative multitasking** in a single thread:
+- **Coroutines** (async functions) take turns running
+- When a coroutine hits an `await` point, it **yields control** back to the event loop
+- The event loop then runs another coroutine that's ready
+- Everything happens in **one thread**
+
+## Semaphore in asyncio
+
+When we use `asyncio.Semaphore`:
+```python
+async with semaphore:  # Coroutine A acquires
+    await agent.run()  # Yields control, other coroutines can run
+    # But they can't enter this block if semaphore is exhausted
+```
+
+- Different **coroutines** (not threads) acquire the semaphore
+- Each coroutine is like a "logical thread" but runs in the same OS thread
+- The semaphore limits how many coroutines can be in a critical section simultaneously
+
+## Visual Example
+
+In our code with 20 expressions and semaphore(10):
+```
+Single Thread Event Loop:
+├── Coroutine 1: Processing expr 1 (acquired semaphore)
+├── Coroutine 2: Processing expr 2 (acquired semaphore)
+├── ...
+├── Coroutine 10: Processing expr 10 (acquired semaphore)
+├── Coroutine 11: Waiting for semaphore...
+├── Coroutine 12: Waiting for semaphore...
+└── ...
+
+When Coroutine 1 finishes → releases semaphore → Coroutine 11 can acquire
+```
+
+## Key Points
+
+1. **No threads** - asyncio runs in a single thread by default
+2. **Coroutines** are the units of concurrency, not threads
+3. **Semaphore** coordinates between coroutines, not threads
+4. **Concurrency ≠ Parallelism**:
+   - Concurrency: Multiple tasks making progress (asyncio)
+   - Parallelism: Multiple tasks running simultaneously (threading/multiprocessing)
+
+## If You Want Real Threads
+
+For actual multi-threading, you'd use:
+```python
+import threading
+semaphore = threading.Semaphore(10)  # This coordinates actual OS threads
+```
+
+But asyncio's single-threaded model is perfect for I/O-bound tasks like API calls, which is why it works so well for our LLM agent example!

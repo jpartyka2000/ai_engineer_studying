@@ -1,0 +1,58 @@
+* **`DataFrame.pivot()`** reshapes data by turning unique values in one column into new column names, using two other columns for the new row index and values. It **requires** that the combination of your chosen index and columns is **uniquely** represented in the DataFrame. If you have any duplicate `(index, column)` pairs, `pivot()` will throw:
+
+  ```
+  ValueError: Index contains duplicate entries, cannot reshape
+  ```
+
+* **`DataFrame.pivot_table()`** does the same reshaping, but with two key differences:
+
+  1. It automatically **aggregates** duplicates using a function you specify (default `aggfunc='mean'`).
+  2. It gives you parameters like `fill_value` (to replace missing cells) and `margins` (to add row/column totals).
+
+---
+
+### When does `pivot()` fail but `pivot_table()` works?
+
+Suppose you have sales data:
+
+| date       | region | sales |
+| ---------- | ------ | ----- |
+| 2025-01-01 | East   | 100   |
+| 2025-01-01 | East   | 150   |
+| 2025-01-01 | West   | 200   |
+
+You want to make each date a row and each region a column.
+
+* **`pivot()`**:
+
+  ```python
+  df.pivot(index='date', columns='region', values='sales')
+  ```
+
+  This errors out because for `('2025-01-01','East')` you have two rows (100 and 150), so pandas doesn’t know which to pick.
+
+* **`pivot_table()`**:
+
+  ```python
+  df.pivot_table(
+      index='date',
+      columns='region',
+      values='sales',
+      aggfunc='sum'       # or 'mean', 'max', etc.
+  )
+  ```
+
+  This works, producing:
+
+  | date       | East | West |
+  | ---------- | ---- | ---- |
+  | 2025-01-01 | 250  | 200  |
+
+because it sums the duplicate “East” entries.
+
+---
+
+**In short:**
+
+* Use **`pivot()`** when you know your `(index, column)` pairs are unique.
+* Use **`pivot_table()`** when you need to handle or aggregate duplicates (or want built-in options like filling missing values or computing totals).

@@ -1,0 +1,67 @@
+At its heart, an **actor-critic** method combines the best of both worlds from policy-gradient (actor) and value-based (critic) approaches:
+
+1. **The Actor**
+
+   * Learns a **parametric policy** $\pi_\theta(a\mid s)$ that maps states to action distributions.
+   * Its job is to **select actions**—it’s your agent’s “brain” for deciding what to do.
+
+2. **The Critic**
+
+   * Learns a **value function** $V_w(s)$ (or an action-value $Q_w(s,a)$).
+   * Its job is to **evaluate** how good a given state (or state–action pair) is under the current policy.
+   * It provides a **baseline** or **bootstrapped target** that stabilizes and accelerates learning.
+
+---
+
+## How they work together
+
+1. **Interaction**
+
+   * At each time step $t$, the actor samples $a_t\sim\pi_\theta(\cdot\mid s_t)$.
+   * The environment returns reward $r_{t+1}$ and next state $s_{t+1}$.
+
+2. **Critic update (value learning)**
+
+   * Compute the **TD error** (one‐step bootstrap):
+
+     $$
+       \delta_t = r_{t+1} + \gamma\,V_w(s_{t+1}) - V_w(s_t).
+     $$
+   * Update the critic via gradient descent on $\delta_t^2$, so $V_w$ becomes a better predictor of future return.
+
+3. **Actor update (policy learning)**
+
+   * Use the critic’s TD error (or advantage) as a signal:
+
+     $$
+       A_t \;=\; \delta_t \quad\text{(or)}\quad A_t = r_{t+1} + \gamma\,V_w(s_{t+1}) - V_w(s_t).
+     $$
+   * Update the policy via the **policy gradient**:
+
+     $$
+       \nabla_\theta J
+       \;\approx\;
+       \mathbb{E}\bigl[\nabla_\theta\log\pi_\theta(a_t\mid s_t)\,A_t\bigr].
+     $$
+   * Intuition: actions that yielded **positive** $\delta_t$ get **more** probable; those with **negative** $\delta_t$ get **less**.
+
+---
+
+## Why actor-critic?
+
+* **Lower variance** than pure Monte Carlo (REINFORCE), because you’re bootstrapping off the critic.
+* **More flexible** than pure value-based methods, since you can directly represent stochastic or continuous policies.
+* **Online and incremental**: you can learn on the fly, step by step, without waiting for entire episodes.
+
+---
+
+### Variants & extensions
+
+* **A2C / A3C**: synchronous vs. asynchronous parallel actor-critic.
+* **PPO / TRPO**: adds trust-region or clipping constraints on the actor update.
+* **DDPG / SAC**: extends to continuous actions with deterministic or soft-actor approaches.
+
+---
+
+**In a nutshell:**
+An actor-critic agent **acts** (actor) and **evaluates** (critic) in tandem—using the critic’s value estimates to shape and stabilize the actor’s policy updates.

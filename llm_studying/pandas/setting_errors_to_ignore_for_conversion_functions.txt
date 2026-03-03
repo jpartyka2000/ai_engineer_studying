@@ -1,0 +1,85 @@
+### Silencing Errors with `errors='ignore'`
+
+The `errors` parameter in Pandas conversion functions (`pd.to_datetime`, `pd.to_numeric`, etc.) controls how invalid parsing is handled. Setting `errors='ignore'` tells Pandas to **leave the input unchanged** when it encounters unparsable values, rather than raising an exception or coercing to missing.
+
+---
+
+#### 1. General Behavior
+
+| `errors` option | Behavior                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| `'raise'`       | (Default) Invalid parsing raises a `ValueError`.                                                |
+| `'coerce'`      | Invalid entries become `NaT` (datetime) or `NaN` (numeric).                                     |
+| **`'ignore'`**  | Return the **original input** unchanged if **any** value is invalid; no exception, no coercion. |
+
+---
+
+#### 2. Example with `pd.to_datetime`
+
+```python
+import pandas as pd
+
+s = pd.Series(['2025-01-01', 'bad-date', '2025-03-01'])
+
+# Default: raises on parsing error
+# pd.to_datetime(s)
+# → ValueError: ...
+
+# Coerce: invalid → NaT
+print(pd.to_datetime(s, errors='coerce'))
+# 0   2025-01-01
+# 1          NaT
+# 2   2025-03-01
+
+# Ignore: input unchanged (dtype remains object)
+print(pd.to_datetime(s, errors='ignore'))
+# 0    2025-01-01
+# 1       bad-date
+# 2    2025-03-01
+# dtype: object
+```
+
+* **When using `'ignore'`**, you get back an **object‑typed** Series with the same strings you started with.
+
+---
+
+#### 3. Example with `pd.to_numeric`
+
+```python
+nums = pd.Series(['10', 'foo', '30'])
+
+# Coerce: invalid → NaN
+print(pd.to_numeric(nums, errors='coerce'))
+# 0    10.0
+# 1     NaN
+# 2    30.0
+
+# Ignore: input unchanged, dtype stays object
+print(pd.to_numeric(nums, errors='ignore'))
+# 0      10
+# 1     foo
+# 2      30
+# dtype: object
+```
+
+---
+
+#### 4. When to Use `errors='ignore'`
+
+* **Preserve raw data** when you want to detect or handle invalid entries yourself later.
+* **Avoid raising exceptions** in bulk conversions when you prefer manual inspection.
+* **Maintain original dtype** when mixed types need a custom cleanup pipeline.
+
+---
+
+#### 5. Pitfalls
+
+* You may end up with an **object** dtype rather than a datetime64 or numeric dtype.
+* Subsequent datetime or numeric operations may fail if invalid strings remain.
+* Often, `errors='coerce'` plus a `.dropna()` or `.fillna()` is more robust for cleaning.
+
+---
+
+### Bottom Line
+
+Use `errors='ignore'` when you explicitly want to skip automatic parsing on bad data and keep the original values intact—just be prepared to handle those unconverted entries later.

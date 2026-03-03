@@ -1,0 +1,275 @@
+The `shap.LinearExplainer` in the SHAP library is specifically designed to compute exact Shapley values for linear models (e.g. scikit-learn’s `LogisticRegression`, `LinearRegression`, or any other model whose output is a weighted sum of its inputs). Unlike the more general “model‐agnostic” `KernelExplainer` (which approximates Shapley values via sampling), `LinearExplainer` leverages the fact that for a truly linear model, the Shapley value formula can be computed in closed form. Below is a summary of how it works, when to use it, and the main options you’ll encounter.
+
+---
+
+## 1. What problem does `LinearExplainer` solve?
+
+* **Goal of SHAP**: For any trained model $f(x)$ and input $x$, we want to assign each feature $j$ a “contribution” $\phi_j$ such that
+
+  $$
+    f(x) - E[f(x)] \;=\; \sum_{j=1}^p \phi_j,
+  $$
+
+  where $E[f(x)]$ is the expected model output over some “background” distribution.
+* **General approaches**:
+
+  1. **`TreeExplainer`** is extremely fast (linear‐time) but only applies exactly to tree‐based models (e.g. XGBoost, LightGBM, RandomForest).
+  2. **`KernelExplainer`** is model‐agnostic but uses repeated model evaluations (sampling coalitions) to approximate Shapley values; it can be slow for large datasets or high‐dimensional inputs.
+  3. **`LinearExplainer`** sits in between: it is only valid (exact) when your model is genuinely linear, but then Shapley values can be computed in closed form—no sampling needed, and it handles large datasets cheaply.
+
+---
+
+## 2. How does `LinearExplainer` compute Shapley values for a linear model?
+
+Suppose you have a linear model:
+
+$$
+f(x) \;=\; \beta_0 \;+\; \sum_{j=1}^p \beta_j x_j
+$$
+
+where $\beta_j$ are learned coefficients and $\beta_0$ is the intercept. Let $X_{\text{bg}}$ denote your “background data” (i.e.\ the dataset you want to use to define $E[f(x)]$ and the baseline expectations for each feature). Then it can be shown that the Shapley value $\phi_j(x)$ for feature $j$ on instance $x$ has the form:
+
+$$
+\phi_j(x) \;=\; \beta_j \bigl(x_j - E[X_{\,\text{bg}, j}]\bigr)
+$$
+
+under the assumption that features are independent (so that the contribution of each feature is simply its coefficient times the difference from the background mean). In other words:
+
+1. **Baseline output**:
+
+   $$
+     E[f(x)] \;=\; \beta_0 \;+\; \sum_{j=1}^p \beta_j E[X_{\,\text{bg}, j}] 
+   $$
+2. **Shapley value for feature j**:
+
+   $$
+     \phi_j(x) = \beta_j \bigl(x_j - E[X_{\,\text{bg}, j}]\bigr).
+   $$
+
+Finally, the “bias” term $\phi_0$ is
+
+$$
+\phi_0 \;=\; E[f(x)]\;=\;\beta_0 + \sum_{j} \beta_j E[X_{\,\text{bg}, j}].
+$$
+
+Thus, if your model truly is linear with a single output (or for classification, a single log‐odds output), `LinearExplainer` can compute each $\phi_j$ in $O(p)$ time rather than $O(2^p)$ or needing Monte Carlo.
+
+---
+
+## 3. When should you use `shap.LinearExplainer`?
+
+* **Your model is linear** (output is $\beta_0 + \beta^T x$). Examples:
+
+  * `sklearn.linear_model.LogisticRegression` (log‐odds scale).
+  * `sklearn.linear_model.LinearRegression`.
+  * Any custom model where you can expose a weight vector $\beta$ and bias $\beta_0$.
+* **You care about exact Shapley values** for each feature, not an approximation.
+* **You have a moderately large dataset** where running `KernelExplainer` would be too slow.
+
+If your model is *not* strictly linear (e.g. a neural network with hidden layers), you cannot trust `LinearExplainer` to give correct answers—use `KernelExplainer` or another method (e.g. `DeepExplainer`, `TreeExplainer` on a tree surrogate) instead.
+
+---
+
+## 4. Key parameters and usage
+
+### 4.1 Basic instantiation
+
+```python
+import shap
+
+# clf is your trained linear model (e.g. a fitted sklearn LogisticRegression)
+explainer = shap.LinearExplainer(clf, background_data)
+```
+
+* **`clf`**: A trained linear model object. For scikit-learn, you can pass the trained `LogisticRegression().fit(...)` or `LinearRegression()`. `LinearExplainer` will read `clf.coef_` and `clf.intercept_`.
+* **`background_data`**: A 2D array or pandas DataFrame of shape `(n_background, n_features)` that represents the “reference” distribution.
+
+  * Conceptually, this is the dataset you want to treat as your **baseline**.
+  * Shapley values are computed relative to the expected value $E[f(x)]$ over this background.
+  * You can pass in your entire training set, or (if too large) a random subsample (e.g.\ 1 000–10 000 rows) to approximate $E[X_j]$.
+
+### 4.2 Optional arguments
+
+```python
+explainer = shap.LinearExplainer(
+    clf,
+    background_data,
+    feature_dependence="independent",
+    masker=None,
+    data_in_log_space=False
+)
+```
+
+* **`feature_dependence`**
+
+  * **`"independent"` (default)**: Assumes features are independent. Under that assumption, the Shapley formula simplifies to $\phi_j = \beta_j (x_j - E[X_{\text{bg}, j}])$.
+  * **`"correlation_dependent"`**: Accounts for correlation between features by using the full covariance matrix of `background_data`. This yields a different closed‐form for $\phi_j$ that integrates over the joint distribution of correlated inputs. It generally requires passing a dense background or specifying `background_data` explicitly so it can compute means and covariances. If you set `feature_dependence="correlation_dependent"`, `LinearExplainer` will compute
+
+    $$
+      \phi_j = \beta_j \Bigl(x_j - E[X_{\text{bg},j}]\Bigr) 
+      \;+\; \sum_{k \neq j} \beta_k \mathrm{Cov}\bigl(X_{\text{bg},j},\,X_{\text{bg},k}\bigr)\,\Bigl(\Sigma_{\text{bg}}^{-1}\,(x - \mu_{\text{bg}})\Bigr)_j
+    $$
+
+    or an equivalent formula that ensures the $\sum_j \phi_j = f(x) - E[f]$. (In practice, SHAP hides this math from you and just uses efficient matrix‐algebra under the hood.)
+
+* **`masker`**
+
+  * (Rarely used with `LinearExplainer`, since no sampling is needed.) By default, you do not need to supply a masker.
+  * For non‐linear explainers like `KernelExplainer`, you often pass `masker=shap.maskers.Independent(background_data)` or `masker=shap.maskers.Impute(background_data)` to specify how to “hide” features when computing conditional expectations. With `LinearExplainer`, SHAP bypasses sampling entirely.
+
+* **`data_in_log_space`** (boolean)
+
+  * Use this if your linear model’s output (e.g.\ a logistic‐regression model returned via `predict_proba(...)`) is already on a log‐odds scale and you want SHAP to operate in that space.
+  * In most cases, you simply give `background_data` in the same input space as you trained your model; you do not need to set `data_in_log_space=True` unless you are explicitly giving SHAP probabilities but want Shapley values for the log‐odds.
+
+---
+
+## 5. Computing and interpreting SHAP values
+
+Once you have an explainer:
+
+```python
+# X_explain is a 2D array or DataFrame of shape (n_samples_to_explain, n_features)
+shap_values = explainer.shap_values(X_explain)
+```
+
+* **Output shape**:
+
+  * For a **binary classification** linear model (i.e. `LogisticRegression`), `explainer.shap_values(...)` returns a 2‐element list:
+
+    * `shap_values[0]`: a 2D array of shape `(n_samples, n_features)` representing Shapley contributions for the **negative class** log‐odds.
+    * `shap_values[1]`: Shapley contributions for the **positive class** log‐odds.
+  * For a **regression** or a *single‐output* model, it returns a single 2D array `(n_samples, n_features)`.
+
+* **Interpreting $\phi_j$**:
+
+  * Each $\phi_j(x)$ is simply $\beta_j (x_j - \mu_j)$ (if you use `"independent"`).
+  * If $\phi_j > 0$, that means feature $j$ pushes $f(x)$ above the baseline $E[f]$.
+  * If $\phi_j < 0$, feature $j$ pulls $f(x)$ below $E[f]$.
+
+* **Sum‐to‐difference property**:
+
+  $$
+    \sum_{j=1}^p \phi_j(x)\;=\; f(x)\;-\;E[f(x)].
+  $$
+
+  In classification, “$f(x)$” is the log‐odds for the chosen class. If you want “probability‐space” Shapley values, you would need to apply a nonlinear transform (e.g. logistic) to both sides or use a different explainer.
+
+---
+
+## 6. Example usage
+
+Below is a full, minimal example using scikit-learn’s `LogisticRegression`, showing how one would call `LinearExplainer`:
+
+```python
+import numpy as np
+import pandas as pd
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+import shap
+
+# 1) Create a synthetic binary classification dataset
+X, y = make_classification(
+    n_samples=10000,
+    n_features=10,
+    n_informative=5,
+    n_redundant=0,
+    random_state=0
+)
+df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(X.shape[1])])
+
+# 2) Split into train/test
+X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random_state=42)
+
+# 3) Fit a LogisticRegression model
+model = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42)
+model.fit(X_train, y_train)
+
+# 4) Instantiate a LinearExplainer with your training data as background
+explainer = shap.LinearExplainer(model, X_train, feature_dependence="independent")
+
+# 5) Compute SHAP values on the test set for the positive class
+#    For binary classification, shap_values returns a list [shap_neg, shap_pos]
+shap_values = explainer.shap_values(X_test)
+
+# Now shap_values[1] is a matrix of shape (n_test_samples, n_features)
+# containing each feature’s contribution to the *positive-class* log-odds.
+
+# 6) Plot a summary plot for the positive-class Shapley values:
+shap.summary_plot(shap_values[1], X_test, feature_names=X_test.columns)
+```
+
+In the summary plot:
+
+* Each row is a feature.
+* The x‐axis shows the range of $\phi_j$ values across all test samples.
+* Points are colored by the feature’s raw value (red = high, blue = low).
+* You’ll see exactly how each coefficient $\beta_j$ interacts with “$x_j - \mu_j$” to push the prediction log‐odds up or down.
+
+---
+
+## 7. When to use `"correlation_dependent"` vs. `"independent"`
+
+* **`"independent"`**: Assumes each feature can be “turned off” independently, so the Shapley value simply equals $\beta_j (x_j - \mu_j)$. Use this if your features are roughly uncorrelated or you don’t care about accounting for correlations. It is very fast (just a vector subtraction and multiplication).
+* **`"correlation_dependent"`**: If your features have strong correlations and you want Shapley values that respect the joint distribution, use this. It does the following under the hood:
+
+  1. Computes the background mean $\mu = E[X_{\text{bg}}]$ and covariance matrix $\Sigma = \mathrm{Cov}(X_{\text{bg}})$.
+  2. Uses the closed‐form for linear‐model Shapley values with correlation:
+
+     $$
+       \phi_j(x) \;=\; \beta_j \bigl(x_j - \mu_j\bigr) \;+\; \sum_{k \neq j} \beta_k\,\Sigma_{jk}\,(\Sigma^{-1}(x - \mu))_j,
+     $$
+
+     or an equivalent matrix‐algebra expression.
+  3. Ensures that $\sum_j \phi_j = f(x) - E[f]$ even when features correlate.
+* The downside of `"correlation_dependent"` is you must have enough background rows to reliably estimate $\Sigma$, and inverting a large covariance matrix is $O(p^3)$. If $p$ is small (< 50) and you truly care about decorrelating, it’s fine. For high-$p$, you usually stick with `"independent"`.
+
+---
+
+## 8. Advantages and limitations
+
+### Advantages
+
+1. **Exact Shapley values** for any truly linear model—no approximation error.
+2. **Speed**: Complexity is $O(p)$ per explained sample (just subtract means and multiply by coefficients), plus any cost to compute means/covariances on the background once.
+3. **Simplicity**: Since you know $\phi_j = \beta_j (x_j - \mu_j)$, you can even compute Shapley values by hand if you want.
+
+### Limitations
+
+1. **Only valid for linear models** (including any model whose output is literally $\beta_0 + \beta^T x$). If you pass in a nonlinear scikit-learn pipeline (e.g. polynomial features, tree ensemble, neural net), results will be incorrect.
+
+2. **Assumptions about feature dependence**:
+
+   * If you use `"independent"` but features are strongly correlated, the additive interpretation $\beta_j (x_j - \mu_j)$ can misattribute credit (because in reality, changing one feature in isolation is not plausible if it always moves with another).
+   * `"correlation_dependent"` fixes that but at the cost of computing and inverting a covariance matrix.
+
+3. **Log-odds vs. probability** (for classification):
+
+   * If your logistic model outputs probabilities (via `predict_proba`), remember that Shapley values on the probability scale are *not* simply $\beta_j (x_j - \mu_j)$. The linear formula only applies to the **log‐odds** output (i.e. the model’s `.decision_function()` or the `coef_` dot `x + intercept_` term).
+   * If you want Shapley values in *probability* space, you must either:
+
+     1. Compute Shapley values on the log‐odds with `LinearExplainer` and then transform them into probability‐space contributions (this is non‐trivial because the logistic link function is nonlinear), or
+     2. Use a more general explainer (e.g. `KernelExplainer`) that treats the model as a black box on probabilities.
+
+---
+
+## 9. Summary and best practice
+
+* **Use `shap.LinearExplainer` whenever**:
+
+  1. You have a genuine linear model $f(x)=\beta_0 + \beta^T x$.
+  2. You care about fast, exact Shapley values.
+  3. Your features are either roughly independent (use `"independent"`) or you have a small number of features and can afford `"correlation_dependent"`.
+
+* **Typical workflow**:
+
+  1. Split your data into training and test sets.
+  2. Fit your `LogisticRegression` (or similar) on the training data.
+  3. Create `LinearExplainer(model, X_train, feature_dependence="independent")`.
+  4. Call `explainer.shap_values(X_test)` to get a `(n_test, p)` matrix of Shapley contributions.
+  5. Use `shap.summary_plot(...)`, `shap.force_plot(...)`, or `shap.decision_plot(...)` to visualize which features are pushing each prediction up or down relative to the baseline.
+
+* **If your model is not linear**, switch to a different explainer (`TreeExplainer`, `DeepExplainer`, or `KernelExplainer`) that is appropriate for the model class.
+
+By exploiting the closed‐form relationship between $\beta_j$ and Shapley values, `LinearExplainer` gives you a fast, exact, and easy‐to‐interpret explanation of each feature’s contribution to every individual prediction in a linear model.

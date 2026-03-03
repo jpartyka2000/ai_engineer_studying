@@ -1,0 +1,30 @@
+When an action like `df.count()` or `df.show()` returns, it means that the entire execution plan (including the join) has been computed up to the point necessary to return the result. In other words, once the action finishes, the join has been completed.
+
+However, here are some points to note:
+
+- **Action Completion Means Execution Finished:**  
+  Spark’s lazy evaluation means transformations (like joins) aren’t executed until an action (such as `count()` or `show()`) is called. When that action completes, all the transformations, including the join, have been executed to produce the result.
+
+- **Monitoring via Spark UI:**  
+  To see detailed progress, you can use the Spark UI, which shows job stages, tasks, and shuffle statistics. This will indicate when the join’s stages are complete.
+
+- **Custom Monitoring:**  
+  If you need programmatic notification of job completion, you can attach a SparkListener to the SparkContext. For example:
+  ```python
+  from pyspark import SparkContext
+  from pyspark.sql import SparkSession
+  from pyspark.scheduler import SparkListener
+
+  class MyListener(SparkListener):
+      def onJobEnd(self, jobEnd):
+          print(f"Job {jobEnd.jobId} has ended.")
+
+  spark = SparkSession.builder.getOrCreate()
+  spark.sparkContext.addSparkListener(MyListener())
+
+  # Trigger an action
+  df.count()
+  ```
+  This listener will print a message when each job finishes, giving you some indication that the join has completed as part of the overall job.
+
+In summary, once `df.count()` or `df.show()` finishes, you can be sure that the join and all prior transformations have been executed.

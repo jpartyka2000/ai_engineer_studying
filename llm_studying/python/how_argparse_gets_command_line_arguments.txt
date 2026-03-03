@@ -1,0 +1,81 @@
+## How `argparse` Gets Terminal Commands
+
+`argparse` gets the command-line arguments from **`sys.argv`** - a Python list that automatically contains all terminal arguments.
+
+## The Flow:
+
+```python
+# When you run: python script.py --name Alice --age 30
+
+# Python automatically populates:
+import sys
+print(sys.argv)
+# ['script.py', '--name', 'Alice', '--age', '30']
+
+# argparse reads from sys.argv
+import argparse
+parser = argparse.ArgumentParser()
+args = parser.parse_args()  # Internally uses sys.argv
+```
+
+## Behind the Scenes:
+
+```python
+# What parse_args() does internally (simplified):
+def parse_args(self, args=None):
+    if args is None:
+        args = sys.argv[1:]  # Skip script name, get arguments
+    # Then parse these arguments
+    return parsed_arguments
+```
+
+## Full Example:
+
+```python
+# script.py
+import sys
+import argparse
+
+# Raw access
+print(f"Raw sys.argv: {sys.argv}")
+
+# Using argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--name', type=str)
+parser.add_argument('--age', type=int)
+
+# parse_args() reads sys.argv automatically
+args = parser.parse_args()
+print(f"Parsed: name={args.name}, age={args.age}")
+```
+
+Running it:
+```bash
+$ python script.py --name Alice --age 30
+
+Raw sys.argv: ['script.py', '--name', 'Alice', '--age', '30']
+Parsed: name=Alice, age=30
+```
+
+## Manual Override:
+
+```python
+# You can override sys.argv for testing
+parser = argparse.ArgumentParser()
+parser.add_argument('--flag')
+
+# Parse custom arguments instead of sys.argv
+args = parser.parse_args(['--flag', 'value'])  # Ignores terminal
+
+# Useful for testing without running from terminal
+```
+
+## The Chain:
+
+1. **Terminal** → User types: `python script.py --option value`
+2. **Shell** → Splits into tokens: `['python', 'script.py', '--option', 'value']`
+3. **Python interpreter** → Populates `sys.argv`: `['script.py', '--option', 'value']`
+4. **argparse** → Reads `sys.argv[1:]`: `['--option', 'value']`
+5. **Your code** → Gets parsed `args.option = 'value'`
+
+**Bottom line**: Python automatically captures terminal arguments in `sys.argv`, and `argparse.parse_args()` reads from there by default - you don't need to do anything special to connect them!

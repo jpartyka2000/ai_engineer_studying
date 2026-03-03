@@ -1,0 +1,36 @@
+Yes, you can annotate your method's return type as `BaseEstimator` because both `RandomForestRegressor` and `ExtraTreesRegressor` inherit from it. This allows your method to be typed as returning a general scikit‑learn estimator. Then, later in your code, if you need to access methods or attributes specific to one of the subclasses, you can check the instance type (using `isinstance`) or use the `cast` function from the `typing` module for static type checking.
+
+For example:
+
+```python
+from sklearn.base import BaseEstimator
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+from typing import cast
+
+def get_model() -> BaseEstimator:
+    # Your logic to decide which model to return.
+    if some_condition():
+        return RandomForestRegressor(n_estimators=100, max_depth=5)
+    else:
+        return ExtraTreesRegressor(n_estimators=100, max_depth=5)
+
+model: BaseEstimator = get_model()
+
+# Later, if you need to use a method specific to RandomForestRegressor:
+if isinstance(model, RandomForestRegressor):
+    # Now it's safe to use RandomForestRegressor-specific methods.
+    print("This is a RandomForestRegressor")
+else:
+    print("This is an ExtraTreesRegressor")
+
+# For static type checking, you can use cast (note that cast() is only for type hints and doesn't change the object):
+rf_model = cast(RandomForestRegressor, model)
+```
+
+**Key Points:**
+
+- **Return Type:** Annotate your function as returning `BaseEstimator` since both potential models are subclasses of it.
+- **Runtime Type Checking:** Use `isinstance` to check the type of the returned model at runtime.
+- **Static Type Casting:** Use `cast` from the `typing` module if you want to inform static type checkers of the expected type, but remember that it does not enforce type safety at runtime.
+
+This approach is standard in Python when a function can return multiple subclass types.

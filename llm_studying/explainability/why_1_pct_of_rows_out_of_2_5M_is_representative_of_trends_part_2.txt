@@ -1,0 +1,70 @@
+Sampling error is just the “wiggle room” between what you estimate from your sample and the true value in the full population.  As your sample size grows, that wiggle room shrinks at a known rate—specifically, with the **square root** of your sample size.
+
+---
+
+## 1. Standard error of the mean
+
+If you want to estimate a population mean (e.g. the average absolute SHAP value for feature *j*), the **standard error** (SE) of your sample mean is
+
+$$
+\text{SE}(\bar x)
+\;=\;
+\frac{\sigma}{\sqrt{n}}
+$$
+
+* $\sigma$ = the population standard deviation of $|\text{SHAP}_j|$.
+* $n$ = your sample size (e.g. 25 000).
+
+|   $n$  | SE factor $\;1/\sqrt{n}$ | SE if $\sigma=1$ |
+| :----: | :----------------------: | :--------------: |
+|  1 000 |          0.0316          |      0.0316      |
+| 10 000 |          0.0100          |      0.0100      |
+| 25 000 |          0.0063          |      0.0063      |
+
+* With **1 000** samples, your average is “off” by about ±0.03 (if σ=1).
+* With **10 000**, it’s ±0.01.
+* With **25 000**, it’s ±0.006!
+
+That means even if your SHAP magnitudes vary widely (σ≈1), a 25 000‑point sample pins down the true mean to within about **0.006** on average.  In feature‑ranking or bar‑plot contexts, differences between top features are typically much larger than that, so you’re safe.
+
+---
+
+## 2. Margin of error for proportions (densities)
+
+If you care about **proportions**—say the fraction of points whose SHAP value for feature *j* lies in a given bin—the standard error of a proportion $p$ is
+
+$$
+\text{SE}(p)
+\;=\;
+\sqrt{\frac{p\,(1-p)}{n}}.
+$$
+
+With a 95% confidence interval you’d multiply by 1.96:
+
+$$
+\text{MoE} \approx 1.96 \times \sqrt{\frac{p\,(1-p)}{n}}.
+$$
+
+* For $n=25\,000$ and $p=0.5$,
+  $\text{MoE}\approx1.96\times\sqrt{0.25 / 25000}\approx0.0062$ → ±0.62 pp.
+* Even for extreme $p$ (e.g. 0.1), the margin is
+  $1.96\sqrt{0.09/25000}\approx0.0037$ → ±0.37 pp.
+
+That tiny error means your density curves or beeswarm point‑cloud summaries will look essentially the same as with the full 2.5 M rows.
+
+---
+
+## 3. Why “tens of thousands” is enough
+
+* **Law of Large Numbers:** guarantees your sample mean converges on the true mean as $n\to\infty$.
+* **Central Limit Theorem:** tells you the distribution of $\bar x$ is approximately normal for large $n$, so SE formulas apply.
+* **Practical rule of thumb:**
+
+  * \~2 000 – 5 000 points already give you a stable picture of feature‑impact distributions.
+  * Pushing to \~25 000 mostly just *confirms* what you saw at 5 000 but costs 5× more compute.
+
+---
+
+### Bottom line
+
+Because your **sampling error** on *means* or *proportions* scales like $1/\sqrt{n}$, once $n$ is in the **10 000–25 000** range, the error is on the order of **0.01** or smaller.  That level of precision is far more than you need to reliably rank features or visualize their effect distributions in a SHAP summary plot.

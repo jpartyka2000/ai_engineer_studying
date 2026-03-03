@@ -1,0 +1,93 @@
+**`pd.MultiIndex.from_tuples()`**
+
+The `MultiIndex.from_tuples()` constructor builds a hierarchical index directly from a list of tuple‐keys, where each tuple represents the full index label for one row (or column) in your DataFrame or Series.
+
+---
+
+## Signature
+
+```python
+pd.MultiIndex.from_tuples(tuples, sortorder=None, names=None)
+```
+
+* **`tuples`** : list (or other sequence) of tuple-labels
+  Each tuple must have the same length, corresponding to the number of levels in your MultiIndex.
+
+* **`sortorder`** (optional) : int or `None`
+  Indicates which level the labels are sorted by (0 = level 0, 1 = level 1, …). Used internally for certain optimizations.
+
+* **`names`** (optional) : list of str or `None`
+  Names to assign to each level of the resulting MultiIndex. Length must match the tuple size.
+
+---
+
+## When to Use
+
+* You already have your row (or column) keys packaged as tuples, e.g.:
+
+  ```python
+  keys = [
+    ('A', 2021),
+    ('A', 2022),
+    ('B', 2021),
+    ('B', 2022)
+  ]
+  ```
+
+* You want to create a MultiIndex in one shot, without first converting to separate arrays or using a DataFrame and `set_index`.
+
+---
+
+## Simple Example
+
+```python
+import pandas as pd
+
+tuples = [
+    ('Store1','2025-01-01'),
+    ('Store1','2025-01-02'),
+    ('Store2','2025-01-01'),
+    ('Store2','2025-01-02')
+]
+
+midx = pd.MultiIndex.from_tuples(tuples, names=['store','date'])
+
+df = pd.DataFrame(
+    {'sales': [100, 120,  80,  95]},
+    index=midx
+)
+
+print(df)
+```
+
+```
+                    sales
+store   date             
+Store1  2025-01-01   100
+        2025-01-02   120
+Store2  2025-01-01    80
+        2025-01-02    95
+```
+
+---
+
+## Comparison to Other Constructors
+
+* **`from_arrays()`**
+  Takes a list of parallel sequences (one per level), e.g. `[['Store1','Store1'],['2025-01-01','2025-01-02']]`.
+* **`from_product()`**
+  Builds the Cartesian product of input iterables, e.g. `['Store1','Store2'] × ['2025-01-01','2025-01-02']`.
+* **`set_index()`**
+  Converts existing columns in a DataFrame into a MultiIndex; use when your data already lives in tabular form.
+
+---
+
+### Tips
+
+* If your tuples aren’t already sorted in the order you want, consider `sortorder` or follow up with `sort_index()`.
+* You can easily reset back to a flat index with `.reset_index()`, which will unpack each tuple-level into its own column.
+
+---
+
+**Bottom line:**
+Use `MultiIndex.from_tuples()` when you have explicit `(level1, level2, …)` keys per row and want to create a hierarchical index without an intermediate DataFrame.

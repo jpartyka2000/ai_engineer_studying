@@ -1,0 +1,52 @@
+On Databricks the driver’s local `/tmp` directory isn’t in DBFS by default, so you have a couple of easy ways to look at it:
+
+---
+
+### 1) Using `%sh` magic
+
+Run a shell command right from your notebook:
+
+```bash
+%sh
+ls -l /tmp
+```
+
+That will list whatever’s in the node’s `/tmp`.
+
+---
+
+### 2) Using the Files API
+
+You can treat the local FS via the `file:/` prefix in either `%fs` or with `dbutils`:
+
+```python
+# Scala/Python notebook cell with DBFS magic
+%fs ls file:/tmp
+
+# Or in Python
+display(dbutils.fs.ls("file:/tmp"))
+```
+
+---
+
+### 3) Mounting it under `/dbfs`
+
+On the driver node, `/dbfs` mirrors local disk under DBFS. So you can also do:
+
+```bash
+%sh
+ls -l /dbfs/tmp
+```
+
+and
+
+```python
+display(dbutils.fs.ls("dbfs:/tmp"))
+```
+
+---
+
+**Note:**
+
+* Anything you put in the *node-local* `/tmp` will disappear if the cluster restarts or scales down.
+* If you need durable temp storage, write to `dbfs:/tmp` (which persists until you explicitly delete it).

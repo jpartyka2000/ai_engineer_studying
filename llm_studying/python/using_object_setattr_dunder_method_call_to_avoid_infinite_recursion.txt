@@ -1,0 +1,202 @@
+## 📋 Understanding `object.__setattr__()` and Why It Works with `__slots__`
+
+---
+
+### The Infinite Recursion Problem
+
+When you override `__setattr__`, any attribute assignment inside it triggers `__setattr__` again:
+
+```python
+class Broken:
+    def __setattr__(self, name, value):
+        print(f"Setting {name}")
+        self.name = value  # 💥 Calls __setattr__ again!
+
+b = Broken()
+b.x = 10  # RecursionError: maximum recursion depth exceeded
+```
+
+What happens:
+1. `b.x = 10` calls `__setattr__('x', 10)`
+2. Inside, `self.name = value` calls `__setattr__('name', 10)`
+3. Inside that, `self.name = value` calls `__setattr__('name', 10)`
+4. ...forever
+
+---
+
+### The Solution: `object.__setattr__()`
+
+By calling the **parent class's** `__setattr__`, you bypass your own:
+
+```python
+class Working:
+    def __setattr__(self, name, value):
+        print(f"Setting {name}")
+        object.__setattr__(self, name, value)  # ✅ Bypasses our __setattr__
+
+w = Working()
+w.x = 10  # Prints "Setting x", then actually sets it
+```
+
+`object` is the base class of all Python classes. Its `__setattr__` is the "original" implementation that actually stores the attribute.
+
+---
+
+### Alternative: Direct `__dict__` Access
+
+If your class doesn't use `__slots__`, you can write directly to `__dict__`:
+
+```python
+class AlsoWorking:
+    def __setattr__(self, name, value):
+        print(f"Setting {name}")
+        self.__dict__[name] = value  # ✅ Direct dict access, no recursion
+
+a = AlsoWorking()
+a.x = 10  # Works!
+```
+
+**But this doesn't work with `__slots__`** because slotted classes have no `__dict__`.
+
+---
+
+### Your Question: Why Does `object.__setattr__()` Work with `__slots__`?
+
+This is a great question! Here's the key insight:
+
+**`__slots__` doesn't restrict the *parent class* — it tells the parent class *where* to store values.**
+
+When you define `__slots__`:
+
+```python
+class Person:
+    __slots__ = ('name', 'age')
+```
+
+Python creates **slot descriptors** on the class:
+
+```python
+print(type(Person.name))  # <class 'member_descriptor'>
+print(type(Person.age))   # <class 'member_descriptor'>
+```
+
+These descriptors know how to store values in a fixed memory location (not a dictionary).
+
+When you call:
+
+```python
+object.__setattr__(self, 'name', 'Alice')
+```
+
+Here's what happens:
+
+1. `object.__setattr__` looks for `'name'` in the class hierarchy
+2. It finds the **slot descriptor** `Person.name`
+3. The descriptor's `__set__` method stores the value in the slot
+4. If the name isn't in `__slots__`, the descriptor doesn't exist, so it fails
+
+**The restriction comes from the slot descriptors, not from `object.__setattr__` itself.**
+
+---
+
+### Proof: `object.__setattr__()` Still Respects `__slots__`
+
+```python
+class Slotted:
+    __slots__ = ('x',)
+    
+    def __setattr__(self, name, value):
+        print(f"Attempting to set {name}")
+        object.__setattr__(self, name, value)  # Delegates to slot descriptor
+
+s = Slotted()
+s.x = 10       # ✅ Works — 'x' has a slot descriptor
+s.y = 20       # ❌ AttributeError — no slot descriptor for 'y'
+```
+
+Output:
+```
+Attempting to set x
+Attempting to set y
+AttributeError: 'Slotted' object has no attribute 'y'
+```
+
+So `object.__setattr__()` doesn't bypass `__slots__` — it **uses** the slot system!
+
+---
+
+### The Full Picture
+
+```
+You write: obj.name = "Alice"
+                │
+                ▼
+        Your __setattr__(self, 'name', 'Alice')
+                │
+                ▼
+        object.__setattr__(self, 'name', 'Alice')
+                │
+                ▼
+        Look up 'name' in class hierarchy
+                │
+                ▼
+        ┌───────────────────────────────────┐
+        │ Found slot descriptor for 'name'? │
+        └───────────────────────────────────┘
+               │                    │
+              Yes                   No
+               │                    │
+               ▼                    ▼
+        Call descriptor's     AttributeError
+        __set__ method        (if using __slots__)
+               │                    
+               ▼                    OR
+        Value stored in       
+        fixed memory slot     Store in __dict__
+                              (if no __slots__)
+```
+
+---
+
+### Why Not Just Let `__slots__` Handle Everything?
+
+You might wonder: if `__slots__` already restricts attributes, why override `__setattr__` at all?
+
+**Reasons to override:**
+
+1. **Custom error messages**
+   ```python
+   # Default: AttributeError: 'Person' object has no attribute 'email'
+   # Custom:  AttributeError: Cannot set 'email'. Allowed: name, age
+   ```
+
+2. **Validation**
+   ```python
+   def __setattr__(self, name, value):
+       if name == 'age' and value < 0:
+           raise ValueError("Age must be positive")
+       object.__setattr__(self, name, value)
+   ```
+
+3. **Logging/tracking changes**
+   ```python
+   def __setattr__(self, name, value):
+       print(f"[AUDIT] {name} set to {value}")
+       object.__setattr__(self, name, value)
+   ```
+
+---
+
+### Summary
+
+| Question | Answer |
+|----------|--------|
+| Why use `object.__setattr__()`? | To bypass your own `__setattr__` and avoid infinite recursion |
+| Does it bypass `__slots__`? | No — it respects slot descriptors |
+| How does `__slots__` restrict? | Via slot descriptors that only exist for defined slots |
+| Can I use `self.__dict__` instead? | Only if you're not using `__slots__` |
+| When to override `__setattr__` with `__slots__`? | Custom errors, validation, logging |
+
+---
+
+Ready for Question 9?

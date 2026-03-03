@@ -1,0 +1,117 @@
+# Python truthy & falsy gotchas (and how not to trip over them)
+
+In Python, `if x:` checks the **truth value** of `x`. Most of the time that’s handy… until it quietly does the wrong thing. Here are the big gotchas and safer patterns.
+
+## What’s falsy (evaluates to `False`)
+
+* `None`
+* `False`
+* Numeric zero: `0`, `0.0`, `0j`, `Decimal(0)`, `Fraction(0, 1)`
+* Empty containers: `""`, `b""`, `[]`, `()`, `{}`, `set()`, `range(0)`
+* Objects whose `__len__()` returns `0` or whose `__bool__()` returns `False`
+
+Everything else is truthy (including strings like `"0"` or `"False"`, and `float('nan')`!).
+
+## Common traps
+
+### 1) Using `x or default` when `0`/`""` are valid
+
+```python
+count = x or 10        # BUG if x can be 0 (uses 10 instead)
+name  = s or "unknown" # BUG if s can be "" (uses "unknown")
+```
+
+**Safer:**
+
+```python
+count = x if x is not None else 10
+name  = s if s is not None else "unknown"
+```
+
+If you truly want to treat empty as missing, keep `or`.
+
+### 2) `None` vs “empty”
+
+```python
+if items:          # False for None and []
+    ...
+```
+
+If you need to **distinguish**:
+
+```python
+if items is None: ...
+elif not items:    # specifically empty
+    ...
+```
+
+### 3) `np.nan` and friends
+
+* `bool(float('nan'))` → `True` (surprise!)
+* **NumPy arrays**: `if np.array([1,2])` → `ValueError: truth value is ambiguous`
+* **pandas**: `if pd.Series([...])` or `if pd.NA` → error (ambiguous)
+
+**Safer:**
+
+```python
+import numpy as np, pandas as pd
+
+np.isnan(x)                # for floats
+pd.isna(x)                 # for pandas scalars/arrays
+arr.size == 0              # array emptiness
+df.empty, s.empty          # pandas emptiness
+```
+
+### 4) Strings that “look false” but aren’t
+
+```python
+if "0":       # True
+if "False":   # True
+if "   ":     # True (whitespace is non-empty)
+```
+
+Strip or normalize first if that’s what you intend:
+
+```python
+if (s or "").strip(): ...
+```
+
+### 5) Custom objects
+
+Any object is truthy by default. If you define `__len__` and it returns `0`, or `__bool__` returns `False`, the object becomes falsy. Be explicit in your class to avoid surprises.
+
+### 6) Chaining with `and` / `or` returns a **value**, not a boolean
+
+```python
+result = a and b   # returns b if a is truthy, else a
+name = s or "N/A"  # returns s if truthy, else "N/A"
+```
+
+Helpful, but easy to misuse. Wrap with `bool(...)` if you truly want a boolean.
+
+## Robust normalization pattern (strings)
+
+If you plan to `.strip().lower()` user data, don’t rely on truthiness alone:
+
+```python
+import pandas as pd, re
+
+def normalize(s):
+    if pd.isna(s):
+        s = ""
+    else:
+        s = str(s)
+    s = s.strip().lower()
+    s = re.sub(r"[_\-/]+", " ", s)
+    s = re.sub(r"[^a-z0-9\s]+", "", s)
+    return re.sub(r"\s+", " ", s).strip()
+```
+
+## Quick checklist
+
+* Need a **default only for `None`**? → `x if x is not None else default`
+* Need to check **empty vs None**? → use `is None` and `not x` separately
+* Working with **NumPy/pandas**? → never `if arr/series`; use `.size`, `.empty`, `isna`
+* Normalizing **strings**? → coerce to `str`, handle `NaN`, then strip
+
+When in doubt, be explicit: “Is it `None`?” “Is it empty?” “Is it NaN?” That beats relying on truthiness magic.

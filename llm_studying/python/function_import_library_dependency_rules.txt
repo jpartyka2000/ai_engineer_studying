@@ -1,0 +1,116 @@
+When you import a function from another Python file, **only the function and its code are imported, not the imports in the source file directly**. However, if the function depends on other modules or imports within the source file, those imports will be executed when the function is called.
+
+### How It Works
+1. When you import a function, Python will execute the entire source file (if it hasn't been executed already) to make sure all definitions, including imports, are processed.
+2. Any imports in the source file are executed and available within the context of the function being imported, but **they are not automatically available in your script unless you explicitly import them yourself**.
+
+---
+
+### Example:
+**File: `module_a.py`**
+```python
+import math
+
+def calculate_area(radius):
+    return math.pi * radius ** 2
+```
+
+**File: `main.py`**
+```python
+from module_a import calculate_area
+
+# You don't need to import `math` in `main.py`.
+print(calculate_area(5))  # Output: 78.53981633974483
+```
+
+In this example:
+- `math` is imported in `module_a.py` and is available for `calculate_area` because the function is defined in the same file.
+- You don't need to explicitly import `math` in `main.py`.
+
+---
+
+### What If You Need Access to Other Imports?
+If you want to use a module in your own script, you must **explicitly import it**, even if the source file already imported it.
+
+**File: `main.py`**
+```python
+from module_a import calculate_area
+import math  # Needed if you want to use `math` directly in `main.py`
+
+print(math.sqrt(16))  # This requires the explicit import of `math` in `main.py`.
+```
+
+### Key Point:
+Imports in a module are local to that module. When you import specific functions or objects, you don’t inherit the source module's imports into your namespace unless you explicitly import them.
+
+------------------------
+
+When you import a function from a module, **any variables defined in that module that the function depends on are also imported implicitly**, because Python executes the entire module when it is imported (if it hasn’t already been executed in the current process). These variables exist within the module’s namespace and are accessible to the function.
+
+However, the variables are **not automatically available in your script’s namespace unless you explicitly import them**.
+
+---
+
+### Example:
+**File: `module_a.py`**
+```python
+# A global variable in the module
+PI = 3.14159
+
+def calculate_area(radius):
+    return PI * radius ** 2
+```
+
+**File: `main.py`**
+```python
+from module_a import calculate_area
+
+print(calculate_area(5))  # Output: 78.53975
+```
+
+- The variable `PI` is defined in `module_a.py`, and `calculate_area` depends on it.
+- When `calculate_area` is imported, Python ensures that `PI` is also loaded in the module’s namespace.
+- You don't need to explicitly import `PI` to use `calculate_area`.
+
+---
+
+### Accessing Variables from `module_a`
+If you want to access the variable `PI` directly in your script, you need to import it explicitly:
+
+```python
+from module_a import calculate_area, PI
+
+print(PI)  # Output: 3.14159
+print(calculate_area(5))  # Output: 78.53975
+```
+
+Alternatively, you can import the entire module:
+
+```python
+import module_a
+
+print(module_a.PI)  # Output: 3.14159
+print(module_a.calculate_area(5))  # Output: 78.53975
+```
+
+---
+
+### Key Points:
+1. **Variables in the module remain within the module's namespace.**
+   - If a function depends on them, they are available when the module is imported.
+2. **You cannot access module-level variables in your script without explicitly importing them.**
+   - Use `from module_a import variable_name` or `import module_a` and access via `module_a.variable_name`.
+3. If the module redefines or modifies a variable, the changes are reflected whenever the function accesses the variable.
+
+---
+
+### Considerations for Globals:
+If you modify a global variable in the module from within your script, be cautious as it may affect the function's behavior. 
+
+Example:
+```python
+import module_a
+
+module_a.PI = 3.14  # Change the value of the global variable
+print(module_a.calculate_area(5))  # Output will use the updated PI: 78.5
+```

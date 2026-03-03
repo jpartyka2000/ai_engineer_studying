@@ -1,0 +1,19 @@
+Yes. `__new__` is special — it's **always** a classmethod under the hood (Python treats it that way implicitly), so its first parameter is always the class itself, conventionally named `cls`.
+
+This is true regardless of what other methods the class has. Even if every other method in the class is a `@staticmethod`, `__new__` still receives `cls`:
+
+```python
+class MyClass:
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("Cannot instantiate")
+
+    @staticmethod
+    def some_method(df):
+        ...
+
+    @staticmethod
+    def another_method(df, columns):
+        ...
+```
+
+The reason is that `__new__` is responsible for actually creating (and returning) a new instance of the class, so it needs to know *which class* is being instantiated. That's why Python automatically passes the class as the first argument, even without an explicit `@classmethod` decorator.

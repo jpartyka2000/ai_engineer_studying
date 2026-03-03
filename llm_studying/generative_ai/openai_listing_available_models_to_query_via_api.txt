@@ -1,0 +1,95 @@
+Here's how to list the available models in your OpenAI account:
+
+```python
+from openai import OpenAI
+
+import json
+import os
+import random
+import sys
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# List all available models
+try:
+    models = client.models.list()
+    
+    # Print all models
+    print("All available models:")
+    for model in models.data:
+        print(f"- {model.id}")
+    
+    print("\n" + "="*50 + "\n")
+    
+    # Separate fine-tuned models from base models
+    fine_tuned_models = []
+    base_models = []
+    
+    for model in models.data:
+        if model.id.startswith('ft:'):
+            fine_tuned_models.append(model)
+        else:
+            base_models.append(model)
+    
+    # Print fine-tuned models specifically
+    print(f"Fine-tuned models ({len(fine_tuned_models)}):")
+    if fine_tuned_models:
+        for model in fine_tuned_models:
+            print(f"- {model.id}")
+            print(f"  Created: {model.created}")
+            print(f"  Owned by: {model.owned_by}")
+            print()
+    else:
+        print("No fine-tuned models found.")
+    
+    print("="*50 + "\n")
+    
+    # Print base models (GPT-4, GPT-3.5, etc.)
+    print(f"Base models ({len(base_models)}):")
+    for model in sorted(base_models, key=lambda x: x.id):
+        print(f"- {model.id}")
+
+except Exception as e:
+    print(f"Error listing models: {e}")
+```
+
+This will output something like:
+
+```
+All available models:
+- gpt-4-turbo
+- gpt-4
+- gpt-3.5-turbo
+- ft:gpt-3.5-turbo-1106:personal::8frqkawLD
+- text-embedding-ada-002
+...
+
+==================================================
+
+Fine-tuned models (1):
+- ft:gpt-3.5-turbo-1106:personal::8frqkawLD
+  Created: 1699046400
+  Owned by: user-abc123
+
+==================================================
+
+Base models (15):
+- gpt-3.5-turbo
+- gpt-4
+- gpt-4-turbo
+...
+```
+
+If you want just the fine-tuned models in a simple list:
+
+```python
+# Quick way to get just fine-tuned model IDs
+models = client.models.list()
+fine_tuned_model_ids = [model.id for model in models.data if model.id.startswith('ft:')]
+
+print("Your fine-tuned models:")
+for model_id in fine_tuned_model_ids:
+    print(model_id)
+```
+
+This will help you find your fine-tuned model ID to use in the Playground or API calls.

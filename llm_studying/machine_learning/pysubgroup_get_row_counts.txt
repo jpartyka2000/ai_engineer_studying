@@ -1,0 +1,34 @@
+Yes—every `Subgroup` result carries a `.subgroup_size` attribute (the total number of rows matching that rule), plus a `.cover` attribute (the number of those rows where the target is positive). Here’s a quick example of how you might print description, size, and positive–rate all in one go:
+
+```python
+import pysubgroup as ps
+
+# … after you’ve run your BeamSearch or DFS …
+results = ps.BeamSearch(
+    task=ps.SubgroupDiscoveryTask(df, ps.BinaryTarget('prediction', value=1), ps.WRAccQF(), depth=3),
+    beam_width=5,
+    result_set_size=10
+).run()
+
+for sg in results:
+    desc = sg.subgroup_description
+    size = sg.subgroup_size         # total rows matching the rule
+    positives = sg.cover            # number of those rows with prediction==1
+    rate = positives / size if size else 0
+    print(f"{desc!s}\n  ↳ size = {size:,} rows, positives = {positives:,} ({rate:.1%} positive)\n")
+```
+
+---
+
+### Alternative: deriving the count from the DataFrame
+
+If you ever want to double‑check against your original `df`, you can also do:
+
+```python
+for sg in results:
+    mask = sg.subgroup.covers(df)      # boolean mask of rows matching the rule
+    size = mask.sum()
+    print(f"{sg.subgroup_description}: {size} rows")
+```
+
+The `.covers(df)` method returns a boolean array of the same length as `df`, so `mask.sum()` is the row count. Either approach will give you exactly how many rows fall under each discovered rule.

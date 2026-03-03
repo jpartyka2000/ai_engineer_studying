@@ -1,0 +1,44 @@
+Yes, `df.select()` always returns a new DataFrame.
+
+```python
+result = df.select("name", "age")
+print(type(result))
+# <class 'pyspark.sql.dataframe.DataFrame'>
+```
+
+This is true regardless of what you select:
+
+```python
+# Single column - still a DataFrame
+df.select("name")
+
+# Multiple columns - DataFrame
+df.select("name", "age", "salary")
+
+# Computed expressions - DataFrame
+df.select((F.col("price") * F.col("qty")).alias("total"))
+
+# Aggregations in select - DataFrame
+df.select(F.max("salary"), F.min("salary"))
+```
+
+**If you want a single column as a `Column` object:**
+
+```python
+col_obj = F.col("name")
+# or
+col_obj = df["name"]
+```
+
+**If you want values extracted (triggers execution):**
+
+```python
+# List of Row objects
+df.select("name").collect()
+
+# Single value
+df.select("name").first()[0]
+
+# List of values
+[row["name"] for row in df.select("name").collect()]
+```

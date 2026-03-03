@@ -1,0 +1,173 @@
+Great question! Here's a breakdown:
+
+---
+
+## `@computed_field` in Pydantic
+
+`@computed_field` is a decorator that creates a **read-only field derived from other fields**. The key feature: it gets **included in serialization** (`model_dump()`, `model_dump_json()`), unlike a regular `@property`.
+
+### Basic Usage
+
+```python
+from pydantic import BaseModel, computed_field
+
+class Rectangle(BaseModel):
+    width: float
+    height: float
+    
+    @computed_field
+    @property
+    def area(self) -> float:
+        return self.width * self.height
+
+r = Rectangle(width=3, height=4)
+print(r.area)         # 12.0
+print(r.model_dump()) # {'width': 3.0, 'height': 4.0, 'area': 12.0}
+```
+
+### Key Points
+
+| Feature | `@property` alone | `@computed_field` + `@property` |
+|---------|-------------------|--------------------------------|
+| Accessible as attribute | ✅ | ✅ |
+| Included in `model_dump()` | ❌ | ✅ |
+| Included in JSON schema | ❌ | ✅ |
+| Can be set manually | ❌ | ❌ |
+
+### Important Rules
+
+1. **Must include `@property`** — the decorator order matters:
+   ```python
+   @computed_field
+   @property        # @property must come second
+   def my_field(self) -> str:
+       ...
+   ```
+
+2. **Must have a return type annotation** — Pydantic needs the type for schema generation
+
+3. **Computed at access time** — recalculated each time you access it (not cached by default)
+
+### Excluding from Serialization Sometimes
+
+```python
+@computed_field(repr=False)  # hide from __repr__
+@property
+def secret_computed(self) -> str:
+    return "hidden"
+```
+
+### Caching Expensive Computations
+
+If the computation is expensive, use `@cached_property` from functools:
+
+```python
+from functools import cached_property
+from pydantic import BaseModel, computed_field
+
+class Report(BaseModel):
+    data: list[int]
+    
+    @computed_field
+    @cached_property
+    def summary(self) -> dict:
+        # Only computed once, then cached
+        return {
+            'sum': sum(self.data),
+            'avg': sum(self.data) / len(self.data)
+        }
+```
+
+---
+
+<details>
+<summary><strong>📋 Copy this: @computed_field Reference</strong></summary>
+
+```
+PYDANTIC: @computed_field
+=========================
+
+PURPOSE:
+Creates a read-only field derived from other fields that gets
+included in serialization (model_dump, JSON schema).
+
+BASIC SYNTAX:
+-------------
+from pydantic import BaseModel, computed_field
+
+class Rectangle(BaseModel):
+    width: float
+    height: float
+    
+    @computed_field
+    @property  # Must come after @computed_field
+    def area(self) -> float:  # Return type required
+        return self.width * self.height
+
+r = Rectangle(width=3, height=4)
+print(r.area)         # 12.0
+print(r.model_dump()) # {'width': 3.0, 'height': 4.0, 'area': 12.0}
+
+COMPARISON:
+-----------
+Feature                  | @property | @computed_field
+-------------------------|-----------|----------------
+Accessible as attribute  |    ✅     |      ✅
+Included in model_dump() |    ❌     |      ✅
+Included in JSON schema  |    ❌     |      ✅
+Can be set manually      |    ❌     |      ❌
+
+KEY RULES:
+----------
+1. @property must come AFTER @computed_field
+2. Must have return type annotation
+3. Computed at access time (not cached by default)
+
+OPTIONAL PARAMETERS:
+--------------------
+@computed_field(
+    repr=True,           # Include in __repr__ (default True)
+    alias='fieldAlias',  # Alias for serialization
+)
+
+CACHING EXPENSIVE COMPUTATIONS:
+-------------------------------
+from functools import cached_property
+
+class Report(BaseModel):
+    data: list[int]
+    
+    @computed_field
+    @cached_property  # Computed once, then cached
+    def summary(self) -> dict:
+        return {'sum': sum(self.data), 'avg': ...}
+
+USE CASES:
+----------
+- Derived/calculated values (area, full_name, age from birthdate)
+- Formatted representations
+- Values needed in API responses but not stored
+- Aggregations or summaries
+```
+
+</details>
+
+---
+
+Now, want to take a shot at **Question 11**?
+
+```python
+from pydantic import BaseModel, computed_field
+
+class Circle(BaseModel):
+    radius: float
+    
+    @computed_field
+    @property
+    def diameter(self) -> float:
+        return self.radius * 2
+
+c = Circle(radius=5.0)
+print(c.diameter)
+print(c.model_dump())
+```

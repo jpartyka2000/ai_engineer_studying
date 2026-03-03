@@ -1,0 +1,39 @@
+Spark does **not** automatically add suffixes to conflicting column names. If you do a plain `df1.join(df2, ...)` and both DataFrames have a column called, say, `"customer_id"`, your joined schema will literally contain two columns both named `"customer_id"`. At that point:
+
+1. **The schema will list `"customer_id"` twice.**
+   If you print `joined_df.printSchema()`, you’ll see two fields with the same name.
+
+2. **Referencing “customer\_id” becomes ambiguous.**
+   If you later write `joined_df.select("customer_id")`, Spark will throw an `AnalysisException: Reference 'customer_id' is ambiguous`, because it doesn’t know which one you meant.
+
+3. **Internally you must qualify or rename them.**
+
+   * The usual pattern is to give each DataFrame an alias before joining:
+
+     ```python
+     df1 = df1.alias("A")
+     df2 = df2.alias("B")
+     joined = df1.join(df2, df1["customer_id"] == df2["customer_id"], "inner")
+     ```
+
+     Now Spark knows there are really two columns: `A.customer_id` and `B.customer_id`. You can do
+
+     ```python
+     joined.select(col("A.customer_id"), col("B.customer_id"), col("A.name"), col("B.address"))
+     ```
+
+     or rename one side in advance:
+
+     ```python
+     df2 = df2.withColumnRenamed("customer_id", "customer_id_B")
+     joined = df1.join(df2, df1["customer_id"] == df2["customer_id_B"])
+     ```
+
+   * If you used a **`USING("customer_id")`** style join (i.e. `df1.join(df2, "customer_id")`), Spark will automatically collapse that shared column into a single `"customer_id"` in the result—but *all other* overlapping columns still appear twice unless you rename.
+
+4. **Bottom line:**
+
+   * **By default, duplicate column names remain exactly the same** in the joined DataFrame.
+   * To distinguish them, you either *alias* each DataFrame (so you can write `A.col1` vs. `B.col1`), or *rename* one of the columns ahead of time, or use the `"using"`‐style join if you only want that one shared key to collapse into a single column.
+
+In short, Spark won’t give you “column” and “column\_1” automatically. If two inputs share name `X`, your joined schema has two fields named `X`. You must rename or qualify (via `.alias()`) if you want to refer to one versus the other.

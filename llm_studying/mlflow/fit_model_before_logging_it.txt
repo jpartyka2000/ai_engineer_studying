@@ -1,0 +1,24 @@
+Thought for a couple of seconds
+
+
+Exactly—MLflow’s `log_model` (or any of the flavor‑specific `mlflow.<flavor>.log_model`) simply records whatever Python object you hand it. If that object hasn’t been trained yet (i.e. you haven’t called `model.fit(...)`), it won’t have any learned parameters to serialize, and downstream inference will fail or produce garbage.
+
+So the typical pattern inside your MLflow run is:
+
+```python
+with mlflow.start_run():
+    # 1) define your model
+    clf = LGBMClassifier(...)
+
+    # 2) train it
+    clf.fit(X_train, y_train)
+
+    # 3) log parameters, metrics, etc.
+    mlflow.log_param("learning_rate", clf.learning_rate)
+    mlflow.log_metric("roc_auc", auc_score)
+
+    # 4) log the trained model
+    mlflow.sklearn.log_model(clf, "model")
+```
+
+If you’re using an autologging API (e.g. `mlflow.sklearn.autolog()`), it wraps your `fit` call and logs parameters, metrics, and the model automatically—but it still requires you to actually call `fit` first. Without that step, there’s nothing “trained” for MLflow to capture.

@@ -1,0 +1,111 @@
+**Short answer**: No—`pytest.mark.parametrize` expects a *single* list (or iterable) of parameter sets. You can’t just provide two separate lists the way you showed. If you do, Python will interpret it as multiple positional arguments for the same keyword, and Pytest will raise an error.
+
+---
+
+## How `pytest.mark.parametrize` Works
+
+A typical call to `@pytest.mark.parametrize` looks like this:
+
+```python
+@pytest.mark.parametrize(
+    "param1, param2",
+    [
+        (val1a, val2a),
+        (val1b, val2b),
+        # ...
+    ],
+)
+def test_something(param1, param2):
+    ...
+```
+
+- The **first** argument (`"param1, param2"`) is a string listing the parameter names.  
+- The **second** argument is a **single list (or iterable)**. Each element in that list must be a tuple matching the declared parameter structure.
+
+If you try to supply *two separate lists*, like:
+
+```python
+@pytest.mark.parametrize(
+    "gen_tasks, expected_tau",
+    [
+        (["A", "B", "C"], 1.0),
+        (["C", "B", "A"], -1.0),
+    ],
+    [
+        (["A", "B", "C"], 1.0),
+        (["C", "B", "A"], -1.0),
+    ]
+)
+```
+
+…Python will interpret that as **three positional arguments** to `parametrize`: the string, the first list, and the second list. Pytest can’t handle that for a single parameterization call.
+
+---
+
+## What to Do Instead
+
+1. **Combine Them into One List**  
+   If your intention is just to have more cases, **merge** them into one list:
+   ```python
+   @pytest.mark.parametrize(
+       "gen_tasks, expected_tau",
+       [
+           # First group
+           (["A", "B", "C"], 1.0),
+           (["C", "B", "A"], -1.0),
+           # Second group
+           (["A", "C", "B"], 0.333),
+           (["B", "C", "A"], -0.333),
+       ]
+   )
+   def test_order_preservation(gen_tasks, expected_tau):
+       ...
+   ```
+   They all become part of the same *single* parameter list.
+
+2. **Use Multiple `parametrize` Decorators** (Cartesian Product)  
+   If you actually intended two *orthogonal* sets of parameters (producing a *Cartesian product* of test cases), you can stack decorators:
+   ```python
+   @pytest.mark.parametrize(
+       "gen_tasks",
+       [
+           ["A", "B", "C"],
+           ["C", "B", "A"],
+       ],
+   )
+   @pytest.mark.parametrize(
+       "expected_tau",
+       [
+           1.0,
+           -1.0,
+       ],
+   )
+   def test_order_preservation(gen_tasks, expected_tau):
+       ...
+   ```
+   This will run **4 tests**: every combination of `gen_tasks` and `expected_tau`.
+
+3. **Generate a Single List Programmatically**  
+   Sometimes you have two separate lists in Python code and want to merge them:
+   ```python
+   list1 = [
+       (["A", "B", "C"], 1.0),
+       (["C", "B", "A"], -1.0),
+   ]
+   list2 = [
+       (["A", "C", "B"], 0.333),
+       (["B", "C", "A"], -0.333),
+   ]
+
+   @pytest.mark.parametrize("gen_tasks, expected_tau", list1 + list2)
+   def test_order_preservation(gen_tasks, expected_tau):
+       ...
+   ```
+   Just use Python’s list concatenation. The important part is that **Pytest sees one flattened list** in the end.
+
+---
+
+### Bottom Line
+
+- **`parametrize` accepts only a single set of parameter values** as its second argument.  
+- **Combine** your test cases into one list, or **stack** multiple `parametrize` decorators if you want a product of parameters.

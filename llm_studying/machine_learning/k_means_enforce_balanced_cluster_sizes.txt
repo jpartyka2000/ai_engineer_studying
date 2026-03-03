@@ -1,0 +1,81 @@
+K-Means clustering does not inherently enforce balanced cluster sizes, as it optimizes for minimizing variance within clusters rather than balancing counts. However, here are some techniques to ensure clusters have a more even distribution:
+
+### 1. **Use K-Means with Constraints**
+   - **Balanced K-Means**: Algorithms like **Balanced K-Means** or **MinMax K-Means** modify K-Means to enforce more equal cluster sizes.
+   - **Constrained K-Means**: Some implementations allow setting constraints on cluster sizes (e.g., limiting the number of points per cluster).
+
+### 2. **Apply K-Means with Oversampling/Undersampling**
+   - If the dataset is imbalanced (some natural groups are much larger), you can **resample** (oversample underrepresented groups or undersample overrepresented ones) before applying K-Means.
+
+### 3. **Use K-Means with Regularization**
+   - Some variants add a regularization term that penalizes highly unbalanced cluster sizes, forcing a more even distribution.
+
+### 4. **Post-processing Adjustments**
+   - After running K-Means, you can reassign points from larger clusters to smaller clusters based on:
+     - Distance to the centroid.
+     - Density-based criteria.
+
+### 5. **Alternative Clustering Algorithms**
+   - **K-Medoids with Constraints**: Enforces constraints on cluster sizes while being more robust to outliers.
+   - **Spectral Clustering**: Can be modified to encourage balance.
+
+Would you like help implementing any of these in Python?
+
+----------------------------
+
+import numpy as np
+from scipy.spatial.distance import cdist
+
+def balanced_kmeans(X, k, max_iters=100):
+    """Balanced K-Means clustering algorithm.
+    
+    Args:
+        X (numpy.ndarray): Data points (n_samples, n_features).
+        k (int): Number of clusters.
+        max_iters (int): Maximum iterations.
+
+    Returns:
+        labels (numpy.ndarray): Cluster assignments for each point.
+        centroids (numpy.ndarray): Final cluster centroids.
+    """
+    n_samples = X.shape[0]
+    cluster_size = n_samples // k  # Target size per cluster
+    remaining = n_samples % k  # Extra points to distribute
+
+    # Initialize centroids randomly
+    centroids = X[np.random.choice(n_samples, k, replace=False)]
+
+    labels = np.zeros(n_samples, dtype=int)
+    
+    for _ in range(max_iters):
+        # Compute distances from points to centroids
+        distances = cdist(X, centroids, metric='euclidean')
+        
+        # Assign points in a balanced way
+        assigned = np.full(n_samples, -1)
+        sorted_indices = np.argsort(distances, axis=0)  # Sort points by proximity to each centroid
+        
+        cluster_counts = np.zeros(k, dtype=int)
+        
+        # Assign points greedily while ensuring balance
+        for i in range(k):
+            for j in sorted_indices[:, i]:
+                if assigned[j] == -1:  # If unassigned
+                    if cluster_counts[i] < cluster_size or (remaining > 0 and cluster_counts[i] < cluster_size + 1):
+                        assigned[j] = i
+                        cluster_counts[i] += 1
+                        if cluster_counts[i] > cluster_size:
+                            remaining -= 1
+
+        labels = assigned
+
+        # Update centroids
+        new_centroids = np.array([X[labels == i].mean(axis=0) for i in range(k)])
+        
+        # Check for convergence
+        if np.allclose(centroids, new_centroids):
+            break
+        
+        centroids = new_centroids
+
+    return labels, centroids

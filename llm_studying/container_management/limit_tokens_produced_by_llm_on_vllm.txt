@@ -1,0 +1,111 @@
+There are a few different ways to limit streaming, depending on what you want to limit. Here are the main options:
+
+## 1. Limit max tokens in the request
+
+The simplest approach—limit how many tokens the model generates:
+
+```python
+@fastapi_app.post("/v1/chat/completions")
+async def chat_completions(
+    request: ChatCompletionRequest,
+    raw_request: Request,
+):
+    # Cap max_tokens before passing to the engine
+    if request.max_tokens is None or request.max_tokens > 1024:
+        request.max_tokens = 1024
+    
+    result = await self._openai_chat.create_chat_completion(
+        request=request,
+        raw_request=raw_request,
+    )
+    # ... rest of handler
+```
+
+## 2. Limit the number of SSE chunks streamed
+
+If you want to cut off the stream after N chunks:
+
+```python
+async def limit_stream(stream, max_chunks: int):
+    """Wrap an async generator to stop after max_chunks."""
+    count = 0
+    async for chunk in stream:
+        if count >= max_chunks:
+            break
+        yield chunk
+        count += 1
+
+@fastapi_app.post("/v1/chat/completions")
+async def chat_completions(
+    request: ChatCompletionRequest,
+    raw_request: Request,
+):
+    result = await self._openai_chat.create_chat_completion(
+        request=request,
+        raw_request=raw_request,
+    )
+
+    # ... error and non-streaming cases ...
+
+    # Streaming case: limit to 100 chunks
+    return StreamingResponse(
+        limit_stream(result, max_chunks=100),
+        media_type="text/event-stream",
+    )
+```
+
+## 3. Limit by token count in the stream
+
+More precise—parse chunks and count actual tokens:
+
+```python
+async def limit_stream_by_tokens(stream, max_tokens: int):
+    """Stop streaming after approximately max_tokens."""
+    token_count = 0
+    async for chunk in stream:
+        # Parse the SSE data to extract token info
+        if chunk.startswith("data: ") and chunk.strip() != "data: [DONE]":
+            try:
+                data = json.loads(chunk[6:])  # Strip "data: " prefix
+                # Count tokens from the delta content
+                delta = data.get("choices", [{}])[0].get("delta", {})
+                content = delta.get("content", "")
+                # Rough estimate: ~4 chars per token
+                token_count += len(content) // 4 + 1
+            except json.JSONDecodeError:
+                pass
+        
+        yield chunk
+        
+        if token_count >= max_tokens:
+            yield "data: [DONE]\n\n"
+            break
+```
+
+## 4. Limit by time
+
+Cut off streams that run too long:
+
+```python
+import asyncio
+
+async def limit_stream_by_time(stream, timeout_seconds: float):
+    """Stop streaming after timeout."""
+    try:
+        async with asyncio.timeout(timeout_seconds):
+            async for chunk in stream:
+                yield chunk
+    except asyncio.TimeoutError:
+        yield "data: [DONE]\n\n"
+```
+
+## Which should you use?
+
+| Goal | Approach |
+|------|----------|
+| Limit output length | Option 1 (`max_tokens`) |
+| Limit network chunks | Option 2 (chunk count) |
+| Precise token budget | Option 3 (token counting) |
+| Prevent long-running requests | Option 4 (timeout) |
+
+Option 1 is usually the cleanest since vLLM handles it natively—no need to interrupt the stream yourself.

@@ -1,0 +1,41 @@
+Ah, I see what you’re asking 👍
+
+When OpenAI exposes **“learning rate multiplier”** in fine-tuning jobs (instead of a raw learning rate), they’re essentially saying:
+
+* The **base learning rate** is not something you set directly.
+* It’s chosen automatically by OpenAI’s training stack, based on the model architecture, optimizer, batch size, and other internal heuristics.
+* You only provide a **multiplier**, which scales that hidden base LR up or down.
+
+---
+
+### ⚙️ How it works under the hood
+
+* Imagine OpenAI has determined through lots of internal experimentation that a safe, stable base LR for GPT-3.5 is, say, `1e-5`.
+* If you set:
+
+  * `learning_rate_multiplier = 1.0` → effective LR = `1e-5` (the default).
+  * `learning_rate_multiplier = 0.5` → effective LR = `5e-6`.
+  * `learning_rate_multiplier = 2.0` → effective LR = `2e-5`.
+
+So the multiplier is a **relative knob** to tune aggressiveness without exposing the raw optimizer LR (which can vary per model family, size, or fine-tuning recipe).
+
+---
+
+### ✅ Why do this?
+
+1. **Safety**: prevents users from picking unstable learning rates that can make a giant model diverge.
+2. **Simplicity**: most fine-tuning customers don’t want to sweep raw LRs; a multiplier is easier to understand.
+3. **Consistency**: ensures every model family (GPT-3.5, GPT-4o, etc.) has an internally tuned baseline LR, so you only need to scale relative to it.
+
+---
+
+### 🚩 Key point
+
+So in an OpenAI SFT job:
+
+* **Underlying learning rate** = an internal, model-specific default chosen by OpenAI.
+* **Learning rate multiplier** = your way of nudging that base LR up or down.
+
+---
+
+Would you like me to also show you what **multipliers people usually try** in practice (e.g. 0.5×, 1×, 2×) when fine-tuning LLMs, and why?

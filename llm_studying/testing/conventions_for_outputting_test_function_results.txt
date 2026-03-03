@@ -1,0 +1,37 @@
+Honest answer: most don't. Tests are typically pass/fail — verbose output on every run adds noise.
+
+**Common patterns in practice:**
+
+1. **Descriptive test names + assertions** (most common)
+   ```python
+   def test_output_dict_excludes_correct_answer(self):
+       # Test name tells you what's being verified
+       # If it fails, pytest shows the assertion details
+       assert "correct_answer" not in output
+   ```
+
+2. **Logging for specific diagnostic info you always want:**
+   ```python
+   import logging
+   logger = logging.getLogger(__name__)
+   
+   def test_model_output_shape(self, model):
+       output = model.predict(input)
+       logger.info(f"Output shape: {output.shape}")  # Useful to always see
+       assert output.shape == (batch_size, num_classes)
+   ```
+
+3. **pytest-html or similar for CI reports:**
+   ```bash
+   pytest --html=report.html
+   ```
+
+4. **Custom fixtures for metrics** (ML-specific):
+   ```python
+   def test_model_accuracy(self, model, test_data, record_property):
+       acc = evaluate(model, test_data)
+       record_property("accuracy", acc)  # Captured in junit/html reports
+       assert acc > 0.95
+   ```
+
+**Recommendation:** Keep tests quiet when passing. Use logging sparingly for info you genuinely always want (like shapes, sizes, timing). Save verbose output for failures — pytest shows that automatically.

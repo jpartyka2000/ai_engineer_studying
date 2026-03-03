@@ -1,0 +1,64 @@
+Great question 👌 — **Databricks Connect** is a Databricks feature that lets you run code from your **local environment** (laptop, IDE, CI/CD system) while actually executing the heavy lifting on a **remote Databricks cluster**.
+
+---
+
+## 🔎 What It Does
+
+* You write Spark code in your favorite local tools (VS Code, PyCharm, Jupyter, etc.).
+* Instead of spinning up a local Spark session (which can be resource-hungry), your code connects to a **Databricks cluster**.
+* The Spark driver and execution happen **remotely** on Databricks, but your local code behaves as if Spark were running locally.
+
+---
+
+## 📌 Typical Workflow
+
+1. Install the Databricks Connect client library (`databricks-connect`).
+2. Configure it with your workspace URL, token, and cluster ID.
+3. In your Python code:
+
+   ```python
+   from pyspark.sql import SparkSession
+
+   spark = SparkSession.builder.remote("sc://<databricks-cluster-url>").getOrCreate()
+
+   df = spark.read.csv("/mnt/data/file.csv", header=True)
+   df.filter(df["age"] > 30).show()
+   ```
+
+Here:
+
+* `remote("sc://...")` is the **Spark Connect** API.
+* Your DataFrame operations are sent over gRPC to the Databricks cluster.
+* Results (like `show()`) stream back to your local environment.
+
+---
+
+## ✅ Benefits
+
+* **Develop locally, scale remotely** → no need for a full Spark install on your machine.
+* **Lightweight local setup** → just a client library, not the entire Spark runtime.
+* **Faster iteration** → work in your IDE, but test on real cluster data.
+* **CI/CD friendly** → jobs/scripts can connect to Databricks clusters from outside the platform.
+
+---
+
+## ⚖️ Databricks Connect vs. Classic PySpark
+
+* **Classic PySpark** → spins up a local JVM Spark instance. Heavy and limited by your laptop.
+* **Databricks Connect** → routes all Spark logic to a remote cluster, keeping your local environment light.
+
+---
+
+## 🚨 Note
+
+* Databricks Connect in its **new form (since Spark 3.4)** is built on **Spark Connect** (the gRPC-based client-server protocol I explained earlier).
+* Older versions of Databricks Connect (pre-2023) worked differently (custom shim, required Spark version matching). The **new version is simpler, standardized, and future-proof**.
+
+---
+
+✅ **In short:**
+**Databricks Connect** is the bridge between your local Python/IDE and a remote Databricks cluster, letting you develop and test Spark applications locally while executing them at cloud scale.
+
+---
+
+Would you like me to also map out the **differences between the old Databricks Connect and the new Spark Connect–based version**, so you know what’s changed if you see older docs?

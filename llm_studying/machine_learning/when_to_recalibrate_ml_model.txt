@@ -1,0 +1,81 @@
+Here’s how to think about “how often” to recalibrate (retrain or re‑tune) a model in production to guard against data drift:
+
+---
+
+## 1. Key factors that drive your cadence
+
+* **Data velocity & volume**
+
+  * High‑throughput domains (real‑time bidding, click‑through prediction, fraud detection) often see feature distributions shift within days or hours.
+  * Slower domains (yearly budget planning, long‑term credit scoring) may be stable for months.
+
+* **Business risk & impact**
+
+  * If a bad prediction costs you money (e.g. mispriced insurance) or reputation (e.g. loan denials), you’ll want tighter controls.
+  * For low‑stakes models (e.g. movie recommendations), you can tolerate drift longer.
+
+* **Monitoring & thresholds**
+
+  * Rather than blindly retraining on a calendar, set up drift‑detection tests (population stability index, KL divergence, Earth Mover’s Distance) or performance gates (monitor key metrics like ROC‑AUC, calibration error).
+  * Trigger retraining when drift or performance degradation exceeds a pre‑defined threshold.
+
+* **Cost of retraining**
+
+  * Large models or pipelines that take days to run push you toward fewer, more deliberate retraining runs.
+  * Lightweight models with rapid training cycles can support daily or on‑demand retraining.
+
+---
+
+## 2. Common cadences by domain
+
+| Domain / Use‑Case                    | Typical Recalibration Interval          |
+| ------------------------------------ | --------------------------------------- |
+| Real‑time bidding / Ad tech          | **Daily** or even **hourly**            |
+| Fraud detection / Intrusion alerts   | **Daily** to **weekly**                 |
+| E‑commerce recommendations           | **Weekly** to **monthly**               |
+| Demand forecasting (retail / energy) | **Weekly** to **bi‑weekly**             |
+| Credit scoring / Insurance scoring   | **Quarterly** to **annually**           |
+| Long‑term financial models           | **Annually** or on major policy changes |
+
+---
+
+## 3. Event‑driven retraining
+
+1. **Automated drift detection**
+
+   * Run statistical tests on incoming feature batches (e.g. PSI > 0.1 or KL divergence beyond threshold).
+   * If triggered, launch a retraining job immediately.
+
+2. **Performance‑based triggers**
+
+   * Monitor live inference metrics (e.g. accuracy, F1, calibration error).
+   * If they drop X % below baseline (commonly **5–10 %**), kick off recalibration.
+
+3. **Hybrid approach**
+
+   * Combine a **baseline schedule** (e.g. monthly) with drift/performance alerts for out‑of‑cycle retraining.
+
+---
+
+## 4. Best practices
+
+* **Baseline schedule + alerts**
+  Pick a sensible calendar cadence (e.g. monthly) but don’t rely on it alone—augment with drift/performance triggers.
+* **Canary or rolling deployments**
+  Before full rollout, test the newly retrained model on a slice of traffic to validate stability.
+* **Version & compare**
+  Keep old and new models side‑by‑side, track key metrics, and perform champion‑challenger tests.
+* **Automate everything**
+  Use a MLOps tool (Kubeflow, MLflow pipelines, Evidently.ai) to schedule retraining, run checks, and deploy new versions seamlessly.
+
+---
+
+### Bottom line
+
+There’s no one‑size‑fits‑all interval.
+
+1. **Fast‑moving, high‑risk** → daily or weekly.
+2. **Medium‑velocity** → weekly to monthly.
+3. **Slow or low‑risk** → quarterly to annually.
+
+But whatever you choose, anchor it with **automated drift/performance monitoring** so you only retrain when it truly matters.

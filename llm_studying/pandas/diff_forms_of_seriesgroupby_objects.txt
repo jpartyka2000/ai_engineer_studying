@@ -1,0 +1,48 @@
+Whenever you “narrow” your grouping to a single column (i.e. you end up grouping *one* Series rather than the full DataFrame), pandas gives you a **SeriesGroupBy**. Here are the most common patterns that produce a SeriesGroupBy:
+
+1. **Select‐then‐group**
+
+   ```python
+   # Pick out the column first, then group it:
+   df['value'].groupby(df['group'])
+   ```
+
+   – You start from a `Series` (`df['value']`) and call `.groupby(...)` on it.
+
+2. **Group‐then‐select**
+
+   ```python
+   # Group the DataFrame and immediately select one column:
+   df.groupby('group')['value']
+   ```
+
+   – You call `.groupby(...)` on the DataFrame, then index into a single column.
+
+3. **Attribute access after grouping**
+
+   ```python
+   # Equivalent to the bracket notation if no name collisions:
+   df.groupby('group').value
+   ```
+
+   – Only works if `value` is a valid attribute name and doesn’t clash with a method.
+
+4. **Grouping a Series by something else**
+
+   ```python
+   # Grouping by the Series’s own index or another array:
+   df['value'].groupby(df.index.month)
+   # or
+   some_series.groupby(other_series)
+   ```
+
+   – Any time you call `.groupby()` on a `Series` (rather than on the DataFrame), you get back a SeriesGroupBy.
+
+---
+
+### Why it matters
+
+* **SeriesGroupBy** supports all the same aggregation and transformation methods (`.sum()`, `.mean()`, `.transform()`, `.nth()`, etc.) but always returns a **Series** (or DataFrame if you un‐nest later).
+* **DataFrameGroupBy** is what you get when you group the DataFrame *without* immediately slicing to one column—and then all non‐group columns come along for the ride.
+
+If you want to end up with a Series result (`.transform()`, `.nth()`, etc.) you’ll need one of the above forms that yields a SeriesGroupBy.

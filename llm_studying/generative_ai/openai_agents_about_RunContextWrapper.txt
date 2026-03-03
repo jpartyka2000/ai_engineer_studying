@@ -1,0 +1,47 @@
+## Understanding `RunContextWrapper[CueReactRunContext]`
+
+This is a **generic type** pattern in Python. Let me break it down:
+
+### The Two Parts
+
+1. **`RunContextWrapper`** — A generic wrapper class (likely from the agent framework, possibly OpenAI's Agents SDK or a similar library). It provides a standardized interface for accessing context during tool execution.
+
+2. **`CueReactRunContext`** — The *actual* context type specific to this application. This is a custom class that holds application-specific state.
+
+### Why the Wrapper?
+
+The wrapper exists to provide a consistent interface while allowing different applications to define their own context. Think of it like this:
+
+```python
+# The framework defines a generic wrapper
+class RunContextWrapper[T]:
+    context: T  # The actual context lives here
+    
+    # Possibly other framework-provided utilities
+    # like logging, cancellation tokens, etc.
+
+# Your application defines what context it needs
+class CueReactRunContext:
+    openai_api_key: str
+    user_id: str
+    session_data: dict
+    
+    def record_tool_call(self, tool_name, args, output, success, error=None):
+        # Custom logging logic
+        ...
+```
+
+### Accessing the Actual Context
+
+That's why you see this pattern in the code:
+
+```python
+context.context.openai_api_key      # First .context gets into the wrapper,
+context.context.record_tool_call()  # to access the CueReactRunContext inside
+```
+
+It's a bit redundant-looking (`context.context`), but it separates:
+- **Framework concerns** (the outer `RunContextWrapper`)
+- **Application concerns** (the inner `CueReactRunContext`)
+
+This is a common dependency injection pattern in agent frameworks — it lets tools access shared resources (API keys, database connections, user session info) without global variables.

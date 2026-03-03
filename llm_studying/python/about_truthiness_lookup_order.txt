@@ -1,0 +1,161 @@
+## 📋 Overview: Python's Truthiness Lookup Order
+
+---
+
+### The Rule
+
+When Python needs a boolean value (like in `if`, `while`, `bool()`), it checks in this order:
+
+| Priority | Method | Logic |
+|----------|--------|-------|
+| 1st | `__bool__` | Use its return value directly |
+| 2nd | `__len__` | `True` if non-zero, `False` if zero |
+| 3rd | Default | `True` (all objects are truthy by default) |
+
+---
+
+### Examples
+
+#### Only `__bool__` defined:
+
+```python
+class AlwaysFalse:
+    def __bool__(self):
+        return False
+
+obj = AlwaysFalse()
+print(bool(obj))  # False
+```
+
+#### Only `__len__` defined:
+
+```python
+class Container:
+    def __init__(self, items):
+        self.items = items
+    
+    def __len__(self):
+        return len(self.items)
+
+print(bool(Container([])))      # False (len is 0)
+print(bool(Container([1, 2])))  # True (len is 2)
+```
+
+#### Both defined — `__bool__` wins:
+
+```python
+class Confusing:
+    def __len__(self):
+        return 0
+    
+    def __bool__(self):
+        return True
+
+obj = Confusing()
+print(len(obj))   # 0
+print(bool(obj))  # True — __bool__ takes priority!
+```
+
+#### Neither defined — default is `True`:
+
+```python
+class Empty:
+    pass
+
+print(bool(Empty()))  # True
+```
+
+---
+
+### Visual Flowchart
+
+```
+bool(obj) called
+      │
+      ▼
+┌─────────────────────┐
+│ Has __bool__?       │
+└─────────────────────┘
+      │           │
+     Yes          No
+      │           │
+      ▼           ▼
+Return        ┌─────────────────────┐
+__bool__()    │ Has __len__?        │
+              └─────────────────────┘
+                    │           │
+                   Yes          No
+                    │           │
+                    ▼           ▼
+              Return         Return
+              len() != 0     True
+```
+
+---
+
+### Built-in Types Follow This Too
+
+```python
+# Empty containers are falsy (via __len__)
+bool([])        # False
+bool({})        # False
+bool("")        # False
+bool(set())     # False
+
+# Non-empty containers are truthy
+bool([1])       # True
+bool({"a": 1})  # True
+bool("hi")      # True
+
+# Numbers use __bool__
+bool(0)         # False
+bool(0.0)       # False
+bool(1)         # True
+bool(-5)        # True
+
+# None is falsy
+bool(None)      # False
+```
+
+---
+
+### Practical Use Case
+
+**A database query result that's truthy even when empty:**
+
+```python
+class QueryResult:
+    def __init__(self, rows, success):
+        self.rows = rows
+        self.success = success
+    
+    def __len__(self):
+        return len(self.rows)
+    
+    def __bool__(self):
+        return self.success  # Truthy if query succeeded
+
+# Empty but successful query
+result = QueryResult([], success=True)
+print(len(result))   # 0
+print(bool(result))  # True — query worked, just no results
+
+if result:
+    print("Query succeeded!")
+```
+
+---
+
+### Quick Summary
+
+| Situation | Result |
+|-----------|--------|
+| `__bool__` returns `True` | Truthy |
+| `__bool__` returns `False` | Falsy |
+| No `__bool__`, `__len__` returns `0` | Falsy |
+| No `__bool__`, `__len__` returns `> 0` | Truthy |
+| Neither defined | Truthy |
+
+---
+
+Ready for Question 27?

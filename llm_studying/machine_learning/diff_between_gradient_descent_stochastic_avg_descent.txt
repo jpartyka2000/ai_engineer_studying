@@ -1,0 +1,57 @@
+Here’s a more concise comparison of classical gradient descent (GD) and the Stochastic Average Gradient (SAG) method:
+
+---
+
+### 1. How they update
+
+* **Batch Gradient Descent (GD)**
+
+  * **Per step**: computes the full gradient
+    $\nabla f(w) = \frac1n\sum_{i=1}^n\nabla\ell_i(w)$
+  * **Update**:
+
+    $$
+    w \leftarrow w - \alpha\,\nabla f(w)
+    $$
+  * **Cost**: touches all $n$ samples each iteration.
+
+* **Stochastic Average Gradient (SAG)**
+
+  * **Memory**: keeps the latest gradient $g_i$ for each training example.
+  * **Per step**:
+
+    1. Pick a random index $i$.
+    2. Compute $\nabla\ell_i(w)$ and replace the old $g_i$.
+    3. Form the average $\bar g = \frac1n\sum_{j=1}^n g_j$.
+    4. Update:
+
+       $$
+       w \leftarrow w - \alpha\,\bar g
+       $$
+  * **Cost**: only one fresh gradient plus O(1) work to update the running average.
+
+---
+
+### 2. Variance & convergence
+
+* **GD** has zero variance (every step is exact) and converges linearly on strongly convex problems—but each iteration is expensive.
+* **SGD** (for contrast) uses one-sample gradients but suffers high variance and sublinear convergence.
+* **SAG** combines the low per-step cost of SGD with variance reduction: by averaging stored gradients, it achieves near-linear convergence rates while only processing one new sample per update.
+
+---
+
+### 3. Memory trade-off
+
+* **GD/SGD**: only need the current $w$ (and maybe a mini-batch).
+* **SAG**: stores an $n$-length buffer of past gradients (size ≈ $n\times d$); this extra memory pays off in faster convergence.
+
+---
+
+### 4. When to choose which
+
+* **GD**: use on moderate-size data when full passes are affordable and you want smooth, predictable progress.
+* **SAG**: use on very large datasets when you can’t afford full-gradient passes but still need fast, stable convergence (and you have memory to spare).
+* **In scikit-learn**:
+
+  * `solver='lbfgs'`, `'newton-cg'`, or `'liblinear'` → full-gradient/quasi-Newton methods.
+  * `solver='sag'` (supports only L2) or `'saga'` (adds L1/ElasticNet) → stochastic average gradient.

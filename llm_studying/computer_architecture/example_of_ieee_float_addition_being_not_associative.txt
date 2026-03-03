@@ -1,0 +1,23 @@
+Here’s what’s happening under the hood in IEEE 754 double precision:
+
+1. **Unbiased exponents & mantissas**  
+   - **−1 × 10²⁰** encodes as  
+     - exponent = 66  
+     - mantissa = 0x5af1d78b58c40  
+   - **3.14** encodes as  
+     - exponent = 1  
+     - mantissa = 0x91eb851eb851f  
+
+2. **Aligning for addition**  
+   - To add two floats, you must align their binary points—this means shifting the smaller’s mantissa right by the difference in exponents (66−1 = 65 bits).  
+   - Shifting 3.14’s 52-bit mantissa right by 65 positions yields **0** (the entire mantissa falls off the right end).
+
+3. **Result of the add**  
+   - After alignment, you’re effectively doing  
+     \[
+       \underbrace{-1\times2^{66}\times(1.\dots)}_{\text{−1e20}} \;+\;
+       \underbrace{0\times2^{66}}_{\text{from 3.14}}
+       \;=\;-1\times2^{66}\times(1.\dots)\;=\;-1e20.
+     \]
+
+Because 3.14 is so much smaller than 10²⁰ (exponent difference of 65), its contribution underflows to zero in the floating‐point add, leaving you with −1e20.

@@ -1,0 +1,198 @@
+# Logging with Two Different Formats: Solutions
+
+Great question! Yes, you can achieve this, but you need **one logger with two handlers**, each with its own formatter. However, you'll need a way to **route** messages to the right handler.
+
+## Solution 1: Two Handlers with Custom Filters (Recommended)
+
+The cleanest approach is to use a custom filter to route messages based on content:
+
+```python
+import logging
+import sys
+
+class HeaderFooterFilter(logging.Filter):
+    """Only allow messages that are headers/footers (contain '=' characters)"""
+    def filter(self, record):
+        return '=' * 5 in record.getMessage()  # Detect separator lines
+
+class RegularMessageFilter(logging.Filter):
+    """Only allow regular messages (not headers/footers)"""
+    def filter(self, record):
+        return '=' * 5 not in record.getMessage()
+
+# Create one logger
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.INFO)
+
+# Handler 1: Headers/footers - no timestamp
+header_handler = logging.StreamHandler(sys.stdout)
+header_handler.setLevel(logging.INFO)
+header_handler.setFormatter(logging.Formatter('%(message)s'))  # Just the message
+header_handler.addFilter(HeaderFooterFilter())
+
+# Handler 2: Regular messages - with timestamp
+regular_handler = logging.StreamHandler(sys.stdout)
+regular_handler.setLevel(logging.INFO)
+regular_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+regular_handler.addFilter(RegularMessageFilter())
+
+# Add both handlers to the logger
+logger.addHandler(header_handler)
+logger.addHandler(regular_handler)
+
+# Usage
+logger.info("\n" + "=" * 60)
+logger.info("SUMMARY")
+logger.info("=" * 60)
+logger.info(f"Columns compared: 'column1' vs 'column2'")
+logger.info(f"Match rate: 95.3%")
+logger.info("=" * 60)
+```
+
+**Output:**
+```
+
+============================================================
+SUMMARY
+============================================================
+2025-01-07 10:30:45 - INFO - Columns compared: 'column1' vs 'column2'
+2025-01-07 10:30:45 - INFO - Match rate: 95.3%
+============================================================
+```
+
+## Solution 2: Use Different Log Levels as Tags
+
+If you're willing to use log levels creatively:
+
+```python
+import logging
+import sys
+
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.DEBUG)
+
+# Handler 1: DEBUG level for headers (no timestamp)
+header_handler = logging.StreamHandler(sys.stdout)
+header_handler.setLevel(logging.DEBUG)
+header_handler.setFormatter(logging.Formatter('%(message)s'))
+
+# Filter to only accept DEBUG level
+class DebugOnlyFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno == logging.DEBUG
+
+header_handler.addFilter(DebugOnlyFilter())
+
+# Handler 2: INFO level for regular messages (with timestamp)
+regular_handler = logging.StreamHandler(sys.stdout)
+regular_handler.setLevel(logging.INFO)
+regular_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+# Filter to exclude DEBUG level
+class InfoAndAboveFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno >= logging.INFO
+
+regular_handler.addFilter(InfoAndAboveFilter())
+
+logger.addHandler(header_handler)
+logger.addHandler(regular_handler)
+
+# Usage
+logger.debug("\n" + "=" * 60)  # No timestamp
+logger.debug("SUMMARY")        # No timestamp
+logger.debug("=" * 60)         # No timestamp
+logger.info(f"Columns compared: 'column1' vs 'column2'")  # With timestamp
+logger.info(f"Match rate: 95.3%")  # With timestamp
+logger.debug("=" * 60)  # No timestamp
+```
+
+## Solution 3: Two Separate Loggers (Simplest)
+
+Sometimes the simplest solution is best:
+
+```python
+import logging
+import sys
+
+# Logger 1: For headers/footers
+header_logger = logging.getLogger("headers")
+header_logger.setLevel(logging.INFO)
+header_handler = logging.StreamHandler(sys.stdout)
+header_handler.setFormatter(logging.Formatter('%(message)s'))
+header_logger.addHandler(header_handler)
+
+# Logger 2: For regular messages
+data_logger = logging.getLogger("data")
+data_logger.setLevel(logging.INFO)
+data_handler = logging.StreamHandler(sys.stdout)
+data_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+data_logger.addHandler(data_handler)
+
+# Usage
+header_logger.info("\n" + "=" * 60)
+header_logger.info("SUMMARY")
+header_logger.info("=" * 60)
+data_logger.info(f"Columns compared: 'column1' vs 'column2'")
+data_logger.info(f"Match rate: 95.3%")
+header_logger.info("=" * 60)
+```
+
+## Solution 4: Wrapper Functions (Most Practical)
+
+Encapsulate the logic in helper functions:
+
+```python
+import logging
+import sys
+
+# Single logger with two handlers
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.DEBUG)
+
+# Handler for plain messages
+plain_handler = logging.StreamHandler(sys.stdout)
+plain_handler.setLevel(logging.DEBUG)
+plain_handler.setFormatter(logging.Formatter('%(message)s'))
+plain_handler.addFilter(lambda record: record.levelno == logging.DEBUG)
+
+# Handler for timestamped messages
+time_handler = logging.StreamHandler(sys.stdout)
+time_handler.setLevel(logging.INFO)
+time_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+logger.addHandler(plain_handler)
+logger.addHandler(time_handler)
+
+# Convenience functions
+def log_header(message):
+    """Log a header/footer without timestamp"""
+    logger.debug(message)
+
+def log_data(message):
+    """Log data with timestamp"""
+    logger.info(message)
+
+# Usage - clean and readable!
+log_header("\n" + "=" * 60)
+log_header("SUMMARY")
+log_header("=" * 60)
+log_data(f"Columns compared: 'column1' vs 'column2'")
+log_data(f"Match rate: 95.3%")
+log_header("=" * 60)
+```
+
+## My Recommendation
+
+I'd suggest **Solution 4 (wrapper functions)** or **Solution 3 (two loggers)** for clarity and maintainability.
+
+**Solution 4** keeps it simple:
+```python
+def log_plain(msg):
+    logger.debug(msg)  # Uses plain formatter
+
+def log_timestamped(msg):
+    logger.info(msg)  # Uses timestamped formatter
+```
+
+This makes your intent crystal clear at the call site and is easy to maintain!

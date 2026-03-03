@@ -1,0 +1,67 @@
+In pandas, you’ll hit “ambiguous truth value” errors any time you let Python’s single-boolean logic operators or contexts try to interpret an entire array-like object as one True/False.  The main situations are:
+
+1. **Using a `Series` or `DataFrame` directly in a boolean context**
+
+   ```python
+   if df:            # DataFrame
+   if series:        # Series
+   while df.empty:   # even empty checks
+   ```
+
+   👉 Use `.empty`, `.any()`, or `.all()` instead.
+
+2. **Combining boolean expressions with Python’s `and` / `or` instead of `&` / `|`**
+
+   ```python
+   mask = (df.A > 0) and (df.B < 5)   # WRONG!
+   ```
+
+   👉 Use element-wise operators:
+
+   ```python
+   mask = (df.A > 0) & (df.B < 5)
+   mask = (df.A > 0) | (df.B < 5)
+   ```
+
+3. **Testing a scalar-like `Series` or `Index` for emptiness or single-element truth without unwrapping**
+
+   ```python
+   s = pd.Series([True])
+   if s:                  # ambiguous—even a 1-element Series
+   ```
+
+   👉 Unwrap to a Python bool via `s.bool()`, `.iloc[0]`, or `.item()` (only when you know it has exactly one element).
+
+4. **Working with the new nullable dtypes (`pd.NA`) in boolean contexts**
+
+   ```python
+   val = pd.Series([pd.NA])
+   if val[0]:             # raises TypeError
+   ```
+
+   👉 Check for missingness explicitly (`pd.isna(val)`) or fill (`val.fillna(False)`).
+
+5. **Chaining comparisons without parentheses**
+
+   ```python
+   mask = df.A > 0 < df.B    # this is Python chaining, not vectorized “and”
+   ```
+
+   👉 Write them separately and combine with `&` / `|`:
+
+   ```python
+   mask = (df.A > 0) & (df.B < 5)
+   ```
+
+6. **Accidentally using a `DataFrame` method that returns a Series in a boolean context**
+
+   ```python
+   if df.duplicated():     # returns a Series[bool]
+   ```
+
+   👉 Call a reduction: `if df.duplicated().any():`
+
+---
+
+**Rule of thumb:**
+Whenever you see a pandas object where Python expects a single True/False—`if`, `while`, `and`/`or`—you must explicitly reduce it to one boolean (via `.any()`, `.all()`, `.empty`, `.bool()`, etc.) rather than relying on its truthiness.

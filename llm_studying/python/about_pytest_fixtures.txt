@@ -1,0 +1,94 @@
+The `@pytest.fixture` annotation in **pytest** is used to define a **fixture**, which is a reusable setup function for tests. Fixtures help prepare the necessary state or provide dependencies for your test cases, enabling cleaner and more maintainable test code by separating setup logic from test logic.
+
+---
+
+### **Key Features of `@pytest.fixture`:**
+1. **Reusability:**
+   - A fixture can be shared across multiple test functions, eliminating redundant setup code.
+   
+2. **Dependency Injection:**
+   - Fixtures can be passed as arguments to test functions. Pytest automatically looks for fixtures with matching names and injects their return values into the tests.
+
+3. **Scope Control:**
+   - Fixtures can have different scopes (`function`, `class`, `module`, or `session`) to control their lifetime.
+   
+4. **Setup and Teardown:**
+   - Fixtures can include both setup and teardown logic using `yield`.
+
+---
+
+### **Basic Example:**
+```python
+import pytest
+
+# Define a fixture
+@pytest.fixture
+def sample_data():
+    return {"key": "value", "number": 42}
+
+# Use the fixture in a test
+def test_sample_data(sample_data):
+    assert sample_data["key"] == "value"
+    assert sample_data["number"] == 42
+```
+
+---
+
+### **Fixture with Setup and Teardown:**
+Using `yield` allows you to include cleanup logic after the test has run.
+
+#### Example:
+```python
+@pytest.fixture
+def database_connection():
+    # Setup
+    conn = create_database_connection()
+    yield conn  # This is returned to the test
+
+    # Teardown
+    conn.close()
+
+def test_query(database_connection):
+    result = database_connection.query("SELECT * FROM users")
+    assert len(result) > 0
+```
+
+---
+
+### **Fixture Scope:**
+You can control how long a fixture lasts using the `scope` parameter:
+- `function` (default): Fixture is created anew for each test function.
+- `class`: Fixture is created once per test class.
+- `module`: Fixture is shared among all tests in a module.
+- `session`: Fixture is shared among all tests in a session.
+
+#### Example:
+```python
+@pytest.fixture(scope="module")
+def module_fixture():
+    return {"module": "value"}
+```
+
+---
+
+### **Parametrized Fixtures:**
+Fixtures can be parametrized to test multiple scenarios.
+
+#### Example:
+```python
+@pytest.fixture(params=[1, 2, 3])
+def param_fixture(request):
+    return request.param
+
+def test_param_fixture(param_fixture):
+    assert param_fixture in [1, 2, 3]
+```
+
+---
+
+### **Advantages of Using Fixtures:**
+1. **Clean Tests:** Keeps test code simple and focused on assertions by moving setup logic to fixtures.
+2. **DRY Principle:** Avoids repeating setup code across multiple tests.
+3. **Maintainability:** Centralizes setup logic, making it easier to modify when needed.
+
+Fixtures are a powerful feature in pytest that can simplify and enhance your testing workflow!

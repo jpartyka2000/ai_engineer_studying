@@ -1,0 +1,60 @@
+When you compute a feature’s **MeanAbsSHAP**—that is, the average of its absolute SHAP values $\bigl|\phi_j(x^{(i)})\bigr|$ over $n$ randomly sampled instances—you’re estimating a **population mean** from a sample. The **standard error** (SE) of that estimate tells you how much variability you’d expect in your sample mean if you repeated the sampling process many times. Here’s why it’s valid:
+
+---
+
+## 1. SHAP values as a random sample
+
+* You draw $n$ instances at random from your dataset (of size $N$).
+* For each instance $i$, you compute $Y_i = \bigl|\phi_j(x^{(i)})\bigr|$.
+* Under random sampling **without replacement**, the $Y_i$s are (approximately) **independent** and identically distributed (i.i.d.) if $n\ll N$.
+
+## 2. Central Limit Theorem (CLT)
+
+* The CLT says that, for i.i.d. $Y_1,\dots,Y_n$ with finite variance $\sigma^2$, the **sampling distribution** of the sample mean
+
+  $$
+    \bar Y = \frac{1}{n}\sum_{i=1}^n Y_i
+  $$
+
+  is approximately Normal with
+
+  $$
+    \mathbb{E}[\bar Y] = \mu, 
+    \quad
+    \mathrm{Var}(\bar Y) = \frac{\sigma^2}{n}.
+  $$
+* Even if the individual $|\phi_j|$ values are skewed or multi‑modal, once $n$ is in the thousands, $\bar Y$ is well‑approximated by a Normal distribution.
+
+## 3. Standard error formula
+
+* The **standard error** of $\bar Y$ is defined as
+
+  $$
+    \mathrm{SE}(\bar Y)
+    = \sqrt{\frac{\mathrm{Var}(Y)}{n}}
+    \approx \frac{s}{\sqrt{n}},
+  $$
+
+  where $s$ is the **sample standard deviation** of your $|\phi_j|$ values.
+* SE quantifies your uncertainty: a smaller SE means you’ve pinned down the true mean more precisely.
+
+## 4. Finite‑population correction (FPC)
+
+* Strictly, when sampling **without** replacement from a population of size $N$, you multiply by
+  $\sqrt{\tfrac{N-n}{\,N-1\,}}$.
+* But if $n \ll N$ (e.g.\ $25{,}000$ out of millions or billions), this factor is essentially 1 (e.g.\ 0.99999…), so we ignore it.
+
+## 5. Why it matters for MeanAbsSHAP
+
+1. **Ranking stability**
+   When you compare mean absolute SHAP values across features, you want to know if differences are “real” or just sampling noise. SE (and confidence intervals) give you exactly that measure.
+2. **Visualization**
+   You can overlay error bars on a SHAP bar plot (mean ± 1.96 SE) to see which features are statistically distinguishable.
+3. **Sampling trade‑off**
+   You choose $n$ so that your SE is small enough—e.g.\ SE ≈ 0.01–0.005—so that the ranking and magnitudes are reliable.
+
+---
+
+### In a nutshell
+
+Because a feature’s absolute SHAP values across a random sample behave like i.i.d. observations with finite variance, the **standard error of their mean** is a valid—indeed, classical—measure of how precisely that mean estimates the true (population) mean. As long as you sample at random and $n$ is large compared to 1,000, the CLT guarantees your SE formula applies and that you can trust both the point estimate and its uncertainty.

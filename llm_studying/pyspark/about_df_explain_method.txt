@@ -1,0 +1,50 @@
+**`df.explain()`**
+
+Displays the execution plan for a DataFrame, showing how Spark will actually execute your query.
+
+**Basic usage:**
+
+```python
+df.explain()
+```
+
+Shows only the physical plan (what Spark will actually do).
+
+**Extended modes:**
+
+```python
+df.explain(True)           # All plan stages
+df.explain("simple")       # Physical plan only (default)
+df.explain("extended")     # Same as explain(True)
+df.explain("cost")         # Includes cost estimates
+df.explain("codegen")      # Shows generated Java code
+df.explain("formatted")    # Nicely formatted output
+```
+
+**What `explain(True)` shows:**
+
+1. **Parsed Logical Plan** – direct translation of your code
+2. **Analyzed Logical Plan** – resolved column names and types
+3. **Optimized Logical Plan** – after Catalyst optimizer rewrites
+4. **Physical Plan** – actual execution strategy
+
+**Example:**
+
+```python
+df = spark.read.parquet("data.parquet")
+result = df.filter(F.col("age") > 30).select("name").distinct()
+result.explain(True)
+```
+
+**Common things to look for in physical plans:**
+
+- `Scan` – reading data (look for pushed filters here)
+- `Filter` – filtering rows
+- `Project` – selecting columns
+- `Exchange` – shuffle (often expensive)
+- `HashAggregate` – aggregations
+- `BroadcastHashJoin` vs `SortMergeJoin` – join strategies
+
+**Tip:**
+
+If you see `Exchange` or `Sort` unexpectedly, that often indicates a shuffle, which can be a performance bottleneck worth investigating.

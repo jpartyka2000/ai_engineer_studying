@@ -1,0 +1,31 @@
+When you convert a column to string type with `.astype(str)`, you're solving a type homogeneity problem that PySpark's `display()` function has trouble handling.
+
+**The underlying issue:**
+
+In your case, the 'value' column contains mixed types:
+- Pandas `Interval` objects (like `(0, 100]`) from the bucketing of numeric columns
+- Regular strings (like `'True'`, `'False'`, or category names)
+- Possibly `NaN` values
+
+When PySpark's `display()` tries to render this DataFrame, it needs to infer a schema. A column with mixed Python object types doesn't map cleanly to a single Spark data type, which causes the error.
+
+**What `.astype(str)` does:**
+
+```python
+df['value'] = df['value'].astype(str)
+```
+
+This iterates through every value in the column and calls Python's `str()` function on it:
+- `Interval(0, 100]` becomes the string `"(0, 100]"`
+- `True` becomes `"True"`
+- `NaN` becomes `"nan"`
+
+Now every value is a Python string, and the column dtype changes from `object` (pandas' catch-all for mixed types) to `string` or remains `object` but with homogeneous content.
+
+**Why this fixes display():**
+
+PySpark can now confidently map the column to a `StringType()` in its schema. There's no ambiguity about how to serialize or render each value.
+
+**A subtle point:**
+
+The pandas `object` dtype is deceptive. It can hold *anything* — strings, numbers, lists, custom objects, mixed together. Two columns can both be `object` dtype but behave completely differently. Converting to string forces actual consistency, not just dtype-label consistency.

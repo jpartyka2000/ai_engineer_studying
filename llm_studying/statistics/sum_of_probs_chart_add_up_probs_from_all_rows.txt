@@ -1,0 +1,56 @@
+Great question — the answer depends on **what exactly you’re trying to evaluate**, but here's the key principle:
+
+---
+
+### ✅ General best practice (and statistically sound approach):
+
+> **Include all rows when summing predicted probabilities**, **regardless of the model’s prediction (0 or 1).**
+
+---
+
+### 💡 Why?
+
+Predicted probabilities are continuous estimates of the **likelihood** of a positive class (e.g., a submit). So:
+
+* If you sum **all predicted probabilities**, you get the **expected number of positive outcomes** across the whole group
+* If you filter to only `prediction == 1`, you're conditioning on a thresholding decision, which **biases** the sum
+
+---
+
+### 📊 Example:
+
+| Row | prob | prediction | actual |
+| --- | ---- | ---------- | ------ |
+| 1   | 0.92 | 1          | 1      |
+| 2   | 0.58 | 1          | 0      |
+| 3   | 0.45 | 0          | 0      |
+| 4   | 0.23 | 0          | 1      |
+
+* **Sum of all probs**: 0.92 + 0.58 + 0.45 + 0.23 = **2.18** → your model expects \~2.18 submits
+* **Sum of actuals**: 1 + 0 + 0 + 1 = **2**
+* ✅ Comparing these gives a calibration-like view
+
+But if you only include predicted wins:
+
+* Sum of probs = 0.92 + 0.58 = **1.50**
+* Sum of actuals = 1
+* ❌ Now you’re ignoring part of the probability mass and introducing selection bias
+
+---
+
+### ✅ Summary
+
+| Approach                             | Recommended? | Why                                           |
+| ------------------------------------ | ------------ | --------------------------------------------- |
+| Sum of probs on all rows             | ✅ Yes        | Reflects total **expected** positive outcomes |
+| Sum of probs where `prediction == 1` | ❌ No         | Filters based on threshold; biases the result |
+
+---
+
+### ✅ Rule of thumb:
+
+> **Probabilities live in a continuous world; predictions live in a binary one.**
+> To evaluate expectations, **sum probabilities**.
+> To evaluate decision-making, **count predictions**.
+
+Let me know if you want to compute both and plot them side-by-side for model diagnostics!

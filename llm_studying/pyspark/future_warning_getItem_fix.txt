@@ -1,0 +1,38 @@
+This warning pops up whenever you use the old‐style “`getItem` with a Column key” syntax to pull out a nested field. For example, if you do something like:
+
+```python
+# Suppose “info” is a StructType or MapType column
+df.select(col("info").getItem(col("key_col")))
+```
+
+PySpark will warn:
+
+```
+FutureWarning: A column as 'key' in getItem is deprecated as of Spark 3.0, 
+and will not be supported in a future release. 
+Use `column[key]` or `column.key` syntax instead.
+```
+
+In other words, starting in Spark 3.0, calling:
+
+```python
+someColumn.getItem(otherColumn)
+```
+
+is deprecated. Instead you should either:
+
+1. If you have a literal key (e.g. you want the “foo” field of a struct), write:
+
+   ```python
+   df.select(col("info")["foo"])
+   # or equivalently
+   df.select(col("info").foo)
+   ```
+
+2. If you really need to use a variable (e.g. the key is stored in another column), use bracket syntax on a Column, like:
+
+   ```python
+   df.select(col("info")[col("key_col")])
+   ```
+
+Any code of the form `col.getItem(keyColumn)` will trigger that FutureWarning. Switching to `col[keyColumn]` or `col.keyName` (for structs) silences it and ensures compatibility with Spark 3.0+.

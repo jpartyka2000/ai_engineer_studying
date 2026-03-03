@@ -1,0 +1,23 @@
+For the *tool‐call name* subtask (a straight 7-way classification), you could in theory use the older **Classification API** (`openai.Classification.create`)—it’s built for single-label problems and will give you probability scores for each class out of the box. However, that endpoint is now largely superseded by fine-tuning or the Chat endpoint, and it doesn’t natively support the downstream *multi-label* argument prediction.
+
+A more **robust** approach overall is to leverage the Chat Completions API’s **Function Calling** feature:
+
+1. **Define each tool** (name + argument schema) as a “function” in your `functions=[…]` parameter.
+2. When you call `client.chat.completions.create(...)`, pass those function definitions instead of manually instructing the model in the user message.
+3. The model will then return a structured `function_call` object with `name` and `arguments` already parsed for you—no brittle JSON parsing needed.
+
+That gives you:
+
+* Automatic, structured output (the SDK delivers `resp.choices[0].message.function_call`).
+* Built-in checking that the tool name is one of your predefined set.
+* A clear separation between “did it call the right function?” (tool‐call accuracy) and “did it pass the right arguments?” (argument set prediction).
+
+For the *argument prediction* subtask, you can then inspect `function_call.arguments` (a dict) directly—and apply your precision/recall/F₁ calculations on those keys.
+
+**Why it’s better:**
+
+* **Reliability:** You offload JSON‐parsing and formatting constraints to the API.
+* **Clarity:** The API won’t invent tool names or stray keys—you only get back what you declared.
+* **Extensibility:** When you add a new tool, just update your `functions` list; no changes to prompt logic.
+
+So: stick with the Chat Completions endpoint, but switch to **function calling** rather than free‐form JSON in the assistant message. That’s the most suitable, future-proof way to evaluate both next‐tool and next‐argument prediction.

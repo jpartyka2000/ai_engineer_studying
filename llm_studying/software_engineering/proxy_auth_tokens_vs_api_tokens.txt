@@ -1,0 +1,85 @@
+A **proxy auth token** and an **API token** both serve to authenticate and authorize requests, but they operate at different layers and purposes. Here’s how they differ:
+
+---
+
+## 1. Definitions
+
+| Term                 | What it is                                                                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API token**        | A credential (often a long opaque string or JWT) that a client includes **directly** in calls to an API endpoint, proving the caller’s identity and permissions.                    |
+| **Proxy auth token** | A credential presented **to a proxy or gateway** sitting in front of one or more downstream services.  The proxy uses it to validate or transform requests on behalf of the client. |
+
+---
+
+## 2. Typical Architecture
+
+```
+[ Client ] → (presents API token) → [ API server ]
+
+[ Client ] → (presents Proxy auth token) → [ Reverse Proxy / API Gateway ] → (forwards, maybe injects API token) → [ Downstream service(s) ]
+```
+
+* **API token** goes *all the way* to the final service you’re calling.
+* **Proxy auth token** stops at the proxy/gateway layer; downstream services rarely see it.
+
+---
+
+## 3. Use Cases
+
+| Aspect              | API Token                                                | Proxy Auth Token                                                                  |
+| ------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **Who issues it**   | The API owner/service (e.g. Auth0, Firebase)             | The proxy or gateway itself (e.g. Kong, Envoy, AWS API Gateway)                   |
+| **Who consumes it** | The target application’s backend logic                   | The proxy layer (for routing, rate-limiting, A/B testing, etc.)                   |
+| **Scopes & claims** | Fine-grained: per-endpoint/method, user roles, TTL, etc. | Coarse: client identity, grouping (e.g. “internal service”), TTL                  |
+| **Rotation/TTL**    | Often long-lived or refreshable via OAuth flows          | Typically short-lived, rotated frequently for security at the edge                |
+| **Visibility**      | Embedded in API calls, logged by the service             | Handled at the proxy—downstream sees only proxied headers or injected credentials |
+
+---
+
+## 4. Why Use a Proxy Auth Token?
+
+1. **Centralized Security**
+   You can enforce IP allow-lists, rate limits, or mutual TLS *once* at the gateway, rather than replicate logic in every microservice.
+
+2. **Credential Translation**
+   The proxy can accept a simple “internal” token from one client and exchange it for a more granular API token (or even multiple tokens) when talking to downstream services.
+
+3. **Multi-Tenant or Multi-Cluster Routing**
+   A gateway can route requests based on token-embedded claims (e.g. tenant ID) to different backend pools without exposing that complexity to clients.
+
+---
+
+## 5. Example Comparison
+
+### API Token (JWT)
+
+```http
+GET /orders/123 HTTP/1.1
+Host: api.example.com
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6…
+```
+
+### Proxy Auth Token (Opaque)
+
+```http
+GET /orders/123 HTTP/1.1
+Host: api.gateway.internal
+X-Proxy-Auth: a27f4e9c-6d0b-4f81-a3e2-8fcd5c9e2f1b
+```
+
+* The gateway consumes `X-Proxy-Auth`, validates it against its store, then—if valid—may rewrite the request:
+
+  ```http
+  GET /orders/123 HTTP/1.1
+  Host: api.example.com
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6…  ← injected
+  ```
+
+---
+
+## 6. Summary
+
+* **API tokens** authenticate clients directly to an API’s business logic, carry fine-grained claims, and are understood by the service itself.
+* **Proxy auth tokens** authenticate clients to an intermediary (gateway or proxy), enable centralized policies (rate-limit, routing, A/B tests), and are typically opaque to downstream services.
+
+Use an API token when you need direct, claim-based access control in the service. Use a proxy auth token when you want a lightweight, centralized entry point that can enforce security and routing before requests ever reach your internal APIs.

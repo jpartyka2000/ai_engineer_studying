@@ -1,0 +1,69 @@
+The `DummyClassifier` in scikit-learn is a simple “rule-based” classifier you can use as a **baseline** to compare against your real models.  It doesn’t look at the input features at all—only at the distribution of the target labels—and makes predictions according to one of several straightforward strategies.
+
+---
+
+## Key Strategies
+
+| `strategy`          | What it does                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| **`most_frequent`** | Always predicts the most common label seen during training (majority‐class baseline). |
+| **`stratified`**    | Generates predictions by sampling according to the training set’s class distribution. |
+| **`uniform`**       | Chooses labels uniformly at random among all classes.                                 |
+| **`constant`**      | Always predicts a user-supplied constant label.                                       |
+| **`prior`**         | Identical to `most_frequent` (retained for API consistency).                          |
+
+---
+
+## Basic Usage
+
+```python
+from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, log_loss
+
+# 1) Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, stratify=y, random_state=42
+)
+
+# 2) Initialize DummyClassifier
+dummy = DummyClassifier(
+    strategy="most_frequent",   # choose your baseline strategy
+    constant=None,              # only used if strategy="constant"
+    random_state=42
+)
+
+# 3) “Train” (really just records the label distribution)
+dummy.fit(X_train, y_train)
+
+# 4) Make predictions
+y_pred      = dummy.predict(X_test)
+y_pred_proba = dummy.predict_proba(X_test)  # works for stratified/uniform
+
+# 5) Evaluate
+print("Accuracy (baseline):", accuracy_score(y_test, y_pred))
+print("Log-loss (baseline):", log_loss(y_test, y_pred_proba))
+```
+
+---
+
+## Attributes & Methods
+
+* **`.classes_`**
+  Array of class labels known at fit time.
+* **`.class_prior_`**
+  Empirical class probabilities (for `stratified` and `prior` strategies).
+* **`.predict(X)`**
+  Returns an array of shape `(n_samples,)` of predicted class labels.
+* **`.predict_proba(X)`**
+  Returns an array of shape `(n_samples, n_classes)` of class probabilities (if supported by strategy).
+
+---
+
+## When to Use It
+
+* **Model sanity check**: Your “real” classifier should outperform the `most_frequent` baseline at minimum.
+* **Pipeline testing**: Plug it in where you need a classifier interface but haven’t built your real model yet.
+* **Performance floor**: Establishes the worst‐case accuracy or log-loss you’d get by ignoring features.
+
+Because it’s so cheap and immediate, `DummyClassifier` helps you avoid “p-hacking” on tiny performance gains and keeps your focus on real predictive power.

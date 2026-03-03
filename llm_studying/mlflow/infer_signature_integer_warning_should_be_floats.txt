@@ -1,0 +1,55 @@
+Thought for a couple of seconds
+
+
+When you call
+
+```python
+signature = infer_signature(X_train, y_pred)
+```
+
+MLflow inspects the **dtypes** in your Pandas `X_train` DataFrame and maps each column into an MLflow “Schema” type (int, float, string, etc.).  The warning you saw is telling you:
+
+> **“Hey—some of the columns you passed in as model inputs have integer dtypes (e.g. `int64`) instead of floating‑point.  Internally MLflow will serialize those as ‘integer’ in the signature, but downstream tooling (JSON serving, Spark UDFs, etc.) often expects numeric features to be floats.”**
+
+### What’s going on under the hood
+
+1. **Pandas → MLflow schema**
+   `infer_signature` uses the DataFrame’s `dtypes` to build a list of `Schema` objects.  An `int64` column becomes an MLflow `Schema` entry with `type=LONG`, whereas a `float64` column becomes `type=DOUBLE`.
+
+2. **JSON & model serving**
+   When you later call `mlflow.pyfunc.log_model(...)` with that signature, MLflow exposes a REST endpoint (or Spark UDF) that will **cast incoming JSON values** into the types in your signature.  JSON doesn’t distinguish `1` vs `1.0` nearly as cleanly as NumPy, so sometimes MLflow will coerce integer inputs to floats or vice versa.
+
+3. **Why MLflow warns**
+
+   * Many ML models (and especially LightGBM) assume **all** numeric features are floats.
+   * If your feature truly is categorical (like an encoded country code `1,2,3`), you might actually want it as an integer.
+   * But if it’s something like `num_contacts` or a count, it’s often safer to cast it to `float32/64` so downstream inference never surprises you.
+
+### What you can do
+
+1. **Ignore it**
+   If you know for sure your serving stack handles integer features correctly, you can safely ignore the warning.  MLflow will still log the exact integer type in your signature.
+
+2. **Cast to float ahead of time**
+   Before calling `infer_signature`, convert your integer columns:
+
+   ```python
+   X_train = X_train.astype({col: "float64" for col in X_train.select_dtypes("int64")})
+   signature = infer_signature(X_train, y_pred)
+   ```
+
+   Now MLflow will record all your numeric inputs as `DOUBLE`, which avoids any potential type‐mismatch at serving time.
+
+3. **Mark true integers as categorical**
+   If a column is really a categorical code (e.g. `0,1,2` for regions), convert it to a pandas `category` or string:
+
+   ```python
+   X_train["region_code"] = X_train["region_code"].astype("category")
+   ```
+
+   Then `infer_signature` will record it as `STRING` (or `INT` plus a metadata tag), and you’ll get cleaner behavior if your model treats it as a categorical feature.
+
+---
+
+**Bottom line:**
+That warning is just MLflow’s way of reminding you “you’ve got integer columns in your feature set—make sure that’s what you really want, because many ML serving paths expect floats.”  If you prefer all‑float inputs, cast them before you infer and log the signature.

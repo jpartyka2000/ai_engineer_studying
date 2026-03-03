@@ -1,0 +1,75 @@
+**`F.when()` in PySpark**
+
+`F.when()` is used for conditional logic—similar to SQL's `CASE WHEN` or an if-else statement.
+
+**Basic syntax:**
+
+```python
+from pyspark.sql import functions as F
+
+F.when(condition, value)
+```
+
+**With `.otherwise()`:**
+
+```python
+F.when(condition, value).otherwise(default_value)
+```
+
+**With multiple conditions (chained `.when()`):**
+
+```python
+F.when(condition1, value1) \
+ .when(condition2, value2) \
+ .when(condition3, value3) \
+ .otherwise(default_value)
+```
+
+**Common use cases:**
+
+**1. Creating a new column based on conditions:**
+
+```python
+df.withColumn(
+    "age_group",
+    F.when(F.col("age") < 18, "minor")
+     .when(F.col("age") < 65, "adult")
+     .otherwise("senior")
+)
+```
+
+**2. Conditional replacement of values:**
+
+```python
+df.withColumn(
+    "status_clean",
+    F.when(F.col("status").isNull(), "unknown")
+     .otherwise(F.col("status"))
+)
+```
+
+**3. Flagging rows:**
+
+```python
+df.withColumn(
+    "is_high_value",
+    F.when(F.col("amount") > 10000, True).otherwise(False)
+)
+```
+
+**4. Conditional calculations:**
+
+```python
+df.withColumn(
+    "discount",
+    F.when(F.col("membership") == "gold", F.col("price") * 0.2)
+     .when(F.col("membership") == "silver", F.col("price") * 0.1)
+     .otherwise(0)
+)
+```
+
+**Important notes:**
+
+- Without `.otherwise()`, non-matching rows get `null`
+- Conditions are evaluated in order; first match wins
+- Can be used inside `select`, `withColumn`, or even `filter`

@@ -1,0 +1,35 @@
+Lazy imports is a pattern where you delay importing a module until the moment it's actually used, rather than importing it at the top of the file when the module first loads.
+
+**Normal (eager) import:**
+```python
+import pandas as pd  # loaded immediately when this file is imported
+import numpy as np   # loaded immediately, even if never used
+
+def do_something():
+    return pd.DataFrame()
+```
+
+**Lazy import:**
+```python
+def do_something():
+    import pandas as pd  # only loaded when this function is actually called
+    return pd.DataFrame()
+```
+
+**Why you'd do it:**
+
+The main reason is startup performance. Heavy libraries like pandas, numpy, scipy, and tensorflow can take hundreds of milliseconds to import. If your module has 10 functions but a user only calls one of them, eager imports force them to pay the cost of loading every dependency for all 10 functions upfront. Lazy imports mean they only pay for what they use.
+
+This matters most in CLI tools (where perceived speed matters), large libraries with many optional features, and serverless/lambda functions where cold start time is critical.
+
+**The tradeoffs:**
+
+The downside is that errors get deferred. With eager imports, a missing dependency fails immediately and obviously at import time. With lazy imports, it fails at runtime when someone calls the function — potentially much later, in production, in a code path that wasn't tested. It also makes dependencies less visible when reading the code, since you can't just glance at the top of the file to see what's required.
+
+**Common patterns:**
+
+Some projects use a hybrid approach — import lightweight/core dependencies eagerly at the top, and heavy or optional ones lazily inside functions. You saw this in the PySpark histogram method we wrote, where `from scipy import stats` and `from pyspark.sql import functions as F` were inside the function body rather than at the top of the file. That way the class can be imported without requiring PySpark or scipy to be installed until you actually call that specific method.
+
+**Python 3.12+ and PEP 690:** There's been ongoing work to add native lazy import support to Python itself, so the interpreter could handle this automatically without you restructuring your code. It's not fully landed as a default yet, but the direction is clear — the Python core team recognizes this is a real need.
+
+**Rule of thumb:** Import at the top of the file by default. Move imports inside functions when the dependency is heavy, optional, or only needed by one specific code path.

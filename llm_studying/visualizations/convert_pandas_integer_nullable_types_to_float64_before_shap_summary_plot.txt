@@ -1,0 +1,71 @@
+# Converting Int64 Columns Before Creating SHAP Summary Plots
+
+If you encounter this error when creating SHAP summary plots:
+
+```
+TypeError: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+```
+
+The issue is likely caused by **pandas nullable integer types** (`Int64`, `Int32`, `Int16`, `Int8`) in your feature DataFrame.
+
+## Why This Happens
+
+SHAP's plotting functions use numpy's `isnan()` internally to handle missing values. Pandas nullable integer types use a different internal representation than standard numpy integers and can contain `pd.NA` values, which numpy's `isnan()` cannot process.
+
+## The Solution
+
+Convert nullable integer columns to `float64` before plotting:
+
+```python
+# Convert Int64 (and other nullable integer types) to float64
+X_shap_fixed = X_shap.copy()
+for col in X_shap_fixed.columns:
+    if X_shap_fixed[col].dtype == 'Int64':
+        X_shap_fixed[col] = X_shap_fixed[col].astype('float64')
+
+# Now create the plot
+shap.summary_plot(
+    shap_values,
+    X_shap_fixed,
+    feature_names=X_shap_fixed.columns.tolist(),
+    plot_type="violin",
+    show=False,
+)
+```
+
+## More Robust Solution
+
+To handle all nullable integer types (`Int8`, `Int16`, `Int32`, `Int64`):
+
+```python
+X_shap_fixed = X_shap.copy()
+for col in X_shap_fixed.columns:
+    # Check if it's a nullable integer type (capital 'I')
+    if pd.api.types.is_integer_dtype(X_shap_fixed[col]) and \
+       X_shap_fixed[col].dtype.name.startswith('Int'):
+        X_shap_fixed[col] = X_shap_fixed[col].astype('float64')
+
+shap.summary_plot(
+    shap_values,
+    X_shap_fixed,
+    feature_names=X_shap_fixed.columns.tolist(),
+    plot_type="violin",
+    show=False,
+)
+```
+
+## Identifying the Problem
+
+You can check for nullable integer types in your DataFrame:
+
+```python
+# See all dtypes
+print(X_shap.dtypes)
+
+# Find nullable integer columns
+nullable_int_cols = [col for col in X_shap.columns 
+                     if X_shap[col].dtype.name.startswith('Int')]
+print("Nullable integer columns:", nullable_int_cols)
+```
+
+Converting these columns to `float64` maintains the numeric information while making them compatible with numpy operations used by SHAP's visualization functions.

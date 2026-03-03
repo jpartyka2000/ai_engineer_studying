@@ -1,0 +1,44 @@
+You can do this by adding another named aggregation in your groupby call. In your case, if the "CLV_365" values come from the column `"total_amount_paid"`, you can sum them per group by specifying an entry such as:
+
+```python
+CLV_365_total=('total_amount_paid', 'sum')
+```
+
+For example, your complete groupby aggregation would look like this:
+
+```python
+df_joined_final = df_joined_data.groupby('campaign').agg(
+    avg_CLV_365=('total_amount_paid', lambda x: round(x.mean(), 3)),
+    CLV_365_total=('total_amount_paid', 'sum'),
+    avg_CLV_30=('CLV_real_30', lambda x: round(x.mean(), 3)),
+    avg_CLV_60=('CLV_real_60', lambda x: round(x.mean(), 3)),
+    avg_CLV_fp_30=('CLV_fp_30', lambda x: round(x.mean(), 3)),
+    avg_CLV_fp_60=('CLV_fp_60', lambda x: round(x.mean(), 3)),
+    avg_CLV_fp_365=('CLV_fp_365', lambda x: round(x.mean(), 3)),
+    clicks=('clicks', 'first'),
+    spend=('spend', 'first'),
+    conversions=('conversions', 'first'),
+    all_conversions=('all_conversions', 'first'),
+    teal_plus_1_month_non_recurring=('teal_plus_1_month_non_recurring', 'first'),
+    teal_plus_1_month_recurring=('teal_plus_1_month_recurring', 'first'),
+    teal_plus_1_week_non_recurring=('teal_plus_1_week_non_recurring', 'first'),
+    teal_plus_1_week_recurring=('teal_plus_1_week_recurring', 'first'),
+    teal_plus_1_year_non_recurring=('teal_plus_1_year_non_recurring', 'first'),
+    teal_plus_1_year_recurring=('teal_plus_1_year_recurring', 'first'),
+    teal_plus_3_months_non_recurring=('teal_plus_3_months_non_recurring', 'first'),
+    teal_plus_3_months_recurring=('teal_plus_3_months_recurring', 'first')
+).reset_index()
+```
+
+### Explanation
+
+- **Named Aggregation Syntax:**  
+  The syntax `new_column_name=('source_column', agg_function)` (available since Pandas 0.25) allows you to assign a new name to the result of aggregating a specific column.
+
+- **`CLV_365_total` Aggregation:**  
+  In the code above, `CLV_365_total=('total_amount_paid', 'sum')` calculates the sum of the `"total_amount_paid"` values for each campaign group, and the result is placed in a new column named `"CLV_365_total"`.
+
+- **Resetting the Index:**  
+  Calling `.reset_index()` at the end ensures that the grouping key `"campaign"` is brought back as a column rather than remaining as the DataFrame’s index.
+
+This approach adds your new column with the sum of the original values alongside your other aggregated columns.

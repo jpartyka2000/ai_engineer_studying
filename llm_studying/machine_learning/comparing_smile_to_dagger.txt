@@ -1,0 +1,43 @@
+Great question! Let me detail the key algorithmic differences between SMILE and DAgger at each timestep.
+
+## DAgger (Dataset Aggregation)
+
+**At each timestep t during data collection:**
+
+1. **Policy execution**: Execute the current learned policy π(i) to choose action a_t
+2. **State transition**: Observe next state s_{t+1} from executing π(i)'s action
+3. **Expert labeling**: Query the expert for what action it would take at s_t (the state we just visited)
+4. **Data aggregation**: Add (s_t, expert_action) to the dataset
+
+**Key characteristic**: DAgger always follows π(i) deterministically throughout an episode, then asks "what should I have done?" at each visited state.
+
+## SMILE (Stochastic Mixture Iterative Learning)
+
+**At each timestep t during data collection:**
+
+1. **Stochastic policy selection**: Sample which policy to follow with probability:
+   - Follow expert policy π* with probability p
+   - Follow learned policy π(i) with probability (1-p)
+   
+2. **Action selection**: Based on the chosen policy, select action a_t
+
+3. **State transition**: Observe next state s_{t+1} from the chosen policy's action
+
+4. **Expert labeling**: Query expert for correct action at s_t
+
+5. **Data aggregation**: Add (s_t, expert_action) to dataset
+
+**Key characteristic**: SMILE switches stochastically between expert and learner *at every timestep within an episode*, creating a blended trajectory.
+
+## Critical Difference
+
+- **DAgger**: Commits to following π(i) for entire trajectories, then labels those states
+  - State distribution: Purely from π(i)'s rollouts
+  
+- **SMILE**: Switches between policies at each timestep
+  - State distribution: A mixture that includes states reachable by sometimes following the expert, sometimes following π(i)
+  - This creates trajectories that partially benefit from expert guidance while still exploring learner mistakes
+
+## Why This Matters
+
+SMILE's stochastic switching means the learner sees states that are "near" the expert trajectory (since the expert occasionally corrects course), while DAgger's states can drift further from expert regions since it commits to full π(i) rollouts. This can make SMILE's training more stable in some domains.

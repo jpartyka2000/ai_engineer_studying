@@ -1,0 +1,49 @@
+When you use pandas’ `Series.shift()` (or `GroupBy.shift()`), you’re asking pandas to move values “up” or “down” the **existing** row order of that Series by a fixed number of positions. It’s crucial to remember:
+
+1. **Shift follows the current row order**
+
+   * If your Series is in arbitrary or unsorted order, `shift(1)` will simply take each value and place it in the *next* row as they appear, regardless of any timestamp or logical sequence.
+   * Only the *position* in the Series matters—**not** the actual values themselves.
+
+2. **Sorting before shifting**
+
+   * To get meaningful “lag” values (e.g. “the previous month’s rate”, “the prior cohort’s rate”), you must first **sort** the DataFrame or Series into the correct temporal (or logical) order.
+   * For example, to shift a timestamp column so that each row holds the prior timestamp, you’d do:
+
+     ```python
+     df = df.sort_values('timestamp')           # chronological order
+     df['prev_ts'] = df['timestamp'].shift(1)   # now prev_ts is the real prior timestamp
+     ```
+
+3. **Group-aware shifting**
+
+   * When you need to shift *within* subgroups (e.g. per “cohort” or per “region”), combine sorting with a `groupby`:
+
+     ```python
+     df = df.sort_values(['group_key','timestamp'])
+     df['prev_rate'] = (
+         df
+         .groupby('group_key')['rate']
+         .shift(1)    # picks the prior rate within each group
+     )
+     ```
+   * Sorting by both the grouping key(s) and the ordering column ensures that shift always aligns with the correct “previous” entry in each subgroup.
+
+4. **Direction and magnitude**
+
+   * `shift(1)` moves values **down** one row (so each row sees the prior row’s value).
+   * `shift(-1)` moves values **up** one row (future-looking).
+   * You can shift by any integer `n`; rows without a counterpart become `NaN`.
+
+5. **Behavior on indices**
+
+   * The Series’ **index labels remain the same**—shift only alters positions of the *values*.
+   * If you need to realign indices after a sort or shift, use `reset_index()` or `reindex()` explicitly.
+
+---
+
+**Key takeaways**:
+
+* **Always** sort your data into the precise order you want *before* shifting.
+* When working within groups, sort by the grouping keys *and* the ordering column, then apply `groupby(...).shift()`.
+* Remember that `shift` is purely positional; it doesn’t inspect the actual values, only the row positions they occupy.

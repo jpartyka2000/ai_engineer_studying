@@ -1,0 +1,254 @@
+## 📋 Deep Dive: `__new__` vs `__init__` in Python
+
+---
+
+### The Short Version
+
+| `__new__` | `__init__` |
+|-----------|------------|
+| **Creates** the instance | **Initializes** the instance |
+| Called **first** | Called **second** |
+| **Returns** the new object | Returns **nothing** (`None`) |
+| Receives the **class** (`cls`) | Receives the **instance** (`self`) |
+| Rarely overridden | Commonly overridden |
+| Static method (implicitly) | Instance method |
+
+---
+
+### The Object Creation Process
+
+When you write `obj = MyClass(args)`, Python does this:
+
+```python
+# Pseudocode of what Python does internally
+def instantiate(cls, *args, **kwargs):
+    obj = cls.__new__(cls, *args, **kwargs)      # Step 1: Create
+    if isinstance(obj, cls):
+        obj.__init__(*args, **kwargs)            # Step 2: Initialize
+    return obj
+```
+
+**Important:** `__init__` only runs if `__new__` returns an instance of the class (or a subclass).
+
+---
+
+### `__new__` — The Constructor
+
+`__new__` is responsible for *creating* and *returning* a new instance.
+
+```python
+class Demo:
+    def __new__(cls, *args, **kwargs):
+        print(f"__new__ called with cls={cls}")
+        instance = super().__new__(cls)
+        print(f"Created instance: {instance}")
+        return instance
+    
+    def __init__(self, value):
+        print(f"__init__ called with self={self}")
+        self.value = value
+
+d = Demo(42)
+```
+
+**Output:**
+```
+__new__ called with cls=<class '__main__.Demo'>
+Created instance: <__main__.Demo object at 0x...>
+__init__ called with self=<__main__.Demo object at 0x...>
+```
+
+**Key points:**
+- First parameter is the **class** (`cls`), not an instance
+- **Must return** an object (usually via `super().__new__(cls)`)
+- If you return something that isn't an instance of `cls`, `__init__` won't be called
+
+---
+
+### `__init__` — The Initializer
+
+`__init__` is responsible for *setting up* the instance that `__new__` created.
+
+```python
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+```
+
+**Key points:**
+- First parameter is the **instance** (`self`)
+- Should **not** return anything (implicitly returns `None`)
+- This is where you set instance attributes
+
+---
+
+### When to Override `__new__`
+
+You rarely need to override `__new__`. Here are the main use cases:
+
+#### 1. Subclassing Immutable Types
+
+Immutable types (like `str`, `int`, `tuple`, `frozenset`) cannot be modified after creation, so you must set their value in `__new__`:
+
+```python
+class UpperStr(str):
+    def __new__(cls, value):
+        # Must set the value here — str is immutable
+        instance = super().__new__(cls, value.upper())
+        return instance
+    
+    # __init__ would be too late to change the string!
+
+s = UpperStr("hello")
+print(s)  # HELLO
+```
+
+#### 2. Singleton Pattern
+
+Ensuring only one instance exists:
+
+```python
+class Singleton:
+    _instance = None
+    _initialized = False
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self):
+        if not self._initialized:
+            print("Initializing singleton")
+            self._initialized = True
+
+a = Singleton()  # Prints: Initializing singleton
+b = Singleton()  # No output — already initialized
+print(a is b)    # True
+```
+
+#### 3. Object Caching / Flyweight Pattern
+
+Reusing existing instances:
+
+```python
+class CachedInt:
+    _cache = {}
+    
+    def __new__(cls, value):
+        if value not in cls._cache:
+            instance = super().__new__(cls)
+            instance.value = value
+            cls._cache[value] = instance
+        return cls._cache[value]
+
+a = CachedInt(5)
+b = CachedInt(5)
+c = CachedInt(10)
+
+print(a is b)  # True — same cached instance
+print(a is c)  # False — different value
+```
+
+#### 4. Metaclass-like Behavior
+
+Controlling what type of object is returned:
+
+```python
+class ShapeFactory:
+    def __new__(cls, shape_type):
+        if shape_type == "circle":
+            return Circle()
+        elif shape_type == "square":
+            return Square()
+        else:
+            return super().__new__(cls)
+```
+
+---
+
+### Common Mistakes
+
+#### Mistake 1: Forgetting to return from `__new__`
+
+```python
+# WRONG
+class Broken:
+    def __new__(cls):
+        super().__new__(cls)  # Forgot return!
+
+b = Broken()
+print(b)  # None!
+```
+
+#### Mistake 2: Returning wrong type prevents `__init__`
+
+```python
+class Weird:
+    def __new__(cls):
+        return "I'm a string!"  # Not an instance of Weird
+    
+    def __init__(self):
+        print("This never runs!")
+
+w = Weird()
+print(w)        # I'm a string!
+print(type(w))  # <class 'str'>
+```
+
+#### Mistake 3: Passing arguments incorrectly to `super().__new__()`
+
+```python
+# WRONG for most classes
+class Bad:
+    def __new__(cls, value):
+        return super().__new__(cls, value)  # TypeError!
+
+# CORRECT — object.__new__ takes only cls
+class Good:
+    def __new__(cls, value):
+        return super().__new__(cls)  # Don't pass value
+    
+    def __init__(self, value):
+        self.value = value
+```
+
+**Note:** Only immutable types like `str`, `int`, `tuple` accept extra arguments in `__new__`.
+
+---
+
+### Quick Reference
+
+```python
+class MyClass:
+    def __new__(cls, *args, **kwargs):
+        # 1. Called first
+        # 2. Creates the instance
+        # 3. MUST return the instance
+        print("Creating instance")
+        return super().__new__(cls)
+    
+    def __init__(self, *args, **kwargs):
+        # 1. Called second (if __new__ returns correct type)
+        # 2. Initializes the instance
+        # 3. Should NOT return anything
+        print("Initializing instance")
+        self.args = args
+```
+
+---
+
+### Summary
+
+| Aspect | `__new__` | `__init__` |
+|--------|-----------|------------|
+| Purpose | Allocate memory, create object | Set up object state |
+| When to override | Immutables, singletons, caching, factories | Almost always (for initialization) |
+| Return value | The new instance | `None` (implicit) |
+| First argument | `cls` (the class) | `self` (the instance) |
+| Can prevent creation | Yes (return different object) | No |
+
+---
+
+Ready for Question 4?

@@ -1,0 +1,83 @@
+Here’s a standalone post that focuses on that rule:
+
+---
+
+### Required Fields in Pydantic Models
+
+In **Pydantic**, whether a field is **required** or **optional** depends on whether you provide a default value when defining the model.
+
+---
+
+#### 1. No Default → Required
+
+If you don’t specify a default (either directly or via `Field()`), Pydantic treats the field as **required**.
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    name: str        # required
+    age: int         # required
+```
+
+Usage:
+
+```python
+User(name="Alice", age=30)   # ✅ OK
+User(name="Alice")           # ❌ ValidationError: age is required
+```
+
+---
+
+#### 2. With Default → Optional (with fallback)
+
+If you give a default value, the field becomes **optional** when instantiating — Pydantic will fill in the default if you don’t pass one.
+
+```python
+class User(BaseModel):
+    name: str
+    age: int = 18    # optional, defaults to 18
+```
+
+Usage:
+
+```python
+User(name="Bob")   # ✅ age=18 automatically
+```
+
+---
+
+#### 3. With `Field(default_factory=...)`
+
+For mutable or dynamically created defaults, you can use `default_factory`. This still makes the field optional, but ensures a **fresh value** each time.
+
+```python
+from pydantic import Field
+from typing import List
+
+class User(BaseModel):
+    tags: List[str] = Field(default_factory=list)
+```
+
+Usage:
+
+```python
+u1 = User()
+u2 = User()
+u1.tags.append("x")
+print(u2.tags)  # [] — separate list, not shared
+```
+
+---
+
+✅ **Takeaway:**
+
+* **No default → required field.**
+* **Default → optional with fallback.**
+* **`default_factory` → optional with dynamic fallback.**
+
+This rule helps keep your models predictable: if you want a field to always be present, don’t give it a default.
+
+---
+
+Want me to also make a **visual table (Required vs Optional vs Default Factory)** so you can quickly compare field behaviors at a glance?

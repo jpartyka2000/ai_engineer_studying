@@ -1,0 +1,101 @@
+### Does the Function Get Called Twice?
+
+Yes, with the given `@pytest.mark.parametrize` decorator, the test function will be called **twice**—once for each tuple of arguments in the list.
+
+- For the first call, the function will receive:
+  ```python
+  test_files = {
+      "opportunity_file": "./test_data/opportunity_test_file_1.json",
+      "dbscanner_file": "./test_data/dbscanner_test_file_1.json",
+      "ingest_file": "./test_data/ingest_test_file_1.json",
+  }
+  expected_result_count = 100
+  ```
+
+- For the second call, the function will receive:
+  ```python
+  test_files = {
+      "opportunity_file": "./test_data/opportunity_test_file_2.json",
+      "dbscanner_file": "./test_data/dbscanner_test_file_2.json",
+      "ingest_file": "./test_data/ingest_test_file_2.json",
+  }
+  expected_result_count = 200
+  ```
+
+This allows the test function to run multiple times with different sets of inputs, which is one of the core features of `pytest.mark.parametrize`.
+
+---
+
+### Can You Mix and Match the Arguments?
+
+Yes, you can mix and match arguments across test sets. For example, you can create combinations where some file paths are reused across test cases, or use entirely different `expected_result_count` values. Here’s an example:
+
+```python
+@pytest.mark.parametrize(
+    "test_files, expected_result_count",
+    [
+        (
+            {
+                "opportunity_file": "./test_data/opportunity_test_file_1.json",
+                "dbscanner_file": "./test_data/dbscanner_test_file_1.json",
+                "ingest_file": "./test_data/ingest_test_file_2.json",
+            },
+            150  # Mixing file sets
+        ),
+        (
+            {
+                "opportunity_file": "./test_data/opportunity_test_file_2.json",
+                "dbscanner_file": "./test_data/dbscanner_test_file_2.json",
+                "ingest_file": "./test_data/ingest_test_file_1.json",
+            },
+            175
+        )
+    ]
+)
+def test_similarity_score(meta_router, test_files, expected_result_count):
+    # Test logic here...
+    pass
+```
+
+Now the test will run twice, but the arguments are a mix of different file paths and expected result counts.
+
+---
+
+### Advanced Parameterization: Cartesian Product of Inputs
+
+If you want to fully mix and match all combinations of the `test_files` and `expected_result_count`, you can use `pytest.mark.parametrize` with separate parameters and let `pytest` compute the Cartesian product:
+
+```python
+@pytest.mark.parametrize(
+    "test_files",
+    [
+        {
+            "opportunity_file": "./test_data/opportunity_test_file_1.json",
+            "dbscanner_file": "./test_data/dbscanner_test_file_1.json",
+            "ingest_file": "./test_data/ingest_test_file_1.json",
+        },
+        {
+            "opportunity_file": "./test_data/opportunity_test_file_2.json",
+            "dbscanner_file": "./test_data/dbscanner_test_file_2.json",
+            "ingest_file": "./test_data/ingest_test_file_2.json",
+        }
+    ]
+)
+@pytest.mark.parametrize("expected_result_count", [100, 200])
+def test_similarity_score(meta_router, test_files, expected_result_count):
+    # Test logic here...
+    pass
+```
+
+This will generate **4 test cases**:
+1. `test_files` (set 1) + `expected_result_count` 100
+2. `test_files` (set 1) + `expected_result_count` 200
+3. `test_files` (set 2) + `expected_result_count` 100
+4. `test_files` (set 2) + `expected_result_count` 200
+
+---
+
+### Summary
+
+- The test function runs once for each tuple of arguments provided in the `@pytest.mark.parametrize` list.
+- You can mix and match arguments manually by creating specific combinations or let pytest compute all possible combinations using multiple `@pytest.mark.parametrize` decorators.

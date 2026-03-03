@@ -1,0 +1,192 @@
+# Logger Level vs. Handler Level in Python Logging
+
+Python's logging system has **two separate filtering stages**, and understanding this is crucial for controlling what gets logged.
+
+## The Two-Stage Filter
+
+```
+Log Message → Logger (Filter 1) → Handler (Filter 2) → Output
+```
+
+1. **Logger Level**: Determines if a message is **processed at all**
+2. **Handler Level**: Determines if a **processed** message is **actually output**
+
+Both filters must pass for a message to appear!
+
+## Logger.setLevel()
+
+Sets the **minimum level** for the logger to process messages:
+
+```python
+import logging
+
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.WARNING)  # Logger will ignore anything below WARNING
+
+logger.debug("Not processed")    # ❌ Filtered out by logger
+logger.info("Not processed")     # ❌ Filtered out by logger  
+logger.warning("Processed!")     # ✅ Passes logger filter
+logger.error("Processed!")       # ✅ Passes logger filter
+```
+
+If a message doesn't pass the logger's level check, it's discarded immediately and **never reaches any handlers**.
+
+## Handler.setLevel()
+
+Sets the **minimum level** for that specific handler to output messages it receives:
+
+```python
+import logging
+
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.DEBUG)  # Logger accepts everything
+
+# Create two handlers with different levels
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.WARNING)  # Only WARNING and above to console
+
+file_handler = logging.FileHandler("app.log")
+file_handler.setLevel(logging.DEBUG)  # Everything to file
+
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
+logger.debug("Debug message")      # Only in file
+logger.info("Info message")        # Only in file
+logger.warning("Warning message")  # Both console AND file
+logger.error("Error message")      # Both console AND file
+```
+
+## Complete Example: Both Filters in Action
+
+```python
+import logging
+import sys
+
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.INFO)  # Logger filter: INFO and above
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.ERROR)  # Handler filter: ERROR and above
+
+logger.addHandler(console_handler)
+
+logger.debug("Debug")      # ❌ Blocked by LOGGER (below INFO)
+logger.info("Info")        # ❌ Passes logger, blocked by HANDLER (below ERROR)
+logger.warning("Warning")  # ❌ Passes logger, blocked by HANDLER (below ERROR)
+logger.error("Error")      # ✅ Passes BOTH filters → appears in console
+```
+
+## Visualization of the Flow
+
+```
+Message Level: DEBUG
+    ↓
+Logger Level: INFO
+    ❌ BLOCKED - never reaches handlers
+
+Message Level: INFO
+    ↓
+Logger Level: INFO
+    ✅ PASSES
+    ↓
+Handler Level: ERROR
+    ❌ BLOCKED - not output
+
+Message Level: ERROR
+    ↓
+Logger Level: INFO
+    ✅ PASSES
+    ↓
+Handler Level: ERROR
+    ✅ PASSES → OUTPUT!
+```
+
+## Practical Use Cases
+
+### Use Case 1: Different Outputs for Different Severities
+
+```python
+import logging
+
+logger = logging.getLogger("app")
+logger.setLevel(logging.DEBUG)  # Process everything
+
+# Console: Only important stuff
+console = logging.StreamHandler()
+console.setLevel(logging.WARNING)
+console.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+
+# File: Everything for debugging
+file = logging.FileHandler("detailed.log")
+file.setLevel(logging.DEBUG)
+file.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+logger.addHandler(console)
+logger.addHandler(file)
+
+logger.debug("Detailed debug info")     # Only in file
+logger.info("Processing step")          # Only in file
+logger.warning("Something odd")         # Console + file
+logger.error("Something broke!")        # Console + file
+```
+
+### Use Case 2: Separate Error Log
+
+```python
+import logging
+
+logger = logging.getLogger("app")
+logger.setLevel(logging.DEBUG)
+
+# Regular log
+normal_handler = logging.FileHandler("app.log")
+normal_handler.setLevel(logging.INFO)
+
+# Errors only
+error_handler = logging.FileHandler("errors.log")
+error_handler.setLevel(logging.ERROR)
+
+logger.addHandler(normal_handler)
+logger.addHandler(error_handler)
+
+logger.info("User logged in")       # Only in app.log
+logger.error("Database crashed!")   # In BOTH app.log and errors.log
+```
+
+## Common Pitfall
+
+```python
+import logging
+
+logger = logging.getLogger("app")
+logger.setLevel(logging.ERROR)  # ⚠️ Logger set to ERROR
+
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)  # Handler set to DEBUG
+
+logger.addHandler(handler)
+
+logger.info("Info message")  # ❌ WON'T APPEAR!
+# Why? Blocked by logger before reaching handler
+```
+
+**The logger level acts as a gatekeeper** - if it blocks a message, no handler will ever see it, regardless of their levels.
+
+## Rule of Thumb
+
+- **Logger level**: Set to the **lowest** level you want to process anywhere
+- **Handler levels**: Set to control where each severity goes
+
+```python
+# Process everything DEBUG and above
+logger.setLevel(logging.DEBUG)
+
+# But only show ERROR+ on console
+console_handler.setLevel(logging.ERROR)
+
+# And show everything in the file
+file_handler.setLevel(logging.DEBUG)
+```
+
+This two-stage system gives you fine-grained control over logging output!

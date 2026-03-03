@@ -1,0 +1,28 @@
+When you call `select` with an aggregation function in PySpark, it returns a new DataFrame, not the raw value. So printing that DataFrame (via `print(df.select(...))`) shows the type or reference to the DataFrame rather than the count.
+
+To actually see the distinct count, you have two common options:
+
+### Option 1: Use `.show()`
+```python
+from pyspark.sql import functions as F
+
+df_moto_opps_with_names.select(F.countDistinct("opportunity_history_opportunity_id")).show()
+```
+This will display the result in the console.
+
+### Option 2: Collect the Result and Print
+If you need to work with the count in your code, you can use `.collect()` to get the value:
+```python
+from pyspark.sql import functions as F
+
+# Alias the count column for easier access.
+distinct_count_df = df_moto_opps_with_names.select(
+    F.countDistinct("opportunity_history_opportunity_id").alias("distinct_count")
+)
+
+# Collect returns a list; get the first row and extract the value.
+distinct_count = distinct_count_df.collect()[0]["distinct_count"]
+print(distinct_count)
+```
+
+Either method will give you the distinct count instead of just printing the DataFrame object.

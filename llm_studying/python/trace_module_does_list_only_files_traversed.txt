@@ -1,0 +1,21 @@
+No, there isn't. The `trace` module doesn't have a `--listfiles` option.
+
+Your options are:
+
+1. **`--listfuncs`** and parse out the filenames (what we're doing)
+
+2. **`--count --coverdir=./trace_out`** which creates a `.cover` file for each file touched, then list that directory:
+
+```yaml
+eval-trace run_name="" config="development_harness" use_legacy_agent="true":
+    # Run evaluation with tracing to list all files visited
+    @rm -rf ./trace_out && \
+    if [ -n "{{run_name}}" ]; then \
+        uv run --env-file .env --active --no-sync python -m trace --count --coverdir=./trace_out -m cue_eval.runner "{{run_name}}" cue_eval/configs/{{config}}.yaml {{use_legacy_agent}} > /dev/null 2>&1; \
+    else \
+        uv run --env-file .env --active --no-sync python -m trace --count --coverdir=./trace_out -m cue_eval.runner "" cue_eval/configs/{{config}}.yaml {{use_legacy_agent}} > /dev/null 2>&1; \
+    fi && \
+    ls ./trace_out | sed 's/.cover$//' | sort -u
+```
+
+The `--listfuncs` approach with grep is simpler honestly.

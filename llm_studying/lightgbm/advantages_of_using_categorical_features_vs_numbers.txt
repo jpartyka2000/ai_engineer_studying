@@ -1,0 +1,34 @@
+Telling LightGBM “these columns are categorical” does more than just flag them as integers—it fundamentally changes *how* the tree‐builder searches for splits on those features:
+
+1. **No arbitrary ordering**
+
+   * If you leave a categorical feature encoded as 0,1,2,3 and *don’t* mark it as categorical, LightGBM will treat it as a continuous variable.
+   * It will only ever split on conditions like `code ≤ 1.5` or `code ≥ 2`, implicitly imposing an ordering that may be meaningless (why is category “3” “larger” than “1”?).
+
+2. **Subset‐based splitting**
+
+   * When you *do* mark it categorical, LightGBM uses a specialized algorithm that:
+
+     1. Sorts the categories by their average gradient,
+     2. Finds the optimal **subset** of categories to send left vs. right in *one* pass,
+     3. Doesn’t restrict you to just `<` or `>` splits on the numeric codes.
+   * This is effectively a fast way of finding the best one‐hot‑style grouping of levels without blowing up memory.
+
+3. **Better statistical splits**
+
+   * By treating each level as its own group, you let the algorithm decide, “Should categories {A, C, F} go left and {B, D, E} go right?”
+   * Versus if you leave them as ints, you only get splits like `{0,1,2}` vs `{3,4}` which might never align with the real signal.
+
+4. **Performance & memory**
+
+   * Native categorical splits are implemented in O(k log k) time (k = #levels) instead of a potential O(k²) brute force.
+   * You avoid having to one‑hot encode (which can massively increase dimensionality) or target‑encode (which can leak).
+
+---
+
+### In short
+
+* **Without** `categorical_feature`: your encoded integers get treated as numeric thresholds—Fast, but often *suboptimal* or even *misleading* if the codes aren’t truly ordinal.
+* **With** `categorical_feature`: LightGBM runs its built‑in category‐aware split routine, giving you richer, more appropriate partitions of the levels and no forced ordering.
+
+That’s why you almost always want to tell LightGBM which features are truly categorical, even if they’re stored as `int64` under the hood.

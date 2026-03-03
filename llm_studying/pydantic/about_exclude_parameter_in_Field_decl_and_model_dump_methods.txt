@@ -1,0 +1,132 @@
+Here you go:
+
+---
+
+<details>
+<summary><strong>📋 Copy this: exclude Parameter in Field()</strong></summary>
+
+```
+PYDANTIC: exclude Parameter in Field()
+======================================
+
+PURPOSE:
+Prevent a field from appearing in serialization output
+(model_dump, model_dump_json) while keeping it accessible
+on the model instance.
+
+BASIC SYNTAX:
+-------------
+from pydantic import BaseModel, Field
+
+class User(BaseModel):
+    name: str
+    password: str = Field(exclude=True)
+
+user = User(name='Alice', password='secret123')
+print(user.password)     # 'secret123' (still accessible)
+print(user.model_dump()) # {'name': 'Alice'} (password excluded)
+
+USE CASES:
+----------
+1. Sensitive data (passwords, tokens, API keys)
+2. Internal fields not meant for API responses
+3. Computed/cached values for internal use only
+4. Database IDs you don't want to expose
+
+CONDITIONAL EXCLUSION:
+----------------------
+You can also use a callable for dynamic exclusion:
+
+def exclude_if_empty(v):
+    return v is None or v == ''
+
+class Profile(BaseModel):
+    name: str
+    bio: str | None = Field(default=None, exclude=exclude_if_empty)
+
+RUNTIME EXCLUSION (Alternative):
+--------------------------------
+Instead of Field(exclude=True), exclude at dump time:
+
+user.model_dump(exclude={'password'})
+user.model_dump(exclude={'password', 'internal_id'})
+
+# Include only specific fields
+user.model_dump(include={'name', 'email'})
+
+NESTED EXCLUSION:
+-----------------
+user.model_dump(exclude={'address': {'street'}})
+# Excludes only 'street' from nested 'address' model
+
+COMPARISON OF APPROACHES:
+-------------------------
+Approach                  | When to Use
+--------------------------|----------------------------------
+Field(exclude=True)       | Always exclude this field
+model_dump(exclude={...}) | Exclude only in specific contexts
+model_dump(include={...}) | Allowlist approach
+
+COMBINING WITH OTHER FIELD OPTIONS:
+-----------------------------------
+class Secret(BaseModel):
+    token: str = Field(
+        exclude=True,     # Exclude from serialization
+        repr=False,       # Hide from __repr__ too
+    )
+
+print(Secret(token='abc'))  # Secret()  (token hidden)
+
+EXCLUDE IN JSON SCHEMA:
+-----------------------
+Note: exclude=True does NOT remove the field from JSON schema.
+To exclude from schema, use json_schema_extra or a custom schema.
+
+SERIALIZATION_ALIAS + EXCLUDE:
+------------------------------
+If you need different behavior for input vs output:
+
+class User(BaseModel):
+    internal_id: int = Field(exclude=True)  # Never in output
+    name: str = Field(serialization_alias='userName')  # Renamed in output
+
+EXAMPLE - API RESPONSE MODEL:
+-----------------------------
+from pydantic import BaseModel, Field
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    hashed_password: str = Field(exclude=True)
+    session_token: str = Field(exclude=True)
+    created_at: datetime
+   
+    # Safe to return from API:
+    # model_dump() gives {'id': ..., 'username': ..., 'email': ..., 'created_at': ...}
+```
+
+</details>
+
+---
+
+Ready to answer **Question 17**?
+
+```python
+from typing import Annotated
+from pydantic import BaseModel, BeforeValidator, AfterValidator
+
+def add_prefix(v):
+    return f"PREFIX_{v}"
+
+def add_suffix(v):
+    return f"{v}_SUFFIX"
+
+CustomStr = Annotated[str, BeforeValidator(add_prefix), AfterValidator(add_suffix)]
+
+class Item(BaseModel):
+    label: CustomStr
+
+item = Item(label='hello')
+print(item.label)
+``` 

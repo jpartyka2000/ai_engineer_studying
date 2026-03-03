@@ -1,0 +1,103 @@
+---
+
+## Using `.pipe()` in pandas: A Clean Way to Chain Custom Functions
+
+### What is `.pipe()`?
+
+* **Definition**: `.pipe()` is a pandas DataFrame/Series method that takes a function (and optional additional args/kwargs), applies it to the DataFrame, and returns the result.
+* **Purpose**: It lets you insert arbitrary functions into a method‐chaining pipeline—keeping the “DataFrame in, DataFrame out” flow without breaking the chain.
+
+---
+
+### Basic Syntax
+
+```python
+result = (
+    df
+    .pipe(func, arg1, arg2, kwarg1=val1)   # equivalent to `func(df, arg1, arg2, kwarg1=val1)`
+    .pipe(another_func)
+)
+```
+
+* **First argument** of `.pipe()` is always the function to call.
+* Any further positional or keyword arguments are passed along to that function.
+
+---
+
+### Why Use `.pipe()`?
+
+1. **Readability**
+
+   * Keeps each transformation on its own line.
+   * Avoids intermediate variable assignments.
+2. **Reusability**
+
+   * You can define standalone data‐transform functions and easily plug them into pipelines.
+3. **Consistency**
+
+   * Maintains the “fluent” style: each step takes and returns a DataFrame.
+
+---
+
+### Common Patterns
+
+#### 1. Wrapping a Custom Function
+
+```python
+def clean_column_names(df):
+    df = df.rename(columns=lambda c: c.strip().lower().replace(' ', '_'))
+    return df
+
+df_clean = (
+    raw_df
+    .pipe(clean_column_names)
+    .pipe(lambda d: d.dropna(subset=['important_col']))
+)
+```
+
+#### 2. Passing Extra Arguments
+
+```python
+def filter_by_threshold(df, col, threshold):
+    return df[df[col] >= threshold]
+
+df_filtered = (
+    df
+    .pipe(filter_by_threshold, 'score', 75)
+)
+```
+
+#### 3. Combining with Built‑in pandas Methods
+
+```python
+df_summary = (
+    df
+    .pipe(lambda d: d[d['date'] >= '2025-01-01'])
+    .groupby('category')
+    .pipe(lambda g: g.agg(total=('value','sum'), mean=('value','mean')))
+    .reset_index()
+)
+```
+
+---
+
+### Tips & Caveats
+
+* **Function Signature Matters**
+
+  * The function you pipe must accept the DataFrame (or Series) as its first argument and return a compatible object.
+* **Multiple Pipelines**
+
+  * You can intermix `.pipe()` with built‑in methods (`.groupby()`, `.assign()`, etc.) in any order.
+* **Debugging**
+
+  * If a pipeline step fails, you may temporarily assign the result of that step to a variable to inspect it.
+* **When to Avoid**
+
+  * For single, trivial transformations (e.g. one‐liner filters), direct method calls or boolean indexing can be more concise.
+
+---
+
+### Summary
+
+`.pipe()` empowers you to build **readable**, **modular**, and **reusable** pandas pipelines by cleanly integrating custom functions alongside built‑in methods—all without breaking the flow of method chaining.

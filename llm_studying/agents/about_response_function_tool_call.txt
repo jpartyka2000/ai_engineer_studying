@@ -1,0 +1,51 @@
+`ResponseFunctionToolCall` is one of the Pydantic-backed models in the OpenAI Python library that represents the agent invoking (or intending to invoke) an external “tool” or function. In the Agents SDK workflow, you’ll see a stream of events—some of which are plain model outputs, and others which are structured function-call events.
+
+---
+
+### What it models
+
+When your agent decides it needs to call a function (e.g. `get_current_weather`, `query_database`, or any custom tool you’ve registered), it emits a `ResponseFunctionToolCall` event. That object contains:
+
+* **`name`**: the name of the tool or function being called
+* **`arguments`**: a dict (or JSON string) of the parameters the agent wants to pass
+
+Under the hood this corresponds to the Chat Completions API’s function-calling feature:
+
+```json
+{
+  "name": "get_current_weather",
+  "arguments": {
+    "location": "San Francisco, CA",
+    "unit": "fahrenheit"
+  }
+}
+```
+
+### How it fits into the async event loop
+
+In a typical `async for event in agent.act(...)` loop, you might see:
+
+1. A **`ResponseFunctionToolCall`** event when the agent issues the call
+2. A **tool execution** step (your code actually invokes that function)
+3. A **tool result** event (often modeled by `ResponseFunctionToolReturn` or similar) delivering the function’s output back into the agent
+
+This structured approach ensures that function calls are first-class citizens in the agent’s reasoning, rather than opaque text blobs.
+
+### Example in code
+
+```python
+async for event in agent.act(input_item):
+    if isinstance(event, ResponseFunctionToolCall):
+        # Agent wants to call a tool
+        result = await call_my_tool(**event.arguments)
+        agent.feed_tool_result(result)
+    elif isinstance(event, SomeOtherEvent):
+        ...
+```
+
+* You detect the `ResponseFunctionToolCall`
+* Extract `event.name` and `event.arguments`
+* Execute the actual function in your environment
+* Hand the result back to the agent
+
+That way, your agent can interleave LLM reasoning and deterministic tool calls in a clean, type-safe manner.

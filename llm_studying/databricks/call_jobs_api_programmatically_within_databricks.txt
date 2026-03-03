@@ -1,0 +1,95 @@
+Yes – you can trigger any existing Databricks Job from inside a notebook or Python script by calling the Jobs REST API (or using the new Databricks-SDK).  Here are three common patterns:
+
+---
+
+### 1) Call the REST API directly from Python
+
+```python
+import requests
+
+# 1) grab host & token from the notebook context or secrets
+dbutils = get_ipython().user_ns['dbutils']
+host = dbutils.notebook.entry_point.getDbutils() \
+            .notebook().getContext().apiUrl().get()
+token = dbutils.secrets.get("my‐scope", "databricks‐pat")
+
+# 2) prepare your payload
+job_id = 123
+notebook_params = {
+    "overall_budget":    "250000",
+    "n_iterations":      "10000",
+    "pct_min_max":       "0.5",
+    "ctr":               "0.02",
+    "input_table":       "schema.table_name"
+}
+payload = {
+    "job_id":         job_id,
+    "notebook_params": notebook_params
+}
+
+# 3) fire off the runNow
+resp = requests.post(
+    f"{host}/api/2.1/jobs/run-now",
+    headers={"Authorization": f"Bearer {token}"},
+    json=payload
+)
+resp.raise_for_status()
+run_id = resp.json()["run_id"]
+print("Launched run_id:", run_id)
+```
+
+You can then poll `/api/2.1/jobs/runs/get` exactly as you did from your desktop script.
+
+---
+
+### 2) Use the Databricks CLI from a notebook cell
+
+If you’ve installed and configured the Databricks CLI in the cluster’s environment, you can simply shell out:
+
+```bash
+%sh
+databricks jobs run-now \
+  --job-id 123 \
+  --notebook-params overall_budget=250000 \
+                    n_iterations=10000 \
+                    pct_min_max=0.5 \
+                    ctr=0.02 \
+                    input_table=schema.table_name
+```
+
+---
+
+### 3) Use the official Databricks-SDK for Python
+
+First install it (`pip install databricks-sdk`), then:
+
+```python
+from databricks.sdk import WorkspaceClient
+
+# This will pick up your ~/.databrickscfg or env vars for host/token
+w = WorkspaceClient()
+
+run = w.jobs.run_now(
+    job_id=123,
+    notebook_params={
+        "overall_budget": "250000",
+        "n_iterations":   "10000",
+        "pct_min_max":    "0.5",
+        "ctr":            "0.02",
+        "input_table":    "schema.table_name"
+    }
+)
+print("Launched run:", run.run_id)
+```
+
+And you can follow up with `w.jobs.get_run(run_id=run.run_id)` to poll its status.
+
+---
+
+#### Summary
+
+– **REST + `requests`**: most lightweight, no extra deps beyond `requests`.
+– **Databricks CLI**: quick & dirty via `%sh` in notebooks or scripts.
+– **Databricks-SDK**: nicest programmatic API, auto-handles auth and pagination.
+
+All three let you trigger jobs “from within Databricks” without ever leaving your notebook or cluster.

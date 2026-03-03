@@ -1,0 +1,89 @@
+**Synchronous vs. Turn-Based (AEC) Agent Actions in Multi-Agent Environments**
+
+---
+
+### 1. Turn-Based (AEC API)
+
+* **What it is:** Agents act one at a time in a fixed (or rotating) order.
+* **Flow:**
+
+  1. Environment yields the first agent’s observation via `agent_iter()`.
+  2. Your code computes & submits that agent’s single action.
+  3. `env.step(action)` advances the environment to the next agent’s turn.
+  4. Repeat until every agent has acted, then the next “global” timestep begins.
+* **Use cases:**
+
+  * Games with sequential moves (e.g. Chess, Go).
+  * Cooperative or competitive settings where turn order matters.
+* **Pros:**
+
+  * Fine-grained control: you can intervene between individual agents’ moves.
+  * Natural match for algorithms that operate on local histories.
+* **Cons:**
+
+  * Harder to vectorize: you can’t batch all agents’ actions together.
+  * More loop overhead in Python.
+
+---
+
+### 2. Synchronous (Parallel API)
+
+* **What it is:** All agents choose their actions **simultaneously** at each timestep.
+* **Flow:**
+
+  1. You call `obs_dict = env.reset()` → one observation per agent.
+  2. Compute a dict of actions `{agent: action}` for **all** agents.
+  3. Call `obs_dict, reward_dict, done_dict, info_dict = env.step(actions)`.
+  4. Repeat until termination.
+* **Use cases:**
+
+  * Environments where agents act in lockstep (robotic swarms, many board games when both players move “simultaneously”).
+  * High-performance training where you want to batch computations.
+* **Pros:**
+
+  * Easy to integrate with vectorized policy calls.
+  * Lower Python-loop overhead.
+* **Cons:**
+
+  * Less flexible for truly sequential interactions.
+  * All agents must act even if some are “done” (you use a special “no-op” action).
+
+---
+
+### 3. When to Choose Which
+
+| Criteria                      | Turn-Based (AEC)                        | Synchronous (Parallel)        |
+| ----------------------------- | --------------------------------------- | ----------------------------- |
+| **Natural fit**               | Games with alternating or ordered moves | Simultaneous-move scenarios   |
+| **Implementation simplicity** | Easy to think about sequential logic    | Easier to batch and vectorize |
+| **Performance**               | More Python calls per step              | Single batched call per step  |
+| **Agent independence**        | Can pause or inspect mid-turn           | All or nothing each timestep  |
+
+---
+
+### 4. PettingZoo Examples
+
+* **AEC (turn-based)**:
+
+  ```python
+  for agent in env.agent_iter():
+      obs, reward, done, trunc, info = env.last()
+      action = policy[agent].select_action(obs) if not done else None
+      env.step(action)
+  ```
+* **Parallel (synchronous)**:
+
+  ```python
+  obs_dict = env.reset()
+  while not done:
+      actions = {agent: policy[agent].select_action(obs_dict[agent])
+                 for agent in env.agents}
+      obs_dict, reward_dict, done_dict, info_dict = env.step(actions)
+  ```
+
+---
+
+**Bottom line:**
+
+* Use **turn-based (AEC)** when agents truly act in sequence and you need per-agent control.
+* Use **synchronous (parallel)** when all agents act together and you want high-throughput, batched execution.

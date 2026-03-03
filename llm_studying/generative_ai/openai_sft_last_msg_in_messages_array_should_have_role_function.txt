@@ -1,0 +1,53 @@
+When you’re training a model to predict *which* function to call next, your training example needs to end with the *most recent function’s response* (i.e. a message with `role="function"`). That way, the model sees the full history—including both user intent and prior function outputs—and learns to emit the *following* `assistant → function_call`.
+
+---
+
+## Why the last message should be `role="function"`
+
+1. **Complete context**
+
+   * The model needs to know not only what it *asked* the function to do, but also *what the function returned*.
+   * Ending on a `role="function"` message ensures it has all the data it needs to decide the next step.
+
+2. **Separation of concerns**
+
+   * You’re teaching the model: “Given this function output, *now* choose your next function call.”
+   * If you ended on an `assistant` message, the model might conflate the question with its own planning steps.
+
+3. **Alignment with the API’s call flow**
+
+   * In real usage, the sequence is:
+
+     1. Assistant issues a `function_call`
+     2. Function returns data (`role="function"`)
+     3. Assistant issues *another* `function_call` (or a natural-language answer)
+   * Mirroring that in your SFT examples yields the strongest signal.
+
+---
+
+## Example JSONL snippet
+
+```jsonl
+{
+  "messages": [
+    {"role":"system",    "content":"You can fetch stock prices and weather."},
+    {"role":"user",      "content":"Tell me GOOGL’s price and London’s weather."},
+    {"role":"assistant","content":null,"function_call":{"name":"get_stock_price","arguments":"{\"ticker\":\"GOOGL\"}"}},
+    {"role":"function", "name":"get_stock_price","content":"{\"ticker\":\"GOOGL\",\"price\":2798.21}"},
+    {"role":"assistant","content":null,"function_call":{"name":"get_weather","arguments":"{\"location\":\"London, UK\"}"}},
+    {"role":"function", "name":"get_weather","content":"{\"location\":\"London, UK\",\"temperature\":15}"}
+  ],
+  "completion": {
+    "role":"assistant",
+    "function_call":{
+      "name":"get_local_time",
+      "arguments":"{\"location\":\"Tokyo, Japan\"}"
+    }
+  }
+}
+```
+
+* Notice how the **last entry** in `"messages"` is the weather function’s response (`role="function"`).
+* The model is then trained to produce the next assistant message, which is **another** `function_call` (to `get_local_time`).
+
+By structuring every example this way—history ending on a function result, with the completion set to the *next* function\_call—you give the fine-tuned model exactly the pattern it needs to pick the right tool every time.

@@ -1,0 +1,102 @@
+We care deeply about __eq__() when talking about hashability because:
+
+> In Python, two objects that are considered equal (a == b) must have the same hash value (hash(a) == hash(b)).
+
+
+
+This is a strict rule of the Python language and is critical for dictionaries and sets to work correctly.
+
+
+---
+
+🧠 Why this matters: the core idea
+
+Dictionaries and sets:
+
+Use __hash__() to find the bucket to look in
+
+Use __eq__() to confirm whether a found key matches the thing being looked up
+
+
+So both methods must work together and stay consistent.
+
+
+---
+
+🔥 What goes wrong if they don’t match?
+
+Imagine two objects a and b:
+
+a == b  ➜  True
+hash(a) != hash(b)
+
+Let’s say you add a to a set:
+
+s = set()
+s.add(a)
+
+Now ask:
+
+b in s    # Should be True, right? Since b == a?
+
+But because b hashes to a different bucket, the set never checks b == a.
+Result: False, even though b == a.
+→ Set is broken.
+
+
+---
+
+✅ What Python expects
+
+If... Then...
+
+a == b hash(a) == hash(b)
+a != b Hashes may or may not differ
+
+
+It’s OK for two unequal objects to share the same hash (called a hash collision), though it's better if they don’t. But it is never OK for equal objects to have different hashes.
+
+
+---
+
+👨‍🔬 Real-world examples
+
+Correct behavior:
+
+a = (1, 2)
+b = (1, 2)
+a == b               # True
+hash(a) == hash(b)   # ✅ True
+
+Incorrect behavior (bad custom class):
+
+class Bad:
+    def __init__(self, x):
+        self.x = x
+    def __eq__(self, other):
+        return self.x == other.x
+    def __hash__(self):
+        return hash(self.x + 1)   # 🙅 inconsistent with __eq__
+
+a = Bad(10)
+b = Bad(10)
+a == b               # True
+hash(a) != hash(b)   # ❌ Bad!
+
+Now set([a]) will not recognize b in set, even though a == b.
+
+
+---
+
+🧷 Summary
+
+We care about __eq__() for hashability because:
+
+__hash__() and __eq__() must agree: equal objects must hash the same
+
+Python dicts and sets depend on this to work correctly
+
+Violating this rule creates subtle, silent bugs in lookups, membership tests, and key overwrites
+
+
+If you override one of these methods, you almost always need to override the other to maintain consistency.

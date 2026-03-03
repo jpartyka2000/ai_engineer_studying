@@ -1,0 +1,41 @@
+# Clarifying `max_num_seqs`
+
+No, it doesn't mean copies of the same batch. Let me clarify the terminology:
+
+## What `max_num_seqs` Actually Means
+
+It's the **maximum number of independent requests/prompts** that vLLM will process simultaneously in a single forward pass.
+
+### Example
+
+If `max_num_seqs=8`, and you have 20 users sending prompts to your server:
+
+- vLLM will process **up to 8 different prompts** at once
+- The remaining 12 requests wait in a queue
+- As requests complete, new ones are pulled in
+
+## Key Distinction
+
+| Term | Meaning |
+|------|---------|
+| **Sequence** | A single independent request/prompt (each user's input) |
+| **Batch** | The group of sequences processed together in one forward pass |
+
+So `max_num_seqs=8` means your **batch can contain up to 8 different sequences**—not 8 copies of one sequence.
+
+## Why This Matters
+
+vLLM uses **continuous batching**—it dynamically groups multiple user requests together to maximize GPU utilization. Each sequence in the batch:
+
+- Has its own prompt
+- Has its own KV cache
+- Generates its own output tokens
+- May be at different stages of generation
+
+## Memory Tradeoff
+
+Higher `max_num_seqs` means:
+- ✅ Better throughput (more parallelism)
+- ❌ More GPU memory (each sequence needs its own KV cache)
+
+If you're running a large model or have limited VRAM, you might lower this value to avoid out-of-memory errors.

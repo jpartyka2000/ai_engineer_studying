@@ -1,0 +1,71 @@
+Spark SQL can’t natively “push” query results straight into your client’s download dialog, but you can have Spark write the results out to a file (CSV, Parquet, JSON, etc.) as soon as you run the SQL. In other words, instead of waiting for the notebook UI to fetch rows into the results pane, you tell Spark to dump the SELECT into storage. For example:
+
+```sql
+-- Example: export a query’s output as a CSV into DBFS (Databricks File System)
+
+INSERT OVERWRITE DIRECTORY '/mnt/my‑exports/my_query_export'
+USING CSV
+OPTIONS (
+  header "true",
+  delimiter ","
+)
+SELECT
+  col1,
+  col2,
+  col3
+FROM my_table
+WHERE some_condition;
+```
+
+This does the following:
+
+1. **`INSERT OVERWRITE DIRECTORY '/mnt/my‑exports/my_query_export'`**
+
+   * Tells Spark to write files under the specified DBFS (or mounted) path.
+   * If the directory already exists, it will be overwritten.
+
+2. **`USING CSV` + `OPTIONS(header "true", delimiter ",")`**
+
+   * Formats the output as CSV with a header row.
+   * You can change this to `USING PARQUET` (no OPTIONS needed) or `USING JSON` if you prefer.
+
+3. **`SELECT … FROM my_table …`**
+
+   * Any valid Spark SQL query. The rows returned by this SELECT get streamed directly into CSV files under `/mnt/my‑exports/my_query_export/*.csv` (like `part-00000-...csv`, `part-00001-...csv`, etc.).
+
+As soon as the command completes, you’ll find one or more CSV files in `/mnt/my‑exports/my_query_export`. You can then download them (via the Databricks UI, `dbutils.fs.cp` to an external location, or any other file‐browser). Example of downloading in Databricks:
+
+```python
+# In a notebook cell, after the INSERT has finished:
+display(dbutils.fs.ls("/mnt/my‑exports/my_query_export"))
+
+# To copy the CSV out to your local driver folder and then download:
+dbutils.fs.cp("/mnt/my‑exports/my_query_export/part-00000-*.csv", "file:/tmp/my_query_export.csv")
+```
+
+Or, if you just want one big single CSV rather than multiple partition files, you can coalesce to 1 partition first:
+
+```sql
+CREATE OR REPLACE TEMP VIEW onefile AS
+SELECT /*+ REPARTITION(1) */ col1, col2, col3
+FROM my_table
+WHERE some_condition;
+
+INSERT OVERWRITE DIRECTORY '/mnt/my‑exports/single_csv_export'
+USING CSV
+OPTIONS(header="true")
+SELECT * FROM onefile;
+```
+
+(Or equivalently in DataFrame API: `df.repartition(1).write.mode("overwrite").option("header","true").csv("/mnt/my-exports/single_csv_export")`.)
+
+---
+
+### Key points
+
+* **You never have to “wait for the UI”**—Spark writes out files directly to storage.
+* **Any Spark SQL `SELECT` can be piped into an `INSERT OVERWRITE DIRECTORY`** (CSV/Parquet/JSON).
+* To get a single file rather than multiple parts, do a `REPARTITION(1)` before writing.
+* Once the job completes, you can download from DBFS or your cloud‑mounted S3/ADLS/GCS location without interacting with the results pane.
+
+That way, running the SQL automatically exports your data to disk, and you don’t need to manually click “Download results.”

@@ -1,0 +1,70 @@
+In Databricks (as in any standard Python environment) the easiest way to see “where am I?” on the driver is:
+
+```python
+import os
+
+print("Working directory:", os.getcwd())
+```
+
+That will show you the current working directory of the Python process (often something like `/databricks/python_shell/scripts` in a cluster session).
+
+---
+
+### If you really want the file’s own folder
+
+If your code lives in a `.py` file (not a notebook cell) and you need to find *that* file’s directory, you can use `__file__`:
+
+```python
+import os
+
+# full path to this script
+script_path = os.path.abspath(__file__)
+# directory containing the script
+script_dir = os.path.dirname(script_path)
+
+print("Script lives in:", script_dir)
+```
+
+(Note that if you run the same snippet inside a notebook cell, `__file__` will be undefined, because notebooks aren’t files on the local disk.)
+
+---
+
+### If you need the *notebook’s* workspace path
+
+Databricks notebooks don’t live on the local filesystem, so to get a notebook’s workspace path you can do:
+
+```python
+notebook_path = (
+    dbutils.notebook
+           .entry_point
+           .getDbutils()
+           .notebook()
+           .getContext()
+           .notebookPath()
+           .get()
+)
+print("Notebook workspace path:", notebook_path)
+```
+
+That returns something like `"/Users/you@company.com/my-folder/my-notebook"`.
+
+---
+
+### TL;DR
+
+* **Local working directory** (where Python is running):
+
+  ```python
+  os.getcwd()
+  ```
+* **Location of a `.py` script**:
+
+  ```python
+  os.path.dirname(os.path.abspath(__file__))
+  ```
+* **Databricks notebook path in the workspace**:
+
+  ```python
+  dbutils.notebook.entry_point.getDbutils()
+         .notebook().getContext().notebookPath().get()
+  ```

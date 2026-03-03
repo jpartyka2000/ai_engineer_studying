@@ -1,0 +1,47 @@
+Here’s a quick side-by-side:
+
+| Feature               | `df * series`                                                                                                      | `df.mul(series, …)` |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| **Basic operation**   | Elementwise multiply, with automatic label-alignment.                                                              |                     |
+| **fill\_value**       | No option → any non-overlapping labels → NaN.                                                                      |                     |
+| **axis**              | Always aligns `series.index` → `df.columns` when broadcasting to columns; or → `df.index` if you do `series * df`. |                     |
+| **Custom alignment**  | Can’t specify; you’d have to reindex your series beforehand.                                                       |                     |
+| **fill\_value param** | n/a                                                                                                                | You can do e.g.     |
+
+```python
+df.mul(series, axis=1, fill_value=0)
+```
+
+to treat missing labels as 0 instead of NaN.
+\| **Method chaining**       | Less explicit in a long pipeline.           | More readable when you need `axis` or `fill_value`.        |
+
+---
+
+### Example
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'A': [1, 2], 
+    'B': [3, 4]
+}, index=['x','y'])
+
+# Series only has 'A'
+s = pd.Series({'A': 10})
+
+# 1) Using `*`
+print(df * s)
+#       A   B
+# x  10.0 NaN
+# y  20.0 NaN
+
+# 2) Using `mul` with fill_value
+print(df.mul(s, axis=1, fill_value=1))
+#       A  B
+# x  10.0  3
+# y  20.0  4
+```
+
+* **`df * s`** leaves `B` as NaN because `s` has no “B” entry.
+* **`df.mul(s, axis=1, fill_value=1)`** treats missing “B” as 1, so `B` remains unchanged.

@@ -1,0 +1,76 @@
+Databricks’ SQL Editor (and Notebook “Results” pane) is deliberately capped at 64 000 rows for interactive browsing. Even if your table has 100 000 (or 1 million) rows, the UI will only fetch and render the first 64 000. Below are the most common workarounds:
+
+---
+
+## 1. Increase the “Max Results” Setting (SQL Editor / SQL Warehouses)
+
+1. Click the user‑icon (upper right) → **User Settings** → **SQL Editor**.
+2. Find **Data Output** → **Max Results** (it defaults to 64 000).
+3. Raise this to a larger number (e.g. 200 000) or set it to **Unlimited**.
+4. Save.
+5. Rerun your query (`SELECT * FROM my_table;`). Now the editor will page through more (or all) rows instead of stopping at 64 000.
+
+> Note: setting it to “Unlimited” can be heavy on your browser if the table is very large, so in practice you often pick a high but finite buffer (e.g. 200 000).
+
+---
+
+## 2. Use the “Download CSV” Button
+
+Even with the 64 K preview cap, you can often get the full result set by clicking the download icon:
+
+1. Run your query in the SQL Editor.
+2. In the results pane, click the **⋮ (more) → Download CSV**.
+3. Databricks will stream the entire result (not just the first 64 000) into a CSV download.
+
+> In some versions, however, Download → CSV may still only grab the preview window. If that happens, try the “Export to External Location” option in the SQL UI (see next section).
+
+---
+
+## 3. Export to an External Location
+
+If you need very large result sets (≫ 64 000 rows), you can push them to DBFS or S3 and read them back:
+
+```sql
+COPY INTO 'dbfs:/tmp/full_table_export/'
+FROM (SELECT * FROM my_table)
+FILEFORMAT = CSV
+OVERWRITE = TRUE;
+```
+
+* This writes the full result as CSV files under `/dbfs/tmp/full_table_export/`.
+* Then you can open or download those files directly via Databricks’ Data UI (Data → DBFS → tmp → full\_table\_export → Download).
+
+---
+
+## 4. Query via a Notebook Cell (Python/PySpark)
+
+If you’re in a notebook rather than the standalone SQL Editor, you can use a PySpark DataFrame and call `display()` or save to a file. For example:
+
+```python
+# 1. Load the table into a DataFrame
+df = spark.table("my_table")
+
+# 2a. View the first N rows interactively (unlimited by default)
+display(df)                # displays all rows by paging in the notebook
+
+# 2b. If you really want to print all rows (not recommended for huge tables):
+for row in df.collect():
+    print(row)
+
+# 2c. Or write the full table out to CSV/Parquet:
+df.write.mode("overwrite").csv("/tmp/my_table_full_export")
+```
+
+* In a Notebook’s `display(df)`, pagination is enabled and not capped at 64 000, so you can scroll through the entire DataFrame.
+* Using `df.collect()` will pull all rows into the driver; use only on moderately sized tables.
+* Writing to a path (e.g. `/tmp/my_table_full_export`) lets you then download the full data files.
+
+---
+
+### TL;DR
+
+* **SQL Editor** is capped at 64 000 rows unless you bump up **User Settings → SQL Editor → Max Results**.
+* For a one‑off dump, click **Download CSV** (or use `COPY INTO …`) to export everything.
+* In a Notebook, use `display(spark.table(…))` or write out to DBFS/S3 for the complete dataset.
+
+Choose whichever method best fits the size of your data and how you want to consume it.

@@ -1,0 +1,367 @@
+============================================================
+SQUASHING COMMITS IN GIT — COMPREHENSIVE GUIDE
+============================================================
+
+WHAT IS SQUASHING?
+------------------------------------------------------------
+Squashing combines multiple commits into a single commit. 
+It's used to clean up messy history before merging a feature 
+branch, turning multiple "WIP" or "fix typo" commits into 
+one meaningful commit.
+
+Before squashing:
+  a1b2c3d Fix typo
+  b2c3d4e Oops forgot file
+  c3d4e5f Add feature
+  d4e5f6g WIP feature start
+
+After squashing:
+  e5f6g7h Add complete feature
+
+
+WHY SQUASH COMMITS?
+------------------------------------------------------------
+1. CLEANER HISTORY
+   • Easier to read and navigate
+   • Each commit represents a complete, logical change
+   
+2. EASIER CODE REVIEW
+   • Reviewers see one cohesive change
+   • No noise from "fix typo" commits
+   
+3. SIMPLER REVERTS
+   • If the feature has a bug, revert one commit
+   • No need to track down multiple related commits
+   
+4. PROFESSIONAL WORKFLOW
+   • Many teams require squashed commits before merge
+   • Standard practice in open source contributions
+
+
+METHOD 1: INTERACTIVE REBASE (Most Common)
+------------------------------------------------------------
+The most flexible and powerful way to squash commits.
+
+BASIC COMMAND:
+  git rebase -i HEAD~N
+
+Where N = number of commits to include.
+
+EXAMPLE — Squash last 4 commits:
+
+$ git log --oneline
+a1b2c3d (HEAD -> feature) Fix typo in button
+b2c3d4e Add button styling
+c3d4e5f Add button click handler
+d4e5f6g Add button component
+e5f6g7h Previous unrelated commit
+
+$ git rebase -i HEAD~4
+
+EDITOR OPENS:
+------------------------------------------------------------
+pick d4e5f6g Add button component
+pick c3d4e5f Add button click handler
+pick b2c3d4e Add button styling
+pick a1b2c3d Fix typo in button
+
+# Rebase e5f6g7h..a1b2c3d onto e5f6g7h (4 commands)
+#
+# Commands:
+# p, pick   = use commit
+# r, reword = use commit, but edit the commit message
+# e, edit   = use commit, but stop for amending
+# s, squash = use commit, but meld into previous commit
+# f, fixup  = like "squash", but discard this commit's log message
+# d, drop   = remove commit
+------------------------------------------------------------
+
+CHANGE TO:
+------------------------------------------------------------
+pick d4e5f6g Add button component
+squash c3d4e5f Add button click handler
+squash b2c3d4e Add button styling
+squash a1b2c3d Fix typo in button
+------------------------------------------------------------
+
+Note: First commit stays as "pick", others become "squash"
+
+SAVE AND CLOSE → New editor opens for combined message:
+
+------------------------------------------------------------
+# This is a combination of 4 commits.
+# This is the 1st commit message:
+
+Add button component
+
+# This is the commit message #2:
+
+Add button click handler
+
+# This is the commit message #3:
+
+Add button styling
+
+# This is the commit message #4:
+
+Fix typo in button
+------------------------------------------------------------
+
+DELETE ALL and write your clean message:
+------------------------------------------------------------
+Add button component with styling and click handler
+
+- Created reusable Button component
+- Added onClick handler with validation
+- Styled with CSS modules
+------------------------------------------------------------
+
+SAVE AND CLOSE → Done! 4 commits are now 1.
+
+
+SQUASH VS FIXUP
+------------------------------------------------------------
+Both combine commits, but handle messages differently:
+
+SQUASH (s):
+- Combines commits
+- Keeps ALL commit messages
+- Opens editor to write new combined message
+- Use when you want to reference original messages
+
+FIXUP (f):
+- Combines commits
+- DISCARDS the fixup commit's message
+- Keeps only the first commit's message
+- Use for "oops" commits that don't need documentation
+
+Example using fixup:
+  pick d4e5f6g Add button component
+  fixup c3d4e5f Add button click handler
+  fixup b2c3d4e Add button styling
+  fixup a1b2c3d Fix typo in button
+
+Result: Single commit with message "Add button component"
+(No editor opens for the message)
+
+
+METHOD 2: SOFT RESET (Quick Alternative)
+------------------------------------------------------------
+Faster but less flexible than interactive rebase.
+
+$ git reset --soft HEAD~4
+$ git commit -m "Add button component with styling"
+
+HOW IT WORKS:
+- --soft moves HEAD back 4 commits
+- Changes remain staged (in index)
+- New commit captures all changes at once
+
+COMPARISON:
+┌─────────────────────┬──────────────────────────────────────┐
+│ Interactive Rebase  │ Soft Reset                           │
+├─────────────────────┼──────────────────────────────────────┤
+│ More control        │ Simpler/faster                       │
+│ Can reorder commits │ All-or-nothing                       │
+│ Can drop commits    │ Can't selectively exclude commits    │
+│ Preserves author    │ You become author of new commit      │
+│ dates (optionally)  │                                      │
+└─────────────────────┴──────────────────────────────────────┘
+
+
+METHOD 3: MERGE --SQUASH
+------------------------------------------------------------
+Squash when merging a branch (doesn't modify source branch).
+
+$ git checkout main
+$ git merge --squash feature
+$ git commit -m "Add complete feature"
+
+HOW IT WORKS:
+- Takes ALL commits from feature branch
+- Stages them as a single set of changes
+- You create one new commit on main
+- Feature branch remains unchanged
+
+WHEN TO USE:
+- When you want to keep the original branch intact
+- When squashing during merge (not before)
+- Common in PR/merge request workflows
+
+
+METHOD 4: REBASE WITH AUTOSQUASH
+------------------------------------------------------------
+Plan your squashes while committing using special prefixes.
+
+STEP 1: Make commits with special prefixes
+$ git commit -m "Add button component"
+$ git commit -m "fixup! Add button component"
+$ git commit -m "fixup! Add button component"
+
+STEP 2: Run rebase with --autosquash
+$ git rebase -i --autosquash HEAD~3
+
+Git automatically marks fixup commits:
+  pick d4e5f6g Add button component
+  fixup a1b2c3d fixup! Add button component
+  fixup b2c3d4e fixup! Add button component
+
+ENABLE AUTOSQUASH BY DEFAULT:
+$ git config --global rebase.autoSquash true
+
+
+HANDLING SQUASH CONFLICTS
+------------------------------------------------------------
+If conflicts occur during squash:
+
+1. Git pauses and shows the conflict
+2. Fix conflicts in the affected files
+3. Stage the resolved files:
+   $ git add <resolved-files>
+4. Continue the rebase:
+   $ git rebase --continue
+
+TO ABORT AND START OVER:
+   $ git rebase --abort
+
+
+SQUASHING COMMITS ALREADY PUSHED
+------------------------------------------------------------
+⚠️  WARNING: Squashing rewrites history (new commit SHAs)
+
+If commits are already pushed:
+1. Squash locally (any method above)
+2. Force push:
+   $ git push --force-with-lease origin feature
+
+--force-with-lease is safer than --force:
+- Checks if remote has new commits you don't have
+- Prevents accidentally overwriting teammates' work
+
+⚠️  NEVER force push to shared branches (main, develop)
+    Only force push to YOUR OWN feature branches
+
+
+GITHUB/GITLAB SQUASH MERGE
+------------------------------------------------------------
+Many platforms offer built-in squash on merge:
+
+GITHUB:
+- In PR, click dropdown on "Merge" button
+- Select "Squash and merge"
+- Edit the combined commit message
+- All PR commits become one commit on main
+
+GITLAB:
+- In MR settings, check "Squash commits"
+- Or set as default in project settings
+
+BITBUCKET:
+- In PR, select "Squash" merge strategy
+
+
+BEST PRACTICES
+------------------------------------------------------------
+1. SQUASH BEFORE CODE REVIEW
+   Clean history makes reviews easier
+
+2. KEEP LOGICAL COMMITS SEPARATE
+   Don't squash unrelated changes together
+   "Add login" and "Fix homepage bug" = 2 commits
+
+3. WRITE GOOD SQUASHED MESSAGES
+   Summarize what the combined commit does
+   Include relevant details from original commits
+
+4. SQUASH WIP COMMITS
+   "WIP", "fixup", "oops" commits should be squashed
+
+5. DON'T SQUASH PUBLIC HISTORY
+   Only squash commits on your own branches
+   Never rewrite shared branch history
+
+6. USE FIXUP FOR SMALL FIXES
+   Cleaner than squash when messages aren't needed
+
+
+REAL-WORLD WORKFLOW EXAMPLE
+------------------------------------------------------------
+You're working on a feature over several days:
+
+Day 1:
+$ git commit -m "Add user registration form"
+
+Day 2:
+$ git commit -m "WIP: form validation"
+$ git commit -m "Complete form validation"
+
+Day 3:
+$ git commit -m "Fix email regex"
+$ git commit -m "Add unit tests"
+$ git commit -m "Fix typo in test"
+
+Before PR, squash into logical commits:
+$ git rebase -i HEAD~6
+
+Change to:
+  pick abc123 Add user registration form
+  squash def456 WIP: form validation
+  squash ghi789 Complete form validation
+  squash jkl012 Fix email regex
+  pick mno345 Add unit tests          <- keep separate!
+  fixup pqr678 Fix typo in test
+
+Result: 2 clean commits:
+  1. "Add user registration form with validation"
+  2. "Add unit tests for registration"
+
+
+COMMON ISSUES AND SOLUTIONS
+------------------------------------------------------------
+ISSUE: "Cannot rebase: You have unstaged changes"
+SOLUTION: Stash or commit your changes first
+  $ git stash
+  $ git rebase -i HEAD~4
+  $ git stash pop
+
+ISSUE: Squash conflicts are confusing
+SOLUTION: Abort and try smaller batches
+  $ git rebase --abort
+  $ git rebase -i HEAD~2  (squash fewer commits)
+
+ISSUE: Lost commits after failed squash
+SOLUTION: Use reflog to recover
+  $ git reflog
+  $ git reset --hard HEAD@{2}
+
+ISSUE: Wrong commits included in rebase
+SOLUTION: Be careful with HEAD~N count
+  Use commit SHA instead:
+  $ git rebase -i abc1234
+
+
+QUICK REFERENCE
+------------------------------------------------------------
+┌────────────────────────────────┬─────────────────────────┐
+│ Task                           │ Command                 │
+├────────────────────────────────┼─────────────────────────┤
+│ Squash last 4 commits          │ git rebase -i HEAD~4    │
+│ Quick squash (reset method)    │ git reset --soft HEAD~4 │
+│                                │ git commit -m "message" │
+│ Squash on merge                │ git merge --squash feat │
+│ Continue after conflict        │ git rebase --continue   │
+│ Abort squash                   │ git rebase --abort      │
+│ Force push after squash        │ git push --force-with-lease │
+│ Enable autosquash              │ git config --global     │
+│                                │ rebase.autoSquash true  │
+└────────────────────────────────┴─────────────────────────┘
+
+INTERACTIVE REBASE KEYWORDS:
+  pick (p)   → Keep commit as-is
+  squash (s) → Combine, keep message
+  fixup (f)  → Combine, discard message
+  reword (r) → Keep commit, edit message
+  drop (d)   → Remove commit
+  edit (e)   → Pause for amending
+
+============================================================

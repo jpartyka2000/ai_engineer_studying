@@ -1,0 +1,215 @@
+Great question! Here's an explanation:
+
+---
+
+## Discriminated Unions in Pydantic
+
+A **discriminated union** (also called a "tagged union") is a way to tell Pydantic *which* type in a `Union` to use based on a specific field value—the "discriminator."
+
+### The Problem Without Discrimination
+
+```python
+from typing import Union
+from pydantic import BaseModel
+
+class Cat(BaseModel):
+    meows: int
+    name: str
+
+class Dog(BaseModel):
+    barks: int
+    name: str
+
+class Pet(BaseModel):
+    pet: Union[Cat, Dog]
+
+# Pydantic has to guess which type you meant
+# It tries Cat first, then Dog if Cat fails
+```
+
+This "try each type" approach is:
+- **Slow** — may attempt multiple validations
+- **Ambiguous** — what if data could match multiple types?
+- **Error-prone** — error messages can be confusing
+
+### The Solution: Discriminated Unions
+
+Add a **literal field** that identifies each type:
+
+```python
+from typing import Literal, Union
+from pydantic import BaseModel
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']  # Discriminator value
+    meows: int
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']  # Discriminator value
+    barks: int
+
+class Pet(BaseModel):
+    pet: Union[Cat, Dog]
+
+# Now Pydantic looks at pet_type FIRST to decide which model to use
+data = {'pet': {'pet_type': 'dog', 'barks': 5}}
+p = Pet.model_validate(data)  # Instantly knows to use Dog
+```
+
+### Explicit Discriminator (Recommended)
+
+You can make the discriminator explicit using `Annotated` and `Field`:
+
+```python
+from typing import Annotated, Literal, Union
+from pydantic import BaseModel, Field
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+    meows: int
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+    barks: int
+
+class Pet(BaseModel):
+    pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+```
+
+This is clearer and gives better error messages.
+
+### Benefits
+
+| Without Discriminator | With Discriminator |
+|-----------------------|-------------------|
+| Tries each type sequentially | Jumps directly to correct type |
+| Slower validation | Faster validation |
+| Confusing errors | Clear errors ("Invalid pet_type") |
+| Ambiguity possible | Unambiguous |
+
+### Real-World Use Cases
+
+- **API events**: `{"event_type": "user_created", ...}` vs `{"event_type": "order_placed", ...}`
+- **Payment methods**: `{"method": "card", "card_number": ...}` vs `{"method": "paypal", "email": ...}`
+- **Shapes**: `{"shape": "circle", "radius": 5}` vs `{"shape": "rectangle", "width": 3, "height": 4}`
+
+---
+
+<details>
+<summary><strong>📋 Copy this: Discriminated Unions Reference</strong></summary>
+
+```
+PYDANTIC: Discriminated Unions (Tagged Unions)
+==============================================
+
+PURPOSE:
+Tell Pydantic which type in a Union to use based on a specific
+field value (the "discriminator"), instead of trying each type.
+
+BASIC EXAMPLE:
+--------------
+from typing import Literal, Union
+from pydantic import BaseModel
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']  # Discriminator field
+    meows: int
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']  # Discriminator field
+    barks: int
+
+class Pet(BaseModel):
+    pet: Union[Cat, Dog]
+
+data = {'pet': {'pet_type': 'dog', 'barks': 5}}
+p = Pet.model_validate(data)
+print(type(p.pet).__name__)  # Dog
+
+EXPLICIT DISCRIMINATOR (Recommended):
+-------------------------------------
+from typing import Annotated, Literal, Union
+from pydantic import BaseModel, Field
+
+class Pet(BaseModel):
+    pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+BENEFITS:
+---------
+Without Discriminator    | With Discriminator
+-------------------------|-------------------
+Tries each type in order | Jumps to correct type
+Slower validation        | Faster validation
+Confusing error messages | Clear errors
+Possible ambiguity       | Unambiguous
+
+HOW IT WORKS:
+-------------
+1. Pydantic looks at the discriminator field first (e.g., pet_type)
+2. Matches the value to the correct Literal type
+3. Validates using only that model
+4. No trial-and-error needed
+
+REQUIREMENTS:
+-------------
+1. Each model in the Union needs the discriminator field
+2. Discriminator must be a Literal type
+3. Each Literal value must be unique across the Union
+
+MULTIPLE VALUES PER TYPE:
+-------------------------
+class Cat(BaseModel):
+    pet_type: Literal['cat', 'kitten']  # Multiple values OK
+    meows: int
+
+NESTED DISCRIMINATED UNIONS:
+----------------------------
+class Vehicle(BaseModel):
+    vehicle: Annotated[
+        Union[Car, Truck, Motorcycle],
+        Field(discriminator='vehicle_type')
+    ]
+
+COMMON USE CASES:
+-----------------
+- API events: event_type field
+- Payment methods: method field
+- Message types: type field
+- Shapes/geometry: shape field
+- Notifications: channel field
+
+ERROR MESSAGES:
+---------------
+Without discriminator:
+  "X validation errors for Pet" (tries all, confusing)
+
+With discriminator:
+  "Input tag 'bird' did not match any of the expected tags:
+   'cat', 'dog'"
+```
+
+</details>
+
+---
+
+Now, want to answer **Question 14**?
+
+```python
+from typing import Literal, Union
+from pydantic import BaseModel
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+    meows: int
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+    barks: int
+
+class Pet(BaseModel):
+    pet: Union[Cat, Dog]
+
+data = {'pet': {'pet_type': 'dog', 'barks': 5}}
+p = Pet.model_validate(data)
+print(type(p.pet).__name__)
+``` 

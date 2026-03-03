@@ -1,0 +1,59 @@
+Here’s a pattern you can follow in pandas to compute “enrolled in last 100 admits” for each cohort (or each admit event) in your `df_data`. I’ll assume:
+
+1. **Each row** of `df_data` corresponds to one admitted person, with at least these columns:
+
+   * `admit_date` (or some monotonic timestamp you can sort on)
+   * `enrolled_flag` — 1 if that admit eventually enrolled, 0 otherwise
+
+2. You want, for each admit (or cohort), the rolling‐average enrollment rate over the *previous* 100 admits.
+
+```python
+import pandas as pd
+
+# 1) Sort by your admit timestamp
+df = df_data.sort_values("admit_date")
+
+# 2) Ensure you have a 0/1 flag for “did this admit enroll?”
+#    If you have e.g. an 'enrolled_date' column instead, you can do:
+# df["enrolled_flag"] = df["enrolled_date"].notna().astype(int)
+
+# 3) Compute the rolling mean over the *prior* 100 admits.
+#    Use rolling(window=100, min_periods=1) on the enrolled_flag,
+#    shifted by 1 so that the current admit is not included in its own history.
+df["enrolled_last_100"] = (
+    df["enrolled_flag"]
+      .rolling(window=100, min_periods=1)   # last 100 rows (admits)
+      .mean()                                # fraction enrolled
+      .shift(1)                              # exclude current row
+)
+
+# 4) If you want to back‐fill the first few admits (so they’re not NaN):
+df["enrolled_last_100"] = df["enrolled_last_100"].fillna(method="bfill")
+
+# 5) (Optional) If you want to attach that back to your cohort‐level table,
+#    merge `enrolled_last_100` on the admit timestamp or cohort key.
+
+print(df[["admit_date", "enrolled_flag", "enrolled_last_100"]].head())
+```
+
+### Notes
+
+* `.rolling(window=100)` slides a fixed‐size window of 100 rows over your sorted DataFrame.
+* `.shift(1)` makes sure the “rolling average” at position *i* only looks at rows `0…i-1`, not including the current one.
+* You can adjust `min_periods=` if you’d rather have NaN until you actually have 100 past admits, instead of back-filling early.
+* If you need to do this *per program* (or any other grouping), you can combine with `groupby`:
+
+  ```python
+  df["enrolled_last_100"] = (
+      df
+      .sort_values("admit_date")
+      .groupby("program_name")["enrolled_flag"]
+      .rolling(window=100, min_periods=1)
+      .mean()
+      .shift(1)
+      .reset_index(level=0, drop=True)
+      .fillna(method="bfill")
+  )
+  ```
+
+That will give each admit (or cohort row) the rolling enrollment rate of the *previous* 100 admits within its program.

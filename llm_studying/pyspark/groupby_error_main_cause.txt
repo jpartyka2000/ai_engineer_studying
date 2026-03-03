@@ -1,0 +1,54 @@
+The error you're seeing about needing a **`GROUP BY`** clause is likely happening because you're trying to use aggregation functions (like `F.sum`) inside a **`withColumn()`** statement without grouping the data. Aggregation functions such as `F.sum` are typically used within the context of `agg()` with a prior `groupBy()` operation, but you’re trying to use them in a `withColumn()`, which causes the error.
+
+### Problem:
+In the for-loop, you're using `F.sum(F.col('num_opportunities_closed')) / F.sum(F.col(stage_transition))`, but this can't be done without a `groupBy()` because **aggregate functions require the data to be grouped** before being used.
+
+### Solution:
+To calculate the win rates for each column in `stage_transition_progress_column_list`, you should include the aggregation logic directly in the `.agg()` function rather than inside a `withColumn()`. You also don't need to sum the columns again in the loop since you've already done the summing in the aggregation step.
+
+Here’s how you can fix it:
+
+### Updated Code:
+1. Calculate the sum of progress columns in the `agg()` function.
+2. Add the win rate columns within that aggregation instead of in a separate loop.
+
+```python
+# Define the win rate calculation for each stage and count closed opportunities
+df_aggregated = grouped.agg(
+    F.sum(F.col('is_closed_won')).alias('num_opportunities_closed'), 
+    F.sum(F.col('made_qualified')).alias('opps_reaching_made_qualified'),
+    F.sum(F.col('made_consensus_building_scoping')).alias('opps_reaching_made_consensus_building_scoping'),
+    F.sum(F.col('made_proposal__negotiation')).alias('opps_reaching_made_proposal__negotiation'),
+    F.sum(F.col('made_contracting')).alias('opps_reaching_made_contracting'),
+    F.sum(F.col('made_deal_closing')).alias('opps_reaching_made_deal_closing'),
+    
+    # Adding sum aggregation for each column in stage_transition_progress_column_list
+    *[F.sum(F.col(col)).alias(col) for col in stage_transition_progress_column_list],
+
+    # Calculate the win rates for each progress column in the same agg function
+    *[F.round(F.sum(F.col('is_closed_won')) / F.when(F.sum(F.col(col)) > 0, F.sum(F.col(col))).otherwise(1), 4).alias(f'{col}_win_rate') for col in stage_transition_progress_column_list]
+).withColumn(
+    'made_qualified_win_rate', F.round(F.col('num_opportunities_closed') / F.col('opps_reaching_made_qualified'), 4)
+).withColumn(
+    'made_consensus_building_scoping_win_rate', F.round(F.col('num_opportunities_closed') / F.col('opps_reaching_made_consensus_building_scoping'), 4)
+).withColumn(
+    'made_proposal__negotiation_win_rate', F.round(F.col('num_opportunities_closed') / F.col('opps_reaching_made_proposal__negotiation'), 4)
+).withColumn(
+    'made_contracting_win_rate', F.round(F.col('num_opportunities_closed') / F.col('opps_reaching_made_contracting'), 4)
+).withColumn(
+    'made_deal_closing_win_rate', F.round(F.col('num_opportunities_closed') / F.col('opps_reaching_made_deal_closing'), 4)
+)
+
+# Show the result
+df_aggregated.show()
+```
+
+### Key Changes:
+- The loop that was previously inside the `withColumn()` has been moved to the **`agg()`** statement itself.
+- The calculation for the win rate (`num_opportunities_closed / stage_transition`) is done directly inside the **aggregation** rather than in a separate step. This ensures that the grouping is maintained.
+- **`F.when(F.sum(F.col(col)) > 0, F.sum(F.col(col))).otherwise(1)`** is used to avoid division by zero in cases where no opportunities reached that stage transition.
+
+### Why This Fixes the Error:
+By placing all the aggregation operations inside `agg()`, you’re ensuring that the data is properly **grouped** before performing the aggregation, which resolves the need for a `GROUP BY` clause when using aggregate functions like `F.sum()`.
+
+Let me know if this resolves your issue!

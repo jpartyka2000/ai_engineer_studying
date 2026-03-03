@@ -1,0 +1,99 @@
+In Python’s standard `logging` system, **you can call** `logging.getLogger(name)` for *any* string name, but it will only have any effect if:
+
+1. **A logger with that name is actually used** by the code you’re trying to silence (i.e. the module calls `logging.getLogger(__name__)` or `logging.getLogger('that.name')` when it emits messages).
+2. **That logger’s messages propagate** (either to the root logger or to one of its handlers) so your level change can filter them.
+
+---
+
+### When you *can* use it
+
+* **Third‑party libraries** that use Python’s logging API and grab a logger via
+
+  ```python
+  logger = logging.getLogger(__name__)
+  ```
+
+  for example:
+
+  ```python
+  # inside lightgbm’s code
+  import logging
+  logger = logging.getLogger('lightgbm')
+  logger.info("Training started…")
+  ```
+
+  In that case your
+
+  ```python
+  logging.getLogger('lightgbm').setLevel(logging.ERROR)
+  ```
+
+  will effectively silence all `INFO` (and `DEBUG`/`WARNING`) calls from LightGBM.
+
+* **Your own modules**—if you do at the top of your file
+
+  ```python
+  import logging
+  logger = logging.getLogger(__name__)
+  logger.debug("Something happened")
+  ```
+
+  then elsewhere you could do
+
+  ```python
+  logging.getLogger('your.module.name').setLevel(logging.WARNING)
+  ```
+
+  to mute its debug messages.
+
+---
+
+### When it *won’t* work
+
+* **Modules that don’t use `logging`** (e.g. print to stdout/stderr directly, or use another framework).
+* **Logger names that aren’t actually created** by the library—if a package logs to the **root** logger or to a differently named logger, changing `"lightgbm"` won’t touch it.
+* **Handlers attached directly to the root** with a custom level—sometimes you have to also adjust the root logger:
+
+  ```python
+  # Mute everything below ERROR, for any logger
+  logging.getLogger().setLevel(logging.ERROR)
+  ```
+
+---
+
+### Quick recipe to discover a module’s logger name
+
+1. **Check the source** of the library: look for lines like
+
+   ```python
+   logging.getLogger('some.name')
+   # or
+   logging.getLogger(__name__)
+   ```
+2. **Capture all loggers at runtime**:
+
+   ```python
+   import logging
+   logging.root.setLevel(logging.DEBUG)
+   logging.basicConfig()   # ensure there's a handler
+   # run the code that logs…
+   ```
+
+   You’ll see messages prefixed by their logger name, e.g.
+
+   ```
+   lightgbm INFO  … Training started
+   foo.bar DEBUG …
+   ```
+3. **Then mute** the ones you don’t want:
+
+   ```python
+   logging.getLogger('foo.bar').setLevel(logging.ERROR)
+   ```
+
+---
+
+**TL;DR**:
+
+* You can always call `logging.getLogger('any.name')`, but it only filters messages from that exact logger name (and its children in the logger hierarchy) if the code actually uses it.
+* To silence a library, find the name it uses for its logger (often the package name or `__name__`), then bump its level. To catch everything, adjust the **root** logger with `logging.getLogger().setLevel(...)`.

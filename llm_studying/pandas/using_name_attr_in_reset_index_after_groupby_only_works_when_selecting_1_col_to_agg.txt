@@ -1,0 +1,34 @@
+When you do
+
+```python
+df_data \
+  .groupby(['DEGREE_OFFERING', 'COHORT_TS'])[['ADMITTED', 'ANOTHER_COL']] \
+  .mean()
+```
+
+you’re selecting **two** columns to aggregate instead of one, so pandas gives you back a **DataFrame** (not a Series) with a MultiIndex on the rows and one column for each of the selected fields:
+
+* The **index** will still be your two grouping keys (`DEGREE_OFFERING`, `COHORT_TS`).
+* The result will have two columns, `"ADMITTED"` and `"ANOTHER_COL"`, each holding the mean of that field within its group.
+
+For example, you might get something like:
+
+| DEGREE\_OFFERING | COHORT\_TS | ADMITTED | ANOTHER\_COL |
+| ---------------- | ---------- | -------- | ------------ |
+| program\_A       | 2023-01-01 | 0.23     | 5.6          |
+| program\_A       | 2023-04-01 | 0.17     | 4.8          |
+| program\_B       | 2023-01-01 | 0.42     | 3.1          |
+| ...              | ...        | ...      | ...          |
+
+If you prefer a flat DataFrame, you can then call `.reset_index()`:
+
+```python
+df_grouped = (
+    df_data
+      .groupby(['DEGREE_OFFERING', 'COHORT_TS'])[['ADMITTED', 'ANOTHER_COL']]
+      .mean()
+      .reset_index()
+)
+```
+
+which will turn `DEGREE_OFFERING` and `COHORT_TS` back into regular columns.

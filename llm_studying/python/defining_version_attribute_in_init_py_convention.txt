@@ -1,0 +1,27 @@
+No—there’s no language‐mandated requirement that `__version__` live in `__init__.py`.  Defining
+
+```python
+__version__ = "1.2.3"
+```
+
+in your package’s `__init__.py` is just a common convention (PEP 396) so that tools and users can do:
+
+```python
+import your_package
+print(your_package.__version__)
+```
+
+But you’re free to keep it anywhere:
+
+* in a separate `version.py` (and import it into `__init__.py`),
+* only in your `setup.cfg`/`pyproject.toml` (and read it via `importlib.metadata.version()`),
+* or managed entirely by tools like `setuptools_scm` or `versioneer` (which inject the version at build time without you writing it by hand).
+
+The key is that *if* some build step (like pip’s editable‐install hook) imports your top‐level module looking for `__version__`, then it needs to be defined *somewhere* on that import path.  If you’d rather not put it in `__init__.py`, just put it in e.g. `your_package/version.py` and then do:
+
+```python
+# in __init__.py
+from .version import __version__
+```
+
+so the hook still finds it.

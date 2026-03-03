@@ -1,0 +1,58 @@
+When you fine-tune a powerful base model like GPT-4.1 on a very small dataset (e.g. \~100 examples), it isn’t at all uncommon to see **worse** performance on that same data than simply using the base model “zero-shot” or with prompt-engineering. Here are the main culprits:
+
+---
+
+## 1. Overfitting on a tiny dataset
+
+* **High capacity**: GPT-4.1 has billions of parameters. With only \~100 examples, the fine-tune can “memorize” idiosyncrasies of those examples rather than learning the underlying pattern you really care about.
+* **Poor generalization**: On held-out or slightly different prompts, an overfit model will mis-apply whatever narrow mappings it saw during training.
+
+## 2. Catastrophic forgetting
+
+* During SFT, you update the model’s weights to fit your 100 examples. In doing so, you can inadvertently **erase** or weaken the broader reasoning skills and world knowledge it had pre-training—so it sometimes performs worse even on very similar prompts.
+
+## 3. Data distribution shift
+
+* If your 100 examples aren’t perfectly representative of the range of real-world inputs you later test on, the SFT’d model can get “confused” by anything outside that tiny slice. The base model, in contrast, knows how to handle arbitrary language.
+
+## 4. Suboptimal fine-tuning hyperparameters
+
+* **Learning rate too high** → the model “jumps” too far from its pretrained weights.
+* **Too few epochs** → the model never actually learned your examples.
+* **No regularization** or **no validation early stopping** → you either under- or over-fit without noticing.
+
+## 5. Loss mismatch
+
+* SFT optimizes for **maximum likelihood** on your examples, but your true metric (e.g. correctness of a tool call sequence) may not align perfectly with likelihood. The base model’s unsupervised objective can sometimes yield higher “naturalness” or coherence on unseen examples.
+
+---
+
+### What to do about it
+
+1. **Increase and diversify your SFT data**
+
+   * Move from 100 to at least a few thousand high-quality examples that cover the full range of your use cases.
+
+2. **Use a held-out validation set + early stopping**
+
+   * Monitor your true metric on held-out prompts and stop fine-tuning the moment validation performance peaks.
+
+3. **Lower your learning rate and adjust batch size**
+
+   * Try LR in the 1e-5 to 5e-6 range, and batch sizes that fit your GPU/endpoint.
+
+4. **Mix in some base-model examples (“replay”)**
+
+   * When you fine-tune, include a fraction of the original base-model’s pretraining data (or generic “instruction tuning” prompts) so you don’t forget the general capabilities.
+
+5. **Consider parameter-efficient tuning**
+
+   * Methods like LoRA or adapters let you tweak far fewer parameters, reducing catastrophic forgetting.
+
+6. **Evaluate with the *same* prompts**
+
+   * Make sure you’re measuring performance on held-out examples that truly reflect your intended deployment, not just the 100 you trained on.
+
+---
+
+By expanding and diversifying your fine-tuning set, carefully tuning hyperparameters, and using techniques to preserve the base model’s strengths, you’ll almost always see SFT eventually **surpass** the vanilla model on your specific task. But with only 100 examples and naïve tuning, it’s completely expected that the base GPT-4.1 can outperform your custom endpoint.

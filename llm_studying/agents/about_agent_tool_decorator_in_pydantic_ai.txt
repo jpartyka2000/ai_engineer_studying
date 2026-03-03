@@ -1,0 +1,43 @@
+Yes—that decorator is how you tell the `Agent` “this Python function is one of my tools.”
+
+What happens under the hood is:
+
+1. **Registration**:
+   When you write
+
+   ```python
+   @agent.tool
+   def compute(ctx: RunContext[State], expr: str) -> Dict[str, Any]:
+       …
+   ```
+
+   the decorator adds `compute` into the agent’s internal **tool registry** (usually keyed by the function name `"compute"`).
+
+2. **Invocation by the LLM**:
+   When you call `agent.run(initial_state)`, the agent will build prompts that describe all available tools (including `compute`) and their function signatures.
+
+3. **Tool-calling step**:
+   If the model decides it needs to invoke your `compute` tool to answer the user’s question, it emits a structured “tool call” (JSON) like:
+
+   ```json
+   {
+     "tool": "compute",
+     "args": {
+       "expr": "2 + 2 * 3"
+     }
+   }
+   ```
+
+4. \*\* execution\*\*:
+   The agent runtime sees that tool call, looks up your decorated `compute` function, deserializes the args, and actually runs:
+
+   ```python
+   result = compute(ctx, expr="2 + 2 * 3")
+   ```
+
+5. **Resume the chain**:
+   It takes the returned `{"value": 8}` and feeds that back into the prompt/context so the LLM can finish its reasoning and produce a final `Answer` object.
+
+---
+
+So in short: **`@agent.tool`** makes `compute` available for the agent to call automatically as part of its tool-calling protocol when you do `agent.run(...)`.

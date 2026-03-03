@@ -1,0 +1,81 @@
+To filter out first and last names from a column of data in Python, you can use the `names` module (if you have a list of names or a dataset with common names). Alternatively, you can leverage a library like `nltk` or `names-dataset` to identify names.
+
+Here’s an approach using a combination of `nltk`, regular expressions, and custom lists of names:
+
+### Step 1: Install Necessary Libraries
+
+You may need to install `nltk` and `names-dataset` (if not already installed):
+
+```bash
+pip install nltk names-dataset
+```
+
+### Step 2: Prepare and Download Necessary Data
+
+```python
+import nltk
+from names_dataset import NameDataset
+
+# Download necessary NLTK data if not already downloaded
+nltk.download('names')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('punkt')
+```
+
+### Step 3: Code Example
+
+```python
+import pandas as pd
+import re
+from names_dataset import NameDataset
+
+# Sample dataframe
+data = {
+    'text_column': [
+        'John Doe placed an order.',
+        'This was confirmed by Alice.',
+        'Report signed by Dr. Robert Brown.',
+        'The email was sent by Samantha on behalf of Ms. Julia White.'
+    ]
+}
+df = pd.DataFrame(data)
+
+# Initialize the NameDataset
+nd = NameDataset()
+
+# Define a function to check if a word is a name
+def is_name(word):
+    return nd.search_first_name(word) or nd.search_last_name(word)
+
+# Use regex to extract potential names and filter using the name dataset
+def extract_names(text):
+    # Tokenize the text
+    words = nltk.word_tokenize(text)
+    # Check if the words are names using NameDataset
+    names = [word for word in words if is_name(word)]
+    return names
+
+# Apply the function to the dataframe
+df['extracted_names'] = df['text_column'].apply(extract_names)
+
+print(df)
+```
+
+### Explanation
+1. **`names-dataset`:** The `NameDataset` class allows you to check if a given word is a common first or last name.
+2. **`nltk`:** Used to tokenize the text, which helps in splitting sentences into individual words.
+3. **Regex & Custom Functions:** The function `is_name()` uses the `names-dataset` to filter out common first and last names, and `extract_names()` applies this logic to the entire text column in the DataFrame.
+
+### Custom Name Lists
+If you have a specific list of first and last names, you can load them into a set and modify the `is_name()` function to match names from your list:
+
+```python
+# Custom name lists
+first_names = {"John", "Alice", "Robert", "Samantha", "Julia"}
+last_names = {"Doe", "Brown", "White"}
+
+def is_name_custom(word):
+    return word in first_names or word in last_names
+```
+
+This method allows you to customize the name-checking process based on your data or requirements.

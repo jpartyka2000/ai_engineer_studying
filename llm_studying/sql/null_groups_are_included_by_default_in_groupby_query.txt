@@ -1,0 +1,45 @@
+Yes—NULLs aren’t silently dropped by `GROUP BY`; they’re simply treated as “all NULLs equal each other,” so you’ll get one group whose key column is NULL. For example:
+
+```sql
+CREATE TABLE sales(region STRING, amount INT);
+INSERT INTO sales VALUES
+  ('East', 100),
+  ('West',  200),
+  (NULL,    150),
+  (NULL,    50);
+
+SELECT
+  region,
+  COUNT(*) AS num_sales,
+  SUM(amount) AS total_amount
+FROM sales
+GROUP BY region;
+```
+
+yields:
+
+|  region  | num\_sales | total\_amount |
+| :------: | :--------: | :-----------: |
+|   East   |      1     |      100      |
+|   West   |      1     |      200      |
+| **NULL** |      2     |      200      |
+
+Notice the `region = NULL` row still appears with its own aggregate.
+
+---
+
+### A few gotchas
+
+* If you **filter out** NULLs in a `WHERE` clause (`WHERE region IS NOT NULL`), then obviously that group won’t show up.
+* In a `HAVING` clause, comparisons like `HAVING region = 'East'` will also filter out the NULL group—you’d need `HAVING region IS NULL` to isolate it.
+* If you’d rather see something more descriptive than `NULL`, you can wrap the column in `COALESCE`, e.g.
+
+  ```sql
+  SELECT
+    COALESCE(region, 'Unknown') AS region_label,
+    COUNT(*) AS num_sales
+  FROM sales
+  GROUP BY COALESCE(region, 'Unknown');
+  ```
+
+But by default, every distinct NULL in a grouping column collapses into exactly one “NULL” group—and that group is included in your results unless you explicitly filter it out.

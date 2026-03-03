@@ -1,0 +1,50 @@
+Python’s support for generics (e.g. `List[int]`, `Dict[str, float]`, your own `class MyContainer[T]: …`) lives entirely in the **static type‐checking** world. At **runtime**, all that generic information is stripped away—you just have plain built-in classes like `list` or `dict`. This is known as **type erasure**. Here’s what that means in practice:
+
+1. **Annotations vs. implementation**
+
+   ```python
+   from typing import List
+
+   def foo(xs: List[int]) -> None:
+       print(type(xs))
+   foo([1, 2, 3])  # prints <class 'list'>
+   ```
+
+   At runtime, `xs` is just a `list`, not a `list[int]`. The interpreter never enforces or even remembers the `<int>` part.
+
+2. **No `isinstance` or `issubclass` by parameter**
+   You can’t do:
+
+   ```python
+   isinstance([1,2,3], List[int])   # TypeError or always False
+   ```
+
+   Only `isinstance([1,2,3], list)` works.
+
+3. **`typing` helpers still work on annotation objects**
+   Although instances lose their parameters, your annotation objects preserve them:
+
+   ```python
+   from typing import get_origin, get_args, Dict
+
+   T = Dict[str, int]
+   get_origin(T)  # → dict
+   get_args(T)    # → (str, int)
+   ```
+
+   But that’s introspecting the *annotation* `T`, not the instance.
+
+4. **Why erasure?**
+
+   * **Performance**: No extra metadata stored on every object.
+   * **Simplicity**: The core interpreter stays lean—type hints are optional, external to the runtime.
+   * **Historical**: Python predates static typing; generics were retrofitted.
+
+5. **Workarounds**
+
+   * Some libraries (`pydantic`, `attrs`, custom `__orig_class__`) manually stash type parameters on instances if you really need them at runtime.
+   * You can always annotate variables or data-structures and use `get_type_hints()` to recover intended types—but only where *you* wrote those hints.
+
+---
+
+**Bottom line:** Python generics exist to help tools (mypy, linters, IDEs) catch bugs before you run your code. Once it’s running, all those `<T>` parameters have been erased, and you’re back to plain old `list`, `dict`, and your own classes.

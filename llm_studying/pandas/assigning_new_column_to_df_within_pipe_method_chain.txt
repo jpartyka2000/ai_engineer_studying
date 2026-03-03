@@ -1,0 +1,47 @@
+Yes—you just need your `pipe` to return the whole DataFrame (with the new column added), not the Series itself. Two common patterns:
+
+---
+
+### 1) Using `assign` in the lambda
+
+```python
+df_data_only_good_cohorts = (
+    filter_cohorts_with_month(df_data)
+    .pipe(
+        lambda df: df.assign(
+            cohort_timestamp = df["COHORT"].map(parse_cohort_str_to_timestamp)
+        )
+    )
+)
+```
+
+* `.assign()` creates (or overwrites) a column and returns the full DataFrame.
+* Now `df_data_only_good_cohorts` is still a DataFrame with your new `cohort_timestamp` column.
+
+---
+
+### 2) Writing a little helper function
+
+If you prefer a named function instead of an inline lambda:
+
+```python
+def add_cohort_timestamp(df):
+    df = df.copy()
+    df["cohort_timestamp"] = df["COHORT"].map(parse_cohort_str_to_timestamp)
+    return df
+
+df_data_only_good_cohorts = (
+    filter_cohorts_with_month(df_data)
+    .pipe(add_cohort_timestamp)
+)
+```
+
+---
+
+#### Why this works
+
+* **`.pipe(func)`** calls `func(df)` and returns its result.
+* If `func` returns a Series, that’s what you get back.
+* But if `func` returns a DataFrame (via `assign()` or by mutating+returning), you stay in the DataFrame world.
+
+So just make sure your lambda or helper returns the DataFrame, not the bare Series.

@@ -1,0 +1,81 @@
+In Spark there isn’t a single “one‐liner” that creates separate dummy columns the way `pd.get_dummies` does, but you can reproduce exactly the same result in two main ways:
+
+---
+
+## 1) Manual `.withColumn(...)` per category
+
+```python
+from pyspark.sql.functions import col
+from pyspark.sql import DataFrame
+
+def get_dummies(
+    df: DataFrame,
+    cols: list[str],
+    prefix_sep: str = "_",
+    dummy_na: bool = True
+) -> DataFrame:
+    """
+    For each column in `cols`, collect its distinct values (including None if dummy_na),
+    then for each distinct value create a new Integer column:
+      {col}{prefix_sep}{value}  ==  (col == value) ? 1 : 0
+    """
+    for c in cols:
+        # collect distinct values (this is a small list since you said <10 unique vals)
+        vals = [row[c] for row in df.select(c).distinct().collect()]
+        for v in vals:
+            name = f"{c}{prefix_sep}{v if v is not None else 'nan'}"
+            df = df.withColumn(name, (col(c) == v).cast("integer"))
+        if dummy_na and None not in vals:
+            # if you want an explicit “missing” column but no null in vals
+            name = f"{c}{prefix_sep}nan"
+            df = df.withColumn(name, col(c).isNull().cast("integer"))
+    return df
+
+# usage
+spark_df = get_dummies(
+    spark_df,
+    cols=COLUMNS_LT_10_VALS_LIST,
+    prefix_sep="_",
+    dummy_na=True
+)
+```
+
+This will give you exactly one column per category *and* one for nulls.
+
+---
+
+## 2) ML‐pipeline approach (vectorized one‐hot)
+
+If you’re OK with having a *vector* column rather than dozens of scalar columns:
+
+```python
+from pyspark.ml import Pipeline
+from pyspark.ml.feature import StringIndexer, OneHotEncoder
+
+# 1) string‐index each col (keep unseen/null as a category)
+indexers = [
+    StringIndexer(inputCol=c, outputCol=c + "_idx", handleInvalid="keep")
+    for c in COLUMNS_LT_10_VALS_LIST
+]
+# 2) one‐hot encode each index (provides sparse vector)
+encoders = [
+    OneHotEncoder(inputCol=c + "_idx", outputCol=c + "_ohe", handleInvalid="keep")
+    for c in COLUMNS_LT_10_VALS_LIST
+]
+
+pipeline = Pipeline(stages=indexers + encoders)
+model    = pipeline.fit(spark_df)
+spark_df = model.transform(spark_df)
+
+# you’ll end up with e.g. “channel_ohe” columns of type Vector,
+# one vector per original categorical column.
+```
+
+---
+
+### Picking the right approach
+
+* **Manual** `.withColumn` is *exactly* like `pd.get_dummies(…, dummy_na=True)` → you get separate integer columns.
+* **ML pipeline** is more idiomatic Spark for downstream ML workflows, but gives you vectors (you can explode them if you really need scalars).
+
+Either way, you’ll preserve perfect row‑alignment (Spark always lines things up by row), and you’ll get exactly the same one‐hot behavior as in pandas.

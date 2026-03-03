@@ -1,0 +1,148 @@
+Here you go:
+
+---
+
+<details>
+<summary><strong>📋 Copy this: context Parameter in model_validate()</strong></summary>
+
+```
+PYDANTIC: context Parameter in model_validate()
+===============================================
+
+PURPOSE:
+Pass arbitrary data to validators at validation time, allowing
+dynamic validation behavior without hardcoding values.
+
+BASIC SYNTAX:
+-------------
+user = User.model_validate(data, context={'key': 'value'})
+
+ACCESSING CONTEXT IN VALIDATORS:
+--------------------------------
+The context is available via `info.context` in validators:
+
+from pydantic import BaseModel, field_validator
+
+class Product(BaseModel):
+    name: str
+    price: float
+    
+    @field_validator('price')
+    @classmethod
+    def apply_discount(cls, v, info):
+        if info.context:
+            discount = info.context.get('discount', 0)
+            return v * (1 - discount)
+        return v
+
+# Without context
+p1 = Product.model_validate({'name': 'Book', 'price': 100})
+print(p1.price)  # 100.0
+
+# With context
+p2 = Product.model_validate(
+    {'name': 'Book', 'price': 100},
+    context={'discount': 0.25}
+)
+print(p2.price)  # 75.0
+
+WORKS WITH ALL VALIDATOR TYPES:
+-------------------------------
+
+# field_validator
+@field_validator('field_name')
+@classmethod
+def validate_field(cls, v, info):
+    ctx = info.context or {}
+    # use ctx...
+
+# model_validator (mode='after')
+@model_validator(mode='after')
+def validate_model(self, info):
+    ctx = info.context or {}
+    # use ctx...
+    return self
+
+# model_validator (mode='before')
+@model_validator(mode='before')
+@classmethod
+def validate_before(cls, data, info):
+    ctx = info.context or {}
+    # use ctx...
+    return data
+
+COMMON USE CASES:
+-----------------
+1. Dynamic discounts/pricing
+   context={'discount': 0.2, 'currency': 'USD'}
+
+2. User-specific validation
+   context={'user_role': 'admin', 'user_id': 123}
+
+3. Environment-aware validation
+   context={'env': 'production', 'strict_mode': True}
+
+4. Request-scoped data
+   context={'request_id': 'abc-123', 'locale': 'en-US'}
+
+5. Feature flags
+   context={'features': {'new_validation': True}}
+
+REAL-WORLD EXAMPLE - Role-Based Validation:
+-------------------------------------------
+from pydantic import BaseModel, field_validator
+
+class Document(BaseModel):
+    title: str
+    classification: str
+    
+    @field_validator('classification')
+    @classmethod
+    def check_access(cls, v, info):
+        allowed = {'public'}
+        if info.context:
+            role = info.context.get('user_role', 'guest')
+            if role == 'admin':
+                allowed |= {'confidential', 'secret'}
+            elif role == 'employee':
+                allowed |= {'confidential'}
+        
+        if v not in allowed:
+            raise ValueError(f'Access denied for classification: {v}')
+        return v
+
+# Guest can only create public docs
+doc = Document.model_validate(
+    {'title': 'Report', 'classification': 'public'},
+    context={'user_role': 'guest'}
+)  # Works
+
+# This would raise ValidationError:
+# Document.model_validate(
+#     {'title': 'Secret Report', 'classification': 'secret'},
+#     context={'user_role': 'guest'}
+# )
+
+IMPORTANT NOTES:
+----------------
+1. Always check `if info.context` before accessing - it can be None
+2. Context is NOT stored on the model instance
+3. Context is passed through to nested model validation
+4. Use context for validation-time data, not for data storage
+
+ALSO WORKS WITH:
+----------------
+- model_validate_json(json_str, context={...})
+- model_validate_strings(data, context={...})
+```
+
+</details>
+
+---
+
+Ready to answer **Question 13** now?
+
+A) No difference—they are completely equivalent
+B) `model_validate` skips validation, `**data` doesn't
+C) `model_validate` can handle ORM objects and has more options; `**data` only works with keyword arguments
+D) `**data` is faster because it bypasses Pydantic internals

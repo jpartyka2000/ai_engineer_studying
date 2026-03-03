@@ -1,0 +1,121 @@
+Here’s a high-level recipe for doing an OpenAI-style RL fine-tuning (i.e. RLHF) on an existing LLM:
+
+---
+
+## 1) Collect preference data
+
+You need a small dataset of prompts plus *comparisons* or *scalar scores* from humans. For example:
+
+```jsonl
+{"prompt": "Write a polite apology email…", 
+ "chosen": "I’m sorry for…", 
+ "rejected": "Oops, my bad…"}
+```
+
+or
+
+```jsonl
+{"prompt": "...", 
+ "completion": "…", 
+ "rating": 4.2}
+```
+
+Upload it:
+
+```bash
+openai api files.upload \
+  --file preferences.jsonl \
+  --purpose reward_model
+```
+
+---
+
+## 2) Train a reward model
+
+Turn those comparisons (or scores) into a scalar reward function $r_\phi$:
+
+```python
+import openai
+
+# comparisons-based
+resp = openai.Reward.create(
+  training_file="file-xxxxxxxx",   # your uploaded preferences
+  model="reward-model-base"        # e.g. a small OpenAI base you pick
+)
+# You now have a reward model `r_φ` you can call:
+#   openai.Reward.evaluate(model="reward-model-xxx", ...)
+```
+
+This step learns to map (prompt, completion) → reward in \[0,1] (or whatever scale you chose).
+
+---
+
+## 3) Run PPO to fine-tune your policy
+
+You’ll now treat the OpenAI policy model (e.g. `gpt-3.5-turbo`) as a *warm start*, and run a standard PPO loop:
+
+```python
+from openai import OpenAI
+import numpy as np
+
+client = OpenAI()
+
+policy_name = "gpt-3.5-turbo"
+reward_name = "reward-model-xxx"
+
+for batch in rollout_batches:
+    prompts = batch["prompts"]  # list of strings
+
+    # 1. Sample from the current policy
+    responses = client.chat.completions.create(
+      model=policy_name,
+      messages=[{"role":"user","content":p} for p in prompts],
+      temperature=0.8,  # add exploration
+      max_tokens=64
+    )
+
+    # 2. Compute rewards
+    rewards = []
+    for p, c in zip(prompts, responses.choices):
+        score = client.rewards.evaluate(
+          model=reward_name, 
+          prompt=p, completion=c.message.content
+        ).reward
+        rewards.append(score)
+
+    # 3. Compute advantages & PPO loss (locally, in your code)
+    #    – use log‐probs from the policy call (you can request logprobs via the API)
+    #    – compute G_t, A_t via standard PPO/GAE
+    #    – form the clipped surrogate objective
+    #
+    # 4. Send a “fine-tune” request using the RL options:
+    client.fine_tunes.rls.create(
+      model=policy_name,
+      training_data=… ,         # you’d package the trajectories + logprobs + advantages
+      n_epochs=1,
+      batch_size=…,
+      learning_rate=…,
+      ppo_clip=0.2
+    )
+    # This kicks off one PPO update on OpenAI’s servers.
+```
+
+> **Note:** OpenAI’s CLI/SDK supports an `rls` (reinforcement-learning–style) fine-tune endpoint under the hood, which accepts your advantage‐weighted samples and runs PPO for you.
+
+---
+
+## 4) Iterate
+
+* Collect new samples with the updated policy.
+* Re-score them with your reward model.
+* Repeat PPO updates until convergence.
+
+---
+
+### TL;DR
+
+1. **Upload human prefs** → train a **reward model** on OpenAI.
+2. **Roll out** your policy to collect trajectories and log‐probs.
+3. **Score** those completions with the reward model.
+4. **PPO-fine-tune** the policy via the OpenAI RL fine-tuning API.
+5. **Repeat** until your LLM behaves the way humans prefer.

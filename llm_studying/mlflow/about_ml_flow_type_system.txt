@@ -1,0 +1,31 @@
+MLflow’s `Schema`/`ColSpec` types aren’t tied to pandas or Spark specifically but to MLflow’s own portable type system (the `mlflow.types` API).  When you write:
+
+```python
+input_schema = Schema([
+    ColSpec("double",  "overall_budget"),
+    ColSpec("integer", "n_iterations"),
+    ColSpec("double",  "pct_min_max"),
+    ColSpec("double",  "ctr"),
+    ColSpec("string",  "input_table"),
+])
+```
+
+you’re declaring that your model inputs have these MLflow data types (from `mlflow.types.schema.DataType`):
+
+* **`double`** → 64-bit floating point
+* **`integer`** → 32-bit signed integer
+* **`long`** (not shown above) → 64-bit signed integer
+* **`float`** → 32-bit floating point
+* **`string`** → variable-length Unicode text
+* **`boolean`** → true/false
+* **`binary`** → raw bytes
+* (etc.)
+
+Under the hood:
+
+* **For Python/pyfunc inference**, MLflow will parse incoming JSON (or pandas DataFrame) and coerce to the corresponding Python/NumPy types (e.g. `double` → `float64`, `integer` → `int32`, `string` → Python `str`).
+* **If you call** `schema.as_spark_schema()`**,** MLflow will spit out a Spark `StructType` with matching Spark `DataType`s (e.g. `DoubleType`, `IntegerType`, `StringType`).
+
+So they’re neither pure pandas nor pure Spark types but MLflow’s abstraction over Arrow/SQL-style types that it can map to both pandas/NumPy and Spark when needed ([mlflow.org][1]).
+
+[1]: https://mlflow.org/docs/1.23.0/python_api/mlflow.types.html?utm_source=chatgpt.com "mlflow.types — MLflow 1.23.0 documentation"

@@ -1,0 +1,13 @@
+There really isn’t a formal “merge protocol” interface in pandas—under the covers `pd.merge()` simply calls into the same join machinery that powers `DataFrame.merge()`.  In practice that means anything you can pass as the “left” (or “right”) argument to `pd.merge` just needs to:
+
+1. Behave like a `pandas.DataFrame`
+2. Have a `.merge(…)` method that accepts the usual parameters (`on=`, `how=`, `left_on=`, etc.) and returns an object of the same type
+
+So out-of-the-box that’s just `pd.DataFrame` itself, but any library or user‐defined subclass that meets those requirements will work.  Common examples include:
+
+* **GeoPandas** `GeoDataFrame`
+* **Dask** `dask.dataframe.DataFrame`
+* **Modin** `modin.pandas.DataFrame`
+* **pandas-on-Spark** (formerly Koalas) `pyspark.pandas.DataFrame`
+
+…and in fact you could roll your own by subclassing `pd.DataFrame` and overriding/implementing a `.merge()` with the same signature.  Then `pd.merge(your_df, other_df, …)` will dispatch into your class’s merge method and give you back an instance of your type.

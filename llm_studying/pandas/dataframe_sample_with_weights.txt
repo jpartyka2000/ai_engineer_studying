@@ -1,0 +1,126 @@
+You can add a `weights` parameter to the `sample()` method to incorporate the `win_probability` column as the sampling weight. Here's how you can do it:
+
+```python
+df_sampled_opps = open_opportunities.sample(
+    n=N,
+    replace=False,
+    weights='win_probability'  # Use the 'win_probability' column for sampling weights
+)
+```
+
+### Explanation:
+1. **`weights` Parameter**:
+   - The `weights` argument specifies the probability of each row being selected.
+   - It can be a column name (as in the example) or a Series containing non-negative numeric values.
+
+2. **Normalize Automatically**:
+   - Pandas automatically normalizes the `weights` column so the values sum to 1, making it easy to pass raw probabilities.
+
+3. **No Replacement**:
+   - `replace=False` ensures that the same opportunity isn’t selected multiple times.
+
+### Example:
+```python
+import pandas as pd
+
+# Example DataFrame
+data = {
+    'opportunity_id': [1, 2, 3, 4],
+    'win_probability': [0.1, 0.5, 0.3, 0.1]
+}
+open_opportunities = pd.DataFrame(data)
+
+# Sampling with weights
+N = 2
+df_sampled_opps = open_opportunities.sample(
+    n=N,
+    replace=False,
+    weights='win_probability'
+)
+
+print(df_sampled_opps)
+```
+
+### Important Notes:
+- The `weights` column must contain non-negative values. If there are any negative or NaN values, you'll get an error.
+- Ensure the `win_probability` column is normalized (values between 0 and 1) or can be interpreted as relative weights. If it’s not normalized, Pandas still works but scales them internally.
+
+----------------
+
+If several opportunities have a `win_probability` of 1 in the `weights` column, here's how Pandas would treat them in the sampling process:
+
+### Key Behavior
+1. **Opportunities with `win_probability = 1`**:
+   - Pandas will treat these as having the highest weight relative to other opportunities.
+   - If the sum of all weights (including these 1's) exceeds the total number of rows, Pandas will normalize the weights by dividing each by the total sum. This ensures they are interpreted as relative probabilities.
+
+2. **Opportunities with `win_probability = 0`**:
+   - These rows will never be selected because their weight is effectively zero.
+
+3. **Relative Probabilities Matter**:
+   - Even if several opportunities have `win_probability = 1`, their likelihood of being selected depends on the sum of all weights.
+
+---
+
+### Example with Several `win_probability = 1`:
+```python
+import pandas as pd
+
+# Example DataFrame
+data = {
+    'opportunity_id': [1, 2, 3, 4, 5],
+    'win_probability': [0.5, 1, 1, 0.3, 0.2]  # Two opportunities with win_probability = 1
+}
+open_opportunities = pd.DataFrame(data)
+
+# Sampling with weights
+N = 3
+df_sampled_opps = open_opportunities.sample(
+    n=N,
+    replace=False,
+    weights='win_probability'
+)
+
+print(df_sampled_opps)
+```
+
+### What Happens:
+1. The total weight is `0.5 + 1 + 1 + 0.3 + 0.2 = 3.0`.
+2. The `win_probability = 1` rows are **not guaranteed to be selected**, but they have a much higher relative probability compared to others.
+   - Relative probabilities:
+     - Opportunity 1: `0.5 / 3 = 16.7%`
+     - Opportunity 2: `1 / 3 = 33.3%`
+     - Opportunity 3: `1 / 3 = 33.3%`
+     - Opportunity 4: `0.3 / 3 = 10%`
+     - Opportunity 5: `0.2 / 3 = 6.7%`
+
+---
+
+### What If All `win_probability = 1`?
+If **all opportunities** have `win_probability = 1`, Pandas will treat them equally. The probabilities will be normalized so that each opportunity has an equal chance of being selected.
+
+For example:
+```python
+# Example DataFrame with all win_probability = 1
+data = {
+    'opportunity_id': [1, 2, 3, 4],
+    'win_probability': [1, 1, 1, 1]
+}
+open_opportunities = pd.DataFrame(data)
+
+# Sampling
+df_sampled_opps = open_opportunities.sample(
+    n=2,  # Randomly select 2
+    replace=False,
+    weights='win_probability'
+)
+
+print(df_sampled_opps)
+```
+
+**Outcome**: Since all weights are the same (equal probabilities), the rows will be selected randomly without preference.
+
+---
+
+### Summary:
+If there are several `win_probability = 1` entries, they will be **treated as highly likely**, but not automatically selected unless their weights are much larger than others. Pandas normalizes the weights internally to ensure relative probabilities are applied.

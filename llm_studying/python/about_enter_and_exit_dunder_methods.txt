@@ -1,0 +1,476 @@
+## 📋 Deep Dive: `__enter__` and `__exit__` — The Context Manager Protocol
+
+---
+
+### What Are Context Managers?
+
+Context managers are objects that define setup and teardown actions for a `with` statement. They ensure resources are properly managed — files get closed, locks get released, connections get returned to pools — even if exceptions occur.
+
+```python
+# Classic example
+with open('file.txt', 'r') as f:
+    content = f.read()
+# File is automatically closed here, even if an error occurred
+```
+
+---
+
+### The Context Manager Protocol
+
+To create a context manager, implement two dunder methods:
+
+| Method | When It's Called | Purpose |
+|--------|------------------|---------|
+| `__enter__(self)` | At the start of `with` block | Setup; return value is assigned to `as` variable |
+| `__exit__(self, exc_type, exc_val, exc_tb)` | At the end of `with` block | Teardown; handle exceptions if needed |
+
+---
+
+### Basic Structure
+
+```python
+class MyContextManager:
+    def __enter__(self):
+        # Setup code runs here
+        print("Entering context")
+        return self  # This is assigned to the 'as' variable
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Teardown code runs here
+        print("Exiting context")
+        return False  # Don't suppress exceptions
+
+# Usage
+with MyContextManager() as cm:
+    print("Inside the block")
+
+# Output:
+# Entering context
+# Inside the block
+# Exiting context
+```
+
+---
+
+### The `__enter__` Method
+
+```python
+def __enter__(self):
+    # 1. Perform setup (acquire resource, start timer, open connection, etc.)
+    # 2. Return something (usually self, but can be anything)
+    return self
+```
+
+**Key points:**
+- Called when execution enters the `with` block
+- The return value is bound to the variable after `as`
+- You don't have to return `self` — you can return anything
+
+```python
+class DatabaseConnection:
+    def __enter__(self):
+        self.conn = create_connection()
+        return self.conn  # Return the connection, not self
+
+with DatabaseConnection() as conn:
+    # conn is the database connection, not the DatabaseConnection instance
+    conn.execute("SELECT * FROM users")
+```
+
+---
+
+### The `__exit__` Method
+
+```python
+def __exit__(self, exc_type, exc_val, exc_tb):
+    # exc_type: The exception class (e.g., ValueError), or None
+    # exc_val:  The exception instance, or None
+    # exc_tb:   The traceback object, or None
+    
+    # Perform cleanup
+    
+    # Return True to suppress the exception
+    # Return False (or None) to let it propagate
+    return False
+```
+
+**The three parameters tell you about any exception that occurred:**
+
+| Parameter | What It Contains | If No Exception |
+|-----------|------------------|-----------------|
+| `exc_type` | Exception class (e.g., `ValueError`) | `None` |
+| `exc_val` | Exception instance | `None` |
+| `exc_tb` | Traceback object | `None` |
+
+```python
+class VerboseContext:
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            print("Exited normally")
+        else:
+            print(f"Exception occurred: {exc_type.__name__}: {exc_val}")
+        return False  # Let exception propagate
+
+# Normal exit
+with VerboseContext():
+    print("Working...")
+# Output:
+# Working...
+# Exited normally
+
+# Exception exit
+with VerboseContext():
+    raise ValueError("Oops!")
+# Output:
+# Exception occurred: ValueError: Oops!
+# (then the exception propagates and crashes)
+```
+
+---
+
+### Exception Handling in `__exit__`
+
+The return value of `__exit__` controls exception propagation:
+
+| Return Value | Effect |
+|--------------|--------|
+| `False` / `None` | Exception propagates (re-raised after `__exit__`) |
+| `True` | Exception is **suppressed** (swallowed) |
+
+```python
+class SuppressErrors:
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            print(f"Suppressing: {exc_val}")
+            return True  # Suppress the exception!
+        return False
+
+# Exception is swallowed
+with SuppressErrors():
+    raise ValueError("This won't crash the program")
+    
+print("Code continues!")  # This runs!
+
+# Output:
+# Suppressing: This won't crash the program
+# Code continues!
+```
+
+**Warning:** Suppressing exceptions can hide bugs. Use sparingly!
+
+---
+
+### How `with` Works Under the Hood
+
+```python
+with EXPRESSION as TARGET:
+    BODY
+```
+
+Is roughly equivalent to:
+
+```python
+manager = EXPRESSION
+value = manager.__enter__()
+TARGET = value
+
+exc_info = (None, None, None)
+try:
+    BODY
+except:
+    exc_info = sys.exc_info()
+    if not manager.__exit__(*exc_info):
+        raise
+finally:
+    if exc_info == (None, None, None):
+        manager.__exit__(None, None, None)
+```
+
+**Key points:**
+- `__enter__` is called first
+- Its return value is assigned to the `as` variable
+- `__exit__` is **always** called, even if an exception occurs
+- `__exit__` receives exception info (or `None`s if no exception)
+- If `__exit__` returns `True`, the exception is suppressed
+
+---
+
+### Practical Examples
+
+#### Example 1: File Handler
+
+```python
+class ManagedFile:
+    def __init__(self, filename, mode='r'):
+        self.filename = filename
+        self.mode = mode
+        self.file = None
+    
+    def __enter__(self):
+        self.file = open(self.filename, self.mode)
+        return self.file
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.file:
+            self.file.close()
+        return False  # Don't suppress exceptions
+
+with ManagedFile('test.txt', 'w') as f:
+    f.write('Hello, World!')
+# File is automatically closed
+```
+
+#### Example 2: Database Transaction
+
+```python
+class Transaction:
+    def __init__(self, connection):
+        self.connection = connection
+    
+    def __enter__(self):
+        self.connection.begin()
+        return self.connection
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            # No exception — commit
+            self.connection.commit()
+        else:
+            # Exception occurred — rollback
+            self.connection.rollback()
+        return False  # Let exception propagate
+
+with Transaction(db_conn) as conn:
+    conn.execute("INSERT INTO users VALUES (...)")
+    conn.execute("UPDATE accounts SET ...")
+# Automatically committed if successful, rolled back if exception
+```
+
+#### Example 3: Lock Management
+
+```python
+import threading
+
+class ManagedLock:
+    def __init__(self):
+        self.lock = threading.Lock()
+    
+    def __enter__(self):
+        self.lock.acquire()
+        return self.lock
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.lock.release()
+        return False
+
+shared_lock = ManagedLock()
+
+with shared_lock:
+    # Critical section — lock is held
+    do_something_thread_safe()
+# Lock is automatically released
+```
+
+#### Example 4: Temporary Directory Change
+
+```python
+import os
+
+class ChangeDirectory:
+    def __init__(self, new_path):
+        self.new_path = new_path
+        self.original_path = None
+    
+    def __enter__(self):
+        self.original_path = os.getcwd()
+        os.chdir(self.new_path)
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self.original_path)
+        return False
+
+print(os.getcwd())  # /home/user
+
+with ChangeDirectory('/tmp'):
+    print(os.getcwd())  # /tmp
+
+print(os.getcwd())  # /home/user (restored!)
+```
+
+#### Example 5: Redirect stdout
+
+```python
+import sys
+from io import StringIO
+
+class CaptureOutput:
+    def __enter__(self):
+        self.original_stdout = sys.stdout
+        self.captured = StringIO()
+        sys.stdout = self.captured
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = self.original_stdout
+        return False
+    
+    def get_output(self):
+        return self.captured.getvalue()
+
+with CaptureOutput() as capture:
+    print("This is captured")
+    print("So is this")
+
+print(capture.get_output())
+# Output:
+# This is captured
+# So is this
+```
+
+---
+
+### The `contextlib` Alternative
+
+Python provides `contextlib.contextmanager` for simpler cases:
+
+```python
+from contextlib import contextmanager
+
+@contextmanager
+def managed_file(filename, mode='r'):
+    f = open(filename, mode)
+    try:
+        yield f  # This is what gets assigned to 'as' variable
+    finally:
+        f.close()
+
+with managed_file('test.txt', 'w') as f:
+    f.write('Hello!')
+```
+
+The `yield` statement divides setup (before) from teardown (after).
+
+**Comparison:**
+
+| Approach | Best For |
+|----------|----------|
+| Class with `__enter__`/`__exit__` | Complex state, reusable managers |
+| `@contextmanager` decorator | Simple, one-off context managers |
+
+---
+
+### Nested Context Managers
+
+You can nest multiple context managers:
+
+```python
+with open('input.txt') as infile, open('output.txt', 'w') as outfile:
+    outfile.write(infile.read())
+
+# Equivalent to:
+with open('input.txt') as infile:
+    with open('output.txt', 'w') as outfile:
+        outfile.write(infile.read())
+```
+
+---
+
+### Common Mistakes
+
+#### Mistake 1: Forgetting to return in `__enter__`
+
+```python
+class Broken:
+    def __enter__(self):
+        print("Entering")
+        # Forgot to return self!
+    
+    def __exit__(self, *args):
+        return False
+
+with Broken() as b:
+    print(b)  # None! Not the Broken instance
+```
+
+#### Mistake 2: Suppressing all exceptions
+
+```python
+class DangerousSuppressor:
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return True  # Suppresses ALL exceptions — dangerous!
+
+with DangerousSuppressor():
+    raise SystemExit()  # Even this gets suppressed!
+
+print("This runs, but it shouldn't...")
+```
+
+#### Mistake 3: Not handling cleanup on exception
+
+```python
+class LeakyResource:
+    def __enter__(self):
+        self.resource = acquire_expensive_resource()
+        self.another = acquire_another()  # What if this raises?
+        return self
+    
+    def __exit__(self, *args):
+        self.resource.release()
+        self.another.release()
+        return False
+
+# If acquire_another() raises, __exit__ never runs,
+# and resource leaks!
+```
+
+**Fix:**
+
+```python
+class SafeResource:
+    def __enter__(self):
+        self.resource = acquire_expensive_resource()
+        try:
+            self.another = acquire_another()
+        except:
+            self.resource.release()  # Clean up on failure
+            raise
+        return self
+    
+    def __exit__(self, *args):
+        self.another.release()
+        self.resource.release()
+        return False
+```
+
+---
+
+### Summary
+
+| Aspect | `__enter__` | `__exit__` |
+|--------|-------------|------------|
+| When called | Start of `with` block | End of `with` block |
+| Parameters | Just `self` | `self`, `exc_type`, `exc_val`, `exc_tb` |
+| Return value | Assigned to `as` variable | `True` suppresses exceptions |
+| Purpose | Setup/acquire resources | Teardown/release resources |
+| Always runs? | Yes (if `with` is reached) | Yes (even on exception) |
+
+**The context manager protocol guarantees cleanup**, making it ideal for:
+- File handling
+- Database transactions
+- Lock management
+- Temporary state changes
+- Resource acquisition/release
+
+---
+
+Now, would you like to attempt the `Timer` context manager question?

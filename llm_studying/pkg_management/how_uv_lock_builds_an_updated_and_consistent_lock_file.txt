@@ -1,0 +1,36 @@
+`uv lock` performs a **dependency resolution** process. Here's how it works:
+
+**1. Parse requirements**
+
+It reads your `pyproject.toml` and extracts:
+- Direct dependencies from `[project.dependencies]`
+- Optional dependencies from `[project.optional-dependencies]`
+- Dev dependencies from `[tool.uv.dev-dependencies]` (if using uv's format)
+- Any constraints or overrides you've specified
+
+**2. Resolve the dependency graph**
+
+For each dependency, it:
+- Fetches available versions from PyPI (or your configured index)
+- Checks version constraints (e.g., `requests>=2.28,<3`)
+- Recursively resolves transitive dependencies (dependencies of your dependencies)
+- Finds a set of versions that satisfies *all* constraints without conflicts
+
+This is the hard part — it's essentially solving a constraint satisfaction problem. If package A needs `foo>=2.0` but package B needs `foo<2.0`, resolution fails.
+
+**3. Write the lock file**
+
+Once resolved, it writes `uv.lock` containing:
+- Exact pinned versions for every package
+- Hashes for integrity verification
+- Metadata about where each package came from
+- Markers for platform-specific dependencies
+
+**Key point:** `uv lock` doesn't install anything — it just computes and records the solution. `uv sync` then reads the lock file and installs those exact versions.
+
+**Updating vs. fresh resolution:**
+
+- `uv lock` — Prefers existing versions in the lock file when possible, only changing what's necessary
+- `uv lock --upgrade` — Ignores the existing lock and resolves everything fresh to get latest compatible versions
+
+Does that clarify the process?

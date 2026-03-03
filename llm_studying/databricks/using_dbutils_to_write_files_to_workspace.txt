@@ -1,0 +1,129 @@
+# Using `dbutils` to write files to your “Workspace” (DBFS user area)
+
+In Databricks, runtime-generated files should be written to **DBFS**, typically under your user folder:
+`dbfs:/Users/<you>/...`
+These files show up in the UI under **Workspace → Users → *you* → Files**.
+
+---
+
+## Quick start: write a small text file
+
+```python
+import json
+
+# Make sure the directory exists
+dbutils.fs.mkdirs("dbfs:/Users/jeff@pathahead.ai/rl_output")
+
+# Write a small text blob (overwrites if exists)
+content = "hello world\nsecond line"
+dbutils.fs.put("dbfs:/Users/jeff@pathahead.ai/rl_output/demo.txt", content, overwrite=True)
+```
+
+Read it back:
+
+```python
+display(dbutils.fs.head("dbfs:/Users/jeff@pathahead.ai/rl_output/demo.txt", 2000))
+```
+
+List files:
+
+```python
+display(dbutils.fs.ls("dbfs:/Users/jeff@pathahead.ai/rl_output"))
+```
+
+---
+
+## JSON Lines (NDJSON) dump
+
+```python
+items = [{"id": 1, "msg": "first"}, {"id": 2, "msg": "second"}]
+payload = "\n".join(json.dumps(x) for x in items)
+
+dbutils.fs.put(
+    "dbfs:/Users/jeff@pathahead.ai/rl_output/data.jsonl",
+    payload,
+    overwrite=True
+)
+```
+
+---
+
+## Appending content (workaround)
+
+`dbutils.fs.put()` does **not** support append. Use the `/dbfs` mount with normal Python I/O:
+
+```python
+with open("/dbfs/Users/jeff@pathahead.ai/rl_output/data.jsonl", "a") as f:
+    f.write(json.dumps({"id": 3, "msg": "third"}) + "\n")
+```
+
+> Tip: `/dbfs/...` and `dbfs:/...` point to the same location. Use `dbutils.fs` for quick puts/gets; use `/dbfs` for standard Python file operations (including append and large writes).
+
+---
+
+## Large files
+
+`dbutils.fs.put()` is best for **small/medium** text payloads. For large data, prefer:
+
+* **Pandas**:
+
+  ```python
+  df.to_csv("/dbfs/Users/jeff@pathahead.ai/rl_output/big.csv", index=False)
+  ```
+* **Spark**:
+
+  ```python
+  (spark_df
+     .coalesce(1)
+     .write.mode("overwrite")
+     .option("header", "true")
+     .csv("dbfs:/Users/jeff@pathahead.ai/rl_output/big_csv_dir"))
+  ```
+
+---
+
+## Copy, move, delete
+
+```python
+# Copy
+dbutils.fs.cp(
+    "dbfs:/Users/jeff@pathahead.ai/rl_output/demo.txt",
+    "dbfs:/Users/jeff@pathahead.ai/rl_output/demo_copy.txt"
+)
+
+# Move (rename)
+dbutils.fs.mv(
+    "dbfs:/Users/jeff@pathahead.ai/rl_output/demo_copy.txt",
+    "dbfs:/Users/jeff@pathahead.ai/rl_output/demo_renamed.txt"
+)
+
+# Delete
+dbutils.fs.rm("dbfs:/Users/jeff@pathahead.ai/rl_output/demo_renamed.txt")
+```
+
+---
+
+## Common gotchas
+
+* **Don’t use `/Workspace/...` with `open()`** — that’s not a real filesystem path. Use `dbfs:/...` or `/dbfs/...`.
+* **Binary files**: `dbutils.fs.put()` takes text. For binaries (images, models), use `/dbfs` with `open(..., "wb")` or Spark/Pandas writers.
+* **Permissions**: Your personal path is `dbfs:/Users/<your-email>/...`. Use shared paths (e.g., `dbfs:/mnt/...`) if others need access.
+
+---
+
+## Your original use case (NDJSON dump)
+
+```python
+import json
+
+out_path = "dbfs:/Users/jeff@pathahead.ai/rl_output/tool_call_data_cue_rl_train.txt"
+dbutils.fs.mkdirs("dbfs:/Users/jeff@pathahead.ai/rl_output")
+
+dbutils.fs.put(
+    out_path,
+    "\n".join(json.dumps(d) for d in question_to_steps_dict_list),
+    overwrite=True
+)
+```
+
+That’s it—you’ll see the file in the UI under **Workspace → Users → [jeff@pathahead.ai](mailto:jeff@pathahead.ai) → Files → rl\_output**.

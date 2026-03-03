@@ -1,0 +1,64 @@
+For SFT you should mirror exactly the sequence of messages you’d send to the Chat Completion API, using **only** these four roles:
+
+1. **`system`**
+2. **`user`**
+3. **`assistant`**
+4. **`function`**
+
+Whenever the model “calls” a tool, you represent that as an **assistant** message with a `name` field.  Whenever the tool returns its result, you represent that as a **function** message with the same `name`.
+
+—
+
+### Example with one user question and two tool calls
+
+Suppose the user asks a question and the correct agent flow is:
+
+1. assistant calls `source(...)`
+2. tool returns its result
+3. assistant calls `segment(...)`
+4. tool returns its result
+5. our next desired call is `calculate(...)`
+
+You would build your training example like this:
+
+```jsonl
+{"messages":[
+   {
+     "role":"system",
+     "content":"You are a data‐analysis agent. Use the registered tools in order."
+   },
+   {
+     "role":"user",
+     "content":"For the last two months, help me analyze my best and worst campaigns."
+   },
+   {
+     "role":"assistant",
+     "name":"source",
+     "content":"{\"dataset\":\"campaign_spend\",\"window\":{\"start\":\"2025-06-01\",\"end\":\"2025-07-31\"}}"
+   },
+   {
+     "role":"function",
+     "name":"source",
+     "content":"{\"source_id\":\"…\",\"stats\":{…}}"
+   },
+   {
+     "role":"assistant",
+     "name":"segment",
+     "content":"{\"source_id\":\"…\",\"group_by\":[\"campaign\",\"month\"]}"
+   },
+   {
+     "role":"function",
+     "name":"segment",
+     "content":"{\"segment_id\":\"…\",\"quality\":{…}}"
+   }
+]}
+{"role":"assistant",
+ "name":"calculate",
+ "content":"{\"source_id\":\"…\",\"segment_id\":\"…\",\"metrics\":[\"CAC\"]}"
+}
+```
+
+* The **first JSON object** (with `"messages"`) is your SFT **prompt**, showing the full history up to—but not including—the `calculate` call.
+* The **second JSON object** is the SFT **completion**: the next function invocation you want the model to learn.
+
+At inference you’d feed the same `messages` array (system → user → assistant/function → …) and ask the model for its next `assistant`+`name` message, and it will reliably emit the correct tool call.

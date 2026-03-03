@@ -1,0 +1,121 @@
+## 📋 Overview: The `__setattr__` Dunder Method
+
+---
+
+### What Is It?
+
+`__setattr__` is called **every time** you set an attribute on an object.
+
+```python
+obj.name = "Alice"  # Calls obj.__setattr__('name', 'Alice')
+```
+
+---
+
+### Signature
+
+```python
+def __setattr__(self, name, value):
+    # name = attribute name (string)
+    # value = value being assigned
+```
+
+---
+
+### Basic Example
+
+```python
+class Verbose:
+    def __setattr__(self, name, value):
+        print(f"Setting {name} = {value}")
+        object.__setattr__(self, name, value)
+
+v = Verbose()
+v.x = 10  # Prints: Setting x = 10
+v.y = 20  # Prints: Setting y = 20
+```
+
+---
+
+### The Critical Rule: Avoid Infinite Recursion
+
+Inside `__setattr__`, you can't just do `self.name = value` — that calls `__setattr__` again!
+
+```python
+# WRONG — infinite recursion!
+def __setattr__(self, name, value):
+    self.name = value  # Calls __setattr__ again... forever
+
+# RIGHT — bypass your own method
+def __setattr__(self, name, value):
+    object.__setattr__(self, name, value)
+
+# ALSO RIGHT — use __dict__ directly (if no __slots__)
+def __setattr__(self, name, value):
+    self.__dict__[name] = value
+```
+
+---
+
+### Common Use Cases
+
+#### 1. Validation
+
+```python
+class Person:
+    def __setattr__(self, name, value):
+        if name == 'age' and value < 0:
+            raise ValueError("Age cannot be negative")
+        object.__setattr__(self, name, value)
+
+p = Person()
+p.age = 25   # ✅ Works
+p.age = -5   # ❌ ValueError
+```
+
+#### 2. Logging/Debugging
+
+```python
+class Tracked:
+    def __setattr__(self, name, value):
+        print(f"[LOG] {name} changed to {value}")
+        object.__setattr__(self, name, value)
+```
+
+#### 3. Restricting Attributes
+
+```python
+class Locked:
+    _allowed = ('x', 'y')
+    
+    def __setattr__(self, name, value):
+        if name not in self._allowed:
+            raise AttributeError(f"Cannot set '{name}'")
+        object.__setattr__(self, name, value)
+```
+
+---
+
+### Related Methods
+
+| Method | When Called |
+|--------|-------------|
+| `__setattr__` | `obj.attr = value` |
+| `__getattr__` | `obj.attr` (only if attr not found normally) |
+| `__getattribute__` | `obj.attr` (always, for every access) |
+| `__delattr__` | `del obj.attr` |
+
+---
+
+### Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| Called when | Any attribute is set |
+| Parameters | `self`, `name` (string), `value` |
+| Gotcha | Don't use `self.x = ...` inside — infinite recursion |
+| Safe way to set | `object.__setattr__(self, name, value)` |
+
+---
+
+Ready for Question 9?

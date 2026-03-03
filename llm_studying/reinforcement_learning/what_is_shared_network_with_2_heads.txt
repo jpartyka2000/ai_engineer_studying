@@ -1,0 +1,40 @@
+In an actor–critic (or any multi‐task) network, a **shared backbone** (or “trunk”) and **multiple heads** simply means:
+
+1. **Shared trunk**
+
+   * You start with a common series of layers—e.g. convolutional or fully-connected layers—that process the raw input (state) into a high-level feature vector.
+   * All downstream tasks (actor and critic) draw from that same feature representation, so you only learn one set of low- and mid-level filters/weights.
+
+2. **Two heads**
+
+   * **Policy head (“actor”)**: takes the shared features and outputs either action logits (for discrete actions) or action parameters (for continuous actions).
+   * **Value head (“critic”)**: takes the same shared features and outputs a single scalar $V(s)$, the estimated expected return from that state.
+
+```python
+class ActorCritic(nn.Module):
+    def __init__(self, n_actions):
+        super().__init__()
+        # shared trunk
+        self.trunk = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(210*160*3, 256), nn.ReLU(),
+        )
+        # head #1: policy (actor)
+        self.policy = nn.Linear(256, n_actions)
+        # head #2: value (critic)
+        self.value  = nn.Linear(256, 1)
+
+    def forward(self, obs):
+        features = self.trunk(obs)          #→ [batch, 256]
+        logits   = self.policy(features)    #→ [batch, n_actions]
+        value    = self.value(features)     #→ [batch, 1]
+        return logits, value.squeeze(-1)
+```
+
+---
+
+### Why use this structure?
+
+* **Efficiency**: the early layers learn a single “world model” of the state, rather than duplicating the same conv/FC stacks in two separate networks.
+* **Consistency**: both actor and critic share the same view of the environment, so your value estimates and policy decisions are grounded in the same features.
+* **Faster learning**: gradients from both the policy loss and the value loss update the shared trunk, giving richer training signal to those layers.

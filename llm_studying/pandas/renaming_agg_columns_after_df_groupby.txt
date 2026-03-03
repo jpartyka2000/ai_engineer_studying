@@ -1,0 +1,80 @@
+### Renaming an Aggregated Series After a `groupby`
+
+When you perform a `groupby` on a single column and aggregate, you get back a **Series** whose name defaults to the original column’s name. To give that Series a new, more meaningful name, you can use any of the following patterns:
+
+---
+
+#### 1. `.rename()` on the Series
+
+```python
+# Original aggregation: Series named "revenue"
+s = df.groupby('col1')['revenue'].sum()
+
+# Rename the Series to "TotalRevenue"
+s_renamed = s.rename('TotalRevenue')
+# or, in place:
+s.name = 'TotalRevenue'
+```
+
+* **Pros**: Simple and explicit.
+* **Result**: A Series indexed by `col1`, named `"TotalRevenue"`.
+
+---
+
+#### 2. `.reset_index(name=…)` (Pandas 1.3+)
+
+```python
+# This returns a DataFrame with columns ['col1', 'TotalRevenue']
+df_tot = df.groupby('col1')['revenue'] \
+          .sum() \
+          .reset_index(name='TotalRevenue')
+```
+
+* **Pros**: Immediately gives you a flat DataFrame with your desired column name.
+* **Use when**: You need the grouping key as a column, not an index.
+
+---
+
+#### 3. Named aggregation with `.agg()` (even for one column)
+
+```python
+# Returns a DataFrame with columns ['col1','TotalRevenue']
+df_tot = (
+    df
+    .groupby('col1', as_index=False)
+    .agg(TotalRevenue=('revenue', 'sum'))
+)
+```
+
+* **Pros**: Unifies aggregation and naming in one call.
+* **Use when**: You might later add more aggregates in the same `.agg()`.
+
+---
+
+#### 4. Assigning to a new column after merging back
+
+If you need to join the totals back onto your original DataFrame:
+
+```python
+# Step 1: compute and rename
+s = df.groupby('col1')['revenue'].sum().rename('TotalRevenue')
+
+# Step 2: merge back
+df = df.merge(s, on='col1')
+```
+
+* **Pros**: Keeps your original DataFrame intact and brings in the new column.
+* **Use when**: You want both row‑level data and group totals side by side.
+
+---
+
+### Quick Comparison
+
+| Method                  | Output Type | Keys as Index? | In‑place Rename?         |
+| ----------------------- | ----------- | -------------- | ------------------------ |
+| `s.rename('…')`         | Series      | Yes            | No (but `s.name=` works) |
+| `reset_index(name='…')` | DataFrame   | No             | N/A                      |
+| `agg(name=(col,func))`  | DataFrame   | Optional       | N/A                      |
+| `merge()`               | DataFrame   | Depends        | N/A                      |
+
+Use whichever fits best in your pipeline to produce a clear, self‑documenting result.

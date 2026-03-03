@@ -1,0 +1,77 @@
+That error is telling you that LightGBM is interpreting your entries in `categorical_feature` as **column indices** (numbers) by default, and whenever it sees a string it complains “not a number.”  To signal “this is a column name, not an index,” you have two options:
+
+---
+
+### 1) Prefix each name with `name:`
+
+```python
+import lightgbm as lgb
+
+# Suppose these are your categorical names:
+cats = ["marital_status", "card_type", "income_range"]
+
+# Tell LightGBM explicitly these are names:
+cats_prefixed = [f"name:{c}" for c in cats]
+
+dtrain = lgb.Dataset(
+    X_train,
+    label=y_train,
+    categorical_feature=cats_prefixed
+)
+
+bst = lgb.train(
+    params,
+    dtrain,
+    num_boost_round=100
+)
+```
+
+Here `categorical_feature=["name:marital_status", …]` makes LightGBM treat those columns as categoricals by name.
+
+---
+
+### 2) Give it integer column indices instead
+
+If you don’t want to use the `name:` prefix, you can specify the **positional** indices of the categorical columns:
+
+```python
+# For example, if marital_status is the 3rd column (0‑based index 2),
+# card_type is the 7th column (index 6), etc.
+cat_indices = [2, 6, 9]
+
+dtrain = lgb.Dataset(
+    X_train,
+    label=y_train,
+    categorical_feature=cat_indices
+)
+```
+
+---
+
+### If you’re using the scikit‑learn API
+
+With `LGBMClassifier` or `LGBMRegressor`, you can simply pass the **raw** column names—no prefix needed:
+
+```python
+from lightgbm import LGBMClassifier
+
+model = LGBMClassifier(
+    objective="binary",
+    n_estimators=100,
+    random_state=42
+)
+
+model.fit(
+    X_train, y_train,
+    categorical_feature=["marital_status", "card_type", "income_range"]
+)
+```
+
+The wrapper automatically detects that these are names rather than indices.
+
+---
+
+**In short**:
+
+* **Low‑level API (`lgb.Dataset`)**: use `"name:colname"` or integer indices.
+* **High‑level API (`LGBMClassifier`/`Regressor`)**: just pass the list of column names.

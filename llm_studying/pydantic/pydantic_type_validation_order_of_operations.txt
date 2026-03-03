@@ -1,0 +1,163 @@
+Excellent question! Let me walk through the exact order of operations when a Pydantic model is initialized:
+
+## The Complete Validation Pipeline:
+
+```python
+class DataScanner(BaseModel):
+    source_name: Optional[str] = None
+    column_metrics: Dict[str, Any] = Field(default_factory=dict)
+    row_count: int = 0
+
+    @field_validator("source_name", mode="before")
+    @classmethod
+    def clean_source(cls, v):
+        print(f"1. BEFORE validator: got {v}, type: {type(v)}")
+        return v.strip() if isinstance(v, str) else v
+    
+    @field_validator("column_metrics", mode="after")
+    @classmethod
+    def validate_metrics(cls, v):
+        print(f"3. AFTER validator: got {v}, type: {type(v)}")
+        return v
+
+# When you create an instance:
+scanner = DataScanner(
+    source_name="  test  ",
+    column_metrics={"a": 1},
+    row_count="42"  # String, not int!
+)
+```
+
+## Order of Execution:
+
+### **Step 1: Raw Input Received**
+```python
+# Pydantic receives raw arguments:
+{
+    "source_name": "  test  ",
+    "column_metrics": {"a": 1},
+    "row_count": "42"
+}
+```
+
+### **Step 2: "before" Validators Run**
+```python
+# For each field with mode="before" validators:
+# Input: Raw value from user
+# Output: Potentially transformed value
+
+"  test  " → clean_source() → "test"
+# Prints: "1. BEFORE validator: got   test  , type: <class 'str'>"
+```
+
+### **Step 3: Type Conversion/Coercion**
+```python
+# Pydantic attempts type conversion based on annotations:
+# source_name: Optional[str] → "test" (already str, no change)
+# column_metrics: Dict[str, Any] → {"a": 1} (already dict, no change)  
+# row_count: int → "42" becomes 42 (converted!)
+```
+
+### **Step 4: "after" Validators Run**
+```python
+# For each field with mode="after" validators:
+# Input: Type-converted value
+# Output: Final validated value
+
+{"a": 1} → validate_metrics() → {"a": 1}
+# Prints: "3. AFTER validator: got {'a': 1}, type: <class 'dict'>"
+```
+
+### **Step 5: Model Instance Created**
+```python
+# Final values assigned to model instance
+```
+
+## Visual Timeline:
+
+```python
+class Example(BaseModel):
+    value: int
+    
+    @field_validator("value", mode="before")
+    @classmethod
+    def before_val(cls, v):
+        print(f"Before: {v} is {type(v)}")
+        return v
+    
+    @field_validator("value", mode="after")
+    @classmethod
+    def after_val(cls, v):
+        print(f"After: {v} is {type(v)}")
+        return v
+
+# Input: string "123"
+Example(value="123")
+
+# Output:
+# Before: 123 is <class 'str'>    ← Raw input
+# After: 123 is <class 'int'>     ← After conversion
+```
+
+## Multiple Validators & Order:
+
+```python
+class Model(BaseModel):
+    data: List[int]
+    
+    # These run in definition order for same mode
+    @field_validator("data", mode="before")
+    @classmethod
+    def first_before(cls, v):
+        print("1st before")
+        return v
+    
+    @field_validator("data", mode="before")
+    @classmethod
+    def second_before(cls, v):
+        print("2nd before")
+        return v
+    
+    @field_validator("data", mode="after")
+    @classmethod
+    def first_after(cls, v):
+        print("1st after")
+        return v
+
+Model(data="1,2,3")
+# Order:
+# 1. "1st before" 
+# 2. "2nd before"
+# 3. Type conversion fails! (string can't become List[int])
+```
+
+## Your NumPy Case Specifically:
+
+```python
+class DataScanner(BaseModel):
+    column_metrics: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("column_metrics", mode="before")
+    @classmethod
+    def _coerce_numpy(cls, v: Any) -> Any:
+        return _normalize_numpy(v)
+
+# When called with NumPy data:
+import numpy as np
+scanner = DataScanner(column_metrics={"mean": np.float64(1.5)})
+
+# Order:
+# 1. Raw input: {"mean": np.float64(1.5)}
+# 2. before validator runs → {"mean": 1.5}  # Converted to Python float
+# 3. Type check: Dict[str, Any] ✓ Passes
+# 4. Model created with clean Python types
+```
+
+## Key Insights:
+
+1. **"before" validators** see raw, unprocessed input
+2. **Type conversion** happens in the middle (can fail here!)
+3. **"after" validators** see type-converted values
+4. **Default values** skip validation if field not provided
+
+This is why `mode="before"` is critical for NumPy - you need to convert the NumPy types BEFORE Pydantic tries to validate them as Python types!

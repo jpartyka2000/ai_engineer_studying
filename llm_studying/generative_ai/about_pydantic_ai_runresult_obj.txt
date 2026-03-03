@@ -1,0 +1,81 @@
+## PydanticAI's `RunResult`
+
+`RunResult` (not `AgentRunResult`) is the object returned when you run a PydanticAI agent. It contains the agent's response plus metadata about the execution.
+
+## Basic Structure:
+
+```python
+from pydantic_ai import Agent
+
+agent = Agent('openai:gpt-4')
+result = agent.run_sync("What is Python?")
+
+# RunResult contains:
+result.data          # The actual response (str, dict, or your model)
+result.messages      # List of all messages exchanged
+result.usage         # Token usage and costs
+result.response_model # Pydantic model if you defined one
+```
+
+## Key Attributes:
+
+### 1. **`.data` - The Actual Response**
+```python
+agent = Agent('openai:gpt-4')
+result = agent.run_sync("Tell me a joke")
+
+print(result.data)  # "Why did the programmer quit? They didn't get arrays!"
+print(type(result.data))  # <class 'str'> (or your custom model)
+```
+
+### 2. **`.messages` - Conversation History**
+```python
+result = agent.run_sync("What is 2+2?")
+
+for message in result.messages:
+    print(f"{message.role}: {message.content}")
+# user: What is 2+2?
+# assistant: 2+2 equals 4
+```
+
+### 3. **`.usage` - Token and Cost Tracking**
+```python
+result = agent.run_sync("Write a paragraph about AI")
+
+print(result.usage.total_tokens)  # 245
+print(result.usage.request_count)  # 1
+print(result.usage.estimated_cost)  # 0.0073 (in USD)
+```
+
+## With Structured Output:
+
+```python
+from pydantic import BaseModel
+
+class CityInfo(BaseModel):
+    name: str
+    population: int
+    country: str
+
+agent = Agent('openai:gpt-4', result_type=CityInfo)
+result = agent.run_sync("Tell me about Tokyo")
+
+# result.data is now a CityInfo instance
+print(result.data.name)  # "Tokyo"
+print(result.data.population)  # 13960000
+print(isinstance(result.data, CityInfo))  # True
+```
+
+## Streaming Results:
+
+```python
+async with agent.run_stream("Write a story") as result:
+    async for chunk in result.stream():
+        print(chunk, end='')  # Streams the response
+    
+    # After streaming completes:
+    final_result = result.get_final_result()
+    print(final_result.usage)  # Still get usage data
+```
+
+**Bottom line**: `RunResult` wraps the agent's response with useful metadata - think of it as "the answer plus the receipt" showing what happened during execution.

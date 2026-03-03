@@ -1,0 +1,33 @@
+Pandas doesn’t have native support for Delta Lake’s storage format or its complex nested data types (arrays, structs, etc.). Instead, Delta Lake is built on top of Apache Spark and is designed to work naturally with Spark DataFrames, which have built‐in support for complex/nested schema.
+
+That said, you do have a couple of options if you need to work with a Delta table in Pandas:
+
+1. **Use PySpark to Read Then Convert:**  
+   Read the Delta table using PySpark’s built-in capabilities (for example, via  
+   `spark.read.format("delta").load("path/to/table")`).  
+   Once you have the data in a Spark DataFrame, you can convert it to a Pandas DataFrame using the  
+   `.toPandas()` method.  
+   > **Note:** When you convert complex types to Pandas, array or struct columns will be converted to Python lists or dictionaries. This conversion works but might be less efficient and more awkward to work with compared to how Spark handles nested data.
+
+2. **Use a Dedicated Delta Lake Python Library:**  
+   There are projects (such as the Delta Sharing Python client or the `deltalake` package on PyPI) that offer limited support for reading Delta tables directly in a non-Spark environment. These libraries typically leverage PyArrow under the hood to read Parquet files that make up the Delta table, and then convert them into a Pandas DataFrame. However, support for nested or complex data might be more limited and require extra handling.
+
+**Bottom Line:**  
+For working with complex, nested data from a Delta table, the standard and most robust approach is to use PySpark. If you must work in Pandas, it’s usually best to load the data with Spark and then convert it to Pandas (keeping in mind that you may have to transform the nested columns appropriately).
+
+For example, a common workflow in Databricks might be:
+
+```python
+# Using PySpark to read a Delta table
+df_spark = spark.read.format("delta").load("dbfs:/path/to/delta_table")
+
+# Optionally, perform necessary transformations on the Spark DataFrame
+# ...
+
+# Convert to Pandas DataFrame (if the dataset is small enough)
+df_pandas = df_spark.toPandas()
+
+# Now work with df_pandas, but note that nested types will be Python lists/dicts.
+```
+
+In summary, while you can get complex columns into Pandas by converting them from Spark, native support for Delta tables and their complex types is best handled with PySpark.

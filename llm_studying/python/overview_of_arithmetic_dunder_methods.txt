@@ -1,0 +1,122 @@
+## 📋 Arithmetic Dunder Methods: A Simple Overview
+
+---
+
+### The Big Picture
+
+When you write `a + b`, Python calls `a.__add__(b)`. That's it. Each operator has a corresponding dunder method.
+
+---
+
+### The Common Ones
+
+| Operator | Method | Example |
+|----------|--------|---------|
+| `+` | `__add__` | `a + b` |
+| `-` | `__sub__` | `a - b` |
+| `*` | `__mul__` | `a * b` |
+| `/` | `__truediv__` | `a / b` |
+| `//` | `__floordiv__` | `a // b` |
+| `%` | `__mod__` | `a % b` |
+| `**` | `__pow__` | `a ** b` |
+
+---
+
+### A Simple Example
+
+```python
+class Money:
+    def __init__(self, dollars):
+        self.dollars = dollars
+    
+    def __add__(self, other):
+        return Money(self.dollars + other.dollars)
+    
+    def __mul__(self, factor):
+        return Money(self.dollars * factor)
+    
+    def __repr__(self):
+        return f"${self.dollars}"
+
+wallet = Money(50)
+tip = Money(10)
+
+print(wallet + tip)   # $60
+print(wallet * 2)     # $100
+```
+
+---
+
+### The Three Flavors
+
+For each operator, there are up to three versions:
+
+| Type | Method | When It's Used |
+|------|--------|----------------|
+| Regular | `__add__` | `a + b` → tries `a.__add__(b)` first |
+| Reflected | `__radd__` | `a + b` → tries `b.__radd__(a)` if regular fails |
+| In-place | `__iadd__` | `a += b` → modifies `a` directly |
+
+**When do you need reflected methods?**
+
+When you want `5 + my_object` to work (not just `my_object + 5`):
+
+```python
+class Money:
+    def __init__(self, dollars):
+        self.dollars = dollars
+    
+    def __add__(self, other):
+        return Money(self.dollars + other)
+    
+    def __radd__(self, other):
+        return Money(other + self.dollars)
+
+wallet = Money(50)
+
+print(wallet + 10)  # Uses __add__: $60
+print(10 + wallet)  # Uses __radd__: $60
+```
+
+---
+
+### Unary Operators
+
+These take no second operand:
+
+| Operator | Method |
+|----------|--------|
+| `-x` | `__neg__` |
+| `+x` | `__pos__` |
+| `abs(x)` | `__abs__` |
+
+```python
+class Temperature:
+    def __init__(self, celsius):
+        self.celsius = celsius
+    
+    def __neg__(self):
+        return Temperature(-self.celsius)
+
+temp = Temperature(25)
+print((-temp).celsius)  # -25
+```
+
+---
+
+### Pro Tips
+
+1. **Always return a new object** (don't modify `self`)
+2. **Return `NotImplemented`** if you can't handle the other type
+3. **Implement `__repr__`** so you can see results when testing
+
+```python
+def __add__(self, other):
+    if not isinstance(other, Money):
+        return NotImplemented  # Let Python try other options
+    return Money(self.dollars + other.dollars)
+```
+
+---
+
+That's the essentials! Ready for Question 8?

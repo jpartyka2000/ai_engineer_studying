@@ -1,0 +1,77 @@
+**Creating Row objects positionally (without field names):**
+
+```python
+from pyspark.sql import Row
+
+row = Row(1, "Alice", 30)
+```
+
+This creates a Row with values only — no field names.
+
+---
+
+**Accessing values:**
+
+```python
+row[0]    # 1
+row[1]    # 'Alice'
+row[2]    # 30
+```
+
+---
+
+**What doesn't work:**
+
+```python
+row.name           # AttributeError
+row["name"]        # KeyError
+row.__fields__     # None
+row.asDict()       # Returns {0: 1, 1: 'Alice', 2: 30} — index-based keys
+```
+
+---
+
+**Creating a Row "schema" for reuse:**
+
+You can create a Row class with field names, then use it to create multiple instances positionally:
+
+```python
+Person = Row("id", "name", "age")
+
+person1 = Person(1, "Alice", 30)
+person2 = Person(2, "Bob", 25)
+
+person1.name       # 'Alice'
+person1.__fields__ # ('id', 'name', 'age')
+```
+
+This is a common pattern for creating DataFrames:
+
+```python
+Person = Row("id", "name", "age")
+
+df = spark.createDataFrame([
+    Person(1, "Alice", 30),
+    Person(2, "Bob", 25),
+    Person(3, "Carol", 35)
+])
+
+df.show()
+# +---+-----+---+
+# | id| name|age|
+# +---+-----+---+
+# |  1|Alice| 30|
+# |  2|  Bob| 25|
+# |  3|Carol| 35|
+# +---+-----+---+
+```
+
+---
+
+**Comparison:**
+
+| Creation method | Has field names | `__fields__` |
+|-----------------|-----------------|--------------|
+| `Row(1, "Alice", 30)` | No | `None` |
+| `Row(id=1, name="Alice", age=30)` | Yes | `('id', 'name', 'age')` |
+| `Person = Row("id", "name", "age"); Person(1, "Alice", 30)` | Yes | `('id', 'name', 'age')` |

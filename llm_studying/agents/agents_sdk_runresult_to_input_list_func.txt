@@ -1,0 +1,27 @@
+Yes—every `RunResult` (and `RunResultStreaming`) in the OpenAI Agents SDK exposes a **`to_input_list()`** method. Calling it on your agent’s result will give you a new input list that merges:
+
+1. **The original input items** you passed into `Runner.run(…)`
+2. **All the new items** (messages, tool calls, handoff outputs, etc.) generated during that run
+
+That merged list is in the exact format the agent expects as its next `input`, so you can easily do:
+
+```python
+result = await Runner.run(agent, "Your question here")
+next_input = result.to_input_list()
+# now pass next_input into the agent again for a multi-turn conversation
+```
+
+This method is defined on `RunResultBase` and typed as:
+
+```python
+def to_input_list(self) -> list[TResponseInputItem]:
+    """Creates a new input list, merging the original input with all the new items generated."""
+    original_items: list[TResponseInputItem] = ItemHelpers.input_to_new_input_list(self.input)
+    new_items = [item.to_input_item() for item in self.new_items]
+
+    return original_items + new_items
+```
+
+So yes—use `result.to_input_list()` to carry your conversation state forward. ([openai.github.io][1])
+
+[1]: https://openai.github.io/openai-agents-python/ref/result/?utm_source=chatgpt.com "Results - OpenAI Agents SDK"

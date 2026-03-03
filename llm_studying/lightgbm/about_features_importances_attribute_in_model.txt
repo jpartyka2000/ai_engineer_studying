@@ -1,0 +1,85 @@
+LightGBM exposes learned feature importance via the `feature_importances_` attribute on its fitted booster or sklearn‐style estimator. Here’s what you need to know:
+
+---
+
+## 1. What It Is
+
+After you call `.fit(...)` on an `LGBMClassifier` / `LGBMRegressor`, you can inspect:
+
+```python
+model.feature_importances_
+```
+
+* It’s a 1D array of length **n\_features**.
+* Each entry corresponds to the importance score of the feature at that index in your training matrix.
+
+---
+
+## 2. Importance Types
+
+By default, LightGBM uses **“split” importance**: the count of how many times a feature is used in tree splits. But you can choose:
+
+* **`importance_type='split'`** (default)
+  Counts how many times each feature is chosen to split across all trees.
+
+* **`importance_type='gain'`**
+  Sums the total gain (reduction in loss) brought by splits on that feature.
+
+You set it when you instantiate your model:
+
+```python
+clf = LGBMClassifier(importance_type='gain')
+clf.fit(X, y)
+print(clf.feature_importances_)
+```
+
+---
+
+## 3. How to Interpret
+
+* **Higher values → more “important”** in the sense of the model’s decision structure.
+* **Split vs. gain**:
+
+  * *Split* tells you how often a feature is used (frequency).
+  * *Gain* tells you how much that feature actually improves the fit when it’s used.
+
+It’s a **relative** measure—you often normalize or plot the importances sorted descending to see your top predictors.
+
+---
+
+## 4. Caveats & Best Practices
+
+* **Correlated features** can “steal” splits from each other, diluting importance.
+* **High‐cardinality categorical features** may dominate split counts but not be truly more predictive.
+* Always combine importance with **domain knowledge** and, if needed, **permutation importance** (shuffling feature values and measuring performance drop) for more robust insights.
+
+---
+
+## 5. Practical Example
+
+```python
+from lightgbm import LGBMClassifier
+import pandas as pd
+import numpy as np
+
+# train
+clf = LGBMClassifier(n_estimators=100, importance_type='gain')
+clf.fit(X_train, y_train)
+
+# get and sort
+imp = pd.Series(clf.feature_importances_, index=feature_names)
+imp = imp.sort_values(ascending=False)
+
+# display top 10
+print(imp.head(10))
+# or plot
+imp.head(20).plot.barh(figsize=(6, 8), title="Top 20 Feature Importances")
+```
+
+---
+
+### ✅ Summary
+
+* **`feature_importances_`** gives you per‐feature scores based on split counts or information gain.
+* Choose between **`split`** (frequency) and **`gain`** (quality of split) via `importance_type`.
+* Use alongside other techniques (permutation importance, SHAP) to get a fuller picture of what drives your model’s predictions.

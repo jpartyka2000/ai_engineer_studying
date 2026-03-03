@@ -1,0 +1,150 @@
+To add typing hints to the function, you can use Python's built-in `typing` module to specify the expected types for the arguments and return values. Here's the updated function with type hints:
+
+```python
+from typing import Optional, Tuple
+
+def call_gpt_4o_openai(
+    prompt_question_str: str,
+    route_str: str,
+    task_type_str: str,
+    df_results_str: Optional[str] = None
+) -> Tuple[str, str]:
+    """
+    Calls a GPT LLM model to generate SQL queries or answer questions based on input.
+
+    Args:
+        prompt_question_str (str): The user's question.
+        route_str (str): Semantic route to determine the prompt template.
+        task_type_str (str): Task type, either 'generating_sql' or 'answer_question'. Default: 'generating_sql'.
+        df_results_str (Optional[str]): Additional data for question answering (e.g., JSON result sets). Default: None.
+
+    Returns:
+        Tuple[str, str]: Generated response text and an error message (if any).
+    """
+    logger.info(
+        "[llm_answer_question.call_gpt_4o_openai]: Just entered call_gpt_4o_openai function"
+    )
+    logger.info(
+        f"[llm_answer_question.call_gpt_4o_openai]: The prompt_question is: {prompt_question_str}"
+    )
+
+    if not prompt_question_str:
+        logger.error("[llm_answer_question.call_gpt_4o_openai]: No question provided.")
+        return "", no_question_data_str
+
+    # Route-to-Prompt Mapping
+    route_tuple_to_prompt_str_dict = {
+        ("generate_sql", "dbscanner"): sql_dbscanner_prompt_str,
+        ("generate_sql", "opportunity"): sql_opportunity_prompt_str,
+        ("answer_question", "dbscanner"): answer_question_dbscanner_prompt_str,
+        ("answer_question", "opportunity"): answer_question_opportunity_prompt_str,
+        ("answer_question", "ingest"): ingest_answer_question_prompt_str
+    }
+
+    # Select the appropriate prompt template
+    key = (task_type_str, route_str)
+    prompt_template_str = route_tuple_to_prompt_str_dict.get(key)
+
+    if not prompt_template_str:
+        logger.error(f"[llm_answer_question.call_gpt_4o_openai]: No prompt found for route: {route_str}, task: {task_type_str}")
+        return "", f"Invalid task_type and route_str combination: {task_type_str}, {route_str}"
+
+    # Format the prompt
+    this_prompt_final_str = prompt_template_str.format(
+        QUESTION_STR=prompt_question_str,
+        JSON_RESULT_SET_STR=df_results_str or ""  # Use an empty string if df_results_str is None
+    )
+
+    payload, headers = get_payload_and_headers(this_prompt_final_str)
+
+    # Call GPT endpoint
+    try:
+        response = requests.post(endpoint_url, headers=headers, json=payload)
+        response.raise_for_status()
+    except Exception as e:
+        error_msg = f"{sql_generation_error_str}: {str(e)}"
+        logger.error(f"[llm_answer_question.call_gpt_4o_openai]: {error_msg}")
+        return "", error_msg
+
+    # Process response
+    result = response.json()
+    generated_text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+
+    # Log results
+    log_message = "SQL query generated" if task_type_str == "generating_sql" else "Question answered"
+    logger.info(f"[llm_answer_question.call_gpt_4o_openai]: {log_message} successfully.")
+    logger.info(f"[llm_answer_question.call_gpt_4o_openai]: Response: {generated_text}")
+
+    return generated_text, ""
+```
+
+### Explanation of Type Hints
+1. **Arguments**:
+   - `prompt_question_str`, `route_str`, and `task_type_str` are all `str`.
+   - `df_results_str` is `Optional[str]`, meaning it can either be a `str` or `None`.
+
+2. **Return Value**:
+   - The function returns a tuple of two strings, so the return type is `Tuple[str, str]`.
+
+Adding typing hints improves readability and helps with static analysis tools like `mypy`.
+
+---------------------
+
+Here's the updated function with **Python typing hints** added:
+
+```python
+from typing import Dict, Tuple
+
+def get_payload_and_headers(this_prompt_final_str: str) -> Tuple[Dict[str, any], Dict[str, str]]:
+    """
+    Returns the payload and headers needed to call the GPT endpoint.
+    
+    Args:
+        this_prompt_final_str (str): The prompt to send to the GPT endpoint.
+    
+    Returns:
+        tuple: A tuple containing the payload (dict) and headers (dict) needed to call the GPT endpoint.
+    """
+
+    # Prepare payload and headers
+    payload: Dict[str, any] = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": "Ensure the response is well-formatted with correct whitespace."},
+            {"role": "user", "content": this_prompt_final_str},
+        ],
+        "temperature": 0,
+        "max_tokens": 2000,
+    }
+
+    headers: Dict[str, str] = {
+        "Authorization": f"Bearer {databricks_token}",
+        "Content-Type": "application/json",
+    }
+
+    return payload, headers
+```
+
+---
+
+### Key Changes:
+1. **Function Signature Typing**:
+   - The parameter `this_prompt_final_str` is annotated as `str`.
+   - The return type is annotated as `Tuple[Dict[str, any], Dict[str, str]]`:
+     - The first item of the tuple (`payload`) is a dictionary with flexible types (`any`) for values (because it includes nested structures).
+     - The second item of the tuple (`headers`) is a dictionary with `str` keys and values.
+
+2. **In-line Typing**:
+   - Added explicit type hints for `payload` and `headers` variables for clarity.
+
+---
+
+### Explanation of Types:
+- **`Dict[str, any]`**:
+  - Used for `payload` because the dictionary contains mixed types of values (strings, integers, lists, dictionaries).
+- **`Dict[str, str]`**:
+  - Used for `headers` because it is a dictionary of string keys and values.
+- **`Tuple`**:
+  - Represents the function's return type: a tuple with two dictionaries.
+
+This ensures the function is well-typed and compatible with static type checkers like `mypy`.

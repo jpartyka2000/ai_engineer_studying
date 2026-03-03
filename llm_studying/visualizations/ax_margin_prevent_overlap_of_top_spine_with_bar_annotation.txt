@@ -1,0 +1,38 @@
+**Fixing overlap in countplot**
+
+It looks like the user is having an issue with annotations in a seaborn countplot overlapping the top box of the plot. It seems like they might want to increase the space above the bars. A simple solution could be adjusting the y-axis limit to create extra space at the top. For instance, setting `ax.set_ylim(0, counts.max()*1.1)` should work well. Alternatively, you could adjust the figure's top margin or the bounding box, but tweaking the y-axis is easier.
+
+**Improving countplot display**
+
+The user wants to "move the line up" in their seaborn countplot because the annotation overlaps the top border. A good solution is to adjust the y-axis limit after plotting. Setting `ax.set_ylim(0, counts.max() * 1.1)` extends the y-limit to include space above the bars and annotations. Alternatively, we can use a dynamic approach by getting the current y-limit and adjusting it. I’ll provide an updated function code so the user can apply this fix directly.
+
+Thought for 13 seconds
+
+You just need to give yourself a little breathing room above the tallest bar by expanding the y‑axis limits before drawing your annotations. For example, right after you draw the countplot you can do:
+
+```python
+# after sns.countplot...
+ax = sns.countplot(x=col, data=df, order=order)
+
+# bump the top of the y‑axis out by 10%
+max_count = counts.max()
+ax.set_ylim(0, max_count * 1.1)
+
+# now annotate
+for patch in ax.patches:
+    height = patch.get_height()
+    ax.text(
+        patch.get_x() + patch.get_width() / 2,
+        height + max_count * 0.01,
+        int(height),
+        ha='center', va='bottom'
+    )
+```
+
+Or even more succinctly:
+
+```python
+ax.margins(y=0.1)
+```
+
+which automatically adds 10% padding above (and below) your tallest bar so that your labels never overlap the top spine.

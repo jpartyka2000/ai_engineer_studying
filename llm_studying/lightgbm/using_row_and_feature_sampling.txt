@@ -1,0 +1,31 @@
+Thought for a couple of seconds
+
+**Row sampling (bagging)** and **feature sampling** are two built‑in regularization techniques in LightGBM’s `LGBMClassifier` that help reduce overfitting and speed up training:
+
+- **Row sampling**  
+  - Controlled by  
+    - `bagging_fraction` (float ≤ 1.0): the fraction of rows to randomly select for each boosting iteration  
+    - `bagging_freq` (int): how often (in tree‑round units) to perform bagging; e.g. `bagging_freq=1` means every tree uses a new random subset  
+    - `bagging_seed` (int): seed for reproducible row sampling  
+  - Effect: each tree is trained on a random subset of the data (e.g. 80% of rows), which decorrelates trees and reduces variance.
+
+- **Feature sampling**  
+  - Controlled by  
+    - `feature_fraction` (float ≤ 1.0): the fraction of features (columns) to randomly select for each tree  
+    - `feature_fraction_seed` (int): seed for reproducible feature sampling  
+  - Effect: each tree only considers a subset of columns, which speeds up splits and further decorrelates the ensemble.
+
+**Example parameters**  
+```python
+clf = LGBMClassifier(
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    bagging_seed=42,
+    feature_fraction=0.7,
+    feature_fraction_seed=42,
+    random_state=42,
+    n_jobs=1
+)
+```
+
+With those settings, every tree is trained on 80% of the rows and 70% of the features, sampled anew each round, improving generalization and training efficiency.

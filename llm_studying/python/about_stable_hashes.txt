@@ -1,0 +1,47 @@
+In Python we say a hash is stable when, for a single object, the integer that __hash__() returns never changes for as long as that object exists.
+
+same object  ──────────────────────────────────►  end of lifetime
+hash(obj)  =  42   42   42   42   42           …  (always 42)
+
+Why this matters
+
+dict and set place a key in a bucket chosen by hash(key) % table_size.
+If that hash later changed, the key would be sitting in the wrong bucket and could no longer be found—even though the key is still physically in the table. Look-ups would fail or, worse, hit the wrong value.
+
+Ways to keep a hash stable
+
+Strategy Typical in… Why it stays stable
+
+Use immutable state int, str, tuple (of hashables) The state can’t change, so the hash can’t either.
+Use object identity (id(self)) Default for user-defined classes that don’t override __eq__ An object’s memory address is fixed for its lifetime.
+Freeze the relevant attributes namedtuple, dataclass(frozen=True) Attributes are read-only, so a hash built from them can’t drift.
+
+
+What breaks stability
+
+class BadKey:
+    def __init__(self, x):
+        self.x = x
+    def __hash__(self):        # depends on mutable field
+        return hash(self.x)
+    def __eq__(self, other):
+        return self.x == other.x
+
+k = BadKey(10)
+d = {k: "value"}   # ok so far
+k.x = 99           # oops—hash *should* be different now
+print(d[k])        # KeyError: dict lost track of k
+
+Because k.x changed, hash(k) should have changed too, but Python still uses the old value stored when the key was inserted. The mapping is now corrupt.
+
+What “stable” does not mean
+
+It does not have to be the same across processes or interpreter runs.
+(For instance, hash("spam") varies each time Python starts because of [hash-randomization].)
+
+It does not bar you from mutating totally unrelated attributes; only the data that __hash__ and __eq__ rely on must remain effectively constant.
+
+
+Take-away
+
+When you implement __hash__, make sure it’s computed from parts of the object that will never change after creation (or use id(self) if identity semantics are what you want). That guarantees the hash is stable, keeping dictionaries and sets trustworthy.

@@ -1,0 +1,56 @@
+When a class inherits from a base class that has class variables, using `@classmethod` with `cls` gives you a clean way to access those inherited attributes without hardcoding any class names.
+
+Consider this base class:
+
+```python
+class EDABase:
+    eda_config = None
+
+    @classmethod
+    def configure(cls, eda_config=None):
+        cls.eda_config = eda_config
+```
+
+And these child classes:
+
+```python
+class SummaryAnalytics(EDABase):
+    @classmethod
+    def summarize(cls, df):
+        config = cls.eda_config
+        ...
+
+class ColumnTypeUtils(EDABase):
+    @classmethod
+    def get_types(cls, df):
+        config = cls.eda_config
+        ...
+
+class FeatureCreationUtils(EDABase):
+    @classmethod
+    def create_feature(cls, df, column_names):
+        config = cls.eda_config
+        ...
+```
+
+In each child class, `cls.eda_config` just works. When `SummaryAnalytics.summarize(df)` is called, `cls` is `SummaryAnalytics`. When `ColumnTypeUtils.get_types(df)` is called, `cls` is `ColumnTypeUtils`. You never have to write `SummaryAnalytics.eda_config` or `ColumnTypeUtils.eda_config` explicitly — `cls` resolves to the appropriate class automatically.
+
+This has a few benefits:
+
+1. **No hardcoded class names** — if you rename a class, the methods still work without edits.
+2. **Copy-paste friendly** — you can move a method from one child class to another without changing how it accesses config.
+3. **Inheritance-aware** — if a child class ever overrides `eda_config` or `configure`, `cls` will correctly refer to the child's version, not the base class's.
+
+Contrast this with `@staticmethod`, where you'd be forced to write:
+
+```python
+class SummaryAnalytics(EDABase):
+    @staticmethod
+    def summarize(df):
+        config = SummaryAnalytics.eda_config  # hardcoded
+        ...
+```
+
+This is fragile — rename the class and you have to update every reference. It also doesn't play well with further subclassing.
+
+So `cls` acts as a dynamic reference to "whatever class this method was called on," making your code more flexible and maintainable.

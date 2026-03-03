@@ -1,0 +1,226 @@
+There are several ways to upload your SFT (Supervised Fine-Tuning) training file to a Modal volume. Here are the most common approaches:
+
+## Method 1: Upload from Local File System
+
+```python
+import modal
+
+app = modal.App("upload-training-data")
+
+# Create or connect to a volume
+volume = modal.Volume.from_name("training-data", create_if_missing=True)
+
+@app.function(volumes={"/data": volume})
+def upload_file_to_volume(file_content: bytes, filename: str):
+    """Upload file content to Modal volume"""
+    file_path = f"/data/{filename}"
+    
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+    
+    # Commit changes to volume
+    volume.commit()
+    
+    print(f"File uploaded to {file_path}")
+    return file_path
+
+@app.local_entrypoint()
+def main():
+    # Read your local training file
+    training_file = "qa_pairs_for_rl_training.jsonl"
+    
+    with open(training_file, "rb") as f:
+        content = f.read()
+    
+    # Upload to Modal volume
+    remote_path = upload_file_to_volume.remote(content, training_file)
+    print(f"Uploaded to: {remote_path}")
+```
+
+## Method 2: Direct CLI Upload Using Modal
+
+```bash
+# First, create a volume if it doesn't exist
+modal volume create training-data
+
+# Upload a file directly
+modal volume put training-data local_file.jsonl /remote_path/file.jsonl
+
+# Upload an entire directory
+modal volume put training-data ./local_training_data/ /training_data/
+```
+
+## Method 3: Upload from URL
+
+```python
+import modal
+import requests
+
+app = modal.App("download-to-volume")
+
+volume = modal.Volume.from_name("training-data", create_if_missing=True)
+
+@app.function(volumes={"/data": volume})
+def download_to_volume(url: str, filename: str):
+    """Download file from URL directly to volume"""
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+    
+    file_path = f"/data/{filename}"
+    
+    with open(file_path, "wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+    
+    volume.commit()
+    print(f"Downloaded {url} to {file_path}")
+    return file_path
+
+@app.local_entrypoint()
+def main():
+    # If your file is hosted somewhere
+    url = "https://example.com/training_data.jsonl"
+    download_to_volume.remote(url, "training_data.jsonl")
+```
+
+## Method 4: Upload Large Files in Chunks
+
+```python
+import modal
+
+app = modal.App("upload-large-file")
+
+volume = modal.Volume.from_name("training-data", create_if_missing=True)
+
+@app.function(volumes={"/data": volume})
+def upload_chunk(chunk: bytes, filename: str, chunk_num: int, is_first: bool):
+    """Upload file in chunks for large files"""
+    file_path = f"/data/{filename}"
+    
+    mode = "wb" if is_first else "ab"
+    with open(file_path, mode) as f:
+        f.write(chunk)
+    
+    volume.commit()
+    return f"Chunk {chunk_num} uploaded"
+
+@app.local_entrypoint()
+def main():
+    training_file = "large_training_data.jsonl"
+    chunk_size = 10 * 1024 * 1024  # 10MB chunks
+    
+    with open(training_file, "rb") as f:
+        chunk_num = 0
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            
+            upload_chunk.remote(
+                chunk, 
+                training_file, 
+                chunk_num, 
+                is_first=(chunk_num == 0)
+            )
+            chunk_num += 1
+            print(f"Uploaded chunk {chunk_num}")
+    
+    print(f"Upload complete: {chunk_num} chunks")
+```
+
+## Method 5: Full Training Pipeline with Upload
+
+```python
+import modal
+
+app = modal.App("sft-training")
+
+volume = modal.Volume.from_name("training-data", create_if_missing=True)
+image = modal.Image.debian_slim().pip_install("transformers", "datasets", "torch")
+
+@app.function(volumes={"/data": volume})
+def prepare_training_data(content: str, filename: str):
+    """Upload and validate training data"""
+    import json
+    
+    file_path = f"/data/{filename}"
+    
+    # Validate JSONL format
+    lines = content.strip().split('\n')
+    valid_lines = []
+    
+    for i, line in enumerate(lines):
+        try:
+            json.loads(line)
+            valid_lines.append(line)
+        except json.JSONDecodeError:
+            print(f"Skipping invalid line {i+1}")
+    
+    # Write validated data
+    with open(file_path, "w") as f:
+        f.write('\n'.join(valid_lines))
+    
+    volume.commit()
+    
+    print(f"Uploaded {len(valid_lines)} valid training examples to {file_path}")
+    return file_path, len(valid_lines)
+
+@app.function(
+    image=image,
+    gpu="A100",
+    volumes={"/data": volume},
+    timeout=86400
+)
+def train_model(data_path: str):
+    """Run SFT on the uploaded data"""
+    # Your training code here
+    print(f"Training with data from {data_path}")
+    # ... training logic ...
+    return "Training complete"
+
+@app.local_entrypoint()
+def main():
+    # Read local file
+    with open("training_data.jsonl", "r") as f:
+        content = f.read()
+    
+    # Upload and validate
+    data_path, num_examples = prepare_training_data.remote(
+        content, 
+        "training_data.jsonl"
+    )
+    
+    print(f"Data prepared: {num_examples} examples at {data_path}")
+    
+    # Start training
+    result = train_model.remote(data_path)
+    print(result)
+```
+
+## Checking Your Volume Contents
+
+```python
+@app.function(volumes={"/data": volume})
+def list_files():
+    import os
+    files = []
+    for root, dirs, filenames in os.walk("/data"):
+        for filename in filenames:
+            path = os.path.join(root, filename)
+            size = os.path.getsize(path)
+            files.append((path, size))
+    return files
+
+# Or from CLI:
+# modal volume ls training-data
+```
+
+## Best Practices:
+
+1. **Always call `volume.commit()`** after writing files to persist changes
+2. **Use chunking** for files larger than 100MB
+3. **Validate your data** before training to catch format errors early
+4. **Store preprocessed data** in volumes to avoid reprocessing
+5. **Use meaningful volume names** to organize different datasets
+
+The volume will persist across function calls and app deployments, so you only need to upload your training data once.

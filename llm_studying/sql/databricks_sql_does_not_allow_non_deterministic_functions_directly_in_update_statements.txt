@@ -1,0 +1,85 @@
+# Why Databricks Doesn't Allow Non-Deterministic Functions in UPDATE Statements
+
+## What's Happening
+
+Databricks (and Apache Spark in general) **prohibits the use of non-deterministic functions** like `RAND()`, `UUID()`, `CURRENT_TIMESTAMP()`, etc. directly in UPDATE statements. This is a deliberate design decision, not a bug.
+
+## What Are Non-Deterministic Functions?
+
+A **non-deterministic function** returns different results each time it's called, even with the same inputs:
+- `RAND()` - returns a different random number each call
+- `UUID()` - generates a unique identifier each call
+- `NOW()` / `CURRENT_TIMESTAMP()` - returns the current time, which changes
+- `MONOTONICALLY_INCREASING_ID()` - generates sequential IDs
+
+In contrast, **deterministic functions** always return the same result for the same input:
+- `UPPER('hello')` - always returns 'HELLO'
+- `2 + 2` - always returns 4
+- `ROUND(3.14159, 2)` - always returns 3.14
+
+## Why Databricks Restricts This
+
+### 1. **Distributed Computing Architecture**
+Databricks/Spark processes data across multiple machines (nodes) in parallel. When you run an UPDATE:
+- Different partitions of your table may be processed on different machines
+- The same row might be evaluated multiple times during optimization
+- `RAND()` would generate **different values** each time, leading to inconsistent results
+
+### 2. **Delta Lake ACID Transactions**
+Delta Lake (Databricks' storage layer) maintains:
+- **Transaction logs** that record what changed
+- **Time travel** capabilities to view historical versions
+- **Audit trails** for compliance
+
+If `RAND()` could be used directly, the transaction log wouldn't be reproducible - replaying the same UPDATE would generate different values each time.
+
+### 3. **Query Optimization & Caching**
+Spark's optimizer may:
+- Reorder operations for efficiency
+- Cache intermediate results
+- Re-evaluate expressions during execution
+
+Non-deterministic functions would break these optimizations because the result changes each evaluation.
+
+### 4. **Idempotency & Retry Logic**
+In distributed systems, operations may need to retry if a node fails. If an UPDATE with `RAND()` fails halfway through:
+- Retrying would generate **different random values** for the remaining rows
+- Some rows would have "version 1" random values, others "version 2"
+- This breaks data consistency
+
+## Example of the Problem
+
+Imagine this UPDATE runs on 3 nodes processing different partitions:
+
+```sql
+UPDATE campaign SET budget = total_spend * RAND()
+```
+
+**What could happen:**
+- Node 1 evaluates `RAND()` and gets 0.5 for its partition
+- Node 2 evaluates `RAND()` and gets 0.8 for its partition  
+- Node 1 crashes and retries, now getting 0.3 for the same rows
+
+Result: **Inconsistent, unpredictable data**
+
+## The Workaround Philosophy
+
+By forcing you to use a subquery or temporary column:
+```sql
+MERGE INTO campaign AS target
+USING (
+  SELECT id, RAND() AS random_value FROM campaign
+) AS source
+ON target.id = source.id
+WHEN MATCHED THEN UPDATE SET target.budget = source.random_value
+```
+
+Databricks ensures:
+- ✅ Random values are **generated once** per row in the subquery
+- ✅ The same value is **consistently applied** during the update
+- ✅ The operation is **reproducible** from transaction logs
+- ✅ Retries will use the **same values** (because they're materialized)
+
+## Bottom Line
+
+This restriction is a **feature, not a limitation**. It prevents subtle data corruption bugs that would be nearly impossible to debug in a distributed system. The workarounds (MERGE, temp columns) ensure your data stays consistent and your operations remain reproducible.

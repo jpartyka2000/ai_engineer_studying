@@ -1,0 +1,52 @@
+Over‐escaping usually happens when you treat a JSON object as a plain Python string, then serialize it again—so every quote in that inner string gets escaped a second time. The most common culprits are:
+
+1. **Double `json.dumps` calls**
+
+   ```python
+   inner = {"x": 1, "y": 2}
+   inner_str = json.dumps(inner)      # -> '{"x":1,"y":2"}'
+   outer = {"arguments": inner_str}
+   line = json.dumps(outer)           # now escapes the quotes in inner_str
+   # inner_str’s quotes become \" in the final JSON, but
+   # json.dumps will escape those backslashes again to \\\" 
+   ```
+
+2. **Using Python’s `repr()` or f-strings on dicts**
+
+   ```python
+   d = {"x":1}
+   s = f"{d}"                         # "{'x': 1}"
+   # then json.dumps({"data": s}) will embed that repr string,
+   # converting single quotes to double and escaping them.
+   ```
+
+3. **Reading lines as raw text and re-dumping them**
+   If you read a JSONL line in as a Python string, then do
+
+   ```python
+   obj = json.loads(line)     
+   new_line = json.dumps({"wrapped": line})
+   ```
+
+   you’ll end up escaping *all* of `line`’s existing backslashes again.
+
+4. **Accidentally embedding serialized JSON inside another serializer**
+   For example, in a training‐example loop you might build up a `messages` list, do
+
+   ```python
+   msg_str = json.dumps(messages)      
+   example = {"messages": msg_str}     # WRONG!
+   final = json.dumps(example)
+   ```
+
+   That embeds a JSON string as a value, so every inner quote must be escaped—and then it gets escaped *again* when `final` is dumped.
+
+---
+
+### How to avoid it
+
+* **Keep nested structures as Python objects**, not pre-serialized strings.
+* **Only call `json.dumps` once** on your final structure.
+* If you *do* need a JSON string inside another JSON, explicitly `json.dumps(inner)` and then accept that your outer `json.dumps` will escape those quotes—but don’t ever dump *that* string again.
+
+By understanding where you inadvertently serialize twice (or more), you can prevent the `\\\"` chaos and keep your JSONL human-readable and machine-parseable.

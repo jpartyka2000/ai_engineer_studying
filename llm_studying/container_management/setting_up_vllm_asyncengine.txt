@@ -1,0 +1,42 @@
+This configures how vLLM sets up its inference engine. Let me break down each parameter:
+
+## `model=MODEL_NAME`
+
+The Hugging Face model identifier to load — in this case `"Qwen/Qwen3-8B"`.
+
+## `tensor_parallel_size=N_GPU`
+
+How many GPUs to split the model across. With `N_GPU=1`, the entire model runs on a single GPU. If you set this to 2 or 4, vLLM would shard the model's layers across multiple GPUs, which is necessary for models too large to fit on one GPU.
+
+## `max_num_seqs=MAX_NUM_SEQS`
+
+The maximum number of sequences (requests) that can be processed concurrently. Set to `2` here, meaning the engine will batch at most 2 requests together. Lower values use less GPU memory but reduce throughput.
+
+## `gpu_memory_utilization=GPU_MEM_UTIL`
+
+What fraction of GPU memory vLLM is allowed to use — set to `0.75` (75%). vLLM pre-allocates this memory for its KV cache (where it stores attention states for in-flight requests). Leaving headroom prevents out-of-memory errors from memory fragmentation or spikes.
+
+## `enforce_eager=FAST_BOOT`
+
+When `True`, disables CUDA graph capture. CUDA graphs are an optimization where GPU operations get recorded and replayed as a single unit — faster at runtime, but takes time to compile upfront. With `FAST_BOOT=True`, the server starts faster but has slightly higher latency on the first tokens. Good for scale-to-zero scenarios where cold start time matters.
+
+## `dtype="auto"`
+
+Let vLLM automatically choose the data type (fp16, bf16, etc.) based on what the model was trained with and what the GPU supports.
+
+## `enable_sleep_mode=True`
+
+This is key for the memory snapshot setup. It allows the engine to "sleep" — releasing GPU resources while preserving state — and then "wake up" later. You can see this used in the code:
+
+```python
+@modal.enter(snap=True)
+async def _warm_and_snapshot(self):
+    # ... load everything ...
+    await self._engine.sleep()  # Release GPU before snapshot
+
+@modal.enter(snap=False)
+async def _enter(self):
+    await self._engine.wake_up()  # Reclaim GPU after restore
+```
+
+This lets Modal snapshot the container while the GPU is in a clean state, then restore it quickly.

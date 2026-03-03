@@ -1,0 +1,73 @@
+Here’s a standalone post that focuses on **`default_factory`**:
+
+---
+
+### What is `default_factory` in Pydantic?
+
+When you define fields in a **Pydantic model**, sometimes you want them to have a **default value**. For immutable types (like `int`, `str`, `bool`), you can safely write:
+
+```python
+from pydantic import BaseModel
+
+class MyModel(BaseModel):
+    count: int = 0
+    name: str = "unknown"
+```
+
+But for **mutable types** (like `list`, `dict`, `set`), using a plain default can cause bugs:
+
+```python
+class BadModel(BaseModel):
+    tags: list = []   # ⚠️ all instances share the same list
+```
+
+---
+
+### Why `default_factory`?
+
+Python evaluates default values once, when the class is defined. That means all model instances share the same mutable object — leading to surprising behavior.
+
+To fix this, Pydantic (via its `Field()` function) supports **`default_factory`**. Instead of storing the object itself, it stores a **callable** that will be executed to create a brand-new object each time.
+
+---
+
+### Example
+
+```python
+from typing import Dict, Any
+from pydantic import BaseModel, Field
+
+class GoodModel(BaseModel):
+    data: Dict[str, Any] = Field(default_factory=dict)
+
+m1 = GoodModel()
+m2 = GoodModel()
+
+m1.data["key"] = "value"
+
+print(m1.data)  # {'key': 'value'}
+print(m2.data)  # {}   (fresh dict, independent of m1)
+```
+
+Here, `default_factory=dict` ensures that every new `GoodModel` gets its own dictionary.
+
+---
+
+### Is `default_factory` a Pydantic Method?
+
+Not exactly.
+
+* `default_factory` is **not a method** — it’s a keyword argument you pass to Pydantic’s [`Field()`](https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.Field).
+* Internally, Pydantic borrows this idea from Python’s `dataclasses.field`, which also has `default_factory`.
+
+---
+
+✅ **In summary:**
+
+* `default_factory` belongs to **Pydantic’s `Field()`**, not to Python itself.
+* It ensures mutable defaults like `list` or `dict` are created fresh for each model instance.
+* It’s the safe, recommended way to define default values for mutable types in Pydantic models.
+
+---
+
+Would you like me to also show how `default_factory` compares with `dataclasses.field(default_factory=...)` so you can see where Pydantic borrowed the idea from?

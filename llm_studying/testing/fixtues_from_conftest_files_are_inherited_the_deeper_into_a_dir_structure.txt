@@ -1,0 +1,44 @@
+pytest will automatically discover and merge all the `conftest.py` fixtures in the directory tree above each test file. Concretely:
+
+1. **Lookup path**
+   When pytest collects a test file `tests/foo/bar/test_something.py`, it will look for `conftest.py` in:
+
+   ```
+   tests/foo/bar/conftest.py
+   tests/foo/conftest.py
+   tests/conftest.py
+   <project root>/conftest.py
+   ```
+
+   (and any other parent directories on `sys.path`), in that order.
+
+2. **Fixture visibility**
+
+   * **Parent → child:** fixtures defined in a parent directory’s `conftest.py` are visible to tests in all its subdirectories.
+   * **Child → parent:** a `conftest.py` in a subdirectory does *not* expose its fixtures to tests in the parent directory—only to tests in its own directory and below.
+
+3. **Overriding fixtures**
+   If you define the same fixture name in both a parent and a child `conftest.py`, the child’s definition will take precedence for tests in that child directory (and its subdirs), effectively overriding the parent’s fixture there.
+
+---
+
+### Example
+
+```
+project/
+├─ conftest.py           # defines fixture A
+└─ tests/
+   ├─ conftest.py        # defines fixture B
+   ├─ foo/
+   │  ├─ conftest.py     # defines fixture C
+   │  └─ test_x.py
+   └─ bar/
+      └─ test_y.py
+```
+
+* In `test_x.py`, you can use fixtures **A**, **B**, and **C**.
+* In `tests/bar/test_y.py`, you can use fixtures **A** and **B**, but **not C**.
+
+---
+
+So yes: the deeper you go, the more `conftest.py` files are on the path, and your tests see the union of all fixtures defined in those files from the project root down to their own directory.

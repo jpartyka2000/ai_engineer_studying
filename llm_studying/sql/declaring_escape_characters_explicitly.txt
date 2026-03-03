@@ -1,0 +1,56 @@
+In SQL, the underscore character (“_”) in a LIKE pattern is treated as a wildcard that matches any single character. If you want to match an underscore literally, you need to escape it. One common way to do that is to use a backslash (`\`) as the escape character and then explicitly declare it using the `ESCAPE` clause.
+
+For example, modify your WHERE clause like this:
+
+```sql
+WHERE campaign LIKE 'na\_%' ESCAPE '\'
+```
+
+### Explanation
+
+- **`'na\_%'`:**  
+  The backslash before the underscore tells SQL to treat the underscore as a literal character rather than as a wildcard.
+
+- **`ESCAPE '\'`:**  
+  This clause tells the SQL engine that the backslash (`\`) is being used as the escape character.
+
+So the full query becomes:
+
+```sql
+SELECT campaign, COUNT(*) AS cnt
+FROM pathahead.tealhq_ecue.preprocessed_ml_data
+LATERAL VIEW explode(user_properties_initial_utm_campaign_set) AS campaign
+WHERE campaign LIKE 'na\_%' ESCAPE '\'
+GROUP BY campaign
+ORDER BY cnt DESC
+```
+
+This query will only match values that start with "na_" literally, followed by any other characters, with the underscore being interpreted as a literal underscore.
+
+----------------
+
+In Spark SQL string literals, the backslash itself must be escaped. That means if you want to use a backslash as the escape character, you need to double it. For example, try:
+
+```sql
+WHERE campaign LIKE 'na\\_%' ESCAPE '\\'
+```
+
+### Explanation
+
+- **Double Backslash in String Literal:**  
+  In the SQL string literal `'na\\_%'`, the `\\` produces a single backslash in the actual pattern. This backslash tells Spark SQL to escape the following character (in this case, the underscore).
+
+- **ESCAPE Clause:**  
+  The clause `ESCAPE '\\'` tells the query processor that the backslash is the escape character.
+
+### Alternative Using Regex
+
+If you continue to have issues with the LIKE syntax, you can use the regex operator `RLIKE` which treats the underscore as a literal character (since it isn't a special regex character):
+
+```sql
+WHERE campaign RLIKE '^na_'
+```
+
+This will match campaign strings that start with `"na_"`.
+
+Either approach should let you match an underscore literally.

@@ -1,0 +1,56 @@
+**Explaining outcome variable logging**
+
+For logging the outcome variable in MLFlow, the convention isn't to log training labels unless for reproducibility. Instead, consider using input\_example with the output column included, logging as an artifact, or using tags. You can also use the model's signature, with input and output names specified. If you're logging the output as part of the input\_example, it can be a DataFrame with a named column, serving as an example output for that model.
+
+
+Thought for a few seconds
+
+
+In MLflow the “outcome” (your `y`) generally isn’t treated like a hyperparameter, it lives in one of two places:
+
+1. **In the model signature’s outputs**
+   When you call
+
+   ```python
+   from mlflow.models.signature import infer_signature
+
+   # X is your feature‐only DataFrame
+   # y_pred_or_prob is what your model actually returns
+   signature = infer_signature(X, y_pred_or_prob)
+   mlflow.sklearn.log_model(clf, "model", signature=signature)
+   ```
+
+   MLflow records both the **input schema** (your predictors) and the **output schema** (what your model spits out) in the signature.  If you want to *label* that output column in the UI, make sure the Series/DataFrame you pass to `infer_signature` has its `.name` set appropriately:
+
+   ```python
+   y_prob.name = "win_probability"
+   signature = infer_signature(X, y_prob)
+   ```
+
+2. **As part of an input example**
+   If you’d like the UI to show a “sample row” that includes both features *and* the true label, pass a small combined DataFrame as the `input_example` when logging:
+
+   ```python
+   example = pd.concat([X.head(5), y_true.head(5)], axis=1)
+   mlflow.sklearn.log_model(
+       clf,
+       "model",
+       signature=signature,
+       input_example=example
+   )
+   ```
+
+   Now when someone inspects your run they’ll see exactly which column was your outcome, alongside the features.
+
+---
+
+### When to log the raw `y_true` data
+
+Only if you have a clear auditing or repro need—for example, to re‑compute metrics later on the exact same labels—would you dump your `y_true` to disk and call:
+
+```python
+y_true.to_csv("y_train.csv", index=False)
+mlflow.log_artifact("y_train.csv", artifact_path="labels")
+```
+
+But for most workflows, embedding your target in the **model signature outputs** and/or in the **input example** is all you need so that downstream consumers know exactly what the model expects and what it returns.

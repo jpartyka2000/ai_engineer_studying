@@ -1,0 +1,81 @@
+Yes, you can programmatically determine which `.py` files pytest would execute as test files in a given directory. This can be done by leveraging pytest's test discovery mechanism.
+
+Here’s how you can achieve this:
+
+---
+
+### **Method 1: Using `pytest.main()` with the `--collect-only` Option**
+The `--collect-only` option tells pytest to collect test files and test cases without executing them.
+
+#### Example:
+```python
+import pytest
+
+def collect_test_files(directory="."):
+    # Run pytest in collection mode
+    result = pytest.main([directory, "--collect-only", "-q"])
+    return result
+
+collect_test_files("path/to/directory")
+```
+
+This will print the files and test functions discovered by pytest. You can parse the output to extract the `.py` files.
+
+---
+
+### **Method 2: Using `pytest`'s Python API for Test Collection**
+Pytest's internal API can also be used to programmatically discover test files.
+
+#### Example:
+```python
+import pytest
+from _pytest.config import get_config
+from _pytest.main import Session
+
+def discover_test_files(directory="."):
+    config = get_config()
+    config.args = [directory]  # Set directory for pytest to search
+    session = Session.from_config(config)
+    session.perform_collect()  # Perform collection
+    test_files = {item.location[0] for item in session.items}  # Collect file names
+    return sorted(test_files)
+
+test_files = discover_test_files("path/to/directory")
+print(test_files)
+```
+
+---
+
+### **Method 3: Using a Manual Approach (Match Pytest Conventions)**
+Pytest follows a naming convention for test files:
+- Files named `test_*.py` or `*_test.py`.
+
+You can write your own script to match this naming convention within a given directory.
+
+#### Example:
+```python
+import os
+
+def find_pytest_files(directory="."):
+    test_files = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.startswith("test_") and file.endswith(".py"):
+                test_files.append(os.path.join(root, file))
+            elif file.endswith("_test.py"):
+                test_files.append(os.path.join(root, file))
+    return test_files
+
+test_files = find_pytest_files("path/to/directory")
+print(test_files)
+```
+
+---
+
+### **Output**
+All these methods will give you a list of `.py` files that pytest would execute as test files in the specified directory.
+
+### **Key Differences**
+- **`pytest.main()` with `--collect-only`:** Uses pytest's CLI behavior. Output is more detailed, including test functions.
+- **Pytest's Internal API:** Directly accesses pytest’s test collection logic. Gives finer control.
+- **Manual Approach:** Only filters files by pytest naming conventions, without actually validating them as test files.

@@ -1,0 +1,72 @@
+**Extracting Index Level Values with `get_level_values()`**
+
+When your DataFrame or Series uses a **MultiIndex**, you often need to pull out the values from a specific level of that index. Pandas provides the **`Index.get_level_values()`** method for exactly this.
+
+---
+
+## Syntax
+
+```python
+level_values = df.index.get_level_values(level)
+```
+
+* **`level`** can be either the **name** of the index level (string) or its **integer position** (0-based).
+
+---
+
+## When to Use
+
+* **Inspecting** the distinct values or pattern of a particular index level.
+* **Filtering** or **masking** based on one level of a MultiIndex.
+* **Aligning** data by extracting that level as a column or standalone array.
+
+---
+
+## Example
+
+```python
+import pandas as pd
+
+# Create a MultiIndex DataFrame
+arrays = [
+    ['A', 'A', 'B', 'B'],
+    ['2025-01-01', '2025-01-02', '2025-01-01', '2025-01-02']
+]
+index = pd.MultiIndex.from_arrays(arrays, names=['region','date'])
+df = pd.DataFrame({'revenue': [100, 120, 200, 180]}, index=index)
+
+# 1) Get all 'region' values (level 0)
+regions = df.index.get_level_values('region')
+# → Index(['A','A','B','B'], dtype='object', name='region')
+
+# 2) Get all dates (level 1)
+dates = df.index.get_level_values(1)
+# → Index(['2025-01-01','2025-01-02','2025-01-01','2025-01-02'], dtype='object', name='date')
+
+# 3) Use it to filter
+mask = dates == '2025-01-01'
+df_jan1 = df[mask]
+```
+
+---
+
+## Turning Level Values into a Column
+
+If you want to bring a level back into your DataFrame as a column:
+
+```python
+df_reset = df.reset_index()  
+# now 'region' and 'date' are regular columns you can manipulate directly
+```
+
+Or assign one level:
+
+```python
+df['region_col'] = df.index.get_level_values('region')
+```
+
+---
+
+**Key Point:**
+
+* `get_level_values()` **does not** modify the DataFrame; it simply returns the requested index‐level as an `Index` object you can inspect, slice, or convert to a Series/array.

@@ -1,0 +1,80 @@
+In pandas (and more generally in Python), `~` is the **bitwise NOT** operator. When applied to boolean arrays or masks, it acts as a **logical “NOT”**, flipping `True ↔ False`. Here are the precise scenarios where you can—and commonly do—use it:
+
+---
+
+## 1. Inverting a Boolean Series or DataFrame mask
+
+```python
+mask = df['col'] > 10       # yields a Series of True/False
+df[~mask]                   # selects rows where col ≤ 10
+```
+
+Under the hood, `~mask` is the same as `mask.map({True: False, False: True})`.
+
+---
+
+## 2. Negating `.isnull()`, `.duplicated()`, etc.
+
+Pandas methods that return boolean Series can be inverted with `~`:
+
+```python
+df[~df['col'].isnull()]        # drop rows where col is NaN
+df.loc[~df.duplicated()]       # keep only the first occurrence of each row
+```
+
+---
+
+## 3. Combining multiple Boolean conditions
+
+Since Python’s `not` can’t be vectorized, use `~` in place of “not” and `&`/`|` instead of `and`/`or`:
+
+```python
+df[
+    (~df['age'].isnull())            # age not null
+  & (df['score'] > 70)               # AND score > 70
+  & (~df['status'].isin(['X','Y']))  # AND status not in X or Y
+]
+```
+
+---
+
+## 4. Inverting an Index-level mask or membership test
+
+```python
+idx = df.index.get_level_values('group')
+df[~idx.isin(['A','B'])]   # drop groups A and B
+```
+
+Or on a plain Index:
+
+```python
+full_idx = pd.Index([1,2,3,4])
+mask = full_idx.isin([2,4])
+(~mask).sum()              # count of values not in [2,4]
+```
+
+---
+
+## 5. Flipping a Boolean DataFrame
+
+When you have a DataFrame of booleans (e.g. from `df > threshold`), `~` inverts all entries:
+
+```python
+bool_df = df > 0
+inv_bool_df = ~bool_df      # True everywhere df ≤ 0
+```
+
+---
+
+## What you **cannot** do with `~`
+
+* You **cannot** apply `~` to a non‐boolean Series/DataFrame unless its dtype supports bitwise‐not (e.g. integer dtypes, where it returns the two’s-complement).
+* You **cannot** use Python’s `not` for element-wise inversion—`not df['col']` will error.
+
+---
+
+### Quick tip
+
+Whenever you find yourself wanting “not this mask,” reach for `~mask`. If you need to negate the result of any pandas boolean method (`.isna()`, `.duplicated()`, `.isin()`, etc.), prepend it with `~` rather than trying to wrap it in Python’s `not`.
+
+Hope that clarifies exactly where (and why) `~` is your go-to logical NOT in pandas!

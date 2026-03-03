@@ -1,0 +1,64 @@
+Pandas’ `DataFrame.round()` is explicitly a **numeric‐only** operation—any non-numeric columns (strings, datetimes, objects, etc.) are simply left untouched rather than being passed through the rounding machinery. Under the hood it boils down to roughly:
+
+```python
+# for each column in the DataFrame...
+for col in df:
+    # if this column is numeric, apply Series.round()
+    # otherwise, just keep it as is
+```
+
+So your string column survives the `.round(3)` call unchanged, and no error is raised.
+
+---
+
+### Minimal repro
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'value': [1.2345, 2.3456, 3.4567],
+    'tag':   ['a',     'b',     'c']
+})
+
+print(df.dtypes)
+# value    float64
+# tag       object
+# dtype: object
+
+print(df.round(2))
+```
+
+```
+   value tag
+0   1.23   a
+1   2.35   b
+2   3.46   c
+```
+
+Notice that:
+
+- The `value` column gets rounded to two decimal places.
+- The `tag` column (dtype `object`) is left exactly as it was.
+
+---
+
+### How it works
+
+- **`DataFrame.round()`** iterates columns and calls **`Series.round()`** only on numeric dtypes.  
+- **Non-numeric dtypes** have no rounding logic defined, so pandas just passes them through.  
+- **No exception** is thrown for “unsupported” dtypes, since pandas treats rounding as a no-op on those columns.
+
+---
+
+### If you need to be explicit
+
+If you want to ensure you only round certain columns, or convert others first, you can do:
+
+```python
+# only round the float columns
+num_cols = df.select_dtypes(include='number').columns
+df[num_cols] = df[num_cols].round(3)
+```
+
+But in most cases you can rely on the built-in `.round()` safely ignoring your string columns.

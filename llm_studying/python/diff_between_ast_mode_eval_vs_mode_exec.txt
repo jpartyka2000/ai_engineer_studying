@@ -1,0 +1,68 @@
+When you use `ast.parse()`, the `mode` argument tells Python what kind of source you’re feeding it, which in turn affects both **what** the parser accepts and **what** it returns:
+
+| Mode       | Purpose                                  | What it accepts                                                  | AST root node returned                                         |
+| ---------- | ---------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
+| **`exec`** | Parse a module or sequence of statements | Any number of statements (definitions, assignments, loops, etc.) | `ast.Module`, whose `.body` is a list of statement nodes       |
+| **`eval`** | Parse a single expression                | Exactly one expression (no statements)                           | `ast.Expression`, whose `.body` is that single expression node |
+
+---
+
+## 1. What Each Mode Accepts
+
+* **`mode='exec'`**
+
+  * You can give it multi-line code containing **statements**, e.g.:
+
+    ```python
+    src = '''
+    def f(x):
+        return x**2
+
+    y = f(3)
+    print(y)
+    '''
+    tree = ast.parse(src, mode='exec')
+    # tree is an ast.Module with 3 body items: FunctionDef, Assign, Expr
+    ```
+* **`mode='eval'`**
+
+  * You must give it exactly **one** expression, e.g.:
+
+    ```python
+    src = "sum(i*i for i in range(10))"
+    tree = ast.parse(src, mode='eval')
+    # tree is an ast.Expression with a single GeneratorExp node underneath
+    ```
+  * If you try to pass statements (like `x = 5`) or multiple expressions/statements, you’ll get a `SyntaxError`.
+
+---
+
+## 2. Why You Choose One vs. the Other
+
+* Use **`exec`** when you want to parse or transform whole scripts or modules—anything from function definitions to loops to top-level statements.
+* Use **`eval`** when you’re only interested in a single expression’s AST (e.g., for a calculator, a config expression, or a templating engine), and you want the parser to enforce “no statements.”
+
+---
+
+## 3. Runtime Implications
+
+* If you compile the AST back to code:
+
+  ```python
+  code_obj = compile(tree, filename="<ast>", mode="exec")
+  exec(code_obj)      # runs module code
+  ```
+
+  versus
+
+  ```python
+  code_obj = compile(tree, filename="<ast>", mode="eval")
+  result = eval(code_obj)  # returns the expression’s value
+  ```
+
+---
+
+**In short:**
+
+* **`exec`** = “treat the input as a full script/module” → statements allowed → gives you an `ast.Module`.
+* **`eval`** = “treat the input as a single expression” → only an expression allowed → gives you an `ast.Expression`.

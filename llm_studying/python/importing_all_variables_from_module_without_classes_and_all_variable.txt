@@ -1,0 +1,29 @@
+Yes — you can use a wildcard import:
+
+```python
+from mymodule import *
+```
+
+This imports all public names from the module. To control *which* names get exported, define `__all__` in the module:
+
+```python
+# mymodule.py
+__all__ = ['MAX_SIZE', 'DEFAULT_TIMEOUT', 'API_VERSION']
+
+MAX_SIZE = 100
+DEFAULT_TIMEOUT = 30
+API_VERSION = "v2"
+_PRIVATE = "not exported"  # skipped by import * even without __all__
+```
+
+Without `__all__`, `import *` imports everything that doesn't start with an underscore. With `__all__`, only the listed names are imported.
+
+If you want to be more selective without `__all__`, there's no built-in "import only constants" mechanism, but you could do something like:
+
+```python
+# Import only UPPER_CASE names (convention for constants)
+import mymodule
+globals().update({k: v for k, v in vars(mymodule).items() if k.isupper()})
+```
+
+That said, `from module import *` is generally discouraged in production code because it pollutes the namespace and makes it hard to trace where names come from. Explicit imports like `from mymodule import MAX_SIZE, DEFAULT_TIMEOUT` are usually preferred.

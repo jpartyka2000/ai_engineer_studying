@@ -1,0 +1,40 @@
+These log messages might be coming from other libraries or parts of the PySpark system that are configured to use logging at a more verbose level. To stop these unwanted log messages, you can adjust the logging level for specific loggers or globally set the logging level for your application.
+
+Here’s how you can control and filter these log messages:
+
+### Option 1: Set the Logging Level for Your Logger
+You can configure your logger to a higher level (e.g., `WARNING` or `ERROR`) so that only more important messages are shown. This prevents INFO or DEBUG messages from other libraries from being printed.
+
+```python
+import logging
+
+# Set up your logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+logger = logging.getLogger(__name__)  # Use your own module name
+logger.setLevel(logging.INFO)  # Set your desired level (e.g., INFO, WARNING)
+
+# Filter out unnecessary loggers
+logging.getLogger("py4j").setLevel(logging.WARN)  # Py4J is often the source of verbose logs
+logging.getLogger("pyspark").setLevel(logging.WARN)  # Limit PySpark log output
+```
+
+### Option 2: Configure PySpark Logging Separately
+You can also configure PySpark's logging level directly if you want to suppress those messages:
+
+```python
+from pyspark import SparkContext
+from pyspark.sql import SparkSession
+
+# Create Spark session with custom logging level
+spark = SparkSession.builder.appName("MyApp").getOrCreate()
+sc = spark.sparkContext
+
+# Set PySpark's logging level
+sc.setLogLevel("WARN")  # Options are ALL, DEBUG, ERROR, FATAL, INFO, OFF, TRACE, WARN
+```
+
+### Explanation
+- `logging.getLogger("py4j").setLevel(logging.WARN)`: PySpark often communicates with JVMs through Py4J, generating verbose logs. This line suppresses those messages.
+- `sc.setLogLevel("WARN")`: Limits PySpark's own log messages to `WARN` or above.
+
+By using these methods, you should be able to suppress the unwanted log messages and only retain the relevant ones for your ETL pipeline.

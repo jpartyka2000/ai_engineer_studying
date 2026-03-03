@@ -1,0 +1,64 @@
+**`DataFrame.applymap()`** is a pandas method that lets you apply a **function to every single cell** in a DataFrame. It’s like `map` for DataFrames, working element-wise across all columns and rows.
+
+---
+
+## Signature
+
+```python
+DataFrame.applymap(func, na_action=None)
+```
+
+* **`func`**: a function that takes one scalar value and returns a transformed scalar.
+* **`na_action`**: if set to `'ignore'`, skips `NaN` values (leaves them as-is) rather than passing them to `func`.
+
+---
+
+## When to use it
+
+* You need the **same** operation for **every** cell, regardless of column or row context.
+* Examples:
+
+  * Formatting numbers or strings in every cell (e.g. adding a currency symbol).
+  * Converting all values to strings, booleans, or some custom type.
+  * Censoring or masking sensitive data uniformly (e.g. replacing any negative number with zero).
+
+---
+
+## Example
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'price': [19.99, 5.50, 3.25],
+    'qty':   [10,     3,    7]
+})
+
+# Format every cell as a string with a trailing unit
+df_fmt = df.applymap(lambda x: f"{x}$" if isinstance(x, (int,float)) else x)
+
+# df_fmt:
+#      price    qty
+#0  19.99$   10$
+#1   5.50$    3$
+#2   3.25$    7$
+```
+
+---
+
+## Performance considerations
+
+* **Slower than vectorized ops**: Because `applymap` calls your Python function once per cell, it’s **not** as fast as using built-in vectorized operations (`df + 1`, `df.astype(str)`, etc.).
+* **Best for simple tasks**: Use it when there’s no straightforward vectorized alternative.
+
+---
+
+## Alternatives
+
+* **`DataFrame.astype()`**: Convert entire DataFrame to a single dtype.
+* **Column-wise methods** (`df['col'].map`, `df['col'].apply`): Faster when only one column needs transformation.
+* **`DataFrame.transform()`**: For column- or row-level aggregations or mappings, not element-wise across all cells.
+
+---
+
+**In summary**, `applymap()` is your go-to when you need to uniformly transform every cell with a custom function—but reach for more vectorized or specialized methods when performance matters.

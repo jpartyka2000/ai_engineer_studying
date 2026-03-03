@@ -1,0 +1,74 @@
+Let’s break down that one line into its building blocks and parameters:
+
+```python
+result = ps.BeamSearch(
+    task=ps.SubgroupDiscoveryTask(df, target, qf, depth=3),
+    beam_width=5,
+    result_set_size=10
+).run()
+```
+
+---
+
+## 1. `ps.SubgroupDiscoveryTask(df, target, qf, depth=3)`
+
+This creates the **search problem** you want to solve.
+
+* **`df`**
+  Your input `pandas.DataFrame` containing all predictor columns plus whatever column(s) `target` refers to.
+
+* **`target`**
+  A `ps.BinaryTarget` (or `ps.NumericTarget`) object that tells PySubgroup:
+
+  * which column in `df` is the outcome,
+  * what value counts as “positive” (e.g. `value=1`).
+
+* **`qf`** (quality function)
+  A `ps.QualityFunction` instance (e.g. `ps.WRAccQF()`, `ps.CQF()`, etc.) that scores each candidate subgroup.
+
+  * **WRAcc** = Weighted Relative Accuracy, balances coverage vs. precision.
+  * You pick this based on whether you care more about high‐precision vs. large coverage, etc.
+
+* **`depth=3`**
+  The **maximum rule length** (i.e. the max number of selectors/conditions combined in one subgroup).
+
+  * `depth=1` → single‐feature rules like `Age < 30`.
+  * `depth=3` → up to three conditions AND‑ed together (e.g. `Age<30 AND Country='US' AND Income>50k`).
+
+---
+
+## 2. `ps.BeamSearch(..., beam_width=5, result_set_size=10)`
+
+This configures **how** you search the space of possible rules.
+
+* **`beam_width=5`**
+  At each search level (i.e. each rule length), you **keep only the top 5 candidates** (by quality) to expand further.
+
+  * A higher beam width explores more candidates (but costs more time).
+  * A lower beam width runs faster but may miss good rules.
+
+* **`result_set_size=10`**
+  After the full search, return the **10 best subgroups** (ranked by your quality function).
+
+  * If you ask for 10 but only 7 meet your minimum support, you’ll get fewer.
+
+---
+
+## 3. `.run()`
+
+* **Executes** the beam‐search algorithm on your `SubgroupDiscoveryTask`.
+* **Returns** a list (or `ResultSet`) of up to `result_set_size` `Subgroup` objects, each with attributes like:
+
+  * `.subgroup_description` (the rule),
+  * `.subgroup_size` (how many rows match),
+  * `.cover` (how many of those are positive),
+  * `.quality_` (the score).
+
+---
+
+### Putting it all together
+
+1. **Define** your data, target, and scoring via `SubgroupDiscoveryTask`.
+2. **Search** with a beam of width 5, allowing rules up to 3 conditions.
+3. **Return** the top 10 subgroups.
+4. **`.run()`** actually performs the computation and hands you the results in `result`.

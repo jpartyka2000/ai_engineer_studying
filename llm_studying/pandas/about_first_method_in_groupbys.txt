@@ -1,0 +1,51 @@
+When you do something like:
+
+```python
+df.groupby('key').first()
+```
+
+you’re using the **GroupBy.first** method, which for each group returns the “first” row (i.e. the one with the smallest original index within that group).  Concretely:
+
+* It’s equivalent to `.nth(0)`—it picks element 0 of each group.
+* By default it will skip over NA values in each column, giving the first *non-NA* entry.
+* It works on both `SeriesGroupBy` and `DataFrameGroupBy` objects.
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'key': list('aaabbb'),
+    'val': [1, None, 3, 4, None, 6]
+})
+
+df.groupby('key').first()
+
+# yields:
+#       val
+# key      
+# a      1.0
+# b      4.0
+```
+
+---
+
+### Can you use `.first()` outside of a `groupby`?
+
+* **`GroupBy.first()`** only exists on the result of a `.groupby(...)` call—you can’t do `df.first()` to grab the first row of an ordinary DataFrame.
+* If you just want the very first row of a DataFrame, use `df.head(1)` or `df.iloc[0]`.
+* **There *is*** a `DataFrame.first()` method, but it’s entirely different: it’s for **time-series slicing**, e.g.
+
+  ```python
+  df_ts = df.set_index(pd.date_range('2020-01-01', periods=6, freq='D'))
+  df_ts.first('3D')  # grabs the first 3 days of data
+  ```
+
+  That has nothing to do with grouping.
+
+---
+
+### TL;DR
+
+* **`grouped.first()`** → first row per group.
+* **`df.first(...)`** (no `groupby`) → only for time-indexed DataFrames, selects by a date offset.
+* To get the very first row of any DataFrame, use `df.head(1)` or `df.iloc[0]`.

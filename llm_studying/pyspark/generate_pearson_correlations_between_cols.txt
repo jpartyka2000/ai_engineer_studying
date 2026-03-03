@@ -1,0 +1,48 @@
+Yes—Spark’s DataFrame API and MLlib both give you easy ways to compute Pearson r between two columns:
+
+---
+
+## 1) Using the built‑in `stat.corr` method
+
+```python
+# assume spark_df is your Spark DataFrame
+r = spark_df.stat.corr("col1", "col2", method="pearson")
+print(f"Pearson correlation between col1 and col2 = {r}")
+```
+
+* **`method`** can be `"pearson"` (default) or `"spearman"`.
+* Returns a single float.
+
+---
+
+## 2) Using the MLlib Correlation matrix (for many columns at once)
+
+If you want a correlation matrix of multiple numeric columns, first assemble them into a vector column, then call `Correlation.corr`:
+
+```python
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.stat import Correlation
+
+# 1) pick the numeric columns you care about
+num_cols = ["col1", "col2", "col3"]
+
+# 2) assemble into a single feature vector
+assembler = VectorAssembler(inputCols=num_cols, outputCol="features")
+vec_df = assembler.transform(spark_df).select("features")
+
+# 3) compute the Pearson correlation matrix
+corr_mat = Correlation.corr(vec_df, "features", "pearson").head()[0]
+
+# corr_mat is a DenseMatrix; to view:
+print("Correlation matrix:\n" + str(corr_mat))
+```
+
+You’ll get an *n*×*n* matrix where the entry *(i, j)* is the Pearson *r* between `num_cols[i]` and `num_cols[j]`.
+
+---
+
+### Tips
+
+* For large DataFrames, these are both single‐pass (O(n)) computations but may shuffle; cache your DF beforehand if you reuse it.
+* If you only need one pair of columns, `stat.corr` is simplest and most efficient.
+* If you want to compute *r* for dozens of columns, the `Correlation.corr` route avoids looping over pairs.

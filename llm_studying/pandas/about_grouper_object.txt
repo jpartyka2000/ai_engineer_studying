@@ -1,0 +1,84 @@
+`pd.Grouper` is a helper class in pandas that lets you specify more complex grouping rules—especially time-based grouping—when you call `.groupby()`. Instead of just grouping by column names or index levels, you can pass one or more `Grouper` objects to define:
+
+* **Time-frequency bins** (e.g. monthly, quarterly) on a datetime column or index
+* **Grouping by an index level** (without having to reset the index)
+* **Custom bin edges** via `freq`, `closed`, `label`, etc.
+
+---
+
+## Key parameters
+
+```python
+pd.Grouper(
+    key=None,         # column name to group by (must be datetime-like if freq is set)
+    level=None,       # index level name or number to group on
+    freq=None,        # a pandas offset alias: 'M', 'Q-DEC', '7D', etc.
+    axis=0,           # axis to group along (0=row, 1=column)
+    sort=False,       # whether to sort groups
+    closed=None,      # 'right' or 'left' interval closure
+    label=None,       # 'right' or 'left' bin labeling
+    convention='start', # for PeriodIndex: 'start' or 'end'
+    kind=None         # 'period' vs. 'timestamp' for resampling
+)
+```
+
+---
+
+## Common use cases
+
+### 1. Time-based grouping on a column
+
+Group daily data into monthly buckets by a datetime column “date”:
+
+```python
+df.groupby(pd.Grouper(key='date', freq='M'))['value'].sum()
+```
+
+This is equivalent to:
+
+```python
+df.set_index('date').resample('M')['value'].sum()
+```
+
+but leaves your original index intact.
+
+### 2. Grouping by index level
+
+If you have a MultiIndex and want to group by one of its levels:
+
+```python
+# index has levels ["store","date"]
+df.groupby(pd.Grouper(level='store'))['sales'].sum()
+```
+
+### 3. Combining multiple Groupers
+
+You can mix regular columns and Groupers:
+
+```python
+df.groupby([
+    'region',
+    pd.Grouper(key='date', freq='Q')
+])['revenue'].mean()
+```
+
+This gives you the average revenue per region per quarter.
+
+### 4. Custom interval closure or labeling
+
+By default, `Grouper(label='left', closed='left')`. To label each weekly bin by its right edge:
+
+```python
+df.groupby(pd.Grouper(key='date', freq='W', label='right', closed='right'))['value'].sum()
+```
+
+---
+
+### Under the hood
+
+* Internally, pandas translates the `Grouper` into a new grouping key by binning or selecting the appropriate level.
+* You can think of it as a way to pass a “fake column” to `.groupby()` that pandas computes on the fly.
+
+---
+
+**In short**, use `pd.Grouper` whenever you need more control over how pandas forms your groups—most commonly for time-series resampling or grouping by hierarchical index levels—without reshaping your DataFrame first.

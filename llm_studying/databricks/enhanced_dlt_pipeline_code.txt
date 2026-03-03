@@ -1,0 +1,40 @@
+import dlt
+from pyspark.sql import functions as F
+
+# Step 1: Define a DLT Table for your first dataset (with quality checks)
+@dlt.table
+def table_with_qc():
+    df = (spark.read.table("source_table_1")
+          # Add quality control checks here (e.g., non-null constraints)
+          .filter(F.col("column_of_interest").isNotNull())
+          # You can add more quality checks as needed
+         )
+    return df
+
+# Step 2: Define a DLT Table for your second dataset (with quality checks)
+@dlt.table
+def second_table_with_qc():
+    df = (spark.read.table("source_table_2")
+          # Add quality control checks
+          .filter(F.col("another_column_of_interest").isNotNull())
+         )
+    return df
+
+# Step 3: Define a DLT Table for the join operation
+@dlt.table
+def joined_table():
+    df1 = dlt.read("table_with_qc")
+    df2 = dlt.read("second_table_with_qc")
+    joined_df = df1.join(df2, "common_column")
+    return joined_df
+
+# Step 4: Filter columns based on the lookup table
+@dlt.table
+def filtered_table():
+    lookup_df = spark.read.table("lookup_table")  # Lookup table with allowed columns
+    allowed_columns = [row["column_name"] for row in lookup_df.collect()]  # Create list of allowed columns
+
+    df = dlt.read("joined_table")
+    filtered_df = df.select([col for col in df.columns if col in allowed_columns])
+    
+    return filtered_df

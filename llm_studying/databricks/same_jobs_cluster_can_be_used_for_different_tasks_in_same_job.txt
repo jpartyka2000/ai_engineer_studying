@@ -1,0 +1,84 @@
+**Yes!** The same jobs cluster can absolutely be used for different tasks within the same job. In fact, this is the default and recommended approach for most workflows.
+
+## **How It Works**
+
+When you create a job with multiple tasks:
+1. **Job cluster starts** when the job begins
+2. **Task 1 runs** on the cluster
+3. **Task 2 runs** on the same cluster (after Task 1 or in parallel)
+4. **Task 3 runs** on the same cluster
+5. **Cluster terminates** after all tasks complete
+
+## **Key Benefits of Reusing the Cluster**
+
+**Cost Efficiency**
+- No cluster startup time between tasks (saves 5-7 minutes per task)
+- Pay for one cluster instead of multiple
+- Cluster stays warm for subsequent tasks
+
+**Performance**
+- Cached data persists between tasks
+- Spark context remains initialized
+- Libraries stay loaded
+
+**Resource Optimization**
+- Better resource utilization
+- Simpler cost tracking
+- Easier debugging (all logs in one place)
+
+## **Example Job Structure**
+```
+Job: Daily ETL Pipeline
+├── Task 1: Extract data from source (Python script)
+├── Task 2: Transform data (SQL notebook)
+├── Task 3: Load to Delta table (Python script)
+└── Task 4: Run quality checks (SQL)
+    
+All running on the same job cluster! ✅
+```
+
+## **Configuration Options**
+
+In your job configuration, you'll see:
+- **Job clusters** - Define once, use for multiple tasks
+- **Task assignment** - Each task can specify which cluster to use
+
+```json
+{
+  "tasks": [
+    {
+      "task_key": "extract",
+      "job_cluster_key": "shared_cluster",  // Same cluster
+      ...
+    },
+    {
+      "task_key": "transform", 
+      "job_cluster_key": "shared_cluster",  // Same cluster
+      ...
+    }
+  ]
+}
+```
+
+## **When You Might Want Different Clusters**
+
+Sometimes separate clusters make sense:
+- **Different resource requirements** (Task 1 needs GPU, Task 2 doesn't)
+- **Parallel execution** with different configs
+- **Isolation requirements** (prod vs dev tasks)
+- **Different runtime requirements** (ML runtime vs standard)
+
+## **Best Practices**
+
+1. **Default to shared cluster** - Use one cluster unless you have a specific reason not to
+2. **Size appropriately** - Size cluster for the most resource-intensive task
+3. **Use task dependencies** - Ensure proper execution order
+4. **Consider parallelism** - Tasks can run in parallel on the same cluster if resources allow
+
+## **Things to Remember**
+
+- **State can persist** - Variables/temp tables from Task 1 might be accessible in Task 2
+- **Resource contention** - Parallel tasks share cluster resources
+- **Failure handling** - If cluster fails, all tasks on it fail
+
+The shared job cluster approach is exactly why Databricks jobs are efficient for multi-step pipelines - you're not wasting time and money spinning up new clusters for each step!

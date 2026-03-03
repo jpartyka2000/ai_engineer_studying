@@ -1,0 +1,53 @@
+That error is coming from the internals of `threadpoolctl` (a library that many scientific-Python packages use to figure out how many threads OpenBLAS/MKL/etc are running). It doesn’t indicate anything wrong with your own code, but it can be noisy. You have a few options to silence it:
+
+---
+
+## 1) Upgrade to a `threadpoolctl` release where it’s fixed
+
+Databricks ships with an older version of `threadpoolctl` that has this bug. If you can install a newer one (3.1.1 or later), the traceback goes away:
+
+```python
+# At the top of your notebook (or in an init script)
+%pip install --upgrade threadpoolctl
+```
+
+Then **restart** your Python session / cluster.
+
+---
+
+## 2) Suppress its logging
+
+If you can’t upgrade, you can simply turn off `threadpoolctl`’s debug logging so that the “Exception ignored…” never shows:
+
+```python
+import logging
+logging.getLogger("threadpoolctl").setLevel(logging.ERROR)
+```
+
+Put that at the top of your notebook (before any imports of NumPy/SciPy/etc).
+
+---
+
+## 3) Monkey-patch the broken callback
+
+As a last resort, you can override the problematic function so it never raises:
+
+```python
+import threadpoolctl
+
+# Replace the dl_iterate_phdr callback with a no-op
+threadpoolctl._ThreadpoolInfo._find_modules_with_dl_iterate_phdr = \
+    (lambda *args, **kwargs: None)
+```
+
+That will short-circuit the code path that ends up with `get_config()` returning `None`.
+
+---
+
+### Which to pick?
+
+* **First choice:** upgrade `threadpoolctl` to ≥ 3.1.1.
+* **Second:** if you can’t change the cluster libraries, just suppress its logging.
+* **Third:** monkey-patch if you need an immediate kill-switch.
+
+Any of these will stop the internal logging error from cluttering your notebook output.

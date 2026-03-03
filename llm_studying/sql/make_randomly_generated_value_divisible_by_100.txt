@@ -1,0 +1,38 @@
+Here's the updated query that rounds all new budget values to be divisible by 100:
+
+```sql
+MERGE INTO campaign AS target 
+USING ( 
+  SELECT 
+    id, 
+    ROUND(total_spend * (1 + (RAND() * 0.2 - 0.1)) / 100) * 100 AS new_budget 
+  FROM campaign 
+) AS source 
+ON target.id = source.id 
+WHEN MATCHED THEN 
+  UPDATE SET target.budget = source.new_budget;
+```
+
+## How the Rounding Works
+
+The formula `ROUND(value / 100) * 100` works by:
+
+1. **Divide by 100**: Converts the value to "hundreds"
+   - Example: 1,234.56 → 12.3456
+
+2. **ROUND()**: Rounds to the nearest whole number
+   - Example: 12.3456 → 12
+
+3. **Multiply by 100**: Converts back to the original scale
+   - Example: 12 → 1,200
+
+## Examples
+
+| Original Budget | With ±10% Random | Rounded to 100s |
+|----------------|------------------|-----------------|
+| 1,000 | 945.23 | **900** |
+| 5,500 | 5,832.17 | **5,800** |
+| 10,000 | 10,456.89 | **10,500** |
+| 3,750 | 3,912.45 | **3,900** |
+
+This ensures all budget values are clean multiples of 100 (e.g., 900, 1000, 1100, 5800, etc.).

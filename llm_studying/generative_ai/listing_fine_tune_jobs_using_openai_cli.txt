@@ -1,0 +1,93 @@
+Showing and managing your fine-tune jobs with the OpenAI CLI is straightforward—and gives you a quick overview of every job you’ve submitted, its status, and key metadata. Here’s how to use it:
+
+---
+
+## 1. Install & Authenticate
+
+If you haven’t already, install the OpenAI CLI and configure your API key:
+
+```bash
+pip install --upgrade openai
+openai api login
+```
+
+You’ll be prompted to paste your API key. Once saved, you can call any `openai` command without re-authenticating.
+
+---
+
+## 2. List All Fine-Tune Jobs
+
+To see every fine-tune job in your account:
+
+```bash
+openai api fine_tunes.list
+```
+
+This prints a JSON array where each entry represents one job, including fields like:
+
+* `id` (e.g. `"ft-ABC123XYZ"`)
+* `model` (the base model, e.g. `"ada"`)
+* `status` (`pending`, `running`, `succeeded`, `failed`)
+* `created_at` (UNIX timestamp)
+* `fine_tuned_model` (the resulting model name, if completed)
+
+---
+
+## 3. Readable Table Output
+
+If you prefer tabular output, pipe the JSON into `jq`, for example:
+
+```bash
+openai api fine_tunes.list \
+  | jq -r '.data[] | [.id, .status, .fine_tuned_model, (.|.created_at | strflocaltime("%Y-%m-%d"))] | @tsv' \
+  | column -t -s $'\t'
+```
+
+This yields something like:
+
+```
+ft-ABC123XYZ  succeeded  ada:ft-your-org-2025-08-15    2025-08-15
+ft-DEF456UVW  running    –                                2025-09-08
+ft-GHI789RST  failed     –                                2025-07-30
+```
+
+---
+
+## 4. Inspect a Single Job
+
+To drill into one job’s details (including hyperparameters, training files, and validation results):
+
+```bash
+openai api fine_tunes.get --id ft-ABC123XYZ
+```
+
+You’ll see fields such as `hyperparams.learning_rate_multiplier`, `training_files`, and `result_files`.
+
+---
+
+## 5. Filter by Status
+
+Although the CLI doesn’t provide built-in status filters, you can combine with `jq`:
+
+```bash
+openai api fine_tunes.list \
+  | jq '.data[] | select(.status=="succeeded")'
+```
+
+Or, for only failed jobs:
+
+```bash
+... | jq '.data[] | select(.status=="failed")'
+```
+
+---
+
+## 6. Tips & Tricks
+
+* **Automate monitoring**: wrap your `fine_tunes.list` call in a cron job or CI step to alert you when new jobs finish.
+* **Search by base model**: use `jq` filters like `select(.model=="gpt-3.5-turbo")` to focus on specific model families.
+* **Combine with `openai tools fine_tunes.events.list`**: view streaming logs and events for a job in real time.
+
+---
+
+By mastering these CLI commands and simple `jq` filters, you can keep full visibility over your fine-tuning pipeline—no dashboard clicks required.

@@ -1,0 +1,142 @@
+## RunContext in PydanticAI
+
+`RunContext` is a container object that provides access to dependencies, state, and metadata during agent execution. It's the primary way tools (functions) interact with the agent's environment and share data.
+
+## Structure and Purpose
+
+```python
+from pydantic_ai import RunContext
+
+@agent.tool
+def my_tool(ctx: RunContext[StateType], param: str) -> dict:
+    # ctx provides access to:
+    # - ctx.deps: Dependencies injected when agent.run() was called
+    # - ctx.state: Mutable state that persists across tool calls
+    # - ctx.retry: Current retry attempt number
+    # - ctx.messages: Conversation history
+```
+
+## Key Components
+
+### 1. **State Access (`ctx.state`)**
+Mutable state that persists throughout a single agent run:
+
+```python
+class State(BaseModel):
+    counter: int = 0
+    results: list[str] = []
+
+@agent.tool
+def increment(ctx: RunContext[State]) -> str:
+    ctx.state.counter += 1  # Modifies state
+    return f"Counter is now {ctx.state.counter}"
+
+@agent.tool
+def add_result(ctx: RunContext[State], value: str) -> None:
+    ctx.state.results.append(value)  # Accumulates results
+```
+
+### 2. **Dependencies (`ctx.deps`)**
+External resources injected at runtime:
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Dependencies:
+    database: DatabaseConnection
+    api_key: str
+    config: dict
+
+agent = Agent[Dependencies, str](
+    model="openai:gpt-4",
+    deps_type=Dependencies
+)
+
+@agent.tool
+def query_database(ctx: RunContext[Dependencies], query: str) -> list:
+    # Access injected dependencies
+    return ctx.deps.database.execute(query)
+
+# Usage
+deps = Dependencies(
+    database=get_db_connection(),
+    api_key="secret",
+    config={"timeout": 30}
+)
+result = await agent.run("Get all users", deps=deps)
+```
+
+### 3. **Retry Information (`ctx.retry`)**
+Track retry attempts for error handling:
+
+```python
+@agent.tool
+def flaky_operation(ctx: RunContext[State]) -> str:
+    if ctx.retry == 0:
+        # First attempt
+        raise ValueError("Simulated failure")
+    else:
+        # Retry attempt
+        return f"Success on retry {ctx.retry}"
+```
+
+### 4. **Message History (`ctx.messages`)**
+Access to the conversation context:
+
+```python
+@agent.tool
+def summarize_conversation(ctx: RunContext[State]) -> str:
+    messages = ctx.messages
+    user_messages = [m for m in messages if m.role == "user"]
+    return f"User has sent {len(user_messages)} messages"
+```
+
+## Type Parameters
+
+`RunContext` is generic and parameterized by the state/dependency type:
+
+```python
+# With state only
+RunContext[State]
+
+# With dependencies
+RunContext[Dependencies]
+
+# With both (using a combined type)
+class AppContext(BaseModel):
+    state: State
+    deps: Dependencies
+
+RunContext[AppContext]
+```
+
+## Practical Example from Your Code
+
+In your arithmetic assistant:
+
+```python
+@agent.tool
+def verify(ctx: RunContext[State], expr: str, guess: float) -> dict:
+    # ctx.state provides access to the State object
+    ctx.state.verification_attempts += 1  # Increment counter
+    ctx.state.total_cost += ctx.state.cost_verify  # Track costs
+    
+    # Tool logic here
+    value = safe_eval(expr)
+    # ...
+```
+
+The `RunContext[State]` gives the tool:
+1. Access to shared state (`verification_attempts`, `total_cost`)
+2. Ability to modify that state
+3. State persists across multiple tool calls in the same run
+
+## Why It's Useful
+
+1. **Dependency Injection**: Cleanly separate configuration from logic
+2. **State Management**: Track information across tool calls
+3. **Testing**: Easy to mock dependencies and state
+4. **Type Safety**: Full type hints for state and dependencies
+
+This pattern is similar to dependency injection in web frameworks, where request context provides access to database connections, user sessions, etc., but adapted for LLM agent workflows.

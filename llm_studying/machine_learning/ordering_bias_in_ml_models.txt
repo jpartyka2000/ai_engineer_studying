@@ -1,0 +1,41 @@
+Yes—**any learning algorithm that processes data in sequence** (especially with **online** or **mini-batch updates**) can pick up artifacts from a fixed ordering. A few examples:
+
+1. **Neural networks / deep models (SGD-based)**
+
+   * As we’ve been talking about, stochastic or mini-batch gradient descent will give *biased* gradient estimates if every epoch sees perfectly the same ordering (e.g. all examples of one class first).
+   * Shuffling ensures each mini-batch is a more representative mix and helps you avoid “cycling” or overfitting to sequence patterns.
+
+2. **Online algorithms (Perceptron, passive-aggressive, etc.)**
+
+   * These update the model one example at a time in the order they arrive.  If your data stream isn’t randomized, you can get very different final models just by permuting the input order.
+
+3. **K-means clustering**
+
+   * The classic Lloyd’s algorithm often iterates over points in order, reassigning them to centroids and updating centroids immediately (online K-means).  The order in which you visit points can change the convergence path and final clusters.
+
+4. **Expectation–Maximization (EM)**
+
+   * While the “E” and “M” steps aggregate over the whole set, some incremental EM variants update parameters after each mini-batch or even each data point.  Those too can be order-sensitive.
+
+5. **Boosting methods (AdaBoost, gradient boosting)**
+
+   * Although they build trees on the full weighted dataset each round, the order in which samples are presented can affect how ties are broken in split finding or pruning heuristics—so deterministically sorted data can yield slightly different models than random ordering.
+
+6. **Online recommender systems or streaming algorithms**
+
+   * Any model that updates per interaction (e.g. matrix-factorization with SGD, bandits, Kalman filters) will in general depend on the time/order of arrivals.
+
+---
+
+### When order doesn’t matter so much
+
+* **Batch algorithms** with deterministic solvers (closed-form least squares, standard decision‐tree builders that consider all data at once) are far less order‐sensitive—unless there’s a tie‐breaking heuristic that depends on the data scan order.
+* **Bagging/Random Forests** mitigate order effects by bootstrapping and random feature subsampling, so any one tree’s idiosyncrasies are averaged out.
+
+---
+
+### Takeaways
+
+* **Always shuffle** your training data before any SGD‐style or online update.
+* **Use stratified shuffle** if you need to preserve class balance across mini-batches.
+* **Be aware** of incremental variants of algorithms—if your use-case is streaming data, maintain some reservoir sampling or mini-batch buffer to avoid pathological order effects.

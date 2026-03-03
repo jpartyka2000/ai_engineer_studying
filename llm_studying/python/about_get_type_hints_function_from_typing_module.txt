@@ -1,0 +1,164 @@
+**Deep Dive into `get_type_hints()` from Python’s `typing` Module**
+
+When you’re building libraries, frameworks, or utilities that rely on function or class annotations, you often need to resolve those annotations into real Python objects—especially when they include forward references or stringified types. That’s where `typing.get_type_hints()` shines.
+
+---
+
+## 1. What is `get_type_hints()`?
+
+* **Purpose**: Retrieves a mapping of variable names to evaluated type hints for functions, methods, classes, or modules.
+
+* **Signature**:
+
+  ```python
+  typing.get_type_hints(
+      obj,
+      globalns: Optional[Dict[str, Any]] = None,
+      localns: Optional[Dict[str, Any]] = None,
+      include_extras: bool = False
+  ) -> Dict[str, Any]
+  ```
+
+* **Returns**:
+
+  * For functions/methods: a dict of parameter names (and `"return"`) to their resolved types.
+  * For classes: type hints for class variables.
+  * For modules: type hints for top-level names.
+
+---
+
+## 2. Basic Usage
+
+### Example: Simple function
+
+```python
+from typing import get_type_hints
+
+def greet(name: str, times: int = 1) -> str:
+    ...
+
+hints = get_type_hints(greet)
+# → {'name': <class 'str'>, 'times': <class 'int'>, 'return': <class 'str'>}
+```
+
+* **String annotations** (forward references) are automatically evaluated:
+
+  ```python
+  class Node:
+      def __init__(self, value: int, next: 'Node' = None): ...
+
+  hints = get_type_hints(Node.__init__)
+  # → {'value': <class 'int'>, 'next': <class '__main__.Node'>, 'return': None}
+  ```
+
+---
+
+## 3. Handling Forward References & Namespaces
+
+If your annotations refer to names not yet defined, or reside in a different scope, you can supply `globalns` and `localns`:
+
+```python
+from typing import get_type_hints
+
+# Suppose this is in module foo.py:
+def process(item: 'Custom'): ...
+
+# In another module:
+import foo
+from foo import Custom
+
+# Without namespaces, forward ref fails:
+# get_type_hints(foo.process)  # raises NameError
+
+# Supply namespaces:
+hints = get_type_hints(foo.process,
+                      globalns=globals(),
+                      localns=locals())
+# → {'item': <class '__main__.Custom'>, 'return': None}
+```
+
+* **`globalns`**: the globals dict where names should be looked up
+* **`localns`**: a locals dict for additional resolution
+
+---
+
+## 4. `include_extras` for Annotated and other Extras
+
+Starting in Python 3.9+, PEP 593 introduced `typing.Annotated[...]` to attach metadata. By default, `get_type_hints()` strips extras; set `include_extras=True` to preserve them:
+
+```python
+from typing import Annotated, get_type_hints
+
+def save(data: Annotated[str, 'json']): ...
+
+# Default strips the metadata:
+get_type_hints(save)
+# → {'data': <class 'str'>, 'return': None}
+
+# Include metadata:
+get_type_hints(save, include_extras=True)
+# → {'data': Annotated[str, 'json'], 'return': None}
+```
+
+---
+
+## 5. Common Pitfalls & Best Practices
+
+1. **Imported vs. Local Names**
+
+   * Always pass the correct `globalns`/`localns` when resolving cross-module references.
+
+2. **Decorators**
+
+   * If a decorator wraps a function without preserving `__annotations__`, `get_type_hints()` may see an empty mapping. Use `functools.wraps` to copy metadata.
+
+3. **Performance**
+
+   * Calling `get_type_hints()` repeatedly on hot paths can incur overhead. Cache results if needed.
+
+4. **Unannotated Parameters**
+
+   * Parameters without annotations simply won’t appear in the returned dict.
+
+---
+
+## 6. Practical Example: Runtime Validation
+
+Here’s how you might use `get_type_hints()` to automatically validate a function’s inputs:
+
+```python
+from typing import get_type_hints
+import inspect
+
+def enforce_types(func):
+    hints = get_type_hints(func)
+    sig   = inspect.signature(func)
+
+    def wrapper(*args, **kwargs):
+        bound = sig.bind(*args, **kwargs)
+        for name, value in bound.arguments.items():
+            if name in hints and not isinstance(value, hints[name]):
+                raise TypeError(f"Argument {name!r} must be {hints[name]}, got {type(value)}")
+        result = func(*args, **kwargs)
+        if 'return' in hints and not isinstance(result, hints['return']):
+            raise TypeError(f"Return must be {hints['return']}, got {type(result)}")
+        return result
+
+    return wrapper
+
+@enforce_types
+def add(x: int, y: int) -> int:
+    return x + y
+
+add(2, 3)        # ✅ returns 5
+add(2, 'hello')  # ❌ TypeError: Argument 'y' must be <class 'int'>, got <class 'str'>
+```
+
+---
+
+### Key Takeaways
+
+* **`get_type_hints()`** resolves annotations to actual Python types, including forward references.
+* Use **`globalns`** and **`localns`** to control how names are looked up.
+* **`include_extras=True`** preserves metadata like `Annotated`.
+* Ideal for building validation layers, serialization tools, and introspective frameworks.

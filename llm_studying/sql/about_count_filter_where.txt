@@ -1,0 +1,103 @@
+## Overview
+
+The SQL `FILTER` clause lets you apply a predicate *inside* an aggregate, so you can compute conditional counts (or sums, avgs, etc.) without subqueries or `CASE` expressions. It was introduced in SQL:2003 and is supported by PostgreSQL, SQLite (v3.30+), and some others.
+
+---
+
+## Basic Syntax
+
+```sql
+COUNT(*) FILTER (WHERE predicate)  
+```
+
+* **`COUNT(*)`**: counts all rows entering the aggregate.
+* **`FILTER (WHERE predicate)`**: only includes rows satisfying `predicate` in this particular aggregate.
+
+You can combine multiple filtered aggregates in one `SELECT`:
+
+```sql
+SELECT
+  COUNT(*)                       AS total_rows,
+  COUNT(*) FILTER (WHERE status = 'open')   AS open_count,
+  COUNT(*) FILTER (WHERE status = 'closed') AS closed_count
+FROM tickets;
+```
+
+---
+
+## Why Use `FILTER`?
+
+* **Clarity**: your intent—“count only these rows”—is explicit.
+* **Performance**: single scan of the table, even with multiple filters.
+* **Compactness**: avoids repetitive `SUM(CASE WHEN … THEN 1 ELSE 0 END)` boilerplate.
+
+---
+
+## Examples
+
+### 1. Counting by Range
+
+```sql
+SELECT
+  COUNT(*)                     AS total_scores,
+  COUNT(*) FILTER (WHERE score > 90)     AS num_excellent,
+  COUNT(*) FILTER (WHERE score BETWEEN 70 AND 90) AS num_good,
+  COUNT(*) FILTER (WHERE score < 70)     AS num_needs_improvement
+FROM exam_results;
+```
+
+### 2. Filtering on Complex Conditions
+
+```sql
+SELECT
+  COUNT(*)                     AS total_orders,
+  COUNT(*) FILTER (WHERE amount > 100 AND region = 'EMEA') AS large_emea_orders,
+  COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '30 days') AS last_30d_orders
+FROM sales;
+```
+
+### 3. Other Aggregates
+
+`FILTER` isn’t limited to `COUNT`—you can use it with any aggregate:
+
+```sql
+SELECT
+  AVG(price)                         AS avg_price_all,
+  AVG(price) FILTER (WHERE category = 'Electronics') AS avg_price_electronics,
+  SUM(quantity) FILTER (WHERE on_sale)               AS total_on_sale_qty
+FROM products;
+```
+
+---
+
+## Compatibility & Alternatives
+
+| Dialect        | `FILTER` Support | Alternative                                              |
+| -------------- | ---------------- | -------------------------------------------------------- |
+| PostgreSQL     | ✅                | —                                                        |
+| SQLite (3.30+) | ✅                | —                                                        |
+| Oracle         | ❌                | `SUM(CASE WHEN … THEN 1 ELSE 0 END)`                     |
+| MySQL/MariaDB  | ❌                | `SUM(condition)` or `SUM(CASE WHEN … THEN 1 ELSE 0 END)` |
+| SQL Server     | ❌                | `SUM(IIF(condition,1,0))`                                |
+| BigQuery       | ❌ (+)            | `COUNTIF(condition)`                                     |
+
+---
+
+## Caveats & Tips
+
+* **NULLs**: rows where `predicate` yields `NULL` are *excluded* (same as `FALSE`).
+* **Grouping**: works seamlessly with `GROUP BY`—each group gets independently filtered.
+* **Ordering**: `FILTER` is part of the aggregate; you cannot combine it with `OVER (ORDER BY…)` window clauses directly—for windows you’d use the window’s `FILTER` syntax if supported.
+* **Multiple Filters**: you can stack many filtered aggregates to produce side-by-side metrics in one pass.
+
+---
+
+## Summary
+
+By pushing conditions *into* aggregates with `FILTER (WHERE…)`, you write expressive, efficient queries:
+
+* **Readable**: clearly labels which rows contribute to each metric.
+* **Efficient**: single scan, avoids subqueries or many `CASE` branches.
+* **Versatile**: works with `COUNT`, `SUM`, `AVG`, `MAX`, `MIN`, etc.
+
+Give `FILTER` a try next time you need conditional aggregates—it often makes your SQL both leaner and faster!

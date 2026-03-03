@@ -1,0 +1,88 @@
+**Accessing Rows with `df.loc[...]` Using Indexes**
+
+The `.loc` indexer in pandas is a label-based accessor, meaning it selects rows (and columns) based on **index** and **column** labels rather than integer positions. Here’s how you can use it to grab rows by their index:
+
+---
+
+## 1. Single label
+
+If your DataFrame’s index is, say, dates:
+
+```python
+# df.index is a DatetimeIndex
+row = df.loc['2025-01-03']
+```
+
+This returns the row whose index label equals `'2025-01-03'`. If your index is non-unique, it returns **all** matching rows as a sub-DataFrame.
+
+---
+
+## 2. List of labels
+
+You can pass a Python list (or any sequence) of labels to get multiple, possibly discontiguous rows:
+
+```python
+subset = df.loc[['2025-01-01','2025-01-04','2025-01-07']]
+```
+
+The result preserves the order you specified, not the original row order.
+
+---
+
+## 3. Slices by label
+
+With a slice object, pandas does an **inclusive** slice on labels:
+
+```python
+block = df.loc['2025-01-01':'2025-01-07']
+```
+
+This gives you every row from Jan 1 through Jan 7, including both endpoints—unlike Python’s normal half-open slicing.
+
+---
+
+## 4. Boolean masks
+
+You can pass a Boolean array or Series indexed the same as `df.index`:
+
+```python
+mask = df['value'] > 100
+filtered = df.loc[mask]
+```
+
+Only rows where `mask` is `True` are returned.
+
+---
+
+## 5. Callables
+
+A lesser-known but powerful feature: you can supply a function that takes the entire DataFrame (or its index) and returns any of the above (labels, list, slice, or mask):
+
+```python
+recent = df.loc[lambda x: x.index > '2025-06-01']
+```
+
+---
+
+### Combining row and column selection
+
+The full signature is:
+
+```python
+df.loc[row_selection, column_selection]
+```
+
+* **`row_selection`** can be any of the types above.
+* **`column_selection`** likewise accepts single labels, lists, slices, boolean arrays, or callables.
+
+---
+
+### Summary of acceptable `row_selection` types
+
+1. **Single index label** (scalar)
+2. **List/sequence of labels**
+3. **Label-based `slice` object** (inclusive of `stop`)
+4. **Boolean array/Series** aligned to `df.index`
+5. **Callable** returning any of the above
+
+Using `.loc` gives you precise, label-driven control over which rows (and columns) you pull out of a DataFrame.

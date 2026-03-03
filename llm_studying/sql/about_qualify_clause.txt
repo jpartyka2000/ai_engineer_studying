@@ -1,0 +1,68 @@
+The QUALIFY clause in SQL is used to filter the results of a query based on the output of window functions. It's similar to a WHERE clause, but while WHERE operates on raw rows of data, QUALIFY operates on rows after window functions are applied.
+
+How It Works:
+
+You define one or more window functions in the SELECT clause or another part of the query.
+
+Then, you use the QUALIFY clause to filter rows based on those window function results.
+
+
+Syntax:
+
+SELECT column1, column2, window_function(...)
+FROM table_name
+QUALIFY condition_on_window_function;
+
+Example 1: Filtering Rows with Row Numbers
+
+Suppose you want to select only the top-ranked rows per group using ROW_NUMBER():
+
+SELECT
+    customer_id,
+    order_id,
+    ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC) AS rank
+FROM orders
+QUALIFY rank = 1;
+
+Here:
+
+ROW_NUMBER() assigns a rank to each row within each customer_id, ordered by order_date.
+
+QUALIFY rank = 1 filters to keep only the top row per customer_id.
+
+
+Example 2: Using RANK to Get Top N per Category
+
+SELECT
+    product_id,
+    category_id,
+    sales,
+    RANK() OVER (PARTITION BY category_id ORDER BY sales DESC) AS sales_rank
+FROM sales_data
+QUALIFY sales_rank <= 3;
+
+This retrieves the top 3 products by sales within each category.
+
+
+---
+
+Key Points:
+
+1. Availability: The QUALIFY clause is not supported in all SQL dialects. It is available in databases like Snowflake, Google BigQuery, and Teradata but not in PostgreSQL, MySQL, or SQLite. For unsupported systems, you can use a subquery instead.
+
+
+2. Alternative for Unsupported Systems:
+
+SELECT *
+FROM (
+    SELECT
+        customer_id,
+        order_id,
+        ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC) AS rank
+    FROM orders
+) subquery
+WHERE rank = 1;
+
+
+
+QUALIFY simplifies such logic and makes your SQL queries more concise when supported.

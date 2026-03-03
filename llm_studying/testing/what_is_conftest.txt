@@ -1,0 +1,64 @@
+In pytest, **`conftest.py`** is a special configuration file that pytest auto-discovers and uses for two main purposes:
+
+1. **Fixture definitions**
+
+   * You write `@pytest.fixture` functions in `conftest.py` to create reusable test data, setup/teardown logic, or shared resources.
+   * Any test module **in the same directory or below** can simply request those fixtures by name—**no imports needed**.
+
+2. **Hook and plugin hooks**
+
+   * You can register pytest hook functions (e.g. `pytest_addoption`, `pytest_collection_modifyitems`, `pytest_runtest_setup`) in `conftest.py` to customize collection, modify command-line options, add markers, or tweak reporting.
+   * It acts like a lightweight plugin that’s local to your test suite.
+
+---
+
+### Key characteristics
+
+* **Auto-discovered**: pytest will find any `conftest.py` in your project tree without you having to add them to `__init__.py` or import them.
+* **Directory-scoped**: a `conftest.py` affects tests in its own directory and all subdirectories, letting you scope fixtures and hooks to particular folders.
+* **No explicit imports**: tests simply declare fixtures by name, and pytest wires them up for you.
+
+---
+
+### Example
+
+```python
+# tests/conftest.py
+
+import pytest
+from myapp import create_app, db
+
+@pytest.fixture(scope="session")
+def app():
+    app = create_app("testing")
+    with app.app_context():
+        yield app
+
+@pytest.fixture(scope="function", autouse=True)
+def clean_db(app):
+    db.drop_all()
+    db.create_all()
+    yield
+    db.session.remove()
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--runslow", action="store_true", default=False,
+        help="run slow tests"
+    )
+
+def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--runslow"):
+        # skip tests marked slow
+        skip_slow = pytest.mark.skip(reason="need --runslow option")
+        for item in items:
+            if "slow" in item.keywords:
+                item.add_marker(skip_slow)
+```
+
+* **Fixtures** `app` and `clean_db` are now available in any test under `tests/`.
+* **Command-line flag** `--runslow` is added, and tests marked with `@pytest.mark.slow` will be skipped by default.
+
+---
+
+By centralizing fixtures and hooks in `conftest.py`, you keep your tests clean, DRY, and highly configurable without boilerplate imports or custom plugin installation.

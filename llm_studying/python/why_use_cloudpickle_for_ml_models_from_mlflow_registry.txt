@@ -1,0 +1,64 @@
+We need to use cloudpickle to load a model from the MLflow registry when the model was saved using cloudpickle or includes objects that cannot be handled by Python’s built-in pickle module.
+
+Here's why:
+
+
+---
+
+1. MLflow PyFunc models may include custom objects
+
+MLflow's pyfunc flavor allows models to wrap arbitrary Python objects (e.g., models trained with custom classes, pipelines, or functions). If the model contains:
+
+Custom classes/functions (e.g., defined in notebooks or local files)
+
+Lambda functions
+
+Closures, nested functions, or complex objects
+
+
+...then pickle often fails to serialize or deserialize them correctly.
+
+2. cloudpickle supports more complex Python objects
+
+Unlike pickle, cloudpickle can serialize:
+
+Functions and classes defined interactively (like in Jupyter or REPL)
+
+Lambda functions
+
+Closures
+
+Objects that depend on dynamic imports
+
+
+That makes it more robust for ML workflows involving experimentation.
+
+
+---
+
+3. MLflow uses cloudpickle by default in some flavors
+
+MLflow internally uses cloudpickle for certain model flavors, including:
+
+pyfunc (generic Python models)
+
+sklearn models when cloudpickle was used for saving
+
+Custom Python model classes (mlflow.pyfunc.PythonModel)
+
+
+So when loading such models, MLflow will either:
+
+Automatically use cloudpickle (if loading through mlflow.pyfunc.load_model)
+
+Or require you to use it manually if you’re doing low-level loading or debugging
+
+
+
+---
+
+Summary
+
+You need cloudpickle to load a model from the MLflow registry if that model was serialized using cloudpickle, or includes components that can’t be handled by pickle. It ensures compatibility with complex Python objects that are common in ML workflows.
+
+Would you like to see a code example showing when this matters?

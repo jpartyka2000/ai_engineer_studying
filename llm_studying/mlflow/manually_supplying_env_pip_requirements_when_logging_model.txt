@@ -1,0 +1,63 @@
+This warning comes from MLflow’s attempt to “automatically” inspect your current Python environment and figure out exactly which `pip` packages (and versions) your pyfunc model needs. If something in that inspection process blows up—say, due to an unusual import hook, a private wheel, or a non-standard layout—MLflow falls back to logging only `cloudpickle==<version>` so that at least serialization will work.
+
+---
+
+### How to eliminate the warning
+
+#### 1) Supply your own `pip_requirements` (or `conda_env`) when you log the model
+
+Rather than relying on MLflow’s auto-inference, explicitly tell it which packages to install:
+
+```python
+from mlflow.utils.environment import _mlflow_conda_env
+
+# Option A: pip requirements list
+pip_reqs = [
+    "cloudpickle==2.2.1",
+    "pandas>=1.5.0",
+    "numpy>=1.23.0",
+    "pyspark>=3.2.0",
+    # ... any others your code needs ...
+]
+
+mlflow.pyfunc.log_model(
+    artifact_path="monte_carlo_sim",
+    python_model=MCSimulatorPyfunc(),
+    signature=signature,
+    pip_requirements=pip_reqs
+)
+```
+
+Or:
+
+```python
+# Option B: full conda environment
+conda_env = _mlflow_conda_env(
+    additional_pip_deps=pip_reqs
+)
+
+mlflow.pyfunc.log_model(
+    artifact_path="monte_carlo_sim",
+    python_model=MCSimulatorPyfunc(),
+    signature=signature,
+    conda_env=conda_env
+)
+```
+
+By pinning your dependencies up front, MLflow will skip its inference step and you won’t see that warning.
+
+#### 2) Turn on debug logging to diagnose the root cause
+
+If you want to see exactly why auto-inference is failing:
+
+```python
+import logging
+logging.getLogger("mlflow.utils.environment").setLevel(logging.DEBUG)
+```
+
+Then re-run your `log_model(...)` to get the full stack trace. That can help you identify any stray imports or custom modules that are tripping it up.
+
+---
+
+**Bottom line:**
+That warning is harmless—it just means MLflow couldn’t guess your full dependency list, so it fell back to `cloudpickle`. If you’d prefer to be explicit (and silence the noise), pass your own `pip_requirements` or `conda_env` to `log_model()`.

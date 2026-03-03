@@ -1,0 +1,26 @@
+**Understanding `asyncio.create_task()`**
+
+`asyncio.create_task()` lets you schedule a coroutine to run **concurrently** in the background, without waiting for it to finish immediately. Instead of blocking on `await`, you get back a **Task** object you can hold onto, inspect, or await later if you choose.
+
+Key points:
+
+* **Fire-and-forget**:
+
+  ```python
+  task = asyncio.create_task(do_work())
+  # main continues immediately without waiting for do_work()
+  ```
+* **Later result retrieval**:
+  You can `await task` at any point (even in a different part of your code) to get its return value, or wrap it in `asyncio.gather()` to wait alongside other tasks.
+* **Cancellation & status**:
+  You can call `task.cancel()` to request cancellation, then check `task.cancelled()` or catch `asyncio.CancelledError` inside your coroutine.
+* **Exception handling**:
+  If a background task raises and you never await it, Python will log a “Task exception was never retrieved” warning. To avoid this, either `await` every task or attach a done callback:
+
+  ```python
+  task.add_done_callback(lambda t: t.exception())
+  ```
+* **Use case**:
+  Ideal for background jobs like periodic polling, long-running I/O, or launching multiple independent workflows in parallel, while your main coroutine continues handling other logic.
+
+By turning coroutines into scheduled tasks, `asyncio.create_task()` is your go-to for starting work now and dealing with results (or errors) on your own timetable.

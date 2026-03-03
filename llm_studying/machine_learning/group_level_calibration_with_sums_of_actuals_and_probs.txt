@@ -1,0 +1,54 @@
+You certainly *can* swap out means for sums if what you care about is **absolute counts** rather than **per‐row probabilities**, but if your goal is still to adjust each row’s probability you’ll need to **normalize** the sum‐based delta back to a per‐row quantity.
+
+---
+
+### Why means are simpler when adjusting probabilities
+
+With the “mean” approach:
+
+```python
+actual_rate = df_group["SUBMITTED_APPLICATION"].mean()
+pred_rate   = df_group["probability"].mean()
+delta       = actual_rate - pred_rate
+# then
+new_prob = old_prob + delta
+```
+
+`delta` is already a “per‐row” shift—i.e. a probability difference.
+
+---
+
+### If you use sums instead…
+
+```python
+sum_actuals   = df_group["SUBMITTED_APPLICATION"].sum()
+sum_pred_probs = df_group["probability"].sum()
+delta_sum     = sum_actuals - sum_pred_probs
+```
+
+• `delta_sum` is an *aggregate count* difference, not a probability.
+• To turn it into a per‐row adjustment you must divide by the group size:
+
+```python
+group_size = len(df_group)
+delta = delta_sum / group_size
+new_prob = old_prob + delta
+```
+
+And you’ll find that
+
+```python
+delta_sum / group_size  ===  (sum_actuals/group_size) – (sum_pred_probs/group_size)
+                          ===  actual_rate – pred_rate
+```
+
+—that is, it *collapses* back to the “mean” method.
+
+---
+
+### TL;DR
+
+* **If you want to tweak probabilities**, just compute the **mean** difference; sums + division by N give you exactly the same shift.
+* **If you want to reconcile total counts**, sums are useful—but you’ll still need to divide by the number of rows in each group to get a per‐row adjustment.
+
+So yes, you *can* aggregate with sums, but don’t forget to normalize by group size if you’re going to add it back into individual probabilities.

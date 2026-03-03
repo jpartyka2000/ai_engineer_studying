@@ -1,0 +1,114 @@
+In PySpark the most common way to get “value counts” for a single column is to use a `groupBy` + `count`.  For example, if your DataFrame is called `df` and you want the counts of each distinct value in `"my_col"`:
+
+```python
+from pyspark.sql import functions as F
+
+df.groupBy("my_col") \
+  .count() \
+  .orderBy(F.desc("count")) \
+  .show()
+```
+
+This will print something like:
+
+```
++-------+-----+
+| my_col|count|
++-------+-----+
+| valueA|  123|
+| valueB|   45|
+| valueC|   10|
++-------+-----+
+```
+
+If you want to rename the count column:
+
+```python
+df.groupBy("my_col") \
+  .agg(F.count("*").alias("freq")) \
+  .orderBy(F.desc("freq")) \
+  .show()
+```
+
+---
+
+### Approximate “frequent items”
+
+If your data is huge and you only care about the top‑k frequent values (not exact counts), you can also use:
+
+```python
+df.stat.freqItems(["my_col"], support=0.01).collect()
+```
+
+which returns a list of heavy hitters (those appearing in at least 1 % of rows), without scanning the entire dataset for every distinct value.
+
+---
+
+But in practice, **`groupBy().count()`** + `orderBy(desc("count"))` is the direct PySpark analogue of Pandas’ `Series.value_counts()`.
+
+-----------------------------------
+
+Spark’s `groupBy()` will actually keep `null` (the Spark equivalent of Pandas’ `NaN`) as its own bucket by default. For example:
+
+```python
+from pyspark.sql.functions import col, count
+
+# This will include one row where my_col IS NULL
+df.groupBy("my_col") \
+  .agg(count("*").alias("cnt")) \
+  .orderBy(col("cnt").desc()) \
+  .show()
+```
+
+You’ll see something like:
+
+```
++-------+---+
+| my_col|cnt|
++-------+---+
+|  value|123|
+|   null| 45|
+|  other| 10|
++-------+---+
+```
+
+---
+
+### Pivot’ing and “NULL” groups
+
+If you’re using `pivot()`, Spark by default omits the `null` category unless you explicitly include it in your pivot values list:
+
+```python
+vals = df.select("my_col").distinct().rdd.flatMap(lambda r: r).collect()
+# e.g. vals == ['A','B',None,'C']
+
+df.groupBy("some_other_col") \
+  .pivot("my_col", vals) \
+  .agg(count("*")) \
+  .show()
+```
+
+Now you’ll get a separate column named `null` (with how many rows had `my_col IS NULL`).
+
+---
+
+### Renaming Null to “Missing”
+
+If you’d rather see a label than `null`, just fill it first:
+
+```python
+df_filled = df.fillna({"my_col": "MISSING"})
+df_filled.groupBy("my_col") \
+         .agg(count("*").alias("cnt")) \
+         .show()
+```
+
+This turns all `null`s into the string `"MISSING"` and then you get a tidy bucket for them in your results.
+
+---
+
+So in short:
+
+* **Straight `groupBy`** already keeps `null` as its own group.
+* **Pivot** needs you to list `None` among the pivot values.
+* **Fillna** is your friend if you want a human‑readable label instead of `null`.

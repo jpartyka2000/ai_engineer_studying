@@ -1,0 +1,79 @@
+Running **MLflow outside of Databricks** comes with several challenges, as you lose the built-in integration and have to set up various components manually. Below are the key challenges and extra work required.
+
+---
+
+## **Challenges & Extra Work Required**
+
+### **1. Setting Up an MLflow Tracking Server**
+- **Problem**: In Databricks, MLflow automatically logs runs to a managed experiment UI. Outside of Databricks, you need to **manually configure a tracking server**.
+- **Solution**:  
+  - Set up an MLflow **tracking server** with a database backend.
+  - Example command to start an MLflow server:
+    ```bash
+    mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0 --port 5000
+    ```
+  - For **production**, use a scalable backend (e.g., PostgreSQL, MySQL) instead of SQLite.
+
+---
+
+### **2. Storing & Managing Experiment Data**
+- **Problem**: Databricks stores MLflow artifacts (models, logs, plots) seamlessly. Without Databricks, you need to specify an **artifact store**.
+- **Solution**:
+  - Use **AWS S3, Google Cloud Storage, or Azure Blob Storage** as an artifact store.
+  - Example:
+    ```python
+    mlflow.set_tracking_uri("http://your-tracking-server:5000")
+    mlflow.set_experiment("My_Experiment")
+    ```
+  - For local storage, set `--default-artifact-root ./mlruns` when starting the MLflow server.
+
+---
+
+### **3. Managing Model Deployment**
+- **Problem**: Databricks integrates MLflow models with **Databricks Model Registry**, making versioning and deployment easy.
+- **Solution**:
+  - Use **MLflow Model Registry** outside of Databricks by setting up a **central tracking server**.
+  - Deploy models manually using:
+    ```bash
+    mlflow models serve -m /path/to/model -p 5001
+    ```
+  - Consider **Docker or Kubernetes** for scalable deployments.
+
+---
+
+### **4. Authentication & Access Control**
+- **Problem**: Databricks provides **built-in authentication** for MLflow. Outside of Databricks, you need to handle authentication manually.
+- **Solution**:
+  - Set up **OAuth, API tokens, or AWS IAM roles** for security.
+  - Use **nginx + SSL** to protect MLflow tracking server endpoints.
+
+---
+
+### **5. Logging Artifacts (Images, Datasets, Plots)**
+- **Problem**: Databricks stores logs and artifacts automatically. Outside Databricks, you must explicitly define **storage paths**.
+- **Solution**:
+  - Store artifacts in **S3, GCS, or Azure Blob Storage**.
+  - Example:
+    ```python
+    mlflow.log_artifact("shap_summary.png", artifact_path="explainability")
+    ```
+
+---
+
+### **6. Model Explainability & Tracking**
+- **Problem**: Databricks integrates seamlessly with SHAP, Feature Store, and experiment tracking. Outside of Databricks, you must configure these separately.
+- **Solution**:
+  - Use **SHAP, LIME, or Captum** manually for explainability.
+  - Store explanations in MLflow as **artifacts**.
+
+---
+
+## **Final Thoughts**
+If you run MLflow outside Databricks, you need to:
+✅ Set up an **MLflow tracking server**  
+✅ Choose a **database backend** (SQLite for testing, PostgreSQL for production)  
+✅ Store **artifacts** in cloud storage (S3, GCS, or Azure)  
+✅ Implement **authentication & security**  
+✅ Deploy models manually (via `mlflow models serve`, Docker, or Kubernetes)  
+
+Would you like a guide on setting up an **end-to-end MLflow tracking server**? 🚀

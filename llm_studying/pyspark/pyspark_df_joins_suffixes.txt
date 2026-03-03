@@ -1,0 +1,59 @@
+No, PySpark’s `join()` method does not have a keyword argument for suffixes like **Pandas** does. In **Pandas**, you can easily specify suffixes for columns with the same name during a join using the `suffixes` parameter. However, in PySpark, you need to manually handle conflicting column names after the join.
+
+To deal with column name conflicts in PySpark, you can use `.alias()` to rename columns before or after the join, or you can explicitly select the columns you need after the join and rename the duplicate ones.
+
+### How to Handle Column Name Conflicts in PySpark
+
+#### Example Approach:
+
+1. **Join Two DataFrames**: Perform the join as usual.
+2. **Handle Conflicting Column Names**: Use `.alias()` to add suffixes manually after the join.
+
+Here’s how you can do it:
+
+```python
+from pyspark.sql import functions as F
+
+# Sample DataFrames
+df1 = spark.createDataFrame([
+    (1, "A", 100),
+    (2, "B", 200),
+    (3, "C", 300)
+], ["id", "name", "value"])
+
+df2 = spark.createDataFrame([
+    (1, "X", 150),
+    (2, "Y", 250),
+    (4, "Z", 350)
+], ["id", "name", "amount"])
+
+# Perform the join on the 'id' column
+df_joined = df1.join(df2, df1['id'] == df2['id'], 'inner')
+
+# Rename conflicting columns manually using .alias()
+df_joined_with_suffixes = df_joined.select(
+    df1['id'],              # From df1
+    df1['name'].alias('name_df1'),  # Rename name column from df1
+    df2['name'].alias('name_df2'),  # Rename name column from df2
+    df1['value'],           # From df1
+    df2['amount']           # From df2
+)
+
+df_joined_with_suffixes.show()
+```
+
+### Explanation:
+- **`.alias()`**: Used to rename conflicting columns after the join.
+- **`.select()`**: Explicitly selects the columns from the joined DataFrame and applies renaming where necessary.
+
+### Output:
+```
++---+-------+-------+-----+------+
+| id|name_df1|name_df2|value|amount|
++---+-------+-------+-----+------+
+|  1|      A|      X|  100|   150|
+|  2|      B|      Y|  200|   250|
++---+-------+-------+-----+------+
+```
+
+This way, you can manually add suffixes to conflicting column names in PySpark after performing a join.

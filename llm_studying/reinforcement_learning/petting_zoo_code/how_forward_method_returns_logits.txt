@@ -1,0 +1,26 @@
+Inside your `forward()` you build a tensor `x` of shape `[1, 3, 210, 160]` (batch of one, channels-first) and then do:
+
+```python
+self.net(x)
+```
+
+Since you defined
+
+```python
+self.net = nn.Sequential(
+    nn.Flatten(),              # → [1, 3*210*160]
+    nn.Linear(..., 256),       # → [1, 256]
+    nn.ReLU(),
+    nn.Linear(256, n_actions)  # → [1, n_actions]
+)
+```
+
+calling `self.net(x)` feeds your preprocessed frame through those layers and returns a 2-D tensor of shape `[1, n_actions]`.  Those raw, unnormalized scores for each action are what we call the **logits**.
+
+By writing
+
+```python
+return self.net(x)
+```
+
+you’re returning that `[1, n_actions]` tensor back to whoever called your module (via `policies[agent](obs)`), so `logits = policies[agent](obs)` grabs exactly that output.

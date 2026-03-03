@@ -1,0 +1,81 @@
+The `predict_disable_shape_check` flag is a LightGBM‐specific parameter you can pass at model instantiation to turn off LightGBM’s strict feature‐count validation inside its `predict` method. By default, LightGBM will raise an error if the number of columns (and therefore the shape) of your `X` at prediction time does not exactly match the shape it saw during training—this is usually a good safeguard against feeding the wrong data into your model.
+
+When you call MLflow’s `mlflow.lightgbm.log_model(…)` with an `input_example`, MLflow tries to run
+
+```python
+preds = model.predict(input_example)
+```
+
+to both capture any additional Python dependencies and to validate that your example actually works. If your `input_example` still contains spurious columns—say you passed a DataFrame that still has your `"prediction"`, `"probability"`, or `"index"` columns—the call to `predict` will blow up with the familiar:
+
+```
+LightGBMError: The number of features in data (18) is not the same as it was in training data (17).
+```
+
+---
+
+## How `predict_disable_shape_check` works
+
+* **Default (`predict_disable_shape_check=False`)**
+  LightGBM will compare the feature‐count of your input array to its internal `num_feature` recorded at `fit()` time. If they differ, it raises an error.
+
+* **With `predict_disable_shape_check=True`**
+  LightGBM skips that check entirely and will attempt to make predictions as long as it can align on column indices (i.e. it only cares about the first `num_feature` columns of your input array).
+
+---
+
+## Trade-offs
+
+| Pros                                                                                 | Cons                                                                                        |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| • Unblocks logging when your `input_example` accidentally has extra/missing columns. | • You lose a safety guard: you might feed the model mis-aligned features without realizing. |
+| • No need to refactor your notebook to drop stray columns                            | • If your features aren’t in the exact order, predictions may be garbage.                   |
+
+---
+
+## How to use it
+
+### 1) Instantiate your `LGBMClassifier` with the flag
+
+```python
+from lightgbm import LGBMClassifier
+
+model = LGBMClassifier(
+    objective="binary",
+    boosting_type="gbdt",
+    n_estimators=1000,
+    learning_rate=0.05,
+    random_state=42,
+    n_jobs=-1,
+    # ← disable the shape check here
+    predict_disable_shape_check=True
+)
+```
+
+Then train and log as usual:
+
+```python
+with mlflow.start_run():
+    # … train your model …
+    mlflow.lightgbm.log_model(
+        model,
+        artifact_path="model",
+        signature=signature,
+        input_example=X_example  # even if X_example has extra cols
+    )
+```
+
+MLflow will now successfully call `model.predict(X_example)` and capture the model without error.
+
+### 2) Or omit `input_example` altogether
+
+If you’d rather not weaken the shape check at all, simply remove `input_example=…` from your `log_model` call. MLflow will skip its internal `predict` test and still register your model (though you won’t get that automatic example capture).
+
+---
+
+### When to prefer each
+
+* **Keep the check on** when you care deeply about catching any mis-aligned feature sets.
+* **Disable the check** when you know your pipeline will feed exactly the right features at scoring time, but your logging/DataFrame still contains extra helper columns you’d prefer not to strip out just to make the MLflow UI happy.
+
+In most production workflows, it’s safest to supply a *clean* `input_example` (matching your training features exactly) and leave `predict_disable_shape_check=False`. But for rapid iteration or when you can’t easily refactor upstream code, `predict_disable_shape_check=True` can be a pragmatic workaround.

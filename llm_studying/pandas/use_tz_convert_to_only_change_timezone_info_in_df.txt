@@ -1,0 +1,98 @@
+Sure — here’s a clear, standalone post you could use (e.g. for documentation, internal wiki, or a tech blog).
+
+---
+
+## 🕒 Using `tz_convert()` in Pandas to Drop or Change Time Zone Information
+
+When working with datetime columns in Pandas, you’ll often encounter **timezone-aware** timestamps (e.g., `datetime64[ns, UTC]`).
+The `.dt.tz_convert()` method lets you **change** or **remove** timezone information cleanly.
+
+---
+
+### 🔹 1. Checking Time Zone Awareness
+
+```python
+df['timestamp'].dtype
+```
+
+If you see something like `datetime64[ns, UTC]`, that column is **timezone-aware**.
+If you see just `datetime64[ns]`, it’s **naive** (no timezone info).
+
+---
+
+### 🔹 2. Converting to a Different Time Zone
+
+Use `.dt.tz_convert()` to change the timezone of a column that’s already timezone-aware:
+
+```python
+df['timestamp'] = df['timestamp'].dt.tz_convert('America/New_York')
+```
+
+This converts the *moment in time* from UTC to U.S. Eastern time, keeping the real-world time consistent.
+
+---
+
+### 🔹 3. Dropping Time Zone Information
+
+To remove the timezone entirely (making the column “naive”):
+
+```python
+df['timestamp'] = df['timestamp'].dt.tz_convert(None)
+```
+
+This **drops** the timezone information but **keeps the displayed clock time**.
+Example:
+
+| Before (`datetime64[ns, UTC]`) | After (`datetime64[ns]`) |
+| ------------------------------ | ------------------------ |
+| 2025-10-17 14:00:00+00:00      | 2025-10-17 14:00:00      |
+
+This is useful when:
+
+* You need to **merge or compare** with naive datetimes.
+* You’ve already normalized everything to a single timezone (e.g., UTC).
+* You want to avoid timezone-awareness in sorting or plotting operations.
+
+---
+
+### 🔹 4. Common Gotcha: `.tz_localize()` vs `.tz_convert()`
+
+* `.tz_localize()` → **Assigns** a timezone to naive datetimes (no conversion).
+* `.tz_convert()` → **Converts** between timezones for already-aware datetimes.
+
+Example:
+
+```python
+# Naive → make it aware (assume it's UTC)
+df['timestamp'] = df['timestamp'].dt.tz_localize('UTC')
+
+# Aware → convert to another zone
+df['timestamp'] = df['timestamp'].dt.tz_convert('America/New_York')
+```
+
+---
+
+### ✅ Summary
+
+| Task                         | Method                               | Example                   |
+| ---------------------------- | ------------------------------------ | ------------------------- |
+| Convert timezone             | `.dt.tz_convert('America/New_York')` | change UTC → Eastern      |
+| Drop timezone info           | `.dt.tz_convert(None)`               | keep clock time, drop tz  |
+| Assign tz to naive datetimes | `.dt.tz_localize('UTC')`             | assume timestamps are UTC |
+
+---
+
+### 🔹 Example in Context
+
+```python
+df['impression_dt'] = (
+    pd.to_datetime(df['impression_ts'], utc=True)  # parse as UTC-aware
+      .dt.tz_convert(None)                         # drop tz info (make naive)
+)
+```
+
+Result: a clean, naive `datetime64[ns]` column suitable for sorting and grouping.
+
+---
+
+Would you like me to format it as a **Markdown article** (with headers, bullets, and code blocks) ready to paste into a wiki or documentation site?

@@ -1,0 +1,71 @@
+Yes—Pandas makes that really easy. You have two main patterns:
+
+---
+
+### 1) `merge` with `left_index` + `right_on`
+
+```python
+# A’s index will match B['index'], and everything from A is kept by default
+df_merged = A.merge(
+    B,
+    left_index=True,
+    right_on='index',
+    how='inner'     # or 'left', 'right', 'outer' depending on what you want
+)
+```
+
+* `left_index=True` tells Pandas “use A.index as the join‐key on the left”
+* `right_on='index'` tells Pandas “use B\['index'] as the join‐key on the right”
+* `how=` controls which rows survive (inner = only matches; left = all A; etc.)
+
+---
+
+### 2) `join` after setting B’s index
+
+If you’d rather have A’s index remain the index of the result, you can reindex B and then do a standard `join`:
+
+```python
+# temporarily make B’s index be its 'index' column
+B2 = B.set_index('index')
+
+# join by index
+# result will have A’s index, and columns from B2
+df_joined = A.join(
+    B2,
+    how='inner'    # or 'left','right','outer'
+)
+```
+
+This is exactly equivalent under the hood, but can feel more natural if you think in terms of “I want B’s rows aligned to A’s index.”
+
+---
+
+### Example
+
+```python
+import pandas as pd
+
+# sample A
+A = pd.DataFrame({'foo': [1,2,3]}, index=[10,20,30])
+
+# sample B
+B = pd.DataFrame({
+    'index': [10,20,40],
+    'bar':   ['a','b','c']
+})
+
+# merge pattern
+merged = A.merge(B, left_index=True, right_on='index')
+#    index  foo bar
+# 0     10    1   a
+# 1     20    2   b
+
+# join pattern
+joined = A.join(B.set_index('index'))
+#      foo bar
+# 10     1   a
+# 20     2   b
+# 30     3 NaN   <-- because 30 wasn’t in B.index
+```
+
+Pick whichever flavor—`merge` or `join`—fits your style.

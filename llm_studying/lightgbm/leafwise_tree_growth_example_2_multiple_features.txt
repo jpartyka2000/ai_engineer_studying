@@ -1,0 +1,121 @@
+Got it. Let’s walk through an intuitive example of how LightGBM chooses splits using multiple features with its leaf-wise growth strategy. This won’t use code — just a step-by-step breakdown.
+
+
+---
+
+Dataset (3 Features + Target)
+
+Sample X1 X2 X3 Target
+
+A 2 10 3 100
+B 3 12 4 110
+C 9 2 7 200
+D 8 1 6 190
+E 4 15 3 120
+F 7 3 8 195
+
+
+
+---
+
+Step-by-Step: Leaf-Wise Tree Growth
+
+Step 0: Start at Root Node
+
+All data is at the root. LightGBM computes which feature and split point would result in the largest reduction in squared error.
+
+It considers splits like:
+
+X1 < 5
+
+X2 < 5
+
+X3 < 5
+...and computes gain for each.
+
+
+Suppose:
+
+Best split = X1 < 5 → Splits samples A, B, E to the left; C, D, F to the right
+
+
+New leaves:
+
+Left Leaf (A, B, E) — avg target = 110
+
+Right Leaf (C, D, F) — avg target = 195
+
+
+
+---
+
+Step 1: Pick the Leaf with Highest Remaining Error
+
+LightGBM now looks at each leaf and calculates how much error still remains in each group. Suppose the Right Leaf (C, D, F) has higher error.
+
+It now evaluates:
+
+Splitting Right Leaf on X2 < 2.5 (splits C, D vs F)
+
+Splitting Right Leaf on X3 < 7.5 (splits D, F vs C)
+
+etc.
+
+
+Suppose:
+
+Best gain = X2 < 2.5 → C and D go left; F goes right
+
+
+Now we have 3 leaves:
+
+A, B, E → mean = 110
+
+C, D → mean = 195
+
+F → mean = 195
+
+
+
+---
+
+Step 2: Pick Next Best Leaf to Split
+
+LightGBM now examines all 3 leaves again. Suppose it finds the highest remaining error in Leaf A, B, E, and sees that splitting on X2 < 11 gives the best gain.
+
+That splits:
+
+A and B (X2 = 10, 12) vs E (X2 = 15)
+
+
+New leaves:
+
+A, B → mean = 105
+
+E → mean = 120
+
+
+
+---
+
+Final Tree Structure (simplified)
+
+X1 < 5
+      /      \
+X2 < 11     X2 < 2.5
+  /    \      /     \
+A,B    E    C,D     F
+
+
+---
+
+Key Takeaways
+
+At each step, LightGBM evaluates all features to find the best possible split — it doesn't prefer one feature over another.
+
+It does not grow by depth — it finds the leaf that, if split, will reduce error the most.
+
+The tree becomes unbalanced, but more focused on high-impact splits.
+
+
+Let me know if you’d like a visual of this as a diagram!

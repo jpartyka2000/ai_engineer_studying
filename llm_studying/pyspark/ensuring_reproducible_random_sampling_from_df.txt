@@ -1,0 +1,66 @@
+Absolutely—both of the built‑in sampling methods in PySpark let you lock in a seed so that you get the *same* “random” rows every time you run it. Here’s how:
+
+1. **Using `DataFrame.sample()`**
+
+   ```python
+   # 10% sample, no replacement, reproducible via seed
+   sample_df = df.sample(
+       withReplacement=False,
+       fraction=0.10,
+       seed=12345
+   )
+   ```
+
+   * `seed=12345` ensures that every time you run this snippet, you’ll get the identical set of rows.
+
+2. **Using `DataFrame.randomSplit()`**
+
+   ```python
+   # split into an exact ~10% slice and the rest
+   small_df, rest_df = df.randomSplit(
+       [0.1, 0.9],
+       seed=12345
+   )
+   ```
+
+   * Again, providing `seed=12345` makes the split deterministic.
+
+3. **Using `rand()` + `limit()` for an Exact Count**
+   If you need exactly N = 10% of the rows (rather than an approximate fraction), you can shuffle deterministically then `limit()`:
+
+   ```python
+   from pyspark.sql.functions import rand
+
+   total_count = df.count()
+   N = int(total_count * 0.1)
+
+   exact_sample = (
+       df
+       .orderBy(rand(seed=12345))  # deterministic shuffle
+       .limit(N)                    # take exactly N rows
+   )
+   ```
+
+4. **(Bonus) Stratified Sampling with `sampleBy()`**
+   If you need to sample 10% *within* each value of some key column, you can also do:
+
+   ```python
+   fractions = df
+       .select("key_col")
+       .distinct()
+       .withColumn("fraction", lit(0.1))
+       .rdd
+       .collectAsMap()
+
+   strat_sample = df.sampleBy(
+       col="key_col",
+       fractions=fractions,
+       seed=12345
+   )
+   ```
+
+   This gives you 10% of each group in `key_col`, reproducibly.
+
+---
+
+**Key point:**  Just pass the same integer to `seed` every time, and PySpark’s sampling functions will be repeatable.

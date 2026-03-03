@@ -1,0 +1,47 @@
+Here’s what each index and symbol is tracking in the SAG formulas:
+
+| Symbol                                                      | Subscript(s)    | Superscript(s)    | Meaning                                                                                                               |
+| ----------------------------------------------------------- | --------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| $n$                                                         | —               | —                 | Total number of training samples.                                                                                     |
+| $i\in\{1,\dots,n\}$                                         | Subscript       | —                 | Labels one particular sample in the dataset.                                                                          |
+| $t\in\{0,1,2,\dots\}$                                       | —               | Superscript       | The iteration count (time step) of the algorithm. $t=0$ is “before any update,” $t=1$ is after the first update, etc. |
+| $i_t$                                                       | Subscript       | —                 | The specific sample index chosen *at iteration* $t$.                                                                  |
+| $w^{(t)}$                                                   | —               | Superscript       | The model’s weight vector *after* completing iteration $t$. (So $w^{(0)}$ is your initialization.)                    |
+| $g_i^{(t)}$                                                 | Subscript       | Superscript       | The *stored* gradient for sample $i$, as of the end of iteration $t$.  Initially $g_i^{(0)}=0$.                       |
+| $S^{(t)}$                                                   | —               | Superscript       | The running sum of **all** stored gradients at iteration $t$:                                                         |
+| $\;S^{(t)}=\sum_{j=1}^n g_j^{(t)}$.  Initially $S^{(0)}=0$. |                 |                   |                                                                                                                       |
+| $\nabla f_i(w)$                                             | Subscript       | —                 | The *true* gradient of the loss on sample $i$ evaluated at weights $w$.                                               |
+| $g_{i_t}^{(t-1)}$                                           | Subscript $i_t$ | Superscript $t-1$ | “The old” stored gradient for the chosen sample $i_t$ *before* you overwrite it at iteration $t$.                     |
+| $g_{i_t}^{(t)}$                                             | Subscript $i_t$ | Superscript $t$   | “The new” gradient you’ve just computed for sample $i_t$ at the current weights $w^{(t-1)}$.                          |
+
+---
+
+### How they fit into the update steps
+
+1. **Pick** a sample index $i_t$.
+2. **Compute** its fresh gradient at the *previous* weights:
+
+   $$
+     g_{i_t}^{(t)} \;=\;\nabla f_{i_t}\bigl(w^{(t-1)}\bigr).
+   $$
+3. **Update** the running sum by *removing* the old stored gradient for $i_t$ and *adding* the new one:
+
+   $$
+     S^{(t)} 
+     = S^{(t-1)}
+       \;-\; g_{i_t}^{(t-1)}
+       \;+\; g_{i_t}^{(t)}.
+   $$
+4. **Step** the weights along the *average* gradient direction:
+
+   $$
+     w^{(t)}
+     = w^{(t-1)}
+       \;-\;\frac{\alpha}{n}\;S^{(t)}.
+   $$
+
+* The **superscript** always tells you *“which iteration”* that quantity refers to.
+* The **subscript** on gradients $\;g_i^{(\cdot)}$ identifies *which sample’s* gradient is being stored.
+* $S^{(t)}$ bundles up all $n$ of those $g_i^{(t)}$ into one sum for the update.
+
+Once each sample has been visited at least once, every $g_i$ in the memory is “fresh,” so $S^{(t)}/n$ becomes the true average gradient—combining the cheap per‐step cost of SGD with the fast, variance‐reduced convergence of full‐batch methods.

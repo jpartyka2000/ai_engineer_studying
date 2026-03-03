@@ -1,0 +1,34 @@
+Not quite—`env.agent_iter()` doesn’t itself produce new frames, it simply hands you the name of the next agent whose turn it is to act. Here’s the key distinction:
+
+1. **You call it once** to create an iterator:
+
+   ```python
+   for agent in env.agent_iter():
+       …
+   ```
+
+   Behind the scenes, that iterator remembers its place in the episode.
+
+2. **Each iteration** of the loop does two things:
+
+   * **Yields** you the next agent’s ID (e.g. `"first_0"` or `"second_0"`).
+   * **Keeps** the environment ready to accept that agent’s action.
+
+3. **When you call**
+
+   ```python
+   env.step(action)
+   ```
+
+   you actually advance the environment by one “sub‐step.” In a two-player Atari game that means:
+
+   * On player 1’s turn you step with their action (and render if `render_mode="human"`), but the game state doesn’t fully advance to the next frame until player 2 has also acted.
+   * Once you’ve gone through both players in that time step, the environment completes one full transition (updates the physics, yields a new frame, etc.).
+
+So:
+
+* **`env.agent_iter()`** → an iterator over agent turns (you only call this once at the top of your loop).
+* **Each `for` step** → gives you who acts next, then you call `step(action)` to actually move the game forward one sub‐step.
+* **A “new frame”** (i.e. a full environment update/render) really happens after **all** agents have taken their actions for that time‐step, not simply on each call to `agent_iter()`.
+
+If you were to call `env.agent_iter()` a second time, you’d be **starting a brand-new episode**, not advancing frames in the same one.

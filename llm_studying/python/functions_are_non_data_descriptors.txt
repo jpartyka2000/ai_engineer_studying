@@ -1,0 +1,361 @@
+## 📋 Deep Dive: Functions Are Non-Data Descriptors
+
+---
+
+### The Key Insight
+
+Functions in Python are objects, and they implement the descriptor protocol with a `__get__` method (but no `__set__` or `__delete__`). This makes them **non-data descriptors**, and it's the mechanism that transforms functions into bound methods when accessed on instances.
+
+---
+
+### Proof That Functions Are Non-Data Descriptors
+
+```python
+def my_function(self):
+    return "Hello!"
+
+# Functions have __get__
+print(hasattr(my_function, '__get__'))     # True
+
+# But not __set__ or __delete__
+print(hasattr(my_function, '__set__'))     # False
+print(hasattr(my_function, '__delete__'))  # False
+
+# Therefore: non-data descriptor
+```
+
+---
+
+### How Method Binding Works
+
+When you access a function through an instance, Python calls the function's `__get__` method, which returns a **bound method**:
+
+```python
+class Dog:
+    def bark(self):
+        return "Woof!"
+
+dog = Dog()
+
+# Accessing via the class — returns the function itself
+print(Dog.bark)        # <function Dog.bark at 0x...>
+print(type(Dog.bark))  # <class 'function'>
+
+# Accessing via an instance — returns a BOUND METHOD
+print(dog.bark)        # <bound method Dog.bark of <Dog object at 0x...>>
+print(type(dog.bark))  # <class 'method'>
+
+# The bound method "remembers" the instance
+print(dog.bark.__self__)  # <Dog object at 0x...>
+print(dog.bark.__func__)  # <function Dog.bark at 0x...>
+```
+
+---
+
+### What `__get__` Does on Functions
+
+Here's what happens under the hood:
+
+```python
+def greet(self):
+    return f"Hello, I'm {self.name}"
+
+class Person:
+    name = "Alice"
+    say_hello = greet
+
+p = Person()
+
+# These two are equivalent:
+result1 = p.say_hello()
+result2 = greet.__get__(p, Person)()
+
+print(result1)  # "Hello, I'm Alice"
+print(result2)  # "Hello, I'm Alice"
+
+# __get__ returns a bound method
+bound = greet.__get__(p, Person)
+print(bound)              # <bound method greet of <Person object>>
+print(bound.__self__)     # <Person object> (the instance)
+print(bound.__func__)     # <function greet> (the original function)
+```
+
+---
+
+### Simulating Function's `__get__` Behavior
+
+Here's a simplified pure-Python version of what function's `__get__` does:
+
+```python
+import types
+
+class FunctionSimulator:
+    """Simulates how function.__get__ works"""
+    
+    def __init__(self, func):
+        self.func = func
+    
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            # Accessed on class, return function itself
+            return self.func
+        # Accessed on instance, return bound method
+        return types.MethodType(self.func, obj)
+    
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+def bark(self):
+    return f"{self.name} says Woof!"
+
+class Dog:
+    name = "Buddy"
+    speak = FunctionSimulator(bark)
+
+d = Dog()
+
+# Access on class — returns function
+print(Dog.speak)    # <function bark at 0x...>
+
+# Access on instance — returns bound method
+print(d.speak)      # <bound method bark of <Dog object>>
+print(d.speak())    # "Buddy says Woof!"
+```
+
+---
+
+### Why Functions Are Non-Data (Not Data) Descriptors
+
+Because functions only define `__get__` (not `__set__`), they can be **shadowed by instance attributes**:
+
+```python
+class Calculator:
+    def add(self, a, b):
+        return a + b
+
+calc = Calculator()
+
+# Normal method call
+print(calc.add(2, 3))  # 5
+
+# Shadow the method with an instance attribute
+calc.add = lambda a, b: a * b
+
+# Now the instance attribute is used instead
+print(calc.add(2, 3))  # 6 (multiplication, not addition!)
+
+# The class method is still intact
+calc2 = Calculator()
+print(calc2.add(2, 3))  # 5 (original method)
+
+# Delete the shadow to restore access to the method
+del calc.add
+print(calc.add(2, 3))  # 5 (back to original)
+```
+
+If functions were **data descriptors**, this shadowing would be impossible.
+
+---
+
+### Comparison: Functions vs Properties
+
+| Aspect | Function | Property |
+|--------|----------|----------|
+| Has `__get__` | ✅ Yes | ✅ Yes |
+| Has `__set__` | ❌ No | ✅ Yes |
+| Descriptor type | Non-data | Data |
+| Can be shadowed | ✅ Yes | ❌ No |
+
+```python
+class Example:
+    def method(self):
+        return "method"
+    
+    @property
+    def prop(self):
+        return "property"
+
+obj = Example()
+
+# Can shadow the method
+obj.method = lambda: "shadowed method"
+print(obj.method())  # "shadowed method"
+
+# Cannot shadow the property
+obj.__dict__['prop'] = "shadowed property"
+print(obj.prop)  # "property" (property wins!)
+```
+
+---
+
+### `staticmethod` and `classmethod` Are Also Descriptors
+
+These decorators wrap functions in descriptor objects:
+
+```python
+class MyClass:
+    @staticmethod
+    def static_func():
+        return "static"
+    
+    @classmethod
+    def class_func(cls):
+        return f"class: {cls.__name__}"
+
+# Check descriptor status
+print(hasattr(staticmethod, '__get__'))  # True
+print(hasattr(staticmethod, '__set__'))  # False — non-data!
+
+print(hasattr(classmethod, '__get__'))   # True
+print(hasattr(classmethod, '__set__'))   # False — non-data!
+```
+
+#### How They Work
+
+```python
+class staticmethod_simulator:
+    """Simplified staticmethod implementation"""
+    def __init__(self, func):
+        self.func = func
+    
+    def __get__(self, obj, objtype=None):
+        # Always return the unwrapped function — no binding
+        return self.func
+
+class classmethod_simulator:
+    """Simplified classmethod implementation"""
+    def __init__(self, func):
+        self.func = func
+    
+    def __get__(self, obj, objtype=None):
+        if objtype is None:
+            objtype = type(obj)
+        # Bind to the CLASS, not the instance
+        return types.MethodType(self.func, objtype)
+```
+
+---
+
+### The Attribute Lookup in Action
+
+```
+obj.method lookup:
+        │
+        ▼
+┌────────────────────────────────────┐
+│ 1. Is 'method' a DATA descriptor   │
+│    in class hierarchy?             │
+│    (has __get__ + __set__)         │
+└────────────────────────────────────┘
+        │ No (function has no __set__)
+        ▼
+┌────────────────────────────────────┐
+│ 2. Is 'method' in obj.__dict__?    │
+└────────────────────────────────────┘
+        │ No (normally not)
+        ▼
+┌────────────────────────────────────┐
+│ 3. Is 'method' a NON-DATA          │
+│    descriptor in class hierarchy?  │
+│    (has only __get__)              │
+└────────────────────────────────────┘
+        │ Yes! Function has __get__
+        ▼
+┌────────────────────────────────────┐
+│ Call function.__get__(obj, type)   │
+│ Returns: bound method              │
+└────────────────────────────────────┘
+```
+
+---
+
+### Practical Implications
+
+#### 1. Monkey-Patching Instances
+
+Because methods are non-data descriptors, you can override them per-instance:
+
+```python
+class Button:
+    def on_click(self):
+        print("Default click handler")
+
+btn1 = Button()
+btn2 = Button()
+
+# Override just for btn1
+btn1.on_click = lambda: print("Custom handler for btn1!")
+
+btn1.on_click()  # "Custom handler for btn1!"
+btn2.on_click()  # "Default click handler"
+```
+
+#### 2. Adding Methods to Instances
+
+You can add a method to a single instance, but you need to bind it manually:
+
+```python
+import types
+
+class Dog:
+    def __init__(self, name):
+        self.name = name
+
+def fetch(self):
+    return f"{self.name} fetches the ball!"
+
+dog = Dog("Buddy")
+
+# This won't work as expected — no automatic binding
+dog.fetch = fetch
+# dog.fetch()  # TypeError: fetch() missing 'self'
+
+# Manually bind it
+dog.fetch = types.MethodType(fetch, dog)
+print(dog.fetch())  # "Buddy fetches the ball!"
+```
+
+#### 3. Understanding `self`
+
+The `self` parameter isn't magic — it's passed automatically because `__get__` creates a bound method that "remembers" the instance:
+
+```python
+class Example:
+    def method(self, x):
+        return f"self={self}, x={x}"
+
+obj = Example()
+
+# When you call obj.method(5), Python does:
+# 1. Look up 'method' on Example
+# 2. Find function, call function.__get__(obj, Example)
+# 3. Get back bound method with obj "baked in"
+# 4. Call bound_method(5), which calls function(obj, 5)
+
+bound = obj.method
+print(bound)         # <bound method Example.method of <Example object>>
+print(bound(5))      # "self=<Example object>, x=5"
+
+# Equivalent to:
+unbound = Example.__dict__['method']
+print(unbound(obj, 5))  # "self=<Example object>, x=5"
+```
+
+---
+
+### Summary
+
+| Fact | Explanation |
+|------|-------------|
+| Functions have `__get__` | Makes them descriptors |
+| Functions lack `__set__` | Makes them **non-data** descriptors |
+| Accessed on instance | `__get__` returns a bound method |
+| Accessed on class | `__get__` returns the function itself |
+| Can be shadowed | Yes, by instance attributes |
+| This enables | Per-instance method overriding, monkey-patching |
+
+The descriptor protocol is elegant — by simply defining `__get__` on function objects, Python unifies functions and methods without any special-case code in the interpreter's attribute lookup.
+
+---
+
+Ready for Question 6?

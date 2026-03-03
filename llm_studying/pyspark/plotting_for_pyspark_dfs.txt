@@ -1,0 +1,43 @@
+Spark’s native `DataFrame` API doesn’t include any `.plot()` methods like pandas does—there’s no built‑in charting in vanilla PySpark. Instead you have a few common work‑arounds:
+
+1. **Convert to pandas**
+
+   ```python
+   pdf = spark_df.toPandas()
+   pdf.plot(…)   # now use pandas/Matplotlib/Seaborn
+   ```
+
+   This is the simplest if your data fits in memory.
+
+2. **Use Databricks display** (if you’re on Databricks notebooks)
+
+   ```python
+   display(spark_df)          # interactive DataFrame viewer
+   display( … some SQL … )    # built‑in chart UI
+   ```
+
+   Databricks will let you pick “bar chart,” “line chart,” etc. off the UI.
+
+3. **Leverage pandas‑on‑Spark (Koalas)**
+
+   ```python
+   import pyspark.pandas as ps
+   psdf = ps.DataFrame(spark_df)
+   psdf.plot.bar(…)   # pandas‑style plotting on Spark DataFrames
+   ```
+
+   Under the hood it still collects small data to the driver, but gives you a pandas‑style API.
+
+4. **Pre‑aggregate & use pure Matplotlib**
+
+   ```python
+   agg = spark_df.groupBy("category").count().toPandas()
+   import seaborn as sns
+   sns.barplot(x="category", y="count", data=agg)
+   ```
+
+   You push the grouping into Spark, then plot the much smaller result set locally.
+
+---
+
+**Bottom line**: PySpark itself has no built‑in plotting, so you either convert to pandas (or pandas‑on‑Spark) or rely on your notebook’s visualization helpers.

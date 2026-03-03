@@ -1,0 +1,87 @@
+**Grader hacking** happens when a model learns to “game” your automated grader instead of genuinely solving the task—for example by memorizing patterns in your prompt or output‐template that yield a passing score without doing the real work. Here are common forms and ways to harden your evals:
+
+---
+
+## 1. Common hacking techniques
+
+| Hack style                   | What it looks like                                                                                                                                       |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lexical overfitting**      | Model spits out the exact token sequence you match on (e.g. always “PASS” or “1.0”), regardless of the real answer.                                      |
+| **Prompt injection**         | Model detects grader‐specific keywords (like `eq`, `regex`, or field names) and echoes them to satisfy checks.                                           |
+| **Leakage from schema**      | If your grader’s prompt or criteria expose ground truth (e.g. accidentally including `item.correct_label` in the system message), the model can copy it. |
+| **Adversarial corner‐cases** | Model learns boundary cases (e.g. empty string passes) and exploits them.                                                                                |
+
+---
+
+## 2. Prevention strategies
+
+### A. Keep grading logic **opaque** to the model
+
+* Don’t include grader logic or field names (e.g. `{{ item.correct_label }}`) in the user‐facing prompt.
+* Use **post‐processing** checks (e.g. string equality tests) rather than embedding those tests in the prompt itself.
+
+### B. Vary and randomize your tests
+
+* **Parameterize** your grading Jinja templates: inject random synonyms, change order of fields, or vary prompt phrasing per‐example, so the model can’t memorize a static surface form.
+* **Adversarial samples**: include “trap” cases (noisy or edge‐case inputs) to ensure genuine understanding.
+
+### C. Use multi‐step or semantic checks
+
+* Combine **`string_check`** with **`semantic_similarity_check`** or a **`multi`** grader so that passing requires both lexical correctness and conceptual alignment.
+* For numerical or structured outputs, use **function\_call\_check** plus validation of parsed arguments rather than raw text matching.
+
+### D. Limit over‐exposed ground truth
+
+* Only expose the minimum fields in `item_schema` needed for prompt construction; don’t leak answers into system or developer messages.
+* If you need to show ground truth for templating, ensure it’s only used in the **grader** context, not in the model‐prompt context.
+
+### E. Human‐in‐the‐loop & sampling
+
+* Periodically sample graded outputs for manual review—especially those that just barely pass—to catch unexpected hacks.
+* Flag suspicious clusters of “easy passes” and add new tests or update your grader logic.
+
+---
+
+## 3. Example: robust classification grader
+
+Instead of this vulnerable pattern:
+
+```json
+{
+  "type":"string_check",
+  "input":"{{ sample.output_text }}",
+  "reference":"{{ item.correct_label }}",
+  "operation":"eq"
+}
+```
+
+You can combine:
+
+```json
+{
+  "type":"multi",
+  "graders":{
+    "exact": {
+      "type":"string_check",
+      "input":"{{ sample.output_text }}",
+      "reference":"{{ item.correct_label }}",
+      "operation":"eq"
+    },
+    "semantic": {
+      "type":"semantic_similarity_check",
+      "input":"{{ sample.output_text }}",
+      "reference":"{{ item.correct_label }}",
+      "threshold":0.8
+    }
+  },
+  "calculate_output":"0.7*exact + 0.3*semantic"
+}
+```
+
+– now the model must both match textually *and* earn a high embedding‐based similarity to pass.
+
+---
+
+### Bottom line
+
+No grader is 100% hack‐proof, but by **obscuring your checks**, **mixing multiple evaluation modalities**, **randomizing** prompts, and **monitoring** outputs, you can make it far harder for a model to hack its way to a passing score.

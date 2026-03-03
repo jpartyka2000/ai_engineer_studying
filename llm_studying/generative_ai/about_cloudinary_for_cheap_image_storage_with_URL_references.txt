@@ -1,0 +1,36 @@
+For your use case — programmatically uploading album cover images to get a URL for the Kontext API — I'd recommend **Cloudinary**. Here's why:
+
+It has a solid **free tier** (25GB storage, 25GB bandwidth/month), a simple Python SDK where you upload a local file and get back a URL in one call, images are served from a CDN so Together AI will fetch them fast, and it's built for exactly this kind of programmatic image workflow. URLs don't expire unless you delete them.
+
+Quick example:
+
+```python
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name="your_cloud",
+    api_key="your_key",
+    api_secret="your_secret"
+)
+
+result = cloudinary.uploader.upload("local_album_cover.png")
+image_url = result["secure_url"]
+
+# Now pass to Kontext
+response = client.images.generate(
+    model="black-forest-labs/FLUX.1-kontext-pro",
+    prompt="Change the outfit to a leather jacket...",
+    image_url=image_url,
+    width=1024,
+    height=1024,
+)
+```
+
+**Runners up:**
+
+- **imgbb** — Even simpler (just an API key, no SDK needed), free, but less polished and URLs can expire depending on settings
+- **Cloudflare R2** — Free egress, great for production, but more setup than Cloudinary
+- **S3** — Industry standard but overkill if you just need quick hosting for a handful of images
+
+Cloudinary hits the sweet spot of easy setup, reliable URLs, and a generous free tier for what you're doing.

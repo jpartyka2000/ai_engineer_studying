@@ -1,0 +1,98 @@
+Yes — LightGBM always runs up to a maximum number of boosting iterations, and you control that via:
+
+* **`n_estimators`** in the scikit‑learn API (`LGBMClassifier`, `LGBMRegressor`)
+* **`num_boost_round`** in the core API (`lightgbm.train`, `lightgbm.cv`)
+* **`num_iterations`** (or its alias `num_round`) in the CLI or config file
+
+Early stopping (via `early_stopping_rounds`) only *halts* training before you hit that max; it never runs *more* iterations than you’ve specified. If you disable early stopping altogether, you’ll always train exactly to your limit.
+
+---
+
+## 1. sklearn API
+
+```python
+from lightgbm import LGBMClassifier
+
+clf = LGBMClassifier(
+    objective='binary',
+    boosting_type='gbdt',
+    n_estimators=300,          # ← max # of boosting rounds
+    learning_rate=0.05,
+    num_leaves=31,
+    random_state=42,
+    n_jobs=1
+)
+
+# if you want early stopping too:
+clf.fit(
+    X_train, y_train,
+    eval_set=[(X_val, y_val)],
+    eval_metric=['binary_logloss','auc'],
+    early_stopping_rounds=50,  # will stop if no improvement for 50 rounds
+    verbose=100
+)
+
+# Without early stopping, remove `early_stopping_rounds`:
+# then it will run exactly 300 rounds
+```
+
+---
+
+## 2. Core API
+
+```python
+import lightgbm as lgb
+
+dtrain = lgb.Dataset(X_train, label=y_train)
+dvalid = lgb.Dataset(X_val, label=y_val, reference=dtrain)
+
+params = {
+    'objective': 'binary',
+    'boosting_type': 'gbdt',
+    'learning_rate': 0.05,
+    'num_leaves': 31,
+    # ... any other params ...
+}
+
+bst = lgb.train(
+    params,
+    dtrain,
+    num_boost_round=300,          # ← max # of boosting rounds
+    valid_sets=[dvalid],
+    early_stopping_rounds=50,     # optional: may stop early
+    verbose_eval=100
+)
+
+# If you skip `early_stopping_rounds`, it will always run 300 iterations.
+```
+
+---
+
+## 3. CLI / config file
+
+In your LightGBM config:
+
+```
+# limit to 300 rounds
+num_iterations = 300
+
+# (optional) stop early if no improvement
+early_stopping_round = 50
+```
+
+Or on the command line:
+
+```
+lightgbm \
+  config=train.conf \
+  num_iterations=300 \
+  early_stopping_round=50
+```
+
+---
+
+### TL;DR
+
+* **Always** specify a hard cap on iterations via `n_estimators` or `num_boost_round`.
+* **Early stopping** is a *soft* cap that may stop you *before* that number but will never exceed it.
+* **Omit** the early‑stopping argument if you want to guarantee you run *exactly* your specified number of rounds.

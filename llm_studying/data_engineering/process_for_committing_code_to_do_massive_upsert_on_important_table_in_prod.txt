@@ -1,0 +1,38 @@
+Your instincts here are good — you definitely want a code‐review (a PR) before we fully commit to prod.  Here’s a pattern that folks often follow when they have existing staging‐tested logic they’d like to “try out” or validate in production before the formal PR:
+
+1. **Parameterize your table target**
+
+   * In your job or notebook, don’t hard-code the production table name.  Instead, drive it off a widget or environment variable, e.g. `MERGE_TABLE = dbutils.widgets.get("target_table")`.
+   * That way you can point it at a throwaway copy of the Delta table in the prod workspace (“`mydb.ml_lead_features_test`”) without touching the real 22 M rows, and then run your merge logic end-to-end.
+
+2. **Smoke-test in the prod workspace on a sandbox table**
+
+   * Clone the real table (e.g. `CREATE TABLE … AS TABLE ml_lead_features LIMIT 1`) or use a small partition of it.
+   * Run your merge job, verify the new columns are populated correctly, that no other data got clobbered, that statistics look sane, etc.
+
+3. **Open the PR early, link to your test run**
+
+   * As soon as your code is “feature-complete” and you’ve done that self-validation on the sandbox copy, open the PR against your main repo.
+   * In the PR description link to the notebook or jobs run you executed in the prod workspace (`mydb.ml_lead_features_test`) so reviewers can see the actual merges and inspect the results.
+
+4. **Get your PR reviewed & CI’d**
+
+   * Your data-eng peers can double-check your SQL/merge logic, look at the CI test logs (if you have any unit tests against a tiny Delta table), and sign off.
+
+5. **Switch the widget/variable to the real table & merge**
+
+   * Once the PR is approved and merged, update the widget/env-var default back to the real `ml_lead_features` table, deploy your job, and let it run.
+
+---
+
+### Why *not* just hit prod first?
+
+* **Audit trail & collaboration.**  A PR is your single source of truth (and shows exactly what changed).
+* **Safety.**  Parameterizing lets you do “dress rehearsal” on a tiny prod‐side copy—no risk to real data.
+* **Repeatability.**  You can re-run your end-to-end smoke test any time, even after the PR is merged, by simply pointing at the test table again.
+
+---
+
+#### TL;DR
+
+> **Yes**, open a PR — but before you flip the switch on the *real* 22 M-row table, point your job at a sandbox clone in the prod workspace (via a simple variable/widget), smoke-test the merge, and include the run details in your PR description so your data‐eng team can see exactly what happened. Once it all looks good and the PR is approved, change the variable to the real table and deploy.

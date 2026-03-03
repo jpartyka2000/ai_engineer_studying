@@ -1,0 +1,121 @@
+When you embed a `from pyspark.shell import spark` (or otherwise try to spin up a SparkContext) inside your PythonModel’s `predict()` (or at module-import time), the MLflow model server—running in its own lightweight container—has no Spark gateway process to talk to, so you get the “\[JAVA\_GATEWAY\_EXITED] Java gateway process exited before sending its port number” error.
+
+### Why it fails
+
+* **MLflow pyfunc serving containers don’t launch Spark by default.**
+  They’re designed to be lightweight and only install Python dependencies. None of the Spark worker daemons or JVM gateways are up and running.
+* **Importing `pyspark.shell.spark` immediately tries to initialize a SparkContext.**
+  Without a configured `spark.driver.host`/`master` or a running Gateway, it blows up.
+
+### How to fix
+
+You basically have two routes:
+
+---
+
+## 1) Don’t use Spark inside the pyfunc at serve time
+
+If your simulation needs the Delta table only at “train” or “log” time, load it once in your training notebook, pass the *raw Pandas* DataFrame into the model as part of the logged artifacts (or serialize it), and then your `predict()` can be pure Pandas:
+
+```python
+class MCSimulatorPyfunc(mlflow.pyfunc.PythonModel):
+
+    def load_context(self, context):
+        # e.g. load a pickled campaign-data pandas df from context.artifacts
+        import pickle
+        with open(context.artifacts["campaign_df"], "rb") as f:
+            self.campaign_df = pickle.load(f)
+
+    def predict(self, context, model_input: pd.DataFrame) -> pd.DataFrame:
+        # model_input: one-row DataFrame of parameters
+        params = model_input.iloc[0].to_dict()
+        # now you already have self.campaign_df in memory
+        sim = CampaignMCSimulator(
+            overall_budget=params["overall_budget"],
+            n_iterations=int(params["n_iterations"]),
+            pct_min_max=params["pct_min_max"],
+            ctr=params["ctr"],
+            df=self.campaign_df,
+        )
+        return sim.run_simulation()
+```
+
+When you call `mlflow.pyfunc.log_model(...)` you supply
+
+* `artifacts={"campaign_df": "/path/to/pickled_df.pkl"}`,
+* and remove any Spark imports from the model code.
+
+This way there is **no SparkContext** to start at serve time.
+
+---
+
+## 2) If you *must* read a Delta table on the fly…
+
+You need to launch a SparkSession yourself in `load_context()` or `predict()`, but you must:
+
+1. Ship the full PySpark / Spark-on-Python libraries into your serving environment.
+   That means including `pyspark` in your Conda or pip dependencies for the model.
+
+2. Configure a valid `master` URL (even if it’s just local) and JVM options. For example:
+
+   ```python
+   import os
+   from pyspark.sql import SparkSession
+
+   class MCSimulatorPyfunc(mlflow.pyfunc.PythonModel):
+       def load_context(self, context):
+           # set up local Spark
+           os.environ["SPARK_MASTER_HOST"] = "127.0.0.1"
+           os.environ["PYSPARK_SUBMIT_ARGS"] = "--master local[*] pyspark-shell"
+           self.spark = SparkSession.builder \
+               .master("local[*]") \
+               .appName("mc_serving") \
+               .getOrCreate()
+
+       def predict(self, context, model_input: pd.DataFrame) -> pd.DataFrame:
+           params = model_input.iloc[0].to_dict()
+           df_campaign = self.spark.table(params["input_table"]).toPandas()
+           sim = CampaignMCSimulator(
+               overall_budget=params["overall_budget"],
+               n_iterations=int(params["n_iterations"]),
+               pct_min_max=params["pct_min_max"],
+               ctr=params["ctr"],
+               df=df_campaign
+           )
+           return sim.run_simulation()
+   ```
+
+3. **Log** your model with those dependencies in `conda_env` so that the serving container actually has Spark installed:
+
+   ```python
+   mlflow.pyfunc.log_model(
+       artifact_path="monte_carlo_sim",
+       python_model=MCSimulatorPyfunc(),
+       condaspec={
+         "name": "mc_env",
+         "channels": ["defaults", "conda-forge"],
+         "dependencies": [
+           "python=3.12",
+           "pyspark=3.4.1",
+           "pandas",
+           "cloudpickle",
+           # …any other libs…
+         ]
+       },
+       code_paths=["path/to/cue_monte_carlo.py", "path/to/mc_simulator_pyfunc.py"]
+   )
+   ```
+
+   Without shipping PySpark and setting `master`, the Java gateway simply never comes up.
+
+---
+
+### TL;DR
+
+* **Best practice:**
+  Don’t start Spark in your MLflow-served model.  Pre-load the campaign data (pickle or `context.artifacts`) during `load_context()` and then your `predict()` is pure Pandas.
+
+* **If you really need Spark:**
+  a) include PySpark in your model’s Conda/pip deps and b) explicitly configure and launch the SparkSession in `load_context()` before you ever import `pyspark.shell`.
+
+That will eliminate the `[JAVA_GATEWAY_EXITED]` error and let your serving endpoint spin up a JVM gateway properly.

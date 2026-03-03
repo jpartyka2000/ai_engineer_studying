@@ -1,0 +1,47 @@
+No, you don't need to make Column B a column to sync as an embedding vector. Here's why:
+
+- **Embedding Column (Column A)**: This is the column where the vector representations are stored, which will be used for fast lookups in the vector search. These embeddings are typically numeric vectors that represent the data in Column A.
+
+- **Return Value (Column B)**: If you want to return the string value from Column B when a lookup is performed on the embedding in Column A, you don't need to sync Column B as an embedding. Instead, Column B should simply be part of the metadata stored in the index. This allows you to associate the embedding with its corresponding string value.
+
+### Configuration
+- **Column A**: Configure this column as the "embedding column" (used for vector search).
+- **Column B**: Include this column in the "columns to sync" list, but do not transform it into an embedding. It will be synced as is, for retrieval purposes.
+
+### Example
+If Column A contains product descriptions and Column B contains product IDs:
+1. Store embeddings of the product descriptions (Column A) for search.
+2. When a search query is executed, return the associated product ID (Column B) from the metadata.
+
+### Steps in Databricks:
+1. Define Column A as the embedding column during vector search index setup.
+2. Add Column B to the "columns to sync" for inclusion in the metadata.
+3. Ensure your query retrieves the embedding from Column A and the metadata value (Column B).
+
+This way, you optimize your setup by syncing only what's necessary for lookups and results without extra computation.
+
+-------------------------
+
+No, you won't need to execute a separate Databricks SQL query to get the value of Column B if you configure the vector search index correctly. Here's how it works:
+
+When you set up a vector search index in Databricks:
+
+1. **Embedding Column**: Column A is used to compute and store embeddings for the vector search.
+
+2. **Metadata Columns**: Column B (or any additional columns) is synced as metadata. This metadata is returned as part of the vector search results. 
+
+### What Happens During a Query
+When you query for the most semantically similar value in Column A:
+- The system performs the vector similarity search using the embeddings in Column A.
+- The associated metadata columns (e.g., Column B) are returned as part of the search results, without requiring a separate SQL query.
+
+### How to Ensure This Works
+- **Set Column B as a "column to sync"**: This ensures Column B is included in the metadata stored in the vector index.
+- **Configure the Query**: Use the vector search API or SQL integration to include metadata retrieval in the query.
+
+### Example Query
+Here’s an example workflow:
+1. You query for a semantic match using an embedding vector for Column A.
+2. The result will include the most similar value (based on the embeddings in Column A) and the corresponding value of Column B from the synced metadata.
+
+If you set it up this way, you won’t need an additional SQL query to retrieve Column B—Databricks will handle it as part of the vector search output.

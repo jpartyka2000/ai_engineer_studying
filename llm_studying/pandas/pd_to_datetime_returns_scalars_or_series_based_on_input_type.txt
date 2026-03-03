@@ -1,0 +1,57 @@
+Pandas’ `pd.to_datetime()` is **vectorized**, but only when you feed it an **array‑like** (list, NumPy array, Series, Index, etc.). In that case it parses each element and returns a `DatetimeIndex` or `Series` of the same length.
+
+However, if you pass a **scalar** (a single string, integer, or `Timestamp`), it will simply return a single `Timestamp` object—**it does not** implicitly “broadcast” that one value into an N‑length Series.
+
+---
+
+### Behavior summary
+
+| Input type                   | Output                                         |
+| ---------------------------- | ---------------------------------------------- |
+| Scalar (e.g. `"2025-07-28"`) | `pd.Timestamp("2025-07-28")`                   |
+| List/ndarray of strings      | `DatetimeIndex([...], dtype="datetime64[ns]")` |
+| `pd.Series` of strings       | `pd.Series([...], dtype="datetime64[ns]")`     |
+
+```python
+import pandas as pd
+
+# Scalar in → scalar out
+ts = pd.to_datetime("2025-07-28")
+print(type(ts), ts)
+# → <class 'pandas._libs.tslibs.timestamps.Timestamp'> 2025-07-28 00:00:00
+
+# Series in → Series out
+s = pd.Series(["2025-07-28", "2025-07-29"])
+dt = pd.to_datetime(s)
+print(type(dt), dt.dtype, "\n", dt)
+# → <class 'pandas.core.series.Series'> datetime64[ns]
+#     0   2025-07-28
+#     1   2025-07-29
+#     dtype: datetime64[ns]
+```
+
+---
+
+### Broadcasting a scalar timestamp
+
+If you *do* need a Series of the same timestamp repeated N times, you can either:
+
+1. **Create an array of that value** and convert it:
+
+   ```python
+   pd.to_datetime(["2025-07-28"] * len(df))
+   ```
+2. **Parse once** and rely on Pandas’ broadcasting in other operations:
+
+   ```python
+   ts = pd.to_datetime("2025-07-28")
+   df["new_col"] = ts               # broadcasts ts to every row
+   df["filled"] = df["existing"].fillna(ts)
+   ```
+
+---
+
+**Bottom line:**
+
+> • **Vectorized** over array‑likes—gives you one output per input.
+> • **Scalar** in → **scalar** out—no hidden broadcasting.

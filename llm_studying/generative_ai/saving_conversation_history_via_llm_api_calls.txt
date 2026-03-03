@@ -1,0 +1,68 @@
+No, **prior messages and responses are not automatically added** to subsequent API calls when interacting with an LLM through OpenAI's API. Each API call is stateless, meaning the model does not retain memory of previous interactions unless you explicitly include the prior messages in the payload of your current request.
+
+---
+
+### **How Conversation Context Works in the API:**
+To maintain the context of a conversation:
+1. **You Must Include Prior Messages Manually**:
+   - If you want the model to remember earlier parts of the conversation, you need to include those messages in the `messages` array of the current API call.
+   - For example:
+     ```python
+     messages = [
+         {"role": "system", "content": "You are a helpful assistant."},
+         {"role": "user", "content": "Tell me about Python."},
+         {"role": "assistant", "content": "Python is a versatile programming language..."},
+         {"role": "user", "content": "What about its uses in data science?"}
+     ]
+     response = openai.ChatCompletion.create(
+         model="gpt-4",
+         messages=messages
+     )
+     ```
+
+2. **The Model Treats the Entire `messages` Array as the Prompt**:
+   - All the messages you include are treated as the context for the current interaction, and the model generates a response based on this context.
+
+---
+
+### **Why Context Isn’t Retained Automatically:**
+The design of the API is stateless for the following reasons:
+1. **Flexibility**:
+   - You decide how much of the conversation history to include, which can help manage token limits and control the behavior of the interaction.
+
+2. **Efficiency**:
+   - Stateless interactions allow the system to process each request independently without the overhead of tracking sessions or managing memory.
+
+3. **Privacy and Security**:
+   - By not storing conversation history server-side, the API ensures that all interactions remain transient and under your control.
+
+---
+
+### **Best Practices for Maintaining Context:**
+1. **Store Conversation History Locally**:
+   - Maintain a list of messages on the client side and include it in each API call as needed.
+   - Example:
+     ```python
+     conversation = [
+         {"role": "system", "content": "You are a helpful assistant."},
+         {"role": "user", "content": "What is the capital of France?"},
+         {"role": "assistant", "content": "The capital of France is Paris."}
+     ]
+     conversation.append({"role": "user", "content": "What is its population?"})
+     response = openai.ChatCompletion.create(
+         model="gpt-4",
+         messages=conversation
+     )
+     conversation.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
+     ```
+
+2. **Trim Excessive History**:
+   - To avoid hitting token limits, only include the most relevant part of the conversation in the `messages` array.
+
+3. **Rephrase System Prompts Dynamically**:
+   - If the conversation becomes too lengthy, summarize prior interactions or modify the system message to provide a concise context.
+
+---
+
+### **Conclusion:**
+When calling an OpenAI LLM through the API, you are responsible for managing the conversation context. Prior messages and responses must be explicitly included in subsequent calls to maintain the flow of the interaction. This stateless design gives you full control over the context and helps you manage token limits efficiently.

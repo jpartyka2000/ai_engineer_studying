@@ -1,0 +1,77 @@
+Here are a few idiomatic ways to flag or filter the rows in `df_source` whose `LEAD_ID` appears in `df_target`:
+
+---
+
+## 1) Semi-join / anti-join
+
+Spark has two special joins for exactly this use-case:
+
+* **Left-semi** keeps only the rows in `df_source` that have a match in `df_target`.
+* **Left-anti** keeps only the rows in `df_source` that **do not** have a match in `df_target`.
+
+```python
+# keep only source rows whose LEAD_ID is in the target
+df_in_target = df_source.join(
+    df_target.select("LEAD_ID").distinct(),
+    on="LEAD_ID",
+    how="left_semi",
+)
+
+# keep only source rows whose LEAD_ID is NOT in the target
+df_not_in_target = df_source.join(
+    df_target.select("LEAD_ID").distinct(),
+    on="LEAD_ID",
+    how="left_anti",
+)
+```
+
+---
+
+## 2) Ordinary left-join + isNotNull flag
+
+If you want to preserve all rows in `df_source` and just add a boolean “in\_target” column:
+
+```python
+from pyspark.sql.functions import col
+
+df_flagged = (
+    df_source
+      # join in the target’s LEAD_ID
+      .join(
+        df_target.select("LEAD_ID").withColumnRenamed("LEAD_ID","tgt_LEAD_ID"),
+        on=col("LEAD_ID") == col("tgt_LEAD_ID"),
+        how="left"
+      )
+      # flag whether we matched
+      .withColumn("in_target", col("tgt_LEAD_ID").isNotNull())
+      # drop the helper column
+      .drop("tgt_LEAD_ID")
+)
+```
+
+---
+
+## 3) Broadcast a small list + .isin()
+
+If `df_target.LEAD_ID` is small enough to collect to the driver, you can:
+
+```python
+# pull the keys to the driver
+target_ids = [r[0] for r in df_target.select("LEAD_ID").distinct().collect()]
+
+from pyspark.sql.functions import col
+df_flagged = df_source.withColumn(
+    "in_target",
+    col("LEAD_ID").isin(target_ids)
+)
+```
+
+---
+
+### Which to choose?
+
+* **Semi-/anti-join** is the most “Spark native” and scales to large tables.
+* **Left-join + isNotNull** gives you a true/false column in one shot.
+* **.isin()** is simplest if the target keyset is tiny (so collecting it to Python is cheap).
+
+Any of these will let you determine which `LEAD_ID`s in your source appear in your target.

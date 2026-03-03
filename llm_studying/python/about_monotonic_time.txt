@@ -1,0 +1,49 @@
+`time.monotonic()` returns a float representing the value of a monotonic clock—a clock that only moves forward and cannot go backward, even if the system time is changed.
+
+## Key Characteristics
+
+- **Always increases** – unaffected by system clock changes (e.g., NTP adjustments, daylight saving time, manual time changes)
+- **Arbitrary reference point** – the value itself is meaningless; only the *difference* between two calls is useful
+- **Guaranteed non-negative deltas** – `t2 - t1` is always ≥ 0 if `t2` was called after `t1`
+
+## Common Use Case: Measuring Elapsed Time
+
+```python
+import time
+
+start = time.monotonic()
+# ... do some work ...
+time.sleep(1.5)
+end = time.monotonic()
+
+elapsed = end - start
+print(f"Elapsed: {elapsed:.3f} seconds")  # Elapsed: 1.502 seconds
+```
+
+## When to Use It vs Other Clocks
+
+| Function | Use Case |
+|----------|----------|
+| `time.monotonic()` | Measuring durations, timeouts, benchmarks |
+| `time.time()` | Getting actual wall-clock time (can jump forward/backward) |
+| `time.perf_counter()` | High-resolution timing for short benchmarks (also monotonic) |
+
+## Why Not Just Use `time.time()`?
+
+```python
+# Problematic with time.time()
+start = time.time()
+# ... system clock gets adjusted backward by 5 seconds (e.g., NTP sync) ...
+end = time.time()
+elapsed = end - start  # Could be NEGATIVE!
+
+# Safe with time.monotonic()
+start = time.monotonic()
+# ... system clock adjustment has no effect ...
+end = time.monotonic()
+elapsed = end - start  # Always correct
+```
+
+## Related
+
+- `time.monotonic_ns()` – same but returns nanoseconds as an integer (avoids float precision issues for very precise measurements)

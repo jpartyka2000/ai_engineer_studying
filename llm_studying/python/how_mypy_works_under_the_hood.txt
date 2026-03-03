@@ -1,0 +1,60 @@
+Short version: **mypy parses and analyzes your code like a compiler would—without executing it.** It builds a model of your program and checks types against that model.
+
+Here’s what it does under the hood:
+
+1. **Parse (no execution)**
+
+* Reads `.py` files and converts them to an **AST** (abstract syntax tree).
+* It never runs your module top-level code (which a normal Python `import` would).
+
+2. **Semantic analysis**
+
+* Builds **symbol tables** for modules/classes/functions; resolves names and imports.
+* For third-party libs, it uses **type stubs** (`.pyi`) from **typeshed** or installed `*-stubs` packages to know function signatures and types.
+
+3. **Type inference + rules**
+
+* Propagates types through expressions and assignments (e.g., `x = 1` ⇒ `x: int`).
+* Applies annotations you wrote (`def f(x: list[int]) -> str: ...`) and checks usage.
+* Handles **generics** (`list[T]`, `dict[K, V]`), **TypeVar** constraints, **variance**, `@overload`, **Protocols** (structural typing), `TypedDict`, `Literal`, etc.
+
+4. **Control/data-flow analysis (type narrowing)**
+
+* Tracks what can be `None` or a `Union` and **narrows** types along branches:
+
+  ```python
+  from typing import Optional
+  def g(s: Optional[str]) -> int:
+      if s is None:
+          return 0
+      # here mypy knows s is str
+      return len(s)
+  ```
+* Understands guards like `isinstance()`, `assert`, `if x is not None`, `try/except`.
+
+5. **Constraint solving & error reporting**
+
+* Solves constraints for generics/overloads and reports mismatches:
+
+  * wrong argument/return types
+  * missing attributes/methods
+  * unreachable/duplicate return paths, etc.
+
+6. **Plugins & special cases**
+
+* Built-ins for `dataclasses`, `attrs`, `pydantic`, etc. (so generated fields/types are understood).
+* You can add custom plugins for framework-specific typing.
+
+7. **Incremental checking**
+
+* Caches results in `.mypy_cache` and rechecks only what changed.
+
+**What it doesn’t do / limits**
+
+* Dynamic tricks (monkey-patching, runtime `setattr`, metaclass magic) can fool it.
+* Unknown parts fall back to `Any`, which suppresses errors—use `--strict` to tighten.
+* It doesn’t verify runtime values, only what types *could* be, given your code paths.
+
+Tip: use `reveal_type(expr)` in code; mypy prints what it inferred, which is great for debugging type issues.
+
+If you share a snippet you’re curious about, I can walk through exactly how mypy infers and checks its types.

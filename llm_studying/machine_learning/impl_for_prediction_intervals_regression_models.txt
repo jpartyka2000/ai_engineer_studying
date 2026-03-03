@@ -1,0 +1,61 @@
+Below is a complete example that shows how to generate a prediction interval for each prediction and tie the lower and upper bounds directly to each prediction in a final DataFrame:
+
+```python
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+
+# Sample data (replace with your actual data)
+# Here we simulate some data for demonstration purposes
+np.random.seed(42)
+X = pd.DataFrame(np.random.rand(100, 5), columns=[f'feature_{i}' for i in range(5)])
+y = X.sum(axis=1) + np.random.randn(100) * 0.1  # target with some noise
+
+# Split data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Fit the RandomForestRegressor
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Get predictions from each tree (shape: [n_trees, n_samples])
+tree_predictions = np.array([tree.predict(X_test) for tree in rf.estimators_])
+
+# For each test instance, calculate the 2.5th and 97.5th percentiles across tree predictions.
+# These percentiles form the lower and upper bounds of the 95% prediction interval.
+lower_bounds = np.percentile(tree_predictions, 2.5, axis=0)
+upper_bounds = np.percentile(tree_predictions, 97.5, axis=0)
+
+# Get the overall prediction (e.g., the mean prediction across trees)
+predictions = rf.predict(X_test)
+
+# Combine the predictions and their corresponding intervals into a DataFrame
+results_df = pd.DataFrame({
+    'prediction': predictions,
+    'lower_bound': lower_bounds,
+    'upper_bound': upper_bounds
+}, index=X_test.index)
+
+print(results_df.head())
+```
+
+### Explanation
+
+- **Individual Tree Predictions:**  
+  The code gathers predictions from each individual tree in the ensemble with:
+  ```python
+  tree_predictions = np.array([tree.predict(X_test) for tree in rf.estimators_])
+  ```
+  This produces an array where each row corresponds to a tree and each column to a test instance.
+
+- **Quantile Calculation:**  
+  The 2.5th percentile (`lower_bounds`) and 97.5th percentile (`upper_bounds`) are calculated along axis 0 for each test instance. These serve as the lower and upper ends of a 95% prediction interval.
+  
+- **Aggregated Prediction:**  
+  The overall prediction for each test instance is obtained by `rf.predict(X_test)`. Typically, this is the mean of all tree predictions.
+
+- **Combining into a DataFrame:**  
+  Finally, a DataFrame (`results_df`) is created that ties each prediction with its corresponding lower and upper bound. Each row represents one instance from `X_test`, so you can directly see the interval \([ \text{lower_bound}, \text{upper_bound} ]\) for every prediction.
+
+This method clearly ties each prediction to its calculated prediction interval.

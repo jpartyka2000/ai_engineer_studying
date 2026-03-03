@@ -1,0 +1,81 @@
+The `ps.BeamSearch(beam_width=50)` call tells **pysubgroup** to use a **beam‐search** strategy when exploring the space of possible feature‐combinations. Here’s what that means in practice:
+
+---
+
+## 1. What is Beam Search in Subgroup Discovery?
+
+* **Breadth-first with pruning**
+  Classic breadth-first search would expand *every* partial rule at depth \$d`to all possible single‐selector extensions at depth`d+1\`. Beam search instead:
+
+  1. **Generates** all one-step extensions of the current “beam” of partial rules.
+  2. **Scores** those extensions by your quality function (here, WRAcc).
+  3. **Keeps only the top `beam_width`** of them.
+  4. Discards the rest.
+
+* **Iterates** until you’ve reached your maximum rule length (`depth=5` in your example) or cannot generate any new extensions.
+
+---
+
+## 2. Role of `beam_width`
+
+* **Beam width = 50** means “at each level of the search tree, only keep the 50 highest-scoring partial rules and discard the rest.”
+* **Larger beam\_width** → more coverage (explore more combinations), but **higher** memory/time cost.
+* **Smaller beam\_width** → faster & less memory, but risk missing some high-quality subgroups because their prefixes didn’t make it into the beam.
+
+---
+
+## 3. How It Works in Your Code
+
+```python
+search = ps.BeamSearch(beam_width=50)
+result = search.execute(task)
+```
+
+1. **Level 1 (depth = 1)**
+
+   * Start with all single‐selector rules (e.g. `age > 30`, `country == 'US'`), score each, keep the top 50.
+
+2. **Level 2 (depth = 2)**
+
+   * For each of those 50, generate all possible one‐more‐selector extensions (e.g. `age>30 AND country=='US'`, `age>30 AND gender=='F'`, …).
+   * Score every extension by WRAcc.
+   * Keep the 50 best.
+
+3. **Repeat** for depths 3, 4, and 5.
+
+4. **Result**
+
+   * Among all the partial rules you kept at depth 5, pick the overall top 25 (your `result_set_size`) to return.
+
+---
+
+## 4. Trade‐Offs and Tuning
+
+| Beam Width  | Pros                                              | Cons                       |
+| ----------- | ------------------------------------------------- | -------------------------- |
+| Small (10)  | Very fast, low memory use                         | May miss interesting rules |
+| Medium (50) | Good balance of speed vs. coverage                | Moderate memory/time cost  |
+| Large (200) | Higher chance to find “rare” or complex subgroups | Much slower, more RAM      |
+
+* **If you see too few diverse rules** or they’re too similar, try **increasing** `beam_width`.
+* **If the search is too slow** or you’re running out of memory, **decrease** it.
+
+---
+
+## 5. Why Beam Search vs. DFS or Exhaustive?
+
+* **DFS** (Depth‐First Search) can drill very deep into one branch and may find highly specific rules quickly, but it can also get “stuck” exploring low-quality branches.
+* **Exhaustive** search (evaluating *every* possible rule up to depth 5) is usually intractable once you have dozens of selectors.
+* **Beam** search strikes a middle ground:
+
+  * Systematically expands breadth‐first (so you explore many different prefixes)
+  * Prunes aggressively to keep compute feasible
+  * Still guarantees you’ll find the best rules *among* those whose prefixes always stayed in the top `beam_width`.
+
+---
+
+### In Summary
+
+* `ps.BeamSearch(beam_width=50)` means **“at each depth of rule length, hold onto only the 50 best partial rules”**
+* It balances **exploration** (trying many different selector combinations) against **efficiency** (never letting the search tree blow up exponentially).
+* You can tune `beam_width` up or down depending on your dataset size, feature count, and how deep/complex you expect your best subgroups to be.

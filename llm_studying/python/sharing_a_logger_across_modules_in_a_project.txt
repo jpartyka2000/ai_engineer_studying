@@ -1,0 +1,99 @@
+Yes, that's a good idea. Python's `logging` module already has a built-in mechanism for sharing loggers across modules.
+
+## Add a `logger.py` module
+
+```
+question_generator/
+├── __init__.py
+├── logger.py            # Logging configuration
+├── main.py
+├── models.py
+├── strategies.py
+├── services.py
+├── generator.py
+└── data/
+```
+
+### `logger.py`
+
+```python
+"""Logging configuration for question generation."""
+
+import logging
+import os
+
+def setup_logger() -> logging.Logger:
+    """Configure and return the application logger."""
+    logger = logging.getLogger("question_generation")
+    
+    # Avoid adding handlers multiple times if setup_logger is called more than once
+    if not logger.handlers:
+        level = os.getenv("LOG_LEVEL", "INFO")
+        logger.setLevel(level)
+        
+        handler = logging.StreamHandler()
+        handler.setLevel(level)
+        
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    
+    return logger
+
+def get_logger() -> logging.Logger:
+    """Get the application logger."""
+    return logging.getLogger("question_generation")
+```
+
+## How to use it
+
+### In `main.py` (entry point) — configure once:
+
+```python
+from question_generator.logger import setup_logger
+
+def main() -> None:
+    # Initialize logger first thing
+    logger = setup_logger()
+    logger.info("Starting question generation...")
+    
+    # ... rest of main
+```
+
+### In all other modules — just retrieve it:
+
+```python
+# services.py
+from question_generator.logger import get_logger
+
+logger = get_logger()
+
+class LLMClient:
+    def __init__(self, model_name_str: str):
+        logger.debug("Initialized LLMClient with model: %s", model_name_str)
+        # ...
+```
+
+```python
+# generator.py
+from question_generator.logger import get_logger
+
+logger = get_logger()
+
+class QuestionPoolManager:
+    def __init__(self):
+        logger.debug("Initialized QuestionPoolManager")
+        # ...
+```
+
+## Why this works
+
+Python's `logging.getLogger("name")` returns the **same logger instance** for a given name across your entire application. So:
+
+1. `setup_logger()` configures the `"question_generation"` logger once at startup
+2. `get_logger()` retrieves that same configured logger from anywhere
+3. All modules share the same logger with the same handlers and formatting
+
+This is the standard Python pattern—no need for singletons or global variables.

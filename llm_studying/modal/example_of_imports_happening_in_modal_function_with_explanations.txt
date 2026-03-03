@@ -1,0 +1,46 @@
+The comment in the code explains it directly:
+
+```python
+# Local imports so your laptop doesn't need vllm / CUDA just to import the file
+```
+
+## The problem with top-level imports
+
+If these imports were at the module level:
+
+```python
+# At top of file
+from vllm import AsyncEngineArgs, AsyncLLMEngine  # Requires CUDA!
+from huggingface_hub import snapshot_download
+```
+
+Then **anyone who imports this module** would need:
+- vLLM installed (which is large and complex)
+- CUDA drivers and GPU libraries
+- All the heavy dependencies these packages pull in
+
+This would break on your laptop, in CI pipelines, or anywhere without a GPU—even if you just wanted to inspect the code, run tests on other parts, or deploy the Modal app definition.
+
+## How Modal works
+
+Modal serializes your code and ships it to remote containers that *do* have GPUs. The actual execution of `_warm_and_snapshot` happens **only inside Modal's GPU containers**, not on your local machine.
+
+By deferring the imports to inside the function:
+- Your local machine only needs `modal` and `fastapi` to deploy
+- The heavy GPU imports only happen when the code actually runs on Modal's infrastructure
+- You can `modal deploy` from a MacBook without CUDA
+
+## Common pattern
+
+This is a standard pattern in Modal apps:
+
+```python
+# Top level: lightweight, always safe
+import modal
+
+# Inside functions that run remotely: heavy GPU stuff
+@app.function(gpu="A100")
+def train():
+    import torch  # Only imported on the GPU container
+    ...
+```

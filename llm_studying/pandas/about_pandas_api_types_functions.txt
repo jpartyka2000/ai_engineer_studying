@@ -1,0 +1,136 @@
+## The `pd.api.types` Module
+
+This is pandas' official module for type-checking and type-related utilities. It provides a stable, public API for inspecting and working with dtypes.
+
+**Why use it?**
+
+1. **Stability**: Functions in `pd.api` are part of the public API and less likely to change between pandas versions
+2. **Robustness**: Handles edge cases and dtype variants you might not think of
+3. **Readability**: More explicit than manual dtype comparisons
+
+---
+
+### Dtype Checking Functions
+
+**Numeric types:**
+
+```python
+pd.api.types.is_numeric_dtype(series)        # Any numeric (int, float, complex)
+pd.api.types.is_integer_dtype(series)        # Any integer type
+pd.api.types.is_signed_integer_dtype(series) # Signed integers only
+pd.api.types.is_unsigned_integer_dtype(series) # Unsigned integers only
+pd.api.types.is_float_dtype(series)          # Any float type
+pd.api.types.is_complex_dtype(series)        # Complex numbers
+```
+
+**Datetime types:**
+
+```python
+pd.api.types.is_datetime64_any_dtype(series) # Any datetime variant
+pd.api.types.is_datetime64_dtype(series)     # Non-timezone-aware datetime
+pd.api.types.is_datetime64tz_dtype(series)   # Timezone-aware datetime
+pd.api.types.is_timedelta64_dtype(series)    # Timedelta
+pd.api.types.is_period_dtype(series)         # Period
+```
+
+**String and object types:**
+
+```python
+pd.api.types.is_string_dtype(series)         # String or object dtype
+pd.api.types.is_object_dtype(series)         # Object dtype specifically
+```
+
+**Other types:**
+
+```python
+pd.api.types.is_bool_dtype(series)           # Boolean
+pd.api.types.is_categorical_dtype(series)    # Categorical
+pd.api.types.is_sparse(series)               # Sparse array
+pd.api.types.is_interval_dtype(series)       # Interval
+pd.api.types.is_extension_array_dtype(series) # Any extension dtype
+```
+
+---
+
+### Scalar Checking Functions
+
+These check individual values rather than entire series:
+
+```python
+pd.api.types.is_scalar(value)        # Is it a scalar (not list/array)?
+pd.api.types.is_number(value)        # Is it a numeric scalar?
+pd.api.types.is_integer(value)       # Is it an integer scalar?
+pd.api.types.is_float(value)         # Is it a float scalar?
+pd.api.types.is_bool(value)          # Is it a boolean scalar?
+pd.api.types.is_complex(value)       # Is it a complex scalar?
+```
+
+**Example:**
+
+```python
+pd.api.types.is_scalar(5)           # True
+pd.api.types.is_scalar([1, 2, 3])   # False
+pd.api.types.is_number(3.14)        # True
+pd.api.types.is_number("hello")     # False
+```
+
+---
+
+### List-like and Array-like Checking
+
+```python
+pd.api.types.is_list_like(obj)       # List, tuple, array, Series, etc.
+pd.api.types.is_array_like(obj)      # Has dtype and shape attributes
+pd.api.types.is_dict_like(obj)       # Dict-like (has keys, values, items)
+pd.api.types.is_iterator(obj)        # Is an iterator
+pd.api.types.is_hashable(obj)        # Can be used as dict key
+pd.api.types.is_re(obj)              # Is a compiled regex
+pd.api.types.is_re_compilable(obj)   # Can be compiled as regex
+```
+
+---
+
+### Type Inference and Conversion
+
+```python
+# Infer the type of an array-like object
+pd.api.types.infer_dtype(series)
+# Returns strings like: 'string', 'integer', 'floating', 'datetime64', 
+# 'boolean', 'mixed', 'mixed-integer', 'empty', etc.
+```
+
+**Example:**
+
+```python
+pd.api.types.infer_dtype(['a', 'b', 'c'])           # 'string'
+pd.api.types.infer_dtype([1, 2, 3])                 # 'integer'
+pd.api.types.infer_dtype([1.0, 2.5, 3.7])           # 'floating'
+pd.api.types.infer_dtype([1, 'a', 3.5])             # 'mixed'
+pd.api.types.infer_dtype([True, False, True])       # 'boolean'
+pd.api.types.infer_dtype(pd.to_datetime(['2024-01-01'])) # 'datetime64'
+```
+
+---
+
+### Practical Example
+
+Here's how you might refactor the original code using `pd.api.types`:
+
+```python
+def infer_numeric_columns(df: pd.DataFrame) -> List[str]:
+    return [col for col in df.columns if pd.api.types.is_numeric_dtype(df[col])]
+
+
+def infer_boolean_columns(df: pd.DataFrame) -> List[str]:
+    return [col for col in df.columns if pd.api.types.is_bool_dtype(df[col])]
+
+
+def infer_string_columns(df: pd.DataFrame) -> List[str]:
+    return [col for col in df.columns if pd.api.types.is_string_dtype(df[col])]
+
+
+def infer_date_columns(df: pd.DataFrame) -> List[str]:
+    return [col for col in df.columns if pd.api.types.is_datetime64_any_dtype(df[col])]
+```
+
+This is cleaner and more maintainable than checking dtype strings directly.

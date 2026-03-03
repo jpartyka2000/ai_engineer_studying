@@ -1,0 +1,28 @@
+The issue is that `plots/normality_plot.png` is a relative path, and in the Databricks execution environment the working directory doesn't support writing files this way. You need to use an absolute path that Databricks can write to.
+
+Try using `/dbfs/tmp/` instead:
+
+```python
+summary_analytics_obj.create_normality_histogram(
+    df=df_final,
+    column_name="deal_stage_closed_won_stage_flag_final_rate",
+    save_path="/dbfs/tmp/normality_plot.png",
+)
+```
+
+Or if you want to organize by environment:
+
+```python
+import os
+
+save_dir = f"/dbfs/tmp/{target_schema}"
+os.makedirs(save_dir, exist_ok=True)
+
+summary_analytics_obj.create_normality_histogram(
+    df=df_final,
+    column_name="deal_stage_closed_won_stage_flag_final_rate",
+    save_path=f"{save_dir}/normality_plot.png",
+)
+```
+
+The `/dbfs/` path maps to Databricks' distributed file system and is writable from Python code running on the cluster.

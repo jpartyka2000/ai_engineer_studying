@@ -1,0 +1,416 @@
+## 📋 Deep Dive: Functions vs Methods in Python
+
+---
+
+### The Short Answer
+
+| Term | What It Is |
+|------|------------|
+| **Function** | A callable object defined with `def` or `lambda` |
+| **Method** | A function that is accessed through a class or instance |
+
+The key insight: **methods are just functions that have been "bound" to an object**. There's no separate "method" definition syntax in Python — methods are created dynamically when you access a function through an instance.
+
+---
+
+### Functions
+
+A function is a standalone callable object:
+
+```python
+def greet(name):
+    return f"Hello, {name}!"
+
+# It's a function
+print(type(greet))  # <class 'function'>
+
+# Call it directly
+print(greet("Alice"))  # "Hello, Alice!"
+
+# Functions are first-class objects
+my_func = greet
+print(my_func("Bob"))  # "Hello, Bob!"
+```
+
+---
+
+### Methods
+
+A method is created when a function is accessed through an instance. The function gets "bound" to that instance:
+
+```python
+class Dog:
+    def bark(self):
+        return f"{self.name} says Woof!"
+    
+    def __init__(self, name):
+        self.name = name
+
+dog = Dog("Buddy")
+
+# Access through class — get the FUNCTION
+print(type(Dog.bark))  # <class 'function'>
+
+# Access through instance — get a BOUND METHOD
+print(type(dog.bark))  # <class 'method'>
+```
+
+---
+
+### How the Transformation Happens
+
+When you access a function through an instance, Python's descriptor protocol creates a bound method:
+
+```python
+class Example:
+    def my_method(self):
+        return "Hello!"
+
+obj = Example()
+
+# Step by step:
+# 1. Python looks up 'my_method' in Example.__dict__
+func = Example.__dict__['my_method']
+print(func)        # <function Example.my_method at 0x...>
+print(type(func))  # <class 'function'>
+
+# 2. Since func has __get__, Python calls it
+bound = func.__get__(obj, Example)
+print(bound)        # <bound method Example.my_method of <Example object>>
+print(type(bound))  # <class 'method'>
+
+# 3. This is what obj.my_method returns
+print(obj.my_method == bound)  # True
+```
+
+---
+
+### Anatomy of a Bound Method
+
+A bound method carries two pieces of information:
+
+```python
+class Person:
+    def introduce(self):
+        return f"I am {self.name}"
+
+p = Person()
+p.name = "Alice"
+
+method = p.introduce
+
+# The original function
+print(method.__func__)  # <function Person.introduce at 0x...>
+
+# The instance it's bound to
+print(method.__self__)  # <Person object at 0x...>
+
+# When you call the method, Python essentially does:
+# method.__func__(method.__self__)
+print(method())  # "I am Alice"
+```
+
+---
+
+### Visual Comparison
+
+```
+FUNCTION                          BOUND METHOD
+────────                          ────────────
+┌─────────────────┐               ┌─────────────────┐
+│ def bark(self): │               │  __func__ ──────┼──▶ def bark(self):
+│     return ...  │               │                 │        return ...
+└─────────────────┘               │  __self__ ──────┼──▶ <Dog object>
+                                  └─────────────────┘
+                                  
+Standalone                        Bound to an instance
+Takes explicit self               self is "baked in"
+Dog.bark                          dog.bark
+```
+
+---
+
+### Calling Functions vs Methods
+
+```python
+class Calculator:
+    def __init__(self, value):
+        self.value = value
+    
+    def add(self, x):
+        return self.value + x
+
+calc = Calculator(10)
+
+# METHOD call — self is automatic
+result1 = calc.add(5)
+print(result1)  # 15
+
+# FUNCTION call — must pass self explicitly
+result2 = Calculator.add(calc, 5)
+print(result2)  # 15
+
+# These are equivalent!
+```
+
+---
+
+### The Three Types of Methods
+
+Python has three decorators that modify how functions become methods:
+
+#### 1. Instance Methods (default)
+
+```python
+class Example:
+    def instance_method(self):
+        return f"Instance: {self}"
+
+obj = Example()
+
+# Bound to instance
+print(obj.instance_method())  # Instance: <Example object>
+
+# First argument receives the instance
+```
+
+#### 2. Class Methods (`@classmethod`)
+
+```python
+class Example:
+    @classmethod
+    def class_method(cls):
+        return f"Class: {cls.__name__}"
+
+obj = Example()
+
+# Bound to class, not instance
+print(obj.class_method())      # Class: Example
+print(Example.class_method())  # Class: Example
+
+# First argument receives the class
+```
+
+#### 3. Static Methods (`@staticmethod`)
+
+```python
+class Example:
+    @staticmethod
+    def static_method():
+        return "Static: no binding"
+
+obj = Example()
+
+# Not bound to anything — just a regular function
+print(obj.static_method())      # Static: no binding
+print(Example.static_method())  # Static: no binding
+
+# No automatic first argument
+```
+
+---
+
+### Comparison Table
+
+| Aspect | Function | Instance Method | Class Method | Static Method |
+|--------|----------|-----------------|--------------|---------------|
+| Type when accessed on class | `function` | `function` | `method` | `function` |
+| Type when accessed on instance | `function` | `method` | `method` | `function` |
+| First argument | None automatic | `self` (instance) | `cls` (class) | None automatic |
+| Bound to | Nothing | Instance | Class | Nothing |
+| Can access instance state | No | Yes | No | No |
+| Can access class state | No | Yes | Yes | No |
+
+```python
+class Demo:
+    class_attr = "class level"
+    
+    def __init__(self):
+        self.instance_attr = "instance level"
+    
+    def instance_method(self):
+        return f"{self.instance_attr}, {self.class_attr}"
+    
+    @classmethod
+    def class_method(cls):
+        # return cls.instance_attr  # ERROR — no access to instance
+        return cls.class_attr
+    
+    @staticmethod
+    def static_method():
+        # return self.instance_attr  # ERROR — no self
+        # return cls.class_attr      # ERROR — no cls
+        return "completely independent"
+```
+
+---
+
+### Functions Defined Outside Classes
+
+You can use any function as a method by assigning it to a class:
+
+```python
+def outside_function(self, x):
+    return f"{self.name} received {x}"
+
+class MyClass:
+    def __init__(self, name):
+        self.name = name
+    
+    # Assign the outside function as a method
+    process = outside_function
+
+obj = MyClass("Handler")
+
+# It works just like a regular method!
+print(obj.process(42))  # "Handler received 42"
+
+# Because the descriptor protocol binds it
+print(type(MyClass.process))  # <class 'function'>
+print(type(obj.process))      # <class 'method'>
+```
+
+---
+
+### Lambda Functions as Methods
+
+Lambdas work the same way:
+
+```python
+class Multiplier:
+    def __init__(self, factor):
+        self.factor = factor
+    
+    # Lambda as a method
+    multiply = lambda self, x: self.factor * x
+
+m = Multiplier(3)
+print(m.multiply(5))  # 15
+print(type(m.multiply))  # <class 'method'>
+```
+
+---
+
+### Unbound Methods (Historical Note)
+
+In Python 2, accessing a method through a class gave you an "unbound method" object. In Python 3, this was simplified — you just get the function:
+
+```python
+# Python 3
+class Example:
+    def method(self):
+        pass
+
+print(type(Example.method))  # <class 'function'> — just a function!
+
+# You can call it, but must pass self manually
+obj = Example()
+Example.method(obj)  # Works — explicit self
+```
+
+---
+
+### Practical Examples
+
+#### Storing Methods in Variables
+
+```python
+class TextProcessor:
+    def __init__(self, text):
+        self.text = text
+    
+    def uppercase(self):
+        return self.text.upper()
+    
+    def lowercase(self):
+        return self.text.lower()
+    
+    def titlecase(self):
+        return self.text.title()
+
+proc = TextProcessor("hello world")
+
+# Store bound methods in a list
+transformations = [proc.uppercase, proc.lowercase, proc.titlecase]
+
+for transform in transformations:
+    print(transform())  # Each method remembers 'proc' as self
+    
+# Output:
+# HELLO WORLD
+# hello world
+# Hello World
+```
+
+#### Callback Functions vs Methods
+
+```python
+class Button:
+    def __init__(self, label):
+        self.label = label
+        self.on_click = None  # Callback slot
+    
+    def click(self):
+        if self.on_click:
+            self.on_click()
+
+class App:
+    def __init__(self):
+        self.counter = 0
+        self.button = Button("Click me")
+        # Assign a BOUND METHOD as callback
+        self.button.on_click = self.handle_click
+    
+    def handle_click(self):
+        self.counter += 1
+        print(f"Clicked {self.counter} times")
+
+app = App()
+app.button.click()  # "Clicked 1 times"
+app.button.click()  # "Clicked 2 times"
+
+# Works because handle_click is bound to app
+```
+
+#### Method References
+
+```python
+class Calculator:
+    def add(self, a, b):
+        return a + b
+    
+    def subtract(self, a, b):
+        return a - b
+
+calc = Calculator()
+
+# Get method references
+operations = {
+    '+': calc.add,
+    '-': calc.subtract,
+}
+
+# Use them later
+print(operations['+'](10, 3))  # 13
+print(operations['-'](10, 3))  # 7
+```
+
+---
+
+### Summary
+
+| Question | Answer |
+|----------|--------|
+| What is a function? | A callable defined with `def` or `lambda` |
+| What is a method? | A function accessed through a class/instance |
+| How are methods created? | Via the descriptor protocol (`__get__`) |
+| What's a bound method? | A method + the instance it's bound to |
+| Where is `self` stored? | In the bound method's `__self__` attribute |
+| Can functions become methods? | Yes, by assigning them to a class |
+| Is there a `def method` syntax? | No — methods are just functions in a class |
+
+The elegance of Python's design is that there's no fundamental distinction between functions and methods at the definition level — the transformation happens automatically through the descriptor protocol when you access a function through an instance.
+
+---
+
+Ready for Question 6?

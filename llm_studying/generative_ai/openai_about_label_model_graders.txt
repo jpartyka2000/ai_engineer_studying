@@ -1,0 +1,55 @@
+**Label model graders** let you automatically verify that a model’s output belongs to a predefined set of acceptable labels. Instead of free-form scoring, you’re asking the grader to pick—or reject—entries from a fixed list.
+
+```json
+{
+  "type":           "label_model",
+  "name":           "<your_grader_name>",
+  "model":          "<openai_or_oss_model>",
+  "input":          [ Message[], … ],
+  "passing_labels": [ "labelA", "labelB", … ],
+  "labels":         [ "labelA", "labelB", "labelC", … ],
+  "sampling_params": {
+    "max_tokens":       1024,
+    "top_p":            1,
+    "reasoning_effort": "medium"
+  }
+}
+```
+
+### Key fields
+
+* **`type: "label_model"`**
+  Chooses the label-checking flow rather than numeric scoring.
+
+* **`name` / `model`**
+  Identifiers for your grader and which LLM to call.
+
+* **`input: Message[]`**
+  An **array of chat messages**, each with a `role` and `content`. You can include:
+
+  * System/developer prompts (to instruct the grader).
+  * The user’s original query and the model’s reply as separate messages.
+    Use templating (`{{ item… }}`, `{{ sample… }}`) if you need to inject ground-truth or sample output.
+
+* **`labels`**
+  The complete set of strings the grader is allowed to pick from. This defines the label universe.
+
+* **`passing_labels`**
+  A subset of `labels` that count as a **pass**. If the grader’s chosen label is in this list, the example passes (otherwise it fails).
+
+* **`sampling_params`**
+  Standard generation settings for the underlying LLM:
+
+  * `max_tokens`, `top_p`, etc.
+  * `reasoning_effort` to control chain-of-thought depth.
+
+### How it works
+
+1. **Frame the chat**: The grader assembles the `input` messages—e.g. a system prompt like “You are a classification judge,” followed by the user’s prompt and the model’s answer.
+2. **Invoke the model**: It asks the specified LLM to choose one of the allowed `labels`.
+3. **Parse & evaluate**:
+
+   * If the returned label is in **`passing_labels`**, the grader assigns a pass (score=1).
+   * Otherwise it assigns a fail (score=0).
+
+This approach is ideal for classification tasks—ticket routing, sentiment tagging, intent detection—where you want to enforce that the model’s reply is exactly one of your defined categories.

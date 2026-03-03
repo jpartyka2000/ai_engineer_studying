@@ -1,0 +1,45 @@
+**Sequential `await` Pattern in Async Python**
+
+When you have multiple independent asynchronous operations that must run one after the other, the cleanest approach is to wrap them in a single driver coroutine (commonly named `main`) and then call it with `asyncio.run()`. Inside your `main`, each `await` pauses until that coroutine completes before moving on:
+
+```python
+import asyncio
+
+async def fetch_data():
+    # e.g. perform an HTTP request or database query
+    await asyncio.sleep(1)
+    return {"data": 123}
+
+async def process_data(data):
+    # e.g. crunch numbers, write to disk
+    await asyncio.sleep(0.5)
+    return f"processed {data}"
+
+async def save_results(result):
+    # e.g. upload or save to file
+    await asyncio.sleep(0.2)
+    print("Saved:", result)
+
+async def main():
+    # 1. Fetch
+    raw = await fetch_data()
+    print("Fetched:", raw)
+
+    # 2. Process
+    processed = await process_data(raw["data"])
+    print("Processed:", processed)
+
+    # 3. Save
+    await save_results(processed)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Why use this pattern?**
+
+* **Clarity of flow**: steps happen in explicit order.
+* **Single event loop**: `asyncio.run(main())` spins up one loop and tears it down, avoiding nested loops.
+* **Error propagation**: exceptions bubble naturally from the deepest coroutine up through `main`, letting you catch them centrally if needed.
+
+If you later decide you want to overlap some tasks (e.g. fetch two resources in parallel), you can upgrade to `asyncio.gather()` inside `main`, but for purely sequential logic, simple chained `await` calls keep your code straightforward and easy to read.

@@ -1,0 +1,22 @@
+The `code_paths` argument to `mlflow.pyfunc.log_model()` tells MLflow to include your own source files (scripts or entire directories) in the model artifact bundle. Concretely, when you pass:
+
+```python
+mlflow.pyfunc.log_model(
+    …,
+    code_paths=["mc_simulator_pyfunc.py", "cue_monte_carlo.py"],
+    …
+)
+```
+
+MLflow will:
+
+1. Copy those files into the model’s `python_env/` (or `code/`) folder inside the logged model directory.
+2. Add that directory to the `PYTHONPATH` at load/serve time.
+
+As a result, when the serving container does
+
+```python
+import mc_simulator_pyfunc
+```
+
+(or any of your modules), it will find them bundled alongside the model. Without `code_paths`, only standard library and installed packages are available, so your custom modules wouldn’t be importable.

@@ -1,0 +1,61 @@
+Good question — that `format='ISO8601'` part is a **special flag** introduced in modern versions of Pandas (v2.0+) for `pd.to_datetime`.
+
+Here’s what it means:
+
+---
+
+### 🧠 Explanation
+
+Normally, `pd.to_datetime()` tries to infer the date format automatically (which can be slow and sometimes ambiguous).
+If you **know** your timestamps follow the **ISO 8601** standard — like:
+
+```
+2025-10-20T14:33:05Z
+2025-10-20T14:33:05+00:00
+2025-10-20 14:33:05
+2025-10-20T14:33:05.123456Z
+```
+
+—you can tell Pandas explicitly by setting:
+
+```python
+format='ISO8601'
+```
+
+That tells Pandas to use a **fast, built-in C parser** optimized for ISO 8601 timestamps, rather than guessing the format.
+
+---
+
+### ⚙️ In your line
+
+```python
+campaign_df['start_dt'] = pd.to_datetime(
+    campaign_df['start_ts'], format='ISO8601', utc=True
+).dt.tz_localize(None)
+```
+
+Here’s what happens step by step:
+
+1. `pd.to_datetime(..., format='ISO8601', utc=True)`
+   → Parses your `'start_ts'` strings assuming they’re ISO8601 timestamps, and converts them to timezone-aware datetimes in UTC.
+
+2. `.dt.tz_localize(None)`
+   → Strips the timezone info, making them *naive* datetimes (no tzinfo attached).
+
+---
+
+### ✅ When to Use
+
+Use `format='ISO8601'` when your timestamps are in one of the standard ISO formats (with or without time zone indicators like `Z` or `+00:00`).
+This is both faster and more reliable than letting Pandas infer the format automatically.
+
+---
+
+### ⚠️ Note
+
+* Prior to Pandas 2.0, `format='ISO8601'` wasn’t supported — you’d just use `pd.to_datetime(..., utc=True)` without `format`.
+* You can’t mix `format='ISO8601'` with other custom format strings like `"%Y-%m-%d"`. It’s a special keyword, not a format pattern.
+
+---
+
+Would you like me to show a quick example comparing `format='ISO8601'` vs automatic inference (so you can see the speed and behavior difference)?

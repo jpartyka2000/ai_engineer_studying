@@ -1,0 +1,47 @@
+Pandas treats **any** array‐like you pass in as “column data” and will wrap it in a `Series` behind the scenes when building the DataFrame. A `DatetimeIndex` is just a specialized `Index` that also behaves like a length‐N sequence of `datetime64[ns]` values. Here’s roughly what pandas does under the hood:
+
+1. **You pass a dict**
+
+   ```python
+   data = {
+     'day': pd.date_range(...),   # a DatetimeIndex
+     'value': [10,20,30,...]      # a plain Python list
+   }
+   df = pd.DataFrame(data)
+   ```
+
+2. **Column creation**
+   For each key/value pair, pandas effectively does:
+
+   ```python
+   # internally, something like this for each column:
+   col_ser = pd.Series(data['day'], name='day')
+   ```
+
+   Because `pd.Series()` accepts an `Index` as its `data` argument, it copies those 7 timestamps into a `Series` of length 7, with dtype `datetime64[ns]`.
+
+3. **New DataFrame index**
+   The newly created Series all get a **fresh** `RangeIndex(0, 7)` as their index unless you explicitly tell pandas to use one of your columns as the DataFrame index (`df.set_index('day')`) or supply your own index to the constructor.
+
+4. **No magic conversion**
+   There’s no hidden “special” promotion of a DateTimeIndex into the DataFrame’s index—pandas simply sees it as an array of datetimes and wraps it in a Series like any other sequence.
+
+So in your example, when you write:
+
+```python
+df = pd.DataFrame({
+    'day': pd.date_range('2025-01-01', periods=7, freq='D'),
+    'value': [10,20,30,40,50,60,70]
+})
+```
+
+Pandas is doing something equivalent to:
+
+```python
+day_ser   = pd.Series(pd.date_range('2025-01-01', periods=7, freq='D'), name='day')
+value_ser = pd.Series([10,20,30,40,50,60,70], name='value')
+
+df = pd.DataFrame({ 'day': day_ser, 'value': value_ser })
+```
+
+And that’s why your `"day"` column ends up as a `Series` of timestamps, even though you originally supplied a `DatetimeIndex`.

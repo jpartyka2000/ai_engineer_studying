@@ -1,0 +1,42 @@
+Sure! Let's walk through the flow of control in this code, step by step:
+
+### **1. Define the Fixture (`database_connection`)**
+```python
+@pytest.fixture
+def database_connection():
+    # Setup
+    conn = create_database_connection()  # Step 1: Establish the database connection
+    yield conn  # Step 2: Provide the connection to the test function
+
+    # Teardown
+    conn.close()  # Step 3: Clean up (close the connection after the test)
+```
+
+- **Step 1 (Setup):** The fixture `database_connection` defines the setup process. The `create_database_connection()` function is called to establish a database connection.
+- **Step 2 (Yield):** The `yield` statement sends the connection object (`conn`) to the test function (`test_query`). This means that control is handed over to the test function. After the test completes, the code after `yield` will execute.
+- **Step 3 (Teardown):** After the test function completes, the control returns to the fixture. The connection is closed using `conn.close()`, ensuring that any resources (like database connections) are cleaned up properly.
+
+### **2. Test Function (`test_query`)**
+```python
+def test_query(database_connection):
+    result = database_connection.query("SELECT * FROM users")
+    assert len(result) > 0
+```
+
+- **Test Starts:** The `test_query` function receives the `database_connection` fixture as an argument.
+- **Fixture Injection:** pytest automatically looks for a fixture named `database_connection` and injects the return value from the fixture (the `conn` object) into the test function.
+- **Database Query:** Inside the test, the `query()` method of the `conn` object is called to fetch data from the database (`SELECT * FROM users`).
+- **Assertion:** The test asserts that the length of the result set is greater than zero, indicating that there is at least one user in the `users` table.
+
+### **3. Flow Control in Detail:**
+1. **Test Start:** pytest starts executing the test (`test_query`).
+2. **Fixture Setup:** Before running `test_query`, pytest calls the `database_connection` fixture function. The database connection is established.
+3. **Yield:** The `yield` in the fixture sends the connection object to the test function, and the test function begins executing.
+4. **Test Execution:** The test queries the database using the `database_connection` fixture, performs the assertion, and completes.
+5. **Teardown:** Once the test completes, control returns to the fixture, where the connection is closed using `conn.close()`.
+
+### **Summary of Flow:**
+- **Fixture (`database_connection`)**: Runs setup code (creating the connection), then yields control to the test, and finally performs teardown (closing the connection).
+- **Test Function (`test_query`)**: Receives the fixture value (`conn`), runs its logic (queries the database), and asserts the result.
+
+The fixture ensures that resources are managed correctly, and the test focuses on testing the query functionality without worrying about setup and teardown logic.

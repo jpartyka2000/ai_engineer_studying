@@ -1,0 +1,116 @@
+# Pandas filter(): `like` vs `regex` Parameter Comparison
+
+When using pandas' `filter()` method, you have two main pattern-matching options: `like` for simple substring matching and `regex` for powerful pattern matching. Here's when and how to use each.
+
+## The `like` Parameter: Simple Substring Matching
+
+The `like` parameter performs basic substring matching - it returns any column whose name contains the specified string anywhere within it.
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'product_id': [1, 2, 3],
+    'product_name': ['A', 'B', 'C'],
+    'id_product': [4, 5, 6],
+    'price': [10, 20, 30],
+    'product': [7, 8, 9]
+})
+
+# Returns ANY column containing 'product' anywhere in the name
+df.filter(like='product')
+# Returns: product_id, product_name, id_product, product
+
+# Case-sensitive by default
+df.filter(like='Product')  # Returns empty DataFrame
+```
+
+## The `regex` Parameter: Pattern Matching Power
+
+The `regex` parameter uses regular expressions for sophisticated pattern matching, giving you precise control over what gets matched.
+
+```python
+# Match columns STARTING with 'product'
+df.filter(regex='^product')
+# Returns: product_id, product_name, product
+
+# Match columns ENDING with 'product'
+df.filter(regex='product$')
+# Returns: id_product, product
+
+# Match columns with 'id' OR 'name'
+df.filter(regex='id|name')
+# Returns: product_id, product_name, id_product
+
+# Match specific pattern: 'product' followed by underscore
+df.filter(regex='product_')
+# Returns: product_id, product_name
+
+# Case-insensitive matching
+df.filter(regex='(?i)PRODUCT')  # (?i) flag makes it case-insensitive
+# Returns: product_id, product_name, id_product, product
+```
+
+## Common Regex Patterns for filter()
+
+```python
+# Digits in column names
+df.filter(regex='\d')  # Any column with a number
+
+# Word boundaries
+df.filter(regex=r'\bprice\b')  # Exact word 'price', not 'prices' or 'myprice'
+
+# Multiple specific columns
+df.filter(regex='^(price|cost|revenue)$')  # Exactly these column names
+
+# Columns with specific suffixes
+df.filter(regex='_(id|date|time)$')  # Columns ending in _id, _date, or _time
+```
+
+## When to Use Which?
+
+**Use `like` when:**
+- You need simple substring matching
+- You want any column containing a specific word/phrase
+- You don't need position-specific matching (start/end)
+- You want readable, straightforward code
+
+**Use `regex` when:**
+- You need to match patterns (not just substrings)
+- You want position-specific matching (^ for start, $ for end)
+- You need OR conditions (id|name)
+- You want to match based on character types (\d for digits)
+- You need case-insensitive matching
+- You require word boundaries or more complex patterns
+
+## Performance Consideration
+
+The `like` parameter is generally faster for simple substring matching since it doesn't need to compile and evaluate regular expression patterns. If you just need "contains this string," stick with `like`.
+
+## Practical Example
+
+```python
+# Dataset with various column naming conventions
+df = pd.DataFrame({
+    'user_id': [1, 2],
+    'user_name': ['Alice', 'Bob'],
+    'admin_id': [3, 4],
+    'user_email_address': ['a@example.com', 'b@example.com'],
+    'last_login_date': ['2024-01-01', '2024-01-02'],
+    'total_sales_2024': [1000, 2000]
+})
+
+# Simple: all user-related columns
+user_cols = df.filter(like='user')  # Simple and clear
+
+# Complex: all ID columns but only if 'id' is at the end
+id_cols = df.filter(regex='_id$')  # Need regex for position
+
+# Complex: all date/time related columns
+temporal_cols = df.filter(regex='(date|time|year|month)')  # Need regex for OR
+
+# Complex: all columns with years (2020-2029)
+year_cols = df.filter(regex='202\d')  # Need regex for pattern
+```
+
+The choice between `like` and `regex` ultimately depends on your matching complexity needs. Start with `like` for simple cases, upgrade to `regex` when you need more control.

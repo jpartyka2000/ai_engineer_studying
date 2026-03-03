@@ -1,0 +1,51 @@
+That’s exactly what you should see when you call:
+
+```python
+model = mlflow.pyfunc.load_model(model_uri)
+```
+
+The **PyFuncModel** is MLflow’s *universal* wrapper around your logged artifact. It gives you a `.predict()` interface that works the same no matter whether the original was scikit‑learn, LightGBM, XGBoost, etc.
+
+---
+
+### How to get back the “real” flavor model
+
+If you need the actual underlying estimator—say, a `sklearn.ensemble.RandomForestClassifier` or an `lgb.LGBMClassifier`—you can use the *flavor‑specific* loader:
+
+```python
+# for a scikit‑learn model
+sk_model = mlflow.sklearn.load_model(model_uri)
+
+# for a LightGBM model
+lgb_model = mlflow.lightgbm.load_model(model_uri)
+
+# and so on for spark, xgboost, pytorch, etc.
+```
+
+That will give you back the exact Python object you originally logged, with all its methods (e.g. `.feature_importances_`) intact.
+
+---
+
+### Peeking under the hood of a PyFuncModel
+
+If you really want to inspect what’s inside your `PyFuncModel`, you can look at its `.metadata` and `._model_impl` attributes:
+
+```python
+# What flavors were logged?
+print(model.metadata.flavors)  
+# e.g. {'python_function': {...}, 'sklearn': {...}}
+
+# The python_function flavor implementation
+impl = model._model_impl  
+print(type(impl))  
+# And you can often get the raw model out of it:
+raw_model = impl.model  
+```
+
+But in most cases the cleanest approach is simply:
+
+```python
+sk_model = mlflow.sklearn.load_model(model_uri)
+```
+
+to go from the registry straight back to your original estimator.

@@ -1,0 +1,88 @@
+When you move from predicting *which* tool to predicting *which* arguments that tool should get, you go from a single‐label task (7-way classification) to a *set‐prediction* task: for each example you must output a subset of possible argument names.  In that setting, the standard definitions are:
+
+1. **Per‐example Precision**
+
+   $$
+   P = \frac{|\;\text{PredictedArgs} \;\cap\; \text{TrueArgs}\;|}
+            {|\;\text{PredictedArgs}\;|}
+   $$
+
+   “Of the argument names I guessed, what fraction were actually needed?”
+
+2. **Per‐example Recall**
+
+   $$
+   R = \frac{|\;\text{PredictedArgs} \;\cap\; \text{TrueArgs}\;|}
+            {|\;\text{TrueArgs}\;|}
+   $$
+
+   “Of the true argument names, what fraction did I correctly guess?”
+
+3. **Per‐example F₁**
+
+   $$
+   F_1 = 2\;\frac{P \times R}{P + R}
+   $$
+
+   The harmonic mean of Precision and Recall on that one example.
+
+You then aggregate over your entire validation set in one of two common ways:
+
+* **Macro‐average**
+  Compute $P, R, F_1$ for each example, then take the arithmetic mean of each metric across all examples.
+
+  $$
+    \text{Macro‐}F_1 = \frac1N \sum_{i=1}^N F_1^{(i)}
+  $$
+
+  This treats each example equally, regardless of how many arguments it has.
+
+* **Micro‐average**
+  Sum up all true‐positive, false‐positive, and false‐negative counts over all examples, then compute
+
+  $$
+    P_{\text{micro}} = \frac{\sum_i \text{TP}_i}{\sum_i (\text{TP}_i + \text{FP}_i)}, 
+    \quad
+    R_{\text{micro}} = \frac{\sum_i \text{TP}_i}{\sum_i (\text{TP}_i + \text{FN}_i)},
+  $$
+
+  and the corresponding $F_{1,\text{micro}}$.  This treats every argument‐name decision equally across the dataset.
+
+---
+
+### Which should you use?
+
+* **Micro‐F₁** is often preferred when the total number of argument‐predictions matters more than per‐example balance.  It downweights “easy” examples with few or no arguments and focuses on overall correctness.
+* **Macro‐F₁** highlights whether your model struggles on certain harder examples (e.g. tools with lots of arguments), since each example’s F₁ carries equal weight.
+
+---
+
+### A few bonus metrics to consider
+
+* **Exact‐match accuracy**
+  The fraction of examples where your *entire* predicted‐set exactly equals the true‐set.  Very strict, but a clear “all-or-nothing” signal.
+
+* **Jaccard index**
+
+  $$
+    J = \frac{|\;\text{PredictedArgs}\cap \text{TrueArgs}\;|}
+             {|\;\text{PredictedArgs}\cup \text{TrueArgs}\;|}
+  $$
+
+  Similar to F₁ but normalized by the union rather than the average set size.
+
+* **Hamming loss** (if your argument space is fixed and you treat it as multi-label classification)
+  The fraction of labels (arguments) whose binary prediction is wrong:
+  $  \frac1{N\times L}\sum_{i=1}^N\sum_{\ell=1}^L\mathbf{1}[\,\hat{y}_{i\ell}\neq y_{i\ell}\,]$.
+
+---
+
+### Recommendation
+
+1. **Primary metric:** Go with **Micro-F₁** on argument‐name sets.  It’s well‐understood in multi-label tasks and balances precision and recall at the token‐level across your whole dataset.
+2. **Secondary checks:**
+
+   * Report **Exact‐match accuracy** to see how often you get *all* arguments right.
+   * Optionally, include **Macro-F₁** if you care about performance consistency across tools with very different numbers of possible arguments.
+
+Together, these metrics will give you a clear, multifaceted view of how well your LLM is assigning the right argument names.

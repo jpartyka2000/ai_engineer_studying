@@ -1,0 +1,67 @@
+In the standard RLHF (Reinforcement Learning from Human Feedback) pipeline, the **reward model** is the component that translates human judgments (“which of these two completions do you prefer?”) into a continuous numeric signal that can drive policy optimization. Concretely:
+
+---
+
+## 1. What it is
+
+* A **neural network** (often based on the same architecture as your base LLM) that, given:
+
+  1. A **prompt** $x$, and
+  2. A **candidate completion** $y$,
+     returns a scalar **reward score** $r(x,y)\in\mathbb{R}$.
+
+* You train it on **comparison data**: human labelers see two completions $y^+$ and $y^-$ for the same prompt $x$ and indicate which they prefer.
+
+---
+
+## 2. How it’s trained
+
+1. **Collect comparisons**
+
+   * For each prompt $x$, gather a pair of model-generated responses $(y^+, y^-)$ with a human preference label (“+” or “–”).
+
+2. **Formulate a loss**
+
+   * Use a **pairwise ranking loss** (e.g. a Bradley–Terry or logistic loss) so that the reward model assigns higher scores to preferred completions:
+
+     $$
+     \mathcal{L}_{\text{RM}} = -\log \sigma\!\bigl(r(x,y^+) - r(x,y^-)\bigr)
+     $$
+   * Here $\sigma$ is the sigmoid, and you drive $r(x,y^+)\!) >\! r(x,y^-)$.
+
+3. **Optimize**
+
+   * Fine-tune your reward network’s parameters via gradient descent on this loss over many (prompt, better, worse) triples.
+
+---
+
+## 3. Why it exists
+
+* **Bridges human feedback & RL**: Humans give **ordinal** feedback (A preferred over B), but RL algorithms need a **scalar reward** signal. The reward model converts one into the other.
+
+* **Generalizes**: Once trained, it can score *any* new prompt-completion pair, not just those you explicitly compared.
+
+* **Stabilizes RL**: By freezing the reward model when you run your policy optimization (e.g. PPO), you get a fixed surrogate objective that the policy can chase, avoiding direct reliance on noisy or expensive human labels.
+
+---
+
+## 4. How it fits in the pipeline
+
+1. **Supervised pre-training** (optional)
+2. **Collect comparisons** from labelers
+3. **Train the reward model** on that data
+4. **Run policy optimization** (e.g. PPO) on your policy model, using the reward model’s outputs $r(x,y)$ as the scalar reward signal
+5. **Validate** with held-out comparisons and/or human checks
+
+---
+
+## 5. Alternatives
+
+* **Direct Preference Optimization (DPO)**: bypasses a standalone reward model and policy optimization by directly fine-tuning the policy via a pairwise likelihood loss.
+* **ReAct / chain-of-thought** scoring: some workflows prompt the model itself to self-score, but these are less robust than a learned reward model trained on human data.
+
+---
+
+### TL;DR
+
+The **reward model** is a learned scoring function $r(x,y)$ that converts human A/B preferences into a continuous reward signal. You train it on human comparison data and then use its outputs to guide an RL-style fine-tuning of your policy (the actual LLM you’ll serve).

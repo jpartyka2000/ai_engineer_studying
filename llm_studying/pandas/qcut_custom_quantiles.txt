@@ -1,0 +1,73 @@
+Yes, you can achieve this in Pandas by passing custom quantiles to `qcut()` to specify how to split the data. For example, to create bins where one bin contains approximately 2/3 of the rows and the other bin contains the remaining 1/3, you can set the quantiles to `[0, 2/3, 1]`. Here’s how you can do it:
+
+```python
+import pandas as pd
+
+# Example data
+data = {'values': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+df = pd.DataFrame(data)
+
+# Use qcut with custom quantiles
+df['custom_bins'] = pd.qcut(df['values'], q=[0, 2/3, 1], labels=['Bottom 2/3', 'Top 1/3'])
+
+print(df)
+```
+
+### Explanation
+- `q=[0, 2/3, 1]` specifies the cut points based on quantiles, where:
+  - `0` is the start (minimum of the data),
+  - `2/3` is the 66.67th percentile (marking the boundary of the first bin),
+  - `1` is the end (maximum of the data).
+- The `labels` parameter assigns names to each bin, making it easier to interpret.
+
+This approach will split your data into two bins, with approximately 2/3 of the rows in the first bin and 1/3 in the second.
+
+------------------
+
+To label each bin with its actual cut points, you can use the `pd.qcut()` function to get the bin edges and then dynamically create labels based on these edges. Here’s how:
+
+```python
+import pandas as pd
+
+# Example data
+data = {'values': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+df = pd.DataFrame(data)
+
+# Define custom quantiles
+quantiles = [0, 2/3, 1]
+
+# Use qcut without labels first to get bin edges
+bins = pd.qcut(df['values'], q=quantiles, duplicates='drop')
+
+# Extract the bin edges and format them as labels
+bin_edges = bins.cat.categories
+labels = [f"{interval.left} - {interval.right}" for interval in bin_edges]
+
+# Apply qcut again with the custom labels
+df['custom_bins'] = pd.qcut(df['values'], q=quantiles, labels=labels)
+
+print(df)
+```
+
+### Explanation:
+1. First, we use `pd.qcut()` without labels to generate the bins and extract the interval edges from `bins.cat.categories`.
+2. We format each interval to create labels in the format `start - end` for each bin.
+3. Then, we apply `pd.qcut()` again, this time using the custom `labels`.
+
+The output will show bins labeled with their cut points, like this:
+
+```
+   values custom_bins
+0       1     1.0 - 6.0
+1       2     1.0 - 6.0
+2       3     1.0 - 6.0
+3       4     1.0 - 6.0
+4       5     1.0 - 6.0
+5       6     1.0 - 6.0
+6       7    7.0 - 10.0
+7       8    7.0 - 10.0
+8       9    7.0 - 10.0
+9      10    7.0 - 10.0
+```
+
+This way, each bin is labeled with its actual range.

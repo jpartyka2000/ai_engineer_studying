@@ -1,0 +1,85 @@
+Here’s how the two most common handler classes in Python’s built-in `logging` module differ:
+
+---
+
+## 1. Basic Purpose
+
+* **`StreamHandler`**
+  Sends log records to any **stream-like object** (anything with a `.write()` method), by default `sys.stderr`. Ideal for consoles, REPLs, or piping into other programs.
+
+* **`FileHandler`**
+  Sends log records to a **disk file** you specify. It opens (and optionally creates) the file, appends or overwrites according to mode, and writes each log record there.
+
+---
+
+## 2. Initialization Parameters
+
+| Parameter      | StreamHandler                                                                    | FileHandler                                                                                                                                                                                       |
+| -------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Constructor    | `StreamHandler(stream=None)`<br>– `stream` (file-like); default is `sys.stderr`. | `FileHandler(filename, mode='a', encoding=None, delay=False)`<br>– `filename`: path to log file<br>– `mode`: file mode (`'a'`, `'w'`, etc.)<br>– `delay`: if `True`, file is opened on first emit |
+| Common Options | Inherits all `Handler` options (level, formatter).                               | Same, plus file-specific options (`mode`, `encoding`, `delay`).                                                                                                                                   |
+
+---
+
+## 3. Typical Use-Cases
+
+1. **Interactive or short-lived scripts**
+   Use `StreamHandler` to show logs on the console:
+
+   ```python
+   import logging
+   console = logging.StreamHandler()
+   console.setLevel(logging.INFO)
+   console.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+   logging.getLogger().addHandler(console)
+   ```
+
+2. **Long-running applications**
+   Use `FileHandler` to persist logs for later inspection:
+
+   ```python
+   import logging
+   fileh = logging.FileHandler("app.log", mode="a", encoding="utf-8")
+   fileh.setLevel(logging.DEBUG)
+   fileh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+   logging.getLogger().addHandler(fileh)
+   ```
+
+---
+
+## 4. Rotation and Maintenance
+
+Neither handler rotates logs by itself. For file-based rotation you’d instead use:
+
+* **`logging.handlers.RotatingFileHandler`** – rotate by size
+* **`logging.handlers.TimedRotatingFileHandler`** – rotate by time
+
+A `StreamHandler` can’t be rotated, but you could swap its stream if you wanted to redirect output.
+
+---
+
+## 5. Performance & Behavior Notes
+
+* **Buffering**
+
+  * `StreamHandler` may buffer based on the underlying stream (e.g. Python’s I/O buffering), but typically you see entries immediately on the console.
+  * `FileHandler` writes to disk; if buffering is an issue you can call `handler.flush()` or configure the file’s buffering via the `open()` parameters.
+
+* **Concurrency**
+
+  * If multiple processes write to the same file via `FileHandler`, you risk log corruption. For multi-process setups, consider `ConcurrentLogHandler` or using a logging server.
+  * `StreamHandler` to `stderr` or `stdout` is usually safe in a multi-threaded process, but not in multi-process contexts without external synchronization.
+
+---
+
+## 6. Summary
+
+| Feature          | StreamHandler                  | FileHandler                       |
+| ---------------- | ------------------------------ | --------------------------------- |
+| Destination      | In-memory stream (stdout/err)  | Disk file                         |
+| Setup complexity | Very simple                    | Simple, plus file path & mode     |
+| Durability       | Ephemeral (console only)       | Persistent                        |
+| Rotation support | None                           | None (use specialized handlers)   |
+| Best for         | Interactive debugging, scripts | Auditing, long-term log retention |
+
+Choose a **`StreamHandler`** when you want immediate, ephemeral console output; choose a **`FileHandler`** when you need to save logs for later review.

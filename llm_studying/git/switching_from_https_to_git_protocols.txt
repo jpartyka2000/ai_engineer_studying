@@ -1,0 +1,100 @@
+# Switch Git from `https://` to `git@github...` (SSH)
+
+Want Git to use SSH instead of HTTPS so you’re not prompted for credentials (and so tools like Poetry stop failing)? Here’s the quick playbook.
+
+## Why switch?
+
+* Avoid repeated username/password or token prompts.
+* Use your SSH keys (more convenient & secure).
+* Works better in headless/CI environments.
+
+---
+
+## 1) Set up SSH keys (one-time)
+
+```bash
+# Create a key if you don't have one
+ssh-keygen -t ed25519 -C "you@example.com"
+
+# Start agent & add key (macOS)
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+
+# macOS convenience (optional)
+mkdir -p ~/.ssh
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_ed25519
+EOF
+```
+
+Add `~/.ssh/id_ed25519.pub` to GitHub: **Settings → SSH and GPG keys → New SSH key**.
+
+Test:
+
+```bash
+ssh -T git@github.com
+# Expect: "Hi <username>! You've successfully authenticated..."
+```
+
+---
+
+## 2) Switch an existing remote to SSH (per-repo)
+
+From inside your repo:
+
+```bash
+git remote -v   # see current remotes
+# origin  https://github.com/ORG/REPO.git (fetch)
+# origin  https://github.com/ORG/REPO.git (push)
+
+# Change to SSH:
+git remote set-url origin git@github.com:ORG/REPO.git
+
+git remote -v   # verify
+# origin  git@github.com:ORG/REPO.git (fetch)
+# origin  git@github.com:ORG/REPO.git (push)
+```
+
+---
+
+## 3) Rewrite HTTPS → SSH globally (affects all future clones)
+
+If tools keep using `https://github.com/...`, tell Git to rewrite those to SSH automatically:
+
+```bash
+git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
+```
+
+Now any `https://github.com/ORG/REPO.git` will behave like `ssh://git@github.com/ORG/REPO.git`.
+
+**To undo:**
+
+```bash
+git config --global --unset url.ssh://git@github.com/.insteadof
+```
+
+---
+
+## 4) Clone with SSH directly (new repos)
+
+```bash
+git clone git@github.com:ORG/REPO.git
+# or
+git clone ssh://git@github.com/ORG/REPO.git
+```
+
+---
+
+## 5) Common pitfalls
+
+* **Key not loaded**: run `ssh-add -l` (list keys). If empty, `ssh-add ~/.ssh/id_ed25519`.
+* **Wrong account**: ensure the public key you added matches the private key you’re loading.
+* **Private submodules**: they must also use SSH or you’ll hit auth errors during `git submodule update`.
+* **CI environments**: load the SSH key in the job, disable strict host key checking if needed, or preseed `known_hosts`.
+
+---
+
+That’s it—once SSH is set up and your remotes are switched, Git will stop prompting for HTTPS credentials and your tooling will be much happier.

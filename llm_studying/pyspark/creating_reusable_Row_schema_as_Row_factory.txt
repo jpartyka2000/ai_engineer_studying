@@ -1,0 +1,95 @@
+**Creating a reusable Row schema:**
+
+Pass field names as strings to `Row()` to create a reusable Row class:
+
+```python
+from pyspark.sql import Row
+
+Person = Row("id", "name", "age")
+```
+
+This doesn't create a Row instance — it creates a Row "factory" with predefined field names.
+
+---
+
+**Create instances positionally:**
+
+```python
+person1 = Person(1, "Alice", 30)
+person2 = Person(2, "Bob", 25)
+person3 = Person(3, "Carol", 35)
+
+person1.name       # 'Alice'
+person2.age        # 25
+person3["id"]      # 3
+```
+
+---
+
+**Building a DataFrame:**
+
+```python
+Person = Row("id", "name", "age")
+
+df = spark.createDataFrame([
+    Person(1, "Alice", 30),
+    Person(2, "Bob", 25),
+    Person(3, "Carol", 35)
+])
+
+df.show()
+# +---+-----+---+
+# | id| name|age|
+# +---+-----+---+
+# |  1|Alice| 30|
+# |  2|  Bob| 25|
+# |  3|Carol| 35|
+# +---+-----+---+
+```
+
+---
+
+**Nested structures:**
+
+```python
+Address = Row("street", "city", "zip")
+Person = Row("id", "name", "address")
+
+person = Person(1, "Alice", Address("123 Main St", "Boston", "02101"))
+
+person.name                # 'Alice'
+person.address.city        # 'Boston'
+person.address.zip         # '02101'
+```
+
+---
+
+**Why use this pattern:**
+
+| Benefit | Explanation |
+|---------|-------------|
+| Cleaner code | Define field names once, not on every row |
+| Less error-prone | Field order is consistent across all instances |
+| Readable | `Person(1, "Alice", 30)` is cleaner than `Row(id=1, name="Alice", age=30)` repeated many times |
+| Self-documenting | The schema variable name describes what the Row represents |
+
+---
+
+**Comparison with direct instantiation:**
+
+```python
+# Without schema — verbose and repetitive
+rows = [
+    Row(id=1, name="Alice", age=30),
+    Row(id=2, name="Bob", age=25),
+    Row(id=3, name="Carol", age=35),
+]
+
+# With schema — cleaner
+Person = Row("id", "name", "age")
+rows = [
+    Person(1, "Alice", 30),
+    Person(2, "Bob", 25),
+    Person(3, "Carol", 35),
+]
+```

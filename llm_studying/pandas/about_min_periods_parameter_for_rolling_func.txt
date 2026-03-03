@@ -1,0 +1,47 @@
+The `min_periods` argument to a pandas `.rolling()` call specifies the **minimum number of non-NA observations** in the window that are required before a value is returned.  If fewer than `min_periods` valid (non-NaN) points exist in the current window, the result for that position will be `NaN`.
+
+---
+
+### How it works
+
+```python
+# suppose s is a Series: [10, 20, 30, 40, 50]
+
+# 1) window=3, min_periods=1
+#    you get a value as soon as there is at least 1 point in the window:
+#    index 0: mean([10])      → 10.0
+#    index 1: mean([10,20])   → 15.0
+#    index 2: mean([10,20,30])→ 20.0
+#    index 3: mean([20,30,40])→ 30.0
+#    index 4: mean([30,40,50])→ 40.0
+
+s.rolling(window=3, min_periods=1).mean()
+# 0    10.0
+# 1    15.0
+# 2    20.0
+# 3    30.0
+# 4    40.0
+# dtype: float64
+
+
+# 2) window=3, min_periods=3
+#    you only get a value once you have 3 observations:
+#    index 0: fewer than 3 → NaN
+#    index 1: fewer than 3 → NaN
+#    index 2: mean([10,20,30])→ 20.0
+#    index 3: mean([20,30,40])→ 30.0
+#    index 4: mean([30,40,50])→ 40.0
+
+s.rolling(window=3, min_periods=3).mean()
+# 0     NaN
+# 1     NaN
+# 2    20.0
+# 3    30.0
+# 4    40.0
+# dtype: float64
+```
+
+* **`window`** controls the *size* of the sliding window (how many rows to look at).
+* **`min_periods`** controls the *minimum* number of *valid* data points within that window before producing a value.
+
+If you don’t explicitly set `min_periods`, it defaults to the same value as `window`, i.e. you get `NaN` until the window is “full.” Setting `min_periods=1` is a handy way to start getting interim averages (or sums, etc.) immediately, rather than waiting for the full window.

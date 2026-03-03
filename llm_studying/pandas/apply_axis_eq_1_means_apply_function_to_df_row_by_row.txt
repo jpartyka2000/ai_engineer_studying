@@ -1,0 +1,48 @@
+In pandas `apply()`, `axis=1` means the function is applied **row by row**, with each row passed as a Series.
+
+## Axis Options
+
+| Value | Meaning | Function receives |
+|-------|---------|-------------------|
+| `axis=0` (default) | Apply down columns | Each column as a Series |
+| `axis=1` | Apply across rows | Each row as a Series |
+
+## In Your Code
+
+```python
+df_unique.apply(lambda row: lookup_rate(row, "_temp_prior_1_year_ts"), axis=1)
+```
+
+This says: "For each row in the dataframe, call `lookup_rate()` with that row."
+
+Inside `lookup_rate`, you can then access individual column values from that row:
+
+```python
+def lookup_rate(row, ts_col):
+    key = tuple(row[col] for col in grouping_columns) + (row[ts_col],)
+    return rate_dict.get(key, np.nan)
+```
+
+Here `row[col]` and `row[ts_col]` grab specific column values from that single row.
+
+## Visual Example
+
+```python
+df = pd.DataFrame({
+    "a": [1, 2, 3],
+    "b": [4, 5, 6]
+})
+
+# axis=0: function receives columns
+df.apply(lambda col: col.sum(), axis=0)
+# a    6
+# b    15
+
+# axis=1: function receives rows
+df.apply(lambda row: row["a"] + row["b"], axis=1)
+# 0    5
+# 1    7
+# 2    9
+```
+
+In your case, you need `axis=1` because you're building a lookup key from multiple column values within each row.

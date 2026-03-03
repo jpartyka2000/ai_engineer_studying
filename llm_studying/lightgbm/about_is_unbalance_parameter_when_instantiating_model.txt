@@ -1,0 +1,84 @@
+When you’re training a **binary** classification model with **highly imbalanced** classes (e.g. 1% positives, 99% negatives), you need to compensate so the learner doesn’t simply predict the majority class everywhere. LightGBM gives you two ways to do this:
+
+1. **`scale_pos_weight`** – you manually set a weight ratio
+2. **`is_unbalance`** – a convenience flag that tells LightGBM to compute that ratio for you
+
+---
+
+## What `is_unbalance` Does
+
+* **Type:** Boolean parameter on `LGBMClassifier` (and in the native config)
+* **Default:** `False`
+
+When you pass `is_unbalance=True`, LightGBM will automatically set the positive-class weight to:
+
+$$
+\text{scale\_pos\_weight} = \frac{\text{number of negative samples}}{\text{number of positive samples}}
+$$
+
+Under the hood it simply does:
+
+```python
+# Pseudocode inside LightGBM
+if is_unbalance:
+    weight_positive = count_negative / count_positive
+    weight_negative = 1.0
+```
+
+You **must** use it only for **binary** classification. It has no effect on multi-class problems (and LightGBM will warn/ignore it).
+
+---
+
+## When to Use
+
+* **Severe imbalance** (e.g. fraud detection, rare disease diagnosis)
+* **Quick prototyping**: you don’t need to compute the ratio yourself
+* **Simple baselines**: `is_unbalance=True` is often the first thing to try before tuning weights more precisely
+
+---
+
+## When Not to Use
+
+* If you have **multiple classes** with different frequencies (use custom **`class_weight`** or sample-weight arrays instead).
+* If you want **fine control** over how much to up-weight the minority class (in which case set `scale_pos_weight` manually).
+* On **balanced** datasets where adding weights may introduce unnecessary bias.
+
+---
+
+## Example
+
+```python
+from lightgbm import LGBMClassifier
+
+# Suppose y has 1000 negatives, 50 positives
+clf = LGBMClassifier(
+    objective="binary",
+    is_unbalance=True,    # automatically uses scale_pos_weight=1000/50=20
+    n_estimators=200,
+    learning_rate=0.1,
+)
+
+clf.fit(X_train, y_train)
+```
+
+If you instead wanted to do it by hand:
+
+```python
+pos = sum(y_train == 1)
+neg = sum(y_train == 0)
+clf = LGBMClassifier(
+    objective="binary",
+    scale_pos_weight=neg/pos,
+    n_estimators=200,
+    learning_rate=0.1,
+)
+```
+
+Both approaches give the same internal weighting—`is_unbalance` just saves you the arithmetic.
+
+---
+
+### ✅ Takeaway
+
+* **`is_unbalance=True`** tells LightGBM to automatically compute and apply a weight to the minority class based on the inverse frequency ratio.
+* It’s a handy shortcut for binary problems with skewed class distributions, but for more nuanced weighting or multi-class tasks you should use `scale_pos_weight` or explicit sample weights instead.

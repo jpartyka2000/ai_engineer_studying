@@ -1,0 +1,48 @@
+The `.dt` accessor is only available on **“datetime‑like”** Series—i.e., those whose dtype is one of:
+
+* **`datetime64[ns]`** or **`datetime64[ns, tz]`**
+
+  ```python
+  s = pd.Series(pd.date_range('2025-01-01', periods=3, freq='D'))
+  s.dtype            # datetime64[ns]
+  s.dt.year          # works
+  ```
+* **`timedelta64[ns]`**
+
+  ```python
+  td = pd.Series(pd.to_timedelta(['1 days','2 days','3 days']))
+  td.dtype           # timedelta64[ns]
+  td.dt.days         # works
+  ```
+* **`PeriodDtype`** (a Series of `Period` objects)
+
+  ```python
+  p = pd.Series(pd.period_range('2025-01', periods=3, freq='M'))
+  p.dtype            # period[M]
+  p.dt.start_time    # works
+  ```
+
+---
+
+### What you get with `.dt`
+
+Once you have a datetime‑like Series, `.dt` exposes vectorized attributes and methods, such as:
+
+* **Date parts**: `s.dt.year`, `s.dt.month`, `s.dt.day`, `s.dt.weekday`, …
+* **Time parts**: `s.dt.hour`, `s.dt.minute`, `s.dt.second`, …
+* **Offsets & normalization**: `s.dt.normalize()`, `s.dt.floor('H')`, `s.dt.ceil('15T')`
+* **Time zone handling**: `s.dt.tz_convert('UTC')`, `s.dt.tz_localize('America/Denver')`
+* **Conversion helpers**: `s.dt.to_period('M')`, `s.dt.to_pydatetime()`, `s.dt.total_seconds()` (for timedeltas)
+
+---
+
+### What won’t work
+
+```python
+ser = pd.Series(['2025-01-01','foo','2025-03-01'])
+ser.dt.day
+# AttributeError: Can only use .dt accessor with datetimelike values
+```
+
+* **Strings**, **integers**, or any non‑datetime/timedelta/period dtype do **not** have `.dt`.
+* You must first convert to a datetime‑like dtype (e.g. `pd.to_datetime(…)`, `pd.to_timedelta(…)`) before using `.dt`.

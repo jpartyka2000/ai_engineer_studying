@@ -1,0 +1,28 @@
+Thought for a couple of seconds
+
+You can let pandas do the “ignore‐NaN” averaging for you and then coerce the result to integer. For example, assuming your DataFrame is called `df` and your four columns are named `col1`, `col2`, `col3` and `col4`, you can do:
+
+```python
+# compute the row‐wise mean (skipping over NaNs)
+df['avg_value'] = df[['col1','col2','col3','col4']].mean(axis=1, skipna=True)
+
+# if you want to round to the nearest integer:
+df['avg_value'] = df['avg_value'].round().astype(int)
+
+# or, if you simply want to truncate toward zero:
+df['avg_value'] = df['avg_value'].fillna(0).astype(int)
+```
+
+**Explanation**  
+1. `df[['col1',…]].mean(axis=1, skipna=True)` computes, for each row, the mean of the non‑null values across your four columns.  
+2. By default that gives you a `float64`. If you want an integer average you have two easy options:  
+   - **Round**, then convert:  
+     ```python
+     df['avg_value'] = df['avg_value'].round().astype(int)
+     ```  
+   - **Truncate** (just cast), which will drop the fractional part:  
+     ```python
+     df['avg_value'] = df['avg_value'].astype(int)
+     ```  
+
+Either way you end up with a pure integer column `avg_value`, and any row that had *all* four values null will become 0 (or you can choose a different fill for those rows before the cast if you like).

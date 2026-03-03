@@ -1,0 +1,69 @@
+Below is the “bare‐bones” outline of SAG, showing exactly how it’s initialized and what happens in the first three iterations. We’ll assume:
+
+* A dataset of $n$ samples, indexed $i=1,\dots,n$.
+* A differentiable per-sample loss $f_i(w)$.
+* A constant step-size $\alpha$.
+* Initial weights $w^{(0)}$.
+
+---
+
+### Initialization
+
+1. **Weights**
+
+   $$
+   w^{(0)} \quad\text{(e.g. all zeros or your chosen starting point)}
+   $$
+2. **Gradient memory**
+   For each sample $i$, store its “last‐seen” gradient.  At $t=0$, we haven’t seen any, so
+
+   $$
+   g_i^{(0)} \;=\; 0,\quad i=1,\dots,n
+   $$
+3. **Running sum of gradients**
+
+   $$
+   S^{(0)} \;=\; \sum_{j=1}^n g_j^{(0)} \;=\; 0
+   $$
+
+---
+
+### Generic SAG update at iteration $t$
+
+1. Pick a sample index $i_t\in\{1,\dots,n\}$ (often at random or in a cyclic order).
+2. Compute its fresh gradient at the current weights:
+
+   $$
+   g_{i_t}^{(\,t\,)} \;=\; \nabla f_{i_t}\bigl(w^{(t-1)}\bigr)
+   $$
+3. Update the running sum by **removing** the old stored gradient for $i_t$, **adding** the new one:
+
+   $$
+   S^{(t)} \;=\; S^{(t-1)} \;-\; g_{i_t}^{(\,t-1\,)} \;+\; g_{i_t}^{(\,t\,)}
+   $$
+4. Update weights along the **average** gradient direction:
+
+   $$
+   w^{(t)} \;=\; w^{(t-1)} \;-\;\frac{\alpha}{n}\;S^{(t)}
+   $$
+
+---
+
+### First three iterations (symbolically)
+
+For concreteness, let’s say on iteration 1 we pick sample 1, on iteration 2 sample 2, on iteration 3 sample 1 again.
+
+|  Step | Picked $i_t$ | Compute $g_{i_t}^{(t)}$                       | Update $S^{(t)}$                                                                    | Update $w^{(t)}$                                                           |
+| :---: | :----------: | :-------------------------------------------- | :---------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| **0** |       —      | —                                             | $S^{(0)} = 0$                                                                       | $w^{(0)}$                                                                  |
+| **1** |   $i_1 = 1$  | $g_{1}^{(1)} = \nabla f_1\bigl(w^{(0)}\bigr)$ | $S^{(1)} = 0 - 0 + g_1^{(1)} = g_1^{(1)}$                                           | $w^{(1)} = w^{(0)} - \tfrac{\alpha}{n}\;g_1^{(1)}$                         |
+| **2** |   $i_2 = 2$  | $g_{2}^{(2)} = \nabla f_2\bigl(w^{(1)}\bigr)$ | $S^{(2)} = g_1^{(1)} - 0 + g_2^{(2)} = g_1^{(1)} + g_2^{(2)}$                       | $w^{(2)} = w^{(1)} - \tfrac{\alpha}{n}\;\bigl(g_1^{(1)} + g_2^{(2)}\bigr)$ |
+| **3** |   $i_3 = 1$  | $g_{1}^{(3)} = \nabla f_1\bigl(w^{(2)}\bigr)$ | $S^{(3)} = (g_1^{(1)} + g_2^{(2)}) - g_1^{(1)} + g_1^{(3)} = g_2^{(2)} + g_1^{(3)}$ | $w^{(3)} = w^{(2)} - \tfrac{\alpha}{n}\;\bigl(g_2^{(2)} + g_1^{(3)}\bigr)$ |
+
+Notice:
+
+* **Memory warms up**: until you’ve visited every sample at least once, some $g_i$ remain at zero, so the average $\tfrac1n S^{(t)}$ is “biased” downhill.
+* **After one full pass** (i.e. $n$ updates), you’ll have one current gradient for each sample, and from then on $S^{(t)}$ is truly the sum of all most‐recent gradients.
+* **Per‐iteration cost** is just one gradient computation ($\nabla f_{i_t}$) plus an $O(1)$ update of the sum $S$.
+
+That’s exactly how SAG is **initialized** (zero gradient memory, zero sum) and how the **first few updates** proceed.

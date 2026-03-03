@@ -1,0 +1,43 @@
+In the current OpenAI Python SDK (v1.99.9) and Chat Completions API, **every** entry in an assistant message’s `tool_calls` array must include a
+
+```json
+"type": "function"
+```
+
+field. There are no other supported values at this time—each call represents a request to invoke one of your JSON-Schema tools (formerly “functions”), so its `type` is always `"function"` ([Microsoft Learn][1]).
+
+---
+
+### Why it exists
+
+The `type` field disambiguates different kinds of planned calls if—and when—OpenAI extends the interface to support more than just function-style tools. For now:
+
+* **`"function"`**
+  You’re asking the model to prepare arguments for one of your tools, in JSON form.
+
+If you omit that field (or set it to anything else), the API will reject your request with a “missing\_required\_parameter” error.
+
+---
+
+### Example
+
+```jsonc
+{
+  "role": "assistant",
+  "content": null,
+  "tool_calls": [
+    {
+      "id": "call_42",
+      "function": {
+        "name": "get_stock_price",
+        "arguments": "{\"ticker\": \"AAPL\"}"
+      },
+      "type": "function"
+    }
+  ]
+}
+```
+
+Whenever you see a `tool_calls` array, make sure each object has `"type": "function"`.
+
+[1]: https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/function-calling?utm_source=chatgpt.com "How to use function calling with Azure OpenAI in Azure AI ..."

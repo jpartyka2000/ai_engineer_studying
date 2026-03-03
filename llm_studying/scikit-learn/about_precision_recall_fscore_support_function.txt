@@ -1,0 +1,97 @@
+`precision_recall_fscore_support` is a versatile function in `sklearn.metrics` for evaluating classification performance across one or more classes. It computes the core metrics of **precision**, **recall**, **F₁ score**, and **support** (the number of true instances) for each label, and can also aggregate them via several averaging schemes.
+
+---
+
+### 1. What it computes
+
+* **Precision** $\displaystyle P = \tfrac{TP}{TP + FP}$
+  Of all the predictions you made for a given class, how many were actually correct?
+
+* **Recall** $\displaystyle R = \tfrac{TP}{TP + FN}$
+  Of all the true examples of a class, how many did your model successfully catch?
+
+* **F₁ score** $\displaystyle F_1 = 2\,\tfrac{P\cdot R}{P + R}$
+  The harmonic mean of precision and recall, balancing both into one number.
+
+* **Support**
+  The number of true occurrences of each class in the dataset.
+
+---
+
+### 2. Key arguments
+
+```python
+precision_recall_fscore_support(
+    y_true,
+    y_pred,
+    *,
+    labels=None,
+    pos_label=1,
+    average=None,
+    sample_weight=None,
+    zero_division="warn"
+)
+```
+
+* **`y_true`, `y_pred`**
+  Arrays of true labels and predicted labels, respectively.
+
+* **`labels`** (optional)
+  Specify a subset and the order of class labels to include. By default, all observed labels are used in sorted order.
+
+* **`pos_label`**
+  When evaluating a binary problem with `average='binary'`, defines which label is considered “positive.” Default is `1`.
+
+* **`average`**
+  Controls how per-class metrics are aggregated:
+
+  * `None`: return an array for each class
+  * `'binary'`: only report for the `pos_label` class (binary classification)
+  * `'micro'`: global TP/FP/FN counts are used for precision/recall/F₁ (treats every sample equally)
+  * `'macro'`: unweighted mean of per-class metrics (treats every class equally)
+  * `'weighted'`: mean weighted by support (accounts for class imbalance)
+  * `'samples'`: for multilabel data, average metrics for each sample
+
+* **`sample_weight`**
+  Optional array of weights per sample to weight your counts.
+
+* **`zero_division`**
+  Defines what to do when you have a zero division (e.g., no positive predictions). Options are:
+
+  * `“warn”` (default): set the metric to 0 and emit a warning
+  * `0` or `1`: set the metric to that constant without warning.
+
+---
+
+### 3. Returns
+
+A tuple of four elements, each shaped according to `average`:
+
+1. **`precision`**
+2. **`recall`**
+3. **`fscore`**
+4. **`support`**
+
+* If `average=None`, each is a 1D array of length `n_classes`.
+* If `average` is set, each is a scalar.
+
+---
+
+### 4. When to use
+
+* **Multiclass classification**: get individual metrics per class plus an overall summary.
+* **Binary classification**: use `average='binary'` or examine both positive/negative classes with `average=None`.
+* **Imbalanced datasets**: choose `average='weighted'` to reflect class prevalence, or use `average='macro'` to see per-class performance equally.
+
+```python
+from sklearn.metrics import precision_recall_fscore_support
+
+y_true = [0, 1, 1, 0, 2, 2]
+y_pred = [0, 1, 0, 0, 2, 1]
+
+prec, rec, f1, sup = precision_recall_fscore_support(
+    y_true, y_pred, average='macro', zero_division=0
+)
+```
+
+This function is a foundational tool in model evaluation, giving you both detailed and aggregated views of how well your classifier balances correctness (precision) against coverage (recall).

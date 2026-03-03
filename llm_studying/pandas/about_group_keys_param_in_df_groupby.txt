@@ -1,0 +1,38 @@
+The `group_keys` parameter controls whether the grouping keys (the values you grouped on) are included in the result’s index when you use methods like `.apply()`.
+
+```python
+df.groupby(by, group_keys=..., …).apply(func)
+```
+
+* **`group_keys=True`** (the default)
+  After grouping and applying, pandas will insert your group labels as extra levels in the result’s index. This makes it clear which output rows came from which group:
+
+  ```python
+  df = pd.DataFrame({
+      'g': ['A','A','B','B'],
+      'x': [1,2,3,4]
+  })
+
+  def f(grp):
+      return grp.assign(x2=grp.x * 2)
+
+  out = df.groupby('g', group_keys=True).apply(f)
+  # out.index is a MultiIndex: (group, original_index)
+  ```
+
+* **`group_keys=False`**
+  Pandas will **not** add the group labels to the index. You still get the concatenated results of your function, but with only the original row index (or whatever your function returns):
+
+  ```python
+  out = df.groupby('g', group_keys=False).apply(f)
+  # out.index is just the original row index; groups are not part of it
+  ```
+
+### When to use
+
+* **Keep `group_keys=True`** when you need to know (via the index) which group each result chunk came from.
+* **Use `group_keys=False`** when you just want a flat concatenation of all groups’ outputs—especially handy if you’re returning full DataFrame slices (as in a “split–apply–combine” transformation) and don’t want a MultiIndex.
+
+---
+
+**In short:** `group_keys` toggles whether the group labels become part of your output’s index when you use `.apply()`.

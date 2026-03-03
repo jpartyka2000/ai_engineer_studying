@@ -1,0 +1,184 @@
+Yes! Field validators run in several other situations beyond initial instantiation. Here are the key scenarios:
+
+## 1. **Model Validation Methods**
+
+```python
+class DataScanner(BaseModel):
+    value: int
+    
+    @field_validator("value")
+    @classmethod
+    def validate_value(cls, v):
+        print(f"Validator running! Value: {v}")
+        return v
+
+scanner = DataScanner(value=1)  # Validator runs
+
+# Manual validation
+scanner.model_validate({"value": 2})  # Validator runs again!
+scanner.model_validate_json('{"value": 3}')  # Validator runs again!
+```
+
+## 2. **Assignment Validation (with `validate_assignment=True`)**
+
+```python
+class DataScanner(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    
+    value: int
+    
+    @field_validator("value")
+    @classmethod
+    def validate_value(cls, v):
+        print(f"Validating: {v}")
+        if v < 0:
+            raise ValueError("Must be positive")
+        return v
+
+scanner = DataScanner(value=1)  # Validator runs
+scanner.value = 5  # Validator runs AGAIN on assignment!
+scanner.value = -1  # Validator runs and raises error
+```
+
+## 3. **Creating Models from ORM Objects**
+
+```python
+class UserModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    email: str
+    
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v):
+        print("Validating email")
+        return v.lower()
+
+# From SQLAlchemy or other ORM object
+user_orm = get_user_from_db()  # Some ORM object
+user_model = UserModel.model_validate(user_orm)  # Validator runs
+```
+
+## 4. **Deserialization Operations**
+
+```python
+scanner = DataScanner.model_validate_json(json_string)  # Validators run
+scanner = DataScanner.parse_obj(dict_data)  # Validators run (deprecated in V2)
+scanner = DataScanner.parse_raw(json_string)  # Validators run (deprecated in V2)
+scanner = DataScanner.parse_file("data.json")  # Validators run (deprecated in V2)
+```
+
+## 5. **Copy with Update**
+
+```python
+class Model(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    value: int
+    
+    @field_validator("value")
+    @classmethod
+    def check_positive(cls, v):
+        print(f"Validating: {v}")
+        return v
+
+original = Model(value=1)  # Validator runs
+copied = original.model_copy(update={"value": 2})  # Validator runs for updated field!
+```
+
+## 6. **Subclass and Inheritance Scenarios**
+
+```python
+class Base(BaseModel):
+    value: int
+    
+    @field_validator("value")
+    @classmethod
+    def base_validator(cls, v):
+        print("Base validator")
+        return v
+
+class Child(Base):
+    @field_validator("value")
+    @classmethod
+    def child_validator(cls, v):
+        print("Child validator")
+        return v
+
+# Both validators run when creating Child instance!
+child = Child(value=1)
+# Output:
+# Base validator
+# Child validator
+```
+
+## 7. **Schema and JSON Schema Generation** (Sort of)
+
+```python
+# Validators can affect schema generation through field_serializer
+class Model(BaseModel):
+    value: int
+    
+    @field_validator("value")
+    @classmethod
+    def validate(cls, v):
+        # This affects validation schema
+        if v > 100:
+            raise ValueError("Too large")
+        return v
+    
+    @field_serializer("value")
+    def serialize(self, v):
+        # Runs during serialization
+        return v * 2
+
+m = Model(value=10)
+m.model_dump()  # Serializer runs here, not validator
+```
+
+## When Validators DON'T Run:
+
+```python
+class Model(BaseModel):
+    value: int = 10
+    computed: int = Field(default_factory=lambda: 20)
+    
+    @field_validator("value", "computed")
+    @classmethod
+    def validate(cls, v):
+        print(f"Validating: {v}")
+        return v
+
+# Validators DON'T run for:
+m = Model()  # No validation for default values!
+
+# Direct attribute access (without validate_assignment)
+m = Model(value=1)
+m.__dict__["value"] = 999  # Bypasses validation!
+
+# Using construct() - specifically skips validation
+m = Model.model_construct(value="not an int!")  # No validation!
+```
+
+## Practical Implications:
+
+```python
+# Be careful with expensive validators!
+class DataScanner(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    
+    data: Dict[str, Any]
+    
+    @field_validator("data")
+    @classmethod
+    def expensive_validation(cls, v):
+        # This could run multiple times!
+        time.sleep(1)  # Simulate expensive operation
+        validate_against_database(v)
+        return v
+
+scanner = DataScanner(data={})  # Runs once
+scanner.data = {"new": "data"}  # Runs again!
+copied = scanner.model_copy(update={"data": {}})  # Runs again!
+```
+
+The key takeaway: validators are your data gatekeepers and run whenever data enters or changes in your model (depending on configuration), not just at instantiation!

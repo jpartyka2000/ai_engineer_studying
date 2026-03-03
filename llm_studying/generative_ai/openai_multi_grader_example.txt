@@ -1,0 +1,75 @@
+A **`multi`** grader bundles together multiple sub-graders and then computes a single composite score from them. Here’s a breakdown of each part of your example:
+
+```json
+{
+  "type": "multi",
+  "graders": {
+    "function_name": {
+      "name": "function_name",
+      "type": "string_check",
+      "input": "get_acceptors",
+      "reference": "{{ sample.output_tools[0].function.name }}",
+      "operation": "eq"
+    },
+    "arguments": {
+      "name": "arguments",
+      "type": "string_check",
+      "input": "{\"smiles\": \"{{ item.smiles }}\"}",
+      "reference": "{{ sample.output_tools[0].function.arguments }}",
+      "operation": "eq"
+    }
+  },
+  "calculate_output": "0.5 * function_name + 0.5 * arguments"
+}
+```
+
+---
+
+## 1. `"type": "multi"`
+
+Signals that this grader isn’t a single check, but rather a **composition** of multiple checks.
+
+## 2. `"graders"` block
+
+A dictionary of named sub-graders. Each key (e.g. `"function_name"`, `"arguments"`) is used as a variable in the final expression.
+
+### Sub-grader: `function_name`
+
+* **`type: "string_check"`**: compares two strings.
+* **`input: "get_acceptors"`**: a literal string (i.e., the name you expected the model to call).
+* **`reference: "{{ sample.output_tools[0].function.name }}"`**: the function name the model actually invoked on its first tool output.
+* **`operation: "eq"`**: passes if `input == reference` exactly.
+
+### Sub-grader: `arguments`
+
+* **`type: "string_check"`**: again, an exact-string comparison.
+* **`input: "{\"smiles\": \"{{ item.smiles }}\"}"`**: builds a JSON-like string with the expected arguments (in this case, the SMILES you passed in).
+* **`reference: "{{ sample.output_tools[0].function.arguments }}"`**: what the model actually passed as arguments to that function.
+* **`operation: "eq"`**: passes only if the JSON string matches exactly.
+
+> **Note:** both of these sub-graders will produce a **0/1** score (0 for fail, 1 for pass), because `string_check` by default yields a binary result.
+
+## 3. `"calculate_output"`
+
+A simple arithmetic expression combining sub-grader scores:
+
+```
+0.5 * function_name + 0.5 * arguments
+```
+
+* If the model got both the function name **and** the arguments right, you get
+  `0.5*1 + 0.5*1 = 1.0` (perfect).
+* If it got one right but the other wrong, you get `0.5`—a half-credit.
+* If it got both wrong, you get `0.0`.
+
+You can make this expression arbitrarily complex—weight some checks more heavily, include more sub-graders, or even nest other `multi` graders.
+
+---
+
+### Why use a `multi` grader?
+
+* **Granular feedback:** You see which part failed (name vs. args).
+* **Partial credit:** You can award partial scores instead of a simple pass/fail.
+* **Composite metrics:** Build a single scalar that still reflects multiple dimensions of correctness.
+
+That structure makes it easy to capture both **“did the model call the right function?”** and **“did it pass the right arguments?”** and to report a single blended score for your Eval dashboard or downstream analysis.

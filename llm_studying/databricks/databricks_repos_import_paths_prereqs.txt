@@ -1,0 +1,84 @@
+Yes — **if you're using Databricks Repos and Option 2 (`sys.path.insert(0, "./src")`)**, then **your import paths *will resolve correctly in production*** **as long as**:
+
+---
+
+### ✅ Prerequisites for Option 2 to work in production:
+
+1. **Your code is part of a Databricks Repo**
+
+   * Cloned from Git into `/Repos/...` (not uploaded manually or scattered across notebooks)
+   * This ensures `os.getcwd()` or `"./"` refers to the repo root
+
+2. **You have this structure inside the repo:**
+
+   ```
+   ecue_ingest/
+   ├── src/
+   │   └── ecue_ingest/
+   │       └── twou/
+   │           ├── common/
+   │           └── ml_processing/
+   ├── notebooks/
+   │   └── run_pipeline.py  ← This notebook is run in prod
+   ```
+
+3. **You do this in your notebook or script:**
+
+   ```python
+   import sys
+   sys.path.insert(0, "./src")
+   ```
+
+4. **You import using fully qualified module names:**
+
+   ```python
+   from ecue_ingest.twou.common.twou_configure_logger import _configure_logger
+   ```
+
+---
+
+### ✅ Why this works in Databricks production:
+
+* When Databricks runs a notebook or job from a **Repo**, it sets the working directory (`os.getcwd()`) to the **repo root**.
+* So `"./src"` is resolved relative to the repo root — consistent for all users and environments.
+* As long as `src/` is added to `sys.path`, your package structure behaves like a normal Python module.
+
+---
+
+### 🧪 Pro Tip: Test it like prod
+
+In a dev notebook:
+
+```python
+import os
+print(os.getcwd())
+```
+
+It should show something like:
+
+```
+/Workspace/Repos/yourname@yourorg.com/ecue_ingest
+```
+
+Then:
+
+```python
+import sys
+sys.path.insert(0, "./src")
+
+from ecue_ingest.twou.common.twou_configure_logger import _configure_logger  # ✅ Should work
+```
+
+---
+
+### ✅ Summary
+
+| Condition                          | Works in Prod? |
+| ---------------------------------- | -------------- |
+| You're using Databricks Repos      | ✅              |
+| You `sys.path.insert(0, "./src")`  | ✅              |
+| You use full package imports       | ✅              |
+| You rely on `/Workspace/Users/...` | ❌ Fragile      |
+
+You're on the right track. Let me know if you want a tiny bootstrap script to auto-add `src/` reliably in all notebooks.
+S

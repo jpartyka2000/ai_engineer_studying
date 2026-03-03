@@ -1,0 +1,26 @@
+That warning is LightGBM’s way of telling you “I’ve looked at every possible split in this node and none of them would improve the objective (all gains ≤ 0), so I’m stopping here.” The reported `best gain: -inf` just means “there wasn’t even one non‑negative gain to report.”
+
+### Why it happens
+
+1. **Pure (or nearly pure) node**
+   All remaining samples in that leaf have effectively the same gradients / hessians (or identical feature values), so there’s nothing useful to split on.
+2. **Strict split constraints**
+   You may have a high `min_split_gain` (aka `min_gain_to_split`), a large `min_child_samples`, or a hefty `min_child_weight`—any of which will reject small‑gain splits.
+3. **Depth or leaf limits reached**
+   You could be at `max_depth` or you’ve already created `num_leaves` and LightGBM can’t grow further under your settings.
+
+### What to do (or not)
+
+* **Often, you can safely ignore it.** It simply marks a natural stopping point in tree growth.
+* **If you wanted more splits**, relax those constraints:
+
+  ```python
+  min_split_gain=0.0 
+  min_child_samples=10 
+  min_child_weight=1e-6 
+  max_depth=8 
+  num_leaves=255
+  ```
+* **If you expected the node to split but it didn’t**, inspect that node’s sample count or feature variance—sometimes the data really isn’t splittable at that point.
+
+In short, it’s a *warning* (not an error) indicating LightGBM has exhausted all split options in a branch under your current regularization and data, and has pruned it accordingly.

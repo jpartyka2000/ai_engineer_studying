@@ -1,0 +1,59 @@
+## Yes! `weave.publish()` Publishes Both
+
+`weave.publish()` is used for **both models and datasets** (and any Weave object) - it's the universal publishing function.
+
+## Publishing Models:
+
+```python
+import weave
+
+class MyLLMApp(weave.Model):
+    temperature: float = 0.7
+    system_prompt: str
+    
+    @weave.op()
+    def predict(self, input: str):
+        return call_llm(input, self.temperature)
+
+# Create and publish a model
+model = MyLLMApp(system_prompt="You are helpful")
+weave.publish(model, "chat-model-v1")
+# Creates: weave:///team/project/chat-model-v1:hash
+
+# Later, retrieve it
+model_ref = weave.ref("chat-model-v1")
+model = model_ref.get()
+```
+
+## Publishing Datasets:
+
+```python
+# Same function for datasets
+dataset = weave.Dataset(
+    name="eval_data",
+    rows=[{"input": "test", "expected": "result"}]
+)
+weave.publish(dataset, "eval-data-v1")
+```
+
+## Common Pattern:
+
+```python
+# Publish both model and its evaluation dataset together
+weave.publish(model, "classifier-v2")
+weave.publish(training_data, "classifier-training-v2")
+weave.publish(eval_data, "classifier-eval-v2")
+
+# Team can retrieve the complete set
+model = weave.ref("classifier-v2").get()
+data = weave.ref("classifier-training-v2").get()
+```
+
+## What Can Be Published:
+
+- **Models** (classes inheriting from `weave.Model`)
+- **Datasets** (`weave.Dataset` objects)
+- **Any Weave Object** (custom classes with Weave tracking)
+- **Evaluation results**
+
+**Bottom line**: `weave.publish()` is the universal "save and version this" function - works for models, datasets, or any tracked object you want to share or version.

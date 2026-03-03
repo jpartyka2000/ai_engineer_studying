@@ -1,0 +1,86 @@
+**Explaining predict\_proba**
+
+The user is asking about the availability of a `.predict_proba()` method when using `pyfunc` with MLflow. The answer is that `pyfunc` models use `.predict()`, but they don’t have `.predict_proba()` by default. If you load a flavor-specific model instead, like `mlflow.sklearn.load_model`, you might have access to `.predict_proba()` if that model supports it. So, in short, `PyFuncModel` offers `.predict()`, and you need to load the underlying flavor-specific model for `.predict_proba()`.
+
+
+Thought for 5 seconds
+
+
+The short answer is that the universal **PyFuncModel** you get back from
+
+```python
+model = mlflow.pyfunc.load_model(model_uri)
+```
+
+only guarantees you a `.predict()` method. There is **no** `.predict_proba()` on the PyFuncModel API.
+
+---
+
+## Why PyFunc only has `.predict()`
+
+* The `python_function` (“pyfunc”) flavor is framework‐agnostic—MLflow can’t assume every model even has a probability method, so it only exposes `predict(input_dataframe)` and returns whatever the model was logged to return.
+* If you logged your model via something like `mlflow.sklearn.log_model(clf, “model”, signature=…)`, the pyfunc wrapper will by default call `clf.predict()` under the hood.
+
+---
+
+## Two ways to get probabilities
+
+### 1) Load the flavor‑specific model
+
+If you need `predict_proba()`, reload the model using its native flavor loader:
+
+```python
+import mlflow
+
+model_uri = f"models:/MyModel/Production"
+
+# For a scikit‑learn model:
+sk_model = mlflow.sklearn.load_model(model_uri)
+probs    = sk_model.predict_proba(X_new)[:,1]
+
+# Or for LightGBM:
+# lgb_model = mlflow.lightgbm.load_model(model_uri)
+# probs     = lgb_model.predict_proba(X_new)[:,1]
+```
+
+That gives you the original model object with all its methods, including `.predict_proba()`.
+
+### 2) Log a pyfunc that returns probabilities
+
+When you register, explicitly wrap your model in a small `pyfunc.PythonModel` that calls `predict_proba`, so that `.predict()` on the PyFuncModel returns probabilities:
+
+```python
+from mlflow.pyfunc import PythonModel, log_model
+
+class ProbModel(PythonModel):
+    def load_context(self, context):
+        import mlflow.sklearn
+        self.clf = mlflow.sklearn.load_model(context.artifacts["skmodel"])
+    def predict(self, context, model_input):
+        return self.clf.predict_proba(model_input)[:,1]
+
+# inside your run
+mlflow.sklearn.log_model(clf, "skmodel")
+log_model(
+    python_model=ProbModel(),
+    artifact_path="prob_model",
+    artifacts={"skmodel": "skmodel"}
+)
+```
+
+Then later
+
+```python
+prob_pyfunc = mlflow.pyfunc.load_model("runs:/<run_id>/prob_model")
+probs        = prob_pyfunc.predict(X_new)
+```
+
+---
+
+### TL;DR
+
+* **`mlflow.pyfunc.load_model()` → PyFuncModel → only `.predict()`**
+* **If you want `.predict_proba()`**, either:
+
+  1. **Reload** with the flavor loader (e.g. `mlflow.sklearn.load_model`)
+  2. **Wrap** your model in a pyfunc that calls `predict_proba` so that `.predict()` returns probabilities.

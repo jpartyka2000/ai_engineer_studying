@@ -1,0 +1,43 @@
+Yes—LightGBM has built‑in support for missing values so you don’t have to impute before training. Under the hood it does this by learning, for each split, which way “missing” should go:
+
+1. **Default split direction**
+   When LightGBM evaluates a candidate split on feature $j$, it considers three groups:
+
+   * samples with $x_j <$ threshold,
+   * samples with $x_j \ge$ threshold,
+   * samples where $x_j$ is **missing** (NaN).
+     It then chooses a “default” direction (left or right) for the missing ones that maximizes the gain.
+
+2. **No need to mark NaNs specially**
+   Just leave your missing entries as `np.nan` (or `None`) in your pandas/NumPy or Spark DataFrame and pass them straight into `LGBMClassifier` or `lgb.Dataset(...)`. LightGBM will detect `nan` and handle them.
+
+3. **Zero as missing option**
+   If you have sparse data encoded with zeros and want zeros treated as missing, you can set
+
+   ```python
+   model = LGBMClassifier(use_missing=True, zero_as_missing=True, …)
+   ```
+
+   (The default is `zero_as_missing=False`.)
+
+4. **Why it works better than simple imputation**
+
+   * The model learns *where* to send missing samples on a per‑split basis, which can capture interactions between “is this missing?” and other features.
+   * You avoid the bias introduced by a global imputation (mean/median) that might not reflect how “missingness” itself carries information.
+
+---
+
+**In practice** just feed your DataFrame with `np.nan` into LightGBM:
+
+```python
+from lightgbm import LGBMClassifier
+
+model = LGBMClassifier(random_state=42)
+model.fit(
+    X_train, y_train,
+    X_val=(X_val, y_val)
+    # X_train/X_val can contain np.nan
+)
+```
+
+and LightGBM will automatically learn how to route missing values at every split.

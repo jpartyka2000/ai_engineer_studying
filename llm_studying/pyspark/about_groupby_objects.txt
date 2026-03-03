@@ -1,0 +1,63 @@
+In PySpark, a **groupBy** object itself does not hold data. It represents a transformation on a DataFrame that is waiting for an **aggregation** function to be applied (like `.agg()`, `.count()`, `.sum()`, etc.). To see the values associated with a **groupBy** operation, you need to apply an aggregation function and then display the resulting DataFrame.
+
+Here’s how you can do that:
+
+### Example:
+
+Assume you have grouped by `column1`:
+
+```python
+grouped = df.groupBy('column1')
+```
+
+To see the values, you can apply an aggregation function. For example:
+
+#### 1. **Count Aggregation**:
+```python
+grouped_count = grouped.count()
+grouped_count.show()
+```
+
+#### 2. **Sum Aggregation (Example)**:
+If you have another column (say, `column2`), and you want to sum the values of `column2` for each group in `column1`:
+```python
+grouped_sum = grouped.sum('column2')
+grouped_sum.show()
+```
+
+#### 3. **Multiple Aggregations**:
+You can also apply multiple aggregations at once:
+```python
+grouped_agg = grouped.agg(
+    F.count('column1').alias('count'),
+    F.sum('column2').alias('sum_column2')
+)
+grouped_agg.show()
+```
+
+### Conclusion:
+A **groupBy** object is an intermediate step in PySpark. To see the values, you need to apply an aggregation function such as `.count()`, `.sum()`, `.avg()`, etc., and then use `.show()` to display the results.
+
+----------------------------------
+
+Yes, when you create a **groupBy** object in PySpark by grouping on one or more columns from a DataFrame, the object still maintains a reference to all the non-grouping columns in the original DataFrame. The groupBy object itself is an intermediate transformation and doesn't drop any of the other columns until you apply an aggregation function.
+
+### Key Points:
+- The **groupBy** object includes all columns of the original DataFrame, but only applies the grouping logic to the specified columns.
+- When you apply an aggregation function (e.g., `.count()`, `.sum()`, `.avg()`), it operates on the non-grouping columns while still respecting the grouping.
+
+### Example:
+
+```python
+# Group by column 'col1'
+grouped = df.groupBy('col1')
+
+# Apply aggregation, like sum on 'col2'
+result = grouped.sum('col2')
+result.show()
+```
+
+In this case, `grouped` still knows about the other columns in `df` like `col2` or `col3`, but they aren't acted upon until an aggregation is applied. If you do an aggregation like `sum('col2')`, it operates on the `col2` column based on the groups in `col1`. However, until you perform an action, all the non-grouping columns remain available in the context of the groupBy object. 
+
+### Conclusion:
+Yes, the groupBy object still has a reference to all columns in `df`, but you need to apply an aggregation or transformation to utilize those other columns effectively.

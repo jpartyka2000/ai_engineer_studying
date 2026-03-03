@@ -1,0 +1,27 @@
+This usually happens when your “top _n_” list includes categories that actually don’t show up in the plotted data—most commonly because they’re `NaN` (or you used `dropna=False` when computing counts).  Seaborn’s `countplot` will silently drop missing values (so you get an empty slot in your `order` with no bar), or if your category value is the empty string you’ll get a blank tick label.  
+
+**How to fix it:**
+
+1. **Don’t include `NaN` in your `order`:**  
+   ```python
+   counts = df[col].value_counts()       # default drops NaN
+   top_n  = counts.head(6)
+   order  = top_n.index
+   ```
+
+2. **Or explicitly fill missing with a placeholder before plotting:**  
+   ```python
+   df_plot = df[col].fillna("Missing")
+   counts  = df_plot.value_counts().head(6)
+   order   = counts.index
+   sns.countplot(x=df_plot, order=order, …)
+   ```
+
+3. **Filter out zero‑count categories** in case you accidentally include them:  
+   ```python
+   counts = df[col].value_counts(dropna=False)
+   counts = counts[counts>0].head(6)
+   order  = counts.index
+   ```
+
+Any of those will ensure that every entry in `order` has a real bar (and a visible label) to go with its annotation.

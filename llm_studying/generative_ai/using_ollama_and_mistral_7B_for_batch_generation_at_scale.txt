@@ -1,0 +1,107 @@
+For batch generation at that scale, you'll want to think about throughput optimization, error handling, and efficient connection management. Here are some considerations:
+
+**Architecture recommendations**
+
+1. **Use async for concurrency** — Ollama can handle multiple requests, and async lets you keep the pipeline fed while waiting on responses:
+
+```python
+import ollama
+import asyncio
+
+async def generate_review(prompt: str) -> str:
+    client = ollama.AsyncClient()
+    response = await client.generate(model='mistral', prompt=prompt)
+    return response['response']
+
+async def batch_generate(prompts: list[str], concurrency: int = 4) -> list[str]:
+    semaphore = asyncio.Semaphore(concurrency)
+    
+    async def limited_generate(prompt):
+        async with semaphore:
+            return await generate_review(prompt)
+    
+    return await asyncio.gather(*[limited_generate(p) for p in prompts])
+
+# Usage
+prompts = [f"Write a review for album {i}" for i in range(100)]
+results = asyncio.run(batch_generate(prompts, concurrency=4))
+```
+
+2. **Tune concurrency carefully** — On your M3 Pro, running 2–4 concurrent requests is probably the sweet spot. More than that and you'll saturate the GPU cores without gaining speed.
+
+3. **Prompt templates** — Keep prompts consistent and parameterized:
+
+```python
+ALBUM_REVIEW_TEMPLATE = """Write a {tone} album review for:
+Artist: {artist}
+Album: {album}
+Genre: {genre}
+Year: {year}
+
+Write 2-3 paragraphs."""
+
+SONG_REVIEW_TEMPLATE = """Write a brief song review for:
+Track: {title}
+Artist: {artist}
+Genre: {genre}
+
+Keep it under 100 words."""
+```
+
+4. **Add retry logic and progress tracking**:
+
+```python
+import asyncio
+from tqdm.asyncio import tqdm
+
+async def generate_with_retry(prompt: str, max_retries: int = 3) -> str | None:
+    client = ollama.AsyncClient()
+    for attempt in range(max_retries):
+        try:
+            response = await client.generate(model='mistral', prompt=prompt)
+            return response['response']
+        except Exception as e:
+            if attempt == max_retries - 1:
+                print(f"Failed after {max_retries} attempts: {e}")
+                return None
+            await asyncio.sleep(1)
+
+async def batch_with_progress(prompts: list[str], concurrency: int = 4):
+    semaphore = asyncio.Semaphore(concurrency)
+    
+    async def limited_generate(prompt):
+        async with semaphore:
+            return await generate_with_retry(prompt)
+    
+    tasks = [limited_generate(p) for p in prompts]
+    return await tqdm.gather(*tasks, desc="Generating")
+```
+
+5. **Checkpoint results** — For thousands of generations, save incrementally so you don't lose progress:
+
+```python
+import json
+from pathlib import Path
+
+def save_checkpoint(results: list, filepath: Path):
+    with open(filepath, 'w') as f:
+        json.dump(results, f)
+
+# Save every N completions
+```
+
+**Time estimates for your M3 Pro**
+
+Assuming ~40 tokens/second and average outputs of 150 tokens:
+- Per generation: ~4 seconds
+- 1,000 reviews (sequential): ~1 hour
+- 1,000 reviews (4 concurrent): ~15–20 minutes
+- 10,000 reviews: ~3–4 hours with concurrency
+
+**Other tips**
+
+- Consider using a smaller quantization (Q4_K_S) if quality is acceptable — slightly faster
+- Keep `num_ctx` (context window) as small as your prompts allow
+- If outputs are repetitive, you might cache or template common phrases
+
+Would you like me to put together a more complete module structure for your package?

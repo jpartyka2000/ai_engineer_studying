@@ -1,0 +1,158 @@
+`unittest.mock` is Python’s **built-in mocking framework** (in the standard library) for testing. It lets you replace parts of your system under test—functions, classes, objects—with controllable **mocks** so you can assert how they were used without touching real dependencies (AWS, files, databases, etc.).
+
+# Core pieces (quick tour)
+
+### Mock / MagicMock
+
+```python
+from unittest.mock import Mock, MagicMock
+
+m = Mock()
+m.do(1, x=2)                  # calling is fine
+m.do.assert_called_once_with(1, x=2)
+
+m2 = MagicMock()              # like Mock but has magic methods preconfigured
+m2.__len__.return_value = 10
+assert len(m2) == 10
+```
+
+### return\_value & side\_effect
+
+```python
+m = Mock(return_value=42)
+assert m() == 42
+
+# Compute/raise per-call:
+def boom(*a, **k): raise RuntimeError("nope")
+m.side_effect = boom  # or a list: [1, 2, RuntimeError()]
+```
+
+### patch (replace “where it’s used”)
+
+```python
+from unittest.mock import patch
+
+# Context manager
+with patch("pkg.module.func", return_value="stubbed") as mock_func:
+    assert call_thing() == "stubbed"
+    mock_func.assert_called_once()
+
+# Decorator
+@patch("pkg.module.Class")               # replaces Class in pkg.module
+def test_something(MockClass):
+    MockClass.return_value.run.return_value = True
+```
+
+**Important:** patch the object **at its import location** (“where it’s looked up”), not where it was originally defined.
+
+### spec / autospec (safer mocks)
+
+```python
+from unittest.mock import create_autospec
+
+def real(a: int, b: str) -> int: ...
+
+# Enforce attributes/signature at mock time:
+safe = create_autospec(real)     # calls must match real(a, b)
+safe(1, "x")                     # ok
+# safe("oops") -> raises TypeError
+
+obj = SomeClass()
+mock_obj = Mock(spec=obj)        # only attrs existing on obj are allowed
+```
+
+### Inspecting calls
+
+```python
+from unittest.mock import call, ANY
+
+m = Mock()
+m.do(1, y=2)
+assert m.do.called
+assert m.do.call_args == call(1, y=2)
+assert m.do.call_args_list == [call(1, y=2)]
+m.do.assert_called_once_with(1, y=2)
+m.do.assert_any_call(ANY, y=2)   # ANY matches anything
+```
+
+### Async code
+
+```python
+import pytest
+from unittest.mock import AsyncMock, patch
+
+@patch("pkg.module.async_func", new_callable=AsyncMock)
+@pytest.mark.asyncio
+async def test_async(mock_af):
+    mock_af.return_value = "ok"
+    assert await use_async() == "ok"
+    mock_af.assert_awaited_once()
+```
+
+### Properties & attributes
+
+```python
+from unittest.mock import patch, PropertyMock
+
+with patch.object(MyClass, "name", new_callable=PropertyMock) as prop:
+    prop.return_value = "fake"
+    assert MyClass().name == "fake"
+```
+
+### Files & context managers
+
+```python
+from unittest.mock import mock_open, patch
+
+m = mock_open(read_data="hello")
+with patch("builtins.open", m):
+    assert open("x").read() == "hello"
+m.assert_called_once_with("x")
+```
+
+### Patch variations
+
+```python
+from unittest.mock import patch
+
+with patch.dict(os.environ, {"MODE": "test"}, clear=False):
+    ...
+
+with patch.multiple("pkg.module",
+    func1=Mock(return_value=1),
+    func2=Mock(return_value=2)):
+    ...
+```
+
+# Typical pytest pattern (fits your AWS example)
+
+Split “value fixture” from “autouse patch” so you can both patch globally and assert calls explicitly:
+
+```python
+# conftest.py
+import json
+import pytest
+from unittest.mock import Mock
+
+@pytest.fixture
+def aws_secret_mock():
+    secret = {"DD_API_KEY": "fake", "DD_SITE": "fake-site"}
+    client = Mock()
+    client.get_secret_value.return_value = {"SecretString": json.dumps(secret)}
+    return {"client": client, "secret": secret}
+
+@pytest.fixture(autouse=True)
+def _install_secret_mock(monkeypatch, aws_secret_mock):
+    monkeypatch.setattr("cue_common.cue_utils.aws_utils.boto3.client",
+                        lambda *_: aws_secret_mock["client"], raising=True)
+```
+
+# Key reminders
+
+* Patch **where referenced**, not where defined.
+* Prefer `autospec`/`create_autospec` to catch bad call signatures.
+* Keep one stable mock instance per dependency if you want to assert call history.
+* Use `AsyncMock` for `async def`.
+* Don’t overuse global patches—make them explicit or scoped to tests where possible.
+
+If you share a concrete function you’re testing, I can show the exact `patch` target string and the minimal asserts that give the most signal.

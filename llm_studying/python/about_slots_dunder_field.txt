@@ -1,0 +1,290 @@
+## 📋 Deep Dive: `__slots__` in Python
+
+---
+
+### What Is `__slots__`?
+
+`__slots__` is a class variable that explicitly declares which instance attributes a class allows. When you define `__slots__`, Python:
+
+1. **Doesn't create a `__dict__`** for each instance (saves memory)
+2. **Prevents adding new attributes** not listed in `__slots__`
+
+---
+
+### Basic Example
+
+```python
+class Person:
+    __slots__ = ('name', 'age')
+
+p = Person()
+p.name = "Alice"  # ✅ Works
+p.age = 30        # ✅ Works
+p.email = "a@b.c" # ❌ AttributeError: 'Person' object has no attribute 'email'
+```
+
+Without `__slots__`:
+
+```python
+class Person:
+    pass
+
+p = Person()
+p.name = "Alice"  # ✅ Works
+p.age = 30        # ✅ Works
+p.email = "a@b.c" # ✅ Also works — no restriction
+p.anything = 123  # ✅ Can add any attribute
+```
+
+---
+
+### Why Use `__slots__`?
+
+#### 1. Memory Savings
+
+Each normal Python object has a `__dict__` (a dictionary) that stores its attributes. Dictionaries have overhead.
+
+```python
+import sys
+
+class WithoutSlots:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class WithSlots:
+    __slots__ = ('x', 'y')
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+a = WithoutSlots(1, 2)
+b = WithSlots(1, 2)
+
+print(sys.getsizeof(a.__dict__))  # ~104 bytes (the dict itself)
+# b has no __dict__!
+# print(b.__dict__)  # AttributeError: 'WithSlots' object has no attribute '__dict__'
+```
+
+**When you have millions of objects, this adds up!**
+
+#### 2. Prevent Typos
+
+```python
+class Config:
+    __slots__ = ('debug', 'timeout', 'retries')
+
+config = Config()
+config.debug = True
+config.timout = 30  # ❌ AttributeError — caught the typo!
+```
+
+#### 3. Faster Attribute Access
+
+Attribute lookup is slightly faster with `__slots__` because Python doesn't need to search a dictionary.
+
+---
+
+### How It Works Under the Hood
+
+With `__slots__`, Python creates **descriptors** for each slot at the class level:
+
+```python
+class Point:
+    __slots__ = ('x', 'y')
+
+# Python creates these behind the scenes:
+print(type(Point.x))  # <class 'member_descriptor'>
+print(type(Point.y))  # <class 'member_descriptor'>
+```
+
+These descriptors store values in a fixed-size internal array, not a dictionary.
+
+---
+
+### No `__dict__` By Default
+
+```python
+class Slotted:
+    __slots__ = ('value',)
+
+class Normal:
+    pass
+
+s = Slotted()
+n = Normal()
+
+print(hasattr(n, '__dict__'))  # True
+print(hasattr(s, '__dict__'))  # False
+
+n.__dict__['secret'] = 123  # Works
+# s.__dict__  # AttributeError!
+```
+
+**If you need both slots AND `__dict__`:**
+
+```python
+class Hybrid:
+    __slots__ = ('x', 'y', '__dict__')  # Explicitly include __dict__
+
+h = Hybrid()
+h.x = 1          # Uses slot
+h.z = 3          # Uses __dict__ (allowed now!)
+```
+
+---
+
+### `__slots__` Syntax Options
+
+```python
+# Tuple (most common)
+class A:
+    __slots__ = ('x', 'y')
+
+# List (also works)
+class B:
+    __slots__ = ['x', 'y']
+
+# Single attribute (still needs to be iterable)
+class C:
+    __slots__ = ('x',)  # Note the comma!
+
+# String works but creates one slot per character — DON'T DO THIS
+class D:
+    __slots__ = 'xy'  # Creates slots 'x' and 'y' — confusing!
+```
+
+---
+
+### Inheritance with `__slots__`
+
+This gets tricky:
+
+```python
+class Parent:
+    __slots__ = ('x',)
+
+class Child(Parent):
+    __slots__ = ('y',)  # Only add NEW slots
+
+c = Child()
+c.x = 1  # ✅ Inherited from Parent
+c.y = 2  # ✅ Defined in Child
+c.z = 3  # ❌ AttributeError
+```
+
+**If child doesn't define `__slots__`:**
+
+```python
+class Parent:
+    __slots__ = ('x',)
+
+class Child(Parent):
+    pass  # No __slots__ — gets a __dict__!
+
+c = Child()
+c.x = 1  # ✅ From Parent's slot
+c.y = 2  # ✅ Stored in __dict__ (no restriction)
+```
+
+---
+
+### Common Gotchas
+
+#### 1. Can't Use `__slots__` with Multiple Inheritance (if both have non-empty slots)
+
+```python
+class A:
+    __slots__ = ('x',)
+
+class B:
+    __slots__ = ('y',)
+
+class C(A, B):  # ❌ TypeError: multiple bases have instance lay-out conflict
+    pass
+```
+
+#### 2. Default Values Don't Work Directly
+
+```python
+class Wrong:
+    __slots__ = ('x',)
+    x = 10  # ❌ This shadows the slot descriptor!
+
+class Right:
+    __slots__ = ('x',)
+    
+    def __init__(self):
+        self.x = 10  # ✅ Set in __init__
+```
+
+#### 3. Can't Pickle Without `__getstate__`/`__setstate__`
+
+```python
+import pickle
+
+class Slotted:
+    __slots__ = ('x',)
+
+s = Slotted()
+s.x = 42
+# pickle.dumps(s)  # May fail or lose data
+
+# Fix: implement __getstate__ and __setstate__
+```
+
+---
+
+### When to Use `__slots__`
+
+| Use Case | Use `__slots__`? |
+|----------|------------------|
+| Millions of small objects | ✅ Yes — memory savings |
+| Data classes with fixed fields | ✅ Yes — prevents typos |
+| Need maximum performance | ✅ Yes — faster access |
+| Need to add attributes dynamically | ❌ No |
+| Using multiple inheritance heavily | ❌ No — complications |
+| Quick prototyping | ❌ No — too restrictive |
+
+---
+
+### Quick Comparison
+
+```python
+# Without __slots__
+class Normal:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+# With __slots__
+class Slotted:
+    __slots__ = ('x', 'y')
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+```
+
+| Aspect | Normal | Slotted |
+|--------|--------|---------|
+| Has `__dict__` | Yes | No |
+| Memory per instance | Higher | Lower |
+| Can add new attributes | Yes | No |
+| Attribute access speed | Normal | Slightly faster |
+| Inheritance | Simple | Tricky |
+
+---
+
+### Summary
+
+| Feature | Description |
+|---------|-------------|
+| What it is | Class variable listing allowed attributes |
+| Memory | Saves memory by eliminating `__dict__` |
+| Restriction | Prevents adding unlisted attributes |
+| Syntax | `__slots__ = ('attr1', 'attr2')` |
+| Best for | Many instances, fixed attributes, performance |
+
+---
+
+Now, would you like to attempt the `LockedClass` question, or would you like me to explain `__setattr__` first?

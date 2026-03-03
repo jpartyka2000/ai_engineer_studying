@@ -1,0 +1,58 @@
+Great question — this one’s a little hidden, because `FunctionModel` isn’t something most people use directly when working with Pydantic.
+
+---
+
+## 🔎 What `FunctionModel` Is
+
+* In **Pydantic v2**, `FunctionModel` is an **internal utility class** used by the [`@validate_call`](https://docs.pydantic.dev/latest/api/validate_call/) decorator.
+* It’s essentially a `BaseModel` that Pydantic generates dynamically to represent the **signature of a function**.
+* It allows Pydantic to validate the inputs you pass to a function as if they were fields in a model.
+
+So, it’s not meant for everyday model design — it’s part of the engine that powers function argument validation.
+
+---
+
+## 📌 Example with `@validate_call`
+
+```python
+from pydantic import validate_call
+
+@validate_call
+def add(x: int, y: int) -> int:
+    return x + y
+
+print(add(1, 2))      # ✅ 3
+print(add("1", "2"))  # ✅ 3 (strings get coerced to int)
+print(add("a", "b"))  # ❌ ValidationError
+```
+
+Behind the scenes:
+
+* Pydantic builds a `FunctionModel` that looks like:
+
+  ```python
+  class AddFunctionModel(BaseModel):
+      x: int
+      y: int
+  ```
+* Each time you call `add(...)`, the arguments are passed into that hidden model for validation.
+
+---
+
+## ⚖️ Difference from `BaseModel`
+
+* `BaseModel` → you define explicitly, to validate structured data.
+* `FunctionModel` → generated automatically from a function signature, used internally by `@validate_call`.
+
+---
+
+## ✅ Takeaway
+
+A **`FunctionModel`** in Pydantic is a **dynamically generated `BaseModel`** that represents the validated parameters of a function.
+
+* You don’t normally define one yourself.
+* They’re created internally when you use tools like `@validate_call`.
+
+---
+
+👉 Would you like me to show you how you could **inspect the hidden `FunctionModel` class** that Pydantic generates for a function? That can be a neat way to peek under the hood.

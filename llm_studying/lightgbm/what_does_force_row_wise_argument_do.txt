@@ -1,0 +1,39 @@
+In LightGBM, the **`force_row_wise`** parameter lets you override LightGBM’s automatic choice of histogram‑building strategy and **always** use the **row‑wise** algorithm. Here’s what that means:
+
+* **Default behavior**
+  When both `force_col_wise=false` and `force_row_wise=false` (the defaults), LightGBM will **test** a small chunk of your data with both the column‑wise and row‑wise histogram methods and then pick whichever is faster at startup. ([lightgbm.readthedocs.io][1])
+
+* **What `force_row_wise=true` does**
+  It skips that startup test and **directly** uses the row‑wise histogram construction for **all** splits.
+
+  * You scan each **row** in turn, accumulating histograms on the fly.
+  * Eliminates the \~millisecond overhead of testing both methods. ([lightgbm.readthedocs.io][1])
+
+* **When to use it**
+  Row‑wise can be faster or more stable when:
+
+  1. **# of rows** is very large, but the **total # of bins** is relatively small.
+  2. You’re running with a **small number of threads** (e.g. ≤ 16).
+  3. You’re using **bagging\_fraction** or **GOSS** strategies to subsample data.
+     However, note that **forcing** row‑wise **doubles** the memory usage of the Dataset object, so if you’re memory‑constrained you might prefer `force_col_wise=true` instead. ([lightgbm.readthedocs.io][1])
+
+* **Interaction with determinism**
+  If you set `deterministic=true` (to get bit‑for‑bit identical results across runs), you **must** also set either `force_col_wise=true` or `force_row_wise=true` to avoid numerical instabilities in the auto‑test phase. ([lightgbm.readthedocs.io][1])
+
+---
+
+**Example usage in Python**:
+
+```python
+from lightgbm import LGBMClassifier
+
+model = LGBMClassifier(
+    n_estimators=100,
+    learning_rate=0.1,
+    force_row_wise=True,     # always use row-wise histograms
+    deterministic=False      # optional: set True for full reproducibility
+)
+model.fit(X_train, y_train)
+```
+
+[1]: https://lightgbm.readthedocs.io/en/latest/Parameters.html "Parameters — LightGBM 4.6.0.99 documentation"

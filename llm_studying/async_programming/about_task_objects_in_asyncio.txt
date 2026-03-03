@@ -1,0 +1,86 @@
+**`asyncio.Task` Objects: An Overview**
+
+In Python’s `asyncio` framework, a **Task** wraps a coroutine and schedules it to run on the event loop. Tasks allow you to:
+
+* **Drive coroutines in the background**, without blocking your main flow.
+* **Monitor** the status of asynchronous work.
+* **Retrieve results or exceptions** once the work completes.
+
+---
+
+### Creating Tasks
+
+* **`asyncio.create_task(coro)`**
+  Schedules `coro` to run “soon” on the current event loop and returns a `Task` object.
+
+* **`loop.create_task(coro)`**
+  Equivalent, if you have an explicit loop reference.
+
+---
+
+### Key Properties
+
+* **`task.done()` → `bool`**
+  Has the task finished (either by returning, raising, or being canceled)?
+
+* **`task.cancelled()` → `bool`**
+  Was `task.cancel()` ever called *and* did it honor the cancellation?
+
+---
+
+### Key Methods
+
+* **`task.cancel()`**
+  Requests cancellation by throwing a `CancelledError` into the coroutine at its next `await`. Returns `True` if cancellation was scheduled, `False` if it was already done.
+
+* **`await task`**
+  Waits for the task to complete.
+
+  * If the coroutine returned a value, `await task` yields that value.
+  * If it raised an exception, awaiting the task re-raises that exception.
+  * If it was canceled, awaiting it raises `asyncio.CancelledError`.
+
+* **`task.result()`**
+  Returns the coroutine’s return value if done successfully.
+
+  * Raises the coroutine’s exception if it failed.
+  * Raises `InvalidStateError` if the task isn’t done yet.
+
+* **`task.exception()`**
+  Returns the exception instance if the coroutine raised one.
+
+  * Returns `None` if it succeeded.
+  * Raises `InvalidStateError` if the task isn’t done yet.
+
+* **`task.add_done_callback(fn)`**
+  Registers a callback `fn(task)` to be called *exactly once* when the task finishes (in any fashion). Useful for fire-and-forget workflows where you still need to clean up exceptions.
+
+---
+
+### Example Usage
+
+```python
+import asyncio
+
+async def worker(delay):
+    await asyncio.sleep(delay)
+    return f"Completed after {delay}s"
+
+async def main():
+    task1 = asyncio.create_task(worker(1))
+    task2 = asyncio.create_task(worker(2))
+
+    # Fire-and-forget background logging
+    task2.add_done_callback(lambda t: print("Task2 done:", t.result()))
+
+    # Meanwhile, await task1’s result explicitly
+    result1 = await task1
+    print("Task1 result:", result1)
+
+    # You can still await task2 later if you want:
+    # result2 = await task2
+
+asyncio.run(main())
+```
+
+Tasks provide a structured way to manage concurrent coroutines: you can schedule, cancel, await, and hook into their lifecycle events all through a well-defined API.

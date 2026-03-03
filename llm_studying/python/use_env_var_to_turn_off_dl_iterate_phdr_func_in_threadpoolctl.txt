@@ -1,0 +1,21 @@
+Solution 3 works because `threadpoolctl` is designed to check for that specific environment variable during its initialization to determine whether it should use the `dl_iterate_phdr` functionality.
+
+Here's what happens:
+
+1. **The `dl_iterate_phdr` function** is a GNU libc function that iterates through all loaded shared libraries in a process. `threadpoolctl` uses this to detect and control threading libraries like OpenBLAS, MKL, etc.
+
+2. **The problem**: On some systems (particularly certain Linux configurations, containers, or when using certain Python distributions), calling `dl_iterate_phdr` can cause issues like:
+   - Segmentation faults
+   - Hanging/freezing
+   - Compatibility problems with certain libraries
+
+3. **The built-in escape hatch**: The `threadpoolctl` developers anticipated these issues and added an environment variable check as a way to disable this functionality. When you set `THREADPOOLCTL_USE_DL_ITERATE_PHDR='0'`, the library:
+   - Skips the `dl_iterate_phdr` call entirely
+   - Falls back to alternative methods to detect threading libraries
+   - Or simply operates with reduced functionality
+
+4. **Why before import**: The environment variable must be set before importing `threadpoolctl` because the library checks this variable during its module initialization. Once imported, the decision has already been made.
+
+This is a deliberate design choice by the `threadpoolctl` maintainers to provide a clean way to work around system-specific issues without requiring code modifications or monkey-patching. It's documented (though not prominently) as a troubleshooting option for users experiencing crashes or compatibility issues.
+
+The monkey-patching approaches (Solutions 1 & 2) work by directly replacing the problematic method, but they're more fragile since they depend on internal implementation details. The environment variable approach is the "official" way to handle this issue.

@@ -1,0 +1,270 @@
+Great question! You've got a solid foundation of metrics. Here's how to build this into a comprehensive evaluation framework:
+
+## 1. Benchmark Alignment (Emulating Popular Eval Frameworks)
+
+**Study these benchmarks for data analysis agents:**
+- **GAIA** (General AI Assistants) - multi-step reasoning tasks
+- **ToolBench** - tool use evaluation
+- **API-Bank** - API/tool calling correctness
+- **HumanEval-SQL** - SQL generation accuracy
+- **BIRD** (Big Bench for Database Reasoning) - complex SQL + reasoning
+
+**What they measure that you should add:**
+- **Task completion rate** - did it actually answer the question?
+- **Self-correction ability** - recovery from errors
+- **Tool call necessity** - are all tool calls needed?
+- **Human preference alignment** - which answer would humans prefer?
+
+## 2. Missing Metrics You Should Add
+
+### (a) Answer Correctness - **Needs Expansion**
+```python
+# Current: Only 50% have correct_answer tags
+# Add:
+- Numeric accuracy (for quantitative answers)
+- Fact verification against ground truth
+- SQL query correctness (if applicable)
+- Statistical test appropriateness
+- Confidence calibration (is the agent appropriately confident?)
+```
+
+### (b) Answer Quality - **Pretty Good, Minor Additions**
+```python
+# You have: coherence, fluency, justified_brevity, structure
+# Consider adding:
+- Readability score (Flesch-Kincaid)
+- Technical accuracy of terminology
+- Appropriate caveats/limitations mentioned
+- Actionability (can user act on this answer?)
+```
+
+### (c) Trajectory Soundness - **Needs More Depth**
+```python
+# You have: tool_success_rate, n_tool_calls
+# Add:
+- Tool call redundancy (repeated identical calls)
+- Tool call ordering optimality
+- Backtracking frequency (going back to fix mistakes)
+- Dead-end detection (pursuing wrong path)
+- Planning quality (does it plan before acting?)
+```
+
+### (d) Trajectory Step-by-Step Correctness - **MISSING**
+```python
+class TrajectoryStepCorrectnessScorer(Scorer):
+    """Evaluate each step in the trajectory"""
+    @weave.op()
+    async def score(self, output: dict) -> dict:
+        trajectory = output["trajectory"]
+        
+        step_scores = []
+        for step in trajectory:
+            step_scores.append({
+                "tool_choice_correct": ...,  # Was this the right tool?
+                "parameters_correct": ...,    # Were params valid?
+                "result_used_properly": ...,  # Did next step use results?
+                "error_handled": ...,         # If error, was it handled?
+            })
+        
+        return {
+            "trajectory_step_correctness": step_scores,
+            "perfect_steps_fraction": ...,
+            "critical_errors": ...,
+        }
+```
+
+### (e) Adaptation/Recovery - **MISSING, CRITICAL**
+```python
+class AdaptationScorer(Scorer):
+    """Measure recovery from errors"""
+    @weave.op()
+    async def score(self, output: dict) -> dict:
+        trajectory = output["trajectory"]
+        
+        # Find error points
+        errors = [step for step in trajectory if step.get("error")]
+        
+        # Check if strategy changed after error
+        recoveries = []
+        for i, error_step in enumerate(errors):
+            next_steps = trajectory[i+1:i+4]  # Look at next 3 steps
+            
+            recoveries.append({
+                "error_acknowledged": ...,
+                "strategy_changed": ...,
+                "alternative_tool_tried": ...,
+                "eventually_succeeded": ...,
+            })
+        
+        return {
+            "error_count": len(errors),
+            "recovery_rate": ...,
+            "mean_recovery_time": ...,
+            "strategy_pivot_count": ...,
+        }
+```
+
+## 3. Domain-Specific Metrics for Data Science
+
+```python
+class DataScienceSpecificScorer(Scorer):
+    """Domain-specific data science evaluation"""
+    
+    @weave.op()
+    async def score(self, output: dict) -> dict:
+        answer = output["answer"]
+        trajectory = output["trajectory"]
+        
+        return {
+            # Statistical rigor
+            "appropriate_statistical_test": ...,
+            "assumptions_checked": ...,  # normality, independence, etc.
+            "multiple_testing_correction": ...,  # Bonferroni, etc.
+            
+            # Data quality awareness
+            "missing_data_addressed": ...,
+            "outliers_mentioned": ...,
+            "sample_size_considerations": ...,
+            
+            # Visualization quality
+            "appropriate_chart_type": ...,
+            "axis_labels_present": ...,
+            "color_blind_friendly": ...,
+            
+            # Business translation
+            "technical_to_business_translation": ...,
+            "roi_or_impact_estimated": ...,
+            "recommendations_actionable": ...,
+            
+            # Reproducibility
+            "random_seed_set": ...,
+            "dependencies_listed": ...,
+            "methodology_documented": ...,
+        }
+```
+
+## 4. Suggested Evaluation Framework Structure
+
+### **Tier 1: Core Metrics (Always Measure)**
+```python
+CORE_METRICS = [
+    "task_completion_rate",        # Did it answer the question?
+    "answer_correctness",           # Is the answer right?
+    "tool_success_rate",            # Tools work correctly?
+    "trajectory_efficiency",        # Minimal steps taken?
+    "hallucination_rate",           # Making things up?
+]
+```
+
+### **Tier 2: Quality Metrics**
+```python
+QUALITY_METRICS = [
+    "answer_quality_score",         # Your existing composite
+    "analytic_ability_score",       # Your existing composite
+    "coherence", "fluency",         # You have these
+    "readability",                  # Add this
+]
+```
+
+### **Tier 3: Advanced/Research Metrics**
+```python
+ADVANCED_METRICS = [
+    "trajectory_step_correctness",  # New - step by step
+    "adaptation_after_error",       # New - recovery
+    "tool_call_optimality",         # New - better tool choices?
+    "confidence_calibration",       # New - appropriate confidence?
+]
+```
+
+### **Tier 4: Domain-Specific**
+```python
+DOMAIN_METRICS = [
+    "statistical_rigor",
+    "data_quality_awareness",
+    "business_impact_estimation",
+    "reproducibility_score",
+]
+```
+
+## 5. Recommended Next Steps
+
+### **Immediate (Next Sprint)**
+1. **Add trajectory step-by-step correctness scorer**
+2. **Add adaptation/recovery scorer**
+3. **Expand correctness evaluation** - get ground truth for all questions
+4. **Add confidence calibration** - does agent know when it's uncertain?
+
+### **Short-term (Next Month)**
+1. **Create domain-specific scorer** for data science
+2. **Add human evaluation loop** - sample 10% for human rating
+3. **Build comparison dashboard** - visualize across model versions
+4. **Set up regression testing** - alert if metrics drop
+
+### **Medium-term (Next Quarter)**
+1. **Expand dataset diversity** - more difficulty levels, categories
+2. **Multi-turn conversations** - not just single Q&A
+3. **Adversarial examples** - intentionally tricky questions
+4. **Cost tracking** - tokens used, latency vs. quality tradeoffs
+
+## 6. Practical Implementation Example
+
+```python
+# evaluation_config.py
+
+EVALUATION_SUITE = {
+    "core": [
+        TaskCompletionScorer(),
+        CorrectnessScorer(),  # Enhanced version
+        ToolSuccessScorer(),  # You have this
+        HallucinationScorer(),  # You have this
+    ],
+    "quality": [
+        AnswerQualityScorer(),  # You have this
+        AnalyticAbilityScorer(),  # You have this
+        CoherenceScorer(),  # You have this
+        FluencyScorer(),  # You have this
+        ReadabilityScorer(),  # NEW
+    ],
+    "trajectory": [
+        TrajectoryStepCorrectnessScorer(),  # NEW
+        AdaptationScorer(),  # NEW
+        ToolCallOptimalityScorer(),  # NEW
+        TrajectoryEfficiencyScorer(),  # Enhanced version
+    ],
+    "domain_specific": [
+        DataScienceRigorScorer(),  # NEW
+        StatisticalValidityScorer(),  # NEW
+        BusinessImpactScorer(),  # NEW
+    ],
+}
+
+# Run stratified by difficulty and category
+results = await evaluation.evaluate(
+    agent,
+    dataset=dataset,
+    scorers=EVALUATION_SUITE["core"] + 
+            EVALUATION_SUITE["quality"] + 
+            EVALUATION_SUITE["trajectory"] +
+            EVALUATION_SUITE["domain_specific"]
+)
+```
+
+## 7. Comparison to Industry Benchmarks
+
+Create a **"scorecard"** comparing your agent to published benchmarks:
+
+```python
+BENCHMARK_COMPARISON = {
+    "GAIA": {
+        "task_completion": 0.45,  # Industry average
+        "your_agent": results["task_completion"],
+    },
+    "ToolBench": {
+        "tool_success_rate": 0.82,
+        "your_agent": results["tool_success_rate"],
+    },
+    # etc.
+}
+```
+
+Does this help clarify the path forward? Which metrics should we prioritize implementing first?

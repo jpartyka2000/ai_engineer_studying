@@ -1,0 +1,49 @@
+The issue with your query is that the **`INTERVAL` keyword** isn't supported within the `RANGE` clause of a window function in Databricks SQL. Instead, you need to use `ROWS` for specifying a range of rows based on physical order or adjust the query logic to achieve the desired outcome.
+
+Here’s how you can fix the query:
+
+### Updated Query for Databricks SQL
+```sql
+SELECT 
+    opportunity_close_date, 
+    AVG(opportunity_amount) OVER (
+        PARTITION BY opportunity_record_type
+        ORDER BY opportunity_close_date 
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS rolling_avg_amount
+FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps
+WHERE opportunity_record_type = 'NET NEW' 
+  AND opportunity_close_date BETWEEN '2024-06-01' AND '2024-08-31';
+```
+
+### Explanation:
+1. **Using `ROWS` Instead of `RANGE`:**
+   - Databricks SQL supports `ROWS` but not `RANGE` for dynamic intervals in window functions. `ROWS` specifies a fixed number of rows to include in the window (e.g., the last 6 rows and the current row).
+   - This query assumes 7 days ≈ 7 rows if data is ordered daily. If this isn't correct, you might need a more advanced approach (see below for alternatives).
+
+2. **Filtering Relevant Dates:**
+   - The `WHERE` clause ensures only rows within the specified date range are included in the calculation.
+
+3. **PARTITION BY:** (Optional)
+   - If `opportunity_record_type` is relevant for grouping data, include it in the `PARTITION BY` clause. Otherwise, you can remove it.
+
+### If You Need a Rolling Window Based on Date Intervals
+To calculate a rolling average based on **actual dates (1 week)** rather than a fixed number of rows, you’ll need to use a self-join or a correlated subquery. For example:
+
+```sql
+SELECT 
+    t1.opportunity_close_date, 
+    AVG(t2.opportunity_amount) AS rolling_avg_amount
+FROM pathahead.motimatic_ecue.raw_stats_table_with_nextsteps t1
+LEFT JOIN pathahead.motimatic_ecue.raw_stats_table_with_nextsteps t2
+  ON t2.opportunity_close_date BETWEEN t1.opportunity_close_date - INTERVAL 7 DAYS AND t1.opportunity_close_date
+WHERE t1.opportunity_record_type = 'NET NEW' 
+  AND t1.opportunity_close_date BETWEEN '2024-06-01' AND '2024-08-31'
+GROUP BY t1.opportunity_close_date;
+```
+
+### Explanation of the Self-Join Query:
+- For each row (`t1`), it finds all rows (`t2`) within the 7-day range ending at the date of `t1`.
+- Averages the `opportunity_amount` for the matching rows.
+
+This second method is more precise when working with irregularly spaced data. Let me know if you need further clarifications!

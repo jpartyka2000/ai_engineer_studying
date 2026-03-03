@@ -1,0 +1,82 @@
+Excellent question — you’re very close, but not quite there.
+Let’s break it down carefully 👇
+
+---
+
+### ✅ `DESC TABLE EXTENDED` — works only for **tables**, not views
+
+In Databricks (and Spark SQL in general):
+
+```sql
+DESC TABLE EXTENDED <table_name>;
+```
+
+returns **metadata about a managed or external table**, such as:
+
+* Table type
+* Provider (e.g. delta, parquet)
+* Location
+* Schema
+* Properties
+* Creation time, etc.
+
+However — this **does not** work for a **view** in the same way.
+
+If `pathahead.avenica_ecue.int_application_contact_job_company` is a **view**, then `DESC TABLE EXTENDED` will give you an error like:
+
+```
+TABLE_OR_VIEW_NOT_FOUND or
+Cannot describe a view using DESC TABLE EXTENDED
+```
+
+---
+
+### ✅ Correct syntax for a **view**
+
+If you want to describe or inspect a **view**, use:
+
+```sql
+DESC VIEW EXTENDED pathahead.avenica_ecue.int_application_contact_job_company;
+```
+
+This will show:
+
+* View type (global or local)
+* Schema of the output columns
+* The SQL text that defines the view (`View Text:` section)
+
+---
+
+### 🕒 Viewing history (like Delta table history)
+
+If your goal is to see **change history (versions, operations, timestamps)** — that’s only possible if it’s a **Delta table**, not a view.
+
+For a Delta table:
+
+```sql
+DESCRIBE HISTORY pathahead.avenica_ecue.int_application_contact_job_company;
+```
+
+That will return the transaction log of all operations:
+
+* Version number
+* Timestamp
+* Operation (e.g., WRITE, DELETE, MERGE)
+* User
+* Operation parameters (e.g., mode, notebook, cluster_id)
+
+If your object is a **view**, there is no Delta transaction log, so `DESCRIBE HISTORY` will not work.
+
+---
+
+### ✅ Summary
+
+| Command                          | Works On          | Purpose                           |
+| -------------------------------- | ----------------- | --------------------------------- |
+| `DESC TABLE EXTENDED <table>`    | Tables            | Shows metadata for a table        |
+| `DESC VIEW EXTENDED <view>`      | Views             | Shows metadata and SQL definition |
+| `DESCRIBE HISTORY <delta_table>` | Delta Tables only | Shows full commit history         |
+
+---
+
+If you tell me whether that object (`int_application_contact_job_company`) is a **Delta table or a view**, I can give you the exact command for your case. Do you know which one it is?

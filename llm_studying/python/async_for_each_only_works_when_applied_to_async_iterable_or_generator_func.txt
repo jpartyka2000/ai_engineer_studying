@@ -1,0 +1,17 @@
+For an `async for` to work, the thing you’re looping over must be an **asynchronous iterable**—i.e. it needs to implement the async iteration protocol (`__aiter__` / `__anext__`), not a plain list or sync generator.
+
+In practice that means `agent.act(...)` must return something like an **async generator** or another object whose `__aiter__` returns itself and whose `__anext__` is an `async def` (or otherwise an awaitable).  Most SDK methods that you `async for` over are indeed declared as `async def` and then `yield` or `yield from` inside, which makes them async generators under the hood.
+
+So:
+
+* **Yes**, `agent.act(...)` has to produce an **async iterable**
+* That usually means it’s defined as an `async def` (an async generator function), or it returns an object built to support `__aiter__`/`__anext__`
+* If you tried to make `agent.act` a normal `def` that returned, say, a list, you’d get
+
+  ```
+  TypeError: 'list' object is not async iterable
+  ```
+
+  when you write `async for`.
+
+In short, for `async for event in agent.act(...):` to work, `agent.act(...)` must itself be an async generator or equivalent async-iterable producer.

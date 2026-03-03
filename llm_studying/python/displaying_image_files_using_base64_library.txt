@@ -1,0 +1,60 @@
+Normally when you display an image in HTML, you point the `<img>` tag at a URL or file path:
+
+```html
+<img src="https://example.com/photo.png">
+```
+
+But sometimes you don't have a URL — the image is a local file, or it was generated in memory, or the file system doesn't map cleanly to a web-accessible path. This is where base64 encoding comes in.
+
+**What base64 does:** It converts the raw binary bytes of an image file into a long text string made up of regular ASCII characters (letters, numbers, `+`, `/`, and `=`). This text string can be embedded directly in the HTML, so the browser doesn't need to fetch the image from anywhere — it's already right there in the source.
+
+**The format:**
+
+```html
+<img src="data:{mime_type};base64,{encoded_data}">
+```
+
+The `data:` prefix tells the browser "this isn't a URL, the image data is inline." The mime type tells it what kind of image it is (e.g., `image/png`, `image/jpeg`, `image/gif`). Everything after `base64,` is the encoded image data.
+
+**Python example — encoding a file:**
+
+```python
+import base64
+
+with open("my_plot.png", "rb") as f:
+    raw_bytes = f.read()
+
+encoded = base64.b64encode(raw_bytes).decode("utf-8")
+
+html = f'<img src="data:image/png;base64,{encoded}" width="800">'
+```
+
+The `b64encode` function takes bytes and returns bytes, so `.decode("utf-8")` converts it to a regular string that can be embedded in HTML.
+
+**Python example — encoding from memory (no file):**
+
+If you're generating a plot with matplotlib and don't want to save it to disk first:
+
+```python
+import base64
+import io
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.plot([1, 2, 3], [4, 5, 6])
+
+buffer = io.BytesIO()
+fig.savefig(buffer, format="png", bbox_inches="tight")
+buffer.seek(0)
+
+encoded = base64.b64encode(buffer.read()).decode("utf-8")
+plt.close(fig)
+
+html = f'<img src="data:image/png;base64,{encoded}" width="800">'
+```
+
+This creates the PNG entirely in memory using a `BytesIO` buffer — nothing touches the disk.
+
+**When to use this approach:**
+
+It's ideal when you have no reliable way to serve the image via a URL — such as in Databricks notebooks where the `/files/` path mapping doesn't always work, or when generating one-off reports where you want everything self-contained in a single HTML string. The downside is that the encoded string is about 33% larger than the original file, so it's not great for very large images or situations where the same image is displayed repeatedly (since the browser can't cache it).

@@ -1,0 +1,35 @@
+Great, I found our previous conversation. Let me revisit and refine the plan with a more intuitive framing.
+
+## The Intuitive Picture
+
+Think of it this way: you have a **ruler** (your LLM-as-a-judge scorers) that you're using to measure the **height difference** between two things (your two agents). The core problem is that your ruler is a bit wobbly — every time you measure, you get a slightly different reading. So the whole plan is about understanding how wobbly your ruler is, steadying it, and then figuring out how many measurements you need to be confident in the difference you observe.
+
+Here's the plan, step by step:
+
+**Step 1: Figure out how wobbly your ruler is (Calibration).** Before comparing anything, pick some fixed outputs (ones you won't change) and score them 20–30 times each with each scorer. This tells you each scorer's variance — how much a single score bounces around for the exact same input. Some scorers will be steady (e.g., ±0.05), others wobbly (e.g., ±0.2). Do this per question type too, because a scorer might be reliable for factual questions but noisy for creative ones. This step also tells you if any scorer is so unreliable it's not worth using.
+
+**Step 2: Steady the ruler by averaging (Repeated scoring).** For each real agent output you want to compare, score it k times and take the average. Averaging shrinks your noise by a factor of √k. So if a scorer has σ_judge = 0.15, then k=9 repeats gets you down to 0.15/√9 = 0.05 noise per output. The calibration from Step 1 tells you how large k needs to be — wobbly scorers need more repeats.
+
+**Step 3: Measure the difference, not the absolutes (Paired t-test).** Both agents answer the same 40 questions. For each question, you compute: `difference_i = avg_score_A_i - avg_score_B_i`. Now you have 40 difference scores. The paired t-test asks: *"Is the average of these 40 differences significantly different from zero?"* The power of pairing is that it eliminates question difficulty as a confound. If question #7 is just hard, both agents score low, but the *difference* still tells you which handled it better. You'd also consider the **Wilcoxon signed-rank test** as an alternative if your score differences are skewed or ordinal rather than nicely bell-shaped. Always report confidence intervals on the mean difference — a CI of [0.02, 0.18] tells you much more than just "p < 0.05."
+
+**Step 4: Figure out how many repeats you actually need (Power analysis).** This is where Steps 1 and 3 connect. You decide on δ — the smallest meaningful difference you care about (e.g., "I only care if one agent is 0.1 better on a 0–1 scale"). Then:
+
+- From Step 1 you have σ_judge (judge noise per single call)
+- With k repeats, per-output noise = σ_judge / √k
+- Across n=40 paired questions, the standard error of the mean difference ≈ σ_effective / √40 (where σ_effective combines judge noise and genuine question-to-question variability)
+- You solve for the smallest k such that this standard error is small enough to detect δ with 80% power at α = 0.05
+
+A practical shortcut: start with k=5, run the comparison, and look at the standard deviation of your 40 difference scores. If your observed effect is large relative to that SD, you're fine. If results are inconclusive, bump k up.
+
+**Step 5: One variable at a time.** You have two variables: prompt strategy and agentic framework. Always hold one constant while varying the other, using the same LLM throughout. This means you run at minimum two separate comparisons (one isolating prompt, one isolating framework), not one comparison where both change at once — otherwise you can't attribute the difference to either variable.
+
+### What I'd add as crucial details
+
+A few things that weren't fully explicit in your original summary:
+
+- **Check the normality assumption** before committing to the paired t-test. With n=40, the t-test is fairly robust, but if your difference scores are heavily skewed or have outliers, Wilcoxon is safer. A quick histogram or Shapiro-Wilk test on the 40 differences will tell you.
+- **Multiple comparisons correction.** If you're running multiple scorers (say 4–5 LLM judges) across multiple comparisons, your false positive rate inflates. Apply something like Bonferroni or Benjamini-Hochberg to your p-values, or just be transparent about how many tests you ran.
+- **Effect size reporting.** Beyond the CI, report Cohen's d on the paired differences. This gives a standardized sense of how large the difference is, independent of your particular scale.
+- **Distinguish agent variance from judge variance.** If you run the same agent on the same question twice, it may also give different outputs (due to temperature > 0). If you want to be thorough, you'd also characterize this source of noise. If you fix temperature to 0 or use a seed, this goes away — but it's worth being deliberate about it.
+
+You can reference our [earlier conversation](https://claude.ai/chat/07cd88d8-4c18-4d5c-a4bd-b563f68d07b1) for the more detailed workflow code and formulas we discussed.

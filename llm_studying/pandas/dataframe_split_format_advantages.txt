@@ -1,0 +1,68 @@
+When you call `DataFrame.to_json(..., orient="split")`, pandas produces a JSON object with three top‐level keys:
+
+```json
+{
+  "index":   [<index labels>],
+  "columns": [<column names>],
+  "data":    [
+               [row1_col1, row1_col2, …],
+               [row2_col1, row2_col2, …],
+               …
+             ]
+}
+```
+
+Here’s what each piece means:
+
+* **`index`**
+  A list of your DataFrame’s index values (so you can reconstruct the row labels on load).
+
+* **`columns`**
+  A list of column names, in order, so you know how to label each field in the rows.
+
+* **`data`**
+  A list of lists, where each inner list is one row of values (in the same column order).
+
+---
+
+## Why “split” is useful
+
+1. **Language-agnostic tabular format**
+   You get exactly the schema (`columns`) and the raw 2D data (`data`) separately—easy to consume from Java/JS/etc.
+
+2. **Round-trip fidelity**
+
+   ```python
+   import pandas as pd
+
+   # original DataFrame
+   df = pd.DataFrame({
+     "A": [1, 2],
+     "B": ["x", "y"]
+   }, index=["r1", "r2"])
+
+   # write
+   df.to_json("mydf.json", orient="split")
+
+   # read back
+   df2 = pd.read_json("mydf.json", orient="split")
+   assert df2.equals(df)
+   ```
+
+3. **MLflow table ingestion**
+   MLflow’s “table” viewer expects exactly this format (`columns` + `data`).  When you `mlflow.log_dict(df.to_dict("split"))`, MLflow will render an interactive table in the UI.
+
+---
+
+## Other JSON “orients” for comparison
+
+| orient    | format                                                | round-trip via `read_json` |
+| --------- | ----------------------------------------------------- | -------------------------- |
+| `split`   | `{index, columns, data}`                              | ✅                          |
+| `records` | `[ {col1: val, col2: val, …}, … ]`                    | ✅                          |
+| `index`   | `{ index_label: {col: val, …}, … }`                   | ✅                          |
+| `columns` | `{ col_name: {index_label: val, …}, … }`              | ✅                          |
+| `values`  | `[ [row1…], [row2…], … ]` (no labels)                 | ❌ (“labels lost”)          |
+| `table`   | A JSON Table Schema doc with `schema` + `data` fields | ✅                          |
+
+“Split” gives you both labels and data in the simplest structure, which is why it’s MLflow’s preferred JSON‐table format.

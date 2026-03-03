@@ -1,0 +1,38 @@
+Looking at the code:
+
+```python
+snapshot_download(
+    repo_id=MODEL_NAME,
+    local_dir=None,
+    local_dir_use_symlinks=True,
+)
+```
+
+With `local_dir=None`, the weights are downloaded to **Hugging Face's default cache directory**:
+
+```
+~/.cache/huggingface/hub/
+```
+
+Specifically, they'll be stored in a structure like:
+
+```
+~/.cache/huggingface/hub/models--{org}--{model_name}/
+├── blobs/          # Actual weight files (large binary blobs)
+├── refs/           # Branch/tag references
+└── snapshots/      # Commit-specific symlinks to blobs
+    └── {commit_hash}/
+        ├── config.json -> ../../blobs/abc123
+        ├── model.safetensors -> ../../blobs/def456
+        └── ...
+```
+
+## In the Modal context
+
+This is running inside a Modal container, so `~` refers to the home directory within that container. When the snapshot is taken, this cached data becomes part of the container's filesystem snapshot.
+
+On subsequent cold starts restored from the snapshot, the weights are already present in the cache—no re-download needed.
+
+## Why not use `local_dir`?
+
+You *could* specify a path like `local_dir="/weights"`, but using the default cache has an advantage: vLLM (and other HF libraries) automatically looks in `~/.cache/huggingface/hub/` when you pass a model name like `MODEL_NAME`. This means the later call to `AsyncLLMEngine.from_engine_args(engine_args)` will find the weights without any extra path configuration.

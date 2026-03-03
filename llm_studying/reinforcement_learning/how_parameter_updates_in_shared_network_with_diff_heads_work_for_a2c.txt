@@ -1,0 +1,25 @@
+Not quite—when you share a trunk and then have two heads, **both** losses flow back into the shared layers.  Here’s how it breaks down:
+
+1. **Actor loss** $\mathcal{L}_\pi$
+
+   * Produces gradients w\.r.t. the **policy head** parameters.
+   * But because the policy head sits on top of the shared trunk, those same gradients propagate back into the trunk layers as well.
+
+2. **Critic loss** $\mathcal{L}_V$
+
+   * Produces gradients w\.r.t. the **value head** parameters.
+   * And likewise, those gradients also flow into the shared trunk.
+
+So in a joint update
+
+```python
+loss = L_pi + c * L_V
+loss.backward()
+opt.step()
+```
+
+* **Trunk weights** get updated by the **sum** of actor- and critic-gradient contributions.
+* **Policy-head weights** only get the actor’s gradients.
+* **Value-head weights** only get the critic’s gradients.
+
+If you truly wanted to update only one head (and not touch the trunk), you’d need separate optimizers or manually zero out the unwanted gradients. But by default, shared-network updates alter both the shared backbone and each head according to whichever loss terms you include.

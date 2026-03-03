@@ -1,0 +1,172 @@
+Yes, Claude Code can handle very large and complex prompts, but there are some nuances and differences compared to using the Claude API directly. Here's what you need to know:
+
+## Context Window Size
+
+**Claude Code uses the same models with the same context windows:**
+
+- **Standard**: 200,000 tokens (~500 pages of text)
+- **Sonnet 4.5 with 1M context** (beta): Available but requires specific conditions
+- **Output tokens**: Up to 64,000 tokens for Sonnet 4
+
+**For reference:**
+- 1,000 tokens ≈ 750 words ≈ 2-3 pages of text
+- 200K tokens ≈ 150,000 words ≈ 500+ pages
+
+## How Claude Code Handles Large Context
+
+Claude Code has several features for working with large amounts of information:
+
+### 1. **CLAUDE.md Files**
+Store persistent context about your project:
+```markdown
+# Project Context
+- Coding standards
+- Architecture decisions
+- Common workflows
+- Project-specific guidelines
+```
+
+This gets included in every session without eating into your per-message token budget.
+
+### 2. **@ References**
+Quickly include files without manually pasting:
+```bash
+> Explain the logic in @src/utils/auth.js
+> Analyze @src/components/
+```
+
+### 3. **Automatic Context Management**
+When approaching the 200K limit, Claude Code automatically:
+- Compacts the conversation by summarizing earlier messages
+- Preserves full history for reference
+- Continues seamlessly without interruption
+
+You'll see "organizing its thoughts" when this happens.
+
+### 4. **Context Monitoring**
+Track your token usage:
+```bash
+/status       # Check current context usage
+/context      # Detailed context information
+```
+
+Many developers use statuslines to display context percentage (see earlier in our conversation!).
+
+## Key Differences from API Usage
+
+### Similarities ✅
+- Same models (Opus, Sonnet, Haiku)
+- Same context window sizes
+- Same token limits
+- Same quality of responses
+
+### Differences ⚠️
+
+**1. Conversation Management**
+- API: You manage full conversation history manually
+- Claude Code: Automatically manages conversation, includes tool use, file reads, etc.
+
+**2. Hidden Token Usage**
+Claude Code uses tokens "behind the scenes" for:
+- Tool invocations (reading files, running bash commands)
+- Internal reasoning
+- MCP server interactions
+- System prompts and instructions
+
+This means your visible conversation might look small, but actual token usage is higher.
+
+**3. Automatic Compaction**
+- API: You handle truncation/summarization
+- Claude Code: Automatically compacts when needed
+
+**4. Multiple Models Not Directly Supported**
+- API: Easy to switch between models mid-conversation
+- Claude Code: Uses one model per session (though you can switch with `/model`)
+
+## Best Practices for Large/Complex Prompts
+
+### 1. **Use CLAUDE.md for Persistent Context**
+Instead of repeating context in every message:
+```markdown
+# .claude/CLAUDE.md
+## Project Guidelines
+- Use TypeScript for all new code
+- Follow functional programming patterns
+- Write tests for all new features
+```
+
+### 2. **Break Up Large Tasks**
+Instead of one massive prompt:
+```bash
+# Bad: One giant prompt with everything
+"Here's a 50,000 token codebase, refactor it all..."
+
+# Good: Incremental approach
+"First, analyze the architecture of @src/"
+"Now refactor the auth module based on that analysis"
+"Apply those patterns to the other modules"
+```
+
+### 3. **Use Skills for Repeated Workflows**
+Create reusable skills for complex multi-step processes.
+
+### 4. **Monitor Context Usage**
+Keep an eye on your context percentage. When it hits ~60-70%, consider:
+- Starting a new session
+- Using `/compact` to summarize
+- Using `/clear` for a fresh start
+
+### 5. **Leverage @ References Efficiently**
+Instead of pasting entire files:
+```bash
+# Efficient
+"Review the authentication logic in @src/auth/"
+
+# Less efficient (uses more tokens)
+[Paste entire auth directory contents]
+```
+
+## Real-World Example
+
+**Handling a large codebase refactor:**
+
+```bash
+# Session 1: Analysis (low token usage)
+"Analyze the architecture of @src/ and create a refactoring plan"
+
+# Session 2: Implementation (with plan in CLAUDE.md)
+"Using the plan in CLAUDE.md, refactor @src/auth/login.ts"
+
+# Session 3: Continue
+"Apply the same patterns to @src/auth/register.ts"
+```
+
+Each session stays within limits, but you accomplish a complex multi-file refactor.
+
+## Limitations to Be Aware Of
+
+1. **200K is still the practical limit** for most users (1M context is beta/restricted)
+2. **Tool use consumes tokens** - Every file read, bash command adds to usage
+3. **You can't see exactly how many tokens** tool usage consumed (but statuslines help)
+4. **Context degrades with size** - Even with 200K tokens, Claude performs better with focused, relevant context
+
+## When to Use API Instead
+
+Consider using the API directly if you need:
+- Extremely fine-grained control over context
+- Custom conversation management
+- Batch processing with custom truncation logic
+- Integration into automated pipelines
+- Specific token counting and management
+
+## Bottom Line
+
+**Yes, Claude Code can handle very large and complex prompts** - it uses the same models with the same context windows as the API. However, it's optimized for *interactive development sessions* rather than *single massive prompts*.
+
+For best results:
+- Use CLAUDE.md for persistent context
+- Break large tasks into manageable sessions
+- Monitor your context usage
+- Let Claude Code's automatic management help you
+
+The 200K token window is enormous - most developers rarely hit it if they use good practices. And when you do approach the limit, Claude Code handles it gracefully with automatic compaction.

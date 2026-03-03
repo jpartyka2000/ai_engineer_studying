@@ -1,0 +1,68 @@
+Great question!
+
+### What’s a “global RNG”?
+
+An **RNG** is a (pseudo)random number generator with internal state. In Python’s `random` module, all the convenience functions—`random()`, `randint()`, `choice()`, `shuffle()`, etc.—use **one shared, module-level `Random` instance** under the hood. That shared instance is what people mean by the **global RNG**.
+
+* `random.seed(x)` seeds that single shared generator.
+* Any code calling `random.choice(...)` or `random.random()` uses the same shared state.
+* If some test utility or library calls `random.seed(0)`, it changes the numbers *everywhere* that uses `random.*`.
+
+It’s “global” to the Python process (not across processes).
+
+### Does it only exist if we use the `random` module?
+
+Not exactly. The “global RNG” is a **pattern** many libraries expose:
+
+* **`random` (stdlib)**: yes, has a global RNG via its module functions.
+* **NumPy**:
+
+  * Legacy API `np.random.*` uses a **global `RandomState`** (shared state).
+  * New API `np.random.default_rng()` returns an **isolated `Generator`** (preferred).
+* **Other libs** (e.g., frameworks, simulators) may also keep their own module-level RNG.
+
+If you don’t use `random` *and* no library you use calls it internally, then that particular global RNG won’t affect you—but another library might have its own.
+
+### How to avoid surprises
+
+Create your **own isolated RNG** and use it directly:
+
+```python
+import random
+
+rng = random.Random(12345)   # your own PRNG, seeded
+x = rng.choice([1, 2, 3])    # uses your rng only
+```
+
+This is immune to `random.seed(...)` calls elsewhere, and your seeding won’t affect anyone else.
+
+Similarly in NumPy:
+
+```python
+import numpy as np
+rng = np.random.default_rng(12345)
+x = rng.choice([1, 2, 3])
+```
+
+### Quick demo of independence
+
+```python
+import random
+random.seed(1)
+rng = random.Random(1)
+
+print(random.random())  # uses global RNG
+print(rng.random())     # uses your private RNG
+
+random.seed(1)
+print(random.random())  # repeats
+print(rng.random())     # does NOT repeat; unaffected by re-seeding global
+```
+
+### Bonus tips
+
+* For reproducible tests, either seed the global RNG once at session start **or** pass an isolated RNG around.
+* For cryptographic randomness, use `secrets` (it doesn’t use or care about `random.seed()`).
+* If you need to snapshot/restore the global RNG: `state = random.getstate()` / `random.setstate(state)`.
+
+So: a “global RNG” is the shared generator many modules expose; `random` has one, NumPy’s legacy API has one, and other libs might as well. Use a private RNG instance when you want isolation.

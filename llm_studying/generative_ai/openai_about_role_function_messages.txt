@@ -1,0 +1,115 @@
+In the OpenAI Chat Completions (Messages) API, each message in the conversation has a **role**, which indicates its source or purpose. In addition to the familiar roles `"system"`, `"user"`, and `"assistant"`, there is a special role:
+
+---
+
+## 📦 `role: "function"`
+
+* **When it appears**
+  After the model emits a request to call a function (via a special assistant message with `"role": "assistant"` and a `"function_call"` field), your client code invokes that function and then injects the function’s *result* back into the conversation as a message with `role: "function"`.
+
+* **Key fields**
+
+  ```jsonc
+  {
+    "role": "function",
+    "name": "<function_name>",
+    "content": "<stringified function output>"
+  }
+  ```
+
+  * `name` must match the function identifier you registered in the API call.
+  * `content` contains the raw response (typically JSON‐serialized) from that function.
+
+* **Why it exists**
+  It provides the model with the *actual* output of the function you just ran, so that subsequent generations can reason over real data rather than imagined or placeholder values.
+
+---
+
+## ▶️ Typical Flow
+
+1. **Model Requests Function**
+
+   ```jsonc
+   // assistant-message
+   {
+     "role": "assistant",
+     "content": null,
+     "function_call": {
+       "name": "get_current_weather",
+       "arguments": "{\"location\": \"San Francisco\"}"
+     }
+   }
+   ```
+2. **Client Runs the Function**
+
+   ```python
+   result = get_current_weather(location="San Francisco")
+   ```
+3. **Client Appends Function Result**
+
+   ```jsonc
+   // function-message
+   {
+     "role": "function",
+     "name": "get_current_weather",
+     "content": "{\"temperature\": 65, \"unit\": \"F\", \"condition\": \"Sunny\"}"
+   }
+   ```
+4. **Model Continues the Conversation**
+   The messages array now includes this function‐role message, enabling the model to generate a contextually informed assistant response.
+
+---
+
+## 🔍 Why It Matters
+
+* **Truthful grounding**: Ensures the model bases its next reply on real function outputs.
+* **Traceability**: Maintains a clear audit trail of what function was called and what it returned.
+* **Loop closure**: By re-injecting the function’s output as a message, the model can seamlessly “see” and reference that data in its next answer.
+
+---
+
+### Example in Full
+
+```python
+import openai
+
+openai.ChatCompletion.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user",   "content": "What’s the weather in Boston right now?"},
+        {
+          "role": "assistant",
+          "content": None,
+          "function_call": {
+            "name": "get_current_weather",
+            "arguments": "{\"location\": \"Boston, MA\"}"
+          }
+        },
+        // ← here you call get_current_weather(...)
+        {
+          "role": "function",
+          "name": "get_current_weather",
+          "content": "{\"temperature\": 72, \"unit\": \"F\", \"condition\": \"Partly Cloudy\"}"
+        }
+        // ← model sees this and generates a human-friendly response next
+    ],
+    functions=[
+        {
+          "name": "get_current_weather",
+          "description": "Get weather data for a location",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {"type": "string"}
+            },
+            "required": ["location"]
+          }
+        }
+    ]
+)
+```
+
+---
+
+By following this pattern, you enable robust, transparent function-calling in your chat applications.

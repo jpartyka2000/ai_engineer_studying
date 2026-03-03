@@ -1,0 +1,60 @@
+In the OpenAI Agents SDK, **`ToolCallItem`** is the class that wraps any time your agent decides to invoke a tool (e.g. a function call, a code execution, a web search). Under the covers it’s a Pydantic-style dataclass defined roughly like this (see ([OpenAI GitHub Page][1])):
+
+```python
+from dataclasses import dataclass
+from typing import Any, Union
+from abc import ABC
+from openai.agents.items import RunItemBase
+
+# All the possible “raw” tool-call types:
+ToolCallItemTypes = Union[
+    ResponseFunctionToolCall,
+    ResponseComputerToolCall,
+    ResponseFileSearchToolCall,
+    ResponseFunctionWebSearch,
+    McpCall,
+    ResponseCodeInterpreterToolCall,
+    ImageGenerationCall,
+    LocalShellCall,
+]
+
+@dataclass
+class ToolCallItem(RunItemBase[ToolCallItemTypes]):
+    """
+    Represents a tool call e.g. a function call or computer action call.
+    """
+    raw_item: ToolCallItemTypes
+    """The raw tool call item from the LLM (e.g. name + arguments)."""
+    # (the 'agent' attribute is inherited from RunItemBase)
+```
+
+### Key points
+
+* **Base class → `RunItemBase[T]`**
+
+  * Provides two core attributes:
+
+    * `agent`: the `Agent` instance that produced this item
+    * `raw_item`: the underlying `openai.types.responses` object
+* **`raw_item`**
+
+  * Is one of several function-call representations (e.g. `ResponseFunctionToolCall`, `LocalShellCall`, etc.).
+  * Contains fields like `.name` (the tool name) and `.arguments` (the JSON arguments).
+* **How you use it**
+
+  ```python
+  async for event in agent.act(input_item):
+      if isinstance(event, ToolCallItem):
+          tool_name = event.raw_item.name
+          args      = event.raw_item.arguments
+          # …invoke your tool locally…
+          result = await call_tool(tool_name, **args)
+          agent.feed_tool_result(result)
+  ```
+* **Why it matters**
+
+  * It gives you a **typed**, **structured** way to detect when the LLM is asking to call a tool, inspect its arguments, and then execute that call in your environment.
+
+Because `ToolCallItem` inherits from `RunItemBase`, it also carries metadata like which agent run generated it and exactly when—making it easy to log, trace, or retry tool calls in complex workflows.
+
+[1]: https://openai.github.io/openai-agents-python/ref/items/?utm_source=chatgpt.com "Items - OpenAI Agents SDK"

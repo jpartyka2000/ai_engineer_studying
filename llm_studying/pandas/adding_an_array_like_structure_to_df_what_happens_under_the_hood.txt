@@ -1,0 +1,70 @@
+When you do something like:
+
+```python
+df['new_col'] = some_array_like
+```
+
+pandas follows a fairly efficient, low-overhead path to turn that “array-like” into a real column in your DataFrame. Here’s roughly what happens under the hood:
+
+---
+
+## 1. Detection of “array-like”
+
+Pandas accepts any object that looks like a one-dimensional collection of values of length N, where N matches the number of rows in `df`. That includes:
+
+* A NumPy `ndarray`
+* A pandas `Index`
+* A Python `list` or `tuple`
+* A pandas `Series` (with or without a matching index)
+
+Pandas checks the length first; if `len(some_array_like) != len(df)`, it raises a `ValueError`.
+
+---
+
+## 2. Deciding on alignment vs. direct insertion
+
+* **If you assign a plain array-like** (e.g. a NumPy array or an `Index`), pandas skips label alignment entirely and treats it as a positionally-aligned block of values.
+* **If you assign a pandas `Series`,** pandas will look at the series’s index. If it matches your DataFrame’s index exactly, it inserts those values positionally; otherwise it aligns by label (reindexing the series to `df.index`, filling missing labels with `NaN`).
+
+---
+
+## 3. BlockManager insertion
+
+Pandas stores all of a DataFrame’s columns in a 2D structure called the **BlockManager**, which groups columns of the same dtype into contiguous memory blocks:
+
+1. **Locate or create a block** for the dtype of your new data (`float64`, `object`, `datetime64[ns]`, etc.).
+2. **If a block of that dtype already exists,** pandas appends your column’s array to that block along the column axis.
+3. **If not,** pandas makes a new block just for your column.
+
+This layout lets pandas do vectorized operations very quickly, since each block is a contiguous NumPy array under the hood.
+
+---
+
+## 4. Updating metadata
+
+Pandas then:
+
+* Adds the column name (`'new_col'`) to its internal list of column labels.
+* Updates the BlockManager’s shape metadata to reflect the extra column.
+
+None of this is done by repeatedly growing Python lists or dictionaries; it’s mostly array concatenation or block creation in C‐extensions, which is why column assignment in pandas is generally very fast (especially compared to pure-Python loops).
+
+---
+
+## 5. No temporary Series unless you ask for it
+
+You never see a temporary `Series` object appear when you assign an `Index` or `ndarray` because pandas doesn’t wrap the data in a `Series` for you—it writes the raw values straight into the BlockManager. Only if you explicitly do something like:
+
+```python
+df['new_col'] = pd.Series(some_array_like)
+```
+
+will pandas need to construct that `Series`, align it if necessary, and then pull its values out for insertion.
+
+---
+
+### TL;DR
+
+* **Array-like assignment** → pandas treats it as a raw vector of values, skips any label alignment, and stuffs it directly into the BlockManager.
+* **Series assignment** → pandas may reindex/align by label, then extract the underlying values for insertion.
+* **BlockManager** grouping by dtype keeps memory layout tight and operations fast, so adding a column is mostly low-level array bookkeeping rather than Python-level loops.

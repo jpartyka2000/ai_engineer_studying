@@ -1,0 +1,44 @@
+CUDA kernels are small programs that run on the GPU. "Compiled" means they've been translated from source code into GPU-executable binary form.
+
+## What is a kernel?
+
+In GPU programming, a "kernel" isn't the operating system kernel — it's a function that runs in parallel across thousands of GPU cores. For example, a matrix multiplication kernel might launch 10,000 threads simultaneously, each computing one element of the output.
+
+## Why compilation?
+
+CUDA kernels are written in a C++-like language. Before the GPU can execute them, they must be compiled for the specific GPU architecture:
+
+```
+Source code (CUDA C++)
+    ↓ nvcc compiler
+PTX (intermediate representation)
+    ↓ GPU driver
+Binary (runs on H100)
+```
+
+Different GPU generations (V100, A100, H100) have different instruction sets, so kernels often need to be compiled specifically for your hardware.
+
+## What gets cached in `/root/.cache/vllm`
+
+vLLM and flashinfer use highly optimized custom kernels for:
+
+- **Attention computation** — the core operation in transformers
+- **Paged KV cache management** — vLLM's memory-efficient attention storage
+- **Rotary embeddings** — position encoding calculations
+- **Fused operations** — multiple ops combined into one kernel for speed
+
+These kernels are often compiled at runtime using "just-in-time" (JIT) compilation. The first time you run vLLM on an H100, it compiles these kernels (can take minutes), then caches the binaries.
+
+## Why caching matters
+
+Without the cache:
+```
+Container starts → compiles kernels (2-5 min) → ready to serve
+```
+
+With the cache:
+```
+Container starts → loads pre-compiled kernels → ready to serve
+```
+
+Combined with the memory snapshots, this is what makes the fast cold starts possible.

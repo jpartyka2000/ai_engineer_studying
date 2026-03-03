@@ -1,0 +1,23 @@
+Exactly—`agent.act(...)` returns an **asynchronous iterable**, not a plain list or generator. By writing:
+
+```python
+async for event in agent.act(...):
+    …
+```
+
+you’re telling Python:
+
+1. **“Call `agent.act(...)` to get back an object that implements `__aiter__` and `__anext__`.”**
+2. **“Drive through it with `await` under the hood**—on each iteration, Python does something like:
+
+   ```python
+   event = await iterator.__anext__()
+   ```
+3. **“Handle each yielded `event` as soon as it’s ready,”** rather than waiting for the entire sequence to be produced up-front.
+
+This pattern is ideal when:
+
+* **Events arrive over time** (e.g. streaming model tokens, tool calls, tool results).
+* **You don’t want to block** the event loop while waiting for the full response.
+
+So yes—it’s just like a normal `for`-loop over an iterable, except that each step is driven by `await` so it can asynchronously pause and resume as new items become available.

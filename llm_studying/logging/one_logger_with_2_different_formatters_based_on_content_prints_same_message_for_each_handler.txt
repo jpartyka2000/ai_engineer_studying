@@ -1,0 +1,102 @@
+Ah, I see the confusion! Unfortunately, **this won't work the way you're hoping**.
+
+## The Problem
+
+If you have **1 logger with 2 handlers** (each with different formatters), **every message will go to BOTH handlers** and you'll get duplicate output:
+
+```python
+import logging
+import sys
+
+logger = logging.getLogger("app")
+logger.setLevel(logging.INFO)
+
+# Handler 1: Plain format
+plain_handler = logging.StreamHandler(sys.stdout)
+plain_handler.setFormatter(logging.Formatter('%(message)s'))
+
+# Handler 2: Timestamped format
+time_handler = logging.StreamHandler(sys.stdout)
+time_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+
+logger.addHandler(plain_handler)
+logger.addHandler(time_handler)
+
+# This outputs TWICE - once for each handler!
+logger.info("Hello")
+```
+
+**Output:**
+```
+Hello
+2025-01-07 10:30:45 - Hello
+```
+
+You get **both** formats for every message! 😟
+
+## You Need a Way to Route Messages
+
+To send some messages to one handler and other messages to a different handler, you **must** have some routing mechanism:
+
+### Option 1: Use Filters (What We Showed Earlier)
+### Option 2: Use Different Log Levels (DEBUG for headers, INFO for data)
+### Option 3: Use **Two Separate Loggers** (Simplest!)
+
+## Recommended Solution: Two Loggers
+
+This is the cleanest approach for your use case:
+
+```python
+import logging
+import sys
+
+# Logger 1: Headers/footers (plain format)
+header_logger = logging.getLogger("headers")
+header_logger.setLevel(logging.INFO)
+header_handler = logging.StreamHandler(sys.stdout)
+header_handler.setFormatter(logging.Formatter('%(message)s'))
+header_logger.addHandler(header_handler)
+header_logger.propagate = False  # Don't send to root logger
+
+# Logger 2: Data messages (timestamped format)
+data_logger = logging.getLogger("data")
+data_logger.setLevel(logging.INFO)
+data_handler = logging.StreamHandler(sys.stdout)
+data_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+data_logger.addHandler(data_handler)
+data_logger.propagate = False  # Don't send to root logger
+
+# Usage - clean and simple!
+header_logger.info("\n" + "=" * 60)
+header_logger.info("SUMMARY")
+header_logger.info("=" * 60)
+data_logger.info(f"Columns compared: 'column1' vs 'column2'")
+data_logger.info(f"Match rate: 95.3%")
+header_logger.info("=" * 60)
+```
+
+**Output:**
+```
+
+============================================================
+SUMMARY
+============================================================
+2025-01-07 10:30:45 - INFO - Columns compared: 'column1' vs 'column2'
+2025-01-07 10:30:45 - INFO - Match rate: 95.3%
+============================================================
+```
+
+## Why Two Loggers?
+
+- ✅ No filters needed
+- ✅ No level tricks needed
+- ✅ Clear intent: "This is a header" vs "This is data"
+- ✅ Simple to understand and maintain
+
+## Bottom Line
+
+**You can't have 1 logger with 2 different formatters and choose which one to use per message without some routing mechanism** (filters, levels, or just using 2 loggers).
+
+The simplest solution for your use case is **two loggers** - one for headers, one for data.
+
+Does this make sense now?

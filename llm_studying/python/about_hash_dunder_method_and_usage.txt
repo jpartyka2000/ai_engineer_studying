@@ -1,0 +1,153 @@
+## 📋 Overview: The `__hash__` Dunder Method
+
+---
+
+### What Is Hashing?
+
+A hash is an integer that represents an object. Python uses hashes to quickly store and find objects in sets and dictionaries.
+
+```python
+print(hash("hello"))  # -1414226898743895856 (some integer)
+print(hash(42))       # 42
+print(hash((1, 2)))   # 3713081631934410656
+```
+
+---
+
+### Why Does It Matter?
+
+Sets and dictionary keys require hashable objects:
+
+```python
+# These work — hashable types
+my_set = {1, "hello", (1, 2)}
+my_dict = {"name": "Alice", 42: "answer"}
+
+# These fail — unhashable types
+my_set = {[1, 2]}  # TypeError: unhashable type: 'list'
+my_dict = {[1, 2]: "value"}  # TypeError
+```
+
+---
+
+### The Rule: `__eq__` and `__hash__` Are Linked
+
+**Python's requirement:**
+
+> If two objects are equal (`a == b`), they MUST have the same hash (`hash(a) == hash(b)`)
+
+That's why:
+- If you define `__eq__`, Python sets `__hash__` to `None` (makes object unhashable)
+- If you want your object hashable, you must define both
+
+```python
+class Person:
+    def __init__(self, id):
+        self.id = id
+    
+    def __eq__(self, other):
+        return self.id == other.id
+
+p = Person(1)
+hash(p)  # TypeError: unhashable type: 'Person'
+{p}      # TypeError: unhashable type: 'Person'
+```
+
+---
+
+### How to Fix It
+
+Define `__hash__` based on the same attributes used in `__eq__`:
+
+```python
+class Person:
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
+    
+    def __eq__(self, other):
+        return self.id == other.id
+    
+    def __hash__(self):
+        return hash(self.id)  # Hash the same thing you compare
+
+p1 = Person(1, "Alice")
+p2 = Person(1, "Alicia")
+
+print(hash(p1) == hash(p2))  # True (same id → same hash)
+print({p1, p2})              # Only one person (they're equal!)
+```
+
+---
+
+### When to Use `__hash__`
+
+| Situation | Define `__hash__`? |
+|-----------|-------------------|
+| Object needs to go in a set | ✅ Yes |
+| Object used as dictionary key | ✅ Yes |
+| Object is mutable | ❌ No (dangerous!) |
+| Object has no `__eq__` | Optional (inherits default) |
+
+---
+
+### Warning: Don't Hash Mutable Objects
+
+If an object can change, its hash might change, breaking sets and dicts:
+
+```python
+# DANGEROUS — don't do this!
+class BadPerson:
+    def __init__(self, name):
+        self.name = name
+    
+    def __eq__(self, other):
+        return self.name == other.name
+    
+    def __hash__(self):
+        return hash(self.name)
+
+p = BadPerson("Alice")
+people = {p}
+print(p in people)  # True
+
+p.name = "Bob"      # Changed!
+print(p in people)  # False — can't find it anymore!
+```
+
+**Rule:** Only hash immutable attributes (or make your object fully immutable).
+
+---
+
+### Quick Template
+
+```python
+class MyClass:
+    def __init__(self, id, name):
+        self.id = id      # Used for equality
+        self.name = name  # Not used for equality
+    
+    def __eq__(self, other):
+        if not isinstance(other, MyClass):
+            return NotImplemented
+        return self.id == other.id
+    
+    def __hash__(self):
+        return hash(self.id)  # Same attribute(s) as __eq__
+```
+
+---
+
+### Summary
+
+| Question | Answer |
+|----------|--------|
+| What is `__hash__`? | Returns an integer for fast lookups |
+| When is it needed? | Sets, dictionary keys |
+| Rule with `__eq__` | Equal objects must have equal hashes |
+| What to hash | Same attributes used in `__eq__` |
+| Mutable objects | Don't make them hashable |
+
+---
+
+Ready for Question 21?

@@ -1,0 +1,77 @@
+In the OpenAI ecosystem, “tools” fall into two broad categories—**internal tools** provided by OpenAI’s platform itself, and **function tools** that you define and expose via the Chat Completions API. Here’s how they differ:
+
+---
+
+## 1. Internal Tools
+
+These are built-in capabilities and services that OpenAI hosts and manages. Examples include:
+
+* **Intent classification**, **summarization**, or **translation** endpoints (if offered as first-party services).
+* **Knowledge retrieval** (e.g., plugging into OpenAI’s Retrieval Augmented Generation service).
+* **Code execution** or **Python REPL** environments in sandboxes (available in some playgrounds or hosted notebooks).
+
+**Key traits:**
+
+* ✨ **Opaque** to you: you just invoke them via special prompts or parameters; the implementation lives entirely on OpenAI’s side.
+* 🔒 **No setup** needed: they’re automatically available to the model when you’re on a plan or environment that supports them.
+* 🚫 **Cannot inspect/edit**: you can’t change how they work—you only call them via a fixed interface.
+
+---
+
+## 2. Function Tools
+
+These are **user-defined** “functions” that you register with the Chat Completion API using a JSON Schema description:
+
+1. **Define** your function signature in your client code:
+
+   ```json
+   {
+     "name": "get_weather",
+     "description": "Get the weather in a given location",
+     "parameters": {
+       "type": "object",
+       "properties": {
+         "location": { "type": "string" },
+         "unit": { "type": "string", "enum": ["celsius","fahrenheit"] }
+       },
+       "required": ["location"]
+     }
+   }
+   ```
+2. **Pass** that schema in your chat call:
+
+   ```python
+   openai.ChatCompletion.create(
+     model="gpt-4o",
+     messages=[{"role":"user","content":"Weather in Paris?"}],
+     functions=[get_weather_schema]
+   )
+   ```
+3. The model can respond with a `"function_call"` message.
+4. **Your code** receives that, invokes the real function (e.g., calls an API), then feeds the result back as a `"tool"` (function) message.
+
+**Key traits:**
+
+* 🛠️ **Custom**: you design the function’s interface and implement its backend.
+* ✅ **Explicit control**: you decide when and how the function is actually executed.
+* 🔄 **Round-trip**: the model suggests calls, you run them in your environment, and then you feed the results back into the conversation.
+
+---
+
+### When to use which
+
+| Scenario                                                            | Internal Tool | Function Tool                     |
+| ------------------------------------------------------------------- | ------------- | --------------------------------- |
+| You need a first-party OpenAI capability (e.g., embeddings, search) | ✔️            | ❌ (unless you wrap them yourself) |
+| You want to invoke your own service (weather, DB lookup, CRM)       | ❌             | ✔️                                |
+| You want OpenAI to manage the execution environment automatically   | ✔️            | ❌                                 |
+| You need to control, inspect, or log the actual call & response     | ❌             | ✔️                                |
+
+---
+
+**In practice**, when building a “smart assistant”:
+
+* You’ll leverage **internal tools** for things like embeddings, document retrieval, or other first-party OpenAI services.
+* You’ll define **function tools** for any domain-specific operations—calling your database, invoking external APIs, or running custom code.
+
+That way, you get the best of both worlds: OpenAI’s managed capabilities plus your own application logic.

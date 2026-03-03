@@ -1,0 +1,33 @@
+You’re not “leaking” your validation labels back into the **model’s** training, but you are using them to **fit** your *calibrator* (the per-group delta).  That distinction matters:
+
+1. **No leakage into model fitting**
+
+   * Your `model.fit(...)` calls in each fold see only `X_train`/`y_train`.
+   * You never train on any `y_val` rows, so the **core** binary classifier remains “pure.”
+
+2. **Calibration is a fitting step**
+
+   * You use `y_val` and `proba_val` in each fold to compute a `(actual_rate – pred_rate)` delta for that fold’s held-out groups.
+   * You then average those deltas across folds and add them back onto every row’s probability.
+   * That *is* fitting a simple, cross-validated calibrator on the labels — perfectly valid so long as you treat calibration as a “meta-model,” but it does use the ground truth to reshape your outputs.
+
+3. **When it can bias your reported metrics**
+
+   * Since you apply the *average* fold deltas to *all* rows (including ones whose own fold contributed to that average), there’s a tiny bit of self-influence — especially in very small groups.
+   * And because you then pick your binary threshold on those same calibrated, out-of-fold predictions *and* truths, your *reported* performance will be slightly optimistic.
+
+---
+
+### So: Is it a “leak”?
+
+* **Model training:** No. You never train on your validation labels.
+* **Calibration:** Yes, you’re using `y_val` to fit a calibrator. That’s intended, but it’s not pure “zero-leakage” if you think of calibration as part of your pipeline.
+
+---
+
+### If you need zero-leakage end-to-end
+
+* **Nest calibration inside each fold** and evaluate each fold *after* its own calibrator.
+* **Or** hold out a final calibration/test set, fit calibration & choose threshold on that, then evaluate on a truly unseen test.
+
+But for most business use-cases, *cross-validated* calibration like yours (i.e. computing deltas on OOF data) is standard practice and not considered a critical leakage.

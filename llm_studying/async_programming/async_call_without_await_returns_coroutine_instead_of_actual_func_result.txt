@@ -1,0 +1,71 @@
+The error is on line 132 - you're missing `await` when calling the async method:
+
+```python
+# Line 132 - WRONG
+result = self._calculate_readability(answer)
+```
+
+Should be:
+
+```python
+# CORRECT
+result = await self._calculate_readability(answer)
+```
+
+**Why this happens:**
+
+When you call an async function without `await`, you get a coroutine object instead of the actual result. Then when you try to do `"error" in result`, Python is trying to check if the string "error" is in a coroutine object (which isn't iterable), causing the error.
+
+**Full fix for the `score` method:**
+
+```python
+@weave.op()
+async def score(self, output: dict) -> dict:
+
+    print("---------------")
+    print("IN SCORE METHOD OF READABILITY!!")
+    print(f"output keys = {list(output.keys())}")
+    print("---------------")
+
+    answer = output.get("final_answer", "")
+    
+    if not answer or not isinstance(answer, str):
+        return {
+            "readability_score": 0.0,
+            "flesch_reading_ease": None,
+        }
+    
+    # Add await here!
+    result = await self._calculate_readability(answer)
+    
+    if "error" in result:
+        return {
+            "readability_score": 0.0,
+            "error": result["error"],
+        }
+    
+    return {
+        "readability_score": result["normalized_score"],
+        "flesch_reading_ease": result["flesch_reading_ease"],
+    }
+```
+
+**Alternative solution:**
+
+Since `_calculate_readability` doesn't actually use any async operations (it's just doing calculations), you could remove the `async` keyword from it:
+
+```python
+# Change this line
+def _calculate_readability(self, answer: str) -> dict:  # Remove 'async'
+    """Calculate Flesch Reading Ease score for input text."""
+    # ... rest of the code stays the same
+```
+
+Then you don't need `await` when calling it:
+
+```python
+# No await needed if _calculate_readability is sync
+result = self._calculate_readability(answer)
+```
+
+I'd recommend the second approach (removing `async` from `_calculate_readability`) since it's just doing computation, not I/O.

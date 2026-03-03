@@ -1,0 +1,71 @@
+Below are the key RNG “levers” you need to lock down for bit‐for‐bit repeatability in a LightGBM workflow, with a minimal code snippet showing how to set each:
+
+---
+
+### 1. Python hash‐randomization  
+Pythons 3+ randomizes dict/set iteration unless you fix `PYTHONHASHSEED` **before** the interpreter starts.  
+```bash
+# In your cluster’s environment (or before `python` launches):
+export PYTHONHASHSEED=42
+```
+
+---
+
+### 2. Python’s built-in RNG  
+Any use of `random.random()`, `random.shuffle()`, etc., comes from this stream.  
+```python
+import random
+random.seed(42)
+```
+
+---
+
+### 3. NumPy’s global RNG  
+All `np.random.*` calls (and many libraries under the hood) draw from here.  
+```python
+import numpy as np
+np.random.seed(42)
+```
+
+---
+
+### 4. scikit-learn data splitting  
+E.g. your `StratifiedKFold` “shuffle” RNG must be fixed.  
+```python
+from sklearn.model_selection import StratifiedKFold
+cv = StratifiedKFold(
+    n_splits=10,
+    shuffle=True,
+    random_state=42
+)
+```
+
+---
+
+### 5. LightGBM’s internal randomness  
+LightGBM subsamples rows/features and shuffles split‐points under the hood—controlled by its `seed`/`random_state`.  
+```python
+from lightgbm import LGBMClassifier
+model = LGBMClassifier(
+    objective='binary',
+    random_state=42,
+    # if you use lgb.cv:
+    # params = {'seed': 42, …}
+)
+```
+
+---
+
+### 6. Thread-level nondeterminism  
+Parallel learning (`n_jobs`/`nthread` > 1) can introduce tiny ordering/race effects. Force single‐threaded:  
+```python
+# scikit-learn wrapper
+model = LGBMClassifier(random_state=42, n_jobs=1)
+
+# or native API
+lgb.train(params, dtrain, nthread=1, …)
+```
+
+---
+
+If you apply **all six**, your LightGBM train/test loop (and OOF prediction pipeline) will yield identical results every run.

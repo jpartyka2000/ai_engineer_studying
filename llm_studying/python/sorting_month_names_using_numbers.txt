@@ -1,0 +1,61 @@
+You just need your sort‐key to look up the *month number* from the month‐name, rather than trying to convert a character of the string. Here are two easy ways:
+
+---
+
+### 1) Using Python’s `datetime.strptime`
+
+```python
+from datetime import datetime
+
+months = sorted(
+    df_prob_diffs["YEAR_MONTH"].dropna().unique(),
+    key=lambda s: (
+        int(s.split("-")[0]),                     # year as int
+        datetime.strptime(s.split("-")[1], "%B").month  # month name → month number
+    )
+)
+```
+
+* `s.split("-")[1]` is the full month name (e.g. `"January"`).
+* `datetime.strptime(..., "%B")` parses that to a date whose `.month` is 1–12.
+* You end up sorting by `(year, month_number)` as desired.
+
+---
+
+### 2) Using the `calendar` module
+
+```python
+import calendar
+
+# build a quick lookup: {"January": 1, "February": 2, …}
+month_to_num = {m: i for i, m in enumerate(calendar.month_name) if m}
+
+months = sorted(
+    df_prob_diffs["YEAR_MONTH"].dropna().unique(),
+    key=lambda s: (
+        int(s.split("-")[0]),       # year
+        month_to_num[s.split("-")[1]]  # lookup month number
+    )
+)
+```
+
+---
+
+### A pandas‐native alternative
+
+If you’d rather let pandas do the heavy lifting:
+
+```python
+# convert to a datetime (using the first of each month),
+# sort them, then get back the YEAR-MONTH strings
+months = (
+    pd.to_datetime(df_prob_diffs["YEAR_MONTH"].dropna(), format="%Y-%B")
+      .sort_values()
+      .dt.strftime("%Y-%B")
+      .unique()
+)
+```
+
+---
+
+All of these will give you your `YEAR_MONTH` strings ordered chronologically (e.g. `"2025-January"`, `"2025-February"`, …, `"2026-January"`, etc.), instead of lexicographically.

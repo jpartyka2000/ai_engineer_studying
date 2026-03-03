@@ -1,0 +1,55 @@
+**Integer and Float Literal Gotchas in PySpark**
+
+When you use `F.lit()` with Python numbers, PySpark infers larger types than you might expect.
+
+**Integer: `int` → `LongType`**
+
+```python
+F.lit(42)  # LongType, not IntegerType
+```
+
+This can cause issues when:
+
+- Joining with a column that's `IntegerType`
+- Schema validation expects `IntegerType`
+- Writing to a data source with strict integer types
+
+**Fix:**
+
+```python
+F.lit(42).cast("integer")
+F.lit(42).cast(IntegerType())
+```
+
+**Float: `float` → `DoubleType`**
+
+```python
+F.lit(3.14)  # DoubleType, not FloatType
+```
+
+This can cause issues when:
+
+- Matching schema with `FloatType` columns
+- Memory efficiency matters (doubles use 8 bytes vs 4 for floats)
+- Downstream systems expect single-precision floats
+
+**Fix:**
+
+```python
+F.lit(3.14).cast("float")
+F.lit(3.14).cast(FloatType())
+```
+
+**Verification:**
+
+```python
+df.select(F.lit(42).alias("val")).schema
+# StructType([StructField('val', LongType(), False)])
+
+df.select(F.lit(42).cast("integer").alias("val")).schema
+# StructType([StructField('val', IntegerType(), False)])
+```
+
+**Rule of thumb:**
+
+If the exact numeric type matters for your use case, always cast explicitly rather than relying on inference.

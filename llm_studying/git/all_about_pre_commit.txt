@@ -1,0 +1,358 @@
+============================================================
+GIT PRE-COMMIT HOOK — COMPREHENSIVE GUIDE
+============================================================
+
+WHAT IS PRE-COMMIT?
+------------------------------------------------------------
+The pre-commit hook is a script that runs automatically 
+AFTER you type `git commit` but BEFORE the commit is 
+actually created.
+
+Timeline:
+  1. You run: git commit -m "Add feature"
+  2. Git triggers: .git/hooks/pre-commit
+  3. Hook runs your checks (linting, tests, etc.)
+  4. If hook exits 0 → Commit proceeds
+  5. If hook exits non-zero → Commit is BLOCKED
+
+
+WHEN DOES IT RUN?
+------------------------------------------------------------
+- Runs on every commit attempt
+- Runs BEFORE the commit message editor opens
+- Runs only on your local machine (not on remote)
+- Does NOT run during merge commits (by default)
+- Does NOT run during rebase
+
+
+CREATING A BASIC PRE-COMMIT HOOK
+------------------------------------------------------------
+Step 1: Create the file
+  $ touch .git/hooks/pre-commit
+
+Step 2: Make it executable
+  $ chmod +x .git/hooks/pre-commit
+
+Step 3: Add your script content (examples below)
+
+
+EXAMPLE 1: Simple Bash Linter Check
+------------------------------------------------------------
+#!/bin/bash
+
+echo "🔍 Running pre-commit checks..."
+
+# Run ESLint
+npm run lint
+if [ $? -ne 0 ]; then
+    echo "❌ ESLint failed. Please fix errors before committing."
+    exit 1
+fi
+
+echo "✅ All checks passed!"
+exit 0
+
+
+EXAMPLE 2: Multiple Checks
+------------------------------------------------------------
+#!/bin/bash
+
+echo "🔍 Running pre-commit checks..."
+ERRORS=0
+
+# Check 1: Linting
+echo "→ Running linter..."
+npm run lint
+if [ $? -ne 0 ]; then
+    echo "❌ Linting failed"
+    ERRORS=1
+fi
+
+# Check 2: Type checking
+echo "→ Running type check..."
+npm run typecheck
+if [ $? -ne 0 ]; then
+    echo "❌ Type check failed"
+    ERRORS=1
+fi
+
+# Check 3: Unit tests
+echo "→ Running tests..."
+npm test
+if [ $? -ne 0 ]; then
+    echo "❌ Tests failed"
+    ERRORS=1
+fi
+
+# Final result
+if [ $ERRORS -ne 0 ]; then
+    echo ""
+    echo "🚫 Commit blocked. Please fix the errors above."
+    exit 1
+fi
+
+echo "✅ All checks passed!"
+exit 0
+
+
+EXAMPLE 3: Check Only Staged Files
+------------------------------------------------------------
+#!/bin/bash
+
+# Get list of staged JS/TS files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|jsx|tsx)$')
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "No JS/TS files staged, skipping lint."
+    exit 0
+fi
+
+echo "🔍 Linting staged files..."
+echo "$STAGED_FILES"
+
+# Run ESLint only on staged files
+npx eslint $STAGED_FILES
+if [ $? -ne 0 ]; then
+    echo "❌ Linting failed on staged files."
+    exit 1
+fi
+
+echo "✅ Linting passed!"
+exit 0
+
+
+EXAMPLE 4: Prevent Commits to Main/Master
+------------------------------------------------------------
+#!/bin/bash
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    echo "❌ Direct commits to $BRANCH are not allowed!"
+    echo "   Please create a feature branch."
+    exit 1
+fi
+
+exit 0
+
+
+EXAMPLE 5: Check for Debug Statements
+------------------------------------------------------------
+#!/bin/bash
+
+# Look for common debug statements in staged files
+STAGED_FILES=$(git diff --cached --name-only)
+
+if grep -rn "console\.log\|debugger\|TODO\|FIXME" $STAGED_FILES; then
+    echo ""
+    echo "⚠️  Warning: Found debug statements or TODOs."
+    echo "   Remove them or use --no-verify to force commit."
+    exit 1
+fi
+
+exit 0
+
+
+EXAMPLE 6: Python Hook
+------------------------------------------------------------
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+
+def run_command(cmd):
+    result = subprocess.run(cmd, shell=True)
+    return result.returncode == 0
+
+print("🔍 Running pre-commit checks...")
+
+checks = [
+    ("Black formatter", "black --check ."),
+    ("Flake8 linter", "flake8 ."),
+    ("Pytest", "pytest -q"),
+]
+
+failed = False
+for name, cmd in checks:
+    print(f"→ {name}...")
+    if not run_command(cmd):
+        print(f"❌ {name} failed")
+        failed = True
+
+if failed:
+    print("\n🚫 Commit blocked.")
+    sys.exit(1)
+
+print("✅ All checks passed!")
+sys.exit(0)
+
+
+SKIPPING THE PRE-COMMIT HOOK
+------------------------------------------------------------
+Sometimes you need to bypass the hook (use sparingly!):
+
+# Skip all pre-commit hooks for this commit
+git commit --no-verify -m "WIP: work in progress"
+
+# Short form
+git commit -n -m "WIP: work in progress"
+
+⚠️  Use with caution! Skipping hooks defeats their purpose.
+
+
+COMMON USE CASES
+------------------------------------------------------------
+1. CODE QUALITY
+   • Run linters (ESLint, Pylint, RuboCop)
+   • Run formatters (Prettier, Black, gofmt)
+   • Check for type errors (TypeScript, mypy)
+
+2. SECURITY
+   • Scan for hardcoded secrets/API keys
+   • Check for vulnerable dependencies
+   • Prevent committing .env files
+
+3. TESTING
+   • Run unit tests
+   • Run smoke tests
+   • Check code coverage thresholds
+
+4. STANDARDS ENFORCEMENT
+   • Validate commit message format
+   • Ensure consistent file naming
+   • Check for required documentation
+
+5. WORKFLOW PROTECTION
+   • Block direct commits to main/master
+   • Require ticket numbers in branch names
+   • Prevent large file commits
+
+
+PRE-COMMIT FRAMEWORK (POPULAR TOOL)
+------------------------------------------------------------
+"pre-commit" is also the name of a popular Python-based 
+framework for managing hooks across projects.
+
+Installation:
+  $ pip install pre-commit
+
+Setup in your repo:
+  $ pre-commit install
+
+Configuration file (.pre-commit-config.yaml):
+------------------------------------------------------------
+repos:
+  # Built-in hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+
+  # ESLint
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: \.[jt]sx?$
+
+  # Prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+
+  # Python Black
+  - repo: https://github.com/psf/black
+    rev: 24.1.0
+    hooks:
+      - id: black
+
+Commands:
+  pre-commit install      # Install hooks
+  pre-commit run          # Run on staged files
+  pre-commit run --all    # Run on all files
+  pre-commit autoupdate   # Update hook versions
+
+
+HUSKY (FOR NODE.JS PROJECTS)
+------------------------------------------------------------
+Popular alternative for JavaScript/Node projects:
+
+Setup:
+  $ npm install husky --save-dev
+  $ npx husky init
+
+Creates .husky/pre-commit:
+------------------------------------------------------------
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run lint
+npm test
+
+Pair with lint-staged for staged-file-only checks:
+  $ npm install lint-staged --save-dev
+
+package.json:
+{
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md}": ["prettier --write"]
+  }
+}
+
+.husky/pre-commit:
+  npx lint-staged
+
+
+DEBUGGING PRE-COMMIT HOOKS
+------------------------------------------------------------
+# Test your hook manually
+.git/hooks/pre-commit
+
+# See what Git is doing
+GIT_TRACE=1 git commit -m "test"
+
+# Check if hook is executable
+ls -la .git/hooks/pre-commit
+
+# Check for Windows line ending issues (CRLF vs LF)
+file .git/hooks/pre-commit
+
+
+BEST PRACTICES
+------------------------------------------------------------
+1. KEEP IT FAST
+   • Hooks run on every commit
+   • Slow hooks = frustrated developers
+   • Run only on staged files when possible
+   • Save heavy tests for CI/CD
+
+2. PROVIDE CLEAR FEEDBACK
+   • Show what's being checked
+   • Display meaningful error messages
+   • Tell developers how to fix issues
+
+3. ALLOW ESCAPE HATCH
+   • Document how to use --no-verify
+   • Trust developers to use it responsibly
+
+4. CHECK ONLY STAGED FILES
+   • Don't lint the whole codebase
+   • Use git diff --cached --name-only
+
+5. SHARE WITH YOUR TEAM
+   • Use pre-commit framework, Husky, or Lefthook
+   • Document setup in README
+   • Automate installation via npm install or similar
+
+
+QUICK REFERENCE
+------------------------------------------------------------
+┌────────────────────────────┬──────────────────────────────┐
+│ Task                       │ Command                      │
+├────────────────────────────┼──────────────────

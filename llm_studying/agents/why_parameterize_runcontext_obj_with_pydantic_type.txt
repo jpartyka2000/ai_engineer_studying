@@ -1,0 +1,83 @@
+Yes, exactly! Parameterizing `RunContext` with a type like `State` is what gives you type-safe access to that state's fields. Here's why this matters:
+
+## Without Type Parameterization
+
+```python
+# Without parameterization, you'd have no type hints
+@agent.tool
+def verify(ctx: RunContext, expr: str, guess: float) -> dict:
+    ctx.state.verification_attempts += 1  # No IDE autocomplete
+    ctx.state.total_cost += 1  # No type checking
+    ctx.state.typo_field += 1  # Won't catch this error until runtime!
+```
+
+## With Type Parameterization
+
+```python
+# With parameterization, you get full type safety
+@agent.tool
+def verify(ctx: RunContext[State], expr: str, guess: float) -> dict:
+    ctx.state.verification_attempts += 1  # IDE knows this exists
+    ctx.state.total_cost += 1  # Type checker validates this
+    ctx.state.typo_field += 1  # TYPE ERROR: State has no attribute 'typo_field'
+```
+
+## The Generic Type System
+
+`RunContext` is defined as a generic class:
+
+```python
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+
+class RunContext(Generic[T]):
+    def __init__(self, state: T):
+        self.state = state
+    
+    @property
+    def state(self) -> T:  # Returns whatever type T is
+        return self._state
+```
+
+When you write `RunContext[State]`, you're telling Python: "This RunContext's state property will be of type State."
+
+## Practical Benefits
+
+### 1. **IDE Autocomplete**
+```python
+@agent.tool
+def my_tool(ctx: RunContext[State], value: str) -> None:
+    ctx.state.  # IDE shows: verification_attempts, compute_calls, total_cost, etc.
+```
+
+### 2. **Type Checking**
+```python
+class State(BaseModel):
+    counter: int = 0
+
+@agent.tool
+def bad_tool(ctx: RunContext[State]) -> None:
+    ctx.state.counter = "not a number"  # TYPE ERROR: Expected int, got str
+```
+
+### 3. **Refactoring Safety**
+If you rename a field in State, your IDE can automatically update all references, or at least show you where updates are needed.
+
+## Alternative Without Parameterization
+
+Without generics, you'd need runtime checks:
+
+```python
+@agent.tool
+def verify(ctx, expr: str, guess: float) -> dict:
+    # No type safety - hope state has these fields!
+    if hasattr(ctx.state, 'verification_attempts'):
+        ctx.state.verification_attempts += 1
+    else:
+        raise AttributeError("State missing verification_attempts")
+```
+
+This is error-prone and defeats the purpose of using Pydantic for type safety.
+
+The parameterization essentially creates a contract: "This tool expects a RunContext that contains a State object with these specific fields." This makes your code more maintainable, catches errors earlier, and provides better developer experience.

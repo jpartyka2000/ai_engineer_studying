@@ -1,0 +1,74 @@
+Nice catch 👍 Let’s unpack what’s going on here.
+
+You showed this Pydantic model:
+
+```python
+class DataScanner(BaseModel):
+    # Optional source/table name for reference
+    source_name: Optional[str] = None
+    
+    # Map of column -> metrics dict (counts, nulls, uniques, etc.)
+    column_metrics: Dict[str, Any] = Field(default_factory=dict)
+```
+
+---
+
+## 1. Why `source_name: Optional[str] = None`
+
+* The type annotation says: **this can be either a `str` or `None`**.
+* The `= None` provides the **default value**.
+* Together, this means:
+
+  * If the user passes a string, use it.
+  * If the user omits it, default to `None`.
+
+This is the canonical way to mark an optional field in Python typing and in Pydantic.
+
+---
+
+## 2. Could We Use `Field()` Instead?
+
+Yes — you can absolutely use `Field()` here if you want to attach extra metadata or be more explicit:
+
+```python
+from pydantic import Field
+from typing import Optional
+
+class DataScanner(BaseModel):
+    source_name: Optional[str] = Field(
+        default=None, 
+        description="Optional source/table name for reference"
+    )
+```
+
+This is equivalent in behavior.
+
+* Both approaches yield the same default (`None`).
+* The main difference: `Field()` lets you **add more config** (description, title, examples, validators, constraints, etc.).
+
+---
+
+## 3. Why the Difference in Style?
+
+* For **simple optionals**, it’s common to just write `Optional[str] = None` — shorter and perfectly clear.
+* For **mutable defaults** (lists, dicts, sets) you *must* use `Field(default_factory=...)` to avoid the Python gotcha of shared mutable defaults.
+* For **extra schema metadata**, you’d also lean on `Field(...)`.
+
+So in your example:
+
+* `source_name` is simple (just `str | None`), so `= None` works fine.
+* `column_metrics` is a `dict` (mutable), so you need `Field(default_factory=dict)` to get a fresh dict for each instance.
+
+---
+
+## ✅ Takeaway
+
+* **Both are valid:**
+
+  * `Optional[str] = None` → clean & Pythonic when you just need an optional field.
+  * `Field(default=None, …)` → useful when you also want extra metadata or schema control.
+* **Use `default_factory` with `Field()`** for mutable types like lists and dicts.
+
+---
+
+Would you like me to also show you what the generated **JSON schema** looks like for `Optional[str] = None` vs `Field(default=None, …)`? That makes the difference really visible.

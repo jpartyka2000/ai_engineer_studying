@@ -1,0 +1,96 @@
+============================================================
+GIT TUTOR — QUESTION RECORD
+============================================================
+Skill Level: Hard
+Category: Debugging & Bisect
+Type: Scenario / Coding
+------------------------------------------------------------
+QUESTION:
+A bug was introduced somewhere in your commit history.
+- Commit `v1.0` (3 months ago) was working fine
+- Current `HEAD` has the bug
+
+Git has a tool that performs a binary search to find the 
+exact commit that introduced the bug.
+
+Write the commands to:
+1. Start this process
+2. Mark the known good commit
+3. Mark the known bad commit
+------------------------------------------------------------
+YOUR ANSWER: 
+git bisect --mark-bad-commit
+
+CORRECT ANSWER: 
+git bisect start
+git bisect good v1.0
+git bisect bad HEAD
+
+STATUS: ❌ Incorrect
+------------------------------------------------------------
+EXPLANATION:
+git bisect uses simple subcommands, not flags like 
+--mark-bad-commit.
+
+THE BISECT WORKFLOW:
+------------------------------------------------------------
+Step 1: Start bisect mode
+  $ git bisect start
+
+Step 2: Mark a known GOOD commit (no bug)
+  $ git bisect good v1.0
+
+Step 3: Mark a known BAD commit (has bug)
+  $ git bisect bad HEAD
+
+(Steps 2 & 3 can be in either order)
+
+WHAT HAPPENS NEXT:
+------------------------------------------------------------
+Git calculates the midpoint between good and bad, then 
+checks out that commit for you to test.
+
+  $ git bisect bad HEAD
+  Bisecting: 32 revisions left to test (roughly 5 steps)
+  [abc123...] Some commit message
+
+You test the code. Then tell Git the result:
+  $ git bisect good    # if this commit works
+  OR
+  $ git bisect bad     # if this commit has the bug
+
+Git narrows the range and checks out another midpoint. 
+Repeat until Git finds the FIRST bad commit:
+
+  abc1234 is the first bad commit
+  commit abc1234
+  Author: Someone <someone@example.com>
+  Date:   Mon Dec 1 10:00:00 2024
+  
+      Refactored user validation   <-- THE CULPRIT!
+
+Step 4: When done, exit bisect mode
+  $ git bisect reset
+
+
+WHY BINARY SEARCH IS POWERFUL:
+------------------------------------------------------------
+If you have 1,000 commits between good and bad:
+  • Manual checking: up to 1,000 tests
+  • Binary search: ~10 tests (log₂ 1000 ≈ 10)
+
+Each step eliminates HALF the remaining commits!
+
+
+BONUS — AUTOMATED BISECT:
+------------------------------------------------------------
+If you have a test script that exits 0 for good, 1 for bad:
+
+  $ git bisect start
+  $ git bisect good v1.0
+  $ git bisect bad HEAD
+  $ git bisect run ./test-script.sh
+
+Git will automatically run the script at each step and 
+find the bad commit without any manual intervention!
+============================================================

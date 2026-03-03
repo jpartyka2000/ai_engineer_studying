@@ -1,0 +1,67 @@
+**`StructType`** is a PySpark class that represents the schema of a DataFrame. It's essentially a collection of `StructField` objects that together describe all the columns in a dataset.
+
+**Constructor:**
+
+```python
+StructType(fields=None)
+```
+
+**Parameter:**
+
+- **`fields`** – a list of `StructField` objects (optional)
+
+**Creating a schema:**
+
+```python
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+schema = StructType([
+    StructField("id", IntegerType(), nullable=False),
+    StructField("name", StringType(), nullable=True),
+    StructField("age", IntegerType(), nullable=True)
+])
+```
+
+**Applying a schema when reading data:**
+
+```python
+df = spark.read.schema(schema).csv("data.csv")
+
+# Or when creating a DataFrame:
+df = spark.createDataFrame([(1, "Alice", 30), (2, "Bob", 25)], schema)
+```
+
+**Useful methods and properties:**
+
+```python
+schema.fields          # List of StructField objects
+schema.fieldNames()    # ['id', 'name', 'age']
+schema["name"]         # Returns the StructField for 'name'
+schema.add("email", StringType(), True)  # Returns new StructType with added field
+schema.simpleString()  # 'struct<id:int,name:string,age:int>'
+schema.json()          # JSON representation of the schema
+```
+
+**Nested schemas:**
+
+`StructType` can be nested within itself to represent complex, hierarchical data:
+
+```python
+address_schema = StructType([
+    StructField("street", StringType()),
+    StructField("city", StringType()),
+    StructField("zip", StringType())
+])
+
+person_schema = StructType([
+    StructField("name", StringType()),
+    StructField("address", address_schema)  # Nested struct
+])
+```
+
+**Common use cases:**
+
+- Enforcing a specific schema when reading semi-structured data (CSV, JSON, Parquet)
+- Improving read performance by avoiding schema inference
+- Ensuring data quality and consistency
+- Defining schemas for nested or complex data structures

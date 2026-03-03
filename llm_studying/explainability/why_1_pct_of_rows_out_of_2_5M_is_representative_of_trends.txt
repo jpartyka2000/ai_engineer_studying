@@ -1,0 +1,36 @@
+Randomly sampling 1% (≈ 25 000 points) out of 2.5 million for a SHAP **summary plot** is almost always enough to capture the global patterns of feature influence. Here’s why:
+
+1. **Law of Large Numbers**
+
+   * When you average or aggregate a large number of independent observations, the sample mean converges to the true population mean.
+   * A sample of 25 000 points yields a standard error on any feature’s mean |SHAP| that’s roughly
+
+     $$
+       \text{SE} \approx \frac{\sigma}{\sqrt{25\,000}},
+     $$
+
+     which—even if σ (the population standard deviation of |SHAP|) is as large as 1—gives SE ≈ 0.006. That’s a tiny margin of error for ranking features or judging relative magnitudes.
+
+2. **Diminishing Returns Beyond a Few Thousand Points**
+
+   * Empirically, SHAP summary plots (the classic “beeswarm”) stabilize as soon as you have 2 000–5 000 points.
+   * Pushing to 25 000 barely changes the shape or ordering, but does increase computation time linearly.
+
+3. **Focus on Aggregate Trends, Not Rare Extremes**
+
+   * Summary plots show the *overall* distribution of each feature’s impact, highlighting the dense bulk of your data.
+   * A pure random sample of 1% will almost certainly include all the common regions of feature space; only the very rare outliers (< 0.01% of rows) might be slightly under‑represented, and those rarely change the big‑picture trends.
+
+4. **Compute vs. Insight Trade‑off**
+
+   * SHAP computation scales roughly as O(sample\_size × model\_complexity).
+   * Sampling down to 25 000 (or even 5 000) gives a 100×–500× speed‑up over the full 2.5 M, with almost no loss in interpretability.
+
+5. **Optional Enhancements**
+
+   * If you really care about small subgroups (e.g. a rare class), you can stratify on the target or predicted quantile so those get guaranteed representation.
+   * Or use `shap.kmeans(X, K)` to pick K cluster‑centers that optimally summarize your feature space—often K = 50–200 is enough for a near‑identical summary plot with virtually zero sampling noise.
+
+---
+
+**Bottom line:** for a global SHAP summary plot, you’re visualizing *densities* and *average* effects. A well‑chosen 1% random sample already gives you an extremely accurate, low‑noise picture of how each predictor pushes predictions up or down—while keeping compute time and memory use manageable.

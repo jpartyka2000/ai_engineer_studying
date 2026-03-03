@@ -1,0 +1,51 @@
+AWS SQS (Simple Queue Service) is a **fully managed message queuing service**. It lets one part of your system put messages on a queue and another part process them later—decoupling producers from consumers and smoothing traffic spikes.
+
+## What it gives you
+
+* **Managed, serverless queues**: no brokers to run.
+* **Scales automatically**: handles bursts and high throughput.
+* **At-least-once delivery** (Standard queues), **exactly-once processing + strict ordering** (FIFO queues).
+* **Long polling** to reduce empty receives and cost.
+* **Visibility timeout** so a message isn’t processed by multiple workers at once.
+* **Dead-letter queues (DLQ)** for poison messages.
+
+## Two queue types
+
+* **Standard**: best throughput, *unordered*, *at-least-once*.
+* **FIFO** (`.fifo`): ordered + deduplicated (exactly-once), lower throughput; optional **message group IDs** to get ordered streams per group.
+
+## Common limits / tips
+
+* **Message size**: up to **256 KB**. For bigger payloads, store in S3 and put the pointer (S3 key) in SQS.
+* **Idempotency**: design consumers so reprocessing a message is safe (especially with Standard queues).
+* **Approximate counts**: queue length metrics are eventually consistent.
+* **Use DLQs** and alarms to catch failures.
+
+## Quick Python (boto3) example
+
+```python
+import boto3, json
+
+sqs = boto3.resource("sqs")
+queue = sqs.get_queue_by_name(QueueName="my-queue")  # or 'my-queue.fifo'
+
+# Send
+queue.send_message(MessageBody=json.dumps({"task_id": 123, "action": "process"}))
+# For FIFO: add MessageGroupId (and optional MessageDeduplicationId)
+# queue.send_message(MessageBody="...", MessageGroupId="group-1")
+
+# Receive
+for msg in queue.receive_messages(MaxNumberOfMessages=10, WaitTimeSeconds=10):
+    body = json.loads(msg.body)
+    # ...process...
+    msg.delete()  # remove from queue after successful processing
+```
+
+## When to use SQS
+
+* Decouple microservices
+* Buffer traffic (spiky -> steady)
+* Fan-out with SNS → SQS (pub/sub + queues)
+* Reliable background job processing
+
+If you want, tell me your use case (throughput, order guarantees, payload size), and I’ll recommend **Standard vs FIFO**, visibility timeout, and a minimal queue policy.

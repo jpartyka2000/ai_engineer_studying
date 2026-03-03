@@ -1,0 +1,93 @@
+In Python, **`ABCMeta`** is the *metaclass* that powers **abstract base classes (ABCs)**.
+
+It lives in the `abc` module, and it’s what lets you define a class that:
+
+* **Cannot be instantiated** unless certain methods are implemented.
+* Can **declare “abstract methods”** that subclasses must override.
+* Can be used for **`isinstance()` and `issubclass()` checks** as an interface.
+
+---
+
+### How it works
+
+When you write:
+
+```python
+from abc import ABCMeta, abstractmethod
+
+class MyABC(metaclass=ABCMeta):
+    @abstractmethod
+    def do_something(self):
+        pass
+```
+
+* `ABCMeta` is the **metaclass** — it controls *how the class itself is created*.
+* When Python sees `metaclass=ABCMeta`, it uses `ABCMeta.__new__` and `ABCMeta.__init__` to:
+
+  1. **Track abstract methods** declared with `@abstractmethod`.
+  2. Mark the class as **abstract** if any are unimplemented.
+  3. Prevent direct instantiation of the class if abstract methods remain.
+
+If a subclass still hasn’t implemented all abstract methods, **trying to instantiate it raises**:
+
+```
+TypeError: Can't instantiate abstract class ...
+```
+
+---
+
+### Example
+
+```python
+from abc import ABCMeta, abstractmethod
+
+class Animal(metaclass=ABCMeta):
+    @abstractmethod
+    def speak(self):
+        pass
+
+class Dog(Animal):
+    def speak(self):
+        return "Woof!"
+
+# This works
+d = Dog()
+print(d.speak())  # Woof!
+
+# This fails
+class Fish(Animal):
+    pass
+
+Fish()  # TypeError: Can't instantiate abstract class Fish with abstract method speak
+```
+
+---
+
+### Shortcut with `ABC`
+
+Most people don’t use `ABCMeta` directly — they inherit from `abc.ABC`, which already sets `metaclass=ABCMeta` for you:
+
+```python
+from abc import ABC, abstractmethod
+
+class Animal(ABC):
+    @abstractmethod
+    def speak(self):
+        pass
+```
+
+`ABC` is just a **convenience base class** that does:
+
+```python
+class ABC(metaclass=ABCMeta):
+    pass
+```
+
+---
+
+💡 **In short:**
+`ABCMeta` is the *metaclass that implements Python’s Abstract Base Class system*. It enforces method implementation rules and is the foundation for Python’s “interfaces.”
+
+---
+
+If you want, I can also show **how `ABCMeta` hooks into `isinstance()` and `issubclass()` checks** so that ABCs can behave like virtual interfaces. That’s a neat hidden feature. Would you like me to show that?

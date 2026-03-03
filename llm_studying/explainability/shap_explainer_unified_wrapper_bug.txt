@@ -1,0 +1,39 @@
+This is a known bug in SHAP’s “unified” `shap.Explainer` wrapper for tree models—internally it ends up holding a `TreeEnsemble` object (your LightGBM model under the hood) and then later tries to access a `.values` attribute that doesn’t exist ([GitHub][1]).
+
+### Two easy work‑arounds
+
+1. **Use the legacy `TreeExplainer` directly**
+
+   ```python
+   import shap
+
+   # bypass the new Explainer API
+   explainer = shap.TreeExplainer(model)  
+   shap_values = explainer.shap_values(X_clean)
+   ```
+
+   This avoids the buggy wrapper path altogether.
+
+2. **Pass a raw prediction function into `shap.Explainer`**
+
+   ```python
+   import shap
+
+   # treat model.predict as a plain function
+   explainer = shap.Explainer(model.predict, X_clean)
+   shap_values = explainer(X_clean)
+   ```
+
+   By giving `shap.Explainer` a function rather than the model object, it falls back to a simpler code path that doesn’t hit the `.values` bug.
+
+### Long‑term fix
+
+Upgrade to the latest SHAP release (≥ 0.41), where this issue has been resolved and you can once again do
+
+```python
+explainer = shap.Explainer(model, X_clean)
+```
+
+without seeing the AttributeError.
+
+[1]: https://github.com/shap/shap/issues/480?utm_source=chatgpt.com "TreeEnsemble instance has no attribute 'values' in LightGBM"

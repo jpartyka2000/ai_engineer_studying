@@ -1,0 +1,40 @@
+Yes! You can do this in a single scan of the table:
+
+```python
+from pyspark.sql.functions import col, count
+
+df = spark.table(OUTPUT_TABLE_NAME)
+
+# count() on a column only counts non-null values
+non_null_counts = df.select([count(col(c)).alias(c) for c in df.columns]).collect()[0]
+
+all_null_cols = [c for c in df.columns if non_null_counts[c] == 0]
+
+print("Columns with all NULLs:", all_null_cols)
+```
+
+This works because `count(col)` ignores NULLs—so a count of 0 means every value is NULL.
+
+## Putting It All Together
+
+Here's a quick validation you can run before changing your write logic:
+
+```python
+from pyspark.sql.functions import col, count
+
+# Get all-null columns from existing table
+existing_df = spark.table(OUTPUT_TABLE_NAME)
+non_null_counts = existing_df.select([count(col(c)).alias(c) for c in existing_df.columns]).collect()[0]
+all_null_cols = [c for c in existing_df.columns if non_null_counts[c] == 0]
+
+# Compare to your new DataFrame
+existing_cols = set(existing_df.columns)
+new_cols = set(final_df_spark.columns)
+cols_being_removed = existing_cols - new_cols
+
+print("All-NULL columns in table:", all_null_cols)
+print("Columns that will be removed:", cols_being_removed)
+print("Match:", set(all_null_cols) == cols_being_removed)
+```
+
+If `Match: True`, you know the only columns being dropped are the all-NULL ones, and you can safely switch to `overwriteSchema=true`.

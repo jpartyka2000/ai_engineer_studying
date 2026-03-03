@@ -1,0 +1,51 @@
+In Microsoft SQL Server, the `ALL` keyword in a `GROUP BY` is a deprecated, backwards‑compatibility option that explicitly tells the engine to “show me every possible group, even those that have no rows after filtering.”  In practice:
+
+* **Default behavior is “ALL.”**
+  By default, SQL Server groups over all values in the underlying table—even if some of those values are filtered out by your `WHERE` clause—so `GROUP BY x` is exactly equivalent to `GROUP BY ALL x`. ([Microsoft Learn][1])
+
+* **What `GROUP BY ALL` does:**
+  It builds its list of grouping keys from the table *before* the `WHERE` filter is applied, then applies the filter to the rows when computing aggregates.  Any group that ends up with zero qualifying rows still appears in the result, but its aggregate columns come back as `NULL`. ([Microsoft Learn][1])
+
+* **Deprecated syntax:**
+  This form (`GROUP BY ALL …`) is only allowed in the simple (non‑rollup/cube) syntax and is marked for removal in a future SQL Server release.  You should simply write `GROUP BY col1, col2, …` instead.
+
+---
+
+### Example
+
+```sql
+CREATE TABLE Example(val INT);
+INSERT INTO Example VALUES (1),(2),(3);
+
+-- Only values >1 qualify, but ALL tells SQL Server to still emit val=1 as a group
+SELECT
+  val,
+  SUM(val) AS total
+FROM Example
+WHERE val > 1
+GROUP BY ALL val;
+```
+
+| val | total |
+| --- | ----- |
+| 1   | NULL  |
+| 2   | 2     |
+| 3   | 3     |
+
+If you drop the `ALL` (or simply omit it), you get only:
+
+```sql
+SELECT
+  val,
+  SUM(val) AS total
+FROM Example
+WHERE val > 1
+GROUP BY val;
+```
+
+| val | total |
+| --- | ----- |
+| 2   | 2     |
+| 3   | 3     |
+
+[1]: https://learn.microsoft.com/en-us/sql/t-sql/queries/select-group-by-transact-sql?view=sql-server-ver16 "GROUP BY (Transact-SQL) - SQL Server | Microsoft Learn"

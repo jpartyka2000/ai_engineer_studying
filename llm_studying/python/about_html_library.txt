@@ -1,0 +1,78 @@
+Python’s **`html`** library is part of Python’s standard library and provides utilities for working with HTML, primarily focused on escaping/unescaping text and parsing HTML. It’s organized into two main submodules:
+
+---
+
+## 1. `html.escape` / `html.unescape`
+
+* **`html.escape(s, quote=True)`**
+
+  * Converts special characters in text to HTML-safe sequences:
+
+    * `&` → `&amp;`
+    * `<` → `&lt;`
+    * `>` → `&gt;`
+  * If `quote=True` (the default), also escapes `"` → `&quot;` and `'` → `&#x27;`.
+  * Useful whenever you’re injecting arbitrary text into HTML to avoid breaking markup or introducing XSS vulnerabilities.
+* **`html.unescape(s)`**
+
+  * Reverses the process, converting `&amp;`, `&lt;`, etc., back into their original characters.
+
+```python
+import html
+
+raw = '5 > 3 & 2 < 4'
+escaped = html.escape(raw)
+# '5 &gt; 3 &amp; 2 &lt; 4'
+un = html.unescape(escaped)
+# '5 > 3 & 2 < 4'
+```
+
+---
+
+## 2. `html.entities`
+
+* Contains definitions of HTML character entities:
+
+  * `html.entities.html5` → mapping of entity names (like `"eacute;"`) to Unicode codepoints.
+  * Useful if you need to look up or validate named entities beyond the basic five (`&amp;`, `&lt;`, etc.).
+
+---
+
+## 3. `html.parser` (HTMLParser class)
+
+Though technically in its own submodule, it ships under the `html` namespace:
+
+* **`html.parser.HTMLParser`**
+
+  * A pure-Python, event-driven HTML parser.
+  * You subclass it and override methods like `handle_starttag()`, `handle_data()`, `handle_endtag()`, etc., to process HTML incrementally.
+  * Good for quick-and-dirty scraping or HTML-processing tasks where you don’t want the full machinery of `BeautifulSoup` or `lxml`.
+
+```python
+from html.parser import HTMLParser
+
+class LinkCollector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            for name, val in attrs:
+                if name == "href":
+                    self.links.append(val)
+
+parser = LinkCollector()
+parser.feed('<p>See <a href="https://example.com">example</a></p>')
+# parser.links == ['https://example.com']
+```
+
+---
+
+## When to Use
+
+* **Escaping/unescaping user data** before injecting into templates or rendering HTML.
+* **Basic HTML parsing** tasks without installing external dependencies.
+* **Entity lookup** when you need to map named entities to Unicode.
+
+For more complex HTML manipulation or robust scraping, libraries like **BeautifulSoup**, **lxml**, or **html5lib** are recommended. But for light, dependency-free needs, the built-in `html` package is often all you need.

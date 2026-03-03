@@ -1,0 +1,29 @@
+Because here you’re **instantiating** the class, not **calling** the module instance:
+
+```python
+PolicyNet(env.action_space(agent).n)
+```
+
+– that syntax invokes the **constructor** (i.e.\ `PolicyNet.__new__` and then `PolicyNet.__init__`), producing a fresh `PolicyNet` object.  You don’t yet have an existing instance to “call,” so `__call__` isn’t involved.
+
+---
+
+### The distinction
+
+1. **Class instantiation**
+
+   ```python
+   net = PolicyNet(n_actions)
+   ```
+
+   → runs `PolicyNet.__new__` + `PolicyNet.__init__`, returns a `PolicyNet` object.
+
+2. **Module invocation**
+
+   ```python
+   logits = net(obs)
+   ```
+
+   → calls `net.__call__(obs)`, which under the hood invokes your `forward(obs)` (plus any hooks registered on the module).
+
+So **`__call__`** only runs when you treat an existing **instance** as a function—i.e.\ when you do `some_module(input)`.  Creating the instance in your dict comprehension never invokes `__call__`, it just runs the constructor methods.

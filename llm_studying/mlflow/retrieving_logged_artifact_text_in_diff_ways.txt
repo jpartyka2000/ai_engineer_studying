@@ -1,0 +1,68 @@
+You have a couple of options for pulling your text artifact back down in code (or simply clicking it in the MLflow UI under the “Artifacts” tab of your run).
+
+---
+
+### 1) Using the high-level `mlflow.artifacts` API (MLflow 2.9+)
+
+```python
+import mlflow
+
+# if you logged with mlflow.log_text(..., artifact_file="my_text.txt")
+# and you know your run_id (e.g. from mlflow.start_run())
+run_id = "7969e289c8844a69b4c46b340d4ac78d"
+
+# load the contents directly as a string
+text = mlflow.artifacts.load_text(
+    artifact_path="my_text.txt",
+    run_id=run_id
+)
+print(text)
+```
+
+You can also download to a local file:
+
+```python
+local_path = mlflow.artifacts.download_artifacts(
+    artifact_path="my_text.txt",
+    run_id=run_id
+)
+# now open it
+with open(local_path, "r") as f:
+    text = f.read()
+```
+
+---
+
+### 2) Using the lower-level `MlflowClient`
+
+```python
+from mlflow.tracking import MlflowClient
+
+client = MlflowClient()
+run_id = "7969e289c8844a69b4c46b340d4ac78d"
+
+# This returns a local directory into which the artifact was downloaded.
+local_dir = client.download_artifacts(
+    run_id=run_id,
+    path="my_text.txt",   # relative path under the run’s artifact root
+    dst_path="."          # or wherever you like
+)
+
+# If dst_path="." then local_dir == "./my_text.txt"
+with open(local_dir, "r") as f:
+    text = f.read()
+
+print(text)
+```
+
+---
+
+### 3) Via the MLflow UI
+
+1. Navigate to the run in the Tracking UI.
+2. Open the **Artifacts** pane on the left.
+3. Click **my\_text.txt** to view or download it directly in your browser.
+
+---
+
+Pick whichever approach fits your environment. Once you have the local path (or use the convenience `load_text`), you can read your logged string just like any other file.

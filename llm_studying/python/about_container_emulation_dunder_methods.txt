@@ -1,0 +1,292 @@
+## 📋 Deep Dive: Container Emulation Dunder Methods in Python
+
+---
+
+### What is Container Emulation?
+
+Container emulation lets your custom classes behave like built-in containers (lists, dicts, sets). By implementing specific dunder methods, your objects can support indexing, iteration, length checks, membership testing, and more.
+
+---
+
+### The Core Container Methods
+
+| Method | Signature | Enables | Example |
+|--------|-----------|---------|---------|
+| `__len__` | `(self)` | `len(obj)` | `len(playlist)` |
+| `__getitem__` | `(self, key)` | `obj[key]` | `playlist[0]` |
+| `__setitem__` | `(self, key, value)` | `obj[key] = value` | `playlist[0] = "New Song"` |
+| `__delitem__` | `(self, key)` | `del obj[key]` | `del playlist[0]` |
+| `__contains__` | `(self, item)` | `item in obj` | `"Song" in playlist` |
+| `__iter__` | `(self)` | `for x in obj` | `for song in playlist` |
+| `__reversed__` | `(self)` | `reversed(obj)` | `reversed(playlist)` |
+| `__missing__` | `(self, key)` | Dict subclass fallback | `d[missing_key]` |
+
+---
+
+### Sequence-like Containers (Lists, Tuples)
+
+For ordered collections accessed by integer index:
+
+```python
+class Playlist:
+    def __init__(self, songs=None):
+        self._songs = list(songs) if songs else []
+    
+    def __len__(self):
+        return len(self._songs)
+    
+    def __getitem__(self, index):
+        # Supports negative indexing and slicing automatically
+        return self._songs[index]
+    
+    def __setitem__(self, index, value):
+        self._songs[index] = value
+    
+    def __delitem__(self, index):
+        del self._songs[index]
+    
+    def __contains__(self, item):
+        return item in self._songs
+    
+    def __iter__(self):
+        return iter(self._songs)
+    
+    def __reversed__(self):
+        return reversed(self._songs)
+
+# Usage
+playlist = Playlist(["Song A", "Song B", "Song C"])
+
+print(len(playlist))           # 3
+print(playlist[0])             # Song A
+print(playlist[-1])            # Song C
+print(playlist[0:2])           # ['Song A', 'Song B']
+
+playlist[1] = "New Song"       # Modify
+del playlist[0]                # Delete
+
+print("New Song" in playlist)  # True
+
+for song in playlist:          # Iterate
+    print(song)
+
+for song in reversed(playlist): # Reverse iterate
+    print(song)
+```
+
+---
+
+### Mapping-like Containers (Dicts)
+
+For key-value collections:
+
+```python
+class Config:
+    def __init__(self, defaults=None):
+        self._data = dict(defaults) if defaults else {}
+    
+    def __len__(self):
+        return len(self._data)
+    
+    def __getitem__(self, key):
+        return self._data[key]
+    
+    def __setitem__(self, key, value):
+        self._data[key] = value
+    
+    def __delitem__(self, key):
+        del self._data[key]
+    
+    def __contains__(self, key):
+        return key in self._data
+    
+    def __iter__(self):
+        # Iterating a dict-like yields keys
+        return iter(self._data)
+    
+    def keys(self):
+        return self._data.keys()
+    
+    def values(self):
+        return self._data.values()
+    
+    def items(self):
+        return self._data.items()
+
+# Usage
+config = Config({"debug": True, "timeout": 30})
+
+print(config["debug"])         # True
+config["verbose"] = False      # Add new key
+del config["timeout"]          # Delete key
+
+print("debug" in config)       # True
+
+for key in config:             # Iterate keys
+    print(f"{key}: {config[key]}")
+```
+
+---
+
+### `__missing__` — Dict Subclass Special
+
+`__missing__` is only called by `dict.__getitem__()` when a key isn't found. It only works in dict subclasses:
+
+```python
+class DefaultDict(dict):
+    def __init__(self, default_factory, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_factory = default_factory
+    
+    def __missing__(self, key):
+        # Called when key not found
+        value = self.default_factory()
+        self[key] = value
+        return value
+
+# Usage
+word_counts = DefaultDict(int)
+for word in ["apple", "banana", "apple", "cherry", "apple"]:
+    word_counts[word] += 1
+
+print(dict(word_counts))  # {'apple': 3, 'banana': 1, 'cherry': 1}
+```
+
+---
+
+### Slicing Support
+
+When you implement `__getitem__`, slicing is passed as a `slice` object:
+
+```python
+class SmartList:
+    def __init__(self, data):
+        self._data = list(data)
+    
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            # key.start, key.stop, key.step
+            print(f"Slicing: start={key.start}, stop={key.stop}, step={key.step}")
+            return self._data[key]
+        elif isinstance(key, int):
+            print(f"Index access: {key}")
+            return self._data[key]
+        else:
+            raise TypeError(f"Invalid key type: {type(key)}")
+
+s = SmartList([0, 1, 2, 3, 4, 5])
+
+s[2]        # Index access: 2
+s[1:4]      # Slicing: start=1, stop=4, step=None
+s[::2]      # Slicing: start=None, stop=None, step=2
+```
+
+---
+
+### Iteration Deep Dive
+
+There are multiple ways Python tries to iterate over an object:
+
+```python
+# Priority order for iteration:
+# 1. __iter__() — if defined, returns an iterator
+# 2. __getitem__() — fallback, calls with 0, 1, 2... until IndexError
+```
+
+**Using `__iter__`:**
+
+```python
+class Countdown:
+    def __init__(self, start):
+        self.start = start
+    
+    def __iter__(self):
+        current = self.start
+        while current > 0:
+            yield current
+            current -= 1
+
+for num in Countdown(5):
+    print(num)  # 5, 4, 3, 2, 1
+```
+
+**Using only `__getitem__` (fallback):**
+
+```python
+class OldStyleSequence:
+    def __init__(self, data):
+        self._data = data
+    
+    def __getitem__(self, index):
+        # Python will call with 0, 1, 2... until IndexError
+        return self._data[index]
+
+# Iteration works even without __iter__!
+for item in OldStyleSequence([10, 20, 30]):
+    print(item)  # 10, 20, 30
+```
+
+---
+
+### `__contains__` Optimization
+
+Without `__contains__`, Python uses iteration to check membership (O(n)). Define it for efficiency:
+
+```python
+class EfficientSet:
+    def __init__(self, items):
+        self._set = set(items)
+        self._list = list(items)
+    
+    def __iter__(self):
+        return iter(self._list)
+    
+    def __contains__(self, item):
+        # O(1) lookup instead of O(n) iteration
+        return item in self._set
+```
+
+---
+
+### Quick Reference Table
+
+| Want to enable... | Implement... |
+|-------------------|--------------|
+| `len(obj)` | `__len__` |
+| `obj[key]` | `__getitem__` |
+| `obj[key] = value` | `__setitem__` |
+| `del obj[key]` | `__delitem__` |
+| `item in obj` | `__contains__` (or falls back to `__iter__`/`__getitem__`) |
+| `for x in obj` | `__iter__` (or falls back to `__getitem__`) |
+| `reversed(obj)` | `__reversed__` (or falls back to `__len__` + `__getitem__`) |
+| `dict[missing]` fallback | `__missing__` (dict subclass only) |
+
+---
+
+### Abstract Base Classes
+
+Python's `collections.abc` module provides ABCs that define which methods you need:
+
+```python
+from collections.abc import Sequence, MutableSequence, Mapping, MutableMapping
+
+# Sequence requires: __getitem__, __len__
+# MutableSequence adds: __setitem__, __delitem__, insert
+
+# Mapping requires: __getitem__, __len__, __iter__
+# MutableMapping adds: __setitem__, __delitem__
+```
+
+Using these helps ensure you've implemented everything needed:
+
+```python
+from collections.abc import MutableSequence
+
+class MyList(MutableSequence):
+    # Python will tell you if you're missing required methods
+    ...
+```
+
+---
+
+Ready for Question 5?

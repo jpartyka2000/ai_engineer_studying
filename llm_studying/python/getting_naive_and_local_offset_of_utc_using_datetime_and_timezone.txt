@@ -1,0 +1,38 @@
+Yes—once you have a timezone‑aware `datetime`, you can pull its “UTC base” and its “local offset” apart:
+
+```python
+from datetime import datetime, timezone
+
+# 1. Get your local time *with* tzinfo attached
+local_dt = datetime.now().astimezone()
+
+# 2. Extract the UTC offset (a timedelta)
+offset = local_dt.utcoffset()
+print("Offset from UTC:", offset)          # e.g. “-1 day, 18:00:00” for MDT (–06:00)
+
+# 3a. Compute the UTC “base” by subtracting that offset
+utc_base_naive = (local_dt - offset).replace(tzinfo=None)
+print("Naive UTC:", utc_base_naive)
+
+# 3b. Or more idiomatically, ask for UTC‑aware directly
+utc_base_aware = local_dt.astimezone(timezone.utc)
+print("Aware UTC:", utc_base_aware)
+```
+
+* **`local_dt.utcoffset()`** gives you a `timedelta` (e.g. `-06:00` for Mountain Daylight).
+* **`local_dt.astimezone(timezone.utc)`** shifts that same moment into UTC, keeping it timezone‑aware.
+* If you need a “plain” (naive) UTC, subtract the offset from your local time and `.replace(tzinfo=None)`.
+
+---
+
+### Quick one‑liner for each
+
+```python
+# offset as hours
+offset_hours = local_dt.utcoffset().total_seconds() / 3600
+
+# UTC time (aware)
+utc_now = datetime.now().astimezone().astimezone(timezone.utc)
+```
+
+This cleanly separates the **base UTC timestamp** from your **local‑time offset**.

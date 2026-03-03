@@ -1,0 +1,35 @@
+Reading a Delta table without using the Spark context is not straightforward, as Delta Lake tables are designed to integrate closely with Apache Spark. Delta Lake is built on top of Apache Parquet and designed to work seamlessly with the Spark engine for scalable and fault-tolerant data processing.
+
+However, you **can** read Delta tables using the Delta Standalone Reader or by accessing the Parquet files directly, but this approach comes with limitations, such as the inability to use Delta-specific features (like versioning and ACID transactions).
+
+### Option 1: **Use Delta Standalone Reader (Java/Scala only)**
+Delta Lake provides a **Delta Standalone Reader** for Java and Scala, which allows you to read Delta tables without a Spark session. However, it doesn't support Python (so not directly usable in Databricks notebooks). This might be suitable for non-Spark environments where you'd need to read Delta tables.
+
+### Option 2: **Read the underlying Parquet files with Pandas**
+Delta tables store data in the Parquet format. You can access the underlying Parquet files directly, but you will not get Delta Lake’s ACID guarantees or time travel features.
+
+Here’s how you could read the Parquet files directly using **pandas** and **pyarrow**:
+
+```python
+import pandas as pd
+import pyarrow.parquet as pq
+
+# Path to the directory containing Delta Lake table's parquet files
+parquet_path = "/dbfs/path/to/delta_table"
+
+# Read the Parquet data into a pandas DataFrame
+df = pd.read_parquet(parquet_path)
+
+# Use the DataFrame
+print(df.head())
+```
+
+### Important Notes:
+- **No ACID Guarantees**: By reading the Parquet files directly, you won’t benefit from the transactional consistency Delta Lake provides.
+- **No Time Travel**: This approach doesn’t give you the ability to query historical versions of the data.
+
+### Option 3: **Use Spark API for Efficient Delta Reads**
+The best practice for reading Delta tables is to use Spark. If you want to avoid using Spark in a resource-heavy cluster environment, you can still utilize a lightweight Spark session for just reading and writing.
+
+### Conclusion:
+Reading Delta tables outside of Spark is possible by accessing the underlying Parquet files directly. However, you lose the advantages of Delta Lake’s ACID guarantees and time travel features. Delta tables are optimized for Spark, and for full functionality, it’s recommended to use Spark to interact with them.

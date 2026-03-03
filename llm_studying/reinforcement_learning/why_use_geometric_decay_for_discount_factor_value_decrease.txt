@@ -1,0 +1,61 @@
+A geometric (exponential) decay—that is, multiplying by γᵏ for the reward k steps in the future—shows up everywhere in RL for a few tightly-interwoven reasons:
+
+---
+
+### 1. **Convergence of the Infinite Sum**
+
+If you have an unbounded (infinite-horizon) problem, you need
+
+$$
+G_t = \sum_{k=0}^\infty \gamma^k\,r_{t+1+k}
+$$
+
+to converge.  A geometric series with 0≤γ<1 guarantees that distant rewards get vanishingly small weights and the sum stays finite.
+
+---
+
+### 2. **Time-Consistent, “Markovian” Preferences**
+
+Exponential discounting is **memoryless**: the relative weight between “one step ahead” and “two steps ahead” is always γ, no matter when you start.  This means:
+
+* Your preference ordering over sequences of rewards doesn’t change with absolute time.
+* It meshes perfectly with the Markov assumption (future depends only on current state, not on how long you’ve been in the process).
+
+If you used some other decay (like hyperbolic), you’d break that stationarity and complicate your Bellman recursion.
+
+---
+
+### 3. **Simple, Recursive Bellman Equation**
+
+Because
+
+$$
+G_t = r_{t+1} + \gamma \underbrace{\sum_{k=0}^\infty \gamma^k\,r_{t+2+k}}_{G_{t+1}}
+     = r_{t+1} + \gamma\,G_{t+1},
+$$
+
+you get the classic one-step Bellman backup
+
+$$
+V(s) = \mathbb{E}[\,r + \gamma V(s')\,],
+$$
+
+which is **linear** in V and yields a **contraction mapping**.  That contraction is the heart of DP convergence guarantees (value iteration, TD, Q-learning).
+
+---
+
+### 4. **Models Real-World Uncertainty & Time-Value**
+
+* In many real problems—finance, control systems, even animal behavior—you really do value immediate rewards more than later ones.
+* Exponential decay gives you a single “half-life” parameter (via γ) to tune how quickly you “forget” the future.
+
+---
+
+### 5. **Algorithmic Convenience**
+
+* Exponentially decayed returns are easy to compute on the fly with a running accumulator.
+* They mesh seamlessly with streaming data and online updates (no need to revisit every past reward when a new one arrives).
+
+---
+
+**Bottom line:** geometric decay isn’t just tradition—it’s what lets you define a **stationary**, **time-consistent**, **recursive**, and **computationally stable** notion of “total future reward” that both models sensible time preferences and gives you the mathematical hooks (contraction, Bellman backups) to actually learn in infinite-horizon settings.

@@ -1,0 +1,91 @@
+**Centering & Alignment in pandas’ Rolling Windows**
+
+When you apply a rolling window—e.g.
+
+```python
+df['value'].rolling(window=7)
+```
+
+—pandas must decide which rows to include for each result and **where** to place that result. By default, the window is **right‐aligned**, meaning it ends at the current row. Centering and alignment options let you adjust that behavior.
+
+---
+
+## 1. Right‐aligned (default)
+
+```python
+df['value'].rolling(window=7).mean()
+```
+
+* **Window**: the current row plus the **6 preceding** rows.
+* **Result**: placed at the index of the **last** row in the window.
+
+```
+Index:    0   1   2   3   4   5   6   7 ...
+Value:   v0  v1  v2  v3  v4  v5  v6  v7 ...
+Rolling:     [v0…v6] → r6  [v1…v7] → r7  …
+```
+
+---
+
+## 2. Centered
+
+```python
+df['value'].rolling(window=7, center=True).mean()
+```
+
+* **Window**: spans 3 rows **before** and 3 rows **after** the current row (for an odd‐length window).
+* **Result**: placed at the index of the **middle** row.
+
+```
+Index:    0   1   2   3   4   5   6   7   8 ...
+Value:   v0  v1  v2  v3  v4  v5  v6  v7  v8 ...
+Rolling:         [v0…v6] →   r3  
+                          [v1…v7] →   r4
+                              [v2…v8] →   r5
+```
+
+* For **even** `window` sizes, pandas places the result at the **right‐of‐center** position: e.g. `window=4, center=True` uses indices `i−1, i, i+1, i+2` and labels the result at `i+1`.
+
+---
+
+## 3. Forward‐looking (left‐aligned)
+
+You can mimic a “future” or “lead” window by shifting your results after a right‐aligned roll, e.g.:
+
+```python
+df['lead3_avg'] = (
+    df['value']
+      .rolling(window=7)    # right‐aligned: covers t−6…t
+      .mean()
+      .shift(-3)             # move the result 3 steps back
+)
+```
+
+This effectively centers a 7‐row window around rows `t−3` to `t+3` and labels it at `t`.
+
+---
+
+## 4. Key parameters
+
+* **`window`**: integer or offset string (e.g. `'7d'`)
+* **`center`**: `False` (default) for right‐aligned, `True` for centered
+* **`min_periods`**: minimum non‐NA observations needed (default = `window`)
+* **`on`** (DataFrame only): column name to use as time index for time‐based windows
+
+---
+
+### When to Use Centering
+
+* **Smoothing**: center helps avoid introducing a lag in moving‐average filters.
+* **Feature engineering**: when you need symmetric context around each timestamp.
+* **Time series analysis**: helps compare trends without forward/backward bias.
+
+---
+
+**In Summary**
+
+* **Right‐aligned** windows look only to the **past**.
+* **Centered** windows look **equally** past and future.
+* **Forward‐looking** can be emulated by shifting a right‐aligned result.
+
+Choosing the right alignment ensures your rolling statistics match your analytic intent.

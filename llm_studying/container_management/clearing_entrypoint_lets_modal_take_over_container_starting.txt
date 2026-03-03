@@ -1,0 +1,38 @@
+Great question. This is about how the container starts up and runs your code.
+
+## What is an entrypoint?
+
+In Docker/containers, the entrypoint is the command that runs when the container starts. For example, NVIDIA's CUDA image might have a default entrypoint that launches a shell or some initialization script.
+
+## What `.entrypoint([])` does
+
+Setting it to an empty list clears the default entrypoint entirely. This gives Modal full control over how the container starts.
+
+## In-process vs. separate process
+
+**Separate process (without clearing entrypoint):**
+```
+Container starts
+    └── Default entrypoint runs (some shell/script)
+            └── Modal spawns your Python code as a child process
+                    └── Your vLLM server runs here
+```
+
+**In-process (with `.entrypoint([])`):**
+```
+Container starts
+    └── Modal directly runs your Python code
+            └── Your vLLM server runs here
+```
+
+## Why does this matter?
+
+1. **Memory snapshots** - This code uses `enable_memory_snapshot=True` and `enable_gpu_snapshot`. Modal captures the entire process state (CPU + GPU memory) to enable fast cold starts. This works best when Modal has direct control of the process, not when your code is a subprocess of something else.
+
+2. **Signal handling** - Shutdown signals (SIGTERM, etc.) go directly to your code rather than being intercepted by a parent process.
+
+3. **Simpler architecture** - One fewer layer means less overhead and fewer things that can go wrong.
+
+4. **Resource accounting** - Modal can more accurately track memory, CPU, and GPU usage when it's running your code directly.
+
+For this vLLM server specifically, the memory snapshot feature is critical — it lets Modal restore a fully-loaded model from a snapshot in seconds rather than reloading weights from disk on every cold start. That only works reliably when Modal owns the process directly.

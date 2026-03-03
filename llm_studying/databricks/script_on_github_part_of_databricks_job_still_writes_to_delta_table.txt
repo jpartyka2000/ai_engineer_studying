@@ -1,0 +1,68 @@
+**Yes, absolutely!** Your script will still write to a Delta table even though the source code comes from GitHub.
+
+## **How It Works**
+
+1. **Databricks pulls the script** from your GitHub repo
+2. **Executes the script** on the Databricks cluster
+3. **Script runs in Databricks environment** with full access to:
+   - Your Databricks workspace
+   - Delta tables in your data lake (DBFS, S3, ADLS, etc.)
+   - Any mounted storage
+   - Catalog/schemas you have permissions for
+4. **Writes happen normally** to your Delta tables
+
+## **Key Points**
+
+**GitHub is just the source**
+- GitHub only stores your code
+- It's like fetching a recipe from a cookbook - you still cook in your own kitchen
+- The actual execution happens entirely within Databricks
+
+**Your script can:**
+```python
+# This will work perfectly fine even from GitHub-sourced script
+df.write.format("delta").mode("overwrite").saveAsTable("my_catalog.my_schema.my_table")
+
+# Or write to a path
+df.write.format("delta").mode("append").save("/delta/my_table")
+```
+
+## **Common Patterns**
+
+**Development Workflow:**
+1. Develop script locally or in Databricks notebooks
+2. Commit to GitHub for version control
+3. Configure job to pull from GitHub
+4. Job executes and writes to Delta tables
+
+**What You Need to Ensure:**
+- **Correct paths/table names** in your script
+- **Proper permissions** for the job cluster to write to target location
+- **Unity Catalog permissions** if using UC
+- **Cluster has necessary libraries** if your script uses special packages
+
+## **Benefits of This Approach**
+- ✅ Version control for your ETL/pipeline code
+- ✅ CI/CD integration possibilities  
+- ✅ Code review process through GitHub PRs
+- ✅ Separation of code from data
+- ✅ Easy rollback to previous versions
+
+## **Example Scenario**
+```python
+# script.py in GitHub
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# Read some data
+df = spark.read.csv("/path/to/source")
+
+# Transform
+df_transformed = df.filter(df.amount > 100)
+
+# This write will work - executes in Databricks, not GitHub!
+df_transformed.write.format("delta").mode("overwrite").saveAsTable("prod.sales.high_value_transactions")
+```
+
+The GitHub integration is just for **code management**, not execution. All the actual compute and data operations happen in your Databricks environment with full access to your Delta Lake!

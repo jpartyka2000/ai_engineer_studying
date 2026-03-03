@@ -1,0 +1,45 @@
+A SHAP value for feature *j* on a single instance x, denoted φ<sub>j</sub>(x), is its “fair share” of the difference between:
+
+* the model’s output when *all* features are present, and
+* the model’s output when feature *j* is “missing,” averaged over *all* ways of “missing” the other features.
+
+Formally, for a model f with M features, the Shapley value is:
+
+$$
+\phi_j(x)
+\;=\;\sum_{S\subseteq\{1,\dots,M\}\setminus\{j\}}
+\frac{|S|!\,(M-|S|-1)!}{M!}
+\Bigl[f_{S\cup\{j\}}(x_{S\cup\{j\}})\;-\;f_S(x_S)\Bigr].
+$$
+
+* $S$ ranges over all subsets of features *not* containing $j$.
+* $f_S(x_S)$ means “the model’s expected output when only the features in S are known (and the rest are marginalized out).”
+* The combinatorial weight $\frac{|S|!(M-|S|-1)!}{M!}$ ensures a fair “averaging” over all possible orders in which feature *j* could join.
+
+Once you compute φ<sub>j</sub>(x), the **absolute SHAP value** is simply:
+
+$$
+\bigl|\phi_j(x)\bigr|.
+$$
+
+In practice:
+
+1. **TreeSHAP** (the algorithm used by `shap.TreeExplainer` on LightGBM/XGBoost/CatBoost) leverages dynamic programming over the tree structure to compute each φ<sub>j</sub>(x) in *O*(T × D²) time (T = #trees, D = max depth), rather than brute‑forcing all 2^M subsets.
+
+2. For a **summary bar plot**, you then take the **mean** of these absolute values over your sample:
+
+   $$
+   \text{MeanAbsSHAP}_j
+   \;=\;
+   \frac{1}{n}\sum_{i=1}^n \bigl|\phi_j(x^{(i)})\bigr|.
+   $$
+
+3. For a **beeswarm summary plot**, you plot the distribution of $\phi_j(x^{(i)})$ (often colored by the feature’s actual value) but the “importance ranking” is still based on those mean absolute values.
+
+---
+
+### Key points
+
+* **|SHAP|** is *not* a different algorithm—it’s just the absolute value of each feature’s Shapley contribution for an instance.
+* You compute φ via the Shapley‑value formula (efficiently via TreeSHAP), then take absolute.
+* Aggregating those $\bigl|\phi_j(x)\bigr|$ across instances gives you global feature‐importance rankings (bar plots) or stabilizes the point clouds (beeswarms).

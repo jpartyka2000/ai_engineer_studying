@@ -1,0 +1,38 @@
+It’s almost always cleaner—and aligns best with how MLflow’s UI, API and lineage tracking work—to treat **each distinct model** as its **own run**. Here’s why:
+
+1. **Clear metrics & parameters per run**
+   Every MLflow run is meant to capture one “experiment trial” (i.e. one model training) along with its hyperparameters, data split, metrics, artifacts, etc.  If you jam multiple unrelated models into the same run, you lose the nice one‐to‐one mapping that makes it easy to compare A vs. B in the UI or via the REST API.
+
+2. **Ease of comparison and search**
+   When you give each model its own run, you can use tags or names (e.g. “model\_type=resnet”, “model\_type=vgg”) and then filter or sort runs by metrics (validation loss, AUC, etc.) to instantly see which architecture/hyperparameter set won.
+
+3. **Independent life‐cycles**
+   You often want to register, transition, or archive models independently:
+
+   ```python
+   mlflow.register_model(model_uri=f"runs:/{run_id_resnet}/model", name="ImageNetResNet")
+   mlflow.register_model(model_uri=f"runs:/{run_id_vgg}/model",   name="ImageNetVGG")
+   ```
+
+   If you’d stored both in one run, you’d need to manually track two artifact sub‐folders and it becomes brittle.
+
+---
+
+### When you might bundle them together
+
+There are a couple of niche cases where you might log more than one model artifact in a single run—say if you’re training an ensemble of sub‐models in one orchestrated job and want to keep them grouped.  In that scenario you would:
+
+* Use **different artifact paths** within the same run:
+
+  ```python
+  mlflow.sklearn.log_model(svm_model, artifact_path="svm")
+  mlflow.xgboost.log_model(xgb_model, artifact_path="xgb")
+  ```
+* Register each with its own “flavor” name pointing back to the same run:
+
+  ```python
+  mlflow.register_model(f"runs:/{run_id}/svm", "MySVM")
+  mlflow.register_model(f"runs:/{run_id}/xgb", "MyXGB")
+  ```
+
+But for the **vast majority** of use-cases—where each model is a separate experiment—you’ll get the best structure and traceability by spawning **one run per model**.

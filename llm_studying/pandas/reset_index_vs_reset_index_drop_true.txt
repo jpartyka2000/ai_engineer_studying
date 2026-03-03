@@ -1,0 +1,73 @@
+**`reset_index()` vs. `reset_index(drop=True)` in pandas**
+
+When you have a DataFrame or Series with a custom (or Multi-)Index and you want to turn index labels back into ordinary columns — or simply restore a default integer index — you use `reset_index()`.
+
+---
+
+## Basic `reset_index()`
+
+```python
+df = pd.DataFrame({
+    'A': ['x','y','z'],
+    'B': [1,2,3]
+}).set_index('A')
+
+# df.index is now ['x','y','z']
+df_reset = df.reset_index()
+```
+
+* **What it does**:
+
+  1. Moves the existing index labels into a new column (named after the index).
+  2. Creates a fresh `RangeIndex(0,1,2,…)`.
+
+* **Result**:
+
+  |   | A | B |
+  | - | - | - |
+  | 0 | x | 1 |
+  | 1 | y | 2 |
+  | 2 | z | 3 |
+
+---
+
+## `reset_index(drop=True)`
+
+If you don’t actually care about preserving the old index values as a column, you can tell pandas to **drop** them:
+
+```python
+df_reset2 = df.reset_index(drop=True)
+```
+
+* **What it does**:
+
+  1. Discards the existing index entirely.
+  2. Creates a fresh `RangeIndex(0,1,2,…)`.
+  3. Does **not** add any new columns.
+
+* **Result**:
+
+  |   | B |
+  | - | - |
+  | 0 | 1 |
+  | 1 | 2 |
+  | 2 | 3 |
+
+---
+
+### Why use each?
+
+* **`reset_index()`** when you need to keep the index values in your data for further processing or reference.
+* **`reset_index(drop=True)`** when the index is just a leftover artifact (e.g. after a sort or groupby) and you want a clean, default integer index with no extra columns.
+
+---
+
+**Tip:** You can also apply these to a Series:
+
+```python
+s = df['B']
+s2 = s.reset_index()           # index → column, values in “0” column
+s3 = s.reset_index(drop=True)  # just a plain Series of values
+```
+
+Using `reset_index()` and its `drop` option helps you switch cleanly between indexed and tabular representations of your data.

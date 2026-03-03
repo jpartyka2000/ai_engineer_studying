@@ -1,0 +1,108 @@
+When multiple rules “fire” for the same row, you’re essentially getting multiple, potentially different estimates of its positive‐class probability. How you combine those estimates can have a big impact on both your predictive performance and interpretability. Here are the main strategies people use, with their pros and cons:
+
+---
+
+## 1. Simple Average of Probabilities
+
+```python
+proba = np.mean([p_rule1, p_rule2, …])
+```
+
+* **Pros**: trivial to implement; smooths out any one rule’s noise.
+* **Cons**: treats every rule equally—so a tiny, high-variance subgroup counts as much as a large, stable one.
+
+---
+
+## 2. Weighted Average by Rule “Quality” or Support
+
+```python
+# let w_i = support_i (or WRAcc_i, or subgroup_size_i / N, or any quality metric)
+proba = np.dot([p_i], [w_i]) / sum(w_i)
+```
+
+* **Pros**: gives more weight to larger or more reliable rules.
+* **Cons**: you must decide what “quality” metric to use (support, WRAcc, lift, etc.), and it still blends all overlapping rules.
+
+---
+
+## 3. Take the Maximum Probability
+
+```python
+proba = max(p_rule1, p_rule2, …)
+```
+
+* **Pros**: optimistic–bias: if any rule says “this is super‐likely,” you go with that.
+* **Cons**: can be overconfident if one rule overfits its small subgroup.
+
+---
+
+## 4. First‐Match / Priority Ordering
+
+1. **Rank** your rules by quality (WRAcc, lift, support, whatever).
+2. **Assign** each row to the first (highest‐rank) rule it matches.
+3. **Fallback** to a baseline probability for rows that match none.
+
+```python
+for rule in ordered_rules:
+    if rule.matches(row):
+        return rule.p_s
+return overall_p  # baseline
+```
+
+* **Pros**: keeps your rules disjoint, very interpretable (“rule #3 fired, so we used its estimate”).
+* **Cons**: some data points may match many good rules but only the top‐rank one counts.
+
+---
+
+## 5. Meta‐Model / Stacking Approach
+
+1. **Create** a binary feature per rule indicating “does this row match rule *i*?”
+2. **Train** a small logistic‐regression (or tree) on those rule‐match indicators to predict the target.
+3. **Use** the meta‐model’s output as your final probability.
+
+```python
+X_meta = pd.DataFrame({ f"r{i}": rule_i.matches(df) for i, rule_i in enumerate(rules) })
+meta = LogisticRegression().fit(X_meta, y)
+proba = meta.predict_proba(X_meta_row)[:,1]
+```
+
+* **Pros**: lets the data decide how to weight or combine overlapping rules; can learn negative interactions (“if rule 3 and rule 7 both fire, down-weight”).
+* **Cons**: you lose some interpretability and introduce a second modeling step.
+
+---
+
+## 6. Calibrate Your Probabilities
+
+Regardless of how you combine, subgroup‐based pₛ values are often poorly calibrated. You can pass your combined estimate through a simple calibration step (e.g. `CalibratedClassifierCV` with `'sigmoid'` or `'isotonic'`) to ensure probabilities actually reflect observed frequencies.
+
+---
+
+### Which Should You Choose?
+
+* If **interpretability** is your top priority, go with **first‐match** or **max**.
+* If you want a **simple ensemble** but still prioritize strong, stable rules, use **weighted averaging** by support or WRAcc.
+* If you want **best predictive power** and don’t mind a second model, build a **meta‐model** on rule matches.
+
+---
+
+### Quick Example: Weighted Averaging
+
+```python
+# Suppose each rule_i has: proba_i, support_i, and quality_i (WRAcc)
+weights = np.array([r.support for r in matched_rules])
+probas  = np.array([r.proba    for r in matched_rules])
+
+# weight by support:
+final_proba = weights.dot(probas) / weights.sum()
+```
+
+Or weight by WRAcc:
+
+```python
+weights = np.array([r.quality for r in matched_rules])
+final_proba = weights.dot(probas) / weights.sum()
+```
+
+---
+
+**Bottom line**: there is no one “correct” way—each has trade-offs in bias/variance and interpretability. Start simple (e.g. weighted average by support), evaluate on held-out data (both accuracy and calibration), and iterate from there.

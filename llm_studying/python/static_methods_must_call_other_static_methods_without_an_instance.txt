@@ -1,0 +1,36 @@
+**Explaining staticmethods in Python**
+
+The user is asking—if a staticmethod calls another method, does that method need to be a staticmethod too? The answer is: no, the other method doesn't have to be a staticmethod.
+
+A staticmethod in Python is a function tied to the class, not an instance. Inside it, you can call other staticmethods or classmethods, or access class variables using the class name. If you try to call an instance method, you'd need an instance, since staticmethods don’t have access to “self.”
+
+
+Thought for 9 seconds
+
+
+Not “magically,” no—you can call any plain function or method inside a `@staticmethod`, but if you want to call another method on that same class *without* an instance, that target method must also be a staticmethod (or a classmethod, which you’d invoke with `cls.method(...)`).
+
+Concretely:
+
+```python
+class Foo:
+    @staticmethod
+    def a():
+        # This works, because b is also a staticmethod:
+        Foo.b()
+
+    @staticmethod
+    def b():
+        print("hello")
+
+    def c(self):
+        print("you’d need an instance to call me")
+```
+
+* If you tried `Foo.c()` inside `a()`, you’d get a TypeError, because `c` expects a `self` argument.
+* You *could* do `Foo().c()` (create a throw‑away instance), but that defeats your “no instances” goal.
+
+**Bottom line:**
+
+* Any helper method you intend to invoke directly from a staticmethod should itself be a `@staticmethod` (or `@classmethod` if you want access to the class object).
+* If you only have four pure, self‑contained transforms, keeping them all as `@staticmethod` (or module‑level functions) is the simplest.

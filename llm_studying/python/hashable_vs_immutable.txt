@@ -1,0 +1,46 @@
+“Hashable” and “immutable” overlap a lot in everyday Python code, but they are not synonyms:
+
+Term What Python really requires Can it change after you put it in a dict/set?
+
+Hashable The object supplies a stable __hash__() result and an __eq__() that stays consistent with that hash for its whole lifetime. Must behave as if it never changes with respect to equality. The object’s other attributes can mutate if the author is careless.
+Immutable The object’s public state never changes once constructed. No API lets you mutate it in-place. By definition it cannot change at all, so a good immutable type is automatically safe to hash—if it also implements __hash__.
+
+
+Why the two ideas diverge
+
+1. An immutable object can still be unhashable.
+
+t = (1, [2, 3])          # The tuple itself is immutable…
+hash(t)                  # …but raises TypeError
+
+A tuple only gets a hash if every element is hashable. Since the inner list is unhashable, the whole tuple is too.
+
+Another common case: a class that overrides __eq__ but forgets to define __hash__ becomes immutable-but-unhashable because Python disables the inherited identity‐based hash.
+
+
+2. A mutable object can be made hashable (though it’s dangerous).
+
+class MutableKey:
+    def __init__(self, x):
+        self.x = x            # you can mutate this later
+    def __hash__(self):
+        return hash(self.x)   # relies on .x
+    def __eq__(self, other):
+        return self.x == other.x
+
+If you mutate obj.x after the instance is used as a key, its equality relationship—and therefore the bucket it should be in—changes, but its stored hash does not. That silently corrupts the dict/set. Python lets you write this code; it’s just bad practice.
+
+
+3. Hashability is an interface promise, not a material property.
+
+All __hash__ has to do is stay consistent for the object’s lifetime. CPython’s default implementation (id(obj)) is technically stable even if you mutate attributes, so user-defined classes are hashable by default—even though they’re mutable—until you add a custom __eq__.
+
+
+
+Rule of thumb
+
+If you need the object as a key, ask “Is it hashable?” not “Is it immutable?”.
+
+Most built-in immutable types (str, bytes, int, tuple, frozenset) are hashable, so the two ideas feel the same day-to-day.
+
+But once you design your own classes or nest containers, remember the subtle difference: immutability helps guarantee hashability, but hashability is the actual contract the dict/set cares about.

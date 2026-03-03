@@ -1,0 +1,80 @@
+**`F.when()` Without `.otherwise()` Returns Null**
+
+When you use `F.when()` without an `.otherwise()`, any rows that don't match the condition get `null`.
+
+**Example:**
+
+```python
+df = spark.createDataFrame([(1,), (2,), (3,), (4,)], ["value"])
+
+df.withColumn(
+    "result",
+    F.when(F.col("value") > 2, "big")
+).show()
+```
+
+**Output:**
+
+```
++-----+------+
+|value|result|
++-----+------+
+|    1|  null|
+|    2|  null|
+|    3|   big|
+|    4|   big|
++-----+------+
+```
+
+**Same with chained `.when()`:**
+
+```python
+df.withColumn(
+    "result",
+    F.when(F.col("value") == 1, "one")
+     .when(F.col("value") == 2, "two")
+).show()
+```
+
+**Output:**
+
+```
++-----+------+
+|value|result|
++-----+------+
+|    1|   one|
+|    2|   two|
+|    3|  null|
+|    4|  null|
++-----+------+
+```
+
+**When this is intentional:**
+
+Sometimes you want nulls for non-matching rows:
+
+```python
+df.withColumn(
+    "bonus",
+    F.when(F.col("rating") == "excellent", 1000)
+)
+# Only excellent employees get a bonus; others get null
+```
+
+**When this is a bug:**
+
+If you expect all rows to have a value, forgetting `.otherwise()` silently introduces nulls:
+
+```python
+# Bug: forgot .otherwise()
+df.withColumn(
+    "category",
+    F.when(F.col("age") < 18, "minor")
+     .when(F.col("age") < 65, "adult")
+    # People 65+ get null instead of "senior"
+)
+```
+
+**Rule of thumb:**
+
+Always consider whether you need an `.otherwise()`. If every row should have a non-null result, add one explicitly.

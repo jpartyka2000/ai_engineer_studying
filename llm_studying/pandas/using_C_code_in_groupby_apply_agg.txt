@@ -1,0 +1,49 @@
+Under the hood, pandas offloads a huge amount of the heavy lifting in `groupby` to compiled C/Cython code. Here are the main places where you get C-level speedups in a typical `df.groupby(...).apply(…)` pipeline:
+
+1. **Hash‐table keying & splitting**
+
+   * When you do `groupby(keys)`, pandas builds a hash table of your group keys in C, scans the index once, and partitions row pointers into buckets.
+   * This happens in a single C loop, so even millions of rows get split into groups very quickly.
+
+2. **Fast reduction kernels**
+
+   * Common aggregations like `.sum()`, `.mean()`, `.min()`, `.max()`, `.count()`, and `.std()` are implemented as C/Cython kernels over contiguous memory blocks.
+   * They avoid Python-level loops entirely, doing one pass per group in optimized C.
+
+3. **Vectorized “transform” implementations**
+
+   * Methods like `shift()`, `cumsum()`, `cumprod()`, `rank()`, and window functions (`rolling`, `expanding`) all have C-backed implementations that operate per‐group without Python callbacks.
+   * Even `.transform('mean')` uses the fast reduction kernels plus a C-level broadcast to reassemble per-row results.
+
+4. **Categorical grouping optimizations**
+
+   * If your grouping key is a `Categorical`, pandas uses the category codes to index groups—no hashing, just direct array‐indexed bucketing in C.
+
+5. **Low-overhead broadcasting**
+
+   * After computing one scalar per group, the “broadcast back to original index” step in `.transform()` is done with a single C memcopy rather than Python assignments.
+
+6. **Efficient missing‐value handling**
+
+   * NaN/skipped-value logic in groupby reductions is handled in C, with `skipna=True` by default, so you don’t pay a Python penalty for each null check.
+
+7. **C‐optimized join of group keys + results**
+
+   * When you call `.apply(func)` pandas still does the grouping in C and only calls your Python `func(grp)` per group—but all the work of slicing out the subset and then splicing back its result is book-kept in C.
+
+---
+
+**What doesn’t run in C**
+
+* The body of your Python callback in `.apply(func)` is pure Python, so the less work you do there, the more you leverage pandas’ C cores.
+* Any custom aggregation that goes through Python loops will still incur Python overhead.
+
+---
+
+**Bottom line:** the split-apply-combine workflow in pandas looks like:
+
+1. **Split** → all in C hashing
+2. **Apply** → C for built-ins (sum/mean/etc.), Python for your callback
+3. **Combine** → C for reassembling the final DataFrame or Series
+
+Use built-in reductions and transforms wherever possible to maximize the C speed, and reserve `.apply()`-level Python only for the genuinely custom bits.

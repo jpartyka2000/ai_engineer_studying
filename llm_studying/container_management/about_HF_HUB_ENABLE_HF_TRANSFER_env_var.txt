@@ -1,0 +1,26 @@
+This environment variable enables a faster download mechanism for Hugging Face model files.
+
+## What it does
+
+When set to `"1"`, it tells the `huggingface-hub` library to use `hf_transfer` — a Rust-based download backend that's significantly faster than the default Python implementation.
+
+## Why it's faster
+
+The default downloader in `huggingface-hub` is pure Python and downloads files sequentially. The `hf_transfer` backend:
+
+- Is written in Rust for lower overhead
+- Uses multiple concurrent connections to download different chunks of a file simultaneously
+- Better saturates high-bandwidth connections
+
+## Practical impact
+
+For large models like Qwen3-8B (which has multi-gigabyte weight files), this can cut download times dramatically — potentially from 10+ minutes down to 1-2 minutes on a fast connection.
+
+## Caveat
+
+To use this, you also need the `hf_transfer` package installed. However, looking at the code, it's not explicitly listed in `.uv_pip_install()`. It's likely either:
+- Bundled as a dependency of the `huggingface-hub` version they're using
+- Already present in the base image
+- Or the variable simply has no effect without it (it fails silently)
+
+The related variable `HF_XET_HIGH_PERFORMANCE` does something similar for Hugging Face's newer Xet storage backend, which is another optimized transfer protocol they're rolling out.

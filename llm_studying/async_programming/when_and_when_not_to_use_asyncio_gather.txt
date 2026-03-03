@@ -1,0 +1,50 @@
+You’d reach for **`asyncio.gather()`** whenever you have several independent coroutines that you want to kick off at roughly the same time and then wait for *all* of them to finish, collecting their results in one go. In contrast to simple sequential `await` or fire-and-forget `create_task()`, `gather()` shines when:
+
+1. **Parallelizing I/O-Bound Work**
+   If you’re fetching data from several URLs, querying multiple databases, or doing multiple file reads—all of which can overlap—you can do:
+
+   ```python
+   results = await asyncio.gather(
+       fetch(url1),
+       fetch(url2),
+       fetch(url3),
+   )
+   ```
+
+   This sends all three requests concurrently and then returns a tuple of their responses once *every* one has completed.
+
+2. **Collecting Heterogeneous Tasks**
+   When each task returns a different type of result (e.g. one gives you JSON, another writes a log, a third polls a service), `gather()` still collects them in order. You can destructure:
+
+   ```python
+   data, _, status = await asyncio.gather(
+       load_data(),
+       write_log("start"),
+       check_status(),
+   )
+   ```
+
+3. **Error Aggregation**
+   By default, if any sub-coroutine raises, `gather()` will raise that first exception and cancel the rest. This lets you treat a group of operations as a single logical unit—either *all* succeed or you catch a clear failure.
+
+4. **Timeouts and Cancellation**
+   Wrapped in `asyncio.wait_for()`, you can bound the entire group:
+
+   ```python
+   results = await asyncio.wait_for(
+       asyncio.gather(task1(), task2(), task3()),
+       timeout=10
+   )
+   ```
+
+   If the group hangs, you get a single `TimeoutError` instead of managing each task’s timeout individually.
+
+---
+
+### When *not* to use it
+
+* **Fire-and-forget** background tasks where you don’t care about the result—there you’d use `asyncio.create_task()` without awaiting.
+* **Sequential dependency** where task B needs the result of task A before it can start—you’d just `await task_a()` then `await task_b(task_a_result)`.
+* **Fine-grained error handling** per task: if you need to let some tasks fail and still gather the rest, you might use `return_exceptions=True` in `gather()` or manage them individually with `asyncio.as_completed()`.
+
+In short, `asyncio.gather()` is your go-to for “run these coroutines side-by-side, but only proceed once *all* of them are done” and for treating a batch of async calls as one composite operation.

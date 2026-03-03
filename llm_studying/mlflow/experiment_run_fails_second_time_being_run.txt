@@ -1,0 +1,41 @@
+This behavior is likely due to caching or timing issues with how MLflow registers a new experiment. When you create a new experiment, the change may not be immediately visible to subsequent calls to `mlflow.get_experiment_by_name()`. In other words, even though the experiment was created, the client’s cache (or the tracking server’s index) hasn’t been updated yet, so the function returns `None` on subsequent calls.
+
+Some factors that can contribute to this include:
+
+- **Caching of Experiment Metadata:**  
+  MLflow may cache experiment information, so if you immediately try to fetch the experiment by name after creating it, the cache might not be refreshed yet.
+
+- **Tracking Server Latency:**  
+  There can be a slight delay in updating the tracking server's experiment registry. This means that a newly created experiment might not be immediately visible to subsequent queries.
+
+- **Experiment Naming Conventions:**  
+  In some environments (especially in Databricks), using leading slashes or particular naming patterns can sometimes affect how the experiment is looked up. Make sure the naming is consistent.
+
+### Workarounds
+
+- **Wait or Refresh:**  
+  After creating an experiment, you might add a brief delay before trying to retrieve it again, or directly use the returned experiment ID.
+
+- **Direct Use of Experiment ID:**  
+  Since `mlflow.create_experiment()` returns the new experiment ID, you can store and use that ID rather than re-fetching by name.
+
+For example, you could modify your code to avoid relying on `get_experiment_by_name()` immediately after creating an experiment:
+
+```python
+experiment_name = "/Workspace/Shared/DiabetesClassification2"
+
+experiment = mlflow.get_experiment_by_name(experiment_name)
+
+if experiment is None:
+    experiment_id = mlflow.create_experiment(name=experiment_name)
+    print(f"Created new experiment: {experiment_name} with id: {experiment_id}")
+else:
+    experiment_id = experiment.experiment_id
+    print(f"Experiment {experiment_name} already exists with id: {experiment_id}")
+```
+
+If you need to confirm the experiment exists after creation, consider either:
+- Waiting a short time before calling `get_experiment_by_name()` again, or
+- Directly using the returned `experiment_id` from `create_experiment()`.
+
+This behavior isn’t necessarily a bug—it’s just a side effect of how MLflow manages experiment metadata and caching in distributed environments such as Databricks.

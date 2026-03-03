@@ -1,0 +1,67 @@
+pytest’s “found no collectors” usually means it didn’t spot that file (or that test) on the real filesystem. In Databricks you often have to copy your Workspace-mounted code into a real FS location and then run pytest **from** that directory, using **relative paths**. Here’s a bullet-proof recipe:
+
+---
+
+### 1) Copy your repo into `/tmp` (a real FS)
+
+Run in a notebook cell:
+
+```bash
+%sh
+# 1. Wipe any old copy
+rm -rf /tmp/code
+
+# 2. Copy the entire repo out of the workspace
+cp -r /Workspace/Users/jeff@pathahead.ai/cue_reinforcement_learning /tmp/code
+```
+
+Now you have
+
+```
+/tmp/code/
+    cues_reinforcement_learning/
+        tests/
+            test_end_to_end.py
+            conftest.py
+        cue_agents/
+        … etc …
+```
+
+---
+
+### 2) Change into that directory and run pytest
+
+Still in a `%sh` cell:
+
+```bash
+%sh
+cd /tmp/code/cue_reinforcement_learning
+
+# install pytest if needed
+pip install --quiet pytest
+
+# run only your one test, using a relative path
+pytest tests/test_end_to_end.py::test_end_to_end_tasks \
+  -q --disable-warnings --maxfail=1
+```
+
+**Why this works**
+
+* By `cd`-ing into `/tmp/code/cue_reinforcement_learning` you make that folder the pytest root, so `tests/…` is on the PYTHONPATH.
+* Specifying `tests/test_end_to_end.py::test_end_to_end_tasks` ensures pytest looks inside that real-FS file and picks up the function.
+
+---
+
+### 3) (Optional) Debug what pytest sees
+
+If you still get “no collectors,” run:
+
+```bash
+pytest --collect-only -q
+```
+
+That will list all files/tests pytest actually recognizes, so you can verify that `test_end_to_end.py` and the `test_end_to_end_tasks` function appear.
+
+---
+
+With those steps you should unblock pytest in Databricks and be able to run that one integration test.

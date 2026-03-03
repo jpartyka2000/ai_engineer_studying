@@ -1,0 +1,67 @@
+Below is a brief overview of why plotting out‑of‑bag error against the number of trees can be helpful, followed by a self‑contained code example you can drop into your project.
+
+Overview of Utility
+
+Free validation: OOB error leverages the “left‑out” samples from each bootstrap draw, so you get an estimate of generalization performance without carving off any of your data for a separate validation split.
+
+Model sizing: By sweeping over different values of n_estimators, you can see at what point adding more trees yields diminishing returns, helping you choose a cost‑effective ensemble size.
+
+Stability check: A smoothly declining and then plateauing OOB error curve suggests your ensemble is stable; noisy or increasing curves might signal data issues or that you need more data.
+
+Early stopping proxy: Although ExtraTrees doesn’t support built‑in early stopping, you can treat the point where OOB error flattens out as a heuristic cut‑off for tree count.
+
+
+import matplotlib.pyplot as plt
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+
+# 1. Generate a synthetic classification dataset
+X, y = make_classification(
+    n_samples=1000,
+    n_features=20,
+    n_informative=15,
+    n_redundant=5,
+    random_state=42
+)
+
+# 2. Split into train and hold‑out sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.3,
+    random_state=42
+)
+
+# 3. Define a range of tree counts to evaluate
+tree_counts = [10, 50, 100, 200, 500]
+oob_errors = []
+
+# 4. Fit an ExtraTreesClassifier with OOB scoring for each size
+for n in tree_counts:
+    model = ExtraTreesClassifier(
+        n_estimators=n,
+        bootstrap=True,    # enable bootstrap sampling
+        oob_score=True,    # compute OOB score
+        random_state=42
+    )
+    model.fit(X_train, y_train)
+    # OOB error = 1 − OOB accuracy
+    oob_errors.append(1.0 - model.oob_score_)
+
+# 5. Plot the OOB error curve
+plt.figure(figsize=(8, 5))
+plt.plot(tree_counts, oob_errors, marker='o')
+plt.xlabel('Number of Trees (n_estimators)')
+plt.ylabel('OOB Error Rate')
+plt.title('OOB Error vs. Number of Trees')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+How to interpret the plot
+
+Look for the “elbow” where error reduction slows.
+
+Pick the smallest n_estimators beyond that elbow to save computation without sacrificing performance.
+
+If the curve is jagged, you may need more trees or more data to get a reliable estimate.

@@ -1,0 +1,52 @@
+## The `@` is a `just` Prefix, Not Part of `if`
+
+The `@` in `@if` is actually **`just`'s silence operator** - it suppresses echoing that command line. The `if` is just regular shell syntax.
+
+## How `@` Works in `just`:
+
+```makefile
+# WITHOUT @ - command is printed, then executed
+test:
+    echo "Running tests"
+    # Output:
+    # echo "Running tests"  <- command printed
+    # Running tests         <- execution result
+
+# WITH @ - only execution result shown
+test:
+    @echo "Running tests"
+    # Output:
+    # Running tests         <- only result, no echo
+```
+
+## In Your Example:
+
+```makefile
+run-eval run_name="" config="development_harness":
+    @if [ -n "{{run_name}}" ]; then \
+    #^ This @ prevents printing the entire if statement
+```
+
+Without the `@`, you'd see:
+```bash
+# The entire if/then/else block printed to terminal
+if [ -n "my_run" ]; then \
+    uv run --env-file .env --active --no-sync python -m cue_eval.runner "my_run" cue_eval/configs/development_harness.yaml; \
+else \
+    ...
+# Then the actual execution
+```
+
+With the `@`, you only see the actual command output, not the shell logic.
+
+## Common `just` Prefixes:
+
+```makefile
+recipe:
+    echo "Normal - shows command and output"
+    @echo "Quiet - only shows output"
+    -echo "Ignore errors - continues even if this fails"
+    @-echo "Both quiet and ignore errors"
+```
+
+**Bottom line**: The `@` is `just`'s way of saying "run this quietly" - the `if` statement itself is regular bash/shell syntax. The `@` just hides the ugly multi-line shell command from the output.

@@ -1,0 +1,91 @@
+Yes — if you're using `os.getcwd()` in **Databricks**, it **still refers to your user-specific workspace path**, even if the code is checked into Git.
+
+### 🔥 Example
+
+```python
+os.getcwd()
+# Returns something like:
+# '/Workspace/Users/jeff@pathahead.ai/repos/ecue_ingest/src/ecue_ingest/twou'
+```
+
+This path is:
+
+* **Dynamic per user** (based on who cloned the Git repo into Databricks)
+* **Not portable** between users, jobs, or environments
+* **Not Git-tracked** — Git has no knowledge of workspace paths
+
+---
+
+### ✅ Solution: Make your imports and path logic **relative to the repo root** rather than hardcoding `os.getcwd()` or relying on Databricks' current directory
+
+Here’s how:
+
+---
+
+### ✅ Option 1: Rely on Python package structure (best long-term)
+
+If your project is structured like:
+
+```
+ecue_ingest/
+├── src/
+│   └── ecue_ingest/
+│       └── twou/
+│           ├── common/
+│           └── ml_processing/
+```
+
+Then:
+
+1. Add `src/` to your `sys.path` dynamically:
+
+   ```python
+   import os, sys
+
+   repo_root = os.path.abspath(os.path.join(os.getcwd(), "..", ".."))
+   src_path = os.path.join(repo_root, "src")
+
+   if src_path not in sys.path:
+       sys.path.insert(0, src_path)
+   ```
+
+2. Then import normally:
+
+   ```python
+   from ecue_ingest.twou.common.twou_configure_logger import _configure_logger
+   from ecue_ingest.twou.ml_processing.twou_ml_utils import TwoUMLUtils
+   ```
+
+This works **regardless of who cloned the repo or where it's running**, because it assumes:
+
+* Your code lives in a `src` directory
+* You run the notebook or script from **anywhere inside the repo**
+
+---
+
+### ✅ Option 2: Use Databricks Repos import path (if running in Databricks)
+
+If you're using [Databricks Repos](https://docs.databricks.com/repos/index.html), and you're inside a notebook in a repo, then Databricks automatically sets the working directory to the **repo root**, so this works:
+
+```python
+import sys
+sys.path.insert(0, "./src")  # repo-relative
+```
+
+Then you can:
+
+```python
+from ecue_ingest.twou.common.twou_configure_logger import _configure_logger
+```
+
+---
+
+### ✅ Summary
+
+| Goal                                | Recommended Approach                                      |
+| ----------------------------------- | --------------------------------------------------------- |
+| Avoid user-specific workspace paths | Use repo-relative paths or installable package layout     |
+| Want to share or check into Git     | Avoid `os.getcwd()` tied to `/Workspace/Users/...`        |
+| Reusable imports                    | Use `sys.path.insert(0, "src")` and `from ecue_ingest...` |
+
+Let me know if you'd like a one-line utility that adds your repo’s `src/` to `sys.path` automatically!

@@ -1,0 +1,102 @@
+When you call
+
+```python
+df.groupby()
+```
+
+on its own, Pandas won’t assume “oh—use my RangeIndex.” You have to tell it what to group by, whether that’s a column or an index level.
+
+---
+
+### 1. `df.groupby()` with no arguments
+
+```python
+>>> df = pd.DataFrame({'A':[1,2,3]})
+>>> df.groupby()
+ValueError: You have to supply one of 'by' and 'level'
+```
+
+You get an error—Pandas won’t magically fall back to grouping on your index.
+
+---
+
+### 2. Grouping on a single-Level RangeIndex
+
+If you really want to group by the (default) RangeIndex, you must explicitly target that level:
+
+```python
+# sample df with default RangeIndex [0,1,2,…]
+df = pd.DataFrame({'Value':[10,20,30,20,10]})
+# >    Value
+# 0     10
+# 1     20
+# 2     30
+# 3     20
+# 4     10
+
+# group by the sole index level (position 0)
+df.groupby(level=0).sum()
+```
+
+**What happens?**
+
+* Level‑0 of a RangeIndex is just the row‑number label.
+* Because each label (0,1,2,…) is unique, you end up with five “groups” of one row each.
+* The result is effectively the same as the original DataFrame.
+
+```python
+# identical to df
+>>> df.groupby(level=0).sum()
+       Value
+0        10
+1        20
+2        30
+3        20
+4        10
+```
+
+---
+
+### 3. Why it’s usually pointless
+
+* A **RangeIndex** is just an auto‑generated sequence of unique labels.
+* Grouping by it is equivalent to grouping on a column of unique values—no aggregation actually merges rows.
+* You rarely want to do this unless you’ve built a bespoke RangeIndex with intentional repeats.
+
+---
+
+### 4. When grouping by index makes sense
+
+Contrast with a “real” index—say you set some column as your index and it has duplicates:
+
+```python
+# make ‘Region’ a single-level index, with repeats
+df2 = pd.DataFrame({
+    'Region':['East','East','West','West','West'],
+    'Sales':[100,200,150,150,100]
+}).set_index('Region')
+
+>>> df2
+        Sales
+Region       
+East      100
+East      200
+West      150
+West      150
+West      100
+
+# now grouping by that index level
+df2.groupby(level='Region').sum()
+# East   300
+# West   400
+```
+
+There, the index *has* meaningful repeats, so you get real aggregation.
+
+---
+
+### **Bottom line**
+
+* **Default RangeIndex:** you must do `groupby(level=0)` (or `by=df.index`) to group on it—but each label is unique, so you’ll get one‑row groups.
+* **Meaningful index:** if you’ve set an index with duplicates, `groupby(level=…)` will collapse those repeats into aggregated results.
+* You always have to explicitly specify **by** (for columns) or **level** (for index) — Pandas won’t infer it for you.

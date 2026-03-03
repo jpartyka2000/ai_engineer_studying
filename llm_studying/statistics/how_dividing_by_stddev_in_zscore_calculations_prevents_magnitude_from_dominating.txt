@@ -1,0 +1,93 @@
+Absolutely — this is a **great follow-up question** because that phrase (“prevents magnitude from dominating”) is subtle but *hugely* important in machine learning, reinforcement learning, and statistics.
+
+Let’s walk through a clear example 👇
+
+---
+
+## 🧮 Example setup
+
+Let’s say we have **two groups of rewards** from different tasks or environments:
+
+| Group | Rewards                 | Mean (μ) | Std. Dev. (σ) |
+| ----- | ----------------------- | -------- | ------------- |
+| **A** | [10, 12, 8, 9, 11]      | 10       | **1.4**       |
+| **B** | [100, 120, 80, 90, 110] | 100      | **14.1**      |
+
+---
+
+## ⚖️ Step 1: Raw (unscaled) differences
+
+Now, suppose we get two new reward values:
+
+* From Group A: **r = 13**
+* From Group B: **r = 130**
+
+Both are **+3 units above the mean**, *in their own scales*.
+
+If we only look at raw magnitudes (`r - μ`):
+
+* Group A → +3
+* Group B → +30
+
+So numerically, Group B looks *ten times “better”*, but that’s misleading —
+because the entire scale of Group B’s rewards is about **10× larger** to begin with.
+
+---
+
+## 🧠 Step 2: Apply z-scores (divide by σ)
+
+Compute:
+
+[
+z = \frac{r - \mu}{\sigma}
+]
+
+| Group | Raw diff (r−μ) | Std. Dev. (σ) | z-score    |
+| ----- | -------------- | ------------- | ---------- |
+| **A** | +3             | 1.4           | **≈ +2.1** |
+| **B** | +30            | 14.1          | **≈ +2.1** |
+
+Now both have **the same z-score**, meaning each reward is **about 2 standard deviations above average** within its own group.
+
+---
+
+## 🧭 Interpretation
+
+Without dividing by σ:
+
+> Group B’s reward looks 10× larger → the algorithm might think it’s *much* better.
+
+With division by σ:
+
+> Both are “equally impressive,” because each is 2 σ above its mean in its own context.
+
+This prevents the *absolute magnitude* (e.g., 100-scale vs 10-scale) from dominating the update or gradient.
+
+---
+
+## 🔧 Why this matters (especially in ML / RL)
+
+In algorithms like GRPO, or in feature standardization before model training:
+
+* Rewards or features often live on **different numeric scales**.
+* If you don’t normalize, the one with the largest numeric range produces the **largest gradients**, dominating learning even if it’s not semantically more important.
+* Dividing by the standard deviation rescales everything into comparable, *unitless* terms — so learning depends on *relative deviation*, not *absolute magnitude*.
+
+---
+
+## 🧩 Summary
+
+| Without / With σ | Effect                                                            |
+| ---------------- | ----------------------------------------------------------------- |
+| ❌ Without σ      | Big-magnitude values dominate updates (misleading)                |
+| ✅ With σ         | Each value is judged relative to its own spread → fair comparison |
+
+---
+
+So when we say “dividing by σ prevents magnitude from dominating,” we mean:
+
+> It stops large-scale numerical values from overpowering smaller-scale ones that are *equally extreme relative to their own variability.*
+
+---
+
+Would you like me to show how this effect would distort a policy update or gradient magnitude in a GRPO-style loss (i.e., how the “dominating magnitude” problem actually changes learning direction)?

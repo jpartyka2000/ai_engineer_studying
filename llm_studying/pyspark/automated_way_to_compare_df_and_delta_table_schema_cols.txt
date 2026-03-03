@@ -1,0 +1,28 @@
+# Load the Delta table as a DataFrame
+delta_df = spark.table("your_delta_table_name")
+
+# Retrieve schemas from both DataFrames
+df_schema = df.schema           # your PySpark DataFrame schema
+delta_schema = delta_df.schema  # Delta table schema
+
+def schema_to_set(schema):
+    """
+    Convert a StructType schema into a set of tuples: (name, dataType, nullable)
+    using simpleString() for data type comparison.
+    """
+    return {(field.name, field.dataType.simpleString(), field.nullable) for field in schema}
+
+df_fields = schema_to_set(df_schema)
+delta_fields = schema_to_set(delta_schema)
+
+# Find fields that are in the DataFrame but not in the Delta table, and vice versa.
+extra_in_df = df_fields - delta_fields
+extra_in_delta = delta_fields - df_fields
+
+print("Fields in your DataFrame but not in the Delta table:")
+for field in extra_in_df:
+    print(field)
+
+print("\nFields in the Delta table but not in your DataFrame:")
+for field in extra_in_delta:
+    print(field)

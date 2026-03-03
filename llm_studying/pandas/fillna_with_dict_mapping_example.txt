@@ -1,0 +1,44 @@
+You can’t use a static dict in the `.fillna({...})` call, but it’s easy to do right after the fact by mapping your `campaign_name` back to its `campaign_id`. For example, suppose you already have a Series (or dict) that gives you the right id for each campaign:
+
+```python
+# Example: build your mapping from your campaigns table
+# (or however you have it in memory)
+# df_campaigns has columns ['campaign_id','campaign_name']
+campaign_mapping = df_campaigns.set_index('campaign_name')['campaign_id']
+
+summary_df = (
+    full_idx
+      .merge(summary_df, on=["campaign_name","date"], how="left")
+      .fillna({
+          "impressions": 0,
+          "clicks":      0,
+          "conversions": 0,
+          "daily_cac":  np.inf
+      })
+)
+
+# now fill in campaign_id from the mapping wherever it’s null
+summary_df['campaign_id'] = summary_df['campaign_id'] \
+    .fillna(summary_df['campaign_name'].map(campaign_mapping)) \
+    .astype(int)
+```
+
+**What’s happening?**
+
+1. You do your normal `fillna` for the numeric columns.
+2. You take the (possibly-NaN) `campaign_id` column and call
+
+   ```python
+   .fillna( summary_df['campaign_name'].map(campaign_mapping) )
+   ```
+
+   which looks up the correct id by name.
+3. You cast to `int` so you don’t end up with floats.
+
+Alternatively, if you never had a `campaign_id` column in `full_idx` to begin with, you can just **assign** it directly:
+
+```python
+summary_df['campaign_id'] = summary_df['campaign_name'].map(campaign_mapping).astype(int)
+```
+
+Either way you end up with every row having the proper `campaign_id` for its `campaign_name`.

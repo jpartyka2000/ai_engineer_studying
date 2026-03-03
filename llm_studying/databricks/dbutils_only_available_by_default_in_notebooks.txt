@@ -1,0 +1,58 @@
+The `dbutils` helper is only automatically injected into **Databricks notebooks**, not into arbitrary Python scripts or modules. That’s why you get:
+
+```plaintext
+NameError: name 'dbutils' is not defined
+```
+
+Here’s how to fix it depending on where you’re running:
+
+---
+
+## 1) In a Databricks Notebook cell
+
+If you’re truly in a notebook (not a `.py` file), make sure your cell is a **Python** cell (no leading `%sh` or `%scala`). In a plain Python cell, `dbutils` should already be available:
+
+```python
+# In a # MAGIC %python cell, this will work out of the box:
+access_key = dbutils.secrets.get("aws-creds", "aws_access_key_id")
+```
+
+If you’re in a **Notebook Repos** folder and running a `.py` via `%run`, you may need to explicitly declare you want the notebook context:
+
+```python
+# At the top of your .py module, add:
+# Databricks notebooks automatically set this up for you,
+# but if you run via %run you might need to do this:
+dbutils = locals().get("dbutils") or globals().get("dbutils")
+if dbutils is None:
+    raise RuntimeError("dbutils not found; make sure you are in a Databricks notebook")
+```
+
+---
+
+## 2) In a Python script or job (outside notebook)
+
+If you’re running this as a scheduled job using a standalone Python file, `dbutils` isn’t provided by default. You can get the same functionality by instantiating the `DBUtils` class yourself:
+
+```python
+from pyspark.sql import SparkSession
+from pyspark.dbutils import DBUtils
+
+# create or get your Spark session
+spark = SparkSession.builder.getOrCreate()
+
+# instantiate dbutils
+dbutils = DBUtils(spark)
+
+# now you can call secrets
+access_key = dbutils.secrets.get("aws-creds", "aws_access_key_id")
+```
+
+---
+
+### Summary
+
+* **Notebook**: `dbutils` is built in—just use it in a `%python` cell.
+* **Python script**: import and instantiate it via `from pyspark.dbutils import DBUtils` and passing in your Spark session.
+
+Once you have `dbutils` in scope, your `dbutils.secrets.get("aws-creds", "aws_access_key_id")` call will succeed.

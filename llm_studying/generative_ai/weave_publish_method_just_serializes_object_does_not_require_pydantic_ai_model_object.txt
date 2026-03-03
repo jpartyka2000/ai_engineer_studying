@@ -1,0 +1,83 @@
+Great question! **`weave.publish()` does NOT require a pydantic-ai model** - it can publish any Python object. Weave is model-framework agnostic.
+
+## What `weave.publish()` Actually Does
+
+It serializes and versions **any Python object** - models, datasets, configs, custom classes, etc. It just needs to be able to serialize the object's attributes.
+
+## Options for Legacy Agent
+
+You have several choices:
+
+### Option 1: Publish the Wrapper Instance (Recommended)
+```python
+if not use_legacy_agent:
+    model_ref = weave.publish(model, name="CueEvaluationModel")
+    model_uri = model_ref.uri()
+else:
+    # Publish the wrapper - Weave can track it
+    wrapper_ref = weave.publish(
+        cue_agents[list(cue_agents.keys())[0]],  # Publish one wrapper as representative
+        name="LegacyCueAgentWrapper"
+    )
+    model_uri = wrapper_ref.uri()
+```
+
+### Option 2: Publish Model Config Dictionary
+```python
+if not use_legacy_agent:
+    model_ref = weave.publish(model, name="CueEvaluationModel")
+    model_uri = model_ref.uri()
+else:
+    # Publish a config dictionary describing the model
+    legacy_model_config = {
+        "model_type": "o4-mini",
+        "framework": "openai_agents_sdk",
+        "agent_class": "CueReactAgent",
+        "wrapper_class": "LegacyCueAgentWrapper"
+    }
+    model_ref = weave.publish(legacy_model_config, name="LegacyModelConfig")
+    model_uri = model_ref.uri()
+```
+
+### Option 3: Create a Simple Model Info Class
+```python
+from dataclasses import dataclass
+
+@dataclass
+class LegacyModelInfo:
+    model_name: str = "o4-mini"
+    framework: str = "openai_agents_sdk"
+    agent_type: str = "CueReactAgent"
+    
+# Then in runner:
+if not use_legacy_agent:
+    model_ref = weave.publish(model, name="CueEvaluationModel")
+    model_uri = model_ref.uri()
+else:
+    legacy_info = LegacyModelInfo()
+    model_ref = weave.publish(legacy_info, name="LegacyModelInfo")
+    model_uri = model_ref.uri()
+```
+
+### Option 4: Keep Placeholder (Current - Simplest)
+Your current approach with `model_uri = "legacy_internal_o4mini"` is actually fine for now! It:
+- ✅ Works immediately
+- ✅ Clearly identifies legacy runs in Weave UI
+- ✅ Avoids complexity
+- ❌ Loses versioning capability (but legacy agent isn't changing anyway)
+
+## My Recommendation
+
+**For now, stick with the placeholder string approach** since:
+1. The legacy agent is frozen (not actively developed)
+2. It always uses o4-mini (no version variance to track)
+3. You're mainly interested in comparing performance, not tracking model evolution
+4. It's the simplest solution
+
+**If you need proper versioning later**, use Option 2 or 3 to publish metadata about the legacy setup.
+
+## The Key Insight
+
+Weave doesn't care about the model framework - it just serializes Python objects. OpenAI Agents SDK, LangChain, pydantic-ai, or raw OpenAI API calls all work fine with `weave.publish()`.
+
+Does that answer your question?

@@ -1,0 +1,61 @@
+**Common Things to Look for in Physical Plans**
+
+**Data Scanning**
+
+- `Scan parquet` / `Scan csv` / `Scan json` – reading from files
+- `PushedFilters` – filters pushed down to the data source (good for performance)
+- `ReadSchema` – columns actually being read (fewer is better)
+
+```
+FileScan parquet [name,age] PushedFilters: [IsNotNull(age), GreaterThan(age,30)]
+```
+
+**Shuffles**
+
+- `Exchange` – indicates a shuffle (data redistribution across the cluster)
+- Shuffles are expensive; watch for unexpected ones
+
+```
+Exchange hashpartitioning(department, 200)
+```
+
+Common causes: `groupBy`, `join`, `distinct`, `repartition`, `orderBy`
+
+**Joins**
+
+- `BroadcastHashJoin` – small table broadcast to all nodes (fast)
+- `SortMergeJoin` – both sides shuffled and sorted (slower, but handles large tables)
+- `BroadcastNestedLoopJoin` – usually inefficient, worth investigating
+
+```
+BroadcastHashJoin [dept_id], [id], Inner, BuildRight
+```
+
+**Aggregations**
+
+- `HashAggregate` – typically appears twice (partial + final) for distributed aggregation
+- `SortAggregate` – fallback when data doesn't fit in memory
+
+**Sorts**
+
+- `Sort` – explicit sorting, can be expensive on large data
+
+**Filters and Projections**
+
+- `Filter` – row filtering
+- `Project` – column selection
+
+**Warning Signs**
+
+| Pattern | Potential Issue |
+|---------|-----------------|
+| Multiple `Exchange` nodes | Excessive shuffling |
+| `SortMergeJoin` on small table | Could benefit from broadcast |
+| `BroadcastNestedLoopJoin` | Inefficient join strategy |
+| Missing `PushedFilters` | Filter not pushed to source |
+| Wide `ReadSchema` | Reading unnecessary columns |
+| `Sort` before `Exchange` | Double work if shuffle also sorts |
+
+**Tip:**
+
+Compare plans before and after optimizations to see if your changes (like adding broadcast hints or reordering operations) actually improved the plan.

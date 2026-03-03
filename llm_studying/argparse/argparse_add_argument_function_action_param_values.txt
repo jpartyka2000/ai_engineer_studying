@@ -1,0 +1,83 @@
+Great question — `argparse`’s `add_argument()` method in Python has a parameter called **`action`**, and it controls **what happens when the argument is encountered on the command line**.
+
+By default, arguments just get parsed and their values are stored. But with `action=...`, you can change that behavior.
+
+---
+
+## Common `action` values
+
+* **`'store'`** *(default)*
+  Store the argument’s value.
+
+  ```python
+  parser.add_argument("--name", action="store")
+  # $ python script.py --name Jeff
+  # args.name -> "Jeff"
+  ```
+
+* **`'store_const'`**
+  Store a **constant value** when the option is specified. Useful for flags.
+
+  ```python
+  parser.add_argument("--verbose", action="store_const", const=2, default=0)
+  # $ python script.py --verbose  → args.verbose == 2
+  # $ python script.py            → args.verbose == 0
+  ```
+
+* **`'store_true'` / `'store_false'`**
+  Special cases of `store_const` for booleans.
+
+  ```python
+  parser.add_argument("--debug", action="store_true")
+  # $ python script.py --debug  → args.debug == True
+  # $ python script.py          → args.debug == False
+  ```
+
+* **`'append'`**
+  Collect multiple occurrences into a list.
+
+  ```python
+  parser.add_argument("--tag", action="append")
+  # $ python script.py --tag a --tag b
+  # args.tag -> ["a", "b"]
+  ```
+
+* **`'count'`**
+  Count how many times an option appears.
+
+  ```python
+  parser.add_argument("-v", action="count", default=0)
+  # $ python script.py -vvv
+  # args.v -> 3
+  ```
+
+* **`'version'`**
+  Prints version info and exits.
+
+  ```python
+  parser.add_argument("--version", action="version", version="%(prog)s 1.0")
+  # $ python script.py --version
+  # script.py 1.0
+  ```
+
+* **Custom callable**
+  You can pass your own function to `action=`. It must be a subclass of `argparse.Action`.
+
+  ```python
+  class CustomAction(argparse.Action):
+      def __call__(self, parser, namespace, values, option_string=None):
+          setattr(namespace, self.dest, values.upper())
+
+  parser.add_argument("--name", action=CustomAction)
+  # $ python script.py --name jeff
+  # args.name -> "JEFF"
+  ```
+
+---
+
+✅ **In short:**
+The `action` parameter tells `argparse` **what to do when it sees that argument**. By default it just stores the next value, but it can also set booleans, collect multiple values, count occurrences, show version info, or even run your own custom logic.
+
+---
+
+Do you want me to make you a **cheat-sheet table of all the built-in actions** (`store`, `store_true`, `append`, etc.) with one-line examples?

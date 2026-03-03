@@ -1,0 +1,21 @@
+`add_local_dir` is an image-building method in Modal that copies a local directory into the container image at build time. In your harness, it's used like this:
+
+```python
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .uv_pip_install(...)
+    .add_local_dir(
+        "cue_eval",
+        remote_path="/workspace/cue_eval",
+        ignore=[...],
+    )
+)
+```
+
+The key thing to understand is that because it's part of the **image definition**, the directory contents become a cached layer. Modal treats it the same way Docker treats a `COPY` instruction — once built, it won't re-copy your files unless something tells it the layer is stale.
+
+**The `ignore` parameter** works like a `.gitignore` — it accepts glob patterns for files and directories you don't want copied into the image. In your case it's filtering out `__pycache__`, `.venv`, `wandb` outputs, etc.
+
+**The caching tradeoff:** Because the files are baked into the image, container startup is fast (no upload step). But you need `--force-build` whenever your source code changes. If your code changes frequently during development, `modal.Mount` at the function level is often a better fit since it uploads fresh files every run at the cost of slightly slower startup.
+
+**Where files end up:** The `remote_path` argument controls the destination inside the container. Your harness maps the local `cue_eval/` directory to `/workspace/cue_eval`, which is why the `PYTHONPATH` is set to `/workspace` in the `run` function — so Python can find all the mounted packages.

@@ -1,0 +1,44 @@
+DataFrames themselves don’t carry a “name” attribute the way Series do. What’s happening here is that pandas, in the context of a `.groupby(...).apply(func)`, **injects** a temporary `name` attribute onto the **group slice** that it hands to your `func`. That `grp` is still a plain `pd.DataFrame` (with all your columns), but pandas attaches:
+
+```python
+grp.name
+```
+
+as the **group key** (a scalar or tuple), purely for your convenience inside the apply.
+
+---
+
+### Key distinctions
+
+* **Standard `DataFrame`**
+
+  ```python
+  df = pd.DataFrame({...})
+  hasattr(df, 'name')    # False
+  ```
+
+  DataFrames have no built-in `df.name`—you can of course assign `df.name = "foo"` yourself, but it’s not part of the API.
+
+* **`Series` objects**
+
+  ```python
+  s = pd.Series([1,2,3], name='my_col')
+  s.name                 # 'my_col'
+  ```
+
+  Series carry a `.name` by design (usually the column name).
+
+* **Group slices in `apply`**
+
+  ```python
+  def f(grp):
+      print(type(grp), grp.name)
+      return grp
+  df.groupby(['A','B']).apply(f)
+  ```
+
+  Inside `f`, `grp` is still a `DataFrame`, but pandas has attached `.name = (A_value, B_value)` so you know which group you’re dealing with.
+
+---
+
+So when you see `grp.name` in a `groupby.apply` function, that’s not a built-in DataFrame property—it’s pandas’ way of giving you the **current group’s key**.

@@ -1,0 +1,168 @@
+## Python's `match` Statement (Pattern Matching)
+
+Python's `match` statement (added in Python 3.10) is **structural pattern matching** - like a switch statement on steroids that can destructure data.
+
+## Basic Syntax:
+
+```python
+match value:
+    case pattern1:
+        # action1
+    case pattern2:
+        # action2
+    case _:
+        # default action (like else)
+```
+
+## Simple Examples:
+
+### Basic Value Matching
+```python
+def describe_status(status_code):
+    match status_code:
+        case 200:
+            return "OK"
+        case 404:
+            return "Not Found"
+        case 500:
+            return "Server Error"
+        case _:
+            return "Unknown"
+
+print(describe_status(404))  # "Not Found"
+```
+
+### Multiple Values (OR pattern)
+```python
+match day:
+    case "Saturday" | "Sunday":
+        print("Weekend!")
+    case "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday":
+        print("Weekday")
+    case _:
+        print("Invalid day")
+```
+
+## Powerful Features:
+
+### 1. **Destructuring**
+```python
+point = (2, 3)
+
+match point:
+    case (0, 0):
+        print("Origin")
+    case (x, 0):
+        print(f"On X-axis at {x}")
+    case (0, y):
+        print(f"On Y-axis at {y}")
+    case (x, y):
+        print(f"Point at {x}, {y}")
+```
+
+### 2. **Type Matching**
+```python
+def process_data(data):
+    match data:
+        case str():
+            return f"String: {data.upper()}"
+        case int() | float():
+            return f"Number: {data * 2}"
+        case list():
+            return f"List with {len(data)} items"
+        case dict():
+            return f"Dict with keys: {data.keys()}"
+        case _:
+            return "Unknown type"
+
+print(process_data("hello"))  # "String: HELLO"
+print(process_data([1, 2, 3]))  # "List with 3 items"
+```
+
+### 3. **Guards (if conditions)**
+```python
+def categorize_number(n):
+    match n:
+        case x if x < 0:
+            return "negative"
+        case 0:
+            return "zero"
+        case x if x < 10:
+            return "single digit"
+        case x if x < 100:
+            return "double digit"
+        case _:
+            return "large"
+
+print(categorize_number(5))  # "single digit"
+print(categorize_number(-3))  # "negative"
+```
+
+## Real-World Example:
+
+```python
+def handle_api_response(response):
+    match response:
+        # Dictionary with specific structure
+        case {"status": "success", "data": data}:
+            return process_data(data)
+        
+        # Error with code
+        case {"status": "error", "code": 404}:
+            return "Not found"
+        
+        # Error with message
+        case {"status": "error", "message": msg}:
+            return f"Error: {msg}"
+        
+        # List response
+        case []:
+            return "Empty response"
+        
+        case [single_item]:
+            return f"Single result: {single_item}"
+        
+        case list() as items:
+            return f"Multiple results: {len(items)}"
+        
+        case _:
+            return "Invalid response format"
+
+# Usage
+print(handle_api_response({"status": "success", "data": [1, 2, 3]}))
+print(handle_api_response({"status": "error", "code": 404}))
+```
+
+## Destructuring Complex Data:
+
+```python
+def parse_command(command):
+    match command.split():
+        case ["quit" | "exit"]:
+            return "goodbye"
+        
+        case ["load", filename]:
+            return f"loading {filename}"
+        
+        case ["save", filename, *options]:
+            return f"saving {filename} with options: {options}"
+        
+        case ["move", x, y] if x.isdigit() and y.isdigit():
+            return f"moving to ({x}, {y})"
+        
+        case _:
+            return "unknown command"
+
+print(parse_command("load data.txt"))  # "loading data.txt"
+print(parse_command("save file.txt --compress --encrypt"))  
+# "saving file.txt with options: ['--compress', '--encrypt']"
+```
+
+## Key Differences from if/elif:
+
+1. **Pattern destructuring** - Can unpack data structures
+2. **Cleaner syntax** for multiple conditions
+3. **Exhaustiveness** - `_` case ensures all patterns covered
+4. **Guards** - Add conditions to patterns with `if`
+
+**Bottom line**: `match` is best when you need to check structure AND values, especially with nested data. For simple value checks, `if/elif` is often clearer.

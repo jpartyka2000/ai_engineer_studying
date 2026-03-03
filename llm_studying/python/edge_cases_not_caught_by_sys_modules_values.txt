@@ -1,0 +1,42 @@
+Yes, there are edge cases where files could be executed but not appear in `sys.modules`:
+
+1. **`exec(open('file.py').read())`** - executes code without importing
+2. **`subprocess.run(['python', 'script.py'])`** - runs in a separate process
+3. **`runpy.run_path('file.py')`** - may not register in sys.modules
+4. **Dynamically generated code** - created and executed at runtime
+
+For your eval harness, these are unlikely since you're using standard imports. But if you want to be thorough, you could also hook into the import system itself:
+
+```python
+import atexit
+import sys
+import os
+
+_visited_files = set()
+
+class FileTracker:
+    def find_module(self, name, path=None):
+        return None  # Let normal import proceed
+    
+    def find_spec(self, name, path, target=None):
+        return None  # Let normal import proceed
+
+# Track via sys.modules at exit (covers most cases)
+def print_visited_files():
+    for module in sys.modules.values():
+        if hasattr(module, '__file__') and module.__file__:
+            _visited_files.add(module.__file__)
+    
+    print("\n=== FILES VISITED ===")
+    for f in sorted(_visited_files):
+        if 'site-packages' not in f:
+            print(f)
+
+atexit.register(print_visited_files)
+```
+
+But realistically, the simple `sys.modules` approach will catch everything in a normal codebase like yours. If you're worried about `exec()` calls, grep your codebase for them:
+
+```bash
+grep -r "exec(" --include="*.py" .
+```

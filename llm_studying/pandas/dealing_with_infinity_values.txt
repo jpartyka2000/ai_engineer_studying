@@ -1,0 +1,46 @@
+Handling **Infinity (`inf`)** values in Pandas depends on your use case, but here are the **standard approaches**:  
+
+### **1️⃣ Replace `inf` with NaN (Recommended for Analytics & Aggregations)**
+Since many Pandas and NumPy functions ignore `NaN` by default, replacing `inf` with `NaN` prevents issues in calculations like mean, median, and percentiles:  
+```python
+df['CAC'] = df['CAC'].replace([np.inf, -np.inf], np.nan)
+```
+✅ **Best when performing aggregations (`mean()`, `median()`, `percentile()`)**  
+
+---
+
+### **2️⃣ Replace `inf` with a Maximum Threshold (Useful for Reporting & Ranking)**
+If you don’t want `inf` values to be ignored but want them to be a high number, set a reasonable upper bound:  
+```python
+max_cac_value = df[df['CAC'] != np.inf]['CAC'].max()  # Get max non-infinite CAC
+df['CAC'] = df['CAC'].replace(np.inf, max_cac_value * 1.5)  # Set inf to 1.5x max
+```
+✅ **Best when sorting or ranking values in a reasonable way**  
+
+---
+
+### **3️⃣ Drop Rows with `inf` Values (Useful When Data is Unreliable)**
+If `inf` values indicate bad data (e.g., missing opportunities), you might want to remove them entirely:  
+```python
+df = df[df['CAC'] != np.inf]
+```
+✅ **Best when `inf` suggests data issues that should be removed**  
+
+---
+
+### **4️⃣ Convert `inf` to a Default Value (Useful for Modeling)**
+If `inf` values must be replaced with a constant (e.g., max CAC allowed in business rules), you can set a default:
+```python
+df['CAC'] = df['CAC'].replace(np.inf, 1000)  # Replace inf with fixed value
+```
+✅ **Best for machine learning models that require finite numbers**  
+
+---
+
+### **What’s the Best Approach for You?**  
+- If you’re **analyzing data**, use **`np.nan`**  
+- If you need **ranking & reporting**, set a **reasonable max threshold**  
+- If `inf` values are **bad data**, drop them  
+- If you need **fixed values for modeling**, use a default replacement  
+
+Would you like help implementing one of these in your CAC calculations? 🚀

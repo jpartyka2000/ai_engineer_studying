@@ -1,0 +1,57 @@
+Here are a few simple ways to turn your DataFrame’s rows into a list of tuples (each tuple containing the values for one row):
+
+---
+
+### 1. Using `itertuples`
+
+```python
+# yields a generator of tuples; name=None omits the namedtuple wrapper
+row_tuples = list(df.itertuples(index=False, name=None))
+```
+
+* **Pros**: very fast, C-optimized
+* **Result**: `[(val11, val12, …), (val21, val22, …), …]`
+
+---
+
+### 2. Using the underlying NumPy array
+
+```python
+row_tuples = [tuple(row) for row in df.values]
+```
+
+or more directly,
+
+```python
+row_tuples = list(map(tuple, df.values))
+```
+
+* **Pros**: concise and also fast
+* **Cons**: loses any index/column labels (you only get raw values)
+
+---
+
+### 3. With `apply`
+
+```python
+row_tuples = df.apply(lambda row: tuple(row), axis=1).tolist()
+```
+
+* **Pros**: you can mix in transformations per row if needed
+* **Cons**: slower, since it calls Python per row
+
+---
+
+### 4. Using `to_records` (NumPy recarray)
+
+```python
+rec = df.to_records(index=False)
+row_tuples = list(rec)
+```
+
+* **Pros**: also gives you a tuple per row, but with field names if you omit `index=False`
+* **Cons**: slightly more awkward to unpack
+
+---
+
+All of these will give you a Python list where each element is a tuple of the row’s values. Pick whichever is most readable or performant for your use case—`itertuples(..., name=None)` is generally the go-to for pure value tuples.

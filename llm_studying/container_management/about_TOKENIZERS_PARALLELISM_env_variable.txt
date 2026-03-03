@@ -1,0 +1,34 @@
+This variable controls whether Hugging Face's tokenizers library uses parallelism internally.
+
+## What it does
+
+When set to `"false"`, it disables the multi-threaded parallelism that the `tokenizers` library uses by default when encoding text.
+
+## Why disable it?
+
+The Hugging Face `tokenizers` library (written in Rust) can use multiple threads to tokenize text faster. However, this causes problems in certain situations:
+
+**1. Fork safety issues**
+
+When Python code forks a process (which happens in multiprocessing), having active threads in the parent process can cause deadlocks or crashes. You'll often see this warning:
+
+```
+The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+```
+
+**2. Conflicts with other parallelism**
+
+In this vLLM server setup, there's already parallelism happening at multiple levels:
+- Async Python (FastAPI/uvicorn)
+- vLLM's internal threading
+- GPU operations via CUDA
+
+Adding tokenizer-level threading on top can cause thread contention and actually slow things down.
+
+**3. Server workloads**
+
+For a server handling many concurrent requests, it's usually better to process each request single-threaded and rely on the concurrency of multiple requests rather than parallelizing within a single tokenization call.
+
+## The tradeoff
+
+Disabling this makes individual tokenization calls slightly slower, but avoids deadlocks and warning spam in production server environments. For batch offline processing on a single machine, you might want it enabled — but for an async web server like this, disabling it is the right call.

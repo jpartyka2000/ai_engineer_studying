@@ -1,0 +1,71 @@
+Not really – once your total population $N$ is **much larger** than your sample size $n$, the **margin of error** depends almost **entirely** on $n$, not on $N$.  In fact, all of our standard error formulas assume an effectively infinite population unless your sample is a non‑trivial fraction of it (say > 5%).
+
+---
+
+### 1. Standard error doesn’t care about $N$
+
+* **Mean absolute SHAP**
+
+  $$
+    \text{SE}(\bar x)\;=\;\frac{\sigma}{\sqrt{n}}
+  $$
+
+  depends on:
+
+  * $\sigma$: the standard deviation of $|\text{SHAP}|$,
+  * $n$: your sample size (e.g. 25 000).
+
+  **It does not include** $N$ at all once $N \gg n$.
+
+* **Proportion (density) error**
+
+  $$
+    \text{SE}(p)\;=\;\sqrt{\frac{p(1-p)}{n}}
+  $$
+
+  likewise depends only on $n$.
+
+---
+
+### 2. Finite Population Correction is negligible
+
+If you really want to account for sampling *without* replacement from a finite population, you multiply by
+
+$$
+  \sqrt{\frac{N - n}{\,N - 1\,}}
+$$
+
+—but if $N = 2.5\times10^9$ and $n = 2.5\times10^4$,
+
+$$
+  \sqrt{\frac{2.5\times10^9 - 2.5\times10^4}{2.5\times10^9 - 1}}
+  \approx \sqrt{0.99999}
+  \;\approx\; 0.999995,
+$$
+
+i.e. a **0.0005%** reduction in your standard error.  In practice: **zero effect**.
+
+---
+
+### 3. Putting numbers on it
+
+Assume $\sigma=1$ or $p=0.5$.  For $n=25{,}000$:
+
+* **SE of the mean** ≈ 0.006
+* **MoE for a proportion** (95% CI) ≈ 1.96 × 0.00316 ≈ 0.0062 (± 0.62 pp)
+
+Whether your population is 2.5 million or 2.5 billion, sampling 25 000 still pins your estimated means or densities to **within about 0.6%**—more than accurate enough to rank features or show their distribution in a SHAP plot.
+
+---
+
+### 4. When you might worry
+
+* **Extremely rare subgroups**
+  If you have events that occur in, say, 1 in 10 million rows, a 25 000 draw could easily miss them.  For those, consider **stratified sampling** or **oversampling** the rare class.
+* **Heavy tails or multi‑modal features**
+  If your SHAP distributions for a feature are extremely skewed or have multiple tiny peaks, you might want a larger $n$ or a summary technique like `shap.kmeans`.
+
+---
+
+**Bottom line:**
+As long as your dataset is orders of magnitude larger than your sample (and 25 000 is tiny relative to 2.5 billion), your sampling error is driven purely by **sample size**, so **25 000** still gives you an accurate, low‑noise SHAP summary plot.

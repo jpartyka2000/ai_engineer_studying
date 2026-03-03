@@ -1,0 +1,47 @@
+In Python’s `async`/`await` system, **`await`** is the keyword you use to **pause** the current coroutine until an **`awaitable`** (another coroutine, `asyncio.Future`, or anything implementing `__await__`) has produced its result.
+
+---
+
+## Key points about `await`
+
+1. **Every async call that returns a coroutine must be `await`ed**
+
+   ```python
+   async def fetch_data():
+       return await http_client.get(url)   # you must await this async call
+
+   async def main():
+       data = fetch_data()                  # this returns a coroutine object
+       # WRONG: data now holds a coroutine, not the actual result!
+       result = await data                  # CORRECT: you await it to get its return value
+   ```
+
+2. **`await` only works inside an `async def` function**
+   You can’t use `await` at the top level of a normal function or module. It has to live in an `async def` (or Python REPL that supports top‐level await).
+
+3. **One `await` per asynchronous operation**
+   If you call multiple async functions, you await each one (or gather them if you want to run them concurrently):
+
+   ```python
+   async def multiple_calls():
+       a = await async_call_1()
+       b = await async_call_2()
+       # or, to run both in parallel:
+       a, b = await asyncio.gather(async_call_1(), async_call_2())
+   ```
+
+4. **Why you need it**
+
+   * Without `await`, you just get a **coroutine object** (a “promise” of work not yet done).
+   * `await` tells the event loop “run this coroutine until it yields a value or completes.”
+
+5. **`await` vs. callbacks**
+   Using `await` makes asynchronous code look and read like synchronous code, without deeply nested callbacks or manual future‐management.
+
+---
+
+### TL;DR
+
+* **Yes**, any time you call an `async def` function (or otherwise obtain an awaitable), you must `await` it if you want its result.
+* If you forget, you’ll get back a coroutine object, and your logic won’t execute (or you’ll see warnings).
+* Use `await` inside `async def` functions to let the event loop handle other tasks while you wait.

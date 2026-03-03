@@ -1,0 +1,87 @@
+**Incorrect, but good try!**
+
+The answer is **D) Raises `ValidationError` for both `rating` and `comment`**
+
+Both fields fail validation:
+
+1. **`rating=6`** fails because `Field(ge=1, le=5)` means the value must be ≥1 AND ≤5. Since 6 > 5, it fails.
+
+2. **`comment='Great!'`** fails because `Field(min_length=10)` requires at least 10 characters. `'Great!'` is only 6 characters.
+
+The key insight: **Pydantic validates all fields and collects all errors**, rather than stopping at the first failure. This is helpful because users get a complete list of what needs fixing.
+
+```python
+# The ValidationError would show both issues:
+# rating: Input should be less than or equal to 5
+# comment: String should have at least 10 characters
+```
+
+Common `Field` constraints:
+- Numbers: `gt`, `ge`, `lt`, `le`, `multiple_of`
+- Strings: `min_length`, `max_length`, `pattern`
+- Collections: `min_length`, `max_length`
+
+---
+
+<details>
+<summary><strong>📋 Copy this Q&A</strong></summary>
+
+```
+QUESTION (Medium | Field Constraints)
+-------------------------------------
+What happens when this code runs?
+
+from pydantic import BaseModel, Field
+
+class Review(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    comment: str = Field(min_length=10)
+
+review = Review(rating=6, comment='Great!')
+
+Options:
+A) Creates the review successfully
+B) Raises ValidationError for rating only
+C) Raises ValidationError for comment only
+D) Raises ValidationError for both rating and comment
+
+ANSWER: D) Raises ValidationError for both rating and comment
+
+EXPLANATION:
+Both fields fail validation:
+1. rating=6 fails because Field(ge=1, le=5) means ≥1 AND ≤5
+2. comment='Great!' fails because Field(min_length=10) requires 
+   at least 10 characters (it only has 6)
+
+Key insight: Pydantic validates all fields and collects all 
+errors, rather than stopping at the first failure.
+
+Common Field constraints:
+- Numbers: gt, ge, lt, le, multiple_of
+- Strings: min_length, max_length, pattern
+- Collections: min_length, max_length
+```
+
+</details>
+
+---
+
+**Question 11** | **Hard** | **Topic: Computed Fields**
+
+What does this code print?
+
+```python
+from pydantic import BaseModel, computed_field
+
+class Circle(BaseModel):
+    radius: float
+    
+    @computed_field
+    @property
+    def diameter(self) -> float:
+        return self.radius * 2
+
+c = Circle(radius=5.0)
+print(c.diameter)
+print(c.model_dump())
+```

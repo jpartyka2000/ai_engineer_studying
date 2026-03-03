@@ -1,0 +1,36 @@
+You can do it in three steps:
+
+1. **Find the top 10** most‐frequent values
+2. **Collapse** everything else to `"Other"`
+3. **`get_dummies`** on the reduced column
+
+```python
+import pandas as pd
+
+# 1) Identify the top‑10 categories
+top10 = df['your_col'].value_counts().nlargest(10).index
+
+# 2) Create a reduced version of the column
+df['your_col_reduced'] = df['your_col'].where(
+    df['your_col'].isin(top10),
+    other='Other'
+)
+
+# 3) One‑hot encode that reduced column
+dummies = pd.get_dummies(df['your_col_reduced'], prefix='your_col')
+
+# 4) (optional) join back to your original DF
+df = pd.concat([df, dummies], axis=1)
+```
+
+Now you’ll get exactly 11 new columns:
+
+```
+your_col_A
+your_col_B
+…        (top‑10 categories)
+your_col_J
+your_col_Other
+```
+
+where `your_col_Other` counts every value outside the top 10.

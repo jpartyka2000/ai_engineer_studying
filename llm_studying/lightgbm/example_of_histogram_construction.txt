@@ -1,0 +1,39 @@
+When we say a gradient (���) and a hessian (���) get “assigned to a bin,” it simply means:
+
+1. **Discretizing the feature value**
+   Each continuous feature 𝑋 is pre‑processed into 𝐵 buckets (bins) based on its value. For example, values in \[0.0–0.3] ⇒ bin 0, (0.3–0.7] ⇒ bin 1, etc.
+
+2. **Accumulating per‑bin statistics**
+   For *each* training example *i* you’ve already computed
+
+   * the pseudo‑gradient ���𝑖 = ∂ℓ/∂ŷ𝑖
+   * the pseudo‑hessian ���𝑖 = ∂²ℓ/∂ŷ𝑖²
+
+   You look up which bin 𝑏 its feature 𝑋𝑖 falls into, and then you add
+
+   * ���𝑖 onto hist\[𝑏].sum\_grad
+   * ���𝑖 onto hist\[𝑏].sum\_hess
+
+   In code‐like form:
+
+   ```text
+   for each instance i:
+     b = bin_index(X[i])          # which bucket X[i] sits in
+     hist[b].sum_grad += grad[i]  # accumulate gradients
+     hist[b].sum_hess += hess[i]  # accumulate hessians
+   ```
+
+3. **Why it matters**
+
+   * Instead of evaluating a split at *every* unique 𝑋 value, you only consider splits *between* these 𝐵 bins.
+   * The total ��� and ��� in each bin give you exactly the information you need to compute the “gain” of splitting at that boundary:
+
+     $$
+       \text{gain} = \frac{(\sum g_{L})^{2}}{\sum h_{L} + \lambda} + 
+                    \frac{(\sum g_{R})^{2}}{\sum h_{R} + \lambda} \;-\;
+                    \frac{(\sum g_{L} + \sum g_{R})^{2}}{\sum h_{L} + \sum h_{R} + \lambda}
+     $$
+
+     where L/R are the left/right child bins if you split here.
+
+So “assigning a gradient and hessian to a bin” is just grouping that example’s gradient/hessian pair into the right histogram bucket so you can quickly sum them up and evaluate every potential split without scanning every single raw feature value.

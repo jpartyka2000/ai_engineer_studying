@@ -1,0 +1,64 @@
+You can’t just spin up a Flask app inside a Databricks notebook and have it listen on “/run-sim” – Databricks isn’t designed to host arbitrary HTTP servers in your driver process.  But you *can* expose your Monte Carlo simulator as a true REST endpoint by packaging it as an MLflow “pyfunc” model and then using Databricks’ built-in Model Serving.
+
+### Rough steps
+
+1. **Turn your simulator into a `mlflow.pyfunc.PythonModel`**
+
+   ```python
+   import mlflow.pyfunc
+   import pandas as pd
+   import numpy as np
+
+   class MCSimulator(mlflow.pyfunc.PythonModel):
+       def load_context(self, context):
+           # any setup you need goes here
+           pass
+
+       def predict(self, context, model_input: pd.DataFrame) -> pd.DataFrame:
+           # model_input might contain parameters like overall_budget, n_iter, etc.
+           # run your Monte Carlo here and return a DataFrame of results
+           df = run_my_simulation(model_input)
+           return df
+   ```
+
+2. **Log it as an MLflow model**
+
+   ```python
+   with mlflow.start_run():
+       mlflow.pyfunc.log_model(
+           artifact_path="mc_model",
+           python_model=MCSimulator()
+       )
+   ```
+
+3. **Deploy with Databricks Model Serving**
+
+   * In the Databricks UI, go to **Models** → choose your run’s `mc_model` artifact → click **Serve**.
+   * Pick a name (e.g. `mc-simulator-prod`) and deploy.
+
+4. **Hit it via REST**
+
+   ```
+   POST https://<your-databricks-workspace>/model/mc-simulator-prod/1/invocations
+   Content-Type: application/json
+   Authorization: Bearer <token>
+
+   { "dataframe_split": { "columns": ["overall_budget","n_iterations"], 
+                         "data": [[250000,10000]] } }
+   ```
+
+   You’ll get back your simulation results as JSON, just like any other MLflow-served model.
+
+---
+
+#### Alternative: Jobs API
+
+If you really want arbitrary control, you can wrap your class in a notebook or Python script, then use the [Databricks Jobs REST API](https://docs.databricks.com/dev-tools/api/latest/jobs.html) to trigger runs and fetch results.  That gives you a programmatic “endpoint,” but it’s not quite as low‐latency as Model Serving.
+
+---
+
+**Bottom line:**
+
+* **Best practice** in Databricks is to leverage **MLflow Model Serving**.
+* Implement your simulator as a `pyfunc` model, register it, and spin up a served endpoint.
+* Then any external service (or even your own front-end) can call it over REST.

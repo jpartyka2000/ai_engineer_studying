@@ -1,0 +1,68 @@
+You can turn one or more columns into a hierarchical (MultiIndex) on your DataFrame simply by passing a list of column names to `set_index`. For example:
+
+```python
+df = df.set_index(['region', 'date'])
+```
+
+### What this does
+
+1. **Drops** the listed columns (`region` and `date`) from your DataFrame’s columns.
+2. **Replaces** the existing index with a new `MultiIndex` whose levels are, in order:
+
+   * **Level 0**: the values that were in `region`
+   * **Level 1**: the values that were in `date`
+
+After that, each row is keyed by a tuple `(region, date)` rather than by a single integer.
+
+---
+
+### Why use a MultiIndex
+
+* **Hierarchical slicing**
+  You can select all “North” data, or all data on a certain date, or both:
+
+  ```python
+  df.loc['North']                # All rows in the North region
+  df.loc[(slice(None), '2025-01-02')]  # All regions on Jan 2, 2025
+  df.loc[('South', '2025-01-01')]      # South on Jan 1, 2025
+  ```
+
+* **Cleaner groupings**
+  Many downstream operations (like `unstack`, `stack`, and pivoting) become more direct when your relevant keys are part of the index.
+
+* **Compact representation**
+  You avoid carrying duplicate key columns around in your DataFrame—those values live in the index.
+
+---
+
+### Accessing levels
+
+* **Names**
+
+  ```python
+  df.index.names
+  # ['region', 'date']
+  ```
+
+* **Values**
+
+  ```python
+  df.index.get_level_values(0)  # all region values
+  df.index.get_level_values('date')  # all date values
+  ```
+
+---
+
+### Reverting back
+
+If you later need those index levels back as regular columns:
+
+```python
+df = df.reset_index()
+```
+
+This will move `region` and `date` back into your columns and restore a simple integer index.
+
+---
+
+**In summary**, `df.set_index(['region','date'])` is the quickest way to create a two-level row index based on those columns, unlocking powerful indexing and reshaping capabilities in pandas.

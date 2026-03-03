@@ -1,0 +1,106 @@
+In SQL, you need to query the **information schema** or system catalog to identify numeric columns, then construct your query. Here are approaches for different SQL databases:
+
+## Generic SQL (Most Databases)
+
+```sql
+-- Step 1: Find numeric columns
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = 'your_table_name'
+  AND table_schema = 'your_schema_name'  -- optional, depending on DB
+  AND data_type IN ('int', 'integer', 'bigint', 'smallint', 'tinyint', 
+                     'decimal', 'numeric', 'float', 'real', 'double precision',
+                     'money', 'smallmoney');
+
+-- Step 2: Use those columns in your SELECT
+SELECT column1, column2, column3  -- manually list the numeric columns
+FROM your_table_name;
+```
+
+## Dynamic SQL Approach (PostgreSQL)
+
+```sql
+-- Generate and execute a dynamic query
+DO $$
+DECLARE
+    cols TEXT;
+BEGIN
+    SELECT string_agg(column_name, ', ')
+    INTO cols
+    FROM information_schema.columns
+    WHERE table_name = 'your_table_name'
+      AND data_type IN ('smallint', 'integer', 'bigint', 'decimal', 'numeric', 
+                        'real', 'double precision', 'money');
+    
+    EXECUTE 'SELECT ' || cols || ' FROM your_table_name';
+END $$;
+```
+
+## SQL Server (T-SQL)
+
+```sql
+-- Method 1: Using INFORMATION_SCHEMA
+DECLARE @sql NVARCHAR(MAX)
+
+SELECT @sql = STRING_AGG(QUOTENAME(column_name), ', ')
+FROM information_schema.columns
+WHERE table_name = 'your_table_name'
+  AND data_type IN ('int', 'bigint', 'smallint', 'tinyint', 
+                    'decimal', 'numeric', 'float', 'real', 'money', 'smallmoney')
+
+SET @sql = 'SELECT ' + @sql + ' FROM your_table_name'
+EXEC sp_executesql @sql
+
+-- Method 2: Using sys.columns (more reliable)
+SELECT @sql = STRING_AGG(QUOTENAME(c.name), ', ')
+FROM sys.columns c
+JOIN sys.types t ON c.user_type_id = t.user_type_id
+WHERE c.object_id = OBJECT_ID('your_table_name')
+  AND t.name IN ('int', 'bigint', 'smallint', 'tinyint', 
+                 'decimal', 'numeric', 'float', 'real', 'money', 'smallmoney')
+```
+
+## MySQL
+
+```sql
+-- Generate the SELECT statement
+SET @sql = NULL;
+
+SELECT GROUP_CONCAT(DISTINCT column_name)
+INTO @sql
+FROM information_schema.columns
+WHERE table_name = 'your_table_name'
+  AND table_schema = 'your_database_name'
+  AND data_type IN ('tinyint', 'smallint', 'mediumint', 'int', 'bigint', 
+                    'decimal', 'numeric', 'float', 'double');
+
+SET @sql = CONCAT('SELECT ', @sql, ' FROM your_table_name');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+```
+
+## Practical Tips
+
+1. **Check your specific numeric types**: Different databases have different numeric type names. Use this query to see what's in your table:
+   ```sql
+   SELECT column_name, data_type
+   FROM information_schema.columns
+   WHERE table_name = 'your_table_name';
+   ```
+
+2. **Consider using a view**: If you frequently need only numeric columns:
+   ```sql
+   CREATE VIEW numeric_columns_view AS
+   SELECT column1, column2, column3  -- list numeric columns
+   FROM your_table_name;
+   ```
+
+3. **In your application code**: It's often easier to filter columns in Python/pandas after fetching:
+   ```python
+   df = pd.read_sql("SELECT * FROM your_table", connection)
+   numeric_df = df.select_dtypes(include=['number'])
+   ```
+
+Which database system are you using? I can provide a more specific solution.

@@ -1,0 +1,34 @@
+Excellent question! This touches on a crucial aspect of how SMILE (and DAgger) work. Let me clarify:
+
+## What Gets Generated: Full Trajectories, Not Single Transitions
+
+At **every iteration** (whether iteration 1, 2, or 5), you generate **full-length trajectories** from start to end, not single-step transitions.
+
+### Iteration 1 (Learning π(2)):
+1. **Collect data**: Roll out the **expert policy** for complete episodes (start state → terminal state)
+2. **Dataset D(1)**: Contains all (state, expert_action) pairs encountered along these full trajectories
+3. **Train π(2)**: Supervised learning on D(1)
+
+### Iteration 2 (Learning π(3)):
+1. **Collect data**: Roll out **full episodes** using SMILE's stochastic mixture:
+   - At each timestep within the episode, flip a coin (probability p)
+   - If heads: take expert's action
+   - If tails: take π(2)'s action
+   - Continue until episode terminates
+2. **Dataset D(2)**: All (state, expert_action) pairs from these full mixed trajectories
+3. **Aggregate**: D_aggregate = D(1) ∪ D(2)
+4. **Train π(3)**: Supervised learning on D_aggregate
+
+### Iteration 5 (Learning π(6)):
+1. **Collect data**: Roll out **full episodes** using stochastic mixture with π(5)
+2. **Dataset D(5)**: All states visited during these complete trajectories
+3. **Aggregate**: D_aggregate = D(1) ∪ D(2) ∪ D(3) ∪ D(4) ∪ D(5)
+4. **Train π(6)**: Supervised learning on D_aggregate
+
+## Key Points
+
+- **Trajectory length**: Always full episodes (could be 100+ timesteps depending on the task)
+- **Not iteration-length trajectories**: Iteration 5 doesn't mean "5-step trajectories"
+- **What grows**: The *dataset* grows with each iteration as you aggregate more state-action pairs from different trajectory distributions
+
+The iteration number tells you which learned policy you're mixing with the expert, not the length of trajectories you're collecting.

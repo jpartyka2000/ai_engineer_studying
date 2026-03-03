@@ -1,0 +1,36 @@
+To split a DataFrame column-wise, you simply select different sets of columns from your DataFrame. One common approach is to add a unique key column (if one doesn't exist already) so that you can later rejoin the DataFrames horizontally. For example:
+
+```python
+from pyspark.sql.functions import monotonically_increasing_id
+
+# Suppose df is your original DataFrame
+
+# Add a unique ID column so that rows can be matched later.
+df_with_id = df.withColumn("id", monotonically_increasing_id())
+
+# Define the two sets of columns you want to split
+cols1 = ["id", "colA", "colB", "colC"]  # adjust these to your desired columns
+cols2 = ["id", "colD", "colE"]           # the remaining columns
+
+# Create two DataFrames by selecting the desired columns
+df1 = df_with_id.select(*cols1)
+df2 = df_with_id.select(*cols2)
+
+# ... do some operations on df1 and df2 independently ...
+
+# Later, rejoin the two DataFrames on the unique "id" column and drop it if desired
+df_rejoined = df1.join(df2, on="id").drop("id")
+```
+
+### Explanation
+
+- **Adding a Unique ID:**  
+  The `monotonically_increasing_id()` function assigns each row a unique identifier. This key is used to join the split DataFrames later.
+  
+- **Selecting Columns:**  
+  We define two sets of columns (`cols1` and `cols2`) and use the `select` method to create two DataFrames that each include the `id` column.
+
+- **Rejoining:**  
+  When you want to recombine your split DataFrames, you join them on the `id` column. You can then drop the `id` if it’s no longer needed.
+
+This method lets you split your DataFrame column-wise, work on each subset independently, and then join them back together seamlessly.

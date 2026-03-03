@@ -1,0 +1,44 @@
+Here’s a simple, intuitive example of a **center-aligned rolling sum** over a column in a pandas DataFrame:
+
+```python
+import pandas as pd
+
+# 1) Create a toy DataFrame of daily measurements
+df = pd.DataFrame({
+    'day': pd.date_range(start='2025-01-01', periods=7, freq='D'),
+    'value': [10, 20, 30, 40, 50, 60, 70]
+})
+
+# 2) Compute a 3-day rolling sum, centered on each row
+df['rolling_sum_3day_center'] = (
+    df['value']
+      .rolling(window=3, center=True, min_periods=1)
+      .sum()
+)
+
+print(df)
+```
+
+**What’s happening?**
+
+* We choose a **window size of 3**.
+* With `center=True`, each sum is taken over the “previous day, current day, next day.”
+* `min_periods=1` lets us get a sum even at the edges (where fewer than 3 values exist).
+
+**Result:**
+
+| day        | value | rolling\_sum\_3day\_center |
+| ---------- | ----- | -------------------------- |
+| 2025-01-01 | 10    | 10 + 20 = 30               |
+| 2025-01-02 | 20    | 10 + 20 + 30 = 60          |
+| 2025-01-03 | 30    | 20 + 30 + 40 = 90          |
+| 2025-01-04 | 40    | 30 + 40 + 50 = 120         |
+| 2025-01-05 | 50    | 40 + 50 + 60 = 150         |
+| 2025-01-06 | 60    | 50 + 60 + 70 = 180         |
+| 2025-01-07 | 70    | 60 + 70 = 130              |
+
+* **First row (Jan 1):** only has “current” and “next” days, so sums 10 + 20.
+* **Middle rows:** sum one day before, the day itself, and one day after.
+* **Last row (Jan 7):** only has “previous” and “current” days, so sums 60 + 70.
+
+That’s a centered 3-day window in action!

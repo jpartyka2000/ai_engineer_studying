@@ -1,0 +1,128 @@
+**Great question! This is a subtle but important point.**
+
+You're confusing two different things:
+1. **What happens during TRAINING** (building the policy)
+2. **What the FINAL POLICY looks like** (after training is done)
+
+## **SMILe is Stationary AFTER Training**
+
+**Stationary means:** The policy doesn't change based on what timestep you're at.
+
+### **Let me clarify what happens:**
+
+## **During Training (Building the Policy)**
+
+**Yes, things change iteration by iteration:**
+
+```
+Iteration 1: Mix = 100% expert
+Iteration 2: Mix = 90% expert + 10% π(2)
+Iteration 3: Mix = 80% expert + 10% π(2) + 10% π(3)
+...
+```
+
+**But this is TRAINING, not execution!**
+
+## **After Training (Final Policy)**
+
+Once training is done, you have a **final fixed mixture**, say:
+
+```
+π_final = 30% π(2) + 30% π(3) + 40% π(4)
+```
+
+**This mixture is the SAME at every timestep during execution!**
+
+### **At Execution Time:**
+
+```
+Timestep 1: Use π_final (30% π(2), 30% π(3), 40% π(4))
+Timestep 2: Use π_final (30% π(2), 30% π(3), 40% π(4))  ← SAME!
+Timestep 3: Use π_final (30% π(2), 30% π(3), 40% π(4))  ← SAME!
+...
+Timestep T: Use π_final (30% π(2), 30% π(3), 40% π(4))  ← SAME!
+```
+
+**The policy doesn't depend on t (the timestep) → STATIONARY**
+
+## **Contrast with Forward Training (Non-Stationary)**
+
+**Forward Training:**
+```
+Timestep 1: Use π(1)  ← Different policy!
+Timestep 2: Use π(2)  ← Different policy!
+Timestep 3: Use π(3)  ← Different policy!
+...
+Timestep T: Use π(T) ← Different policy!
+```
+
+**The policy DEPENDS on t → NON-STATIONARY**
+
+## **The Key Difference**
+
+**Stationary:** π(state) - doesn't care what time it is
+**Non-Stationary:** π(state, t) - depends on current timestep
+
+## **SMILe at Execution**
+
+**Every timestep:**
+1. Look at current state
+2. Flip weighted coin to pick a sub-policy
+3. Use that sub-policy
+4. **The weights are the same at every timestep**
+
+**Example execution:**
+```
+t=1, state=A: Flip coin → pick π(3) → action = "go left"
+t=2, state=B: Flip coin → pick π(4) → action = "go straight"
+t=3, state=C: Flip coin → pick π(2) → action = "go right"
+```
+
+**Different sub-policies chosen, but same mixture weights!**
+
+## **Your Confusion**
+
+You might be thinking:
+
+"But the policy changes from π(2) to π(3) to π(4) as I execute!"
+
+**Answer:** That's just the **randomness** of which sub-policy gets selected. The **distribution** (the weights) stays the same.
+
+### **Analogy: Dice Rolling**
+
+**Stationary (SMILe):**
+- Roll a standard die every turn
+- Distribution: {1,2,3,4,5,6} each with 1/6 probability
+- You get different numbers, but the **die itself doesn't change**
+
+**Non-Stationary (Forward Training):**
+- Turn 1: Roll a 6-sided die
+- Turn 2: Roll an 8-sided die
+- Turn 3: Roll a 12-sided die
+- The **die itself changes** each turn
+
+## **Mathematical Definition**
+
+**Stationary:** π(a|s) - probability of action given state only
+**Non-Stationary:** π(a|s,t) - probability depends on state AND time
+
+**SMILe:** π(a|s) = Σ w(i) × π(i)(a|s)
+- Weights w(i) don't depend on t
+- Policy π(i) choices don't depend on t
+- Therefore: **STATIONARY**
+
+**Forward Training:** Use π(t)(a|s) at timestep t
+- Explicitly depends on t
+- Therefore: **NON-STATIONARY**
+
+## **Summary**
+
+**SMILe is stationary because:**
+- The **final mixture weights are fixed** after training
+- You use the **same mixture distribution** at every timestep
+- Only the **random selection** from that mixture varies
+- The policy function doesn't take timestep as input
+
+**The changes during training iterations are building the policy, not executing it!**
+
+Does this clarify why SMILe is stationary?

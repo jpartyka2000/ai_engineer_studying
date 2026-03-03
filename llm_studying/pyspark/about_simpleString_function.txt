@@ -1,0 +1,49 @@
+PySpark’s `simpleString()` is a method on the SQL `DataType` (and on composite types like `StructType`, `ArrayType`, etc.) that returns a concise, human-readable “DDL-style” description of that type. It’s most often used for debugging or serializing schemas in a compact form.
+
+For example:
+
+```python
+from pyspark.sql.types import IntegerType, StringType, ArrayType, StructType, StructField
+
+# Primitive types
+print(IntegerType().simpleString())        # 'int'
+print(StringType().simpleString())         # 'string'
+
+# A collection type
+arr = ArrayType(StringType())
+print(arr.simpleString())                  # 'array<string>'
+
+# A struct (record) type
+schema = StructType([
+    StructField("id",   IntegerType(), True),
+    StructField("name", StringType(),  True)
+])
+print(schema.simpleString())
+# 'struct<id:int,name:string>'
+```
+
+* **Where it lives**
+
+  * Under `pyspark.sql.types.DataType.simpleString()`, inherited by all built-in types ([spark.apache.org][1]).
+  * Composite types (`ArrayType`, `MapType`, `StructType`) override it to include nested type names in angle-bracket/`struct<>` notation ([sparkbyexamples.com][2]).
+
+* **What it’s for**
+
+  * Generating a compact, DDL-compatible string of a schema (e.g. for logging, debugging, or passing through to other Spark APIs).
+  * In contrast, `.json()` or `.jsonValue()` gives a verbose JSON schema, and `.typeName()` returns only the base type name (e.g. `"array"` for an `ArrayType`).
+
+---
+
+#### Advanced note: query plans
+
+There’s also a Java/Scala level `simpleString()` on Spark’s logical plans (accessible via the JVM), e.g.:
+
+```python
+# give you something like "Project [id#0, name#1] ..."
+plan_str = df._jdf.queryExecution().simpleString()
+```
+
+but in everyday PySpark you’ll most often encounter `simpleString()` on schema/DataType objects.
+
+[1]: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.types.DataType.html?utm_source=chatgpt.com "DataType — PySpark 4.0.0 documentation - Apache Spark"
+[2]: https://sparkbyexamples.com/pyspark/pyspark-sql-types-datatype-with-examples/?utm_source=chatgpt.com "PySpark SQL Types (DataType) with Examples"

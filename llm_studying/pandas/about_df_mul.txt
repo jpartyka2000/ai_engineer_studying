@@ -1,0 +1,132 @@
+The `DataFrame.mul()` method (aliased as `.mult()` in some docs) is pandas’ elementwise “multiply with alignment” routine.  Its key capabilities are:
+
+1. **Elementwise multiplication**
+2. **Automatic alignment** on index and/or columns
+3. **Broadcasting** when one operand is a Series
+4. **`fill_value`** to control how missing labels are treated
+
+---
+
+## Signature
+
+```python
+DataFrame.mul(
+    other, 
+    axis: {‘index’, ‘columns’} = ‘columns’, 
+    level: Hashable = None, 
+    fill_value: scalar = None
+) → DataFrame
+```
+
+* **`other`**: another DataFrame, Series, or scalar.
+* **`axis`**:
+
+  * If `other` is a **Series**, `axis='index'` (or `0`) means align the Series’ index to the DataFrame’s **rows**;
+  * `axis='columns'` (or `1`) means align to the DataFrame’s **columns**.
+* **`level`**: for MultiIndex, which level to align on.
+* **`fill_value`**: a scalar to use wherever one side is missing that label (instead of producing NaN).
+
+---
+
+## 1. Basic DataFrame × DataFrame
+
+```python
+df1 = pd.DataFrame({
+    'A': [1, 2],
+    'B': [3, 4]
+}, index=['x','y'])
+
+df2 = pd.DataFrame({
+    'A': [ 5,  6],
+    'C': [ 7,  8]
+}, index=['x','y'])
+
+df1.mul(df2)
+```
+
+```
+       A   B   C
+x   1*5 NaN NaN
+y   2*6 NaN NaN
+```
+
+Because `df2` has no column ‘B’, the result for B is all NaN.  If you instead do:
+
+```python
+df1.mul(df2, fill_value=1)
+```
+
+any missing label is treated as 1, so B stays unchanged:
+
+```
+       A    B    C
+x   5.0  3.0  7.0
+y  12.0  4.0  8.0
+```
+
+---
+
+## 2. DataFrame × Series (broadcasting)
+
+```python
+s = pd.Series({'A': 10, 'B': 100})
+df1.mul(s, axis='columns')
+```
+
+Here we multiply each **column** by the matching entry in `s`:
+
+```
+       A     B
+x   1*10  3*100
+y   2*10  4*100
+```
+
+If instead you had a Series whose index matches the **rows**:
+
+```python
+s2 = pd.Series({'x': 2, 'y': 3})
+df1.mul(s2, axis='index')
+```
+
+you’d get:
+
+```
+       A    B
+x    2    6
+y    6   12
+```
+
+---
+
+## 3. Why use `.mul()` instead of `*`?
+
+* Both align on labels by default, but `.mul()` lets you pass a **`fill_value`** to avoid NaNs when labels don’t perfectly match.
+* The **`axis`** parameter makes it explicit how a Series should be aligned (row‐wise vs. column‐wise).
+* Method chaining: you can write `df.filter(...).mul(...).sum(axis=1)` cleanly in a pipeline.
+
+---
+
+### In your case
+
+```python
+rule_prob_df = df_data[rule_cols].mul(prob_series, axis=1)
+```
+
+* `df_data[rule_cols]` is a DataFrame of 0/1’s, columns like `['rule1','rule2',…]`.
+* `prob_series` is a Series whose **index** is also `['rule1','rule2',…]` and whose **values** are the probabilities.
+* By specifying `axis=1`, pandas lines up **`prob_series.index` with the DataFrame’s columns**.
+* Each 1 becomes that rule’s probability, and each 0 becomes 0.
+
+If you instead got all NaNs, it means your Series’ index didn’t exactly match your DataFrame’s column labels—so pandas found “no common labels” and returned NaN everywhere.  You can fix that by making sure:
+
+```python
+prob_series.index.tolist() == df_data[rule_cols].columns.tolist()
+```
+
+or by re‐indexing the Series:
+
+```python
+prob_series = prob_series.reindex(df_data[rule_cols].columns).fillna(0)
+```
+
+Now your `.mul()` will produce the numeric matrix you expect, rather than all NaNs.

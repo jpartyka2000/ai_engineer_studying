@@ -1,0 +1,70 @@
+## Trajectory Turn Explanation
+
+A **trajectory turn** is one **step or exchange** in a conversation/interaction sequence between users, AI assistants, and tools.
+
+## Breaking Down the Turn Types:
+
+```python
+# A "trajectory" is a sequence of turns in order:
+trajectory = [
+    Turn 1: user → "What's the weather in NYC?"
+    Turn 2: assistant → "Let me check that for you"
+    Turn 3: tool_input → {"function": "get_weather", "params": {"city": "NYC"}}
+    Turn 4: tool_output → {"temp": 72, "conditions": "sunny"}
+    Turn 5: assistant → "It's 72°F and sunny in NYC"
+]
+```
+
+## Each Turn Represents:
+
+```python
+class TrajectoryCitation(BaseModel):
+    turn_index: int  # Position in conversation (0, 1, 2, ...)
+    turn_type: Literal["user", "assistant", "tool_input", "tool_output"]
+    snippet: Optional[str]  # Brief excerpt of what was said/done
+
+# Example citation pointing to specific turn:
+citation = TrajectoryCitation(
+    turn_index=3,  # 4th turn (zero-based)
+    turn_type="tool_output",
+    snippet="temp: 72, conditions: sunny"
+)
+```
+
+## Complete Example Trajectory:
+
+```python
+# Full conversation trajectory with citations:
+trajectory = [
+    # Turn 0
+    {"turn_type": "user", "content": "Calculate the tax on $1000 at 8%"},
+    
+    # Turn 1
+    {"turn_type": "assistant", "content": "I'll calculate that tax for you"},
+    
+    # Turn 2
+    {"turn_type": "tool_input", "content": "calculate(1000 * 0.08)"},
+    
+    # Turn 3
+    {"turn_type": "tool_output", "content": "80"},
+    
+    # Turn 4
+    {"turn_type": "assistant", "content": "The tax on $1000 at 8% is $80"}
+]
+
+# Citation referencing where the calculation came from:
+citation = TrajectoryCitation(
+    turn_index=3,  # Points to the tool_output turn
+    turn_type="tool_output",
+    snippet="80"
+)
+```
+
+## Why Track Trajectory Turns?
+
+1. **Evaluation** - Analyze each step of AI reasoning
+2. **Attribution** - Know where information came from
+3. **Debugging** - Identify which turn went wrong
+4. **Citations** - Reference specific moments in the interaction
+
+**Bottom line**: A trajectory turn is a **single interaction step** in a conversation flow - like one message, one tool call, or one response. The citation system lets you point back to specific turns to show where information or decisions originated.

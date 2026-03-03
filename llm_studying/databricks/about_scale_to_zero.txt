@@ -1,0 +1,72 @@
+The **scale-to-zero** feature in Databricks Model Serving is a cost-optimization mechanism that allows serving endpoints to scale down to **zero active instances** (workers) when there is no traffic. This feature ensures you only pay for compute resources when your model is actively serving requests, making it ideal for workloads with sporadic or low traffic.
+
+### Key Benefits of Scale-to-Zero
+1. **Cost Efficiency**:
+   - Eliminates idle compute costs when the endpoint is not receiving requests.
+   - Particularly useful for models that are infrequently used or during non-peak hours.
+
+2. **On-Demand Resource Allocation**:
+   - Automatically scales back up when new requests are received, ensuring resources are available when needed.
+
+3. **Simplified Management**:
+   - Reduces the need for manual intervention to stop and restart endpoints based on usage patterns.
+
+---
+
+### How Scale-to-Zero Works
+1. **Idle Detection**:
+   - Databricks monitors the serving endpoint for inactivity.
+   - After a predefined period of no incoming requests, the endpoint scales down to zero workers.
+
+2. **Cold Start**:
+   - When new requests arrive after the endpoint has scaled to zero, it triggers a **cold start**, where the necessary compute resources are provisioned, and the model is loaded back into memory.
+   - Cold starts may introduce slight latency during the first request.
+
+3. **Auto-Scaling**:
+   - Once active, the endpoint can scale further based on traffic demand, within the configured minimum and maximum worker limits.
+
+---
+
+### Configuration
+You can configure scale-to-zero by setting the **minimum number of workers** to `0` in the serving endpoint's configuration.
+
+#### Example YAML Configuration:
+```yaml
+endpoint:
+  name: my-scale-to-zero-endpoint
+  scale_settings:
+    min_workers: 0  # Enable scale-to-zero
+    max_workers: 10
+  model:
+    uri: "models:/my-model/production"
+```
+
+---
+
+### Use Cases for Scale-to-Zero
+1. **Occasional Model Usage**:
+   - Models that are used intermittently, such as in applications with seasonal traffic or on-demand analytics.
+
+2. **Development and Testing**:
+   - Serving endpoints in development or testing environments where constant availability is not required.
+
+3. **Cost-Conscious Applications**:
+   - Applications with budget constraints that benefit from reduced idle costs.
+
+---
+
+### Considerations for Scale-to-Zero
+1. **Cold Start Latency**:
+   - The first request after scaling to zero incurs additional latency due to resource provisioning and model loading.
+   - For latency-sensitive applications, you may want to set a small `min_workers` value (e.g., `1`) to keep at least one worker always available.
+
+2. **Traffic Patterns**:
+   - Scale-to-zero works best for workloads with infrequent or bursty traffic. Constant, high-throughput traffic is better served with a non-zero minimum worker configuration.
+
+3. **Monitoring**:
+   - Monitor endpoint performance and cold start latency to ensure it aligns with your application's requirements.
+
+---
+
+### Key Takeaways
+The **scale-to-zero** feature is a powerful tool in Databricks for optimizing costs without sacrificing on-demand availability. However, it requires careful consideration of cold start latency and workload patterns to ensure it meets the performance needs of your application.

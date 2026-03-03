@@ -1,0 +1,192 @@
+Great question! The paper doesn't specify one exact stopping criterion, but here are the common approaches:
+
+## **Common Stopping Criteria for SMILe**
+
+### **1. Fixed Number of Iterations (Most Common)**
+
+Simply decide ahead of time: "I'll do N iterations"
+
+```python
+for i in range(N):  # e.g., N = 10, 20, 50
+    # Train new policy π(i+1)
+    # Add to mixture
+```
+
+**Pros:** Simple, predictable
+**Cons:** Might stop too early or waste computation
+
+### **2. Performance Plateau (Validation-Based)**
+
+Stop when performance stops improving:
+
+```python
+best_performance = -infinity
+patience = 0
+max_patience = 5
+
+for i in range(max_iterations):
+    # Train π(i+1), add to mixture
+    current_performance = evaluate_on_validation_set()
+    
+    if current_performance > best_performance:
+        best_performance = current_performance
+        patience = 0
+    else:
+        patience += 1
+    
+    if patience >= max_patience:
+        break  # Stop! No improvement for 5 iterations
+```
+
+**This is mentioned in the original paper - return "best π(i) on validation"**
+
+### **3. Loss Threshold**
+
+Stop when you match the expert well enough:
+
+```python
+threshold = 0.05  # 5% error acceptable
+
+for i in range(max_iterations):
+    # Train π(i+1), add to mixture
+    loss = measure_loss_vs_expert()
+    
+    if loss < threshold:
+        break  # Good enough!
+```
+
+### **4. Computational Budget**
+
+Stop when you run out of time/samples:
+
+```python
+total_samples = 0
+max_samples = 100000
+
+while total_samples < max_samples:
+    # Collect trajectories (costs samples)
+    # Train new policy
+    # Add to mixture
+    total_samples += trajectories_collected
+```
+
+**Practical for real-world constraints**
+
+## **What the Original Paper Says**
+
+From the search results I found earlier:
+
+> "Return best π(i) on validation"
+
+This suggests they use **approach #2 (validation-based)**:
+- Train multiple iterations
+- Evaluate each mixture on a validation set
+- Return the best one
+
+## **Practical Implementation**
+
+**Most practitioners combine approaches:**
+
+```python
+# Hybrid approach
+max_iterations = 50
+patience_limit = 5
+min_improvement = 0.01
+
+best_val_performance = -infinity
+no_improvement_count = 0
+
+for i in range(max_iterations):
+    # Train and add policy
+    train_policy_i()
+    add_to_mixture()
+    
+    # Evaluate
+    val_perf = evaluate_mixture()
+    
+    # Check for meaningful improvement
+    if val_perf - best_val_performance > min_improvement:
+        best_val_performance = val_perf
+        no_improvement_count = 0
+        save_mixture()  # Save this as best so far
+    else:
+        no_improvement_count += 1
+    
+    # Early stopping
+    if no_improvement_count >= patience_limit:
+        print(f"Stopping at iteration {i}")
+        break
+
+return best_saved_mixture
+```
+
+## **How to Decide Stopping Criterion**
+
+**Choose based on your scenario:**
+
+**Fixed iterations if:**
+- You have computational budget constraints
+- You know roughly how many iterations work from experience
+- You want predictable runtime
+
+**Validation-based if:**
+- Performance is critical
+- You can afford extra computation
+- You have a good validation set
+
+**Loss threshold if:**
+- You have a specific accuracy target
+- You know what "good enough" means
+- You're deploying in safety-critical applications
+
+**Computational budget if:**
+- You're limited by time/money
+- You're doing hyperparameter search over many runs
+- You need to train many agents
+
+## **Typical Values (From Literature)**
+
+**Based on the experiments I found:**
+- **Simple tasks:** 5-15 iterations
+- **Medium tasks:** 15-30 iterations  
+- **Complex tasks:** 20-50 iterations
+
+**Example from search results:**
+- Mario Bros: ~20 iterations
+- Driving tasks: 15+ iterations
+
+## **What Happens If You Don't Stop?**
+
+**Keep adding policies forever?**
+
+**Potential issues:**
+1. **Overfitting to training distribution**
+2. **Diminishing returns** - later policies add little
+3. **Memory/computation costs** - storing many policies
+4. **Diluted weights** - each policy gets tiny weight
+
+**In practice:** Performance usually plateaus after some iterations
+
+## **Rule of Thumb**
+
+**Start with:**
+- Max iterations: 20-30
+- Patience: 3-5 iterations
+- Min improvement: 1% of metric range
+
+**Then tune based on:**
+- Validation performance
+- Computational budget  
+- Task complexity
+
+## **Summary**
+
+**You stop when:**
+1. **Fixed iterations reached** (most common for simplicity)
+2. **Performance plateaus** (most common for best results)
+3. **Loss threshold met** (if you have target accuracy)
+4. **Budget exhausted** (practical constraint)
+
+**The paper suggests validation-based stopping** - train multiple iterations and return the mixture that performs best on a held-out validation set.
+
+Does this answer your question about when to stop training SMILe?

@@ -1,0 +1,37 @@
+You don’t get to drop straight‐up JSON of your columns any more — you have to pick one of MLflow’s supported payload schemas and wrap your row(s) in it.  For a pandas-based (pyfunc) model on Databricks Serving Endpoints that means either:
+
+1. **Records format**
+
+   ```json
+   {
+     "dataframe_records": [
+       {
+         "overall_budget": 250000.0,
+         "n_iterations":   10000,
+         "pct_min_max":    0.5,
+         "ctr":            0.02,
+         "input_table":    "pathahead.tealhq_ecue.campaign_mc_data_april_2025"
+       }
+     ]
+   }
+   ```
+
+2. **Split format**
+
+   ```json
+   {
+     "dataframe_split": {
+       "columns": ["overall_budget","n_iterations","pct_min_max","ctr","input_table"],
+       "data": [
+         [250000.0,10000,0.5,0.02,"pathahead.tealhq_ecue.campaign_mc_data_april_2025"]
+       ]
+     }
+   }
+   ```
+
+or, if you’ve built a non-DataFrame signature, you can use the more generic
+
+* `"instances": [...]`
+* `"inputs": { field1: [...], field2: [...] }`
+
+keys.  But **you must** use exactly one of those top‐level wrappers — you can’t just POST a bare `{ "overall_budget": …, "n_iterations": … }` object.  The Serving endpoint will reject anything that isn’t under one of the recognized keys (`dataframe_records`, `dataframe_split`, `instances`, or `inputs`).

@@ -1,0 +1,28 @@
+There isn’t a built-in “tree score” in scikit‑learn’s SelectKBest. What some people refer to as a "tree score" is usually a custom scoring function that uses a tree-based model’s feature importance (for example, from the `feature_importances_` attribute of a RandomForest or ExtraTrees model) to rank the predictors.
+
+In other words, if you want to select the best features based on how important they are to a tree model, you’d need to write a custom score function that trains (or uses a pre-trained) tree-based estimator on your data and then returns a score for each feature (often the feature importance values). You can then pass that custom function to SelectKBest.
+
+For example, you could do something like:
+
+```python
+from sklearn.ensemble import ExtraTreesRegressor
+import numpy as np
+
+def tree_score(X, y):
+    # Train a tree-based model
+    model = ExtraTreesRegressor(n_estimators=50, random_state=42)
+    model.fit(X, y)
+    # Return the feature importances as scores
+    return model.feature_importances_
+```
+
+And then use:
+
+```python
+from sklearn.feature_selection import SelectKBest
+
+selector = SelectKBest(score_func=tree_score, k=5)
+X_new = selector.fit_transform(X, y)
+```
+
+Keep in mind that this custom score function will compute importances based on the tree model, which might differ from traditional statistical tests like ANOVA F-test (`f_classif`), mutual information, or chi-squared.

@@ -1,0 +1,43 @@
+Thought for a second
+
+
+Yes—you can browse all registered models and their versions either in the MLflow UI or programmatically via the Python client.
+
+---
+
+## 1) In the MLflow UI (Databricks or standalone)
+
+1. Go to your MLflow Tracking Server UI (in Databricks: **Models → Model Registry**).
+2. You’ll see a listing of every model name, with its latest version, stages, and creation times.
+3. Click any model name to drill into its versions, where you can see every registered entry (and its source run, metrics, tags, etc.).
+
+---
+
+## 2) Programmatically with `MlflowClient`
+
+```python
+from mlflow.tracking import MlflowClient
+
+client = MlflowClient()
+
+# List all model names (no versions)
+registered_models = client.list_registered_models()
+for rm in registered_models:
+    print(f"Model: {rm.name}, Creation Time: {rm.creation_timestamp}")
+
+# If you want every version of every model:
+for rm in registered_models:
+    versions = client.get_latest_versions(rm.name, stages=[])
+    # or use client.search_model_versions(f"name='{rm.name}'")
+    for v in versions:
+        print(f"{rm.name}  v{v.version}  stage={v.current_stage}  run_id={v.run_id}")
+```
+
+### Important client methods
+
+* `client.list_registered_models()`: returns each **registered model** (one entry per model name).
+* `client.search_registered_models(filter_string=None)`: like “list” but supports filters on name, tags, etc.
+* `client.search_model_versions(filter_string)`: returns every **version** matching a filter (e.g. `"name='MyModel'"`).
+* `client.get_latest_versions(name, stages=None)`: returns the latest version(s) in specified stage(s), or all if `stages=[]`.
+
+With those you can see every row—i.e. each registered model or each model version—in the registry.

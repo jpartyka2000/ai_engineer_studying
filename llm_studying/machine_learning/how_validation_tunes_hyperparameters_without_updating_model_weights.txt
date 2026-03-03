@@ -1,0 +1,93 @@
+When you use a validation set purely for hyper­parameter tuning, you’re running a two‐level optimization:
+
+1. Inner loop (weight training):
+
+You pick a candidate hyper­parameter configuration (learning rate, regularization strength, architecture choices, etc.).
+
+You train your model on the training set alone, updating its weights via gradient descent (or whatever optimizer) so as to minimize the training loss.
+
+At no point do gradients from the validation set flow back into the model’s weights.
+
+
+
+2. Outer loop (hyper­parameter search):
+
+Once that training run finishes (or at checkpoints, if you’re using early stopping), you evaluate the model’s performance on the validation set—for example, you compute validation loss or accuracy.
+
+The hyper­parameter search algorithm (grid search / random search / Bayesian optimization / evolutionary search, etc.) looks at that validation metric and decides which hyper­parameters to try next.
+
+You repeat the inner loop with a new set of hyper­parameters, always training on the training set and always evaluating on the validation set, but never using the validation labels to nudge the weights.
+
+
+
+
+
+---
+
+Pseudocode example
+
+best_score = +∞
+best_hypers = None
+
+for hypers in hyperparameter_grid:
+    # 1) INNER LOOP: train only on the training data
+    model = Model(**hypers)
+    model.fit(X_train, y_train)
+
+    # 2) EVALUATION: score only on the validation data
+    val_score = model.evaluate(X_val, y_val)
+
+    if val_score < best_score:
+        best_score = val_score
+        best_hypers = hypers
+
+# best_hypers is chosen based on validation performance
+
+Notice that:
+
+model.fit only “sees” (X_train, y_train) and updates weights accordingly.
+
+model.evaluate looks at (X_val, y_val) and returns a score, but does not touch the weights.
+
+The hyper­parameter loop simply keeps track of which settings gave the best validation score.
+
+
+
+---
+
+Early‑stopping as a special case
+
+Early‑stopping is really just tuning the “number of epochs” hyperparameter on the fly:
+
+1. After each epoch of training on the training set, you compute the validation loss.
+
+
+2. If validation loss hasn’t improved for k epochs, you stop training.
+
+
+3. You never backpropagate the validation loss—you're just watching it to decide when to halt.
+
+
+
+
+---
+
+Final model
+
+Once you’ve found the best hyper­parameters via validation:
+
+Option A: Retrain a fresh model on the combined training + validation sets (often recommended) using those hyper­parameters, then finally evaluate on your held‑out test set.
+
+Option B: If you’re confident in your validation‑only training, you can keep the weights from your best inner‐loop run and report those.
+
+
+
+---
+
+Key takeaways
+
+Training set ⇒ updates weights (inner loop).
+
+Validation set ⇒ selects hyper­parameters (outer loop), but ⇒ does not update weights.
+
+This separation ensures your model hasn’t “peaked” on validation data, preserving it as a proxy for unseen performance.

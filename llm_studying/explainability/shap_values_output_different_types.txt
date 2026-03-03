@@ -1,0 +1,52 @@
+The reason you sometimes get a **NumPy array** and other times a **list** when calling `explainer.shap_values(X_test)` is related to the **type of machine learning model** you are using and how SHAP handles **different output types** (e.g., regression vs. classification, binary classification vs. multiclass classification).
+
+Here’s why this happens:
+
+### 1. **Regression Models** (or models with a single output):
+For **regression models** or any model that has a **single output** (e.g., a binary classifier that returns one probability score), SHAP returns a **NumPy array** of SHAP values. This is because there is only one set of SHAP values for each instance, corresponding to the single output.
+
+Example:
+```python
+shap_values = explainer.shap_values(X_test)  # For regression or binary classification
+# shap_values is a NumPy array
+```
+
+### 2. **Multiclass Classification Models**:
+For **multiclass classification models**, SHAP returns a **list of NumPy arrays**. Each element of the list corresponds to the SHAP values for one class in the model. So, if your model is classifying into 3 classes, the `shap_values` will be a list with 3 NumPy arrays, one for each class.
+
+Example:
+```python
+shap_values = explainer.shap_values(X_test)  # For multiclass classification
+# shap_values is a list of NumPy arrays, one for each class
+```
+
+Each NumPy array in the list has the same shape as the input data (`X_test`), but the SHAP values are computed separately for each class.
+
+### Why This Happens:
+- **Regression or Binary Classification**: SHAP values are returned as a single matrix (NumPy array) because there is only one output to explain (a single numeric prediction or probability score).
+  
+- **Multiclass Classification**: SHAP values are returned as a list of matrices (one per class) because SHAP needs to explain the prediction for **each class separately**. Therefore, it returns a list, where each element is a matrix of SHAP values for a specific class.
+
+### Example:
+- For a **binary classification model**, SHAP returns an array of SHAP values (because there is only one output per instance).
+- For a **multiclass classification model** with 3 classes, SHAP returns a list with 3 NumPy arrays, each corresponding to the SHAP values for one class.
+
+### How to Handle It:
+- If `shap_values` is a **list** (for multiclass), you can access the SHAP values for a particular class by indexing the list:
+
+  ```python
+  # Get SHAP values for the first class
+  shap_values_class_0 = shap_values[0]
+  ```
+
+- If `shap_values` is a **NumPy array**, you can use it directly:
+
+  ```python
+  # Directly use the SHAP values
+  shap_values_array = shap_values
+  ```
+
+### Conclusion:
+The return type of `explainer.shap_values()` depends on the type of model:
+- **NumPy array** for regression or binary classification models (single output).
+- **List of NumPy arrays** for multiclass classification models (multiple outputs).

@@ -1,0 +1,79 @@
+No, helper functions **do not have to be called directly by a unit test function** for them to work. However, for `pytest` to properly inject and manage fixtures, the helper function must be executed **within a test context** where `pytest` is running.
+
+### **Key Points:**
+- Helper functions **can be used anywhere** in the test file (or imported from another module).
+- They can be called **by test functions, other helper functions, or test setup code**.
+- As long as a test is being executed, and the helper function accesses a fixture properly (e.g., using `request.getfixturevalue`), it will work.
+
+---
+
+### **Example 1: Helper Function Called Inside a Test**
+```python
+import pytest
+
+# Fixture
+@pytest.fixture
+def sample_fixture():
+    return "Hello from fixture!"
+
+# Helper function that uses request to fetch fixture value
+def fetch_fixture_value(request, fixture_name):
+    return request.getfixturevalue(fixture_name)
+
+# Test function that calls the helper
+def test_using_helper_function(request):
+    value = fetch_fixture_value(request, "sample_fixture")
+    assert value == "Hello from fixture!"
+```
+✅ **Works because `fetch_fixture_value` is called inside a test.**
+
+---
+
+### **Example 2: Helper Function Called by Another Helper**
+```python
+import pytest
+
+@pytest.fixture
+def sample_fixture():
+    return "Hello from fixture!"
+
+# Helper function
+def fetch_fixture_value(request, fixture_name):
+    return request.getfixturevalue(fixture_name)
+
+# Another helper function calling fetch_fixture_value
+def another_helper_function(request):
+    return fetch_fixture_value(request, "sample_fixture")
+
+# Test calling the second helper
+def test_using_another_helper(request):
+    value = another_helper_function(request)
+    assert value == "Hello from fixture!"
+```
+✅ **Works because `another_helper_function` is eventually used inside a test.**
+
+---
+
+### **Example 3: Helper Function Called Outside Any Test (Won't Work)**
+```python
+import pytest
+
+@pytest.fixture
+def sample_fixture():
+    return "Hello from fixture!"
+
+def fetch_fixture_value(request, fixture_name):
+    return request.getfixturevalue(fixture_name)
+
+# ❌ Attempting to call it outside of a test will cause an error
+value = fetch_fixture_value(None, "sample_fixture")  # Will raise an error
+```
+❌ **Fails because `request` is `None` outside of `pytest` execution.**
+
+---
+
+### **Conclusion**
+- **Yes**, helper functions can be used **without being directly called by a test function**, as long as they are called within a pytest execution context.
+- **No**, they **won't work** if called outside of the pytest test execution (e.g., in global scope).
+
+Would you like an example of **class-based tests** or using helper functions in **conftest.py**? 🚀

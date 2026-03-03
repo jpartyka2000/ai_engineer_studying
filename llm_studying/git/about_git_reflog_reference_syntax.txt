@@ -1,0 +1,183 @@
+============================================================
+GIT REFLOG REFERENCES — HOW TO USE HEAD@{N} SYNTAX
+============================================================
+
+WHAT ARE REFLOG REFERENCES?
+------------------------------------------------------------
+Reflog references let you point to previous states of HEAD 
+(or any branch) using a special syntax. Instead of needing 
+the exact commit hash, you can reference positions in your 
+action history.
+
+Basic syntax:
+  <ref>@{<qualifier>}
+
+Examples:
+  HEAD@{1}        → HEAD one action ago
+  main@{3}        → main branch three actions ago
+  HEAD@{yesterday} → Where HEAD was yesterday
+
+
+NUMERIC REFERENCES: HEAD@{N}
+------------------------------------------------------------
+Reference HEAD by how many actions ago:
+
+  HEAD@{0}    → Current position (same as HEAD)
+  HEAD@{1}    → One action ago
+  HEAD@{2}    → Two actions ago
+  HEAD@{5}    → Five actions ago
+  ...and so on
+
+Example scenario:
+  git reflog
+  ┌──────────────────────────────────────────────────────┐
+  │ a1b2c3d HEAD@{0}: reset: moving to HEAD~3            │
+  │ f4e5d6c HEAD@{1}: commit: Add payment feature        │
+  │ 9h8i7j6 HEAD@{2}: commit: Update checkout            │
+  │ k1l2m3n HEAD@{3}: commit: Fix cart bug               │
+  │ p5q6r7s HEAD@{4}: checkout: moving from dev to main  │
+  └──────────────────────────────────────────────────────┘
+
+To undo the reset and restore those 3 commits:
+  git reset --hard HEAD@{1}
+  
+Now HEAD points to f4e5d6c again.
+
+
+TIME-BASED REFERENCES: HEAD@{time}
+------------------------------------------------------------
+Reference HEAD by when it was at that state:
+
+  HEAD@{yesterday}
+  HEAD@{2.days.ago}
+  HEAD@{1.week.ago}
+  HEAD@{2024-12-01}
+  HEAD@{3.hours.ago}
+  HEAD@{2.minutes.ago}
+  HEAD@{"2024-12-15 14:30:00"}
+
+Examples:
+  git show HEAD@{yesterday}
+  git diff HEAD@{1.week.ago} HEAD
+  git reset --hard HEAD@{2.hours.ago}
+
+
+BRANCH-SPECIFIC REFERENCES: branch@{N}
+------------------------------------------------------------
+You can reference any branch's reflog, not just HEAD:
+
+  main@{1}           → main branch one action ago
+  feature@{3}        → feature branch three actions ago
+  origin/main@{1}    → remote tracking branch one ago
+
+Examples:
+  git log main@{1}..main        # What changed on main
+  git diff feature@{5} feature  # Compare feature's history
+
+
+UPSTREAM REFERENCE: branch@{upstream} or @{u}
+------------------------------------------------------------
+Reference a branch's upstream (remote tracking branch):
+
+  main@{upstream}    → origin/main (or whatever tracks main)
+  main@{u}           → Same, shorthand
+  @{u}               → Upstream of current branch
+
+Examples:
+  git log @{u}..HEAD             # Local commits not yet pushed
+  git diff @{upstream}           # Changes vs remote
+  git merge @{u}                 # Merge upstream into current
+
+
+COMMANDS THAT ACCEPT REFLOG REFERENCES
+------------------------------------------------------------
+Almost any Git command that takes a commit reference:
+
+VIEWING
+  git show HEAD@{2}
+  git log HEAD@{5}..HEAD
+  git diff HEAD@{yesterday} HEAD
+  git log main@{1.week.ago}..main
+
+RESETTING
+  git reset --hard HEAD@{1}
+  git reset --soft HEAD@{3}
+  git reset --mixed HEAD@{2}
+
+BRANCHING
+  git checkout -b recovery HEAD@{4}
+  git branch backup HEAD@{2}
+
+CHERRY-PICKING
+  git cherry-pick HEAD@{3}
+
+COMPARING
+  git diff HEAD@{3} HEAD@{0}
+  git diff main@{yesterday} main
+
+
+PRACTICAL RECOVERY EXAMPLES
+------------------------------------------------------------
+SCENARIO 1: Undo accidental reset
+  $ git reset --hard HEAD~5      # Oops! Lost 5 commits
+  $ git reflog                   # Find where you were
+  $ git reset --hard HEAD@{1}    # Go back one action
+
+SCENARIO 2: Recover branch deleted yesterday
+  $ git branch -D feature        # Oops!
+  $ git reflog                   # Find feature's last commit
+  $ git checkout -b feature HEAD@{2}
+
+SCENARIO 3: Compare today vs yesterday
+  $ git diff HEAD@{yesterday} HEAD
+  $ git log HEAD@{yesterday}..HEAD --oneline
+
+SCENARIO 4: Undo bad merge
+  $ git merge buggy-branch       # Oops, broke everything
+  $ git reset --hard HEAD@{1}    # Before the merge
+
+SCENARIO 5: See what you did last week on main
+  $ git log main@{1.week.ago}..main --oneline
+
+
+IMPORTANT NOTES
+------------------------------------------------------------
+- HEAD@{N} counts ACTIONS, not commits
+    - A checkout counts as an action
+    - A reset counts as an action
+    - Even failed commands may count
+
+- Branch@{N} is LOCAL per branch
+    - Each branch has its own reflog
+    - Deleting a branch deletes its reflog
+
+- Time-based references use LOCAL reflog times
+    - Based on when YOU performed the action
+    - Not when the commit was originally authored
+
+- Quotes may be needed for complex time expressions
+    - git show HEAD@{"1 month 2 weeks ago"}
+    - git show HEAD@{"2024-12-15 09:30:00"}
+
+- Reflog entries expire (~90 days default)
+    - Unreachable commits: 30 days
+    - Reachable commits: 90 days
+    - Configurable via gc.reflogExpire
+
+
+QUICK REFERENCE CHEAT SHEET
+------------------------------------------------------------
+┌─────────────────────────┬────────────────────────────────┐
+│ Reference               │ Meaning                        │
+├─────────────────────────┼────────────────────────────────┤
+│ HEAD@{0}                │ Current HEAD                   │
+│ HEAD@{1}                │ Previous action                │
+│ HEAD@{N}                │ N actions ago                  │
+│ HEAD@{yesterday}        │ HEAD as of yesterday           │
+│ HEAD@{2.weeks.ago}      │ HEAD as of 2 weeks ago         │
+│ main@{3}                │ main branch 3 actions ago      │
+│ @{u} or @{upstream}     │ Current branch's upstream      │
+│ main@{u}                │ main's upstream                │
+└─────────────────────────┴────────────────────────────────┘
+
+============================================================

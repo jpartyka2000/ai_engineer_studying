@@ -1,0 +1,80 @@
+You can grab a reference to the “current” event loop in a couple of ways, depending on whether you’re inside a coroutine or in regular (synchronous) code:
+
+---
+
+## 1. From synchronous code
+
+```python
+import asyncio
+
+# This will return the loop for the current thread, creating one if necessary:
+loop = asyncio.get_event_loop()
+```
+
+> **Note:**
+>
+> * In Python 3.10+, calling `get_event_loop()` when no loop is running will still create one, but you’ll get a `DeprecationWarning` in future releases.
+
+If you explicitly want to create a brand-new loop (and not rely on any “current” one), you can do:
+
+```python
+import asyncio
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+```
+
+---
+
+## 2. From inside a coroutine
+
+Once you’re already running inside `async def`, you can do:
+
+```python
+import asyncio
+
+async def foo():
+    loop = asyncio.get_running_loop()
+    # now you can use loop to schedule callbacks, create tasks, etc.
+    task = loop.create_task(other_coro())
+    …
+```
+
+* `get_running_loop()` will raise a `RuntimeError` if you call it outside of an active event loop (i.e. outside of an `async` context).
+
+---
+
+### Why two methods?
+
+* **`get_event_loop()`** (sync)
+
+  * Creates or returns the loop associated with the current OS thread.
+  * Can be called anywhere, but will warn in newer Python if no loop is running.
+* **`get_running_loop()`** (async)
+
+  * Safe to call only when *you know* you’re inside a loop; raises otherwise.
+  * Encourages clearer separation between “setup” (outside) and “in-loop” logic.
+
+---
+
+### Example putting it all together
+
+```python
+import asyncio
+
+async def worker():
+    loop = asyncio.get_running_loop()
+    print("Got running loop:", loop)
+
+def main():
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(worker())
+    finally:
+        loop.close()
+
+if __name__ == "__main__":
+    main()
+```
+
+This prints your loop’s repr and then cleanly shuts down.

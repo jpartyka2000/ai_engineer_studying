@@ -1,0 +1,108 @@
+ANSI color codes are special sequences of characters—known as **ANSI escape codes**—that you embed in text to control formatting, color, and other output options on terminals that support them. They originate from the ANSI X3.64 standard and are widely supported in Unix-like environments (and even on Windows via recent consoles).
+
+Here’s a breakdown of how they work and the most common usages:
+
+---
+
+## 1. The Basics: Escape and CSI
+
+1. **Escape character**: `ESC` (ASCII 27), often written as `\x1b` or `\033`.
+2. **Control Sequence Introducer (CSI)**: after `ESC`, a `[` (left bracket) begins a control sequence.
+
+So any ANSI code starts with:
+
+```
+ESC [  …commands…  m
+```
+
+In a string literal you might write that as `"\x1b[...m"` or `"\033[...m"`.
+
+---
+
+## 2. Select Graphic Rendition (SGR) Parameters
+
+The final letter `m` selects **Graphic Rendition** parameters (i.e., colors, bold, underline, etc.). You can send one or more numeric parameters separated by semicolons (`;`). Some key SGR parameters:
+
+|   Code  | Meaning                                                 |
+| :-----: | :------------------------------------------------------ |
+|    0    | Reset all attributes                                    |
+|    1    | Bold/intense                                            |
+|    4    | Underline                                               |
+|    7    | Invert (swap fg/bg)                                     |
+|  30–37  | Set **foreground** to one of 8 basic colors (see below) |
+|  40–47  | Set **background** to one of 8 basic colors             |
+|  90–97  | Set **foreground** to one of 8 “bright” colors          |
+| 100–107 | Set **background** to one of 8 “bright” colors          |
+
+---
+
+## 3. The 8 Basic Colors
+
+The codes 30 through 37 map to these standard colors:
+
+| Code | Color   |
+| :--: | :------ |
+|  30  | Black   |
+|  31  | Red     |
+|  32  | Green   |
+|  33  | Yellow  |
+|  34  | Blue    |
+|  35  | Magenta |
+|  36  | Cyan    |
+|  37  | White   |
+
+For example:
+
+```bash
+echo -e "\033[31mThis is red text\033[0m"
+```
+
+Here, `\033[31m` turns text red, and `\033[0m` resets back to default.
+
+---
+
+## 4. Extended Colors: 256-Color and True Color
+
+### 4.1. 256-Color Mode
+
+Use the “38;5;<n>” (foreground) or “48;5;<n>” (background) sequence, where `<n>` is 0–255.
+
+```bash
+# Bright orange (color 202):
+echo -e "\033[38;5;202mOrange text\033[0m"
+```
+
+### 4.2. 24-Bit True Color
+
+Use “38;2;<r>;<g>;<b>” or “48;2;<r>;<g>;<b>” for full RGB:
+
+```bash
+# A specific purple:
+echo -e "\033[38;2;128;0;128mPurple text\033[0m"
+```
+
+---
+
+## 5. Combining Attributes
+
+You can chain multiple parameters. For example, bold bright green on magenta background:
+
+```bash
+echo -e "\033[1;92;45mBold bright-green on magenta\033[0m"
+```
+
+* `1`     → bold
+* `92`    → bright green foreground
+* `45`    → magenta background
+
+---
+
+## 6. Practical Tips
+
+* **Resetting**: Always end with `\033[0m` (or `ESC[0m`) to avoid “bleeding” colors into subsequent text.
+* **Portability**: Not all terminals support true-color or even 256-color; scripts should detect `TERM` or use libraries (e.g., Python’s `colorama`, Node’s `chalk`) that handle fallbacks.
+* **Readability**: For complex styling, it’s often easiest to build small helper functions or use a dedicated library.
+
+---
+
+With ANSI color codes, you can make terminal output more readable, highlight errors or warnings, and create more user-friendly CLI applications.

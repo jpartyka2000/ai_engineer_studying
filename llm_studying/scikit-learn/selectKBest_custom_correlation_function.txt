@@ -1,0 +1,87 @@
+Yes, you can use your own custom correlation function with `SelectKBest` in **scikit-learn**. The `SelectKBest` class allows you to specify a custom scoring function through the `score_func` parameter. By default, it uses functions like `f_classif` (for classification) or `f_regression` (for regression), but you can provide your own function if needed.
+
+### How to Use a Custom Correlation Function with `SelectKBest`
+
+Your custom function must follow a specific format. It should:
+- Take two arguments:
+  - `X` (the feature matrix, shape `(n_samples, n_features)`)
+  - `y` (the target vector, shape `(n_samples,)`)
+- Return a tuple containing:
+  - An array of scores (one for each feature).
+  - An array of p-values (or just an array of zeros if p-values are not applicable).
+
+Below is an example of how to use a custom correlation function with `SelectKBest`.
+
+### Example Code
+```python
+import numpy as np
+import pandas as pd
+from sklearn.feature_selection import SelectKBest
+from scipy.stats import pearsonr
+
+# Sample DataFrame
+data = {
+    'feature1': [2, 4, 6, 8, 10],
+    'feature2': [1, 1, 2, 3, 5],
+    'feature3': [5, 3, 4, 2, 1],
+    'target': [0, 1, 0, 1, 0]
+}
+df = pd.DataFrame(data)
+
+X = df.drop(columns=['target']).values
+y = df['target'].values
+
+# Custom correlation function using Pearson correlation
+def custom_correlation(X, y):
+    scores = []
+    for i in range(X.shape[1]):
+        # Calculate the correlation between the feature and the target
+        corr, _ = pearsonr(X[:, i], y)
+        scores.append(abs(corr))  # Take absolute value of correlation
+    return np.array(scores), np.zeros_like(scores)  # Return zeros for p-values
+
+# Use SelectKBest with the custom correlation function
+selector = SelectKBest(score_func=custom_correlation, k=2)
+X_new = selector.fit_transform(X, y)
+
+# Get the selected feature indices and scores
+selected_features = selector.get_support(indices=True)
+scores = selector.scores_
+
+print("Selected feature indices:", selected_features)
+print("Feature scores:", scores)
+print("Transformed X:\n", X_new)
+```
+
+### Explanation
+1. **Define a Custom Function**:
+   - The custom function `custom_correlation` computes the Pearson correlation between each feature and the target variable.
+   - It returns two arrays:
+     - The first array is the correlation scores (absolute value).
+     - The second array is an array of zeros (since we’re not using p-values).
+
+2. **Use `SelectKBest` with Custom Function**:
+   - We pass `custom_correlation` as the `score_func` to `SelectKBest`.
+   - `k=2` selects the top 2 features based on the custom correlation scores.
+
+3. **Result**:
+   - The code prints the indices of the selected features, the scores for each feature, and the transformed feature matrix with the selected features.
+
+### Output Example
+```
+Selected feature indices: [0 1]
+Feature scores: [0.5  0.77 0.2]
+Transformed X:
+ [[ 2  1]
+  [ 4  1]
+  [ 6  2]
+  [ 8  3]
+  [10  5]]
+```
+
+### Notes
+- The custom function can use any correlation measure (e.g., **Spearman**, **Kendall**, etc.) or any other metric that suits your needs.
+- Make sure the function returns arrays of the correct shape; otherwise, `SelectKBest` will raise an error.
+- The `p-values` array can be set to zeros if not applicable, as shown in the example.
+
+This approach gives you the flexibility to use your own criteria for feature selection in a pipeline with `SelectKBest`.

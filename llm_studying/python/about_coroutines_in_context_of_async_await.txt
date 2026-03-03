@@ -1,0 +1,51 @@
+In Python’s `async`/`await` world, a **coroutine** is essentially a function that can **pause** and **resume** its execution, allowing other work to happen in the meantime. Concretely:
+
+1. **Definition**
+
+   * You create a coroutine by marking a function with `async def`:
+
+     ```python
+     async def my_task():
+         # this is a coroutine function
+         await asyncio.sleep(1)
+         return "done"
+     ```
+   * Calling `my_task()` **does not** run it immediately. Instead it returns a **coroutine object**, which is like a “promise” to do that work later.
+
+2. **Execution via `await` or the event loop**
+
+   * You hand that coroutine object to the event loop (e.g. via `await my_task()` inside another coroutine, or `asyncio.run(my_task())` at top‐level).
+   * When you `await`, the interpreter runs your coroutine until it hits another `await` or completes, then gives control back to the event loop so other coroutines can make progress.
+
+3. **Why they matter**
+
+   * They let you write non-blocking I/O code (HTTP calls, file access, AI model calls) without threading or callbacks.
+   * While one coroutine is waiting (e.g. for network I/O), the event loop can switch to another, improving concurrency.
+
+4. **Coroutine vs. generator**
+
+   * Under the hood, coroutines are a special kind of generator (they use `yield` internally), but with a cleaner syntax and integration into `asyncio`.
+   * You **never** `.send()` into them yourself; you interact via `await`.
+
+5. **In the agent example**
+
+   * `agent.act(...)` is itself an **async function**—so calling it gives you a coroutine.
+   * That coroutine implements `__aiter__`, making it an **asynchronous iterable**.
+   * The `async for` loop repeatedly **awaits** its `__anext__()` method to pull out each event as it becomes available.
+
+---
+
+### Visualizing the lifecycle
+
+```text
+                       ┌────────────┐
+ call async def f() ──▶│ coroutine  │─┬─▶ runs until first await
+                       └────────────┘ │
+                                      │ awaits I/O or sleep
+                                      ▼
+                               event loop does other work
+                                      ▲
+                                      │ resumes f() when ready
+```
+
+Each time you `await` inside that coroutine, you give the event loop a chance to switch to other tasks—so a single thread can juggle many concurrent operations.

@@ -1,0 +1,69 @@
+In asyncio you’re dealing with two kinds of APIs:
+
+1. **Coroutine functions** (declared with `async def`)
+2. **Regular (synchronous) functions/methods** on the event loop or helper APIs
+
+---
+
+### 1. Coroutine functions must be awaited (or scheduled)
+
+Any function defined as:
+
+```python
+async def foo(...):
+    …
+```
+
+returns a *coroutine object* when you call it, e.g.:
+
+```python
+coro = foo(...)
+```
+
+You must either:
+
+* **`await` it** inside another coroutine:
+
+  ```python
+  result = await foo(...)
+  ```
+* **Schedule it** as a Task (which itself you don’t await, but whose result you can later):
+
+  ```python
+  task = asyncio.create_task(foo(...))
+  # `task` is a Task object, running in background
+  result = await task   # later, if you want the return value
+  ```
+
+If you neither `await` nor schedule it, nothing runs—you’ll get a warning about an un-awaited coroutine.
+
+---
+
+### 2. Non-`async` asyncio methods don’t need `await`
+
+There are plenty of asyncio APIs that are *synchronous* functions (normal `def`), and you can call them from either sync or async context without `await`. Common examples:
+
+```python
+loop = asyncio.get_event_loop()        # normal function
+task = loop.create_task(my_coro())     # schedules a coroutine
+fut  = asyncio.ensure_future(my_coro())# schedules a coroutine
+asyncio.sleep(1)                       # this *is* a coroutine, so must await
+asyncio.get_running_loop()             # regular function
+loop.add_reader(fd, callback)          # register a callback
+```
+
+* **`loop.create_task()`** or **`asyncio.create_task()`**
+  Returns a `Task` immediately—no `await` needed to *call* it. The *task’s work* happens later on the event loop.
+
+* **`asyncio.get_event_loop()`**, **`asyncio.get_running_loop()`**, **`loop.add_reader()`**, **`loop.set_exception_handler()`**, etc.
+  These are synchronous and don’t return coroutines, so you just call them.
+
+---
+
+### Putting it all together
+
+* **Coroutines** (what you write with `async def` or functions like `asyncio.sleep`) must be either awaited or wrapped in a Task/Future.
+* **Tasks/Futures** are plain objects and *calling* the scheduler (e.g. `create_task`, `ensure_future`, `run_until_complete`) is a normal function call.
+* **Event-loop APIs** (inspectors, callbacks, exception handlers, etc.) are also normal functions.
+
+So: **other than** high-level entry-points like `asyncio.run()`, **every coroutine** you call must ultimately be `await`ed or scheduled—but you do *not* `await` the scheduling calls themselves.

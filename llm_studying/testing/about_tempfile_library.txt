@@ -1,0 +1,39 @@
+The `tempfile` library is a Python standard library module that creates temporary files and directories. It's particularly useful in testing because it:
+
+**Core Functions:**
+
+| Function | Description |
+|----------|-------------|
+| `NamedTemporaryFile()` | Creates a temporary file with a visible name in the filesystem |
+| `TemporaryFile()` | Creates a temporary file (may not have a visible name) |
+| `TemporaryDirectory()` | Creates a temporary directory |
+| `mkstemp()` | Creates a temp file and returns (file descriptor, path) |
+| `mkdtemp()` | Creates a temp directory and returns the path |
+
+**Key Benefits:**
+
+1. **Automatic cleanup** - Files/directories are deleted when closed or when used with context managers
+2. **Unique names** - Guarantees no naming collisions
+3. **Secure** - Creates files with restricted permissions
+4. **Cross-platform** - Works on Windows, Linux, macOS
+
+**How I used it in the tests:**
+
+```python
+# Creates a temp file, yields its path, then deletes it after the test
+@pytest.fixture
+def temp_seed_file(seed_questions_jsonl):
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+        f.write(seed_questions_jsonl)
+        temp_path = f.name
+    yield temp_path
+    Path(temp_path).unlink(missing_ok=True)  # Cleanup
+
+# Creates a temp directory that auto-deletes when context exits
+@pytest.fixture
+def temp_data_dir():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
+```
+
+This ensures tests don't leave behind files and don't interfere with each other or the real filesystem.

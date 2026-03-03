@@ -1,0 +1,96 @@
+**`F.regexp_extract()` in PySpark**
+
+Extracts a substring from a column using a regular expression pattern.
+
+**Syntax:**
+
+```python
+F.regexp_extract(col, pattern, group_index)
+```
+
+- `col` – the column to search
+- `pattern` – a regex pattern (Java regex syntax)
+- `group_index` – which capture group to return (0 = entire match, 1+ = specific groups)
+
+**Basic example:**
+
+```python
+from pyspark.sql import functions as F
+
+df = spark.createDataFrame([
+    ("Order: 12345",),
+    ("Order: 67890",),
+    ("No order here",)
+], ["text"])
+
+df.withColumn(
+    "order_num",
+    F.regexp_extract(F.col("text"), r"Order: (\d+)", 1)
+).show()
+```
+
+**Output:**
+
+```
++-------------+---------+
+|         text|order_num|
++-------------+---------+
+| Order: 12345|    12345|
+| Order: 67890|    67890|
+|No order here|         |
++-------------+---------+
+```
+
+**Understanding `group_index`:**
+
+```python
+pattern = r"(\w+)@(\w+)\.(\w+)"
+text = "user@example.com"
+
+# group_index=0 → entire match: "user@example.com"
+# group_index=1 → first group: "user"
+# group_index=2 → second group: "example"
+# group_index=3 → third group: "com"
+```
+
+**Example with multiple groups:**
+
+```python
+df = spark.createDataFrame([("user@example.com",)], ["email"])
+
+df.select(
+    F.regexp_extract(F.col("email"), r"(\w+)@(\w+)\.(\w+)", 0).alias("full"),
+    F.regexp_extract(F.col("email"), r"(\w+)@(\w+)\.(\w+)", 1).alias("user"),
+    F.regexp_extract(F.col("email"), r"(\w+)@(\w+)\.(\w+)", 2).alias("domain"),
+    F.regexp_extract(F.col("email"), r"(\w+)@(\w+)\.(\w+)", 3).alias("tld"),
+).show()
+```
+
+**Output:**
+
+```
++----------------+----+-------+---+
+|            full|user| domain|tld|
++----------------+----+-------+---+
+|user@example.com|user|example|com|
++----------------+----+-------+---+
+```
+
+**Important behavior:**
+
+- Returns empty string `""` when no match is found (not null)
+- Uses Java regex syntax
+- Only extracts the first match in the string
+
+**Common patterns:**
+
+```python
+# Extract digits
+F.regexp_extract(F.col("text"), r"(\d+)", 1)
+
+# Extract word after a keyword
+F.regexp_extract(F.col("text"), r"status:\s*(\w+)", 1)
+
+# Extract domain from URL
+F.regexp_extract(F.col("url"), r"https?://([^/]+)", 1)
+```

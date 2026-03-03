@@ -1,0 +1,49 @@
+`"neg_mean_absolute_error"` is one of the built-in scoring metrics provided by scikit-learn for regression problems. Here's a deeper dive into what it is and why it's used:
+
+### What is Mean Absolute Error (MAE)?
+
+- **Definition:**  
+  Mean Absolute Error (MAE) is a measure of error that computes the average absolute difference between predicted values and actual values. For a set of predictions \( \hat{y}_i \) and actual values \( y_i \) (for \( i = 1, \dots, n \)), the MAE is defined as:
+  \[
+  \text{MAE} = \frac{1}{n} \sum_{i=1}^n |\hat{y}_i - y_i|
+  \]
+  Lower values of MAE indicate better model performance since the predictions are closer to the true values.
+
+### Why "neg_mean_absolute_error" Instead of "mean_absolute_error"?
+
+- **Maximization vs. Minimization:**  
+  Many scikit-learn functions like `cross_val_score` are designed under the assumption that higher scores indicate better performance. However, when you compute errors (like MAE), lower values are desirable. To resolve this, scikit-learn inverts the MAE by taking its negative.  
+  Therefore, `"neg_mean_absolute_error"` is defined as:
+  \[
+  \text{neg\_MAE} = -\text{MAE}
+  \]
+  With this definition, a higher (i.e., less negative) score corresponds to a lower MAE, and hence, a better model.
+
+- **Consistency in Evaluation:**  
+  By using `"neg_mean_absolute_error"`, you can leverage scikit-learn’s evaluation pipelines (such as `cross_val_score`) without needing to customize them. This way, you're always aiming to maximize the returned score, whether it’s a performance metric where higher is better or an error metric that’s been negated.
+
+### How It's Used in Your Code
+
+In your code snippet:
+
+```python
+if goal_value == "regression":
+    model_tmp = RandomForestRegressor(random_state=42)
+    scoring = "neg_mean_absolute_error"  # Higher (closer to 0) is better.
+```
+
+- **Model Selection:**  
+  You create an instance of `RandomForestRegressor` for regression problems.
+
+- **Scoring Metric:**  
+  You set the scoring metric to `"neg_mean_absolute_error"`. When the model is evaluated using cross-validation, scikit-learn will compute the MAE for each fold, take its negative, and then average these scores.  
+  - For example, if one fold has an MAE of 2.5, `"neg_mean_absolute_error"` for that fold will be -2.5.
+  - If your model improves and the MAE decreases to 1.5, the score becomes -1.5, which is "higher" (less negative) than -2.5, indicating an improvement.
+
+### Summary
+
+- **`"neg_mean_absolute_error"`** is simply the negative of the mean absolute error.
+- **Purpose:** It allows the evaluation function (which maximizes scores) to work with an error metric.
+- **Interpretation:** A score closer to 0 (i.e., less negative) is better, meaning the model predictions have a lower average absolute error.
+
+This conversion is common practice when optimizing models with error metrics in scikit-learn, ensuring that all scores can be treated in a maximization framework.

@@ -1,0 +1,90 @@
+Here’s how they differ:
+
+1. **Signature & Binding**
+
+   * **`@staticmethod`**
+
+     ```python
+     class C:
+         @staticmethod
+         def f(x, y):
+             return x + y
+     ```
+
+     * **No** implicit first argument.
+     * Behaves just like a plain function put inside the class’s namespace.
+     * Cannot access `self` or `cls` unless you pass them in explicitly.
+
+   * **`@classmethod`**
+
+     ```python
+     class C:
+         @classmethod
+         def f(cls, x, y):
+             return cls(x)  # or do something with the class
+     ```
+
+     * Receives the class (`cls`) as the **first argument** instead of an instance.
+     * Can call other class methods, construct new instances, or inspect/modify class‑level state.
+
+2. **Use‑Cases**
+
+   * **Static methods**
+
+     * Utility functions related to the class’s domain but that don’t need any class or instance data.
+     * E.g., a validation helper:
+
+       ```python
+       class User:
+           @staticmethod
+           def is_valid_email(email):
+               return "@" in email
+       ```
+
+       You can call it as `User.is_valid_email(s)` or `u.is_valid_email(s)` without touching `User` or `u`.
+   * **Class methods**
+
+     * Factory methods or alternative constructors:
+
+       ```python
+       class Date:
+           def __init__(self, year, month, day):
+               ...
+
+           @classmethod
+           def from_iso(cls, iso_str):
+               y, m, d = map(int, iso_str.split("-"))
+               return cls(y, m, d)
+       ```
+
+       Now `Date.from_iso("2025-05-12")` builds a `Date` object without you having to parse it externally.
+     * Access/modification of class‑wide state or polymorphic behavior in subclasses.
+
+3. **Lookup & Polymorphism**
+
+   ```python
+   class Base:
+       @staticmethod
+       def stat():    print("Base stat")
+       @classmethod
+       def clsmeth(cls): print("Base clsmeth, cls is", cls.__name__)
+
+   class Sub(Base):
+       pass
+
+   Base.stat()      #→ "Base stat"
+   Sub.stat()       #→ still "Base stat"  (no polymorphism)
+
+   Base.clsmeth()   #→ "Base clsmeth, cls is Base"
+   Sub.clsmeth()    #→ "Base clsmeth, cls is Sub"  (cls is bound to the subclass)
+   ```
+
+   * **Static** methods always behave identically regardless of subclass.
+   * **Class** methods see which class they’re called on, making them polymorphic.
+
+---
+
+**Summary**
+
+* **Static methods** = namespace‑organized functions, no access to class/instance.
+* **Class methods** = methods that get the class as their first argument (`cls`), great for factories and subclass‑aware behavior.

@@ -1,0 +1,41 @@
+That error happens because you’ve broken the “grouped” context before calling `transform()`. Here’s what’s going on step by step:
+
+1. **`df_seasonal_rates.groupby('COHORT_month')['ADMITTED']`**
+   Returns a **GroupBy Series** object, which knows how to do group-wise operations like `transform()`.
+
+2. **`.head(3)`**
+   When you call `.head(3)` on that GroupBy Series, it immediately pulls out the first three rows **per group** and returns a **plain Series** containing only those rows. At that point:
+
+   * You’ve lost the grouping metadata.
+   * The length of the Series is now “3 × number\_of\_groups,” not the same length as the original DataFrame.
+
+3. **`.transform('mean')`**
+   The `transform()` method needs to be called on a GroupBy object (so it can compute one output per input row, aligned back to the original index). But you’re calling it on a plain Series that has no grouping information (and whose length doesn’t match the frame you’re trying to assign to), so Pandas throws an error.
+
+---
+
+### How to do “mean of the first 3 rows in each group” instead
+
+If your goal is “for each month, look at only the first 3 quarters and take their admit-rate mean,” you can’t mix `head()` and `transform()` in one pipeline. Instead, compute it in two steps:
+
+```python
+# 1️⃣ Extract the head-3-per-group and compute their means:
+group_head3_means = (
+    df_seasonal_rates
+    .groupby('COHORT_month')
+    ['ADMITTED']
+    .apply(lambda s: s.head(3).mean())
+)
+
+# 2️⃣ Map those back to every row in df_seasonal_rates:
+df_seasonal_rates['COHORT_same_month_admit_rate'] = (
+    df_seasonal_rates['COHORT_month']
+    .map(group_head3_means)
+    .round(5)
+)
+```
+
+* Step 1 returns a **Series indexed by `COHORT_month`** whose values are the mean of the first three `ADMITTED` values.
+* Step 2 then “broadcasts” (maps) that month-level mean back to each row in your original DataFrame.
+
+That way you never lose the grouping context before computing your mean.

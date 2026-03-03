@@ -1,0 +1,64 @@
+You can absolutely build that same “Degrees × Quarter” layout in pandas — it really is just a pivot table in spreadsheet terminology.  You have one column for your grouping key (`Degree`), one for your “Quarter of Created Date”, and one for the numeric metric (`% Diff Pred v. Actual Sub`).  Then you pivot so that:
+
+* Rows → each unique `Degree`
+* Columns → each unique quarter (e.g. `"2022 Q1"`, `"2022 Q2"`, …)
+* Values → the `% Diff Pred v. Actual Sub` for that (Degree, Quarter)
+
+Here’s a minimal example:
+
+```python
+import pandas as pd
+
+# --- 1) Make sure you have a quarter string column ----
+# suppose your DataFrame has a datetime column 'Created Date'
+df["Quarter"] = (
+    pd.to_datetime(df["Created Date"])
+      .dt.to_period("Q")        # e.g. Period('2022Q1')
+      .astype(str)              # → '2022Q1'
+      .str.replace("Q", " Q")   # → '2022 Q1'
+)
+
+# --- 2) Pivot into exactly the shape you showed ----
+pivot = df.pivot_table(
+    index="Degree",
+    columns="Quarter",
+    values="% Diff Pred v. Actual Sub",
+    aggfunc="mean"               # or np.sum / np.first if you know there’s only one row per combo
+)
+
+# --- 3) (Optional) Round / format as percentages ---
+pivot = pivot.round(3) * 100     # if your raw values were in [0,1]
+pivot = pivot.astype(str) + "%"  # turn them into strings with a '%'
+
+# Or use the Styler if you want it pretty in a notebook:
+pivot_style = (
+    df.pivot_table(
+        index="Degree",
+        columns="Quarter",
+        values="% Diff Pred v. Actual Sub",
+        aggfunc="mean"
+    )
+    .style
+    .format("{:.1%}")           # one decimal percentage
+    .set_table_styles([{
+        "selector": "th", 
+        "props": [("text-align", "right")]
+    }])
+)
+```
+
+If your metric is already in percentage‐points (e.g. `21.7` meaning 21.7%), just drop the `* 100` step and use `.format("{:.1f}%")` in the Styler.
+
+> **Cross-tab?**
+> You can also write the same thing as a `crosstab` if you prefer, since `pd.crosstab` accepts an aggregation function too:
+>
+> ```python
+> pivot = pd.crosstab(
+>     df["Degree"], 
+>     df["Quarter"],
+>     values=df["% Diff Pred v. Actual Sub"],
+>     aggfunc="mean"
+> )
+> ```
+
+Either approach gives you exactly the matrix of Degrees × Quarters you showed.

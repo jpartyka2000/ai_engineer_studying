@@ -1,0 +1,52 @@
+In **Databricks**, **column mapping mode** refers to a feature in **Delta Lake** that allows renaming columns while preserving the underlying data in a way that avoids breaking existing pipelines or data dependencies. This mode introduces a mechanism for more flexible column renaming in Delta Lake tables.
+
+### Key Points About Column Mapping Mode in Databricks
+
+1. **Preserving Data**:
+   - Normally, renaming a column in a Delta table might cause issues, such as breaking existing queries, jobs, or downstream applications that reference the old column name. 
+   - With column mapping mode enabled, Delta Lake uses an internal unique **column ID** to track the columns. This ensures that renaming a column changes only the external name of the column while keeping the underlying schema consistent.
+
+2. **Supported Operations**:
+   - **Rename columns**: You can safely rename columns in a Delta table without affecting existing data processing pipelines.
+   - **Reorder columns**: Columns can be reordered without affecting how the data is stored or referenced.
+   - **Add/drop columns**: New columns can be added or dropped, and existing processes won’t be disrupted because the internal column ID system maintains the integrity of the table structure.
+
+3. **How It Works**:
+   - Delta Lake assigns a **unique ID** to each column in the table. This ID is used internally by the system for tracking columns, allowing for operations like renaming or reordering without impacting the underlying data or schema.
+   - When column mapping mode is enabled, users interact with column names as usual, but internally, these names map to their corresponding column IDs.
+
+4. **Enabling Column Mapping Mode**:
+   You need to enable this feature by setting table properties when creating or modifying a Delta table. There are two modes you can use:
+   
+   - **Name mapping mode (default)**: This is the default mode where Delta Lake tracks columns by name.
+   - **ID mapping mode**: This mode introduces column IDs to track columns.
+
+   To enable column mapping mode, you can use the following command:
+   ```sql
+   ALTER TABLE table_name
+   SET TBLPROPERTIES ('delta.columnMapping.mode' = 'name');  -- or 'id'
+   ```
+
+5. **Benefits**:
+   - **Backward Compatibility**: Column mapping ensures that renaming a column doesn’t affect existing queries or break integrations that rely on the old column name.
+   - **Enhanced Schema Evolution**: Schema changes, like adding or reordering columns, become more manageable in production environments.
+   - **Operational Flexibility**: With column IDs, you can safely make schema modifications without fear of disrupting ongoing jobs, improving agility for teams working with large datasets.
+
+### Example Use Case:
+
+Suppose you have a Delta table tracking sales data, and you want to rename a column from `order_id` to `transaction_id`. Normally, this would break existing reports and jobs that depend on `order_id`. However, with column mapping mode enabled, you can rename the column as follows:
+
+```sql
+ALTER TABLE sales_data
+RENAME COLUMN order_id TO transaction_id;
+```
+
+This operation will not break existing jobs because the underlying data structure (via column IDs) remains unchanged.
+
+### Limitations:
+
+- **Compatibility**: Older versions of Delta Lake may not support column mapping mode, so ensure your Databricks environment is updated to a version that supports this feature.
+- **Migration**: If column mapping mode is not enabled when the table is created, you may need to migrate the table by converting its schema, which could involve more complex operations.
+
+### Conclusion:
+**Column mapping mode** in Databricks' Delta Lake provides a powerful way to manage schema changes, such as renaming or reordering columns, without disrupting existing pipelines or jobs. By using internal column IDs, it allows for more flexible table management and reduces the risk of breaking dependencies in production systems.

@@ -1,0 +1,81 @@
+Thought for a few seconds
+
+
+You’re right that `log_param` is really intended for tuning‐related settings (e.g. learning rate, tree depth, regularization strength).  Your feature list and target column are more like **metadata** about the model’s interface than “parameters” in the algorithmic sense, so I wouldn’t jam them into `log_param` unless they’re really small and unlikely to change.
+
+Instead, here are the more idiomatic MLflow patterns for capturing your predictors and outcome:
+
+---
+
+### 1) Leverage the Model Signature
+
+When you call:
+
+```python
+from mlflow.models.signature import infer_signature
+
+# X_train = DataFrame of predictors
+# y_train = Series or DataFrame of your target
+signature = infer_signature(X_train, y_train)
+mlflow.sklearn.log_model(clf, "model", signature=signature)
+```
+
+MLflow will record:
+
+* **`signature.inputs`** = the feature column names & types
+* **`signature.outputs`** = the target name & type (if you passed a Series with `.name` or a one‑column DataFrame)
+
+You can then inspect them later via:
+
+```python
+from mlflow.models import Model
+mlmodel = Model.load("models:/MyModel/Production")
+print([i.name for i in mlmodel.signature.inputs])
+print([o.name for o in mlmodel.signature.outputs])
+```
+
+---
+
+### 2) Use an Input Example
+
+If you want a concrete row showing both X and y, you can pass an example DataFrame with your target column included:
+
+```python
+example = pd.concat([X_train.head(3), y_train.head(3)], axis=1)
+mlflow.sklearn.log_model(clf,
+                         "model",
+                         input_example=example,
+                         signature=signature)
+```
+
+That makes it easy for someone browsing your run to see exactly which columns go in and what comes out.
+
+---
+
+### 3) Log as Tags or Artifacts (Optional)
+
+* **Tags**: for short strings
+
+  ```python
+  mlflow.set_tag("target_column", y_train.name)
+  ```
+* **Artifacts**: for longer lists or richer metadata
+
+  ```python
+  pd.Series(X_train.columns).to_csv("feature_list.csv", index=False)
+  mlflow.log_artifact("feature_list.csv", artifact_path="metadata")
+  ```
+
+---
+
+#### Why not `log_param`?
+
+* **Visibility**: parameters are prominently surfaced in the MLflow UI under “Params,” which can clutter hyperparameter tables if you stuff in dozens of feature names.
+* **Semantics**: someone downstream will expect “Params” to be tweakable knobs, not a fixed list of input columns.
+
+---
+
+**Bottom line:**
+– **Use the model signature** for the canonical feature & target schema (this is exactly what it’s for).
+– **Optionally** include an input example to show how X + y line up.
+– Reserve `log_param` for real hyperparameters you’ll tune or compare across runs.

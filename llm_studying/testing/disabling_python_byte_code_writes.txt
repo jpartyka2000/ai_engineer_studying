@@ -1,0 +1,50 @@
+This is happening because the Databricks “Workspace” mount is effectively read-only (or at least doesn’t support creating `__pycache__` directories), and pytest (via the Python interpreter) is trying to write `.pyc` files when it imports your tests or `conftest.py`.
+
+---
+
+## Two easy fixes
+
+### 1) Disable Python byte‐code writes
+
+Tell Python not to generate `.pyc` files at all, so it never tries to make a `__pycache__` directory:
+
+```sh
+%sh
+export PYTHONDONTWRITEBYTECODE=1
+pytest \
+  /Workspace/Users/jeff@pathahead.ai/cue_reinforcement_learning/tests/test_end_to_end.py::test_end_to_end_tasks \
+  --ignore-glob='*/__pycache__' \
+  -q --disable-warnings --maxfail=1
+```
+
+Or equivalently:
+
+```sh
+%sh
+python -B -m pytest \
+  /Workspace/Users/jeff@pathahead.ai/cue_reinforcement_learning/tests/test_end_to_end.py::test_end_to_end_tasks \
+  --ignore-glob='*/__pycache__' \
+  -q --disable-warnings --maxfail=1
+```
+
+Either approach stops Python from ever writing `.pyc` files, so pytest won’t hit that “Operation not supported” error.
+
+---
+
+### 2) Run tests from a truly writable directory
+
+If you really need byte-code caching, copy your code into a local tmp folder first, then run pytest there:
+
+```sh
+%sh
+cp -r /Workspace/Users/jeff@pathahead.ai/cue_reinforcement_learning /tmp/rl
+pytest /tmp/rl/tests/test_end_to_end.py::test_end_to_end_tasks \
+  --ignore-glob='*/__pycache__' \
+  -q --disable-warnings --maxfail=1
+```
+
+That way both your source files and any `__pycache__` directories live under `/tmp`, which fully supports byte‐code writes.
+
+---
+
+Either of those will eliminate the OSError and let your tests—or your `print()` debug statements—run to completion.

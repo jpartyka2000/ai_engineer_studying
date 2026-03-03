@@ -1,0 +1,57 @@
+In Databricks, when working with **Delta tables**, a new **snapshot** is typically created every time you perform a write operation. This is an inherent feature of the Delta Lake architecture, as it ensures **ACID transactions** and enables time travel, versioning, and data consistency. However, creating new snapshots with every write can impact performance, particularly with frequent small updates.
+
+### To reduce the impact of frequent snapshots and updates, here are a few strategies:
+
+### 1. **Use `MERGE` or `UPDATE` Instead of Overwriting**
+Instead of overwriting the table, you can use **`MERGE`** or **`UPDATE`** operations to only modify specific rows. This reduces the overhead of creating a new snapshot for the entire table.
+
+Example:
+```python
+from delta.tables import *
+
+delta_table = DeltaTable.forPath(spark, "path/to/delta_table")
+
+# Perform an update operation on specific rows
+delta_table.update(
+    condition = F.col("id") == some_value,
+    set = { "column_name": "new_value" }
+)
+```
+
+### 2. **Optimize Delta Table with `OPTIMIZE`**
+To improve performance and reduce the frequency of new snapshots impacting table writes, consider running **`OPTIMIZE`** operations on your Delta table periodically. The **`OPTIMIZE`** command compacts small files into larger ones and minimizes the performance impact of Delta Lake's versioning.
+
+Example:
+```sql
+OPTIMIZE delta.`path/to/delta_table`
+```
+
+### 3. **Reduce Frequency of Writes**
+If possible, **batch updates** or inserts into larger transactions rather than frequent small writes. Delta Lake is optimized for **batch writes** rather than many small updates. By grouping writes into fewer, larger transactions, you can reduce the number of snapshots.
+
+### 4. **Auto Compaction (`delta.autoOptimize.optimizeWrite`)**
+Delta Lake supports **automatic optimization** through auto compaction and optimized writes. You can enable this feature so that Delta Lake optimizes file sizes in the background, reducing the overhead of creating new snapshots.
+
+To enable this for your Delta table:
+```python
+spark.conf.set("spark.databricks.delta.optimizeWrite", "true")
+spark.conf.set("spark.databricks.delta.autoCompact", "true")
+```
+
+### 5. **Delete Old Versions and Snapshots**
+Delta Lake keeps previous versions of data to support **time travel**. You can use the **`VACUUM`** command to delete old snapshots and free up storage space. This doesn’t stop new snapshots from being created but helps manage storage costs and performance.
+
+Example:
+```sql
+VACUUM delta.`path/to/delta_table` RETAIN 0 HOURS;
+```
+
+### 6. **Configure Retention Periods**
+You can configure the retention period for Delta tables to keep fewer snapshots and reduce storage and maintenance overhead.
+
+```python
+spark.conf.set("spark.databricks.delta.retentionDurationCheck.enabled", "false")
+```
+
+### Conclusion:
+While Delta tables inherently create snapshots with each write operation, you can optimize the process through batching, compaction, `MERGE`/`UPDATE` operations, and managing retention settings. While reducing snapshot frequency isn't directly possible, these approaches can minimize performance impacts and manage resources efficiently.

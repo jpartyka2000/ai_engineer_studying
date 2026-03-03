@@ -1,0 +1,80 @@
+Yes—Pandas has built‑in support for timezone‑aware timestamps (both on `Series` via the `.dt` accessor and on a `DatetimeIndex`), and you can extract the UTC base and the local offset just the same way you would with plain Python `datetime`s.
+
+---
+
+### 1. Make your `Series` or `Index` timezone‑aware
+
+```python
+import pandas as pd
+
+# 1a) If you start with a naive datetime Series:
+s = pd.Series(pd.date_range('2025-07-28 06:00', periods=3, freq='H'))
+# localize it to Mountain Time (e.g. America/Denver)
+s = s.dt.tz_localize('America/Denver')
+
+# 1b) Or if your DataFrame already has a DatetimeIndex:
+df = pd.DataFrame({'Value':[1,2,3]},
+                  index=pd.date_range('2025-07-28 06:00', periods=3, freq='H'))
+df.index = df.index.tz_localize('America/Denver')
+```
+
+---
+
+### 2. Extract the UTC offset
+
+* **For a Series**
+
+  ```python
+  offsets = s.dt.utcoffset()
+  # offsets is a TimedeltaSeries: e.g. [-06:00, -06:00, -06:00]
+  ```
+
+* **For a DatetimeIndex**
+
+  ```python
+  idx_offsets = df.index.utcoffset()
+  # returns a TimedeltaIndex of the same length
+  ```
+
+---
+
+### 3. Convert to UTC (the “base” time)
+
+* **Series → UTC**
+
+  ```python
+  utc_s = s.dt.tz_convert('UTC')
+  # now values are shifted to UTC, with tz='UTC'
+  ```
+
+* **Index → UTC**
+
+  ```python
+  utc_idx = df.index.tz_convert('UTC')
+  # you can assign it back: df.index = utc_idx
+  ```
+
+---
+
+### 4. (Optional) Drop the timezone info
+
+If you want a “naive” UTC timestamp (no tz attached):
+
+```python
+utc_naive_s = utc_s.dt.tz_localize(None)
+# or for an index:
+utc_naive_idx = utc_idx.tz_localize(None)
+```
+
+---
+
+### Quick summary of the key methods
+
+| Object                 | What it does                                     |
+| ---------------------- | ------------------------------------------------ |
+| `tz_localize(tz)`      | “Attach” a timezone to naive timestamps          |
+| `tz_convert(tz)`       | Shift a tz‑aware timestamp into another timezone |
+| `dt.utcoffset()`       | Return a `Timedelta` giving the offset from UTC  |
+| `dt.tz_localize(None)` | Remove timezone info, yielding a naive timestamp |
+
+With those, you can separately pull out exactly the **UTC base time** (`.tz_convert('UTC')`) and the **local offset** (`.dt.utcoffset()`) on any Pandas datetime object.

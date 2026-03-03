@@ -1,0 +1,108 @@
+In the context of LLM fine-tuning, **semi-computable rewards** refer to reward signals that can be partially but not fully computed automatically. They sit between fully automatic metrics and purely human-evaluated rewards.
+
+## The Spectrum of Computability
+
+1. **Fully Computable**: BLEU score, perplexity, exact match accuracy
+2. **Semi-Computable**: Code correctness with test cases, factual accuracy with knowledge bases
+3. **Non-Computable**: Creativity, humor, empathy (require human judgment)
+
+## Examples of Semi-Computable Rewards
+
+### 1. **Code Generation**
+```python
+def semi_computable_code_reward(generated_code):
+    # Computable part: Does it run?
+    syntax_valid = check_syntax(generated_code)  # Automatic
+    tests_pass = run_unit_tests(generated_code)  # Automatic
+    
+    # Non-computable part: Is it elegant/maintainable?
+    code_quality = human_review_needed()  # Manual
+    
+    return 0.7 * tests_pass + 0.3 * code_quality
+```
+
+### 2. **Factual Accuracy**
+- **Computable**: Check against a knowledge base for known facts
+- **Non-computable**: Evaluate reasoning quality or handle novel/ambiguous cases
+
+### 3. **Safety/Toxicity**
+- **Computable**: Flag obvious harmful content using classifiers
+- **Non-computable**: Detect subtle biases or context-dependent appropriateness
+
+## Why "Semi-Computable" Matters
+
+### The Challenge
+You want to fine-tune on complex tasks where:
+- Some aspects can be automatically verified
+- Other aspects require human judgment
+- Full human evaluation is too expensive/slow
+
+### The Solution
+Combine automatic metrics with selective human evaluation:
+
+```python
+def get_reward(model_output, ground_truth):
+    # Automatic components
+    length_penalty = compute_length_score(model_output)
+    format_correct = check_format(model_output)
+    
+    # Semi-automatic (requires external resources)
+    facts_verified = check_against_database(model_output)
+    
+    # Trigger human evaluation only when needed
+    if confidence < threshold:
+        human_score = request_human_eval(model_output)
+    else:
+        human_score = predicted_human_score(model_output)
+    
+    return combine_scores(length_penalty, format_correct, 
+                         facts_verified, human_score)
+```
+
+## Practical Implementation in RLHF/RLAIF
+
+In Reinforcement Learning from Human Feedback workflows:
+
+1. **Initial Training**: Use fully computable rewards (fast, cheap)
+2. **Refinement**: Add semi-computable rewards for nuanced behaviors
+3. **Final Tuning**: Incorporate human feedback for non-computable aspects
+
+## Example in Your Fine-Tuning Context
+
+If you were implementing semi-computable rewards for your Qwen model:
+
+```python
+def evaluate_response(prompt, generated_response, expected_response):
+    # Fully computable
+    length_match = abs(len(generated_response) - len(expected_response))
+    keyword_overlap = compute_keyword_similarity(generated_response, expected_response)
+    
+    # Semi-computable (needs external validation)
+    if "code" in prompt:
+        code_runs = test_generated_code(generated_response)  # Automatic
+        code_efficient = None  # Would need human review
+    
+    if "fact" in prompt:
+        fact_check = verify_with_knowledge_base(generated_response)  # Automatic
+        reasoning_quality = None  # Would need human review
+    
+    # Combine into reward signal
+    reward = weighted_combination(length_match, keyword_overlap, 
+                                code_runs, fact_check)
+    return reward
+```
+
+## The Key Insight
+
+Semi-computable rewards acknowledge that many important aspects of language model behavior exist in a gray area where:
+- We can automatically verify some properties
+- But full evaluation requires human judgment
+- We need efficient ways to combine both types of signals
+
+This is particularly relevant for tasks like:
+- Mathematical reasoning (can check answer, not always the steps)
+- Code generation (can test functionality, not readability)
+- Factual responses (can verify facts, not presentation quality)
+- Task completion (can check if done, not if done well)
+
+The "semi-computable" nature makes them practical for large-scale training while still capturing nuanced quality metrics that pure automatic metrics miss.

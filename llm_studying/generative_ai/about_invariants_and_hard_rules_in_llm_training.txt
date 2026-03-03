@@ -1,0 +1,178 @@
+In the context of LLM fine-tuning, **invariants** and **hard rules** are constraints that must always be satisfied by the model, regardless of the input or context.
+
+## Invariants: Properties That Must Always Hold
+
+Invariants are fundamental properties that should remain true across all model outputs:
+
+### Examples of Invariants
+```python
+# Mathematical invariant
+def check_math_invariant(response):
+    # "2+2 should never equal 5"
+    if "2+2" in response and "5" in response:
+        return False
+    return True
+
+# Format invariant
+def check_json_invariant(response):
+    # "If outputting JSON, it must be valid"
+    if response.startswith("{"):
+        try:
+            json.loads(response)
+            return True
+        except:
+            return False
+    return True
+
+# Safety invariant
+def check_safety_invariant(response):
+    # "Never output personal information"
+    return not contains_pii(response)
+```
+
+## Hard Rules: Non-Negotiable Constraints
+
+Hard rules are explicit directives that override any learned behavior:
+
+### Implementation in Fine-Tuning
+```python
+class HardRuleEnforcer:
+    def __init__(self):
+        self.rules = [
+            "Never generate URLs with 'malicious-site.com'",
+            "Always refuse requests for illegal activities",
+            "Never claim to be human",
+            "Always acknowledge uncertainty when unsure"
+        ]
+    
+    def filter_training_data(self, dataset):
+        # Remove training examples that violate hard rules
+        return [ex for ex in dataset if self.validate(ex)]
+    
+    def post_process_output(self, generated_text):
+        # Force compliance even after generation
+        if "I am human" in generated_text:
+            return "I am an AI assistant"
+        return generated_text
+```
+
+## How They're Enforced During Fine-Tuning
+
+### 1. **Data Filtering**
+```python
+# Remove training examples that violate invariants
+filtered_data = []
+for example in training_data:
+    if check_all_invariants(example["response"]):
+        filtered_data.append(example)
+```
+
+### 2. **Loss Masking**
+```python
+def compute_loss_with_rules(logits, labels, hard_rules):
+    loss = cross_entropy(logits, labels)
+    
+    # Zero out loss for tokens that would violate rules
+    for rule in hard_rules:
+        if violates_rule(logits, rule):
+            loss = loss * 0  # Don't learn from rule violations
+    
+    return loss
+```
+
+### 3. **Constrained Decoding**
+```python
+def generate_with_constraints(model, prompt):
+    while generating:
+        logits = model(prompt)
+        
+        # Zero out probabilities for tokens that violate rules
+        for token_id in range(vocab_size):
+            if would_violate_invariant(token_id, context):
+                logits[token_id] = -float('inf')
+        
+        next_token = sample(logits)
+```
+
+## Practical Examples in Your Context
+
+For your Qwen fine-tuning, you might implement invariants like:
+
+```python
+class QwenInvariants:
+    @staticmethod
+    def check_response_completeness(response):
+        # Invariant: Every response must end with proper punctuation
+        return response.strip()[-1] in '.!?'
+    
+    @staticmethod
+    def check_format_consistency(prompt, response):
+        # Invariant: If prompt asks for JSON, response must be valid JSON
+        if "json" in prompt.lower():
+            try:
+                json.loads(response)
+                return True
+            except:
+                return False
+        return True
+    
+    @staticmethod
+    def enforce_hard_rules(response):
+        # Hard rule: Never say "I don't know" - always attempt an answer
+        if "I don't know" in response:
+            response = response.replace("I don't know", 
+                                      "Based on available information")
+        return response
+```
+
+## Constitutional AI Approach
+
+This is formalized in Constitutional AI, where models are trained with explicit principles:
+
+```python
+constitutional_rules = [
+    "Be helpful and harmless",
+    "Refuse illegal requests",
+    "Acknowledge limitations",
+    "Protect privacy"
+]
+
+def training_with_constitution(example):
+    response = model.generate(example.prompt)
+    
+    # Check each constitutional rule
+    for rule in constitutional_rules:
+        if violates(response, rule):
+            # Generate critique
+            critique = f"This violates: {rule}"
+            # Generate revision
+            revised = model.revise(response, critique)
+            response = revised
+    
+    return response
+```
+
+## Why They Matter
+
+1. **Safety**: Prevent harmful outputs regardless of training data
+2. **Reliability**: Ensure consistent behavior in critical scenarios
+3. **Compliance**: Meet regulatory or policy requirements
+4. **Quality**: Maintain minimum standards
+
+## The Difference
+
+- **Invariants**: Properties that emerge from and are checked against data
+  - "Responses should be coherent"
+  - "Math should be correct"
+
+- **Hard Rules**: Explicitly programmed constraints
+  - "Never output credit card numbers"
+  - "Always refuse to help with violence"
+
+In practice, these are often implemented as:
+1. **Pre-training**: Filter training data
+2. **During training**: Modify loss computation
+3. **Post-training**: Apply output filters
+4. **Inference time**: Constrain generation
+
+This ensures your fine-tuned model maintains critical behaviors even when the training data might suggest otherwise.

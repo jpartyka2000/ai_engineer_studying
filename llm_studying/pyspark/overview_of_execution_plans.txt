@@ -1,0 +1,41 @@
+**PySpark Execution Overview**
+
+When you write PySpark DataFrame code, Spark doesn't execute it immediately. Instead, it builds up a plan and optimizes it before running.
+
+**Lazy Evaluation**
+
+Transformations like `select`, `filter`, `groupBy`, and `join` are lazy—they just build up a logical plan. Nothing executes until you call an action like `count`, `collect`, `show`, or `write`.
+
+```python
+# No execution yet:
+df2 = df.filter(F.col("age") > 30).select("name", "salary")
+
+# NOW it executes:
+df2.show()
+```
+
+**The Execution Pipeline**
+
+1. **Logical Plan** – your code as an abstract tree of operations
+2. **Optimized Logical Plan** – Catalyst optimizer rewrites it (predicate pushdown, column pruning, etc.)
+3. **Physical Plan** – concrete execution strategy (join algorithms, shuffle boundaries, etc.)
+4. **Execution** – distributed across the cluster
+
+**Viewing Plans**
+
+```python
+df.explain()          # Physical plan only
+df.explain(True)      # All stages: parsed, analyzed, optimized, physical
+df.explain("cost")    # Includes cost estimates
+```
+
+**Key Optimizations Catalyst Performs**
+
+- **Predicate pushdown** – filters pushed closer to data source
+- **Column pruning** – only reads needed columns
+- **Constant folding** – evaluates constant expressions at planning time
+- **Join reordering** – optimizes join order for efficiency
+
+**Why This Matters**
+
+Because of optimization, logically equivalent code often produces identical execution plans. The optimizer is quite smart, so focus on writing clear code first, then optimize if needed based on actual plan inspection.

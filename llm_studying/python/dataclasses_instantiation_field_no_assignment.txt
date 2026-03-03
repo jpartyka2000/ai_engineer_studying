@@ -1,0 +1,61 @@
+### How Positional Arguments Work in a `dataclass`
+
+In Python's `dataclasses`, fields without a default value must be **provided when creating an instance**, while fields with a default value (or set as `Optional[...] = None`) are treated as **keyword arguments** that can be omitted.
+
+---
+
+### Example: Adding a Required Field
+
+If we modify the class by adding a new required field, say `agent_name`, like this:
+
+```python
+@dataclass
+class Prompt:
+    prompt_template: str
+    agent_name: str  # New required field without a default value
+
+    customer_name_tagline: Optional[str] = None
+    additional_context: Optional[Dict[str, str]] = None
+    tables: Optional[List[str]] = None
+    schemas: Optional[List[str]] = None
+    examples: Optional[List[str]] = None
+    dynamic_str_context: Optional[str] = None
+    passed_input: Optional[str] = None
+    initial_user_question: Optional[str] = None
+```
+
+Now, when creating an instance of `Prompt`, **both `prompt_template` and `agent_name` must be provided as positional arguments**:
+
+```python
+my_prompt = Prompt(
+    "Hello, {{ customer_name_tagline }}! Here is your input: {{ passed_input }}",
+    "SalesAgentAI"
+)
+```
+
+If you **omit** either required argument, Python will raise a `TypeError`:
+
+```python
+my_prompt = Prompt("Hello, {{ customer_name_tagline }}! Here is your input: {{ passed_input }}")
+```
+
+❌ **Error:**
+```
+TypeError: Prompt.__init__() missing 1 required positional argument: 'agent_name'
+```
+
+---
+
+### Default Values vs. Required Arguments
+
+- **Fields without defaults** (e.g., `prompt_template: str`) → **Required positional arguments**
+- **Fields with defaults** (e.g., `customer_name_tagline: Optional[str] = None`) → **Optional keyword arguments**
+- **Fields with `field(default_factory=...)`** → Optional but initialized dynamically (e.g., `additional_context: Dict[str, str] = field(default_factory=dict)` ensures it always has a dictionary)
+
+---
+
+### Rule of Thumb:
+- If you want a field to be **required when creating an object**, don’t assign it a default value.
+- If you want a field to be **optional**, provide a default (`= None` or `field(default_factory=...)` for mutable types like `dict` or `list`).
+
+Would you like me to help refactor your class to better manage required and optional fields? 🚀

@@ -1,0 +1,56 @@
+Here’s the signature for `DataFrame.groupby` (and most of these apply to `Series.groupby` as well):
+
+```python
+DataFrame.groupby(
+    by=None,
+    axis=0,
+    level=None,
+    as_index=True,
+    sort=True,
+    group_keys=True,
+    squeeze=False,       # deprecated in newer pandas
+    observed=False,
+    dropna=True
+)
+```
+
+| Argument      | What it does                                                                                                       |
+|---------------|---------------------------------------------------------------------------------------------------------------------|
+| **by**        | Column label, array-like, dict, or function to group on.  
+• If a string or list of strings: use those column(s).  
+• If a callable: compute group labels row-wise.                                           |
+| **axis**      | `0` or `'index'` (group rows) or `1` or `'columns'` (group columns). Default `0`.                                   |
+| **level**     | If the axis is a **MultiIndex**, you can group by one or more levels (int, name, or list thereof). Otherwise ignored. |
+| **as_index**  | `True` ⇒ the grouping labels become the index on the result.  
+`False` ⇒ labels remain columns (and you get a simple `RangeIndex`).                         |
+| **sort**      | `True` ⇒ group keys are sorted before grouping.  
+`False` ⇒ preserves the order of appearance (faster).                                                |
+| **group_keys**| When you apply a function, controls whether to include the group label in the output’s index.  
+`True` ⇒ include; `False` ⇒ omit.                                                       |
+| **squeeze**   | *(Deprecated in newer versions.)*  
+If a grouped result only has one column, return a `Series` instead of a `DataFrame` when `True`.                     |
+| **observed**  | Only relevant if you’re grouping on a **Categorical** column.  
+`True` ⇒ only show **observed** category combinations.  
+`False` ⇒ show all possible categories (with zero counts).                        |
+| **dropna**    | `True` ⇒ drop `NaN` group keys (i.e. don’t create a “NaN” group).  
+`False` ⇒ keep `NaN` as its own group (requires pandas 1.1.0+).                   |
+
+---
+
+### Quick examples
+
+```python
+# basic: group rows by campaign_name, then sum numeric columns
+df.groupby('campaign_name').sum()
+
+# keep NaN campaigns as their own group
+df.groupby('campaign_name', dropna=False).mean()
+
+# group by month name (computed), not a column
+df.groupby(df['date'].dt.month_name()).agg(['sum','mean'])
+
+# group by multiple columns without making them the index
+df.groupby(['campaign','plan'], as_index=False).size()
+```
+
+That’s all of the main knobs you can twiddle on `groupby()`!

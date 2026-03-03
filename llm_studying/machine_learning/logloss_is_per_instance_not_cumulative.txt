@@ -1,0 +1,30 @@
+Exactly—it *is* by design an **average loss per instance**, and that’s precisely why we divide by \(N\). Here’s the rationale:
+
+1. **Interpretability & comparability**  
+   - If you simply summed the negative log‐likelihoods  
+     \[
+       \text{TotalLoss} = -\sum_{i=1}^N \Bigl[y_i\log(p_i) + (1-y_i)\log(1-p_i)\Bigr],
+     \]  
+     that number would grow linearly with the dataset size. You couldn’t tell if a model with TotalLoss = 100 on 1,000 samples is better or worse than TotalLoss = 50 on 500 samples without doing extra math.  
+   - By averaging  
+     \[
+       \text{LogLoss} = -\frac1N\sum_{i=1}^N \Bigl[y_i\log(p_i) + (1-y_i)\log(1-p_i)\Bigr],
+     \]  
+     you get a **per‐sample** penalty. You can then compare across datasets or folds of different sizes, or interpret “on average the model incurs 0.45 nats/bits of loss per example.”
+
+2. **Statistical meaning**  
+   - Log-loss is an empirical estimate of the **expected negative log‐likelihood** under your data distribution.  
+   - In expectation terms,  
+     \[
+       \mathbb{E}_{(x,y)\sim\text{data}}\bigl[-\log p(y\mid x)\bigr]
+       \approx \frac1N\sum_{i=1}^N -\log p(y_i\mid x_i).
+     \]  
+   - That “\(\tfrac1N\sum\)” is exactly why we divide by \(N\): to approximate the expectation rather than the raw sum.
+
+3. **Optimization & gradients**  
+   - In training, minimizing the *average* log‐loss yields gradients whose magnitudes don’t explode as your batch or dataset grows.  
+   - It standardizes the learning rate and makes the loss curve meaningful over epochs.
+
+---
+
+So yes, dividing by \(N\) *does* give you an average—and that’s intentional. You want to know the model’s *average* “surprise” per example, not a total that swells with more data.

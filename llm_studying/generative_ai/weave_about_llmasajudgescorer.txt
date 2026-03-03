@@ -1,0 +1,77 @@
+## `LLMAsAJudgeScorer` in Weave
+
+`LLMAsAJudgeScorer` uses **another LLM to evaluate responses** - essentially asking an AI model to grade/judge the output of your AI system.
+
+## How It Works:
+
+```python
+from weave.scorers import LLMAsAJudgeScorer
+
+# Configure the judge
+judge = LLMAsAJudgeScorer(
+    model="gpt-4",  # The judge model
+    prompt_template="""
+    Rate this response from 1-5 for helpfulness.
+    Question: {question}
+    Answer: {answer}
+    
+    Score (1-5):
+    """
+)
+
+# Use it to evaluate
+score = judge.score(
+    question="How do I cook pasta?",
+    answer="Boil water, add pasta, cook 8-10 mins, drain."
+)
+# GPT-4 judges: "4/5 - Clear but could mention salt"
+```
+
+## Common Evaluation Criteria:
+
+```python
+# Custom judge for specific criteria
+quality_judge = LLMAsAJudgeScorer(
+    model="gpt-4",
+    prompt_template="""
+    Evaluate this customer service response on:
+    1. Politeness (1-5)
+    2. Accuracy (1-5)  
+    3. Completeness (1-5)
+    
+    Customer: {input}
+    Agent: {output}
+    
+    Return JSON: {{"politeness": X, "accuracy": Y, "completeness": Z}}
+    """
+)
+```
+
+## Why Use LLM as Judge?
+
+1. **Subjective metrics** - Creativity, tone, helpfulness
+2. **Complex evaluation** - Things hard to code as rules
+3. **Scalability** - Evaluate thousands of responses automatically
+4. **Consistency** - Same judging criteria every time
+
+## Typical Setup:
+
+```python
+class Evaluator:
+    def __init__(self):
+        self.judge = LLMAsAJudgeScorer(
+            model="gpt-4",
+            system_prompt="You are an expert evaluator",
+            temperature=0.1  # Low for consistency
+        )
+    
+    @weave.op()
+    async def evaluate_batch(self, outputs):
+        scores = []
+        for output in outputs:
+            score = await self.judge.score(output)
+            scores.append(score)
+        return scores
+```
+
+**Bottom line**: `LLMAsAJudgeScorer` automates evaluation by using a (typically stronger) LLM to judge your model's outputs - like having GPT-4 grade your chatbot's responses for quality, accuracy, or style.

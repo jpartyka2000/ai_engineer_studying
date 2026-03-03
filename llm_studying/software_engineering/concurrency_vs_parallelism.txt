@@ -1,0 +1,69 @@
+## Concurrency vs. Parallelism
+
+### **Concurrency**: Managing Multiple Tasks
+- Multiple tasks **making progress** but not necessarily at the same instant
+- Tasks take **turns** using shared resources
+- Like **one juggler** keeping multiple balls in the air
+- Example: **asyncio** - single thread handling multiple I/O operations
+
+```python
+# Concurrent but NOT parallel (asyncio)
+async def task1():
+    await api_call()  # Pauses, lets task2 run
+    
+async def task2():
+    await database_query()  # Pauses, lets task1 run
+
+# Both make progress, but only one runs at any instant
+```
+
+### **Parallelism**: Doing Multiple Tasks Simultaneously  
+- Multiple tasks **actually executing** at the same instant
+- Requires **multiple CPU cores or threads**
+- Like **multiple jugglers** each juggling their own balls
+- Example: **multiprocessing** - multiple processes running on different cores
+
+```python
+# Truly parallel (multiprocessing)
+def process_data(chunk):
+    return heavy_computation(chunk)
+
+# Actually runs on different CPU cores AT THE SAME TIME
+with Pool(4) as p:
+    results = p.map(process_data, chunks)
+```
+
+## Real-World Analogy
+
+**Concurrency (One Barista):**
+- Takes order A
+- Starts coffee A brewing
+- While A brews, takes order B
+- Starts coffee B brewing
+- Finishes coffee A
+- Finishes coffee B
+- *One person, multiple tasks progressing*
+
+**Parallelism (Multiple Baristas):**
+- Barista 1 makes coffee A
+- Barista 2 makes coffee B (at the same time)
+- Barista 3 makes coffee C (at the same time)
+- *Multiple people, tasks happening simultaneously*
+
+## When to Use Which?
+
+**Use Concurrency (asyncio) for:**
+- I/O-bound tasks (API calls, file operations, database queries)
+- Many tasks that mostly wait
+- Single machine coordination
+
+**Use Parallelism (threading/multiprocessing) for:**
+- CPU-bound tasks (calculations, data processing)
+- Tasks that need true simultaneous execution
+- Heavy computations that can be split
+
+## The Key Insight
+
+> **"Concurrency is about dealing with lots of things at once. Parallelism is about doing lots of things at once."** - Rob Pike
+
+Your asyncio code with semaphores is **concurrent** - one thread efficiently managing multiple API calls by switching between them when they wait for responses. It's not parallel, but it doesn't need to be!

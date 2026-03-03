@@ -1,0 +1,52 @@
+Yes, when using `pd.concat()` with `axis=1`, duplicate column names will both/all exist in the output DataFrame. Pandas doesn't automatically drop or merge duplicate columns.
+
+**Example:**
+```python
+import pandas as pd
+
+df1 = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+df2 = pd.DataFrame({'B': [5, 6], 'C': [7, 8]})
+
+result = pd.concat([df1, df2], axis=1)
+print(result)
+```
+
+**Output:**
+```
+   A  B  B  C
+0  1  3  5  7
+1  2  4  6  8
+```
+
+Notice there are two 'B' columns!
+
+**How to handle duplicates:**
+
+1. **Access duplicate columns** - Use integer indexing or `iloc`:
+```python
+result.iloc[:, 1]  # First 'B' column
+result.iloc[:, 2]  # Second 'B' column
+```
+
+2. **Remove duplicates after concat:**
+```python
+# Keep first occurrence
+result = result.loc[:, ~result.columns.duplicated(keep='first')]
+
+# Keep last occurrence  
+result = result.loc[:, ~result.columns.duplicated(keep='last')]
+```
+
+3. **Rename columns before concat:**
+```python
+df2 = df2.add_suffix('_df2')
+result = pd.concat([df1, df2], axis=1)  # Now has 'B' and 'B_df2'
+```
+
+4. **Use `join()` or `merge()` instead** if you want to handle duplicates differently:
+```python
+# join() will suffix duplicate columns by default
+result = df1.join(df2, rsuffix='_right')  # Creates 'B' and 'B_right'
+```
+
+So yes, duplicates will exist unless you explicitly handle them!

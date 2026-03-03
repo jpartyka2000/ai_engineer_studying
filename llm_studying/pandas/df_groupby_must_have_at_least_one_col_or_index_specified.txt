@@ -1,0 +1,56 @@
+No—Pandas won’t magically group by your MultiIndex just because it’s there. By default, `.groupby()` looks at whatever you pass into its **by** (column labels or arrays) or **level** (index‐level names or positions) parameters. If you don’t tell it to use your index levels, it won’t.
+
+---
+
+### Key Points
+
+1. **No “auto‑grouping”**
+
+   ```python
+   df.groupby()  
+   # ValueError: You have to supply one of 'by' and 'level'
+   ```
+
+   You must supply at least one of:
+
+   * `by=…` – keys in your **columns** (or an array/function that maps each row to a group)
+   * `level=…` – names or positions of your **index levels**
+
+2. **Grouping by columns**
+
+   ```python
+   # Group by the 'Category' column
+   df.groupby('Category')['Revenue'].sum()
+   ```
+
+3. **Grouping by index levels**
+
+   ```python
+   # Suppose df.index.names == ['Region','Category','Year','Quarter']
+   # Group by the 'Year' level of your MultiIndex:
+   df.groupby(level='Year')['Revenue'].sum()
+
+   # Or by Region & Category together:
+   df.groupby(level=['Region','Category'])['Revenue'].sum()
+   ```
+
+4. **Mixing columns & index levels**
+   You can even group by a mix of columns and index levels:
+
+   ```python
+   df.groupby(
+       by=['SomeColumn'],        # a column
+       level=['Region','Year']   # two index levels
+   )['Revenue'].sum()
+   ```
+
+---
+
+### Why `level=` is nicer here
+
+* **No need to `reset_index()`.** You don’t have to pull levels back into columns first.
+* **Result keeps your index.** The returned Series/DataFrame will still be indexed by those same level(s).
+
+---
+
+**Bottom line:** if you want to use your MultiIndex in a `groupby`, you must explicitly tell Pandas which level(s) to use via `level=` (or pass index‑level values into `by=`). Otherwise it only considers columns or arrays you hand it.

@@ -1,0 +1,100 @@
+# Clearing UV Cache
+
+When working with `uv` (the fast Python package installer), you may need to clear its cache to resolve dependency issues or force fresh package downloads.
+
+## **Basic Cache Clearing**
+
+```bash
+# Clear all uv cache
+uv cache clean
+```
+
+This removes all cached package downloads and built wheels.
+
+## **Why You Might Need This**
+
+**Common scenarios:**
+- Corrupted package downloads
+- Dependency resolution issues after updating `pyproject.toml` or `requirements.txt`
+- Stale cached wheels causing import errors
+- Package version conflicts
+- Switching between different Python versions
+
+## **Using with Just**
+
+Integrate cache clearing into your `justfile`:
+
+```justfile
+# Clear uv cache
+clean-cache:
+    uv cache clean
+
+# Clear cache and reinstall dependencies
+reinstall: clean-cache
+    uv sync
+
+# Fresh start with clean cache
+fresh:
+    uv cache clean
+    rm -rf .venv
+    uv venv
+    uv sync
+    
+# Run with fresh cache
+run-fresh: clean-cache
+    uv sync
+    uv run python main.py
+```
+
+## **Selective Cache Operations**
+
+```bash
+# View cache directory location
+uv cache dir
+
+# Check cache size
+du -sh $(uv cache dir)
+
+# Manually inspect cache
+ls -lh $(uv cache dir)
+```
+
+## **When to Use vs. Other Solutions**
+
+**Use `uv cache clean` when:**
+- You have uv-specific caching issues
+- Dependencies aren't updating properly
+- You get "package not found" errors despite it being available
+- After changing Python versions with uv
+
+**Don't confuse with:**
+- Python bytecode cache (`__pycache__`) - cleared with `find . -name "__pycache__" -delete`
+- pip cache - cleared with `pip cache purge`
+- Virtual environment - removed with `rm -rf .venv`
+
+## **Complete Cleanup Recipe**
+
+```justfile
+# Nuclear option - clear everything
+nuke:
+    @echo "Clearing uv cache..."
+    uv cache clean
+    @echo "Removing virtual environment..."
+    rm -rf .venv
+    @echo "Clearing Python bytecode..."
+    find . -type d -name "__pycache__" -delete
+    find . -type f -name "*.pyc" -delete
+    @echo "Reinstalling..."
+    uv venv
+    uv sync
+    @echo "✓ Fresh environment ready!"
+```
+
+## **Best Practices**
+
+1. **Try `uv cache clean` first** before more drastic measures
+2. **Commit your lock file** (`uv.lock`) to avoid version drift
+3. **Use `uv sync`** after clearing cache to reinstall dependencies
+4. **Check `uv cache dir`** if you're running low on disk space
+
+**Performance note:** UV rebuilds its cache quickly, so clearing it is much faster than with traditional pip cache operations.

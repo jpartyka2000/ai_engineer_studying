@@ -1,0 +1,61 @@
+A few options depending on what you need:
+
+**Option 1: Coverage.py (most common)**
+
+Tracks which files/lines are executed:
+
+```bash
+pip install coverage
+
+# Run with coverage
+coverage run -m cue_eval.runner "test_run" cue_eval/configs/dev.yaml true
+
+# See which files were touched
+coverage report
+
+# Or generate HTML report with clickable file list
+coverage html
+open htmlcov/index.html
+```
+
+VSCode extension: **Coverage Gutters** — highlights covered lines in the editor.
+
+**Option 2: Python's trace module (built-in)**
+
+Lists every file that was imported/executed:
+
+```bash
+python -m trace --listfuncs -m cue_eval.runner "test_run" cue_eval/configs/dev.yaml true
+```
+
+Or just list files (not functions):
+
+```bash
+python -m trace --trace -m cue_eval.runner 2>&1 | grep "\.py" | cut -d'(' -f2 | cut -d':' -f1 | sort -u
+```
+
+**Option 3: Simple custom script**
+
+Add this at the top of `runner.py`:
+
+```python
+import sys
+
+_imported_files = set()
+_original_import = __builtins__.__import__
+
+def tracking_import(name, *args, **kwargs):
+    module = _original_import(name, *args, **kwargs)
+    if hasattr(module, '__file__') and module.__file__:
+        _imported_files.add(module.__file__)
+    return module
+
+__builtins__.__import__ = tracking_import
+
+import atexit
+atexit.register(lambda: print("\n".join(sorted(_imported_files))))
+```
+
+---
+
+**My recommendation:** `coverage run` + Coverage Gutters extension is the most practical. You get a clean list of files and can see exactly which lines were executed.

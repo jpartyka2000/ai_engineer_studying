@@ -1,0 +1,52 @@
+**`df.select()` on One Column Returns a DataFrame, Not a Column**
+
+Even when selecting a single column, `df.select()` returns a DataFrame:
+
+```python
+result = df.select("name")
+print(type(result))
+# <class 'pyspark.sql.dataframe.DataFrame'>
+```
+
+**This differs from Pandas:**
+
+```python
+# Pandas - returns a Series
+pdf["name"]
+
+# PySpark - returns a DataFrame
+df.select("name")
+```
+
+**If you want a Column object:**
+
+```python
+col_obj = F.col("name")
+# or
+col_obj = df["name"]
+
+print(type(col_obj))
+# <class 'pyspark.sql.column.Column'>
+```
+
+But note: a `Column` object is just a reference/expression, not actual data.
+
+**If you want actual values:**
+
+```python
+# List of Row objects
+df.select("name").collect()
+# [Row(name='Alice'), Row(name='Bob')]
+
+# Just the values as a list
+[row["name"] for row in df.select("name").collect()]
+# ['Alice', 'Bob']
+
+# First value only
+df.select("name").first()[0]
+# 'Alice'
+```
+
+**Why PySpark works this way:**
+
+DataFrames represent distributed data. A single column is still distributed across the cluster, so it remains a DataFrame. Extracting actual values requires an action (`collect`, `first`, etc.) that pulls data to the driver.

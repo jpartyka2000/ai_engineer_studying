@@ -1,0 +1,49 @@
+I don't have detailed documentation on these specific event types from my training data. Let me search for more information.Based on the documentation, here's the key difference:
+
+## RawResponsesStreamEvent
+
+**Low-level, token-by-token events directly from the LLM.**
+
+- Type: `"raw_response_event"`
+- Contains events in OpenAI Responses API format (e.g., `response.created`, `response.output_text.delta`)
+- Useful for streaming text to the user as it's generated
+- Granular — you get every token delta
+
+```python
+if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+    print(event.data.delta, end="", flush=True)  # Token-by-token output
+```
+
+## RunItemStreamEvent
+
+**High-level, semantic events processed by the Agent SDK.**
+
+- Type: `"run_item_stream_event"`
+- Emitted when a complete item is generated (message finished, tool called, tool returned)
+- Has a `name` field indicating what happened:
+  - `message_output_created` — full message ready
+  - `tool_called` — tool invocation started
+  - `tool_output` — tool returned a result
+  - `handoff_requested` / `handoff_occured` — agent handoff
+  - `reasoning_item_created` — reasoning step completed
+
+```python
+if event.type == "run_item_stream_event":
+    if event.name == "tool_called":
+        print(f"Tool invoked: {event.item.name}")
+    elif event.name == "message_output_created":
+        print(ItemHelpers.text_message_output(event.item))
+```
+
+## When to Use Each
+
+| Use Case | Event Type |
+|----------|------------|
+| Live typing effect in UI | `RawResponsesStreamEvent` |
+| "Tool is running" indicator | `RunItemStreamEvent` |
+| Display final message | `RunItemStreamEvent` |
+| Progress updates (step-by-step) | `RunItemStreamEvent` |
+
+## In Your Code
+
+The code you shared processes both because it's building a trajectory — it extracts completed items from either event type, whichever the SDK emits, while ignoring the granular streaming deltas that aren't useful for evaluation purposes.

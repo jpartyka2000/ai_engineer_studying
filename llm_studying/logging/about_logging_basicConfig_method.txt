@@ -1,0 +1,44 @@
+`logging.basicConfig()` is a convenience function that performs a one-time configuration of the **root logger**. Here’s what it does under the hood:
+
+1. **Checks for existing handlers**
+
+   * If the root logger already has any handlers attached, `basicConfig()` does nothing (unless you pass `force=True` in Python 3.8+).
+   * This prevents you from accidentally reconfiguring logging multiple times.
+
+2. **Configures the root logger’s level**
+
+   * Accepts a `level=` argument (e.g. `logging.INFO`).
+   * Sets the root logger to that level so it will process messages at or above that severity.
+
+3. **Creates and attaches a handler**
+
+   * By default, it adds a `StreamHandler` pointing to `sys.stderr`.
+   * If you specify `filename=…`, it instead creates a `FileHandler` writing to that file (with your chosen `filemode`, default `'a'`).
+
+4. **Sets the handler’s formatter**
+
+   * You can pass a `format=` string (and optional `datefmt=`) to define how each log record is rendered.
+   * If omitted, it uses a simple default of `'%(levelname)s:%(name)s:%(message)s'`.
+
+5. **Optional arguments**
+
+   * `handlers=` (Python 3.3+): provide your own list of handlers to attach instead of auto-creating one.
+   * `force=True` (Python 3.8+): remove any existing handlers before configuring, so you can re-call `basicConfig()` reliably.
+
+---
+
+### Typical usage
+
+```python
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    filename="app.log",      # comment out to log to stderr instead
+    filemode="w",            # overwrite log file each run
+)
+```
+
+After calling this (once), any subsequent calls like `logging.getLogger("foo").warning("…")` will go through the root logger with your configured handler and format.
