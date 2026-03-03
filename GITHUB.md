@@ -2,10 +2,11 @@
 
 ## Repository
 
-- https://github.com/jpartyka2000/ai_engineer_studying.git
+- git@github.com:jpartyka2000/ai_engineer_studying.git
 - **Remote**: GitHub (origin)
 - **Main branch**: `main` — always deployable, protected.
 - **Development branch**: `develop` — integration branch for features.
+- FOR EVERY GIT COMMAND YOU RUN, IT MUST BE CONFIRMED BY ME.
 
 ---
 
