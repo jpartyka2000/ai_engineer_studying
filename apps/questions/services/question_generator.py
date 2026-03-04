@@ -73,7 +73,7 @@ You must respond with valid JSON only."""
         subject: Subject,
         topic: str,
         num_questions: int = 3,
-        difficulty: str = "intermediate",
+        difficulty: str | None = None,
         question_types: list[str] | None = None,
     ) -> list[GeneratedQuestion]:
         """
@@ -97,11 +97,24 @@ You must respond with valid JSON only."""
         if question_types is None:
             question_types = ["mc", "free"]
 
+        # Build difficulty instruction
+        if difficulty:
+            difficulty_instruction = f"- Generate questions at the '{difficulty}' difficulty level"
+            difficulty_constraint = f'  "difficulty": "{difficulty}"'
+        else:
+            difficulty_instruction = (
+                "- Assign appropriate difficulty level (beginner/intermediate/advanced) to each question based on:\n"
+                "  * Beginner: Basic concepts, definitions, simple recall\n"
+                "  * Intermediate: Application of concepts, problem-solving, understanding relationships\n"
+                "  * Advanced: Complex scenarios, edge cases, optimization, deep understanding"
+            )
+            difficulty_constraint = '  "difficulty": "intermediate" (or "beginner" or "advanced" based on complexity)'
+
         prompt = f"""Based on the following content about "{topic}" in the subject area of "{subject.name}",
 generate {num_questions} exam questions.
 
 Requirements:
-- Generate questions at the "{difficulty}" difficulty level
+{difficulty_instruction}
 - Include a mix of question types: {", ".join(question_types)}
 - For multiple choice questions, provide exactly 4 options labeled A, B, C, D
 - The correct_answer for MC questions should be just the letter (e.g., "A")
@@ -119,7 +132,7 @@ Respond with a JSON object containing a "questions" array. Each question should 
 - options: Array of 4 strings for MC (empty for free text)
 - correct_answer: Letter for MC, full answer for free text
 - explanation: Why this is the correct answer
-- difficulty: "{difficulty}"
+- difficulty: One of "beginner", "intermediate", or "advanced"
 - tags: Array of relevant topic tags
 
 Example response format:
@@ -131,7 +144,7 @@ Example response format:
       "options": ["21", "31", "41", "51"],
       "correct_answer": "B",
       "explanation": "The default value for num_leaves in LightGBM is 31...",
-      "difficulty": "intermediate",
+{difficulty_constraint},
       "tags": ["lightgbm", "hyperparameters", "num_leaves"]
     }}
   ]
@@ -160,7 +173,7 @@ Example response format:
         subject: Subject,
         topic: str,
         num_questions: int = 5,
-        difficulty: str = "intermediate",
+        difficulty: str | None = None,
     ) -> list[GeneratedQuestion]:
         """
         Generate exam questions directly from a topic name using Claude's knowledge.
@@ -174,11 +187,22 @@ Example response format:
         Returns:
             List of generated questions.
         """
+        # Build difficulty instruction
+        if difficulty:
+            difficulty_instruction = f"- Questions should be at the '{difficulty}' difficulty level"
+        else:
+            difficulty_instruction = (
+                "- Assign appropriate difficulty level (beginner/intermediate/advanced) to each question based on:\n"
+                "  * Beginner: Basic concepts, definitions, simple recall\n"
+                "  * Intermediate: Application of concepts, problem-solving, understanding relationships\n"
+                "  * Advanced: Complex scenarios, edge cases, optimization, deep understanding"
+            )
+
         prompt = f"""Generate {num_questions} exam questions about "{topic}"
 in the subject area of "{subject.name}".
 
 Requirements:
-- Questions should be at the "{difficulty}" difficulty level
+{difficulty_instruction}
 - Include a mix of multiple choice and free text questions
 - For multiple choice, provide exactly 4 options (A, B, C, D)
 - Test real understanding, not just memorization
@@ -260,7 +284,7 @@ for each question:
         file_path: Path,
         subject: Subject,
         num_questions: int = 3,
-        difficulty: str = "intermediate",
+        difficulty: str | None = None,
     ) -> list[Question]:
         """
         Import questions from an llm_studying file.

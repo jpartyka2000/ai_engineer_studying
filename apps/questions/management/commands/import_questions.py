@@ -98,9 +98,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--difficulty",
             type=str,
-            default="intermediate",
+            default=None,
             choices=["beginner", "intermediate", "advanced"],
-            help="Difficulty level for generated questions",
+            help="Difficulty level for generated questions (if not specified, Claude assigns automatically)",
         )
         parser.add_argument(
             "--dry-run",
@@ -257,7 +257,7 @@ class Command(BaseCommand):
         source_dir: Path,
         max_files: int,
         questions_per_file: int,
-        difficulty: str,
+        difficulty: str | None,
         delay: float,
     ):
         """Import questions from files for each subject."""
