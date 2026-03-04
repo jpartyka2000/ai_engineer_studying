@@ -25,6 +25,8 @@ class Command(BaseCommand):
         self.stdout.write("Seeding visual topics...")
         self.seed_git_visuals()
         self.seed_git_rebase_visual()
+        self.seed_git_reset_visual()
+        self.seed_git_fetch_vs_pull_visual()
         self.seed_sklearn_visuals()
         self.seed_transformers_visuals()
         self.seed_lightgbm_visuals()
@@ -182,6 +184,164 @@ class Command(BaseCommand):
                         "title": "Rebase vs Merge: When to Use Each",
                         "explanation": "Use **rebase** for: cleaning up local commits, keeping feature branch up-to-date, linear history preference. Use **merge** for: preserving complete history, shared branches, when history matters.",
                         "diagram_data": 'flowchart TD\n    Q{What are you doing?}\n    Q -->|"Updating feature branch<br/>with latest main"| R1["git rebase main<br/>(if not shared)"]\n    Q -->|"Integrating feature<br/>into main"| R2["git merge feature<br/>(preserves history)"]\n    Q -->|"Cleaning up commits<br/>before PR"| R3["git rebase -i<br/>(squash/reword)"]\n    Q -->|"Shared branch or<br/>already pushed"| R4["git merge<br/>(safer)"]\n    style R1 fill:#ADD8E6\n    style R2 fill:#90EE90\n    style R3 fill:#ADD8E6\n    style R4 fill:#90EE90',
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_reset_visual(self):
+        """Seed Git reset visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-reset",
+            defaults={
+                "title": "Git Reset: Soft, Mixed, and Hard",
+                "description": "Understand the three reset modes and how they affect HEAD, staging, and working directory",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["git", "reset", "undo", "HEAD"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Three Trees of Git",
+                        "explanation": 'Git manages three "trees" (file collections): **Working Directory** (your files), **Staging Area/Index** (next commit), and **Repository/HEAD** (last commit). Understanding these is key to understanding reset.',
+                        "diagram_data": 'flowchart LR\n    subgraph "Three Trees"\n    WD["Working Directory<br/>(Your Files)"]\n    SA["Staging Area<br/>(Index)"]\n    REPO["Repository<br/>(HEAD Commit)"]\n    end\n    WD -->|git add| SA\n    SA -->|git commit| REPO\n    style WD fill:#90EE90\n    style SA fill:#FFFACD\n    style REPO fill:#ADD8E6',
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Starting State",
+                        "explanation": "Let's say you have 3 commits (A→B→C) and HEAD points to C. All three trees are in sync - working directory, staging area, and HEAD all have the same content.",
+                        "diagram_data": 'gitGraph\n    commit id: "A"\n    commit id: "B"\n    commit id: "C" tag: "HEAD"',
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Git Reset --soft",
+                        "explanation": '**--soft** only moves HEAD to the target commit. Staging area and working directory are **untouched**. Your changes appear as "staged for commit". Use this to redo a commit message or combine commits.',
+                        "diagram_data": 'flowchart TB\n    subgraph "After: git reset --soft B"\n    HEAD2["HEAD → B"]\n    STAGE2["Staging: C\'s changes<br/>(ready to commit)"]\n    WORK2["Working Dir: C\'s changes"]\n    end\n    subgraph Legend\n    L1["Moved"]\n    L2["Unchanged"]\n    end\n    style HEAD2 fill:#FFB6C1\n    style STAGE2 fill:#90EE90\n    style WORK2 fill:#90EE90\n    style L1 fill:#FFB6C1\n    style L2 fill:#90EE90',
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Soft Reset Use Case",
+                        "explanation": "Made a commit but want to change the message or add more files? Use **git reset --soft HEAD~1** to undo the commit but keep everything staged. Then commit again with the right message.",
+                        "diagram_data": 'flowchart LR\n    A["Oops, wrong commit message"] --> B["git reset --soft HEAD~1"]\n    B --> C["Changes still staged"]\n    C --> D["git commit -m \'Better message\'"]\n    style D fill:#90EE90',
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Git Reset --mixed (Default)",
+                        "explanation": '**--mixed** (the default) moves HEAD and resets the staging area, but leaves working directory **untouched**. Changes appear as "unstaged". Use this to unstage files or reorganize what goes into commits.',
+                        "diagram_data": 'flowchart TB\n    subgraph "After: git reset --mixed B"\n    HEAD3["HEAD → B"]\n    STAGE3["Staging: Empty<br/>(matches B)"]\n    WORK3["Working Dir: C\'s changes<br/>(unstaged)"]\n    end\n    subgraph Legend\n    L1["Moved/Reset"]\n    L2["Unchanged"]\n    end\n    style HEAD3 fill:#FFB6C1\n    style STAGE3 fill:#FFB6C1\n    style WORK3 fill:#90EE90\n    style L1 fill:#FFB6C1\n    style L2 fill:#90EE90',
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Mixed Reset Use Case",
+                        "explanation": "Accidentally staged files you didn't want? Or want to split a big commit into smaller ones? Use **git reset HEAD~1** (mixed is default) to unstage and re-add files selectively.",
+                        "diagram_data": 'flowchart LR\n    A["Committed too many files"] --> B["git reset HEAD~1"]\n    B --> C["All changes unstaged"]\n    C --> D["git add file1.py"]\n    D --> E["git commit -m \'First part\'"]\n    E --> F["git add file2.py"]\n    F --> G["git commit -m \'Second part\'"]\n    style E fill:#90EE90\n    style G fill:#90EE90',
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Git Reset --hard",
+                        "explanation": "**--hard** moves HEAD, resets staging area, AND resets working directory. All changes are **discarded**. This is destructive - uncommitted work is lost! Use with caution.",
+                        "diagram_data": 'flowchart TB\n    subgraph "After: git reset --hard B"\n    HEAD4["HEAD → B"]\n    STAGE4["Staging: Empty<br/>(matches B)"]\n    WORK4["Working Dir: B\'s content<br/>(C\'s changes GONE)"]\n    end\n    subgraph Legend\n    L1["Moved/Reset"]\n    L2["DESTROYED"]\n    end\n    style HEAD4 fill:#FFB6C1\n    style STAGE4 fill:#FFB6C1\n    style WORK4 fill:#FFB6C1\n    style L1 fill:#FFB6C1\n    style L2 fill:#FF0000',
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Hard Reset Use Case",
+                        "explanation": "Want to completely abandon recent work and go back? **git reset --hard HEAD~2** throws away the last 2 commits entirely. Or **git reset --hard origin/main** to match the remote exactly.",
+                        "diagram_data": 'flowchart LR\n    A["Made a mess of things"] --> B["git reset --hard origin/main"]\n    B --> C["Local matches remote exactly"]\n    C --> D["All local changes gone"]\n    style D fill:#FFB6C1',
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Comparison Summary",
+                        "explanation": "Quick reference: **--soft** keeps everything, **--mixed** unstages but keeps files, **--hard** destroys everything. When in doubt, start with --soft - you can always go harder.",
+                        "diagram_data": 'flowchart TB\n    subgraph "git reset --soft"\n    S1["HEAD: Moved"]\n    S2["Staging: Unchanged"]\n    S3["Working: Unchanged"]\n    end\n    subgraph "git reset --mixed"\n    M1["HEAD: Moved"]\n    M2["Staging: Reset"]\n    M3["Working: Unchanged"]\n    end\n    subgraph "git reset --hard"\n    H1["HEAD: Moved"]\n    H2["Staging: Reset"]\n    H3["Working: Reset"]\n    end\n    style S1 fill:#FFB6C1\n    style S2 fill:#90EE90\n    style S3 fill:#90EE90\n    style M1 fill:#FFB6C1\n    style M2 fill:#FFB6C1\n    style M3 fill:#90EE90\n    style H1 fill:#FFB6C1\n    style H2 fill:#FFB6C1\n    style H3 fill:#FFB6C1',
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Recovery with Reflog",
+                        "explanation": "Accidentally did a hard reset? Git reflog tracks all HEAD movements. Find the lost commit hash with **git reflog** and recover with **git reset --hard <hash>**. Commits aren't truly gone until garbage collected (~30 days).",
+                        "diagram_data": 'flowchart TD\n    A["Oops! git reset --hard"] --> B["git reflog"]\n    B --> C["See: abc123 HEAD@{1}: commit: My work"]\n    C --> D["git reset --hard abc123"]\n    D --> E["Work recovered!"]\n    style A fill:#FFB6C1\n    style E fill:#90EE90',
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_fetch_vs_pull_visual(self):
+        """Seed Git fetch vs pull visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-fetch-vs-pull",
+            defaults={
+                "title": "Git Fetch vs Pull",
+                "description": "Understand the difference between fetch and pull, and when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["git", "fetch", "pull", "remote"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Setup: Local and Remote",
+                        "explanation": "You have a **local repository** on your machine and a **remote repository** (like GitHub). Your local repo has **remote-tracking branches** (like origin/main) that remember where the remote branches were last time you checked.",
+                        "diagram_data": 'flowchart LR\n    subgraph "Your Machine"\n    LOCAL["Local Repo<br/>main branch"]\n    TRACK["origin/main<br/>(tracking branch)"]\n    end\n    subgraph "GitHub"\n    REMOTE["Remote Repo<br/>main branch"]\n    end\n    TRACK -.->|"tracks"| REMOTE\n    style LOCAL fill:#90EE90\n    style TRACK fill:#FFFACD\n    style REMOTE fill:#ADD8E6',
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Starting State",
+                        "explanation": "Both local and remote are at commit B. Someone else pushes commit C to the remote. Now the remote is ahead, but your local repo doesn't know yet.",
+                        "diagram_data": 'flowchart LR\n    subgraph "Local (outdated)"\n    L1["A"] --> L2["B"]\n    L2 --> LH["main, origin/main"]\n    end\n    subgraph "Remote (ahead)"\n    R1["A"] --> R2["B"] --> R3["C"]\n    R3 --> RH["main"]\n    end\n    style R3 fill:#90EE90\n    style LH fill:#FFFACD',
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Git Fetch: Download Only",
+                        "explanation": "**git fetch** downloads new commits from the remote and updates your **remote-tracking branch** (origin/main). It does NOT touch your local main branch. Safe and non-destructive.",
+                        "diagram_data": 'flowchart LR\n    subgraph "After: git fetch"\n    L1["A"] --> L2["B"]\n    L2 --> LH["main (unchanged)"]\n    L2 --> L3["C"]\n    L3 --> OH["origin/main (updated)"]\n    end\n    style L3 fill:#90EE90\n    style OH fill:#90EE90\n    style LH fill:#FFFACD',
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "After Fetch: You Decide",
+                        "explanation": "After fetching, you can inspect what changed before merging. Use **git log origin/main** or **git diff main origin/main** to see what's new. Then merge when ready.",
+                        "diagram_data": 'flowchart TD\n    A["git fetch origin"] --> B["origin/main updated"]\n    B --> C{"Review changes?"}\n    C -->|"git log origin/main"| D["See new commits"]\n    C -->|"git diff main origin/main"| E["See code changes"]\n    D --> F["git merge origin/main"]\n    E --> F\n    F --> G["Local main updated"]\n    style A fill:#ADD8E6\n    style G fill:#90EE90',
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Git Pull: Fetch + Merge",
+                        "explanation": "**git pull** is simply **git fetch** followed by **git merge**. It downloads AND immediately integrates the changes into your current branch. Convenient but gives you less control.",
+                        "diagram_data": 'flowchart LR\n    subgraph "git pull = fetch + merge"\n    FETCH["git fetch"]\n    MERGE["git merge origin/main"]\n    FETCH --> MERGE\n    end\n    style FETCH fill:#ADD8E6\n    style MERGE fill:#90EE90',
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Pull Result",
+                        "explanation": "After **git pull**, your local main is updated to include the remote changes. If there were no local commits, it's a simple fast-forward. Otherwise, a merge commit may be created.",
+                        "diagram_data": 'flowchart LR\n    subgraph "After: git pull (fast-forward)"\n    L1["A"] --> L2["B"] --> L3["C"]\n    L3 --> LH["main, origin/main"]\n    end\n    style L3 fill:#90EE90\n    style LH fill:#90EE90',
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "When Branches Diverge",
+                        "explanation": "If you have local commits AND the remote has new commits, **git pull** will create a **merge commit**. This can clutter history. Some teams prefer **git pull --rebase** for a linear history.",
+                        "diagram_data": 'flowchart TB\n    subgraph "Before Pull (diverged)"\n    B1["A"] --> B2["B"]\n    B2 --> B3["C (local)"]\n    B2 --> B4["D (remote)"]\n    end\n    subgraph "After git pull"\n    A1["A"] --> A2["B"]\n    A2 --> A3["C"]\n    A2 --> A4["D"]\n    A3 --> A5["M (merge)"]\n    A4 --> A5\n    end\n    style A5 fill:#FFFACD',
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Git Pull --rebase",
+                        "explanation": "**git pull --rebase** fetches then rebases your local commits on top of the remote changes. This creates a linear history without merge commits. Popular for keeping a clean git log.",
+                        "diagram_data": 'flowchart TB\n    subgraph "Before"\n    B1["A"] --> B2["B"]\n    B2 --> B3["C (local)"]\n    B2 --> B4["D (remote)"]\n    end\n    subgraph "After git pull --rebase"\n    A1["A"] --> A2["B"] --> A4["D"] --> A3["C\' (rebased)"]\n    end\n    style A3 fill:#90EE90',
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "When to Use Each",
+                        "explanation": "Use **fetch** when: you want to review changes first, working on shared branch, or CI/CD scripts. Use **pull** when: you trust incoming changes, working alone, want convenience. Use **pull --rebase** for linear history.",
+                        "diagram_data": 'flowchart TD\n    Q{"What do you need?"}\n    Q -->|"Review before integrating"| F["git fetch<br/>then git merge"]\n    Q -->|"Quick update, trust remote"| P["git pull"]\n    Q -->|"Update + linear history"| PR["git pull --rebase"]\n    Q -->|"Just see what\'s new"| FO["git fetch<br/>git log origin/main"]\n    style F fill:#ADD8E6\n    style P fill:#90EE90\n    style PR fill:#FFFACD\n    style FO fill:#E6E6FA',
                     },
                 ],
             },
