@@ -24,6 +24,7 @@ class Command(BaseCommand):
 
         self.stdout.write("Seeding visual topics...")
         self.seed_git_visuals()
+        self.seed_git_rebase_visual()
         self.seed_sklearn_visuals()
         self.seed_transformers_visuals()
         self.seed_lightgbm_visuals()
@@ -105,6 +106,82 @@ class Command(BaseCommand):
                         "title": "Merging Branches",
                         "explanation": "When your feature is complete, you can merge it back into `main`. First checkout main, then run `git merge feature`. Git creates a merge commit that combines both histories.",
                         "diagram_data": 'gitGraph\n    commit id: "C0"\n    commit id: "C1"\n    commit id: "C2"\n    branch feature\n    checkout feature\n    commit id: "C3"\n    commit id: "C4"\n    checkout main\n    merge feature id: "C5" tag: "HEAD -> main"',
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_rebase_visual(self):
+        """Seed Git rebase visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-rebase",
+            defaults={
+                "title": "Git Rebase: Rewriting History",
+                "description": "Learn how git rebase works and when to use it instead of merge",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["git", "rebase", "merge", "history"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Starting Point: Diverged Branches",
+                        "explanation": "You have a **feature branch** that diverged from **main**. Both branches have new commits. This is a common scenario when working on a feature while others merge to main.",
+                        "diagram_data": 'gitGraph\n    commit id: "A"\n    commit id: "B"\n    branch feature\n    checkout feature\n    commit id: "C"\n    commit id: "D"\n    checkout main\n    commit id: "E"\n    commit id: "F" tag: "main"',
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Merge Approach",
+                        "explanation": "With **git merge**, you create a merge commit that combines both histories. The commit history shows the parallel development. This preserves the true history but can create a cluttered log.",
+                        "diagram_data": 'gitGraph\n    commit id: "A"\n    commit id: "B"\n    branch feature\n    checkout feature\n    commit id: "C"\n    commit id: "D"\n    checkout main\n    commit id: "E"\n    commit id: "F"\n    merge feature id: "M" tag: "merge commit"',
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Rebase Approach",
+                        "explanation": 'With **git rebase main**, you "replay" your feature commits on top of main. It\'s like saying: "pretend I started my work from the latest main." This creates a **linear history**.',
+                        "diagram_data": 'gitGraph\n    commit id: "A"\n    commit id: "B"\n    commit id: "E"\n    commit id: "F" tag: "main"\n    commit id: "C\'" type: HIGHLIGHT\n    commit id: "D\'" tag: "feature" type: HIGHLIGHT',
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "How Rebase Works (Step 1)",
+                        "explanation": "Git first finds the **common ancestor** (commit B) of your branch and the target branch. Then it temporarily saves your commits (C, D) as patches.",
+                        "diagram_data": 'gitGraph\n    commit id: "A"\n    commit id: "B" tag: "common ancestor"\n    branch feature\n    checkout feature\n    commit id: "C (saved)"\n    commit id: "D (saved)"\n    checkout main\n    commit id: "E"\n    commit id: "F" tag: "rebase onto here"',
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "How Rebase Works (Step 2)",
+                        "explanation": "Git moves your branch pointer to the tip of main (commit F). Then it **replays** each of your commits, one by one, creating new commits C' and D' with new hashes.",
+                        "diagram_data": 'gitGraph\n    commit id: "A"\n    commit id: "B"\n    commit id: "E"\n    commit id: "F"\n    commit id: "C\' (replayed)" type: HIGHLIGHT\n    commit id: "D\' (replayed)" tag: "feature" type: HIGHLIGHT',
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Handling Conflicts",
+                        "explanation": "If a conflict occurs during replay, Git pauses and lets you resolve it. After fixing conflicts: **git add .** then **git rebase --continue**. Use **git rebase --abort** to cancel.",
+                        "diagram_data": "flowchart TD\n    A[git rebase main] --> B{Conflict?}\n    B -->|No| C[Commit replayed]\n    B -->|Yes| D[CONFLICT - Rebase paused]\n    D --> E[Fix conflicts manually]\n    E --> F[git add .]\n    F --> G[git rebase --continue]\n    G --> B\n    D --> H[git rebase --abort]\n    H --> I[Back to original state]\n    style D fill:#FFB6C1\n    style G fill:#90EE90",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Interactive Rebase: Squashing Commits",
+                        "explanation": "Use **git rebase -i HEAD~3** to modify the last 3 commits. You can **squash** (combine), **reword** (edit message), **edit** (amend), **drop** (delete), or **reorder** commits.",
+                        "diagram_data": 'flowchart LR\n    subgraph Before\n    A1["fix typo"]\n    A2["add feature"]\n    A3["fix typo again"]\n    end\n    subgraph "git rebase -i"\n    B1["pick: add feature"]\n    B2["squash: fix typo"]\n    B3["squash: fix typo again"]\n    end\n    subgraph After\n    C1["add feature (clean)"]\n    end\n    Before --> B1\n    B1 --> After\n    style C1 fill:#90EE90',
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "The Golden Rule of Rebasing",
+                        "explanation": "**Never rebase commits that have been pushed and shared with others.** Rebase rewrites history (new commit hashes). If others based work on the old commits, you'll cause conflicts and confusion.",
+                        "diagram_data": 'flowchart TD\n    subgraph "Safe to Rebase"\n    A[Local commits not pushed]\n    B[Your own feature branch]\n    C[Before opening PR]\n    end\n    subgraph "NEVER Rebase"\n    D[Commits on main/master]\n    E[Shared branches]\n    F[After PR is merged]\n    end\n    style A fill:#90EE90\n    style B fill:#90EE90\n    style C fill:#90EE90\n    style D fill:#FFB6C1\n    style E fill:#FFB6C1\n    style F fill:#FFB6C1',
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Rebase vs Merge: When to Use Each",
+                        "explanation": "Use **rebase** for: cleaning up local commits, keeping feature branch up-to-date, linear history preference. Use **merge** for: preserving complete history, shared branches, when history matters.",
+                        "diagram_data": 'flowchart TD\n    Q{What are you doing?}\n    Q -->|"Updating feature branch<br/>with latest main"| R1["git rebase main<br/>(if not shared)"]\n    Q -->|"Integrating feature<br/>into main"| R2["git merge feature<br/>(preserves history)"]\n    Q -->|"Cleaning up commits<br/>before PR"| R3["git rebase -i<br/>(squash/reword)"]\n    Q -->|"Shared branch or<br/>already pushed"| R4["git merge<br/>(safer)"]\n    style R1 fill:#ADD8E6\n    style R2 fill:#90EE90\n    style R3 fill:#ADD8E6\n    style R4 fill:#90EE90',
                     },
                 ],
             },
