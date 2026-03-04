@@ -67,5 +67,17 @@ def logout_view(request):
 
 @login_required
 def profile_view(request):
-    """Display user profile/dashboard."""
-    return render(request, "accounts/profile.html")
+    """Display user profile/dashboard with study statistics."""
+    from apps.core.services.dashboard_service import get_dashboard_service
+
+    service = get_dashboard_service()
+
+    context = {
+        "summary": service.get_dashboard_summary(request.user),
+        "subject_breakdown": service.get_subject_breakdown(request.user),
+        "recent_activity": service.get_recent_activity(request.user, limit=10),
+        "weakest_subjects": service.get_weakest_subjects(request.user, limit=3),
+        "strongest_subjects": service.get_strongest_subjects(request.user, limit=3),
+    }
+
+    return render(request, "accounts/profile.html", context)

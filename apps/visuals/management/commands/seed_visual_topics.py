@@ -28,6 +28,7 @@ class Command(BaseCommand):
         self.seed_git_reset_visual()
         self.seed_git_fetch_vs_pull_visual()
         self.seed_sklearn_visuals()
+        self.seed_isolation_forest_visual()
         self.seed_transformers_visuals()
         self.seed_lightgbm_visuals()
         self.seed_system_design_visuals()
@@ -403,6 +404,101 @@ class Command(BaseCommand):
                         "title": "Making Predictions",
                         "explanation": "To predict a new sample, start at the root and follow the decision path. At each node, go left or right based on the split condition until you reach a leaf.",
                         "diagram_data": 'graph TB\n    New["New Sample<br/>X=[2.5, 3]"]\n    New --> Root["X1 < 3.5?"]\n    Root -->|"2.5 < 3.5? Yes!"| Left["Predict: Blue"]\n    Root -.->|No| Right["Predict: Red"]\n    style New fill:#FFFACD\n    style Left fill:#ADD8E6',
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_isolation_forest_visual(self):
+        """Seed Isolation Forest visual topic."""
+        subject = self.get_or_create_subject(
+            "scikit-learn", "scikit-learn", "ML Frameworks"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="isolation-forest",
+            defaults={
+                "title": "Isolation Forest: Anomaly Detection",
+                "description": "Learn how Isolation Forest detects anomalies by isolating observations using random splits",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": [
+                    "isolation-forest",
+                    "anomaly-detection",
+                    "unsupervised-learning",
+                    "outliers",
+                ],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Anomaly Detection",
+                        "explanation": "**Anomaly detection** finds data points that are significantly different from the majority. Use cases include fraud detection, network intrusion, manufacturing defects, and medical diagnosis. Traditional methods struggle with high-dimensional data.",
+                        "diagram_data": 'graph TB\n    subgraph "Normal Data (Majority)"\n    N1["Transaction: $50"]\n    N2["Transaction: $75"]\n    N3["Transaction: $60"]\n    N4["Transaction: $45"]\n    end\n    subgraph "Anomalies (Rare)"\n    A1["Transaction: $50,000"]\n    A2["Transaction: $0.01"]\n    end\n    style A1 fill:#FFB6C1\n    style A2 fill:#FFB6C1\n    style N1 fill:#90EE90\n    style N2 fill:#90EE90\n    style N3 fill:#90EE90\n    style N4 fill:#90EE90',
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Key Insight: Anomalies are Easy to Isolate",
+                        "explanation": "Isolation Forest is based on a simple observation: **anomalies are few and different**. Because they're rare and have unusual feature values, they can be isolated with fewer random splits than normal points.",
+                        "diagram_data": 'graph LR\n    subgraph "2D Feature Space"\n    direction TB\n    Cluster["Normal points<br/>(clustered together)"]\n    Outlier["Anomaly<br/>(isolated)"]\n    end\n    Cluster --> |"Hard to isolate<br/>Many splits needed"| C1["Deep in tree"]\n    Outlier --> |"Easy to isolate<br/>Few splits needed"| O1["Near root"]\n    style Outlier fill:#FFB6C1\n    style Cluster fill:#90EE90\n    style O1 fill:#FFB6C1\n    style C1 fill:#90EE90',
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Building an Isolation Tree",
+                        "explanation": "An **Isolation Tree (iTree)** is built by randomly selecting a feature and a random split value between the feature's min and max. This process repeats recursively until each point is isolated or max depth is reached.",
+                        "diagram_data": 'graph TB\n    Root["All Data (100 points)"]\n    Root --> |"Random: Feature X < 0.4"| L1["Left: 60 points"]\n    Root --> |"Feature X >= 0.4"| R1["Right: 40 points"]\n    L1 --> |"Random: Feature Y < 0.7"| L2["35 points"]\n    L1 --> |"Feature Y >= 0.7"| R2["25 points"]\n    R1 --> |"Random: Feature Z < 0.2"| L3["15 points"]\n    R1 --> |"Feature Z >= 0.2"| R3["25 points"]\n    style Root fill:#E6E6FA\n    Note["Splits are RANDOM<br/>Not optimized like Decision Trees"]',
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Isolating a Normal Point",
+                        "explanation": "A **normal point** lives in a dense region with many similar points. It takes **many random splits** to finally isolate it from its neighbors. This results in a **long path** from root to leaf.",
+                        "diagram_data": 'graph TB\n    Root["Start"] --> S1["Split 1"]\n    S1 --> S2["Split 2"]\n    S2 --> S3["Split 3"]\n    S3 --> S4["Split 4"]\n    S4 --> S5["Split 5"]\n    S5 --> S6["Split 6"]\n    S6 --> Leaf["Normal Point<br/>Path Length = 6"]\n    style Leaf fill:#90EE90\n    style Root fill:#E6E6FA',
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Isolating an Anomaly",
+                        "explanation": "An **anomaly** has unusual feature values that make it easy to separate from the rest. A random split is likely to isolate it quickly, resulting in a **short path** from root to leaf.",
+                        "diagram_data": 'graph TB\n    Root["Start"] --> S1["Split 1"]\n    S1 --> Leaf["Anomaly!<br/>Path Length = 1"]\n    S1 --> Continue["...rest of tree..."]\n    style Leaf fill:#FFB6C1\n    style Root fill:#E6E6FA\n    style Continue fill:#EEEEEE',
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Path Length Comparison",
+                        "explanation": "The **path length** (number of edges from root to leaf) is the key metric. Anomalies have **shorter average path lengths** across multiple trees. This is the basis for the anomaly score.",
+                        "diagram_data": 'graph LR\n    subgraph "Normal Point"\n    NP["Path lengths:<br/>6, 7, 5, 8, 6<br/>Average: 6.4"]\n    end\n    subgraph "Anomaly"\n    AP["Path lengths:<br/>2, 1, 3, 2, 1<br/>Average: 1.8"]\n    end\n    NP --> N["Low anomaly score"]\n    AP --> A["HIGH anomaly score"]\n    style AP fill:#FFB6C1\n    style A fill:#FFB6C1\n    style NP fill:#90EE90\n    style N fill:#90EE90',
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Building the Forest",
+                        "explanation": "Isolation Forest builds **multiple trees** (default: 100), each trained on a random subsample of data (default: 256 points). This ensemble approach reduces variance and improves robustness.",
+                        "diagram_data": 'graph TB\n    Data["Full Dataset<br/>10,000 points"]\n    Data --> |"Sample 256"| T1["iTree 1"]\n    Data --> |"Sample 256"| T2["iTree 2"]\n    Data --> |"Sample 256"| T3["iTree 3"]\n    Data --> |"..."| Tn["iTree 100"]\n    T1 --> Ensemble["Isolation Forest"]\n    T2 --> Ensemble\n    T3 --> Ensemble\n    Tn --> Ensemble\n    style Ensemble fill:#ADD8E6',
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Computing the Anomaly Score",
+                        "explanation": "The anomaly score is computed from the **average path length** across all trees, normalized by the expected path length for the sample size. Scores range from 0 to 1, where **scores close to 1 indicate anomalies**.",
+                        "diagram_data": 'flowchart TB\n    subgraph "For each point"\n    PL["Get path length<br/>from each tree"]\n    AVG["Calculate average<br/>path length E(h)"]\n    NORM["Normalize by<br/>expected length c(n)"]\n    SCORE["Score = 2^(-E(h)/c(n))"]\n    end\n    PL --> AVG --> NORM --> SCORE\n    subgraph "Score Interpretation"\n    S1["Score → 1: Anomaly"]\n    S2["Score → 0.5: Normal"]\n    S3["Score → 0: Very normal"]\n    end\n    style S1 fill:#FFB6C1\n    style S2 fill:#FFFACD\n    style S3 fill:#90EE90',
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Setting the Contamination Parameter",
+                        "explanation": "The **contamination** parameter (default: 'auto') sets the expected proportion of anomalies. It determines the threshold for classifying points as anomalies. Set it based on domain knowledge or cross-validation.",
+                        "diagram_data": 'graph TB\n    subgraph "contamination=0.1 (10% anomalies)"\n    S1["Scores > threshold → Anomaly"]\n    S2["Top 10% of scores<br/>flagged as anomalies"]\n    end\n    subgraph "Effect on Threshold"\n    C1["contamination=0.01"] --> T1["High threshold<br/>Few anomalies"]\n    C2["contamination=0.1"] --> T2["Medium threshold<br/>More anomalies"]\n    C3["contamination=0.5"] --> T3["Low threshold<br/>Many anomalies"]\n    end\n    style T1 fill:#90EE90\n    style T2 fill:#FFFACD\n    style T3 fill:#FFB6C1',
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "scikit-learn Implementation",
+                        "explanation": "Using Isolation Forest in scikit-learn is straightforward. Key parameters: **n_estimators** (trees), **max_samples** (subsample size), **contamination** (anomaly proportion), **random_state** (reproducibility).",
+                        "diagram_data": 'flowchart LR\n    subgraph "Code Flow"\n    C1["from sklearn.ensemble<br/>import IsolationForest"]\n    C2["clf = IsolationForest(<br/>n_estimators=100,<br/>contamination=0.1)"]\n    C3["clf.fit(X_train)"]\n    C4["predictions = clf.predict(X)<br/>-1 = anomaly, 1 = normal"]\n    C5["scores = clf.score_samples(X)<br/>lower = more anomalous"]\n    end\n    C1 --> C2 --> C3 --> C4\n    C3 --> C5\n    style C4 fill:#90EE90\n    style C5 fill:#ADD8E6',
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Strengths and Limitations",
+                        "explanation": "**Strengths**: Fast training O(n), handles high dimensions well, no distance calculations needed, works without labels. **Limitations**: Struggles with local anomalies in dense regions, assumes anomalies are globally isolated.",
+                        "diagram_data": 'graph TB\n    subgraph "Strengths"\n    S1["Fast & Scalable"]\n    S2["High-dimensional data"]\n    S3["No labels needed"]\n    S4["Memory efficient"]\n    end\n    subgraph "Limitations"\n    L1["Global isolation assumption"]\n    L2["Axis-parallel splits only"]\n    L3["Sensitive to contamination"]\n    end\n    subgraph "Best Use Cases"\n    U1["Fraud detection"]\n    U2["Network intrusion"]\n    U3["Sensor anomalies"]\n    U4["Data cleaning"]\n    end\n    style S1 fill:#90EE90\n    style S2 fill:#90EE90\n    style S3 fill:#90EE90\n    style S4 fill:#90EE90\n    style L1 fill:#FFB6C1\n    style L2 fill:#FFB6C1\n    style L3 fill:#FFB6C1\n    style U1 fill:#ADD8E6\n    style U2 fill:#ADD8E6\n    style U3 fill:#ADD8E6\n    style U4 fill:#ADD8E6',
                     },
                 ],
             },

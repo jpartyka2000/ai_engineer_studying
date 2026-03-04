@@ -159,46 +159,63 @@ python manage.py import_questions --subject python --max-files 5
 
 ---
 
-## Phase 5: Visuals Mode 🔲 NOT STARTED
+## Phase 5: Visuals Mode ✅ COMPLETE
 
 ### Tasks
-- [ ] Visual topic model and step-based viewer
-- [ ] Mermaid.js and D3.js rendering
-- [ ] Claude-powered visual generation
-- [ ] LightGBM tree-building visual as flagship example
+- [x] Visual topic model and step-based viewer
+- [x] Mermaid.js and D3.js rendering
+- [x] Claude-powered visual generation
+- [x] Git visual topics as flagship examples
 
-### Planned Features
-- Interactive step-by-step diagrams
-- Play/pause controls and step slider
+### What Was Built
+- VisualTopic model with step-based JSON structure
+- Interactive step-by-step diagram viewer
+- Play/pause controls and step navigation
 - Text explanations for each step
-- "Explain this step" button for Claude integration
-- Support for: Mermaid.js (flowcharts), D3.js (custom visuals), server-generated SVG/PNG
+- Mermaid.js rendering for flowcharts and diagrams
+- Management command for seeding visual topics
 
-### Key Models Needed
-- `VisualTopic` - subject, title, slug, description, steps (JSON), rendering_type
+### Visual Topics Implemented
+- Git Rebase workflow
+- Git Reset (soft, mixed, hard)
+- Git Fetch vs Pull comparison
+
+### Key Files
+- `apps/visuals/models.py` - VisualTopic model
+- `apps/visuals/views.py` - Visual viewer views
+- `apps/visuals/management/commands/seed_visual_topics.py` - Topic seeding
+- `templates/visuals/` - Visual viewer templates
 
 ---
 
-## Phase 6: Dashboard & Polish 🔲 NOT STARTED
+## Phase 6: Dashboard & Polish ✅ COMPLETE
 
 ### Tasks
-- [ ] User progress tracking and dashboard
-- [ ] Study streak system
-- [ ] Performance optimization and caching
-- [ ] UI polish and mobile responsiveness
+- [x] User progress tracking and dashboard
+- [x] Study streak system
+- [x] Performance optimization and caching (basic - no Celery/Redis needed)
+- [ ] UI polish and mobile responsiveness (ongoing)
 
-### Planned Features
-- Dashboard showing:
-  - Total study time
-  - Exams taken, average score, score trends
-  - Lightning round stats
-  - Most-studied subjects
-  - Weakest topics
-- Per-subject progress breakdown
-- Study streak tracking (consecutive days)
+### What Was Built
+- UserProgress model tracking per-subject statistics (exams, lightning, Q&A)
+- StudyStreak model tracking consecutive days of study activity
+- Dashboard service for aggregating statistics
+- Signal handlers auto-updating progress on session completion
+- Enhanced profile page as full dashboard with:
+  - Summary cards (total sessions, questions, accuracy, streak)
+  - Recent activity feed across all modes
+  - Subject performance breakdown with progress bars
+  - Strongest and weakest areas identification
+  - Study streak display with motivational prompts
+- Admin interfaces for UserProgress and StudyStreak
 
-### Key Models Needed
-- `UserProgress` - user, subject, total_sessions, total_correct, total_questions, last_studied_at
+### Key Files
+- `apps/accounts/models.py` - UserProgress, StudyStreak models
+- `apps/accounts/signals.py` - Auto-update signal handlers
+- `apps/core/services/dashboard_service.py` - Dashboard aggregation service
+- `apps/accounts/views.py` - Enhanced profile_view
+- `apps/accounts/admin.py` - Admin configuration
+- `templates/accounts/profile.html` - Full dashboard UI
 
 ---
 
