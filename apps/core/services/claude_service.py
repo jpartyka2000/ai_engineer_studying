@@ -5,7 +5,7 @@ All Claude API interactions should go through this service.
 """
 
 import logging
-from typing import Any
+from typing import Any, Iterator
 
 from anthropic import Anthropic
 from django.conf import settings
@@ -108,6 +108,7 @@ class ClaudeService:
             ClaudeAPIError: If the API call fails or JSON parsing fails.
         """
         import json
+        import re
 
         # Add JSON instruction to system message
         json_system = (system_message or "") + (
@@ -122,11 +123,79 @@ class ClaudeService:
             temperature=temperature,
         )
 
+        # Strip markdown code fences if present
+        # Claude sometimes wraps JSON in ```json ... ```
+        cleaned_response = response.strip()
+
+        # Remove opening code fence
+        if cleaned_response.startswith("```"):
+            # Find the end of the first line (the language identifier)
+            first_newline = cleaned_response.find("\n")
+            if first_newline != -1:
+                cleaned_response = cleaned_response[first_newline + 1:]
+
+        # Remove closing code fence
+        if cleaned_response.endswith("```"):
+            cleaned_response = cleaned_response[:-3].rstrip()
+
         try:
-            return json.loads(response)
+            return json.loads(cleaned_response)
         except json.JSONDecodeError as e:
-            logger.error("Failed to parse JSON response: %s", response[:500])
+            logger.error("Failed to parse JSON response: %s", cleaned_response[:500])
             raise ClaudeAPIError(f"Invalid JSON response from Claude: {e}") from e
+
+    def stream_completion(
+        self,
+        prompt: str,
+        system_message: str | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        conversation_history: list[dict] | None = None,
+    ) -> Iterator[str]:
+        """
+        Stream a text completion from Claude.
+
+        Yields text chunks as they arrive from the API. This is useful for
+        real-time display of responses in chat interfaces.
+
+        Args:
+            prompt: The user prompt to send to Claude (most recent message).
+            system_message: Optional system message to set context.
+            max_tokens: Maximum tokens in the response.
+            temperature: Sampling temperature (0-1).
+            conversation_history: Previous messages in format
+                [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}, ...].
+                The prompt will be appended as the final user message.
+
+        Yields:
+            Text chunks as strings.
+
+        Raises:
+            ClaudeAPIError: If the API call fails.
+        """
+        try:
+            # Build messages array
+            messages = conversation_history or []
+            messages.append({"role": "user", "content": prompt})
+
+            kwargs: dict[str, Any] = {
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "messages": messages,
+                "temperature": temperature,
+            }
+
+            if system_message:
+                kwargs["system"] = system_message
+
+            # Use streaming API with context manager
+            with self.client.messages.stream(**kwargs) as stream:
+                for text in stream.text_stream:
+                    yield text
+
+        except Exception as e:
+            logger.exception("Claude streaming API error: %s", str(e))
+            raise ClaudeAPIError(f"Failed to stream completion: {e}") from e
 
     def validate_response(
         self, response_data: dict[str, Any], model_class: type[BaseModel]

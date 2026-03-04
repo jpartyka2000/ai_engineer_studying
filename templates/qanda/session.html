@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Q&A Session - {{ session.subject.name }} - AI Interview Prep{% endblock %}
+
+{% block extra_css %}
+<!-- Prism.js for syntax highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<style>
+    .message-content {
+        line-height: 1.6;
+    }
+    .message-content code {
+        background-color: #f3f4f6;
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-size: 0.9em;
+    }
+    .message-content pre {
+        margin: 1em 0;
+        border-radius: 0.5em;
+        overflow-x: auto;
+    }
+    .message-content pre code {
+        background: none;
+        padding: 0;
+    }
+    .typing-indicator {
+        display: inline-block;
+    }
+    .typing-indicator span {
+        height: 8px;
+        width: 8px;
+        background-color: #6366f1;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 2px;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-indicator span:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    .typing-indicator span:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+    @keyframes bounce {
+        0%, 80%, 100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'qanda:home' subject_slug=session.subject.slug %}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+        &larr; Back to Sessions
+    </a>
+</div>
+
+<div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4 flex items-center justify-between">
+        <div>
+            <div class="flex items-center">
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {% if session.title %}
+                        {{ session.title }}
+                    {% else %}
+                        {{ session.subject.name }} Q&A
+                    {% endif %}
+                </h1>
+                {% if is_archived %}
+                <span class="ml-3 px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded">
+                    Archived
+                </span>
+                {% endif %}
+            </div>
+            <p class="text-sm text-gray-600 mt-1">{{ session.message_count }} messages</p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'qanda:export' subject_slug=session.subject.slug pk=session.pk %}"
+               class="px-4 py-2 text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors text-sm">
+                <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Export
+            </a>
+            {% if is_archived %}
+            <form method="post" action="{% url 'qanda:unarchive' subject_slug=session.subject.slug pk=session.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-4 py-2 text-green-600 border border-green-600 rounded-lg hover:bg-green-50 transition-colors text-sm">
+                    Unarchive
+                </button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'qanda:archive' subject_slug=session.subject.slug pk=session.pk %}"
+                  onsubmit="return confirm('Are you sure you want to archive this session?');">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm">
+                    Archive
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="messages-container" class="bg-white rounded-lg shadow-md p-6 mb-4 h-[600px] overflow-y-auto">
+        {% for message in chat_messages %}
+        <div class="message mb-6 {% if message.role == 'user' %}text-right{% endif %}">
+            <div class="inline-block max-w-3xl text-left">
+                <div class="flex items-start {% if message.role == 'user' %}flex-row-reverse{% endif %}">
+                    <div class="flex-shrink-0 {% if message.role == 'user' %}ml-3{% else %}mr-3{% endif %}">
+                        {% if message.role == 'user' %}
+                        <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                            U
+                        </div>
+                        {% else %}
+                        <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white font-semibold">
+                            AI
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <div class="{% if message.role == 'user' %}bg-indigo-100 text-gray-900{% else %}bg-gray-100 text-gray-900{% endif %} rounded-lg p-4">
+                            <div class="message-content" data-message-id="{{ message.id }}">
+                                {{ message.content|linebreaks }}
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 {% if message.role == 'user' %}text-right{% endif %}">
+                            {{ message.created_at|date:"M d, Y g:i A" }}
+                        </div>
+                        {% if message.role == 'assistant' %}
+                        <div class="mt-2 flex space-x-2">
+                            <button onclick="quickAction('explain_further', {{ message.id }})"
+                                    class="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors">
+                                Explain Further
+                            </button>
+                            <button onclick="quickAction('give_example', {{ message.id }})"
+                                    class="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors">
+                                Give Example
+                            </button>
+                            <button onclick="quickAction('quiz_me', {{ message.id }})"
+                                    class="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors">
+                                Quiz Me
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Input Form -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+        {% if is_archived %}
+        <div class="text-center py-6 text-gray-600">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+            </svg>
+            <p class="text-lg font-medium">This session is archived</p>
+            <p class="text-sm mt-1">Unarchive it to continue the conversation</p>
+        </div>
+        {% else %}
+        <form id="question-form" method="post">
+            {% csrf_token %}
+            <div class="flex space-x-4">
+                <textarea id="question-input" name="question" rows="3"
+                          placeholder="Ask a question about {{ session.subject.name }}..."
+                          class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                          required></textarea>
+                <button type="submit" id="submit-button"
+                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Prism.js for syntax highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<!-- marked.js for markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+// Configure marked for safe HTML
+marked.setOptions({
+    breaks: true,
+    gfm: true,
+});
+
+// Get CSRF token
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// Scroll to bottom of messages container
+function scrollToBottom() {
+    const container = document.getElementById('messages-container');
+    container.scrollTop = container.scrollHeight;
+}
+
+// Create message element
+function createMessageElement(role, content = '') {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message mb-6 ${role === 'user' ? 'text-right' : ''}`;
+
+    const innerDiv = document.createElement('div');
+    innerDiv.className = 'inline-block max-w-3xl text-left';
+
+    const flexDiv = document.createElement('div');
+    flexDiv.className = `flex items-start ${role === 'user' ? 'flex-row-reverse' : ''}`;
+
+    // Avatar
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = `flex-shrink-0 ${role === 'user' ? 'ml-3' : 'mr-3'}`;
+    const avatarInner = document.createElement('div');
+    avatarInner.className = `w-8 h-8 rounded-full ${role === 'user' ? 'bg-indigo-600' : 'bg-gray-600'} flex items-center justify-center text-white font-semibold`;
+    avatarInner.textContent = role === 'user' ? 'U' : 'AI';
+    avatarDiv.appendChild(avatarInner);
+
+    // Content
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'flex-1';
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = `${role === 'user' ? 'bg-indigo-100' : 'bg-gray-100'} text-gray-900 rounded-lg p-4`;
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    if (content) {
+        messageContent.innerHTML = marked.parse(content);
+    }
+    bubbleDiv.appendChild(messageContent);
+    contentDiv.appendChild(bubbleDiv);
+
+    flexDiv.appendChild(avatarDiv);
+    flexDiv.appendChild(contentDiv);
+    innerDiv.appendChild(flexDiv);
+    messageDiv.appendChild(innerDiv);
+
+    return { messageDiv, messageContent };
+}
+
+// Ask question
+async function askQuestion(question, quickAction = null, refMessageId = null) {
+    const form = document.getElementById('question-form');
+    const input = document.getElementById('question-input');
+    const submitButton = document.getElementById('submit-button');
+    const container = document.getElementById('messages-container');
+
+    // Disable input
+    input.disabled = true;
+    submitButton.disabled = true;
+
+    try {
+        // Add user message to UI
+        const { messageDiv: userMessageDiv } = createMessageElement('user', question);
+        container.appendChild(userMessageDiv);
+        scrollToBottom();
+
+        // Create assistant message with typing indicator
+        const { messageDiv: assistantMessageDiv, messageContent: assistantContent } = createMessageElement('assistant');
+        container.appendChild(assistantMessageDiv);
+
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+        assistantContent.appendChild(typingIndicator);
+        scrollToBottom();
+
+        // Submit question to backend
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', getCsrfToken());
+        formData.append('question', question);
+        if (quickAction) {
+            formData.append('quick_action', quickAction);
+            formData.append('reference_message_id', refMessageId);
+        }
+
+        const response = await fetch('{% url "qanda:ask" subject_slug=session.subject.slug pk=session.pk %}', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to submit question');
+        }
+
+        const data = await response.json();
+
+        // Start streaming
+        streamResponse(data.stream_url, assistantContent, assistantMessageDiv);
+
+    } catch (error) {
+        console.error('Error asking question:', error);
+        alert('Failed to submit question. Please try again.');
+        input.disabled = false;
+        submitButton.disabled = false;
+    }
+}
+
+// Stream response via SSE
+function streamResponse(streamUrl, contentElement, messageElement) {
+    const eventSource = new EventSource(streamUrl);
+    let fullContent = '';
+
+    // Remove typing indicator
+    contentElement.innerHTML = '';
+
+    eventSource.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.error) {
+            contentElement.innerHTML = `<div class="text-red-600">Error: ${data.error}</div>`;
+            eventSource.close();
+            enableInput();
+            return;
+        }
+
+        if (data.done) {
+            // Apply syntax highlighting
+            Prism.highlightAllUnder(contentElement);
+
+            // Add quick action buttons
+            addQuickActionButtons(messageElement, data.message_id);
+
+            // Add timestamp
+            addTimestamp(messageElement);
+
+            eventSource.close();
+            enableInput();
+            scrollToBottom();
+
+            // Reload page to refresh message list (simpler approach)
+            setTimeout(() => location.reload(), 1000);
+            return;
+        }
+
+        // Append chunk
+        if (data.chunk) {
+            fullContent += data.chunk;
+            contentElement.innerHTML = marked.parse(fullContent);
+            scrollToBottom();
+        }
+    });
+
+    eventSource.addEventListener('error', (error) => {
+        console.error('SSE error:', error);
+        eventSource.close();
+        contentElement.innerHTML += '<div class="text-red-600 mt-2">Connection lost. Please refresh to see the full response.</div>';
+        enableInput();
+    });
+}
+
+// Add quick action buttons
+function addQuickActionButtons(messageElement, messageId) {
+    const contentDiv = messageElement.querySelector('.flex-1');
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'mt-2 flex space-x-2';
+    buttonsDiv.innerHTML = `
+        <button onclick="quickAction('explain_further', ${messageId})"
+                class="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors">
+            Explain Further
+        </button>
+        <button onclick="quickAction('give_example', ${messageId})"
+                class="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors">
+            Give Example
+        </button>
+        <button onclick="quickAction('quiz_me', ${messageId})"
+                class="text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors">
+            Quiz Me
+        </button>
+    `;
+    contentDiv.appendChild(buttonsDiv);
+}
+
+// Add timestamp
+function addTimestamp(messageElement) {
+    const innerDiv = messageElement.querySelector('.inline-block');
+    const timestamp = document.createElement('div');
+    timestamp.className = 'text-xs text-gray-500 mt-1';
+    timestamp.textContent = 'Just now';
+    innerDiv.appendChild(timestamp);
+}
+
+// Enable input
+function enableInput() {
+    const input = document.getElementById('question-input');
+    const submitButton = document.getElementById('submit-button');
+    input.disabled = false;
+    submitButton.disabled = false;
+    input.value = '';
+    input.focus();
+}
+
+// Quick action handler
+function quickAction(action, messageId) {
+    let question;
+    switch(action) {
+        case 'explain_further':
+            question = "Can you explain that in more detail?";
+            break;
+        case 'give_example':
+            question = "Can you provide a practical code example?";
+            break;
+        case 'quiz_me':
+            question = "Generate a practice question about this topic to test my understanding.";
+            break;
+        default:
+            return;
+    }
+    askQuestion(question, action, messageId);
+}
+
+// Form submission handler
+document.getElementById('question-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('question-input');
+    const question = input.value.trim();
+    if (question) {
+        askQuestion(question);
+    }
+});
+
+// Initial scroll to bottom
+scrollToBottom();
+
+// Apply syntax highlighting to existing messages
+document.addEventListener('DOMContentLoaded', () => {
+    Prism.highlightAll();
+});
+</script>
+{% endblock %}

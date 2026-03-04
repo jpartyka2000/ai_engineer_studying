@@ -106,23 +106,56 @@ python manage.py import_questions --subject python --max-files 5
 
 ---
 
-## Phase 4: Q&A Mode 🔲 NOT STARTED
+## Phase 4: Q&A Mode ✅ COMPLETE
 
 ### Tasks
-- [ ] Chat interface with streaming responses
-- [ ] Conversation history management
-- [ ] Quick-action buttons (explain further, give example, quiz me)
+- [x] Chat interface with streaming responses
+- [x] Conversation history management
+- [x] Quick-action buttons (explain further, give example, quiz me)
 
-### Planned Features
-- Chat-style interface with Claude
-- System prompt primed for the selected subject
-- Streaming responses for real-time display
-- Code snippets with syntax highlighting
-- Conversation export as Markdown
-- Session history saved for future reference
+### What Was Built
+- QASession model with status management (active/archived)
+- Message model with separate user/assistant messages and metadata tracking
+- Server-Sent Events (SSE) streaming for real-time Claude responses
+- Token-aware conversation history with sliding window truncation
+- Complete chat interface with message history and input form
+- Three quick-action buttons on each assistant message:
+  - "Explain Further" - request more detail
+  - "Give Example" - request practical code example
+  - "Quiz Me" - generate practice question
+- Real-time markdown rendering with marked.js
+- Code syntax highlighting with Prism.js (Python, JavaScript, Bash, SQL)
+- Export conversation as downloadable markdown file
+- Archive session functionality
+- Admin interfaces for QASession and Message management
 
-### Key Models Needed
-- `QASession` - user, subject, messages (JSON or related model)
+### Key Files
+- `apps/qanda/models.py` - QASession and Message models
+- `apps/qanda/views.py` - All Q&A views including SSE streaming
+- `apps/qanda/admin.py` - Admin configuration
+- `apps/qanda/urls.py` - URL patterns
+- `apps/core/services/claude_service.py` - Added stream_completion() method
+- `templates/qanda/home.html` - Session list page
+- `templates/qanda/session.html` - Chat interface with streaming JavaScript
+- `templates/subjects/detail.html` - Added Q&A Mode link
+
+### Features Implemented
+1. **Streaming Responses**: Real-time Claude responses via SSE (Server-Sent Events)
+2. **Conversation Management**: Full history with token-based truncation (100k token limit)
+3. **Quick Actions**: Three contextual buttons on each assistant message
+4. **Code Highlighting**: Automatic syntax highlighting for code blocks
+5. **Markdown Rendering**: Rich formatting with marked.js
+6. **Export**: Download conversations as markdown files
+7. **Archive**: Archive old sessions to keep workspace clean
+8. **Session Management**: Multiple sessions per subject, resume anytime
+
+### Technical Details
+- **Streaming**: EventSource API (client) + StreamingHttpResponse (server)
+- **Token Counting**: Approximate estimation (4 chars ≈ 1 token)
+- **Context Window**: Keeps last ~100k tokens in conversation history
+- **Message Storage**: Separate Message records for flexible querying
+- **Error Handling**: Graceful degradation on streaming errors
+- **Security**: User isolation, CSRF protection, input validation
 
 ---
 
