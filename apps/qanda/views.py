@@ -6,7 +6,6 @@ import logging
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import models
 from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
@@ -112,8 +111,10 @@ def ask_question(request, subject_slug, pk):
     # Don't allow questions on archived sessions
     if session.status == QASession.Status.ARCHIVED:
         return JsonResponse(
-            {"error": "Cannot ask questions in archived sessions. Please unarchive first."},
-            status=403
+            {
+                "error": "Cannot ask questions in archived sessions. Please unarchive first."
+            },
+            status=403,
         )
 
     # Get question from request
@@ -187,7 +188,9 @@ def stream_response(request, subject_slug, pk, message_id):
 
     # Don't allow streaming for archived sessions
     if session.status == QASession.Status.ARCHIVED:
-        return JsonResponse({"error": "Cannot stream responses for archived sessions"}, status=403)
+        return JsonResponse(
+            {"error": "Cannot stream responses for archived sessions"}, status=403
+        )
 
     # Get the assistant message to fill
     message = get_object_or_404(
@@ -215,10 +218,12 @@ def stream_response(request, subject_slug, pk, message_id):
         # Skip any messages with empty content
         if not msg.content.strip():
             continue
-        history.append({
-            "role": msg.role,
-            "content": msg.content,
-        })
+        history.append(
+            {
+                "role": msg.role,
+                "content": msg.content,
+            }
+        )
 
     def event_stream():
         """Generator for SSE events."""
@@ -226,10 +231,10 @@ def stream_response(request, subject_slug, pk, message_id):
             claude_service = get_claude_service()
             full_content = []
 
-            # Stream from Claude
+            # Stream from Claude with document context
             for chunk in claude_service.stream_completion(
                 prompt=last_user_msg.content,
-                system_message=session.get_system_message(),
+                system_message=session.get_system_message_with_context(),
                 conversation_history=history,
                 max_tokens=4096,
                 temperature=0.7,
@@ -302,7 +307,9 @@ def export_session(request, subject_slug, pk):
     markdown_content = "\n".join(lines)
 
     # Create filename
-    filename = f"qanda_{session.subject.slug}_{session.started_at.strftime('%Y%m%d_%H%M')}.md"
+    filename = (
+        f"qanda_{session.subject.slug}_{session.started_at.strftime('%Y%m%d_%H%M')}.md"
+    )
 
     # Return as downloadable file
     response = HttpResponse(markdown_content, content_type="text/markdown")

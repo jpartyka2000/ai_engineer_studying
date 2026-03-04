@@ -144,9 +144,7 @@ You must respond with valid JSON only."""
                     if not options["dry_run"]:
                         question.difficulty = new_difficulty
                         question.save(update_fields=["difficulty"])
-                        self.stdout.write(
-                            self.style.SUCCESS("  ✓ Updated difficulty")
-                        )
+                        self.stdout.write(self.style.SUCCESS("  ✓ Updated difficulty"))
                     else:
                         self.stdout.write(
                             self.style.WARNING("  → Would update difficulty")

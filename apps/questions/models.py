@@ -139,3 +139,78 @@ class Question(models.Model):
             for i, opt in enumerate(self.options)
             if i < len(letters)
         ]
+
+
+class StudyMaterial(models.Model):
+    """
+    Source document content for a subject.
+
+    Used for question generation and as reference context in Q&A mode.
+    Documents are stored with content hashing for deduplication.
+    """
+
+    # Relationship
+    subject = models.ForeignKey(
+        "subjects.Subject",
+        on_delete=models.CASCADE,
+        related_name="study_materials",
+        help_text=_("The subject area this material belongs to"),
+    )
+
+    # Content
+    title = models.CharField(
+        max_length=255,
+        help_text=_("Document title (usually the file name)"),
+    )
+    content = models.TextField(
+        help_text=_("Full document content"),
+    )
+    source_file = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text=_("Original file path"),
+    )
+    content_hash = models.CharField(
+        max_length=64,
+        db_index=True,
+        help_text=_("SHA-256 hash of content for deduplication"),
+    )
+    token_estimate = models.PositiveIntegerField(
+        default=0,
+        help_text=_("Estimated token count (len/4)"),
+    )
+
+    # Tracking
+    questions_generated = models.PositiveIntegerField(
+        default=0,
+        help_text=_("Number of questions generated from this material"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text=_("Whether this material is available for use"),
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("Study Material")
+        verbose_name_plural = _("Study Materials")
+        unique_together = [["subject", "content_hash"]]
+        indexes = [
+            models.Index(fields=["subject", "is_active"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.subject.name}: {self.title}"
+
+    def save(self, *args, **kwargs) -> None:
+        """Generate content hash and token estimate if not provided."""
+        if not self.content_hash and self.content:
+            self.content_hash = hashlib.sha256(self.content.encode()).hexdigest()
+        if not self.token_estimate and self.content:
+            self.token_estimate = len(self.content) // 4
+        super().save(*args, **kwargs)

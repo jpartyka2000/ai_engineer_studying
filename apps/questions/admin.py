@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import Question
+from .models import Question, StudyMaterial
 
 
 @admin.register(Question)
@@ -66,3 +66,49 @@ class QuestionAdmin(admin.ModelAdmin):
         return text
 
     truncated_question.short_description = _("Question")
+
+
+@admin.register(StudyMaterial)
+class StudyMaterialAdmin(admin.ModelAdmin):
+    """Admin interface for StudyMaterial model."""
+
+    list_display = [
+        "title",
+        "subject",
+        "token_estimate",
+        "questions_generated",
+        "is_active",
+        "created_at",
+    ]
+    list_filter = ["subject", "is_active", "created_at"]
+    search_fields = ["title", "content", "source_file"]
+    ordering = ["-created_at"]
+    readonly_fields = ["content_hash", "token_estimate", "created_at", "updated_at"]
+
+    fieldsets = [
+        (
+            None,
+            {
+                "fields": ["subject", "title", "is_active"],
+            },
+        ),
+        (
+            _("Content"),
+            {
+                "fields": ["content", "source_file"],
+            },
+        ),
+        (
+            _("Statistics"),
+            {
+                "fields": ["token_estimate", "questions_generated"],
+            },
+        ),
+        (
+            _("Metadata"),
+            {
+                "fields": ["content_hash", "created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]

@@ -107,6 +107,42 @@ class QASession(models.Model):
             f"Be pedagogical, thorough, and cite authoritative sources when applicable."
         )
 
+    def get_system_message_with_context(self, max_doc_tokens: int = 8000) -> str:
+        """
+        Generate system message including relevant study materials as context.
+
+        Includes stored documents for the subject to provide Claude with
+        reference material when answering questions.
+
+        Args:
+            max_doc_tokens: Maximum tokens to use for document context.
+
+        Returns:
+            str: System message with embedded document context.
+        """
+        base = self.get_system_message()
+
+        # Get study materials for this subject
+        materials = self.subject.study_materials.filter(is_active=True).order_by(
+            "-created_at"
+        )
+
+        if not materials.exists():
+            return base
+
+        # Build context from materials, respecting token limit
+        context = "\n\n## Reference Materials\n"
+        context += "Use the following study materials to inform your responses:\n"
+        tokens_used = 0
+
+        for material in materials:
+            if tokens_used + material.token_estimate > max_doc_tokens:
+                break
+            context += f"\n### {material.title}\n{material.content}\n"
+            tokens_used += material.token_estimate
+
+        return base + context
+
     def get_conversation_history(self, max_tokens: int = 100000) -> list[dict]:
         """
         Get conversation history for Claude API, truncated to fit token limit.
@@ -162,11 +198,11 @@ class QASession(models.Model):
         """Update message count and token estimate from related messages."""
         messages = self.messages.all()
         self.message_count = messages.count()
-        self.total_tokens_estimate = sum(
-            msg.token_count_estimate for msg in messages
-        )
+        self.total_tokens_estimate = sum(msg.token_count_estimate for msg in messages)
         self.last_message_at = timezone.now()
-        self.save(update_fields=["message_count", "total_tokens_estimate", "last_message_at"])
+        self.save(
+            update_fields=["message_count", "total_tokens_estimate", "last_message_at"]
+        )
 
 
 class Message(models.Model):

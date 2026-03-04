@@ -99,7 +99,7 @@ class QASessionAdmin(admin.ModelAdmin):
         """Display token count with formatting."""
         tokens = obj.total_tokens_estimate
         if tokens > 1000:
-            return f"{tokens/1000:.1f}k"
+            return f"{tokens / 1000:.1f}k"
         return str(tokens)
 
     tokens_display.short_description = _("Tokens")

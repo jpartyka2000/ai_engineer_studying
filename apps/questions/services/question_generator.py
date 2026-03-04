@@ -99,7 +99,9 @@ You must respond with valid JSON only."""
 
         # Build difficulty instruction
         if difficulty:
-            difficulty_instruction = f"- Generate questions at the '{difficulty}' difficulty level"
+            difficulty_instruction = (
+                f"- Generate questions at the '{difficulty}' difficulty level"
+            )
             difficulty_constraint = f'  "difficulty": "{difficulty}"'
         else:
             difficulty_instruction = (
@@ -189,7 +191,9 @@ Example response format:
         """
         # Build difficulty instruction
         if difficulty:
-            difficulty_instruction = f"- Questions should be at the '{difficulty}' difficulty level"
+            difficulty_instruction = (
+                f"- Questions should be at the '{difficulty}' difficulty level"
+            )
         else:
             difficulty_instruction = (
                 "- Assign appropriate difficulty level (beginner/intermediate/advanced) to each question based on:\n"
