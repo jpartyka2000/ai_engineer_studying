@@ -1,4 +1,4 @@
-"""Service for generating exam questions using Claude API."""
+"""Service for generating exam questions using LLM APIs (Claude or OpenAI)."""
 
 import hashlib
 import logging
@@ -6,7 +6,12 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from apps.core.services.claude_service import ClaudeAPIError, get_claude_service
+from apps.core.services.llm_service import (
+    LLMAPIError,
+    LLMService,
+    get_llm_service,
+    get_provider_name,
+)
 from apps.questions.models import Question
 from apps.subjects.models import Subject
 
@@ -47,8 +52,8 @@ class QuestionGeneratorService:
     """
     Service for generating exam questions from source material or topics.
 
-    Uses the Claude API to convert explanatory content into structured
-    exam questions (multiple choice and free text).
+    Uses LLM APIs (Claude or OpenAI) to convert explanatory content into
+    structured exam questions (multiple choice and free text).
     """
 
     SYSTEM_PROMPT = """You are an expert exam question writer for technical subjects.
@@ -65,9 +70,17 @@ Guidelines:
 
 You must respond with valid JSON only."""
 
-    def __init__(self) -> None:
-        """Initialize the question generator service."""
-        self.claude = get_claude_service()
+    def __init__(self, provider: str | None = None) -> None:
+        """
+        Initialize the question generator service.
+
+        Args:
+            provider: The LLM provider to use ("claude" or "openai").
+                     If not specified, uses the LLM_PROVIDER setting.
+        """
+        self.provider = provider
+        self.llm: LLMService = get_llm_service(provider)
+        self.provider_name = get_provider_name(provider)
 
     def generate_from_content(
         self,
@@ -155,7 +168,7 @@ Example response format:
 }}"""
 
         try:
-            response = self.claude.generate_json_completion(
+            response = self.llm.generate_json_completion(
                 prompt=prompt,
                 system_message=self.SYSTEM_PROMPT,
                 max_tokens=4096,
@@ -166,11 +179,11 @@ Example response format:
             question_set = GeneratedQuestionSet.model_validate(response)
             return question_set.questions
 
-        except ClaudeAPIError:
+        except LLMAPIError:
             raise
         except Exception as e:
             logger.exception("Failed to generate questions: %s", str(e))
-            raise ClaudeAPIError(f"Question generation failed: {e}") from e
+            raise LLMAPIError(f"Question generation failed: {e}") from e
 
     def generate_from_topic(
         self,
@@ -220,7 +233,7 @@ for each question:
   explanation, difficulty, tags"""
 
         try:
-            response = self.claude.generate_json_completion(
+            response = self.llm.generate_json_completion(
                 prompt=prompt,
                 system_message=self.SYSTEM_PROMPT,
                 max_tokens=4096,
@@ -232,7 +245,7 @@ for each question:
 
         except Exception as e:
             logger.exception("Failed to generate questions from topic: %s", str(e))
-            raise ClaudeAPIError(f"Question generation failed: {e}") from e
+            raise LLMAPIError(f"Question generation failed: {e}") from e
 
     def save_questions(
         self,
@@ -330,7 +343,7 @@ for each question:
                 num_questions=num_questions,
                 difficulty=difficulty,
             )
-        except ClaudeAPIError as e:
+        except LLMAPIError as e:
             logger.error("Failed to generate questions from %s: %s", file_path, e)
             return []
 
@@ -343,13 +356,22 @@ for each question:
         )
 
 
-# Singleton instance
-_question_generator: QuestionGeneratorService | None = None
+# Singleton instances per provider
+_question_generators: dict[str | None, QuestionGeneratorService] = {}
 
 
-def get_question_generator() -> QuestionGeneratorService:
-    """Get the singleton question generator instance."""
-    global _question_generator
-    if _question_generator is None:
-        _question_generator = QuestionGeneratorService()
-    return _question_generator
+def get_question_generator(provider: str | None = None) -> QuestionGeneratorService:
+    """
+    Get a question generator instance for the specified provider.
+
+    Args:
+        provider: The LLM provider to use ("claude" or "openai").
+                 If not specified, uses the LLM_PROVIDER setting.
+
+    Returns:
+        A QuestionGeneratorService instance.
+    """
+    global _question_generators
+    if provider not in _question_generators:
+        _question_generators[provider] = QuestionGeneratorService(provider)
+    return _question_generators[provider]

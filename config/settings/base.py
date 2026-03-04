@@ -122,6 +122,13 @@ LOGOUT_REDIRECT_URL = "home"
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
 CLAUDE_MODEL = "claude-opus-4-5-20251101"
 
+# OpenAI API
+OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-4o")
+
+# Default LLM provider for question generation: "claude" or "openai"
+LLM_PROVIDER = env("LLM_PROVIDER", default="claude")
+
 # Celery Configuration
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")

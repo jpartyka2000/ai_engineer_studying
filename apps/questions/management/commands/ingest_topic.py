@@ -119,6 +119,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Generate questions for existing materials that have none",
         )
+        parser.add_argument(
+            "--provider",
+            type=str,
+            choices=["claude", "openai"],
+            default=None,
+            help="LLM provider for question generation (default: uses LLM_PROVIDER setting)",
+        )
 
     def handle(self, *args, **options):
         """Execute the command."""
@@ -178,6 +185,7 @@ class Command(BaseCommand):
                 subject=subject,
                 questions_per_file=options["questions_per_file"],
                 delay=options["delay"],
+                provider=options.get("provider"),
             )
 
         self.stdout.write(self.style.SUCCESS("Ingestion complete!"))
@@ -302,16 +310,18 @@ class Command(BaseCommand):
         subject: Subject,
         questions_per_file: int,
         delay: float,
+        provider: str | None = None,
     ) -> None:
         """Generate questions from study materials."""
         if not materials:
             return
 
-        generator = get_question_generator()
+        generator = get_question_generator(provider)
         total_generated = 0
 
         self.stdout.write(
-            f"\nGenerating questions from {len(materials)} document(s)..."
+            f"\nGenerating questions from {len(materials)} document(s) "
+            f"using {generator.provider_name}..."
         )
 
         for material in materials:
