@@ -120,7 +120,7 @@ LOGOUT_REDIRECT_URL = "home"
 
 # Anthropic Claude API
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
-CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
+CLAUDE_MODEL = "claude-opus-4-5-20251101"
 
 # Celery Configuration
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
