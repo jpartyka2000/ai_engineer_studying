@@ -1,5 +1,6 @@
 """Views for the core app."""
 
+from django.db.models import Count
 from django.views.generic import TemplateView
 
 from apps.subjects.models import Subject
@@ -14,8 +15,12 @@ class HomeView(TemplateView):
         """Add subjects grouped by category to the context."""
         context = super().get_context_data(**kwargs)
 
-        # Get all active subjects
-        subjects = Subject.objects.filter(is_active=True).order_by("category", "name")
+        # Get all active subjects with question counts
+        subjects = (
+            Subject.objects.filter(is_active=True)
+            .annotate(question_count=Count("questions"))
+            .order_by("category", "name")
+        )
 
         # Group subjects by category
         categories: dict[str, list[Subject]] = {}

@@ -26,7 +26,9 @@ class GeneratedQuestion(BaseModel):
     correct_answer: str = Field(
         description="The correct answer (letter for MC, text for free)"
     )
-    explanation: str = Field(description="Explanation of why the answer is correct")
+    explanation: str = Field(
+        default="", description="Explanation of why the answer is correct"
+    )
     difficulty: str = Field(
         default="intermediate", description="beginner, intermediate, or advanced"
     )

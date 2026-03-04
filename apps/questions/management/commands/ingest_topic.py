@@ -114,6 +114,11 @@ class Command(BaseCommand):
             default=None,
             help="Maximum number of files to process (default: all)",
         )
+        parser.add_argument(
+            "--generate-missing",
+            action="store_true",
+            help="Generate questions for existing materials that have none",
+        )
 
     def handle(self, *args, **options):
         """Execute the command."""
@@ -153,6 +158,21 @@ class Command(BaseCommand):
 
         # Generate questions if not skipped
         if not options["skip_questions"]:
+            # If --generate-missing, include existing materials without questions
+            if options["generate_missing"]:
+                existing_without_questions = StudyMaterial.objects.filter(
+                    subject=subject,
+                    questions_generated=0,
+                    is_active=True,
+                ).exclude(id__in=[m.id for m in materials])
+
+                if existing_without_questions.exists():
+                    count = existing_without_questions.count()
+                    self.stdout.write(
+                        f"Found {count} existing material(s) without questions"
+                    )
+                    materials = list(materials) + list(existing_without_questions)
+
             self.generate_questions(
                 materials=materials,
                 subject=subject,
