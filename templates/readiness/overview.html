@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Interview Readiness - AI Interview Prep{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header with Role Selector -->
+    <div class="bg-white shadow rounded-lg mb-6">
+        <div class="px-6 py-5 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-2xl font-bold text-gray-900">Interview Readiness</h2>
+                <!-- Role Level Tabs -->
+                <div class="mt-3 sm:mt-0">
+                    <nav class="flex space-x-2" aria-label="Role levels">
+                        {% for level in role_levels %}
+                        <a href="?role={{ level.slug }}"
+                           class="px-4 py-2 text-sm font-medium rounded-md transition-colors
+                                  {% if current_role == level.slug %}
+                                  bg-indigo-600 text-white
+                                  {% else %}
+                                  bg-gray-100 text-gray-700 hover:bg-gray-200
+                                  {% endif %}">
+                            {{ level.name }}
+                        </a>
+                        {% endfor %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Readiness Status -->
+        <div class="px-6 py-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between">
+                <!-- Overall Score Circle -->
+                <div class="flex items-center space-x-6">
+                    <div class="relative">
+                        <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
+                            <!-- Background circle -->
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="#E5E7EB" stroke-width="12"/>
+                            <!-- Progress circle -->
+                            <circle cx="60" cy="60" r="54" fill="none"
+                                    stroke="{% if assessment.is_ready %}#10B981{% elif assessment.overall_score >= 50 %}#F59E0B{% else %}#EF4444{% endif %}"
+                                    stroke-width="12"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="{{ assessment.overall_score|floatformat:0 }}% 339.292"
+                                    style="stroke-dasharray: calc({{ assessment.overall_score }} * 3.39292) 339.292"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-3xl font-bold text-gray-900">{{ assessment.overall_score|floatformat:0 }}%</span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if assessment.is_ready %}
+                        <span class="inline-flex items-center px-4 py-2 rounded-full text-lg font-semibold bg-green-100 text-green-800">
+                            <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            Interview Ready!
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-4 py-2 rounded-full text-lg font-semibold bg-yellow-100 text-yellow-800">
+                            <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            Keep Practicing
+                        </span>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">
+                            Target: {{ assessment.threshold|floatformat:0 }}% for {{ current_role|title }} level
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Activity Summary -->
+                <div class="mt-6 sm:mt-0 grid grid-cols-3 gap-6 text-center">
+                    <div>
+                        <p class="text-2xl font-bold text-gray-900">{{ assessment.total_sessions }}</p>
+                        <p class="text-sm text-gray-500">Sessions</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-900">{{ assessment.total_questions }}</p>
+                        <p class="text-sm text-gray-500">Questions</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-900">{{ assessment.study_days }}</p>
+                        <p class="text-sm text-gray-500">Study Days</p>
+                    </div>
+                </div>
+            </div>
+            <p class="mt-4 text-sm text-gray-500 text-center sm:text-left">
+                Assessment period: {{ assessment.period_start|date:"M j" }} - {{ assessment.period_end|date:"M j, Y" }} (last 30 days)
+            </p>
+        </div>
+    </div>
+
+    <!-- Mode Performance Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {% for mode in mode_data %}
+        <div class="bg-white shadow rounded-lg p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-medium text-gray-500">{{ mode.name }}</h3>
+                <span class="text-xs text-gray-400">{{ mode.weight|floatformat:0 }}% weight</span>
+            </div>
+            <div class="flex items-baseline">
+                <p class="text-2xl font-semibold {% if mode.accuracy >= 70 %}text-green-600{% elif mode.accuracy >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                    {% if mode.sessions > 0 %}{{ mode.accuracy|floatformat:0 }}%{% else %}—{% endif %}
+                </p>
+                {% if mode.sessions > 0 %}
+                <p class="ml-2 text-sm text-gray-500">accuracy</p>
+                {% endif %}
+            </div>
+            <div class="mt-2 text-xs text-gray-500">
+                {% if mode.sessions > 0 %}
+                {{ mode.sessions }} session{% if mode.sessions != 1 %}s{% endif %} &bull; {{ mode.questions }} questions
+                {% else %}
+                No sessions yet
+                {% endif %}
+            </div>
+            <!-- Progress bar -->
+            <div class="mt-3 w-full bg-gray-200 rounded-full h-2">
+                <div class="{% if mode.accuracy >= 70 %}bg-green-500{% elif mode.accuracy >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-2 rounded-full transition-all"
+                     style="width: {% if mode.sessions > 0 %}{{ mode.accuracy }}{% else %}0{% endif %}%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Category Coverage -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Category Coverage</h3>
+                    <span class="text-sm text-gray-500">
+                        {{ assessment.required_categories_met }}/{{ assessment.required_categories_total }} required
+                    </span>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {% for cat in category_data %}
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center">
+                            {% if cat.required %}
+                            {% if cat.is_covered %}
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            {% else %}
+                            <svg class="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            {% endif %}
+                            {% else %}
+                            <span class="w-5 h-5 mr-2"></span>
+                            {% endif %}
+                            <span class="text-sm font-medium text-gray-900">{{ cat.name }}</span>
+                            {% if cat.required %}
+                            <span class="ml-2 text-xs text-indigo-600">(Required)</span>
+                            {% endif %}
+                        </div>
+                        <span class="text-sm {% if cat.score >= 70 %}text-green-600{% elif cat.score >= 50 %}text-yellow-600{% else %}text-gray-500{% endif %}">
+                            {% if cat.subjects_attempted > 0 %}{{ cat.score|floatformat:0 }}%{% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="{% if cat.score >= 70 %}bg-green-500{% elif cat.score >= 50 %}bg-yellow-500{% elif cat.subjects_attempted > 0 %}bg-red-500{% else %}bg-gray-300{% endif %} h-1.5 rounded-full"
+                             style="width: {% if cat.subjects_attempted > 0 %}{{ cat.score }}{% else %}0{% endif %}%"></div>
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500">
+                        {{ cat.subjects_attempted }}/{{ cat.subjects_total }} subjects studied
+                    </div>
+                </div>
+                {% empty %}
+                <div class="px-6 py-8 text-center text-gray-500">
+                    No category data available.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Difficulty Analysis -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Difficulty Performance</h3>
+            </div>
+            <div class="px-6 py-5 space-y-6">
+                {% for diff in difficulty_data %}
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center">
+                            <span class="text-sm font-medium text-gray-900">{{ diff.name }}</span>
+                            {% if diff.required_threshold > 0 %}
+                            {% if diff.meets_threshold %}
+                            <svg class="w-4 h-4 text-green-500 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                            {% else %}
+                            <svg class="w-4 h-4 text-red-500 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-semibold {% if diff.accuracy >= 70 %}text-green-600{% elif diff.accuracy >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {% if diff.total > 0 %}{{ diff.accuracy|floatformat:0 }}%{% else %}—{% endif %}
+                            </span>
+                            {% if diff.required_threshold > 0 %}
+                            <span class="text-xs text-gray-400 ml-1">/ {{ diff.required_threshold|floatformat:0 }}%</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="relative w-full bg-gray-200 rounded-full h-3">
+                        <div class="{% if diff.accuracy >= 70 %}bg-green-500{% elif diff.accuracy >= 50 %}bg-yellow-500{% elif diff.total > 0 %}bg-red-500{% else %}bg-gray-300{% endif %} h-3 rounded-full transition-all"
+                             style="width: {% if diff.total > 0 %}{{ diff.accuracy }}{% else %}0{% endif %}%"></div>
+                        {% if diff.required_threshold > 0 %}
+                        <!-- Threshold marker -->
+                        <div class="absolute top-0 h-3 w-0.5 bg-gray-600" style="left: {{ diff.required_threshold }}%"></div>
+                        {% endif %}
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500">
+                        {{ diff.correct }}/{{ diff.total }} correct
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-gray-500 py-8">
+                    No difficulty data available.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Track-Specific Study Recommendations -->
+    {% if track_recommendations %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {% for track_id, track in track_recommendations.items %}
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">
+                            {% if track_id == 'ml_engineering' %}
+                            <span class="inline-flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+                                </svg>
+                                {{ track.track_name }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"/>
+                                </svg>
+                                {{ track.track_name }}
+                            </span>
+                            {% endif %}
+                        </h3>
+                        <p class="mt-1 text-xs text-gray-500">{{ track.track_description }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-semibold {% if track.coverage_score >= 70 %}text-green-600{% elif track.coverage_score >= 50 %}text-yellow-600{% else %}text-gray-500{% endif %}">
+                            {{ track.coverage_score|floatformat:0 }}%
+                        </span>
+                        <p class="text-xs text-gray-400">{{ track.categories_covered }}/{{ track.categories_total }} categories</p>
+                    </div>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {% for rec in track.recommendations %}
+                <div class="px-6 py-3 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-3 min-w-0">
+                            <!-- Priority indicator -->
+                            <div class="flex-shrink-0 mt-0.5">
+                                {% if rec.priority == 1 %}
+                                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-600" title="Critical">
+                                    <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                </span>
+                                {% elif rec.priority == 2 %}
+                                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 text-yellow-600" title="High Priority">
+                                    <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-600" title="Medium Priority">
+                                    <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                    </svg>
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Category and Topic -->
+                            <div class="min-w-0 flex-1">
+                                <span class="text-xs font-medium {% if track_id == 'ml_engineering' %}text-purple-600 bg-purple-50{% else %}text-blue-600 bg-blue-50{% endif %} px-2 py-0.5 rounded">{{ rec.category }}</span>
+                                <h4 class="text-sm font-semibold text-gray-900 mt-1 truncate">{{ rec.topic_name }}</h4>
+                                <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ rec.description }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="flex-shrink-0 ml-3">
+                            {% if rec.subject_slug %}
+                            <a href="/subject/{{ rec.subject_slug }}/"
+                               class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white {% if track_id == 'ml_engineering' %}bg-purple-600 hover:bg-purple-700{% else %}bg-blue-600 hover:bg-blue-700{% endif %} transition-colors shadow-sm">
+                                Study
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="px-6 py-8 text-center text-gray-500">
+                    <svg class="mx-auto h-8 w-8 text-green-400 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm">Great progress on this track!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if assessment.is_ready %}
+    <!-- Ready State - No recommendations needed -->
+    <div class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+        <svg class="mx-auto h-12 w-12 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-green-900">You're Interview Ready!</h3>
+        <p class="mt-2 text-sm text-green-700">
+            Congratulations! You've met all the requirements for {{ current_role|title }} level interviews.
+            Keep practicing to maintain your skills and consider advancing to the next level.
+        </p>
+        {% if current_role != "principal" %}
+        <a href="?role={% if current_role == 'entry' %}senior{% else %}principal{% endif %}"
+           class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 transition-colors">
+            Try {% if current_role == 'entry' %}Senior{% else %}Principal{% endif %} Level
+        </a>
+        {% endif %}
+    </div>
+    {% else %}
+    <!-- Empty State - No data -->
+    <div class="bg-white shadow rounded-lg p-8 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">Start Your Interview Preparation</h3>
+        <p class="mt-2 text-sm text-gray-500">
+            Complete study sessions across different modes and categories to track your interview readiness.
+        </p>
+        <a href="{% url 'home' %}"
+           class="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+            Start Studying
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
