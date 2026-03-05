@@ -124,7 +124,7 @@ CLAUDE_MODEL = "claude-opus-4-5-20251101"
 
 # OpenAI API
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
-OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-4o")
+OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-5.2")
 
 # Default LLM provider for question generation: "claude" or "openai"
 LLM_PROVIDER = env("LLM_PROVIDER", default="claude")
