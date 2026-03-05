@@ -55,4 +55,10 @@ urlpatterns = [
         views.unarchive_session,
         name="unarchive",
     ),
+    # Save message as topic
+    path(
+        "<slug:subject_slug>/<int:pk>/save-topic/<int:message_id>/",
+        views.save_as_topic,
+        name="save_topic",
+    ),
 ]

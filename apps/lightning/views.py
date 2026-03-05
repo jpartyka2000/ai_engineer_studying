@@ -1,5 +1,8 @@
 """Views for the lightning round app."""
 
+import logging
+import random
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,6 +16,8 @@ from apps.questions.models import Question
 from apps.subjects.models import Subject
 
 from .models import LightningAnswer, LightningSession
+
+logger = logging.getLogger(__name__)
 
 
 class LightningConfigView(LoginRequiredMixin, TemplateView):
@@ -30,12 +35,20 @@ class LightningConfigView(LoginRequiredMixin, TemplateView):
         # Get MC question count for each difficulty
         difficulties = {}
         for level in subject.difficulty_levels:
-            count = Question.objects.filter(
-                subject=subject,
-                difficulty=level,
-                question_type="mc",  # Lightning rounds are MC only
-                is_active=True,
-            ).count()
+            if level == "interview":
+                # Interview mode uses all MC questions regardless of difficulty
+                count = Question.objects.filter(
+                    subject=subject,
+                    question_type="mc",
+                    is_active=True,
+                ).count()
+            else:
+                count = Question.objects.filter(
+                    subject=subject,
+                    difficulty=level,
+                    question_type="mc",  # Lightning rounds are MC only
+                    is_active=True,
+                ).count()
             difficulties[level] = count
 
         context["difficulties"] = difficulties
@@ -61,13 +74,24 @@ def start_lightning(request, subject_slug):
     if time_limit not in valid_limits:
         time_limit = 300
 
-    # Check if there are MC questions available
-    question_count = Question.objects.filter(
-        subject=subject,
-        difficulty=difficulty,
-        question_type="mc",
-        is_active=True,
-    ).count()
+    # Handle interview mode specially
+    interview_question_pool = []
+    if difficulty == "interview":
+        interview_question_pool = _get_interview_question_pool(
+            request, subject, subject_slug
+        )
+        if interview_question_pool is None:
+            # Error occurred, redirect handled in helper
+            return redirect("lightning:config", subject_slug=subject_slug)
+        question_count = len(interview_question_pool)
+    else:
+        # Check if there are MC questions available
+        question_count = Question.objects.filter(
+            subject=subject,
+            difficulty=difficulty,
+            question_type="mc",
+            is_active=True,
+        ).count()
 
     if question_count == 0:
         messages.error(
@@ -85,9 +109,77 @@ def start_lightning(request, subject_slug):
         subject=subject,
         difficulty=difficulty,
         time_limit_seconds=time_limit,
+        interview_question_pool=interview_question_pool,
     )
 
     return redirect("lightning:play", subject_slug=subject_slug, pk=session.pk)
+
+
+def _get_interview_question_pool(request, subject, subject_slug):
+    """
+    Get pre-ranked question pool for interview mode.
+
+    Returns list of question IDs or None if error occurred.
+    """
+    from apps.core.services.llm_service import LLMAPIError
+    from apps.questions.services.interview_ranker import (
+        QuestionForRanking,
+        get_interview_ranker,
+    )
+
+    # Get all MC questions (any difficulty), limit to 50 for LLM
+    available_questions = list(
+        Question.objects.filter(
+            subject=subject,
+            question_type="mc",
+            is_active=True,
+        ).values("id", "question_text", "options", "difficulty", "tags")[:50]
+    )
+
+    if len(available_questions) == 0:
+        messages.error(
+            request,
+            _("No multiple choice questions available for this subject."),
+        )
+        return None
+
+    # If we have more than 50, randomly sample
+    if len(available_questions) > 50:
+        available_questions = random.sample(available_questions, 50)
+
+    # Convert to Pydantic models for ranking
+    questions_for_ranking = [
+        QuestionForRanking(
+            id=q["id"],
+            question_text=q["question_text"],
+            options=q["options"] or [],
+            difficulty=q["difficulty"],
+            tags=q["tags"] or [],
+        )
+        for q in available_questions
+    ]
+
+    # Rank via LLM - request all questions ranked for the pool
+    ranker = get_interview_ranker()
+
+    try:
+        # Rank all available questions for the pool
+        ranked_ids = ranker.rank_questions(
+            questions=questions_for_ranking,
+            subject_name=subject.name,
+            num_to_select=len(questions_for_ranking),
+        )
+        return ranked_ids
+    except LLMAPIError as e:
+        logger.exception("Interview ranking failed for %s: %s", subject.slug, e)
+        messages.error(
+            request,
+            _(
+                "Unable to generate interview-focused questions. "
+                "Please try again or select a different difficulty."
+            ),
+        )
+        return None
 
 
 class LightningPlayView(LoginRequiredMixin, DetailView):
@@ -113,17 +205,35 @@ class LightningPlayView(LoginRequiredMixin, DetailView):
             session.save()
             return context
 
-        # Get a new random question that hasn't been answered yet
-        answered_question_ids = session.answers.values_list("question_id", flat=True)
-        available_questions = Question.objects.filter(
-            subject=session.subject,
-            difficulty=session.difficulty,
-            question_type="mc",
-            is_active=True,
-        ).exclude(id__in=answered_question_ids)
+        # Get answered question IDs
+        answered_question_ids = set(
+            session.answers.values_list("question_id", flat=True)
+        )
 
-        if available_questions.exists():
-            question = available_questions.order_by("?").first()
+        question = None
+
+        if session.difficulty == "interview" and session.interview_question_pool:
+            # Interview mode: draw from pre-ranked pool in order
+            for qid in session.interview_question_pool:
+                if qid not in answered_question_ids:
+                    question = Question.objects.filter(
+                        id=qid, is_active=True
+                    ).first()
+                    if question:
+                        break
+        else:
+            # Standard mode: get a random question that hasn't been answered
+            available_questions = Question.objects.filter(
+                subject=session.subject,
+                difficulty=session.difficulty,
+                question_type="mc",
+                is_active=True,
+            ).exclude(id__in=answered_question_ids)
+
+            if available_questions.exists():
+                question = available_questions.order_by("?").first()
+
+        if question:
             context["question"] = question
             context["question_number"] = session.questions_answered + 1
         else:

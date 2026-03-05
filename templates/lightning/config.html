@@ -29,22 +29,40 @@
                 <label class="block text-sm font-medium text-gray-700 mb-3">
                     Select Difficulty Level
                 </label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {% for level, count in difficulties.items %}
                     <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none
-                        {% if level == 'intermediate' %}border-indigo-500 ring-2 ring-indigo-500{% else %}border-gray-300{% endif %}
-                        {% if count == 0 %}opacity-50 cursor-not-allowed{% endif %}">
+                        {% if level == 'intermediate' %}border-indigo-500 ring-2 ring-indigo-500
+                        {% elif level == 'interview' %}border-violet-300
+                        {% else %}border-gray-300{% endif %}
+                        {% if count == 0 %}opacity-50 cursor-not-allowed{% endif %}"
+                        data-difficulty="{{ level }}">
                         <input type="radio" name="difficulty" value="{{ level }}"
                                class="sr-only" {% if level == 'intermediate' %}checked{% endif %}
                                {% if count == 0 %}disabled{% endif %}>
                         <span class="flex flex-1">
                             <span class="flex flex-col">
+                                {% if level == 'interview' %}
+                                <span class="block text-sm font-medium text-violet-700">
+                                    <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                    Interview Focus
+                                </span>
+                                <span class="mt-1 flex items-center text-sm text-gray-500">
+                                    {{ count }} MC questions
+                                </span>
+                                <span class="mt-1 text-xs text-violet-600">
+                                    AI-ranked by importance
+                                </span>
+                                {% else %}
                                 <span class="block text-sm font-medium text-gray-900 capitalize">
                                     {{ level }}
                                 </span>
                                 <span class="mt-1 flex items-center text-sm text-gray-500">
                                     {{ count }} MC questions
                                 </span>
+                                {% endif %}
                             </span>
                         </span>
                         <span class="pointer-events-none absolute -inset-px rounded-lg border-2" aria-hidden="true"></span>
@@ -107,20 +125,45 @@
 
 {% block extra_js %}
 <script>
-    // Handle radio button visual selection for both groups
-    ['difficulty', 'time_limit'].forEach(name => {
-        document.querySelectorAll(`input[name="${name}"]`).forEach(radio => {
-            radio.addEventListener('change', function() {
-                document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
-                    const label = r.closest('label');
-                    label.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-500');
+    // Handle difficulty radio button selection with interview mode styling
+    document.querySelectorAll('input[name="difficulty"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Reset all difficulty labels
+            document.querySelectorAll('label[data-difficulty]').forEach(label => {
+                label.classList.remove('border-indigo-500', 'border-violet-500', 'ring-2', 'ring-indigo-500', 'ring-violet-500');
+                const difficulty = label.dataset.difficulty;
+                if (difficulty === 'interview') {
+                    label.classList.add('border-violet-300');
+                } else {
                     label.classList.add('border-gray-300');
-                });
-                if (this.checked) {
-                    this.closest('label').classList.remove('border-gray-300');
-                    this.closest('label').classList.add('border-indigo-500', 'ring-2', 'ring-indigo-500');
                 }
             });
+            // Highlight selected
+            if (this.checked) {
+                const label = this.closest('label');
+                const difficulty = label.dataset.difficulty;
+                label.classList.remove('border-gray-300', 'border-violet-300');
+                if (difficulty === 'interview') {
+                    label.classList.add('border-violet-500', 'ring-2', 'ring-violet-500');
+                } else {
+                    label.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-500');
+                }
+            }
+        });
+    });
+
+    // Handle time limit radio button selection
+    document.querySelectorAll('input[name="time_limit"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('input[name="time_limit"]').forEach(r => {
+                const label = r.closest('label');
+                label.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-500');
+                label.classList.add('border-gray-300');
+            });
+            if (this.checked) {
+                this.closest('label').classList.remove('border-gray-300');
+                this.closest('label').classList.add('border-indigo-500', 'ring-2', 'ring-indigo-500');
+            }
         });
     });
 </script>

@@ -1,5 +1,6 @@
 """Views for the exam app."""
 
+import logging
 import random
 
 from django.contrib import messages
@@ -15,6 +16,8 @@ from apps.questions.models import Question
 from apps.subjects.models import Subject
 
 from .models import ExamAnswer, ExamSession
+
+logger = logging.getLogger(__name__)
 
 
 class ExamConfigView(LoginRequiredMixin, TemplateView):
@@ -32,11 +35,18 @@ class ExamConfigView(LoginRequiredMixin, TemplateView):
         # Get available question count for each difficulty
         difficulties = {}
         for level in subject.difficulty_levels:
-            count = Question.objects.filter(
-                subject=subject,
-                difficulty=level,
-                is_active=True,
-            ).count()
+            if level == "interview":
+                # Interview mode uses all questions regardless of difficulty
+                count = Question.objects.filter(
+                    subject=subject,
+                    is_active=True,
+                ).count()
+            else:
+                count = Question.objects.filter(
+                    subject=subject,
+                    difficulty=level,
+                    is_active=True,
+                ).count()
             difficulties[level] = count
 
         context["difficulties"] = difficulties
@@ -62,54 +72,137 @@ def start_exam(request, subject_slug):
     # Validate question count
     question_count = max(1, min(question_count, 50))
 
-    # Get available questions
-    available_questions = list(
-        Question.objects.filter(
-            subject=subject,
-            difficulty=difficulty,
-            is_active=True,
-        ).values_list("id", flat=True)
-    )
-
-    if len(available_questions) < question_count:
-        messages.warning(
-            request,
-            _(
-                f"Only {len(available_questions)} questions available for {difficulty} difficulty."
-            ),
+    # Handle interview mode specially
+    if difficulty == "interview":
+        selected_ids = _get_interview_questions(
+            request, subject, question_count, subject_slug
         )
-        question_count = len(available_questions)
-
-    if question_count == 0:
-        messages.error(
-            request,
-            _(
-                "No questions available for this subject and difficulty. Please try a different configuration."
-            ),
+        if selected_ids is None:
+            # Error occurred, redirect handled in helper
+            return redirect("exam:config", subject_slug=subject_slug)
+    else:
+        # Standard difficulty filtering
+        available_questions = list(
+            Question.objects.filter(
+                subject=subject,
+                difficulty=difficulty,
+                is_active=True,
+            ).values_list("id", flat=True)
         )
-        return redirect("exam:config", subject_slug=subject_slug)
 
-    # Select random questions
-    selected_ids = random.sample(available_questions, question_count)
+        if len(available_questions) < question_count:
+            messages.warning(
+                request,
+                _(
+                    f"Only {len(available_questions)} questions available for {difficulty} difficulty."
+                ),
+            )
+            question_count = len(available_questions)
+
+        if question_count == 0:
+            messages.error(
+                request,
+                _(
+                    "No questions available for this subject and difficulty. Please try a different configuration."
+                ),
+            )
+            return redirect("exam:config", subject_slug=subject_slug)
+
+        # Select random questions
+        selected_ids = random.sample(available_questions, question_count)
 
     # Create exam session
     session = ExamSession.objects.create(
         user=request.user,
         subject=subject,
         difficulty=difficulty,
-        question_count=question_count,
+        question_count=len(selected_ids),
     )
 
-    # Create exam answers (question slots)
-    questions = Question.objects.filter(id__in=selected_ids)
-    for i, question in enumerate(questions):
-        ExamAnswer.objects.create(
-            session=session,
-            question=question,
-            order=i,
-        )
+    # Create exam answers (question slots) - preserve order for interview mode
+    questions_by_id = {q.id: q for q in Question.objects.filter(id__in=selected_ids)}
+    for i, qid in enumerate(selected_ids):
+        if qid in questions_by_id:
+            ExamAnswer.objects.create(
+                session=session,
+                question=questions_by_id[qid],
+                order=i,
+            )
 
     return redirect("exam:question", subject_slug=subject_slug, pk=session.pk)
+
+
+def _get_interview_questions(request, subject, question_count, subject_slug):
+    """
+    Get questions for interview mode using LLM ranking.
+
+    Returns list of question IDs or None if error occurred.
+    """
+    from apps.core.services.llm_service import LLMAPIError
+    from apps.questions.services.interview_ranker import (
+        QuestionForRanking,
+        get_interview_ranker,
+    )
+
+    # Get all questions (any difficulty), limit to 50 for LLM
+    available_questions = list(
+        Question.objects.filter(
+            subject=subject,
+            is_active=True,
+        ).values("id", "question_text", "options", "difficulty", "tags")[:50]
+    )
+
+    if len(available_questions) == 0:
+        messages.error(
+            request,
+            _("No questions available for this subject. Please try a different subject."),
+        )
+        return None
+
+    # If we have more than 50, randomly sample
+    if len(available_questions) > 50:
+        available_questions = random.sample(available_questions, 50)
+
+    # Adjust question count if needed
+    actual_count = min(question_count, len(available_questions))
+    if actual_count < question_count:
+        messages.warning(
+            request,
+            _(f"Only {actual_count} questions available for interview mode."),
+        )
+
+    # Convert to Pydantic models for ranking
+    questions_for_ranking = [
+        QuestionForRanking(
+            id=q["id"],
+            question_text=q["question_text"],
+            options=q["options"] or [],
+            difficulty=q["difficulty"],
+            tags=q["tags"] or [],
+        )
+        for q in available_questions
+    ]
+
+    # Rank via LLM
+    ranker = get_interview_ranker()
+
+    try:
+        selected_ids = ranker.rank_questions(
+            questions=questions_for_ranking,
+            subject_name=subject.name,
+            num_to_select=actual_count,
+        )
+        return selected_ids
+    except LLMAPIError as e:
+        logger.exception("Interview ranking failed for %s: %s", subject.slug, e)
+        messages.error(
+            request,
+            _(
+                "Unable to generate interview-focused questions. "
+                "Please try again or select a different difficulty."
+            ),
+        )
+        return None
 
 
 class ExamQuestionView(LoginRequiredMixin, DetailView):

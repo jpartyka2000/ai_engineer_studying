@@ -85,7 +85,7 @@ class Subject(models.Model):
     def save(self, *args, **kwargs) -> None:
         """Set default difficulty levels if not provided."""
         if not self.difficulty_levels:
-            self.difficulty_levels = ["beginner", "intermediate", "advanced"]
+            self.difficulty_levels = ["beginner", "intermediate", "advanced", "interview"]
         super().save(*args, **kwargs)
 
     def get_absolute_url(self) -> str:

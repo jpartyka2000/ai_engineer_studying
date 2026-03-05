@@ -349,3 +349,88 @@ def unarchive_session(request, subject_slug, pk):
 
     messages.success(request, _("Session restored successfully."))
     return redirect("qanda:session", subject_slug=subject_slug, pk=pk)
+
+
+@login_required
+@require_POST
+def save_as_topic(request, subject_slug, pk, message_id):
+    """
+    Save an assistant message as a topic file and generate questions.
+
+    This endpoint:
+    1. Extracts a topic name from the message content using Claude
+    2. Saves the content to llm_studying/<subject_slug>/<topic_name>.txt
+    3. Generates questions from the content and saves to database
+
+    Returns JSON response with status and details.
+    """
+    from .services import (
+        SaveTopicError,
+        TopicExtractionError,
+        save_as_topic as save_topic_service,
+    )
+
+    # Get session and verify ownership
+    session = get_object_or_404(
+        QASession,
+        pk=pk,
+        user=request.user,
+    )
+
+    # Verify subject matches
+    if session.subject.slug != subject_slug:
+        return JsonResponse(
+            {"error": "Subject mismatch"},
+            status=400,
+        )
+
+    # Get the message to save
+    message = get_object_or_404(
+        Message,
+        pk=message_id,
+        session=session,
+        role=Message.Role.ASSISTANT,
+    )
+
+    # Validate message has content
+    if not message.content.strip():
+        return JsonResponse(
+            {"error": "Message has no content to save"},
+            status=400,
+        )
+
+    try:
+        result = save_topic_service(
+            content=message.content,
+            subject=session.subject,
+            num_questions=3,
+        )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "topic_name": result["topic_name"],
+                "file_path": result["file_path"],
+                "questions_created": result["questions_created"],
+                "message": f"Saved as '{result['topic_name']}' with {result['questions_created']} questions generated",
+            }
+        )
+
+    except TopicExtractionError as e:
+        logger.error("Topic extraction failed: %s", e)
+        return JsonResponse(
+            {"error": "Failed to extract topic name. Please try again."},
+            status=500,
+        )
+    except SaveTopicError as e:
+        logger.error("Save topic failed: %s", e)
+        return JsonResponse(
+            {"error": "Failed to save file. Please try again."},
+            status=500,
+        )
+    except Exception as e:
+        logger.exception("Unexpected error in save_as_topic: %s", e)
+        return JsonResponse(
+            {"error": "An unexpected error occurred. Please try again."},
+            status=500,
+        )

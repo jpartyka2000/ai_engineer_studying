@@ -54,6 +54,11 @@ class LightningSession(models.Model):
         choices=TIME_LIMIT_CHOICES,
         help_text=_("Time limit in seconds"),
     )
+    interview_question_pool = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("Pre-ranked question IDs for interview mode (empty for other modes)"),
+    )
 
     # Progress tracking
     questions_answered = models.PositiveIntegerField(
