@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Argument - {{ session.subject.name }} - AI Interview Prep{% endblock %}
+
+{% block extra_css %}
+<style>
+    .typing-indicator {
+        display: inline-block;
+    }
+    .typing-indicator span {
+        height: 8px;
+        width: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 2px;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-indicator span:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    .typing-indicator span:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+    @keyframes bounce {
+        0%, 80%, 100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
+    }
+    /* Heat level colors */
+    .heat-friend .typing-indicator span { background-color: #10b981; }
+    .heat-colleague .typing-indicator span { background-color: #6366f1; }
+    .heat-jerk .typing-indicator span { background-color: #ef4444; }
+
+    .heat-friend .opponent-bubble { background-color: #d1fae5; }
+    .heat-colleague .opponent-bubble { background-color: #e0e7ff; }
+    .heat-jerk .opponent-bubble { background-color: #fee2e2; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'argument:config' subject_slug=session.subject.slug %}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+        &larr; Back to Configuration
+    </a>
+</div>
+
+<div class="max-w-4xl mx-auto heat-{{ session.heat_level }}">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4 flex items-center justify-between">
+        <div>
+            <div class="flex items-center">
+                <h1 class="text-xl font-bold text-gray-900">{{ session.subject.name }} Argument</h1>
+                <span class="ml-3 px-3 py-1 text-sm font-medium rounded
+                    {% if session.heat_level == 'friend' %}bg-green-100 text-green-800
+                    {% elif session.heat_level == 'colleague' %}bg-indigo-100 text-indigo-800
+                    {% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ heat_level_display }}
+                </span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1">
+                {{ session.difficulty|capfirst }} difficulty | {{ session.message_count }} messages
+            </p>
+        </div>
+        {% if not is_completed %}
+        <button id="end-argument-btn"
+                onclick="endArgument()"
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+            End Argument
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Initial Prompt -->
+    <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-6 mb-4">
+        <h2 class="font-semibold text-amber-800 mb-2">Topic for Debate</h2>
+        <p class="text-gray-800">{{ session.initial_prompt }}</p>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="messages-container" class="bg-white rounded-lg shadow-md p-6 mb-4 h-[500px] overflow-y-auto">
+        {% for message in messages_list %}
+        <div class="message mb-6 {% if message.role == 'user' %}text-right{% endif %}">
+            <div class="inline-block max-w-2xl text-left">
+                <div class="flex items-start {% if message.role == 'user' %}flex-row-reverse{% endif %}">
+                    <div class="flex-shrink-0 {% if message.role == 'user' %}ml-3{% else %}mr-3{% endif %}">
+                        {% if message.role == 'user' %}
+                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                            You
+                        </div>
+                        {% else %}
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-2xl
+                            {% if session.heat_level == 'friend' %}bg-green-100
+                            {% elif session.heat_level == 'colleague' %}bg-indigo-100
+                            {% else %}bg-red-100{% endif %}">
+                            {% if session.heat_level == 'friend' %}&#128578;
+                            {% elif session.heat_level == 'colleague' %}&#128528;
+                            {% else %}&#128545;{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <div class="rounded-lg p-4
+                            {% if message.role == 'user' %}bg-indigo-100
+                            {% else %}opponent-bubble{% endif %}">
+                            <div class="message-content whitespace-pre-wrap">{{ message.content }}</div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 {% if message.role == 'user' %}text-right{% endif %}">
+                            {{ message.created_at|date:"M d, g:i A" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center text-gray-500 py-8">
+            <p>No messages yet. Share your opinion on the topic above!</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Input Form -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+        {% if is_completed %}
+        <div class="text-center py-6 text-gray-600">
+            <p class="text-lg font-medium">This argument has ended</p>
+            <a href="{% url 'argument:results' subject_slug=session.subject.slug pk=session.pk %}"
+               class="mt-3 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                View Results
+            </a>
+        </div>
+        {% else %}
+        <form id="response-form" method="post">
+            {% csrf_token %}
+            <div class="flex space-x-4">
+                <textarea id="response-input" name="response" rows="3"
+                          placeholder="Share your opinion or respond to the opponent..."
+                          class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                          required></textarea>
+                <button type="submit" id="submit-button"
+                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- End Argument Modal -->
+<div id="end-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">End This Argument?</h3>
+        <p class="text-gray-600 mb-4">
+            Your performance will be analyzed on technical accuracy, temperament control, and topic focus.
+        </p>
+        <div class="flex space-x-3">
+            <button onclick="closeEndModal()"
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                Keep Arguing
+            </button>
+            <button onclick="confirmEndArgument()"
+                    id="confirm-end-btn"
+                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                End & Analyze
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Get CSRF token
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// Scroll to bottom of messages container
+function scrollToBottom() {
+    const container = document.getElementById('messages-container');
+    container.scrollTop = container.scrollHeight;
+}
+
+// Create message element
+function createMessageElement(role, content = '') {
+    const heatLevel = '{{ session.heat_level }}';
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message mb-6 ${role === 'user' ? 'text-right' : ''}`;
+
+    const innerDiv = document.createElement('div');
+    innerDiv.className = 'inline-block max-w-2xl text-left';
+
+    const flexDiv = document.createElement('div');
+    flexDiv.className = `flex items-start ${role === 'user' ? 'flex-row-reverse' : ''}`;
+
+    // Avatar
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = `flex-shrink-0 ${role === 'user' ? 'ml-3' : 'mr-3'}`;
+    const avatarInner = document.createElement('div');
+
+    if (role === 'user') {
+        avatarInner.className = 'w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold';
+        avatarInner.textContent = 'You';
+    } else {
+        let bgClass = 'bg-indigo-100';
+        let emoji = '&#128528;';
+        if (heatLevel === 'friend') {
+            bgClass = 'bg-green-100';
+            emoji = '&#128578;';
+        } else if (heatLevel === 'jerk') {
+            bgClass = 'bg-red-100';
+            emoji = '&#128545;';
+        }
+        avatarInner.className = `w-10 h-10 rounded-full flex items-center justify-center text-2xl ${bgClass}`;
+        avatarInner.innerHTML = emoji;
+    }
+    avatarDiv.appendChild(avatarInner);
+
+    // Content
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'flex-1';
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = `rounded-lg p-4 ${role === 'user' ? 'bg-indigo-100' : 'opponent-bubble'}`;
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content whitespace-pre-wrap';
+    if (content) {
+        messageContent.textContent = content;
+    }
+    bubbleDiv.appendChild(messageContent);
+    contentDiv.appendChild(bubbleDiv);
+
+    flexDiv.appendChild(avatarDiv);
+    flexDiv.appendChild(contentDiv);
+    innerDiv.appendChild(flexDiv);
+    messageDiv.appendChild(innerDiv);
+
+    return { messageDiv, messageContent, bubbleDiv };
+}
+
+// Submit response
+async function submitResponse(responseText) {
+    const form = document.getElementById('response-form');
+    const input = document.getElementById('response-input');
+    const submitButton = document.getElementById('submit-button');
+    const container = document.getElementById('messages-container');
+
+    // Disable input
+    input.disabled = true;
+    submitButton.disabled = true;
+
+    try {
+        // Add user message to UI
+        const { messageDiv: userMessageDiv } = createMessageElement('user', responseText);
+        container.appendChild(userMessageDiv);
+        scrollToBottom();
+
+        // Create opponent message with typing indicator
+        const { messageDiv: opponentMessageDiv, messageContent: opponentContent, bubbleDiv } = createMessageElement('opponent');
+        container.appendChild(opponentMessageDiv);
+
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+        opponentContent.appendChild(typingIndicator);
+        scrollToBottom();
+
+        // Submit to backend
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', getCsrfToken());
+        formData.append('response', responseText);
+
+        const response = await fetch('{% url "argument:respond" subject_slug=session.subject.slug pk=session.pk %}', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to submit response');
+        }
+
+        const data = await response.json();
+
+        // Start streaming
+        streamResponse(data.stream_url, opponentContent);
+
+    } catch (error) {
+        console.error('Error submitting response:', error);
+        alert(error.message || 'Failed to submit response. Please try again.');
+        input.disabled = false;
+        submitButton.disabled = false;
+    }
+}
+
+// Stream response via SSE
+function streamResponse(streamUrl, contentElement) {
+    const eventSource = new EventSource(streamUrl);
+    let fullContent = '';
+
+    // Remove typing indicator
+    contentElement.innerHTML = '';
+
+    eventSource.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.error) {
+            contentElement.innerHTML = `<span class="text-red-600">Error: ${data.error}</span>`;
+            eventSource.close();
+            enableInput();
+            return;
+        }
+
+        if (data.done) {
+            eventSource.close();
+            enableInput();
+            scrollToBottom();
+            return;
+        }
+
+        // Append chunk
+        if (data.chunk) {
+            fullContent += data.chunk;
+            contentElement.textContent = fullContent;
+            scrollToBottom();
+        }
+    });
+
+    eventSource.addEventListener('error', (error) => {
+        console.error('SSE error:', error);
+        eventSource.close();
+        contentElement.innerHTML += '<span class="text-red-600 block mt-2">Connection lost. Please refresh.</span>';
+        enableInput();
+    });
+}
+
+// Enable input
+function enableInput() {
+    const input = document.getElementById('response-input');
+    const submitButton = document.getElementById('submit-button');
+    if (input && submitButton) {
+        input.disabled = false;
+        submitButton.disabled = false;
+        input.value = '';
+        input.focus();
+    }
+}
+
+// End argument modal
+function endArgument() {
+    document.getElementById('end-modal').classList.remove('hidden');
+    document.getElementById('end-modal').classList.add('flex');
+}
+
+function closeEndModal() {
+    document.getElementById('end-modal').classList.add('hidden');
+    document.getElementById('end-modal').classList.remove('flex');
+}
+
+async function confirmEndArgument() {
+    const confirmBtn = document.getElementById('confirm-end-btn');
+    const endBtn = document.getElementById('end-argument-btn');
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Analyzing...';
+    if (endBtn) endBtn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', getCsrfToken());
+
+        const response = await fetch('{% url "argument:end" subject_slug=session.subject.slug pk=session.pk %}', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to end argument');
+        }
+
+        // Redirect to results
+        window.location.href = data.redirect_url;
+
+    } catch (error) {
+        console.error('Error ending argument:', error);
+        alert(error.message || 'Failed to analyze the argument. Please try again.');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'End & Analyze';
+        if (endBtn) endBtn.disabled = false;
+        closeEndModal();
+    }
+}
+
+// Form submission handler
+document.getElementById('response-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('response-input');
+    const responseText = input.value.trim();
+    if (responseText) {
+        submitResponse(responseText);
+    }
+});
+
+// Initial scroll to bottom
+scrollToBottom();
+</script>
+{% endblock %}

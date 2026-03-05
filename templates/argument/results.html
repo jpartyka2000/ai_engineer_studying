@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Argument Results - {{ session.subject.name }} - AI Interview Prep{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'argument:config' subject_slug=session.subject.slug %}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+        &larr; Back to Argument Mode
+    </a>
+</div>
+
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Argument Analysis</h1>
+        <p class="text-gray-600">{{ session.subject.name }} | {{ session.difficulty|capfirst }} | {{ session.get_heat_level_display }}</p>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ session.message_count }} messages exchanged | {{ session.started_at|date:"M d, Y g:i A" }}
+        </p>
+    </div>
+
+    <!-- Overall Score -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-md p-8 mb-6 text-white text-center">
+        <p class="text-lg opacity-90 mb-2">Overall Score</p>
+        <p class="text-6xl font-bold">{{ analysis.average_score }}<span class="text-3xl">/10</span></p>
+    </div>
+
+    <!-- Score Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- Technical Score -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-gray-900">Technical Accuracy</h3>
+                <span class="text-2xl font-bold text-indigo-600">{{ analysis.technical_score }}/10</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                <div class="bg-indigo-600 h-3 rounded-full transition-all duration-500"
+                     style="width: {{ analysis.technical_score }}0%"></div>
+            </div>
+            <p class="text-sm text-gray-600">{{ analysis.technical_feedback }}</p>
+        </div>
+
+        <!-- Temperament Score -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-gray-900">Temperament Control</h3>
+                <span class="text-2xl font-bold text-green-600">{{ analysis.temperament_score }}/10</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                <div class="bg-green-600 h-3 rounded-full transition-all duration-500"
+                     style="width: {{ analysis.temperament_score }}0%"></div>
+            </div>
+            <p class="text-sm text-gray-600">{{ analysis.temperament_feedback }}</p>
+        </div>
+
+        <!-- Focus Score -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-gray-900">Topic Focus</h3>
+                <span class="text-2xl font-bold text-amber-600">{{ analysis.focus_score }}/10</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                <div class="bg-amber-600 h-3 rounded-full transition-all duration-500"
+                     style="width: {{ analysis.focus_score }}0%"></div>
+            </div>
+            <p class="text-sm text-gray-600">{{ analysis.focus_feedback }}</p>
+        </div>
+    </div>
+
+    <!-- Overall Feedback -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="font-semibold text-gray-900 mb-3">Overall Feedback</h3>
+        <p class="text-gray-700">{{ analysis.overall_feedback }}</p>
+    </div>
+
+    <!-- Debate Topic -->
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-6">
+        <h3 class="font-semibold text-amber-800 mb-2">Original Topic</h3>
+        <p class="text-gray-800">{{ session.initial_prompt }}</p>
+    </div>
+
+    <!-- Conversation Review -->
+    <details class="bg-white rounded-lg shadow-md mb-6">
+        <summary class="p-6 cursor-pointer font-semibold text-gray-900 hover:bg-gray-50 rounded-lg">
+            View Full Conversation ({{ session.message_count }} messages)
+        </summary>
+        <div class="px-6 pb-6 space-y-4 max-h-96 overflow-y-auto">
+            {% for message in messages_list %}
+            <div class="{% if message.role == 'user' %}ml-8{% else %}mr-8{% endif %}">
+                <div class="flex items-center mb-1">
+                    <span class="font-medium text-sm
+                        {% if message.role == 'user' %}text-indigo-600{% else %}text-gray-600{% endif %}">
+                        {% if message.role == 'user' %}You{% else %}Opponent{% endif %}
+                    </span>
+                    <span class="text-xs text-gray-400 ml-2">{{ message.created_at|date:"g:i A" }}</span>
+                </div>
+                <div class="p-3 rounded-lg text-sm
+                    {% if message.role == 'user' %}bg-indigo-50{% else %}bg-gray-100{% endif %}">
+                    {{ message.content|linebreaks }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="{% url 'argument:config' subject_slug=session.subject.slug %}"
+           class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-center">
+            Try Another Argument
+        </a>
+        <a href="{% url 'subjects:detail' slug=session.subject.slug %}"
+           class="px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors text-center">
+            Back to {{ session.subject.name }}
+        </a>
+    </div>
+</div>
+{% endblock %}

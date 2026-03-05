@@ -15,4 +15,5 @@ urlpatterns = [
     path("qanda/", include("apps.qanda.urls")),
     path("visuals/", include("apps.visuals.urls")),
     path("coding/", include("apps.coding.urls")),
+    path("argument/", include("apps.argument.urls")),
 ]

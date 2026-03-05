@@ -183,3 +183,62 @@ def update_progress_on_qa_session(sender, instance, created, **kwargs):
         instance.user.username,
         instance.subject.name,
     )
+
+
+@receiver(post_save, sender="argument.ArgumentSession")
+def update_progress_on_argument_complete(sender, instance, created, **kwargs):
+    """
+    Update UserProgress when an argument session is completed.
+
+    Only triggers when status changes to COMPLETED and has analysis.
+    """
+    from apps.argument.models import ArgumentSession
+
+    if instance.status != ArgumentSession.Status.COMPLETED:
+        return
+
+    # Check if analysis exists (completion with analysis)
+    if not hasattr(instance, "analysis"):
+        return
+
+    progress = _get_or_create_progress(instance.user, instance.subject)
+
+    # Count completed argument sessions for this subject
+    completed_count = ArgumentSession.objects.filter(
+        user=instance.user,
+        subject=instance.subject,
+        status=ArgumentSession.Status.COMPLETED,
+    ).count()
+
+    if completed_count > progress.argument_sessions:
+        # This is a new completion - update progress
+        progress.argument_sessions = completed_count
+
+        # Calculate average scores from all completed sessions with analysis
+        from django.db.models import Avg
+
+        from apps.argument.models import ArgumentAnalysis
+
+        agg = ArgumentAnalysis.objects.filter(
+            session__user=instance.user,
+            session__subject=instance.subject,
+            session__status=ArgumentSession.Status.COMPLETED,
+        ).aggregate(
+            avg_technical=Avg("technical_score"),
+            avg_temperament=Avg("temperament_score"),
+            avg_focus=Avg("focus_score"),
+        )
+
+        progress.argument_avg_technical = round(agg["avg_technical"] or 0.0, 1)
+        progress.argument_avg_temperament = round(agg["avg_temperament"] or 0.0, 1)
+        progress.argument_avg_focus = round(agg["avg_focus"] or 0.0, 1)
+        progress.last_studied_at = timezone.now()
+        progress.save()
+
+        # Update streak
+        _update_study_streak(instance.user)
+        logger.info(
+            "Updated progress for user %s, subject %s (argument completed)",
+            instance.user.username,
+            instance.subject.name,
+        )

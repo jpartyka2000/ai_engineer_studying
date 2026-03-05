@@ -67,6 +67,24 @@ class UserProgress(models.Model):
         help_text=_("Total Q&A sessions started"),
     )
 
+    # Argument statistics
+    argument_sessions = models.PositiveIntegerField(
+        default=0,
+        help_text=_("Total completed argument sessions"),
+    )
+    argument_avg_technical = models.FloatField(
+        default=0.0,
+        help_text=_("Average technical accuracy score (1-10)"),
+    )
+    argument_avg_temperament = models.FloatField(
+        default=0.0,
+        help_text=_("Average temperament control score (1-10)"),
+    )
+    argument_avg_focus = models.FloatField(
+        default=0.0,
+        help_text=_("Average topic focus score (1-10)"),
+    )
+
     # Timestamps
     last_studied_at = models.DateTimeField(
         null=True,
@@ -89,7 +107,12 @@ class UserProgress(models.Model):
     @property
     def total_sessions(self) -> int:
         """Total sessions across all modes."""
-        return self.exam_sessions + self.lightning_sessions + self.qa_sessions
+        return (
+            self.exam_sessions
+            + self.lightning_sessions
+            + self.qa_sessions
+            + self.argument_sessions
+        )
 
     @property
     def total_correct(self) -> int:
