@@ -44,6 +44,14 @@ class Subject(models.Model):
         default=False,
         help_text=_("Whether Visuals mode is available for this subject"),
     )
+    coding_language = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text=_(
+            "If this subject has its own coding language (e.g., 'git', 'sql', 'shell'), "
+            "specify it here. Leave blank for Python-only subjects like LightGBM."
+        ),
+    )
     default_question_count = models.PositiveIntegerField(
         default=10,
         help_text=_("Default number of questions for Exam mode"),

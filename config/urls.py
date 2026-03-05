@@ -14,4 +14,5 @@ urlpatterns = [
     path("lightning/", include("apps.lightning.urls")),
     path("qanda/", include("apps.qanda.urls")),
     path("visuals/", include("apps.visuals.urls")),
+    path("coding/", include("apps.coding.urls")),
 ]

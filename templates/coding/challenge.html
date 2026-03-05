@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ challenge.title }} - Coding Challenge{% endblock %}
+
+{% block extra_css %}
+<style>
+    #editor-container {
+        height: 500px;
+        border: 1px solid #374151;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    /* Markdown prose styling */
+    .markdown-content h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #111827;
+    }
+    .markdown-content h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: #1f2937;
+    }
+    .markdown-content h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        color: #374151;
+    }
+    .markdown-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem;
+        color: #4b5563;
+    }
+    .markdown-content p {
+        margin-bottom: 0.75rem;
+        line-height: 1.625;
+    }
+    .markdown-content ul, .markdown-content ol {
+        margin-left: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    .markdown-content ul {
+        list-style-type: disc;
+    }
+    .markdown-content ol {
+        list-style-type: decimal;
+    }
+    .markdown-content li {
+        margin-bottom: 0.25rem;
+    }
+    .markdown-content pre {
+        background-color: #1f2937;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        overflow-x: auto;
+        margin-bottom: 0.75rem;
+    }
+    .markdown-content pre code {
+        background-color: transparent;
+        padding: 0;
+        color: #e5e7eb;
+        font-size: 0.875rem;
+    }
+    .markdown-content code {
+        background-color: #e5e7eb;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content blockquote {
+        border-left: 4px solid #d1d5db;
+        padding-left: 1rem;
+        margin-left: 0;
+        color: #6b7280;
+        font-style: italic;
+    }
+    /* Timer styles */
+    .timer-display {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .timer-normal {
+        color: #059669;
+    }
+    .timer-warning {
+        color: #d97706;
+    }
+    .timer-danger {
+        color: #dc2626;
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    /* Time's up modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        text-align: center;
+        max-width: 400px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Left Panel: Problem Description -->
+    <div class="bg-white rounded-lg shadow-md p-6 h-fit lg:sticky lg:top-4">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-xl font-bold text-gray-900">{{ challenge.title }}</h1>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                {% if challenge.difficulty == 'beginner' %}bg-green-100 text-green-800
+                {% elif challenge.difficulty == 'intermediate' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ challenge.get_difficulty_display }}
+            </span>
+        </div>
+
+        <div class="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+            <span class="inline-flex items-center">
+                {% if challenge.challenge_type == 'implement' %}
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Implement
+                {% else %}
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Modify
+                {% endif %}
+            </span>
+            <span>|</span>
+            <span>{{ challenge.get_language_display }}</span>
+            <span>|</span>
+            <span>~{{ challenge.estimated_time_minutes }} min</span>
+        </div>
+
+        <div id="challenge-description" class="markdown-content max-w-none mb-6 text-gray-700">
+            <!-- Markdown will be rendered here by marked.js -->
+        </div>
+        <script id="description-source" type="text/plain">{{ challenge.description }}</script>
+
+        {% if challenge.expected_output %}
+        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Expected Behavior</h3>
+            <p class="text-sm text-gray-600">{{ challenge.expected_output }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Hints Section -->
+        <div class="border-t pt-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-medium text-gray-700">
+                    Hints ({{ session.hints_used }}/{{ total_hints }})
+                </h3>
+            </div>
+            <div id="hints-container">
+                {% for hint in available_hints %}
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-2">
+                    <p class="text-sm text-yellow-800">
+                        <strong>Hint {{ forloop.counter }}:</strong> {{ hint }}
+                    </p>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500 italic">No hints revealed yet.</p>
+                {% endfor %}
+            </div>
+            {% if has_more_hints %}
+            <button hx-post="{% url 'coding:reveal_hint' subject_slug=session.subject.slug pk=session.pk %}"
+                    hx-target="#hints-container"
+                    hx-swap="beforeend"
+                    class="mt-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                Reveal Next Hint
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Panel: Code Editor -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <!-- Timer Display -->
+        <div class="flex items-center justify-between mb-4 pb-4 border-b">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-sm text-gray-600">Time Remaining</span>
+            </div>
+            <div id="timer" class="timer-display timer-normal" data-minutes="{{ challenge.estimated_time_minutes }}">
+                {{ challenge.estimated_time_minutes }}:00
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'coding:submit' subject_slug=session.subject.slug pk=session.pk %}"
+              id="code-form">
+            {% csrf_token %}
+
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-medium text-gray-900">Your Solution</h2>
+                <span class="text-sm text-gray-500" id="save-status">Auto-save enabled</span>
+            </div>
+
+            <!-- Monaco Editor Container -->
+            <div id="editor-container" class="mb-4"></div>
+            <input type="hidden" name="code" id="code-input">
+
+            <!-- Action Buttons -->
+            <div class="flex justify-between items-center mt-4">
+                <form method="post" action="{% url 'coding:abandon' subject_slug=session.subject.slug pk=session.pk %}"
+                      class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            onclick="return confirm('Are you sure you want to abandon this challenge?')"
+                            class="text-gray-600 hover:text-gray-800 text-sm">
+                        Abandon Challenge
+                    </button>
+                </form>
+                <button type="submit"
+                        class="bg-indigo-600 text-white py-2 px-6 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Submit for Review
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Marked.js for Markdown rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<!-- Monaco Editor from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<script>
+    // Render markdown description
+    (function() {
+        const descriptionSource = document.getElementById('description-source').textContent;
+        const descriptionContainer = document.getElementById('challenge-description');
+        if (descriptionSource && descriptionContainer) {
+            descriptionContainer.innerHTML = marked.parse(descriptionSource);
+        }
+    })();
+</script>
+<script>
+    require.config({
+        paths: {
+            'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs'
+        }
+    });
+
+    require(['vs/editor/editor.main'], function() {
+        // Get initial code - properly escaped for JavaScript string
+        const initialCode = "{{ session.user_code|default:""|escapejs }}";
+
+        const editor = monaco.editor.create(document.getElementById('editor-container'), {
+            value: initialCode,
+            language: '{{ monaco_language }}',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            fontSize: 14,
+            lineNumbers: 'on',
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            tabSize: 4,
+            insertSpaces: true,
+            formatOnPaste: true,
+            formatOnType: true,
+        });
+
+        // Update hidden input before form submission
+        document.getElementById('code-form').addEventListener('submit', function(e) {
+            document.getElementById('code-input').value = editor.getValue();
+        });
+
+        // Auto-save draft (debounced)
+        let saveTimeout;
+        editor.onDidChangeModelContent(function() {
+            clearTimeout(saveTimeout);
+            document.getElementById('save-status').textContent = 'Saving...';
+            document.getElementById('save-status').classList.remove('text-green-600');
+            document.getElementById('save-status').classList.add('text-gray-500');
+
+            saveTimeout = setTimeout(function() {
+                const code = editor.getValue();
+                fetch("{% url 'coding:save_draft' subject_slug=session.subject.slug pk=session.pk %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: 'code=' + encodeURIComponent(code)
+                }).then(function(response) {
+                    if (response.ok) {
+                        document.getElementById('save-status').textContent = 'Saved';
+                        document.getElementById('save-status').classList.remove('text-gray-500');
+                        document.getElementById('save-status').classList.add('text-green-600');
+                    }
+                }).catch(function() {
+                    document.getElementById('save-status').textContent = 'Save failed';
+                    document.getElementById('save-status').classList.add('text-red-600');
+                });
+            }, 2000);
+        });
+
+        // Set initial value in hidden input
+        document.getElementById('code-input').value = editor.getValue();
+
+        // Make editor available globally for timer auto-submit
+        window.monacoEditor = editor;
+    });
+</script>
+
+<!-- Countdown Timer -->
+<script>
+(function() {
+    const timerElement = document.getElementById('timer');
+    const totalMinutes = parseInt(timerElement.dataset.minutes) || 15;
+    let totalSeconds = totalMinutes * 60;
+    let timerInterval;
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function updateTimerDisplay() {
+        timerElement.textContent = formatTime(totalSeconds);
+
+        // Update timer color based on remaining time
+        timerElement.classList.remove('timer-normal', 'timer-warning', 'timer-danger');
+        if (totalSeconds <= 60) {
+            timerElement.classList.add('timer-danger');
+        } else if (totalSeconds <= 300) {
+            timerElement.classList.add('timer-warning');
+        } else {
+            timerElement.classList.add('timer-normal');
+        }
+    }
+
+    function showTimeUpModal() {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <svg class="w-16 h-16 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Time's Up!</h2>
+                <p class="text-gray-600 mb-4">Your code is being submitted for review...</p>
+                <div class="flex justify-center">
+                    <svg class="animate-spin h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    function autoSubmit() {
+        // Update hidden input with current code
+        if (window.monacoEditor) {
+            document.getElementById('code-input').value = window.monacoEditor.getValue();
+        }
+
+        // Show the modal
+        showTimeUpModal();
+
+        // Submit the form after a brief delay
+        setTimeout(function() {
+            document.getElementById('code-form').submit();
+        }, 1500);
+    }
+
+    function tick() {
+        totalSeconds--;
+        updateTimerDisplay();
+
+        if (totalSeconds <= 0) {
+            clearInterval(timerInterval);
+            autoSubmit();
+        }
+    }
+
+    // Initialize display
+    updateTimerDisplay();
+
+    // Start countdown
+    timerInterval = setInterval(tick, 1000);
+
+    // Store interval ID in case we need to clear it
+    window.challengeTimer = timerInterval;
+})();
+</script>
+{% endblock %}

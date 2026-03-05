@@ -1,0 +1,115 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>Generate Interview Questions: {{ subject.name }}</h1>
+
+<div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+    <h2 style="margin-top: 0;">Current Coverage</h2>
+    <p><strong>Total Questions:</strong> {{ existing.total_questions }}</p>
+    <p><strong>By Difficulty:</strong>
+        Beginner: {{ existing.questions_by_difficulty.beginner }},
+        Intermediate: {{ existing.questions_by_difficulty.intermediate }},
+        Advanced: {{ existing.questions_by_difficulty.advanced }}
+    </p>
+    {% if existing.all_tags %}
+    <p><strong>Topics Covered:</strong> {{ existing.all_tags|join:", " }}</p>
+    {% endif %}
+</div>
+
+{% if coverage %}
+<div style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+    <h2 style="margin-top: 0;">Coverage Analysis</h2>
+    <p><em>{{ coverage.coverage_summary }}</em></p>
+
+    {% if coverage.covered_topics %}
+    <p><strong style="color: green;">Well Covered ({{ coverage.covered_topics|length }}):</strong><br>
+        {{ coverage.covered_topics|join:", " }}</p>
+    {% endif %}
+
+    {% if coverage.partially_covered_topics %}
+    <p><strong style="color: orange;">Needs More Coverage ({{ coverage.partially_covered_topics|length }}):</strong><br>
+        {{ coverage.partially_covered_topics|join:", " }}</p>
+    {% endif %}
+
+    {% if coverage.missing_topics %}
+    <p><strong style="color: red;">Missing Topics ({{ coverage.missing_topics|length }}):</strong><br>
+        {{ coverage.missing_topics|join:", " }}</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if interview_topics %}
+<div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+    <h2 style="margin-top: 0;">Important Interview Topics</h2>
+    <p><strong>Estimated questions needed for full coverage:</strong> {{ interview_topics.total_estimated_questions }}</p>
+
+    <p><strong>Essential Topics:</strong><br>
+        {{ interview_topics.essential_topics|join:", " }}</p>
+
+    <p><strong>Common Topics:</strong><br>
+        {{ interview_topics.common_topics|join:", " }}</p>
+
+    <p><strong>Advanced Topics:</strong><br>
+        {{ interview_topics.advanced_topics|join:", " }}</p>
+</div>
+{% endif %}
+
+<div style="padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+    <h2 style="margin-top: 0;">Generate Questions</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <fieldset style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
+            <legend style="font-weight: bold;">Generation Mode</legend>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="mode" value="specific" checked>
+                    <strong>Generate specific number of questions</strong>
+                </label>
+                <div style="margin-left: 25px;">
+                    <label>Number of questions:
+                        <input type="number" name="num_questions" value="10" min="1" max="50"
+                               style="width: 80px; padding: 5px;">
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label style="display: block;">
+                    <input type="radio" name="mode" value="complete">
+                    <strong>Generate until full coverage</strong>
+                    <span style="color: #666;">(LLM determines when all important topics are covered)</span>
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
+            <legend style="font-weight: bold;">Options</legend>
+
+            <label>Difficulty filter (optional):
+                <select name="difficulty" style="padding: 5px;">
+                    <option value="">All difficulties</option>
+                    <option value="beginner">Beginner only</option>
+                    <option value="intermediate">Intermediate only</option>
+                    <option value="advanced">Advanced only</option>
+                </select>
+            </label>
+        </fieldset>
+
+        <div style="margin-top: 20px;">
+            <input type="submit" value="Generate Questions"
+                   style="padding: 10px 20px; background: #417690; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+            <a href="{% url 'admin:subjects_subject_changelist' %}"
+               style="margin-left: 10px; color: #666;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<p style="margin-top: 20px; color: #666;">
+    <strong>Note:</strong> Question generation uses the LLM API and may take a minute or more,
+    especially for "full coverage" mode.
+</p>
+{% endblock %}

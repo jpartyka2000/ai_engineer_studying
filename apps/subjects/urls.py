@@ -8,4 +8,5 @@ app_name = "subjects"
 
 urlpatterns = [
     path("<slug:slug>/", views.SubjectDetailView.as_view(), name="detail"),
+    path("<slug:slug>/stats/", views.SubjectStatsView.as_view(), name="stats"),
 ]
