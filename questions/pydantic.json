@@ -1,0 +1,1435 @@
+{
+  "metadata": {
+    "subject_slug": "pydantic",
+    "subject_name": "Pydantic",
+    "exported_at": "2026-03-05T20:01:47.070281",
+    "question_count": 69,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You want a reusable `Username` type with these properties:\n\n1) Input should be stripped of leading/trailing whitespace\n2) Value must be at most 20 characters *after* stripping\n3) Final stored value should be lowercase\n\nWrite a Pydantic v2 `Annotated` type alias named `Username` that satisfies the above, and show a minimal `BaseModel` using it.\n\n(Use `BeforeValidator`, `AfterValidator`, and `Field`.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid solution:\n\n```python\nfrom typing import Annotated\nfrom pydantic import BaseModel, Field, BeforeValidator, AfterValidator\n\nUsername = Annotated[\n    str,\n    BeforeValidator(str.strip),\n    Field(max_length=20),\n    AfterValidator(str.lower),\n]\n\nclass User(BaseModel):\n    username: Username\n```\n",
+      "explanation": "The `BeforeValidator(str.strip)` runs on the raw input so whitespace is removed first. Then `Field(max_length=20)` is enforced by Pydantic during its internal validation step, so the length check applies to the stripped string. Finally, `AfterValidator(str.lower)` runs after validation to normalize the stored value to lowercase. Ordering matters: if `Field(max_length=20)` came before stripping, the max length could be checked against the unstripped input, which would violate the requirement.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "annotated",
+        "type-aliases",
+        "field-constraints",
+        "beforevalidator",
+        "aftervalidator",
+        "normalization",
+        "validation-order"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an expensive derived value that you want to appear in `model_dump()`, but you do *not* want it recomputed on every access.\n\n1) Write a Pydantic model `Report` with a field `data: list[int]` and a computed field `summary: dict` that returns `{\"sum\": ..., \"avg\": ...}`.\n2) Ensure `summary` is computed only once per instance (cached).\n3) Briefly explain why your solution avoids recomputation.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom functools import cached_property\nfrom pydantic import BaseModel, computed_field\n\nclass Report(BaseModel):\n    data: list[int]\n\n    @computed_field\n    @cached_property\n    def summary(self) -> dict:\n        return {\n            \"sum\": sum(self.data),\n            \"avg\": sum(self.data) / len(self.data) if self.data else 0.0,\n        }\n```\n\nExplanation: `@computed_field` makes `summary` part of serialization (`model_dump()`) and schema, while `@cached_property` caches the computed result on first access so subsequent accesses reuse the stored value instead of recomputing.",
+      "explanation": "By default, computed fields are evaluated at access time, meaning repeated attribute access can repeat the computation. Combining `@computed_field` with `functools.cached_property` keeps the field serializable while ensuring the expensive computation runs only once per model instance; later accesses return the cached value stored on the instance.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "computed_field",
+        "cached_property",
+        "performance",
+        "serialization",
+        "model_dump"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a discriminated union where one of the member models forgets to define the discriminator field.\n\n```python\nfrom typing import Annotated, Literal, Union\nfrom pydantic import BaseModel, Field\n\nclass Cat(BaseModel):\n    pet_type: Literal['cat']\n    meows: int\n\nclass Dog(BaseModel):\n    # pet_type is missing here\n    barks: int\n\nclass Pet(BaseModel):\n    pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]\n```\n\n1) What requirement of discriminated unions is violated?\n2) What is the correct fix (show the corrected `Dog` model)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The requirement that *each model in the Union must include the discriminator field*, and that it must be a `Literal` with a unique tag value across the Union.\n\n2) Fix by adding the discriminator field to `Dog` as a `Literal` tag, e.g.:\n```python\nclass Dog(BaseModel):\n    pet_type: Literal['dog']\n    barks: int\n```",
+      "explanation": "Discriminated unions work by reading the discriminator field first (here: `pet_type`) and mapping its value to exactly one Union member. If a Union member lacks that field, Pydantic cannot reliably build the tag-to-model mapping for the union, and validation/model selection becomes ill-defined. Adding `pet_type: Literal['dog']` restores the required structure and makes the union unambiguous and fast to validate.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "discriminated-unions",
+        "literal",
+        "schema-requirements",
+        "validation",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a Pydantic model for an API response where:\n- `hashed_password` and `session_token` must never appear in `model_dump()` output.\n- They must still be accessible on the model instance (e.g., for internal logic).\n- Additionally, explain whether `exclude=True` removes these fields from the generated JSON schema, and what you would do if you also wanted them removed from the schema.\n\nWrite the model code and a short explanation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pydantic import BaseModel, Field\nfrom datetime import datetime\n\nclass UserResponse(BaseModel):\n    id: int\n    username: str\n    email: str\n    hashed_password: str = Field(exclude=True)\n    session_token: str = Field(exclude=True)\n    created_at: datetime\n```\n\nExplanation: `Field(exclude=True)` prevents the field from appearing in serialization output (`model_dump`, `model_dump_json`) but the attributes remain available on the instance. `exclude=True` does NOT remove the field from the JSON schema; to hide it from schema/docs you would need to use schema customization such as `json_schema_extra` (or a custom schema generation approach) to omit or modify the field in the schema.",
+      "explanation": "The key requirement is permanent exclusion from serialization while preserving attribute access. `Field(exclude=True)` is the correct mechanism for always excluding those fields by default. A common misunderstanding is that this also affects schema generation; it does not. Therefore, a separate schema customization mechanism is required if the schema must not mention those fields.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "Field",
+        "exclude",
+        "model_dump",
+        "json-schema",
+        "api-design",
+        "sensitive-data"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to apply a discount during validation using context, and you also want to ensure that `age` is not coerced from a string when strict mode is enabled.\n\nWrite Pydantic v2 code that:\n1) Defines an `Order` model with fields `item: str` and `price: float`.\n2) Uses a `field_validator` on `price` that reads `discount` from `info.context` (default 0 if missing) and applies it.\n3) Validates an order with a 20% discount using `model_validate(..., context={...})`.\n4) Demonstrates strict mode by validating a `User` model where `age='25'` raises a validation error when `strict=True`.\n\n(You may include brief comments; focus on correct usage of `model_validate`, `context`, and `strict`.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pydantic import BaseModel, field_validator, ValidationError\n\nclass Order(BaseModel):\n    item: str\n    price: float\n\n    @field_validator('price')\n    @classmethod\n    def apply_discount(cls, v, info):\n        discount = info.context.get('discount', 0) if info.context else 0\n        return v * (1 - discount)\n\norder = Order.model_validate(\n    {'item': 'Book', 'price': 100},\n    context={'discount': 0.2},\n)\nassert order.price == 80.0\n\nclass User(BaseModel):\n    name: str\n    age: int\n\ntry:\n    User.model_validate({'name': 'Bob', 'age': '25'}, strict=True)\n    raise AssertionError('Expected ValidationError')\nexcept ValidationError:\n    pass\n```",
+      "explanation": "This uses `model_validate(..., context=...)` to pass runtime data into validators via `info.context`, enabling conditional validation/transformation (discount application) without hard-coding values into the model. It also demonstrates per-call strictness: `strict=True` prevents coercion of `'25'` (a string) into an `int`, causing a `ValidationError`. This shows two key advantages of `model_validate`: context passing and per-call strict override.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "model_validate",
+        "context",
+        "field_validator",
+        "strict",
+        "ValidationError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are validating a nested model and want request-scoped data to influence validation in both the parent and the nested model.\n\n1) Explain how `context` behaves with nested model validation in Pydantic v2.\n2) Write a minimal example with a parent model containing a nested model where a validator in the nested model uses `info.context` (e.g., a feature flag or user role) to accept/reject a value.\n3) In your explanation, address whether `context` is stored on the resulting model instances.\n\n(Answer in text and code.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) In Pydantic v2, the `context` passed to `model_validate(..., context=...)` is propagated to validators during validation, including validators in nested models validated as part of the same call. Validators can read it via `info.context`.\n2) Example:\n```python\nfrom pydantic import BaseModel, field_validator, ValidationError\n\nclass Child(BaseModel):\n    level: str\n\n    @field_validator('level')\n    @classmethod\n    def check_level(cls, v, info):\n        ctx = info.context or {}\n        role = ctx.get('user_role', 'guest')\n        allowed = {'basic'}\n        if role == 'admin':\n            allowed |= {'advanced'}\n        if v not in allowed:\n            raise ValueError('not allowed')\n        return v\n\nclass Parent(BaseModel):\n    child: Child\n\n# guest: only basic\nParent.model_validate({'child': {'level': 'basic'}}, context={'user_role': 'guest'})\n\n# guest: rejects advanced\ntry:\n    Parent.model_validate({'child': {'level': 'advanced'}}, context={'user_role': 'guest'})\nexcept ValidationError as e:\n    print('failed')\n\n# admin: accepts advanced\nParent.model_validate({'child': {'level': 'advanced'}}, context={'user_role': 'admin'})\n```\n3) `context` is not stored on the resulting model instances; it is only available during validation via `info.context`.",
+      "explanation": "This tests understanding of three key behaviors: (a) `context` is accessed via `info.context` and should be treated as possibly `None` (`info.context or {}`), (b) it is passed through to nested model validation so nested validators can use the same request-/environment-scoped data, and (c) it is not persisted on the created model objects—so it should not be used for data storage, only for validation-time decisions.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "context",
+        "nested-models",
+        "validation-propagation",
+        "field_validator",
+        "ValidationError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a Pydantic model `OrderItem` with the following `Field()` constraints:\n\n- `product_id`: string matching the format `PROD-123456` (exactly 6 digits)\n- `quantity`: integer in the range 1–100 inclusive\n- `unit_price`: `Decimal` strictly greater than 0, with exactly 2 decimal places and at most 10 total digits\n- `discount_percent`: float between 0 and 100 inclusive, defaulting to 0\n\nThen, for each of the following inputs, state whether it should validate or raise a `ValidationError`, and *why*:\n\n1. `{\"product_id\": \"PROD-123456\", \"quantity\": 1, \"unit_price\": \"10.00\", \"discount_percent\": 0}`\n2. `{\"product_id\": \"PROD-12345\", \"quantity\": 1, \"unit_price\": \"10.00\", \"discount_percent\": 0}`\n3. `{\"product_id\": \"PROD-123456\", \"quantity\": 0, \"unit_price\": \"10.00\", \"discount_percent\": 0}`\n4. `{\"product_id\": \"PROD-123456\", \"quantity\": 1, \"unit_price\": \"10.001\", \"discount_percent\": 0}`\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution is:\n\n```python\nfrom decimal import Decimal\nfrom pydantic import BaseModel, Field\n\nclass OrderItem(BaseModel):\n    product_id: str = Field(pattern=r'^PROD-\\d{6}$')\n    quantity: int = Field(ge=1, le=100)\n    unit_price: Decimal = Field(gt=0, decimal_places=2, max_digits=10)\n    discount_percent: float = Field(ge=0, le=100, default=0)\n```\n\nValidation outcomes:\n1) Valid: product_id matches `^PROD-\\d{6}$`, quantity=1 is within [1,100], unit_price has 2 decimal places, discount_percent within [0,100].\n2) Invalid: product_id has only 5 digits, fails the regex pattern.\n3) Invalid: quantity=0 violates `ge=1`.\n4) Invalid: unit_price has 3 decimal places, violates `decimal_places=2`.",
+      "explanation": "This tests combining multiple `Field()` constraints across types: a regex `pattern` for strings, inclusive numeric bounds with `ge`/`le`, and Decimal-specific precision constraints (`decimal_places`, `max_digits`) plus strict positivity (`gt`). The invalid cases each violate exactly one of the specified constraints, demonstrating how Field constraints enforce correctness without custom validators.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "Field",
+        "regex-pattern",
+        "Decimal",
+        "decimal_places",
+        "max_digits",
+        "numeric-constraints",
+        "data-validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing an API client in Pydantic v2 and need to send JSON to an HTTP endpoint.\n\n1) Explain the practical difference between `model_dump()` and `model_dump_json()`.\n2) Show a short code snippet that produces *pretty-printed* JSON and excludes fields whose value is `None`.\n\n(Assume you have a `BaseModel` instance called `m`.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `model_dump()` returns a Python `dict` suitable for in-Python manipulation, while `model_dump_json()` returns a JSON `str` suitable for sending/storing as JSON (and uses Pydantic's optimized serialization).\n\n2) Example:\n```python\njson_str = m.model_dump_json(indent=2, exclude_none=True)\n```\nThis pretty-prints with indentation and omits `None` fields.",
+      "explanation": "`model_dump()` is for producing Python data structures (e.g., to merge/transform before sending). `model_dump_json()` is for producing a JSON string directly (commonly used for HTTP bodies, logs, caching). The parameters `indent` and `exclude_none` are supported to control formatting and omit null-like fields.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic-v2",
+        "model_dump",
+        "model_dump_json",
+        "api-serialization",
+        "exclude_none",
+        "indent"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain, at a conceptual level, how `@validate_call` uses an internal `FunctionModel` to validate function inputs. Your answer must include:\n\n1) What the generated model represents (relative to the function)\n2) How it differs from a user-defined `BaseModel`\n3) What happens at call time when you pass invalid inputs (e.g., non-coercible values)\n\nYou may use a small illustrative pseudo-class like `class AddFunctionModel(BaseModel): ...` in your explanation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The generated model represents the function’s signature: each parameter becomes a field (name and type) in a dynamically created `BaseModel`-like class (often described as a `FunctionModel`). For example, for `def add(x: int, y: int)`, Pydantic effectively creates something like `class AddFunctionModel(BaseModel): x: int; y: int`.\n\n2) It differs from a user-defined `BaseModel` in that it is not written explicitly by the user to model structured data; it is created automatically and internally to support function argument validation. A normal `BaseModel` is part of your public data model design, while `FunctionModel` is an implementation detail powering `@validate_call`.\n\n3) At call time, the arguments passed to the function are first fed into this generated model for parsing/validation. If inputs are compatible, Pydantic may coerce them (e.g., numeric strings to `int`). If inputs are invalid and cannot be parsed/coerced (e.g., \"a\" for an `int`), model validation fails and Pydantic raises a `ValidationError` instead of executing the function body with bad arguments.",
+      "explanation": "A correct answer must tie `@validate_call` to a dynamically generated model derived from the function signature, contrast it with explicitly defined `BaseModel` usage, and describe the runtime behavior: arguments are validated/coerced via that model before the function runs, and invalid/non-coercible values trigger `ValidationError`.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic-v2",
+        "functionmodel",
+        "validate_call",
+        "internals",
+        "dynamic-model-generation",
+        "base-model"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are ingesting data from two sources:\n1) a trusted internal pipeline that already guarantees correct types, and\n2) an external API that may send wrong types or missing fields.\n\nExplain which Pydantic v2 method you would use for each source (`model_validate()` vs `model_construct()`), and describe the key trade-off(s) involved (validation, error reporting, and performance).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `model_validate()` for the external/untrusted API input because it performs full validation and coercion and raises a `ValidationError` with detailed context when the data is invalid. Use `model_construct()` for the trusted internal pipeline when you want maximum speed and you are confident the data already matches the model schema, because it creates the model without validation (so it won’t catch bad data and may allow incorrect types/values to slip through). The trade-offs are: `model_validate()` provides safety, coercion, and rich errors but costs validation time; `model_construct()` is faster but skips validation and error reporting, increasing risk if the input is not truly trusted.",
+      "explanation": "This tests understanding of when validation is necessary. `model_validate()` is designed as the central entry point for turning untrusted input into a validated model (with coercion and detailed errors). `model_construct()` is explicitly a no-validation constructor intended for performance when the input is already known-good; using it on untrusted input defeats Pydantic’s safety guarantees.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "model_validate",
+        "model_construct",
+        "performance",
+        "error-handling",
+        "data-trust"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a long-lived Pydantic model where `validate_assignment=True` is enabled, but you discover that some code can still bypass validation and corrupt the model.\n\n1) Give **two different ways** validation can be bypassed even when `validate_assignment=True` is set.\n2) Briefly explain **why** these bypasses work (conceptually).\n\nYou may use short code snippets.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Two bypasses:\n- Directly writing to the instance dict: `m.__dict__[\"value\"] = \"bypass\"`\n- Using low-level attribute setting: `object.__setattr__(m, \"value\", \"bypass\")`\n\n2) Why they work:\nThese approaches avoid Pydantic’s normal attribute assignment path (the model’s `__setattr__` logic that triggers validation when `validate_assignment=True`). By mutating the underlying storage (`__dict__`) or calling `object.__setattr__` directly, you skip the hooks where Pydantic runs validators and type coercion.",
+      "explanation": "`validate_assignment=True` relies on Pydantic intercepting standard attribute assignment (e.g., `m.value = ...`). If you mutate the underlying storage directly or use low-level Python mechanisms, you bypass the interception point and therefore bypass validation. This is an important edge case for “data integrity” guarantees in mutable models.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "validate_assignment",
+        "bypass-validation",
+        "__dict__",
+        "object.__setattr__",
+        "data-integrity"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are validating inputs to a data-processing function and want to ensure that invalid inputs fail *before* any side effects occur.\n\nGiven this code:\n\n```python\nfrom pydantic import validate_call\n\nlog = []\n\n@validate_call\ndef process(user_id: int, payload: dict) -> None:\n    log.append(f\"start:{user_id}\")\n    # ... do work ...\n    log.append(\"done\")\n\nprocess(\"not-an-int\", {\"x\": 1})\n```\n\n1) What kind of exception should you expect from the call shown?\n2) What should be the state of `log` after the call, and why?\n\nAnswer in 2–4 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) A Pydantic `ValidationError`. 2) `log` should remain empty (`[]`) because `@validate_call` validates arguments (and raises on invalid input) before the function body executes, preventing side effects like appending to `log`.",
+      "explanation": "`@validate_call` performs runtime validation of the call arguments prior to running the function body. Since `user_id` cannot be validated as an `int` from the provided value, Pydantic raises `ValidationError` and the function never reaches the `log.append(...)` statements, so no side effects occur.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "validate_call",
+        "side-effects",
+        "ValidationError",
+        "function-wrapping",
+        "runtime-behavior"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing a Pydantic AI function tool that receives `AgentInfo` as context. Write a short Python snippet (pseudocode is fine) showing how the tool could enforce the agent’s output policy:\n\n- If `agent_info.allow_text_output` is `False`, the tool must avoid returning plain text and instead choose a structured path (e.g., by using/returning something aligned with `agent_info.output_tools`).\n- If `agent_info.allow_text_output` is `True`, it may return a plain string.\n\nAlso briefly explain (1–2 sentences) how passing `AgentInfo` supports separation of concerns or testability.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pydantic_ai.models.function import AgentInfo\n\n# Example tool function signature; exact decorator/return types may vary\nasync def my_tool(user_query: str, agent_info: AgentInfo):\n    if not agent_info.allow_text_output:\n        # Enforce structured output only\n        # (e.g., choose an output tool definition by name/type)\n        allowed = [t.name for t in agent_info.output_tools]\n        # Return/trigger structured output path (pseudocode)\n        return {\n            \"type\": \"structured\",\n            \"use_output_tool\": allowed[0] if allowed else None,\n            \"data\": {\"query\": user_query}\n        }\n\n    # Plain text is allowed\n    return f\"Answer: {user_query}\"\n```\n\nExplanation: `AgentInfo` injects the agent’s configuration and tool context into the function, so the function doesn’t need a global reference to the agent. This makes the tool more modular and easier to unit test by passing in different `AgentInfo` instances (e.g., toggling `allow_text_output` or varying `output_tools`).",
+      "explanation": "A correct answer demonstrates branching on `agent_info.allow_text_output` and using `agent_info.output_tools` (or at least acknowledging them) when text output is disallowed. The conceptual explanation should connect `AgentInfo` to separation of concerns: tool logic depends on injected context rather than global agent state, improving modularity and testability.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic-ai",
+        "agentinfo",
+        "output_tools",
+        "allow_text_output",
+        "model_settings",
+        "separation-of-concerns",
+        "testability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building an agent that uses multiple toolsets.\n\n1) Explain what happens \"under the hood\" to the tools from all provided toolsets when the agent runs.\n2) Give one practical implication of this behavior for tool naming or conflicts.\n\n(Answer in 3–6 sentences.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Under the hood, the agent gathers (combines) all function tools from all provided toolsets into a single combined toolset that the agent uses during the run. 2) A practical implication is that tools from different toolsets effectively share the same namespace at runtime, so name collisions or conflicting tool definitions must be avoided or intentionally managed (e.g., by using distinct tool names or carefully controlling which toolsets are supplied).",
+      "explanation": "The content states that all function tools from all given toolsets are gathered into one combined toolset for the agent. If multiple toolsets contribute tools, they coexist in the same effective collection, so duplicate names or overlapping responsibilities can create ambiguity or conflicts unless the developer designs tool naming and composition carefully.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic-ai",
+        "toolsets",
+        "tool-composition",
+        "functiontoolset",
+        "agent-runtime",
+        "tool-collisions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes where `default_factory` comes from and how it is used in Pydantic?\n\nChoose the most accurate answer.",
+      "question_type": "mc",
+      "options": [
+        "A. `default_factory` is a method on `BaseModel` that is overridden to customize defaults for all fields",
+        "B. `default_factory` is a Python language feature for type annotations and works without importing anything",
+        "C. `default_factory` is a keyword argument to Pydantic's `Field()` (conceptually similar to `dataclasses.field(default_factory=...)`) and should be used for mutable defaults",
+        "D. `default_factory` is a validator hook that runs after model initialization to replace shared mutable defaults"
+      ],
+      "correct_answer": "C",
+      "explanation": "`default_factory` is not a `BaseModel` method and not a standalone Python feature. In Pydantic, it is passed to `Field()` as a keyword argument. The idea mirrors `dataclasses.field(default_factory=...)`: store a callable and call it for each new instance to safely create mutable defaults.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "Field",
+        "default_factory",
+        "dataclasses",
+        "model-fields",
+        "mutable-defaults"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are modeling users with per-instance tags. Explain why the following model definition is problematic, and rewrite it correctly using Pydantic so that each `User` instance gets its own independent list.\n\n```python\nfrom pydantic import BaseModel\nfrom typing import List\n\nclass User(BaseModel):\n    tags: List[str] = []\n```\n\nYour answer should (1) describe the issue and (2) provide the corrected code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Issue: `tags: List[str] = []` uses a mutable default (a single list object) that can be shared across instances, causing changes in one instance to appear in others. Correct: use `Field(default_factory=list)` so Pydantic creates a new list for each instance.\n\n```python\nfrom pydantic import BaseModel, Field\nfrom typing import List\n\nclass User(BaseModel):\n    tags: List[str] = Field(default_factory=list)\n```",
+      "explanation": "Mutable defaults (like `[]`) are a common Python pitfall: the same object can be reused, leading to unintended shared state. Pydantic supports `default_factory` to generate a fresh default value per model instance, which both prevents sharing and keeps the field optional to provide at instantiation time.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "mutable-defaults",
+        "default_factory",
+        "Field",
+        "model-design"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response: Explain why `default_factory=list` is often preferred over `default=[]` for a list field in a Pydantic model. In your answer, describe what `Field()` contributes to model parsing/validation/serialization in this context.\n\nYou may reference code like:\n\n```python\nfrom pydantic import BaseModel, Field\nfrom typing import List\n\nclass User(BaseModel):\n    tags: List[str] = Field(default_factory=list)\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`default_factory=list` ensures a new list is created for each model instance when the field is omitted, avoiding unintended sharing of the same mutable list across instances that can happen with a literal `default=[]`. In this context, `Field()` does not hold the runtime data; it attaches configuration to the field so that during model creation Pydantic knows (1) how to generate a default value (call the factory), (2) how to validate the field against its type (`List[str]`), and (3) how to expose the field and its metadata/default behavior in generated schema/serialization (e.g., JSON Schema/OpenAPI).",
+      "explanation": "The key concept is mutable defaults: a literal list used as a default can be reused across instances in Python, leading to surprising cross-instance mutation. `default_factory` avoids this by calling a function to produce a fresh object per instance. `Field()` is the mechanism for expressing this default behavior (and other constraints/metadata) so Pydantic can apply it consistently during parsing, validation, and schema generation.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "Field",
+        "default_factory",
+        "mutable-defaults",
+        "schema-generation",
+        "serialization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are serializing a Pydantic v2 model to JSON and need to omit fields under three different rules:\n1) omit fields that were never explicitly set by the user,\n2) omit fields that are equal to their default values,\n3) omit fields whose value is `None`.\n\nName the three `model_dump_json()` parameters that correspond to these rules, and briefly explain the difference between rule (1) and rule (2).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Parameters: (1) `exclude_unset=True`, (2) `exclude_defaults=True`, (3) `exclude_none=True`. Difference: `exclude_unset` removes fields that were not explicitly provided/set (even if they have defaults), whereas `exclude_defaults` removes fields whose current value equals the declared default (even if the user explicitly set it to that default).",
+      "explanation": "`exclude_unset` is about whether the field was provided/assigned (set vs not set). `exclude_defaults` is about value comparison to defaults. These can differ: a field can be “set” to its default value (so it is not excluded by `exclude_unset`) but still be excluded by `exclude_defaults` because its value equals the default. `exclude_none` specifically removes fields whose value is `None`.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic-v2",
+        "model_dump_json",
+        "exclude_unset",
+        "exclude_defaults",
+        "exclude_none",
+        "serialization-rules"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a regular (non-`str`) enum and want Pydantic to serialize it as its string value in `.model_dump()` / `.model_dump_json()` without manually accessing `.value`.\n\n```python\nfrom enum import Enum\nfrom pydantic import BaseModel\n\nclass Status(Enum):\n    ACTIVE = \"active\"\n    INACTIVE = \"inactive\"\n\nclass User(BaseModel):\n    status: Status\n```\n\n1) Explain why `Status.ACTIVE` is not directly JSON serializable in the same way as a `str`-based enum.\n2) Show one Pydantic configuration-based fix so that `User(status=Status.ACTIVE).model_dump()` produces `{\"status\": \"active\"}`.\n\nProvide code for your fix.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) A regular `Enum` member is not a `str`; it’s an `Enum` instance. JSON encoders (and many serializers) don’t know how to turn arbitrary `Enum` objects into JSON primitives unless you convert them (e.g., use `.value`). A `str, Enum` member is also a `str`, so it naturally serializes like a string.\n\n2) Configure Pydantic to use enum values during serialization:\n\n```python\nfrom enum import Enum\nfrom pydantic import BaseModel, ConfigDict\n\nclass Status(Enum):\n    ACTIVE = \"active\"\n    INACTIVE = \"inactive\"\n\nclass User(BaseModel):\n    model_config = ConfigDict(use_enum_values=True)\n    status: Status\n\nu = User(status=Status.ACTIVE)\nassert u.model_dump() == {\"status\": \"active\"}\n```\n",
+      "explanation": "Regular enums are not JSON primitives; they require conversion (commonly to `.value`). `str`-enums avoid this by making members instances of `str`. When you must keep a regular `Enum`, Pydantic can be configured to serialize using the enum’s values (e.g., `use_enum_values=True`), so dumps produce strings rather than enum objects.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "serialization",
+        "ConfigDict",
+        "use_enum_values",
+        "python-enum"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a Pydantic field that:\n- Accepts either a string or `None`\n- Can be omitted when creating the model\n- Uses `Field` to add metadata\n\nWhich definition meets all requirements?\n\nA)\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    middle_name: str | None = Field(description=\"Optional middle name\")\n```\n\nB)\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    middle_name: str | None = Field(default=None, description=\"Optional middle name\")\n```\n\nC)\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    middle_name: str = Field(default=None, description=\"Optional middle name\")\n```\n\nD)\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    middle_name: str | None\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "B",
+      "explanation": "To allow omission, the field must have a default (commonly `None`). To allow `None` as a valid value, the type must include `None` (`str | None` or `Optional[str]`). Option B satisfies both and uses `Field` metadata. A lacks a default so the field remains required. C sets a default of `None` but the annotation is `str`, so `None` contradicts the type intent. D allows `None` as a type but provides no default, so it remains required.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "Field",
+        "optional",
+        "defaults",
+        "python-typing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to accept NumPy scalar types inside a dictionary field and store plain Python types in the model.\n\nGiven:\n```python\nfrom pydantic import BaseModel, Field, field_validator\nfrom typing import Any, Dict\nimport numpy as np\n\ndef normalize_numpy(v: Any) -> Any:\n    # Assume this converts numpy scalars (e.g., np.float64) to Python scalars\n    # and recurses into dicts/lists.\n    ...\n\nclass DataScanner(BaseModel):\n    column_metrics: Dict[str, Any] = Field(default_factory=dict)\n\n    @field_validator(\"column_metrics\", mode=\"before\")\n    @classmethod\n    def coerce_numpy(cls, v: Any) -> Any:\n        return normalize_numpy(v)\n\nscanner = DataScanner(column_metrics={\"mean\": np.float64(1.5)})\n```\nExplain (a) why `mode=\"before\"` is the appropriate choice here in terms of the validation pipeline, and (b) what the value and type of `scanner.column_metrics[\"mean\"]` should be after initialization.\n\nAnswer in 3–6 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) `mode=\"before\"` runs on the raw input before Pydantic performs type validation/coercion, so it’s the right place to normalize/convert non-standard runtime types (like NumPy scalars) into plain Python types that downstream validation can handle consistently. If you waited until `mode=\"after\"`, Pydantic would already have attempted to validate/coerce the field contents and any incompatibilities could surface earlier or you could end up validating the “wrong” type.\n(b) After initialization, `scanner.column_metrics[\"mean\"]` should be the Python float value `1.5`, and its type should be `<class 'float'>` (not `numpy.float64`).",
+      "explanation": "The key idea is the pipeline: raw input → before validators → type conversion/validation → after validators. NumPy scalar normalization is a pre-processing step that should happen before Pydantic’s own validation logic, ensuring the model stores standard Python types and avoiding issues with strict checks or downstream serialization.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "field-validator",
+        "validation-order",
+        "numpy",
+        "data-normalization",
+        "type-coercion"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building an API endpoint that returns all input issues at once. Consider this model and input:\n\n```python\nfrom pydantic import BaseModel, Field, ValidationError\n\nclass Signup(BaseModel):\n    age: int = Field(ge=18)\n    username: str = Field(min_length=3)\n    bio: str = Field(max_length=10)\n\npayload = {\"age\": 16, \"username\": \"Al\", \"bio\": \"This bio is definitely too long\"}\n```\n\nIf you run `Signup(**payload)` inside a `try/except ValidationError` block, what errors should you expect Pydantic to report, and why? (Answer in terms of which fields fail and the constraint each violates.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A single ValidationError containing three field errors: (1) `age` fails `ge=18` because 16 < 18, (2) `username` fails `min_length=3` because \"Al\" has length 2, and (3) `bio` fails `max_length=10` because the provided string is longer than 10 characters. Pydantic validates all fields and aggregates all failures into one ValidationError rather than stopping at the first failing field.",
+      "explanation": "Each field has an independent constraint and all three inputs violate their respective constraints. Pydantic’s validation process checks all fields and collects all errors into a single ValidationError, enabling clients to fix multiple issues in one iteration.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic",
+        "validationerror",
+        "error-aggregation",
+        "Field",
+        "ge",
+        "min_length",
+        "max_length"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are migrating code to Pydantic v2. A legacy API sends boolean-like values such as `\"yes\"`/`\"no\"` and you must accept them while still storing a real Python `bool` in the model.\n\nWrite a Pydantic v2 model that:\n1) Has a field `active: bool`\n2) Accepts inputs: `True/False`, `1/0`, `\"true\"/\"false\"`, `\"1\"/\"0\"`, and additionally `\"yes\"/\"no\"` (case-insensitive)\n3) Raises a validation error for anything else (e.g., `\"on\"`, `2`, `\"y\"`)\n\nProvide the code (including any validator) and briefly explain how it works.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pydantic import BaseModel, field_validator\n\nclass User(BaseModel):\n    active: bool\n\n    @field_validator('active', mode='before')\n    @classmethod\n    def yes_no_to_bool(cls, v):\n        # Let Pydantic handle already-valid inputs (bool, 0/1, \"true\"/\"false\"/\"0\"/\"1\")\n        if isinstance(v, str):\n            s = v.strip().lower()\n            if s == 'yes':\n                return True\n            if s == 'no':\n                return False\n        return v\n```\n\nExplanation: The `mode='before'` validator runs before Pydantic's built-in parsing. It maps legacy strings `\"yes\"`/`\"no\"` (case-insensitive) to real booleans. All other values are returned unchanged, so Pydantic's normal bool parsing rules apply; unsupported values (e.g., `\"on\"`, `2`) then trigger a `ValidationError`.",
+      "explanation": "This solution demonstrates understanding of Pydantic v2's strict bool coercion set and how to extend it safely. Using a `field_validator(..., mode='before')` allows pre-processing only the legacy cases (`yes/no`) while delegating all standard cases to Pydantic's built-in bool parsing. Returning the original value for non-legacy inputs ensures invalid values still fail validation rather than being silently coerced.",
+      "difficulty": "advanced",
+      "tags": [
+        "pydantic-v2",
+        "field-validator",
+        "mode-before",
+        "custom-coercion",
+        "bool",
+        "migration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what is the main purpose of using `typing.Annotated` for model fields?\n\n```python\nfrom typing import Annotated\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    age: Annotated[int, Field(ge=0, le=120)]\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. To attach metadata to a type hint that Pydantic can use for validation and configuration",
+        "B. To force Python itself to enforce runtime type checking of `age` without Pydantic",
+        "C. To make `age` optional by default unless a default value is provided",
+        "D. To prevent Pydantic from coercing input types (e.g., strings to ints)"
+      ],
+      "correct_answer": "A",
+      "explanation": "`Annotated[BaseType, ...metadata]` attaches metadata to a type hint. Plain Python largely ignores that metadata, but Pydantic reads it to apply constraints (e.g., `ge`, `le`), transformations, and other field configuration. It does not make fields optional, nor does it inherently disable coercion.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "typing-annotated",
+        "field-constraints",
+        "type-hints"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what is the main practical difference between using a plain `@property` and using `@computed_field` + `@property` for a derived value?\n\n```python\nfrom pydantic import BaseModel, computed_field\n\nclass Rectangle(BaseModel):\n    width: float\n    height: float\n\n    @computed_field\n    @property\n    def area(self) -> float:\n        return self.width * self.height\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `@computed_field` makes the value writable so it can be set during model initialization.",
+        "B. `@computed_field` includes the derived value in `model_dump()` and JSON schema, while `@property` alone does not.",
+        "C. `@computed_field` automatically caches the computed value so it is only calculated once.",
+        "D. `@computed_field` allows the derived value to be validated as an input field provided by the user."
+      ],
+      "correct_answer": "B",
+      "explanation": "`@computed_field` is designed to expose a derived, read-only value as a *field* for serialization and schema generation. A plain `@property` is accessible as an attribute, but it is not included in `model_dump()` output or the JSON schema. `@computed_field` does not make the value writable, does not automatically cache results, and it is not an input field meant to be provided by the user.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "computed_field",
+        "serialization",
+        "model_dump",
+        "json-schema",
+        "property"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what is the primary purpose of a *discriminated union* (tagged union)?",
+      "question_type": "mc",
+      "options": [
+        "To allow Pydantic to choose which model in a Union to validate based on a specific field value (the discriminator)",
+        "To force Pydantic to validate all models in a Union and merge the results into one output model",
+        "To make Union validation work without type hints by inferring types from field names only",
+        "To ensure all models in a Union share identical fields so validation is always unambiguous"
+      ],
+      "correct_answer": "A",
+      "explanation": "A discriminated union uses a specific field (the discriminator, typically a Literal field like pet_type) so Pydantic can immediately select the correct model from the Union. Without discrimination, Pydantic generally tries Union members in order, which can be slower and can produce confusing errors when multiple schemas could match.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "discriminated-unions",
+        "union",
+        "discriminator",
+        "literal"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what does setting `exclude=True` on a field do?\n\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    name: str\n    password: str = Field(exclude=True)\n\nu = User(name='Alice', password='secret123')\n```\n\nWhich statement is correct?",
+      "question_type": "mc",
+      "options": [
+        "The field is removed from the model instance and cannot be accessed as an attribute.",
+        "The field is still stored on the model and accessible, but omitted from `model_dump()` / `model_dump_json()` output by default.",
+        "The field is excluded from JSON schema generation, so it will not appear in OpenAPI docs.",
+        "The field is only excluded when calling `model_dump(exclude={...})`; `Field(exclude=True)` has no effect on serialization."
+      ],
+      "correct_answer": "B",
+      "explanation": "`Field(exclude=True)` marks a field to be excluded from serialization output (e.g., `model_dump()` and `model_dump_json()`) while keeping it available on the model instance (`u.password` still works). It does not, by itself, remove the field from JSON schema.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "Field",
+        "exclude",
+        "serialization",
+        "model_dump"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given the two ways to create a Pydantic model instance:\n\n```python\n# Method A\nuser_a = User(**data)\n\n# Method B\nuser_b = User.model_validate(data)\n```\n\nWhich statement best describes the difference between Method A and Method B?",
+      "question_type": "mc",
+      "options": [
+        "No difference—they are completely equivalent in all situations.",
+        "`model_validate` skips validation, while `**data` performs full validation.",
+        "`model_validate` can validate from dicts or arbitrary objects (e.g., ORM instances) and supports options like strict/context; `**data` only works with keyword arguments.",
+        "`**data` is faster because it bypasses Pydantic internals."
+      ],
+      "correct_answer": "C",
+      "explanation": "`User(**data)` requires that `data` be a mapping of field names to values (i.e., something that can be expanded into keyword arguments). `User.model_validate(obj)` is a class method designed to validate from multiple kinds of inputs (dicts, objects, ORM instances when configured with `from_attributes=True`) and can override validation behavior per-call (e.g., `strict=True`) and pass `context` to validators. It does not skip validation, and `**data` does not bypass Pydantic internals.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "model_validate",
+        "BaseModel",
+        "constructor",
+        "validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, what is the primary purpose of the `context` parameter in `model_validate()`?\n\n```python\nuser = User.model_validate(data, context={'key': 'value'})\n```",
+      "question_type": "mc",
+      "options": [
+        "A) To persist extra metadata on the model instance for later access",
+        "B) To pass arbitrary request-/environment-scoped data to validators at validation time",
+        "C) To change the model schema and add fields dynamically during validation",
+        "D) To disable validation for fields not present in the input data"
+      ],
+      "correct_answer": "B",
+      "explanation": "`context` is designed to pass arbitrary, runtime data into validators (accessible via `info.context`) so validation logic can be dynamic (e.g., discounts, roles, environment flags). It is explicitly not stored on the model instance, and it does not modify the schema or disable validation.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "model_validate",
+        "context",
+        "validators"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, which `Field()` constraint ensures a numeric value is **strictly greater than** a threshold (e.g., `price > 0`)?",
+      "question_type": "mc",
+      "options": [
+        "A. ge",
+        "B. gt",
+        "C. le",
+        "D. lt"
+      ],
+      "correct_answer": "B",
+      "explanation": "`gt` means “greater than” (strict). For example, `Field(gt=0)` validates that the value is strictly greater than 0. By contrast, `ge` is inclusive (≥), and `le`/`lt` are “less than” constraints.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "Field",
+        "numeric-constraints",
+        "gt-ge-lt-le"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, what does `BaseModel.model_dump_json()` return?\n\n```python\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    id: int\n    name: str\n\nu = User(id=123, name=\"Alice\")\nresult = u.model_dump_json()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A Python `dict` containing the model data",
+        "A JSON `str` containing the serialized model data",
+        "A `bytes` object containing UTF-8 encoded JSON",
+        "A file-like stream that writes JSON incrementally"
+      ],
+      "correct_answer": "B",
+      "explanation": "`model_dump_json()` serializes the model directly to a JSON string (type `str`). In contrast, `model_dump()` returns a Python dictionary.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-v2",
+        "BaseModel",
+        "serialization",
+        "model_dump_json"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, what is `FunctionModel` primarily used for?",
+      "question_type": "mc",
+      "options": [
+        "A public base class that users should subclass to create reusable validators for functions",
+        "An internal dynamically generated model used by `@validate_call` to validate a function’s arguments against its signature",
+        "A replacement for `BaseModel` that is required for all models in Pydantic v2",
+        "A tool that only validates a function’s return value, not its parameters"
+      ],
+      "correct_answer": "B",
+      "explanation": "`FunctionModel` is an internal utility in Pydantic v2: when you decorate a function with `@validate_call`, Pydantic builds a dynamic model representing the function signature (parameters and their types). Calls to the function are validated by passing the arguments into that generated model. It is not a public base class intended for direct user subclassing, and it validates inputs (parameters), not only return values.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-v2",
+        "functionmodel",
+        "validate_call",
+        "function-argument-validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, which method is the direct replacement for Pydantic v1’s `parse_obj()` for creating and validating a model from arbitrary input data?",
+      "question_type": "mc",
+      "options": [
+        "A. `model_validate()`",
+        "B. `model_construct()`",
+        "C. `model_validate_json()`",
+        "D. `validate_model()`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`model_validate()` was introduced in Pydantic v2 as the primary class method for constructing a model from untrusted/arbitrary input while performing validation and coercion. In v1, `parse_obj()` served this role; `model_construct()` skips validation, and `model_validate_json()` is specifically for raw JSON input.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "model_validate",
+        "parse_obj",
+        "migration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what does setting `validate_assignment=True` on a model primarily change?\n\n```python\nfrom pydantic import BaseModel, ConfigDict\n\nclass M(BaseModel):\n    model_config = ConfigDict(validate_assignment=True)\n    x: int\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It validates fields only during model creation; assignments after creation are never validated.",
+        "It validates (and may coerce types for) field values whenever they are assigned after the model is created.",
+        "It makes the model immutable so fields cannot be changed after creation.",
+        "It validates only private attributes (those starting with `_`) on assignment."
+      ],
+      "correct_answer": "B",
+      "explanation": "`validate_assignment=True` triggers Pydantic validation on *post-creation* attribute assignments (e.g., `m.x = '42'`). This includes normal validation rules and type coercion where possible. It does not imply immutability (that’s `frozen=True`), and it does not validate private attributes by default.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "validate_assignment",
+        "model_config",
+        "assignment-validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, what does the `@validate_call` decorator primarily do when applied to a function?",
+      "question_type": "mc",
+      "options": [
+        "It validates and (when possible) coerces function arguments against the function’s type hints at runtime, raising `ValidationError` on invalid input.",
+        "It validates only the function’s return value against the annotated return type and raises `TypeError` on mismatch.",
+        "It performs static type-checking at import time and prevents the module from loading if types don’t match.",
+        "It converts the function into a Pydantic `BaseModel` so that it can be saved and loaded as JSON."
+      ],
+      "correct_answer": "A",
+      "explanation": "`@validate_call` wraps the function with Pydantic-powered runtime validation based on the function’s annotations. On each call, arguments are validated (and may be coerced) before the function body runs; invalid inputs raise a Pydantic `ValidationError`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "validate_call",
+        "function-argument-validation",
+        "ValidationError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic AI, what best describes the purpose of the `AgentInfo` class passed into function tools?\n\nA. It stores the conversation transcript and token usage for the current run.\nB. It encapsulates metadata about the agent (available tools, output permissions, model settings) for tool functions.\nC. It is the Pydantic model used to validate the tool function’s input parameters.\nD. It is a registry used to automatically discover tools across Python modules at import time.",
+      "question_type": "mc",
+      "options": [
+        "It stores the conversation transcript and token usage for the current run.",
+        "It encapsulates metadata about the agent (available tools, output permissions, model settings) for tool functions.",
+        "It is the Pydantic model used to validate the tool function’s input parameters.",
+        "It is a registry used to automatically discover tools across Python modules at import time."
+      ],
+      "correct_answer": "B",
+      "explanation": "`AgentInfo` is a dataclass in `pydantic_ai.models.function` that provides tool functions with contextual metadata about the agent environment—such as `function_tools`, `output_tools`, `allow_text_output`, and `model_settings`. This lets tools behave dynamically and safely without needing global access to the agent.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-ai",
+        "agentinfo",
+        "functionmodel",
+        "tooling",
+        "metadata"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic AI, what is the primary purpose of a `FunctionToolset`?",
+      "question_type": "mc",
+      "options": [
+        "To automatically expose every function in a Python module as an agent tool",
+        "To group and register local Python functions as tools that an agent can call at runtime",
+        "To replace the `Agent` class with a function-only interface",
+        "To enforce that all tools must be remote HTTP endpoints"
+      ],
+      "correct_answer": "B",
+      "explanation": "`FunctionToolset` is specifically designed to collect (group) local Python functions and register them as callable tools for an AI agent. It provides modularity and controlled exposure of capabilities, rather than automatically exposing everything or requiring remote endpoints.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-ai",
+        "functiontoolset",
+        "tools",
+        "agent-tooling",
+        "toolsets"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what is the purpose of using `Field(default_factory=...)` for a model field?\n\n```python\nfrom pydantic import BaseModel, Field\nfrom typing import Dict, Any\n\nclass M(BaseModel):\n    data: Dict[str, Any] = Field(default_factory=dict)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It validates the dictionary keys at class definition time and caches the result for all instances",
+        "B. It creates a new default value by calling the factory each time a new model instance is created",
+        "C. It makes the field immutable so that instances cannot modify the dictionary",
+        "D. It converts any provided input into a dictionary even if the input is invalid"
+      ],
+      "correct_answer": "B",
+      "explanation": "`default_factory` is a keyword argument to Pydantic's `Field()` that stores a callable (e.g., `dict`). Pydantic calls that callable when creating each new model instance, ensuring a fresh mutable object per instance. This avoids shared mutable defaults like `{}` or `[]` being reused across instances.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "Field",
+        "default_factory",
+        "mutable-defaults",
+        "BaseModel"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what determines whether a model field is required when creating an instance?\n\n```python\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    name: str\n    age: int\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. A field is required only if its type is not Optional[...]",
+        "B. A field is required if it has no default value (directly or via Field(...))",
+        "C. A field is required only if it is the first attribute defined in the class",
+        "D. A field is required only if it is of a primitive type (e.g., int, str)"
+      ],
+      "correct_answer": "B",
+      "explanation": "Pydantic treats fields as required when no default is provided. The presence or absence of a default value (including defaults defined via Field()) is what controls whether the caller must pass the field during instantiation. Type hints like Optional[...] affect allowed values (e.g., allowing None), but do not by themselves make the field optional to provide.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "BaseModel",
+        "required-fields",
+        "defaults"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what is the primary purpose of using `Field()` inside a `BaseModel`?\n\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    name: str = Field(..., min_length=3, description=\"The user's full name\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. To store the field's runtime value separately from the model instance",
+        "B. To attach configuration such as defaults, validation constraints, and metadata to a model field",
+        "C. To bypass Pydantic validation for the annotated attribute",
+        "D. To make the field private so it is excluded from serialization"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Field()` is a helper used in model definitions to provide extra information about a field—defaults (`default`, `default_factory`), validation constraints (e.g., `min_length`, `ge`), and metadata (e.g., `description`). It does not store runtime values separately (A), does not disable validation (C), and does not make fields private/excluded by default (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "Field",
+        "BaseModel",
+        "metadata",
+        "validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, what does the `indent` parameter of `BaseModel.model_dump_json()` control?\n\n```python\nmodel_dump_json(indent=2)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. The number of spaces used for pretty-printing the JSON output",
+        "B. The maximum recursion depth when serializing nested models",
+        "C. Whether field aliases are used instead of field names",
+        "D. Whether fields with value `None` are excluded"
+      ],
+      "correct_answer": "A",
+      "explanation": "`indent` controls formatting of the JSON string: `None` (default) produces compact JSON, while an integer (e.g., `2`) pretty-prints with that many spaces per indentation level. The other options correspond to different parameters: recursion depth is not controlled by `indent`, alias behavior is `by_alias`, and excluding `None` is `exclude_none`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-v2",
+        "model_dump_json",
+        "json-serialization",
+        "indent"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python and Pydantic, what is the primary practical effect of defining an enum as `class SourceType(str, Enum)` instead of `class SourceType(Enum)`?\n\n```python\nfrom enum import Enum\n\nclass SourceType(str, Enum):\n    TABLE = \"table\"\n    SQL = \"sql\"\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Enum members behave like strings (e.g., compare equal to the underlying string) and serialize to JSON without special handling",
+        "Enum members become integers internally, which makes validation faster in Pydantic",
+        "Pydantic will refuse to accept raw strings for the field unless you add a custom validator",
+        "The enum can no longer be used for type checking because it is treated as plain `str`"
+      ],
+      "correct_answer": "A",
+      "explanation": "Inheriting from both `str` and `Enum` creates a “string enum”: each member is an enum instance that is also an instance of `str`. This enables behaviors such as `SourceType.TABLE == \"table\"` evaluating to `True`, and JSON serialization typically working directly (e.g., `json.dumps(SourceType.TABLE)` producing `\"table\"`) without needing to manually access `.value` or add extra configuration.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "python-enum",
+        "str-enum",
+        "json-serialization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, what does annotating a field as `Optional[str]` (without providing a default) imply about model instantiation?\n\n```python\nfrom typing import Optional\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    middle_name: Optional[str]\n```\n",
+      "question_type": "mc",
+      "options": [
+        "The field is optional and may be omitted; it will default to None.",
+        "The field is required, but it may be either a string or None when provided.",
+        "The field is required and must be a string (None is not allowed).",
+        "The field is optional and may be omitted; it will default to an empty string."
+      ],
+      "correct_answer": "B",
+      "explanation": "`Optional[str]` (or `str | None`) changes the *allowed type* to include `None`, but it does not make the field optional to omit during instantiation. Without a default value, Pydantic still treats the field as required; you must pass it (though you may pass `None`).",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "optional",
+        "required-fields",
+        "type-annotations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, which sequence best describes what happens when a model is initialized and a field has both a `mode=\"before\"` and a `mode=\"after\"` validator?\n\nConsider this simplified model:\n```python\nfrom pydantic import BaseModel, field_validator\n\nclass Example(BaseModel):\n    value: int\n\n    @field_validator(\"value\", mode=\"before\")\n    @classmethod\n    def before_val(cls, v):\n        return v\n\n    @field_validator(\"value\", mode=\"after\")\n    @classmethod\n    def after_val(cls, v):\n        return v\n\nExample(value=\"123\")\n```\nWhich ordering is correct for the `value` field?",
+      "question_type": "mc",
+      "options": [
+        "Raw input → type conversion/coercion → before validator → after validator",
+        "Raw input → before validator → type conversion/coercion → after validator",
+        "Raw input → after validator → type conversion/coercion → before validator",
+        "Raw input → before validator → after validator → type conversion/coercion"
+      ],
+      "correct_answer": "B",
+      "explanation": "Pydantic’s per-field pipeline is: (1) receive raw input, (2) run `mode=\"before\"` validators on that raw input (allowing you to transform it), (3) perform type validation/coercion according to the field annotation (e.g., \"123\" → 123 for `int`), and then (4) run `mode=\"after\"` validators on the already type-converted value.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "field-validator",
+        "validation-order",
+        "type-coercion"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic, when multiple fields fail validation during model creation, what is the expected behavior?\n",
+      "question_type": "mc",
+      "options": [
+        "Pydantic stops at the first failing field and raises a ValidationError for that field only",
+        "Pydantic validates all fields and raises a single ValidationError that can contain multiple field errors",
+        "Pydantic silently coerces invalid values to defaults and continues without errors",
+        "Pydantic returns a partially-created model containing only the valid fields"
+      ],
+      "correct_answer": "B",
+      "explanation": "Pydantic attempts to validate all fields and aggregates any issues into one ValidationError. This is useful because the caller sees a complete list of problems (e.g., both a numeric constraint failure and a string length failure) rather than fixing errors one-by-one.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic",
+        "validationerror",
+        "error-aggregation",
+        "basemodel"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Pydantic v2, which of the following inputs will be accepted (i.e., successfully coerced) for a field annotated as `bool`?\n\n```python\nfrom pydantic import BaseModel\n\nclass M(BaseModel):\n    active: bool\n```\n\nAssume each option is used as `M(active=...)`.",
+      "question_type": "mc",
+      "options": [
+        "\"yes\"",
+        "\"TRUE\"",
+        "\"on\"",
+        "2"
+      ],
+      "correct_answer": "B",
+      "explanation": "Pydantic v2 only accepts booleans and a limited set of coercible representations for `bool`: `True/False`, `1/0` (integers), and strings \"true\"/\"false\"/\"1\"/\"0\" (case-insensitive). Therefore, \"TRUE\" is valid and will coerce to `True`. \"yes\" and \"on\" are not accepted, and integer `2` is not accepted (only `1` and `0`).",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-v2",
+        "type-coercion",
+        "bool",
+        "validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following code, what will be printed?\n\n```python\nfrom typing import Annotated\nfrom pydantic import BaseModel, BeforeValidator, AfterValidator\n\ndef add_prefix(v):\n    return f\"PREFIX_{v}\"\n\ndef add_suffix(v):\n    return f\"{v}_SUFFIX\"\n\nCustomStr = Annotated[str, BeforeValidator(add_prefix), AfterValidator(add_suffix)]\n\nclass Item(BaseModel):\n    label: CustomStr\n\nitem = Item(label='hello')\nprint(item.label)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. hello",
+        "B. PREFIX_hello",
+        "C. hello_SUFFIX",
+        "D. PREFIX_hello_SUFFIX"
+      ],
+      "correct_answer": "D",
+      "explanation": "`BeforeValidator(add_prefix)` runs first on the raw input `'hello'`, producing `'PREFIX_hello'`. Then Pydantic performs its internal validation/coercion to `str` (no change here). Finally, `AfterValidator(add_suffix)` runs on the validated value, producing `'PREFIX_hello_SUFFIX'`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "annotated",
+        "beforevalidator",
+        "aftervalidator",
+        "validation-order"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want the field `total` to be included in `model_dump()` for the model below. Which decorator order is correct?\n\n```python\nfrom pydantic import BaseModel, computed_field\n\nclass Order(BaseModel):\n    unit_price: float\n    quantity: int\n\n    # Choose the correct decorator order for total\n    def total(self) -> float:\n        return self.unit_price * self.quantity\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A.\n```python\n@property\n@computed_field\ndef total(self) -> float:\n    return self.unit_price * self.quantity\n```",
+        "B.\n```python\n@computed_field\n@property\ndef total(self) -> float:\n    return self.unit_price * self.quantity\n```",
+        "C.\n```python\n@computed_field\ndef total(self) -> float:\n    return self.unit_price * self.quantity\n```",
+        "D.\n```python\n@property\ndef total(self) -> float:\n    return self.unit_price * self.quantity\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "For Pydantic computed fields, the expected pattern is `@computed_field` applied to a property, with `@property` coming second (closest to the function). This ensures Pydantic registers it as a computed field and can include it in serialization and schema. Using `@property` alone (D) won’t serialize it; omitting `@property` (C) violates the rule that it must be a property; reversing the order (A) is incorrect for Pydantic’s computed field registration.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "computed_field",
+        "decorators",
+        "property",
+        "model_dump"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want clearer errors and explicit model selection for a Union in Pydantic.\n\nGiven the models below, which `Pet` definition correctly sets an explicit discriminator on the `pet` field?\n\n```python\nfrom typing import Annotated, Literal, Union\nfrom pydantic import BaseModel, Field\n\nclass Cat(BaseModel):\n    pet_type: Literal['cat']\n    meows: int\n\nclass Dog(BaseModel):\n    pet_type: Literal['dog']\n    barks: int\n```\n",
+      "question_type": "mc",
+      "options": [
+        "```python\nclass Pet(BaseModel):\n    pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]\n```",
+        "```python\nclass Pet(BaseModel):\n    pet: Union[Cat, Dog] = Field(discriminator='pet_type')\n```",
+        "```python\nclass Pet(BaseModel):\n    pet: Annotated[Cat, Dog, Field(discriminator='pet_type')]\n```",
+        "```python\nclass Pet(BaseModel):\n    pet: Union[Cat, Dog]\n\n    class Config:\n        discriminator = 'pet_type'\n```"
+      ],
+      "correct_answer": "A",
+      "explanation": "In Pydantic, the recommended explicit form is to wrap the Union with `Annotated[..., Field(discriminator='...')]`. Option A is the correct syntax and makes the discriminator explicit at the field level, improving clarity and error messages (e.g., invalid tag values). The other options use invalid or non-existent patterns for discriminators in this context.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "annotated",
+        "field",
+        "discriminator",
+        "union",
+        "error-messages"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a nested model and want to exclude only a nested field at dump time (not permanently).\n\n```python\nfrom pydantic import BaseModel\n\nclass Address(BaseModel):\n    street: str\n    city: str\n\nclass User(BaseModel):\n    name: str\n    address: Address\n\nu = User(name='A', address=Address(street='Main', city='NYC'))\n```\n\nWhich `model_dump(...)` call excludes only `street` from the nested `address` in the output?",
+      "question_type": "mc",
+      "options": [
+        "u.model_dump(exclude={'street'})",
+        "u.model_dump(exclude={'address.street'})",
+        "u.model_dump(exclude={'address': {'street'}})",
+        "u.model_dump(exclude={'address': 'street'})"
+      ],
+      "correct_answer": "C",
+      "explanation": "Nested exclusion uses a nested mapping structure that mirrors the model shape. To exclude `street` inside `address`, you pass `exclude={'address': {'street'}}`. The other options either target a top-level field name, use an unsupported dotted path, or provide an incorrect type for the nested exclude specification.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "model_dump",
+        "exclude",
+        "nested-models",
+        "serialization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pydantic import BaseModel, ConfigDict\n\nclass UserORM:\n    def __init__(self):\n        self.name = 'Alice'\n        self.age = 30\n\nclass User(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    name: str\n    age: int\n\norm_user = UserORM()\n```\n\nWhich line correctly creates a `User` instance from `orm_user`?\n",
+      "question_type": "mc",
+      "options": [
+        "user = User(**orm_user)",
+        "user = User.model_validate(orm_user)",
+        "user = User.model_validate_json(orm_user)",
+        "user = User.model_validate_strings(orm_user)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`model_validate()` can accept non-dict objects and, with `model_config = ConfigDict(from_attributes=True)`, it will read attributes from the object (e.g., `orm_user.name`, `orm_user.age`). `User(**orm_user)` fails because `orm_user` is not a mapping of keyword arguments. `model_validate_json` expects a JSON string, and `model_validate_strings` expects a dict-like input where values are strings.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "model_validate",
+        "from_attributes",
+        "orm",
+        "ConfigDict"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the model below, what will be printed?\n\n```python\nfrom pydantic import BaseModel, field_validator\n\nclass Product(BaseModel):\n    name: str\n    price: float\n\n    @field_validator('price')\n    @classmethod\n    def apply_discount(cls, v, info):\n        if info.context:\n            discount = info.context.get('discount', 0)\n            return v * (1 - discount)\n        return v\n\np1 = Product.model_validate({'name': 'Book', 'price': 100})\np2 = Product.model_validate({'name': 'Book', 'price': 100}, context={'discount': 0.25})\nprint(p1.price, p2.price)\n```",
+      "question_type": "mc",
+      "options": [
+        "A) `100.0 100.0`",
+        "B) `75.0 75.0`",
+        "C) `100.0 75.0`",
+        "D) A `ValidationError` is raised because `context` is not allowed in `model_validate()`"
+      ],
+      "correct_answer": "C",
+      "explanation": "When no context is provided, `info.context` is `None`, so the validator returns the original value (100.0). When context includes `{'discount': 0.25}`, the validator applies `v * (1 - 0.25)` resulting in 75.0.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "field_validator",
+        "model_validate",
+        "context",
+        "runtime-validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the model below, which input will **fail** validation?\n\n```python\nfrom pydantic import BaseModel, Field\n\nclass Product(BaseModel):\n    rating: float = Field(ge=1.0, le=5.0, multiple_of=0.5)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `Product(rating=1.0)`",
+        "B. `Product(rating=4.5)`",
+        "C. `Product(rating=4.3)`",
+        "D. `Product(rating=5.0)`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`multiple_of=0.5` requires the value to be an exact multiple of 0.5 (e.g., 1.0, 1.5, 2.0, …). `4.3` is within the range [1.0, 5.0] but is not a multiple of 0.5, so it fails validation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "Field",
+        "numeric-constraints",
+        "multiple_of",
+        "validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the model below, which call produces the JSON string `{\"fullName\":\"Alice\"}`?\n\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    id: int | None = None\n    name: str = Field(alias=\"fullName\")\n\nu = User(id=None, name=\"Alice\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "u.model_dump_json()",
+        "u.model_dump_json(by_alias=True)",
+        "u.model_dump_json(exclude_none=True)",
+        "u.model_dump_json(by_alias=True, exclude_none=True, exclude={\"id\"})"
+      ],
+      "correct_answer": "D",
+      "explanation": "To get `{\"fullName\":\"Alice\"}` you must (1) use the alias key via `by_alias=True` and (2) remove the `id` field. Since `id` is `None`, `exclude_none=True` would remove it, and `exclude={\"id\"}` also ensures it is excluded explicitly. Options B and C each only solve part of the problem (alias or excluding `None`) but not both; A does neither.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic-v2",
+        "aliases",
+        "exclude_none",
+        "include-exclude",
+        "model_dump_json"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pydantic import validate_call\n\n@validate_call\ndef add(x: int, y: int) -> int:\n    return x + y\n\nprint(add(1, 2))\nprint(add(\"1\", \"2\"))\nprint(add(\"a\", \"b\"))\n```\n\nWhich outcome best describes what happens when this code runs?",
+      "question_type": "mc",
+      "options": [
+        "The second call raises `ValidationError` because strings are never coerced to integers",
+        "All three calls succeed because `@validate_call` does not validate positional arguments",
+        "The first two calls succeed (the second via coercion), and the third call raises `ValidationError`",
+        "Only the first call succeeds; `@validate_call` disables coercion and requires exact types"
+      ],
+      "correct_answer": "C",
+      "explanation": "`@validate_call` validates the function arguments using a dynamically generated model (a `FunctionModel`-like internal `BaseModel`) built from the function signature. For `x: int, y: int`, Pydantic will coerce compatible inputs like \"1\" and \"2\" into integers, so `add(\"1\", \"2\")` becomes `add(1, 2)` and returns `3`. Non-numeric strings like \"a\" and \"b\" cannot be coerced to `int`, so the third call fails with a `ValidationError`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "validate_call",
+        "type-coercion",
+        "validationerror",
+        "function-signature"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following Pydantic v2 model:\n\n```python\nfrom pydantic import BaseModel, ValidationError\n\nclass User(BaseModel):\n    id: int\n    name: str\n\npayload = {\"id\": \"123\", \"name\": \"Alice\"}\nuser = User.model_validate(payload)\n```\n\nWhich statement best describes what happens when this code runs?",
+      "question_type": "mc",
+      "options": [
+        "A. It raises `ValidationError` because `id` is a string, not an integer.",
+        "B. It creates a `User` and coerces `id` from the string \"123\" to the integer `123`.",
+        "C. It creates a `User` but leaves `id` as the string \"123\" because Pydantic does not coerce types.",
+        "D. It returns a plain dictionary with validated values instead of a `User` instance."
+      ],
+      "correct_answer": "B",
+      "explanation": "`model_validate()` validates and (in the common/default lenient behavior) coerces compatible types. Here, the string \"123\" is cast to `int` and a `User` instance is returned. A `ValidationError` would occur if the value could not be validated/coerced into an `int` (e.g., \"abc\").",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "model_validate",
+        "type-coercion",
+        "validation",
+        "ValidationError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following Pydantic model:\n\n```python\nfrom typing import List\nfrom pydantic import BaseModel, ConfigDict\n\nclass Model(BaseModel):\n    model_config = ConfigDict(validate_assignment=True)\n    count: int\n    tags: List[str]\n\nm = Model(count=1, tags=[\"a\"])\n\n# Four separate assignments:\nA = lambda: setattr(m, \"count\", \"42\")\nB = lambda: setattr(m, \"tags\", (\"b\", \"c\"))\nC = lambda: setattr(m, \"count\", \"not a number\")\nD = lambda: setattr(m, \"tags\", \"bc\")\n```\n\nWhich assignment is expected to raise a `ValidationError` *because it cannot be coerced to the target type* (based on typical Pydantic coercion behavior described in the source)?",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "C",
+      "explanation": "With `validate_assignment=True`, assignments are validated. `count = \"42\"` is commonly coerced from string to int, and assigning a tuple to `List[str]` is coerced to a list of strings. But `count = \"not a number\"` cannot be converted to an integer, so validation fails and a `ValidationError` is raised. (The key tested idea is that type coercion can happen on assignment, but only when conversion is possible.)",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "validate_assignment",
+        "type-coercion",
+        "validationerror",
+        "lists"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pydantic import validate_call\n\n@validate_call\ndef greet(name: str, times: int = 1) -> str:\n    return \" \".join([f\"Hello, {name}!\" for _ in range(times)])\n\n# Calls:\na = greet(\"Alice\", \"2\")\nb = greet(name=\"Bob\")\n```\n\nWhich statement best describes what happens for calls `a` and `b`?",
+      "question_type": "mc",
+      "options": [
+        "`a` raises `ValidationError` because `times` is a string; `b` succeeds and uses `times=1`.",
+        "`a` succeeds because `\"2\"` is coerced to the integer `2`; `b` succeeds and uses the default `times=1`.",
+        "`a` succeeds but `times` remains a string, causing a runtime error inside the list comprehension; `b` raises `ValidationError` because `times` is missing.",
+        "Both `a` and `b` raise `ValidationError` because `@validate_call` disables default arguments and requires exact types with no coercion."
+      ],
+      "correct_answer": "B",
+      "explanation": "A key feature of `@validate_call` is type coercion where possible. The string `\"2\"` can be parsed into an `int`, so `a` succeeds with `times=2`. For `b`, `times` is not provided, so normal Python default handling applies and `times=1` is used.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "validate_call",
+        "type-coercion",
+        "default-arguments",
+        "runtime-validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which `AgentInfo` attribute would you check to decide whether a tool is allowed to return plain text (instead of requiring structured output via an output tool)?\n\nA. `function_tools`\nB. `output_tools`\nC. `allow_text_output`\nD. `model_settings`",
+      "question_type": "mc",
+      "options": [
+        "`function_tools`",
+        "`output_tools`",
+        "`allow_text_output`",
+        "`model_settings`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`allow_text_output` is a boolean that indicates whether the agent permits plain text output in addition to structured tool-based output. The other fields describe available tools (`function_tools`, `output_tools`) or configuration (`model_settings`) rather than permissions for text output.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic-ai",
+        "agentinfo",
+        "allow_text_output",
+        "output-policy",
+        "tools"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which set of approaches correctly lists valid ways to register tools in a `FunctionToolset`?\n\nA developer wants to expose a few functions as tools and may also add more tools later during runtime.",
+      "question_type": "mc",
+      "options": [
+        "Only by decorating functions with `@toolset.tool`; runtime additions are not supported",
+        "By using `@toolset.tool`, by passing functions/`Tool` instances via the `tools` constructor argument, and by adding tools later with `add_function()`/`add_tool()`",
+        "Only by importing functions into the same file as the `Agent`; toolsets do not accept functions directly",
+        "By defining tools in JSON schema files that the `FunctionToolset` compiles into Python functions"
+      ],
+      "correct_answer": "B",
+      "explanation": "The source content lists three supported registration methods: (1) decorator `@toolset.tool`, (2) passing functions or `Tool` instances via the `tools` argument when constructing the toolset, and (3) dynamically adding tools at runtime using `add_function()` or `add_tool()`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic-ai",
+        "functiontoolset",
+        "tool-registration",
+        "decorators",
+        "runtime-tools"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following two Pydantic models:\n\n```python\nfrom pydantic import BaseModel, Field\n\nclass BadModel(BaseModel):\n    tags: list[str] = []\n\nclass GoodModel(BaseModel):\n    tags: list[str] = Field(default_factory=list)\n\nb1 = BadModel(); b2 = BadModel()\n\nb1.tags.append(\"x\")\n\nprint(b1.tags)\nprint(b2.tags)\n```\n\nWhat will be printed, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "It will print:\n['x']\n['x']\n\nBecause `tags: list[str] = []` uses a single list object created at class definition time. Both `BadModel` instances reference the same default list, so mutating it via `b1.tags.append(...)` affects `b2.tags` as well. Using `Field(default_factory=list)` would create a fresh list per instance and avoid this shared-state behavior.",
+      "explanation": "Python evaluates default values once when the class body executes. For mutable defaults (lists/dicts/sets), that means all instances share the same object unless a factory is used. `default_factory` fixes this by deferring creation of the mutable object until instance creation time, producing independent defaults.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "mutable-defaults",
+        "default_factory",
+        "python-default-arguments",
+        "Field"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the model below. Which instantiation(s) will raise a ValidationError, and why?\n\n```python\nfrom pydantic import BaseModel, Field\nfrom typing import List\n\nclass User(BaseModel):\n    name: str\n    age: int = 18\n    tags: List[str] = Field(default_factory=list)\n```\n\nChoose the single best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Only `User()` raises, because `name` is required",
+        "B. Only `User(name=\"Ana\")` raises, because `tags` is required",
+        "C. `User(name=\"Ana\")` and `User()` both raise, because `age` is required",
+        "D. None raise, because Pydantic will infer defaults for all missing fields"
+      ],
+      "correct_answer": "A",
+      "explanation": "`name` has no default, so it is required; calling `User()` omits it and triggers a ValidationError. `age` has a default of 18, so it can be omitted. `tags` uses `default_factory=list`, which also makes it optional to pass while ensuring a fresh list per instance.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "Field",
+        "default_factory",
+        "ValidationError",
+        "required-vs-optional"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the model below, what happens when you run the code?\n\n```python\nfrom pydantic import BaseModel, Field\nfrom typing import List\n\nclass User(BaseModel):\n    name: str = Field(..., min_length=3, max_length=50)\n    age: int = Field(default=0, ge=0, le=120)\n    tags: List[str] = Field(default_factory=list)\n\nu = User(name=\"Al\", age=200)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. The model is created successfully; `age` is clamped to 120 and `tags` becomes `[]`",
+        "B. A `ValidationError` is raised because `name` is too short and `age` is greater than 120",
+        "C. A `TypeError` is raised because `default_factory` cannot be used with lists",
+        "D. The model is created successfully, but `tags` is set to `None` because it was not provided"
+      ],
+      "correct_answer": "B",
+      "explanation": "`name=\"Al\"` violates `min_length=3`, and `age=200` violates `le=120`, so Pydantic raises a `ValidationError` containing both issues. Pydantic does not automatically clamp values (so A is wrong). `default_factory=list` is valid and commonly used to avoid shared mutable defaults (so C is wrong). `tags` would default to an empty list, not `None` (so D is wrong).",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "Field",
+        "ValidationError",
+        "constraints",
+        "default_factory"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the model below, which call will produce JSON that uses the alias key `userId` instead of the field name `id`?\n\n```python\nfrom pydantic import BaseModel, Field\n\nclass User(BaseModel):\n    id: int = Field(alias='userId')\n    name: str | None = None\n\nu = User.model_validate({'userId': 1, 'name': None})\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `u.model_dump_json()`",
+        "B. `u.model_dump_json(by_alias=True)`",
+        "C. `u.model_dump_json(exclude_unset=True)`",
+        "D. `u.model_dump_json(exclude_none=True)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`by_alias=True` tells Pydantic to serialize using field aliases instead of the Python attribute/field names. `exclude_unset` controls whether fields not explicitly set are omitted, and `exclude_none` omits fields whose value is `None`; neither changes the key names used in the output.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic-v2",
+        "model_dump_json",
+        "by_alias",
+        "field-aliases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following Pydantic model:\n\n```python\nfrom enum import Enum\nfrom pydantic import BaseModel\n\nclass SourceType(str, Enum):\n    TABLE = \"table\"\n    SQL = \"sql\"\n\nclass SourceRecord(BaseModel):\n    source_type: SourceType\n```\n\nWhich of the following initializations will raise a `ValidationError`?\n",
+      "question_type": "mc",
+      "options": [
+        "SourceRecord(source_type=SourceType.TABLE)",
+        "SourceRecord(source_type=\"table\")",
+        "SourceRecord.model_validate({\"source_type\": \"sql\"})",
+        "SourceRecord(source_type=\"invalid\")"
+      ],
+      "correct_answer": "D",
+      "explanation": "Pydantic can validate enum-typed fields from either the enum member (e.g., `SourceType.TABLE`) or the corresponding string value (e.g., `\"table\"`, `\"sql\"`). A string not present among the enum values (like `\"invalid\"`) does not match any member, so validation fails with a `ValidationError`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "validation",
+        "enums",
+        "model_validate"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the model below, which instantiations succeed, and what values do they produce?\n\n```python\nfrom typing import Optional\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    middle_name: Optional[str] = None\n```\n\nExplain what happens for each:\n1) `User()`\n2) `User(middle_name=\"Ann\")`\n3) `User(middle_name=None)`\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "All three instantiations succeed. (1) `User()` succeeds because the field has a default; `middle_name` becomes `None`. (2) Passing a string succeeds and sets `middle_name` to \"Ann\". (3) Passing `None` also succeeds because the type allows `None`; `middle_name` is `None` explicitly.",
+      "explanation": "Adding `= None` makes the field non-required (it can be omitted) and sets the default to `None`. The `Optional[str]` annotation (or `str | None`) means both `str` and `None` are valid values when the field is provided.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "optional",
+        "defaults",
+        "model-instantiation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have the following model with multiple validators:\n```python\nfrom pydantic import BaseModel, field_validator\nfrom typing import List\n\nclass Model(BaseModel):\n    data: List[int]\n\n    @field_validator(\"data\", mode=\"before\")\n    @classmethod\n    def first_before(cls, v):\n        print(\"1st before\")\n        return v\n\n    @field_validator(\"data\", mode=\"before\")\n    @classmethod\n    def second_before(cls, v):\n        print(\"2nd before\")\n        return v\n\n    @field_validator(\"data\", mode=\"after\")\n    @classmethod\n    def first_after(cls, v):\n        print(\"1st after\")\n        return v\n\nModel(data=\"1,2,3\")\n```\nWhat will happen when this code runs?",
+      "question_type": "mc",
+      "options": [
+        "It prints only `1st before`, then fails during type conversion before any other validators run.",
+        "It prints `1st before`, `2nd before`, then fails during type conversion; `1st after` does not run.",
+        "It prints `1st before`, `2nd before`, `1st after`, then fails during type conversion.",
+        "It prints `2nd before`, `1st before`, then successfully converts the string to `List[int]` and runs `1st after`."
+      ],
+      "correct_answer": "B",
+      "explanation": "Validators of the same mode run in definition order. Both `mode=\"before\"` validators run first, receiving the raw input string. Next Pydantic attempts to coerce the value into `List[int]`. The raw string `\"1,2,3\"` cannot be coerced into a list of integers by default, so validation fails at the type conversion step. Because conversion fails, the `mode=\"after\"` validator never runs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "pydantic-v2",
+        "field-validator",
+        "validation-order",
+        "multiple-validators",
+        "list-parsing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What happens when this code runs?\n\n```python\nfrom pydantic import BaseModel, Field\n\nclass Review(BaseModel):\n    rating: int = Field(ge=1, le=5)\n    comment: str = Field(min_length=10)\n\nreview = Review(rating=6, comment='Great!')\n```\n",
+      "question_type": "mc",
+      "options": [
+        "The model is created successfully because Pydantic coerces values into the allowed range/length",
+        "A ValidationError is raised for `rating` only",
+        "A ValidationError is raised for `comment` only",
+        "A ValidationError is raised containing errors for both `rating` and `comment`"
+      ],
+      "correct_answer": "D",
+      "explanation": "`rating=6` violates `le=5` (must be between 1 and 5 inclusive). `comment='Great!'` violates `min_length=10` (length is 6). Pydantic validates all fields and collects all validation errors, so the raised ValidationError includes both field errors rather than stopping after the first failure.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "Field",
+        "ge",
+        "le",
+        "min_length",
+        "validationerror",
+        "error-aggregation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What happens when running the following code under Pydantic v2?\n\n```python\nfrom pydantic import BaseModel\n\nclass User(BaseModel):\n    age: int\n    active: bool\n\nuser = User(age=\"25\", active=\"yes\")\nprint(user.age, type(user.age))\nprint(user.active, type(user.active))\n```\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "It prints `25 <class 'int'>` and `True <class 'bool'>` because both values are coerced.",
+        "It prints `\"25\" <class 'str'>` and `\"yes\" <class 'str'>` because Pydantic does not coerce types by default.",
+        "It raises a `ValidationError` because `\"yes\"` is not a valid boolean input in Pydantic v2.",
+        "It raises a `ValidationError` because `\"25\"` cannot be converted to an integer."
+      ],
+      "correct_answer": "C",
+      "explanation": "Pydantic v2 will coerce `age=\"25\"` into the integer `25`. However, `active=\"yes\"` is not among the accepted boolean representations (only `true/false/1/0` as strings, case-insensitive, plus actual booleans and integers `1/0`). Therefore model construction fails with a `ValidationError` before any `print` executes.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic-v2",
+        "BaseModel",
+        "ValidationError",
+        "bool",
+        "int-coercion"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

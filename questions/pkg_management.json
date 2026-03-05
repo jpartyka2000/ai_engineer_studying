@@ -1,0 +1,1593 @@
+{
+  "metadata": {
+    "subject_slug": "pkg_management",
+    "subject_name": "Package Management",
+    "exported_at": "2026-03-05T20:01:47.061842",
+    "question_count": 78,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Consider this sequence in a POSIX shell:\n\n```bash\npython -m venv .venv\necho \"Before: $VIRTUAL_ENV\"\nsource .venv/bin/activate\necho \"After activate: $VIRTUAL_ENV\"\ndeactivate\necho \"After deactivate: $VIRTUAL_ENV\"\n```\n\nWhich option best describes what happens to `VIRTUAL_ENV`, `PATH`, and your shell prompt across these steps?",
+      "question_type": "mc",
+      "options": [
+        "`VIRTUAL_ENV` is set during `python -m venv`; activation only changes the prompt; `deactivate` only changes `PATH`.",
+        "`source .../activate` sets `VIRTUAL_ENV`, prepends the venv’s `bin/` to `PATH`, and updates the prompt; `deactivate` unsets `VIRTUAL_ENV` and restores the original `PATH` and prompt.",
+        "`source .../activate` only changes `PATH`; `VIRTUAL_ENV` is computed dynamically by Python at runtime; `deactivate` removes the venv directory.",
+        "`deactivate` leaves `VIRTUAL_ENV` set but restores `PATH`; the prompt is never modified by activation."
+      ],
+      "correct_answer": "B",
+      "explanation": "The activation script is responsible for shell-environment changes: it sets `VIRTUAL_ENV` to the full venv path, modifies `PATH` so the venv’s `bin/` comes first, and updates the prompt to show the venv name. `deactivate` reverses these changes by unsetting `VIRTUAL_ENV` and restoring the prior `PATH` and prompt.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "venv",
+        "activation",
+        "deactivate",
+        "PATH",
+        "shell-prompt"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate runs `pip install -e .` inside a directory containing Python source files, but pip errors because it cannot determine package metadata. Based on editable mode requirements, what is the most likely cause and the correct fix?\n\nChoose one.",
+      "question_type": "mc",
+      "options": [
+        "Editable installs require a `requirements.txt`; add one and rerun.",
+        "Editable installs only work inside a virtual environment; activate one and rerun.",
+        "The directory is missing a `pyproject.toml` or `setup.py` that defines package metadata; add one (or use a valid package directory) and rerun.",
+        "Editable installs copy files into `site-packages`; delete `site-packages` and rerun."
+      ],
+      "correct_answer": "C",
+      "explanation": "For `pip install -e` to work, the target directory must be a valid Python package project with metadata defined via `pyproject.toml` (PEP 517/518) or `setup.py`. Without one of these, pip cannot build/identify the project to install it (editable or otherwise).",
+      "difficulty": "advanced",
+      "tags": [
+        "pip",
+        "editable-install",
+        "pyproject-toml",
+        "setup-py",
+        "package-metadata",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain how `uv run` decides what dependencies to install when running a command, and describe a scenario where `uv run --with package_name ...` is preferable to editing `pyproject.toml`/`requirements.txt` or adding PEP 723 metadata. Your answer should mention at least two dependency declaration sources and the purpose of `--with`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "When you run `uv run ...`, uv detects dependencies from common declaration sources such as `pyproject.toml`, `requirements.txt`, and inline script metadata (PEP 723 comments at the top of a script). It then creates or reuses a uv-managed virtual environment with those dependencies installed (using caching) and executes the requested script/command in that environment. The `--with package_name` option is preferable when you need a temporary, one-off extra dependency for a single run (e.g., quickly running `uv run --with rich script.py` to add nicer output, or `uv run --with pytest pytest` to run tests) without permanently changing project files or modifying the script header.",
+      "explanation": "This tests understanding of the dependency detection pipeline (multiple possible sources) and the role of `--with` as an ephemeral add-on for a specific invocation, which is useful for ad-hoc tooling or experimentation without committing dependency changes to project configuration or script metadata.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "uv-run",
+        "dependency-detection",
+        "pyproject-toml",
+        "requirements-txt",
+        "pep-723",
+        "with-option",
+        "workflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are debugging dependency bloat and want to produce two views:\n1) a view that shows only direct dependencies, and\n2) a view that highlights any dependencies (direct or transitive) that have newer versions available.\n\nWrite the two `uv tree` commands that accomplish this, using flags appropriately.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `uv tree --depth 1`\n2) `uv tree --outdated`",
+      "explanation": "`--depth 1` limits the output to one level below the project root, which corresponds to direct dependencies only. `--outdated` annotates/highlights packages for which newer versions are available, and it applies across the tree (direct and transitive dependencies) in the displayed output.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "uv-tree",
+        "depth",
+        "outdated",
+        "dependency-audit",
+        "dependency-bloat"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A CI job currently runs `uv lock --check` and fails with a non-zero exit code. You want an automated step that both (1) updates/regenerates the lock file if needed and (2) installs the dependencies.\n\nWhich command best matches that goal?\n",
+      "question_type": "mc",
+      "options": [
+        "uv lock",
+        "uv sync",
+        "uv lock --check",
+        "uv sync --check"
+      ],
+      "correct_answer": "B",
+      "explanation": "`uv sync` both updates the lock file (bringing it in line with `pyproject.toml`) and installs dependencies. `uv lock` only regenerates the lock file without performing installation, and `uv lock --check` only checks consistency. `uv sync --check` is not the described workflow for updating + installing in the provided content.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "sync",
+        "lockfile-regeneration",
+        "dependency-installation",
+        "ci-pipelines"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your organization maintains two repositories:\n\n1) `acme-webapp` (an application deployed in production)\n2) `acme-utils` (a Python library intended to be used as a dependency by many external projects)\n\nBoth use `uv` and have `pyproject.toml`. For each repo, decide whether you should commit `uv.lock`, and justify your decision. Include the main trade-off for libraries and how teams often handle CI/development reproducibility.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "For `acme-webapp` (application), you should commit `uv.lock` along with `pyproject.toml` to guarantee reproducible, deterministic deployments and CI runs, and to audit exactly when dependency versions change.\n\nFor `acme-utils` (library), it is more nuanced: some teams choose not to commit `uv.lock` because downstream consumers will resolve dependencies in their own environments and a library lock file could be misleading as a “required” set. The trade-off is losing deterministic installs for the library’s own development and CI if no lock file is used. Many teams still commit `uv.lock` (or maintain a separate lock for dev/CI) to keep the library’s test environment reproducible while recognizing that consumers rely on the library’s declared constraints in `pyproject.toml` rather than the lock.",
+      "explanation": "Applications benefit strongly from lock files because they control the runtime environment and want identical installs everywhere. Libraries must be compatible across a range of versions, so the published contract is the dependency constraints, not a single frozen set; however, lock files are still valuable internally to make CI and contributor setups repeatable. The key is understanding the audience: deploy-time determinism for apps vs compatibility expectations for libraries.",
+      "difficulty": "advanced",
+      "tags": [
+        "applications-vs-libraries",
+        "lockfile-policy",
+        "dependency-constraints",
+        "reproducibility",
+        "security-auditing",
+        "uv"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have both conda `(base)` and a `uv` environment on your machine, and `modal` exists in both. Provide a short troubleshooting plan (commands + reasoning) to:\n\n1) Identify which `modal` is being executed right now.\n2) Switch to using the `uv`-managed `modal` instead of the conda one.\n3) Verify the switch.\n\nYour answer should include the key commands and explain what each step proves.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Identify the active executable: run `which modal` to see the exact path of the `modal` binary currently resolved by PATH.\n\n2) Switch to uv-managed `modal`: deactivate conda so conda’s `.../anaconda3/bin` is no longer taking precedence on PATH:\n```bash\nconda deactivate\n```\n(If needed, repeat until you’re out of `(base)`.) This allows the shell to resolve `modal` from the uv-managed environment, assuming it’s on PATH.\n\n3) Verify: run both\n```bash\nwhich modal\nmodal --version\n```\n`which modal` should now point to the uv-managed binary location (not the conda path), and `modal --version` should report the expected version for that installation.",
+      "explanation": "The core issue is PATH precedence: the terminal runs the first matching `modal` executable found on PATH. `which modal` is the definitive way to see which one that is. Deactivating conda removes (or deprioritizes) conda’s bin directory from PATH, allowing another installation (e.g., uv-managed) to be found instead. Verification should include both the resolved path (`which`) and the runtime behavior/version (`modal --version`) to ensure you didn’t just change metadata but actually changed the executed binary.",
+      "difficulty": "advanced",
+      "tags": [
+        "path-precedence",
+        "environment-management",
+        "conda-deactivate",
+        "uv",
+        "cli-tools",
+        "debugging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Scenario: You have multiple Python installations (Homebrew Python and a `pyenv`-managed Python). You want to (1) determine which `python3` your shell is currently using, and (2) change your environment so that `pyenv`’s Python is chosen instead of Homebrew’s by default.\n\nWrite the commands you would run to verify the current `python3` location and version, and then describe a PATH/initialization change that would cause `pyenv`’s Python to take precedence.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Verification commands:\n- `which python3` (or `command -v python3`) to see the resolved path\n- `python3 --version` to confirm the version\n(Optional) `type -a python3` to see all candidates on PATH\n\nChange to prefer pyenv:\n- Ensure pyenv initialization runs in your shell startup file (e.g., `~/.zshrc`) and that pyenv’s shims directory appears before Homebrew’s bin in PATH.\nExample (conceptually):\n- Add/keep pyenv init lines such as `eval \"$(pyenv init -)\"` and ensure `~/.pyenv/shims` is earlier in PATH than `/opt/homebrew/bin` or `/usr/local/bin`.\nThen restart the shell (or `source ~/.zshrc`) and re-check with `which python3` and `python3 --version`.",
+      "explanation": "To diagnose which Python is being used, you must inspect command resolution (`which`/`command -v`/`type -a`) and confirm the runtime (`python3 --version`). To make `pyenv` win, you need its shim directory to be found first in PATH, which is typically achieved by properly initializing pyenv in the shell startup file and ensuring PATH order places `~/.pyenv/shims` ahead of Homebrew’s bin directories. This targets the root cause (PATH precedence) rather than incorrectly assuming system binaries are overwritten.",
+      "difficulty": "advanced",
+      "tags": [
+        "pyenv",
+        "homebrew",
+        "path-precedence",
+        "shell-init",
+        "zsh",
+        "python-version-management",
+        "macos"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate claims they activated a venv, but you suspect the shell is still using the system Python. You run:\n\n```bash\necho $VIRTUAL_ENV\nwhich python\n```\n\nand get:\n\n```text\n/home/user/project/.venv\n/usr/bin/python\n```\n\nExplain what this mismatch suggests and how you would interpret these results to determine whether the venv is actually being used for `python` in this shell.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The output suggests that a venv path is recorded in VIRTUAL_ENV (/home/user/project/.venv), but the `python` being executed is still the system interpreter (/usr/bin/python). If the venv were correctly active for command resolution, `which python` would typically point inside the venv (e.g., /home/user/project/.venv/bin/python). This mismatch indicates the environment activation is incomplete or PATH is not updated/being honored in the current shell session, so `python` is not coming from the venv despite VIRTUAL_ENV being set.",
+      "explanation": "A properly activated venv usually does two key things: sets `VIRTUAL_ENV` and updates `PATH` so the venv’s `bin/` directory is searched first. `echo $VIRTUAL_ENV` alone shows intent/state (a variable is set), but `which python` shows the actual interpreter that will run. When `which python` resolves to `/usr/bin/python`, the shell will use system Python, meaning the venv is not effectively in use for `python` commands in that session.",
+      "difficulty": "advanced",
+      "tags": [
+        "which",
+        "PATH",
+        "VIRTUAL_ENV",
+        "virtualenv",
+        "shell-troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You already have an existing `uv.lock` checked into version control. You edit `pyproject.toml` to add a new dependency `httpx>=0.27,<0.29` and then run `uv lock` (without `--upgrade`). Which behavior should you expect, assuming your existing locked versions are still compatible with all constraints?\n\nA. `uv lock` ignores the existing lock file and upgrades all packages to the newest compatible versions.\nB. `uv lock` prefers keeping existing locked versions and only changes what is necessary to accommodate `httpx`.\nC. `uv lock` installs `httpx` into the environment immediately and writes its installed version into `uv.lock`.\nD. `uv lock` writes only direct dependencies (not transitive dependencies) into `uv.lock` to minimize changes.",
+      "question_type": "mc",
+      "options": [
+        "A. `uv lock` ignores the existing lock file and upgrades all packages to the newest compatible versions.",
+        "B. `uv lock` prefers keeping existing locked versions and only changes what is necessary to accommodate `httpx`.",
+        "C. `uv lock` installs `httpx` into the environment immediately and writes its installed version into `uv.lock`.",
+        "D. `uv lock` writes only direct dependencies (not transitive dependencies) into `uv.lock` to minimize changes."
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, `uv lock` prefers the versions already present in the lock file when they still satisfy the full set of constraints, and it makes minimal changes (e.g., adding `httpx` and any required transitive dependencies, adjusting other pins only if needed). Fresh resolution that disregards existing pins is the behavior of `uv lock --upgrade`. Also, `uv lock` does not install anything, and the lock file includes pinned versions for all packages (including transitive dependencies), plus hashes and metadata.",
+      "difficulty": "advanced",
+      "tags": [
+        "lockfile-update-strategy",
+        "uv-lock",
+        "upgrade",
+        "minimal-changes",
+        "dependency-resolution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect `uv lock --check` is validating against the wrong project because there are multiple `pyproject.toml` files in your repository.\n\n1) Name one command that helps you infer which `pyproject.toml` / project root `uv` is using.\n2) Show the exact `uv` command you would run to force `uv lock --check` to target `/path/to/project` explicitly.\n\nProvide your answer as commands (with brief notes if needed).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Use either:\n- `uv tree` (shows the dependency tree and implicitly indicates which project root/pyproject is being used), or\n- `uv pip show <your-package-name>` (helps confirm which project/package uv is detecting).\n2) `uv lock --check --directory /path/to/project`",
+      "explanation": "`uv tree` is suggested as a way to see the dependency tree and implicitly which `pyproject.toml` is being read, and `uv pip show <your-package-name>` can confirm which project/package `uv` is detecting. To avoid ambiguity and explicitly target a project, `uv lock --check --directory /path/to/project` directs `uv` to operate on that directory regardless of the current working directory.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "uv-tree",
+        "uv-pip-show",
+        "uv-lock-check",
+        "directory-flag",
+        "project-root-detection",
+        "pyproject.toml"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team works on multiple Terraform projects that require different Terraform versions. They want a workflow that can set a global version and also allow per-project version selection.\n\nWhich installation approach from the content best fits this requirement, and what are the key commands to (1) add Terraform support, (2) install a version, and (3) set the global version?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `asdf` (a version manager). Key commands:\n\n1) Add Terraform plugin:\n```bash\nasdf plugin-add terraform https://github.com/asdf-community/asdf-hashicorp.git\n```\n2) Install a version (e.g., latest):\n```bash\nasdf install terraform latest\n```\n3) Set the global version:\n```bash\nasdf global terraform latest\n```",
+      "explanation": "`asdf` is explicitly described as a version manager suited for managing multiple tool versions. Adding the Terraform plugin enables Terraform version management, installing fetches the desired version, and setting `asdf global` configures the default version (with the implication that project-specific versions can also be set using asdf's per-project configuration).",
+      "difficulty": "advanced",
+      "tags": [
+        "terraform",
+        "asdf",
+        "version-management",
+        "tooling",
+        "macos",
+        "multi-version"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate reports that after running `pyenv activate myenv`, `python --version` still shows the system Python and `which python` points to `/usr/bin/python`.\n\nGiven the setup steps in the source content, identify the most likely missing shell configuration line(s) and explain how reloading the shell configuration fixes the issue. Include the relevant snippet in your answer.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Most likely the shell is not initializing pyenv (and/or the pyenv-virtualenv hook), so activation does not update PATH/shims correctly. The missing lines are typically the pyenv init and virtualenv init evals in the shell profile, for example:\n\n```bash\nexport PATH=\"$HOME/.pyenv/bin:$PATH\"\neval \"$(pyenv init --path)\"\neval \"$(pyenv init -)\"\neval \"$(pyenv virtualenv-init -)\"\n```\n\nReloading the shell configuration (e.g., `source ~/.zshrc` or `source ~/.bash_profile`) re-runs these commands in the current shell session, enabling pyenv’s shims and the virtualenv integration so that `pyenv activate myenv` can place the pyenv-managed Python earlier in PATH. After that, `which python` should resolve to something like `~/.pyenv/versions/myenv/bin/python`.",
+      "explanation": "pyenv relies on shell initialization to modify PATH and enable its shim-based resolution. The `pyenv virtualenv-init -` hook is what makes `pyenv activate` properly adjust the environment in the current shell. Without these eval lines, the system Python remains first in PATH, so `which python` and `python --version` continue to reflect `/usr/bin/python` even after attempting activation. Reloading the profile applies the configuration immediately without opening a new terminal.",
+      "difficulty": "advanced",
+      "tags": [
+        "pyenv",
+        "pyenv-virtualenv",
+        "PATH",
+        "shims",
+        "shell-profile",
+        "troubleshooting",
+        "which-python"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate claims: “In a `justfile`, it’s fine to use bare integers for default parameter values; quoting is only needed for values containing spaces.”\n\nWhich response is most accurate based on justfile syntax rules described in the source content?",
+      "question_type": "mc",
+      "options": [
+        "Correct: bare integers are valid defaults; quoting is only needed when whitespace is present.",
+        "Incorrect: default parameter values must be quoted strings, even when they look like integers (e.g., `\"2\"`, not `2`).",
+        "Correct: bare integers are valid only when the parameter name starts with `num_`.",
+        "Incorrect: default parameter values must be unquoted; quoting makes them environment variables."
+      ],
+      "correct_answer": "B",
+      "explanation": "The referenced rule is explicit: in justfiles, default parameter values must be quoted strings. Therefore `num_questions=2` is invalid syntax; it must be `num_questions=\"2\"` (and similarly for other defaults), regardless of whether the value contains spaces.",
+      "difficulty": "advanced",
+      "tags": [
+        "just",
+        "justfile",
+        "default-values",
+        "quoting-rules",
+        "syntax-errors",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why editable mode (`pip install -e .`) is not universally “better” than a normal install (`pip install .` or `pip install package`). In your answer:\n\n1) Contrast the goals of a package consumer vs. a package developer.\n2) Describe what problem editable mode solves in a test/edit loop.\n3) Give one example scenario where a normal install is the more appropriate choice.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Editable mode is best for development, not consumption. A consumer typically wants a stable, fixed version installed into the environment (e.g., in site-packages) and does not intend to modify the code; a normal install provides that. A developer iterates: edit code, run tests/import it, edit again. Editable mode solves the friction of having to reinstall the package after every change by making the installed package reflect the working directory’s code. A normal install is more appropriate when installing third-party packages from PyPI for use (not modification), such as installing `requests` for an application deployment where you want reproducible, stable behavior.",
+      "explanation": "The key distinction is intent and workflow. Editable installs optimize the rapid iteration cycle of developing and testing local code (including when another project depends on that local library). Normal installs optimize stability and reproducibility for users who are consuming a released version and do not want local edits to affect behavior.",
+      "difficulty": "advanced",
+      "tags": [
+        "pip",
+        "editable-install",
+        "reproducibility",
+        "development-vs-consumption",
+        "testing-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company uses a monorepo with multiple Python packages:\n\n```text\nmonorepo/\n  packages/\n    pkg_a/\n      pyproject.toml\n      src/pkg_a/...\n    pkg_b/\n      pyproject.toml\n      src/pkg_b/...\n  apps/\n    app1/\n      pyproject.toml\n      src/app1/...\n```\n\nDevelopers complain that their IDE frequently shows import errors between packages (e.g., `pkg_b` importing `pkg_a`) unless they manually configure IDE path settings for each workspace.\n\nExplain how editable installs can reduce IDE configuration burden in this scenario, and mention at least one reason why editable installs may be less necessary in simpler projects.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Editable installs (e.g., `pip install -e packages/pkg_a` and `pip install -e packages/pkg_b` into the same virtual environment used by the IDE) register each package as an installed distribution, so imports like `import pkg_a` resolve via the environment rather than relying on IDE-specific path mappings. This is especially helpful in monorepos and `src/` layouts where the import roots are not obvious. In simpler single-package repos, modern IDEs (VS Code/Pylance, PyCharm) often infer the project structure and source roots automatically from the workspace and configuration, so editable installs are not strictly required for import resolution and basic IDE features.",
+      "explanation": "In a monorepo, multiple independent package roots exist, and the IDE may not automatically treat each as an importable distribution. Editable installs provide a consistent, tool-agnostic mechanism: the Python environment knows where each package lives, and the IDE typically follows the interpreter’s environment metadata for indexing and import resolution. In contrast, a straightforward repo layout is often recognized by IDE heuristics, reducing the need for editable installs.",
+      "difficulty": "advanced",
+      "tags": [
+        "monorepo",
+        "pip",
+        "editable-install",
+        "ide",
+        "import-resolution",
+        "src-layout",
+        "workspace-configuration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate says: “`pip index versions mypkg` doesn’t show `1.0.0rc1`, so that pre-release must not exist.” What is the most accurate response based on `pip index versions` behavior and the recommended way to confirm whether RC versions exist?\n\nAssume you have shell tools available.",
+      "question_type": "mc",
+      "options": [
+        "A. Correct—`pip index versions` always lists every release including pre-releases; if it’s missing, it doesn’t exist.",
+        "B. Incorrect—by default `pip index versions` lists stable/final releases only; confirm RCs by checking PyPI Release History or querying the PyPI JSON API (e.g., `curl .../json | jq ... | grep rc`).",
+        "C. Incorrect—`pip index versions` only checks your local cache; run `pip cache purge` and it will show RC versions.",
+        "D. Correct—RC versions are never uploaded to PyPI; they only exist on GitHub tags."
+      ],
+      "correct_answer": "B",
+      "explanation": "`pip index versions` is limited: it typically shows only final/stable releases and may omit pre-releases such as `rc` builds. To confirm whether RC versions exist, you should check the package’s PyPI Release History page or query the PyPI JSON API and filter for `rc` entries (as in the provided `curl | jq | grep rc | sort -V` pipeline).",
+      "difficulty": "advanced",
+      "tags": [
+        "pip",
+        "pip-index-versions",
+        "pre-releases",
+        "release-candidates",
+        "pypi-json-api",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate reports that `poetry run python run_tests.py` is using the wrong interpreter or dependencies (it behaves like it’s not using the project’s virtual environment). Describe how you would verify which Poetry environment is active and explain what the output helps you confirm.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Run `poetry env info` to inspect the currently configured/active virtual environment. The output shows details like the virtualenv path and the Python executable being used, which lets you confirm whether Poetry is pointing to the expected project environment (and therefore the expected installed dependencies) rather than a global/system interpreter or a different venv.",
+      "explanation": "`poetry env info` is the recommended diagnostic command to confirm Poetry’s environment selection. By checking the reported environment path and Python executable, you can validate whether `poetry run ...` commands will execute within the correct virtual environment, which directly impacts which dependencies and interpreter are used.",
+      "difficulty": "advanced",
+      "tags": [
+        "poetry",
+        "virtualenv",
+        "environment-debugging",
+        "poetry-env-info",
+        "dependency-isolation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Poetry project, you suspect a direct dependency pulled in an unexpected transitive dependency. Write the command you would use to display the full dependency hierarchy (a tree) so you can see which package depends on which.\n\nAlso briefly explain (1 sentence) why this output helps in diagnosing the issue.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Command: `poetry show --tree`\nExplanation: The tree view reveals transitive dependencies and their parent relationships, making it clear which direct package introduced the unexpected dependency.",
+      "explanation": "`poetry show --tree` prints a hierarchical dependency graph, showing both direct and transitive dependencies and the links between them; this is exactly what you need to trace an unexpected package back to the dependency that required it.",
+      "difficulty": "advanced",
+      "tags": [
+        "poetry",
+        "transitive-dependencies",
+        "dependency-tree",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your `pyproject.toml` contains:\n\n```toml\n[tool.poetry.scripts]\nspecific-test = \"run_tests:specific_test\"\n```\n\nBut running `poetry run specific-test` fails with an import/entry-point error. Which diagnosis is MOST likely to fix the problem based on how Poetry resolves scripts?\n\nAssume the function name is correct and you are running the command from the project directory.",
+      "question_type": "mc",
+      "options": [
+        "Rename the script key from `specific-test` to `specific_test` because Poetry does not allow hyphens in script names.",
+        "Ensure `run_tests.py` is importable as the `run_tests` module (e.g., it exists in the project root or on the Python path) and that `specific_test` is defined at module top level.",
+        "Replace the value with `\"./run_tests.py:specific_test\"` so Poetry can locate the file via a relative path.",
+        "Run `poetry run python run_tests.py specific_test` because `[tool.poetry.scripts]` only works for installed console scripts, not `poetry run`."
+      ],
+      "correct_answer": "B",
+      "explanation": "Poetry script entries use the `module:function` form and rely on normal Python importing rules. That means `run_tests` must be importable as a module (commonly satisfied by having `run_tests.py` at the project root when running in the project context) and the target callable must exist at module scope. Hyphens are allowed in the script command name (the key), paths like `./run_tests.py:...` are not the expected format, and `poetry run <script>` is exactly how Poetry executes these entry points.",
+      "difficulty": "advanced",
+      "tags": [
+        "poetry",
+        "entry-points",
+        "python-imports",
+        "tool.poetry.scripts",
+        "debugging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this scenario:\n\n1) You run `pip install .` from a local project directory `/work/proj`.\n2) You modify `/work/proj/proj_pkg/__init__.py`.\n3) You run Python and import `proj_pkg`.\n\nNow compare it to:\n\n1) You run `pip install -e .` from the same directory `/work/proj`.\n2) You modify `/work/proj/proj_pkg/__init__.py`.\n3) You run Python and import `proj_pkg`.\n\nFor each installation mode, explain which code Python will import (the copy in `site-packages` vs the working directory), and describe an edge-case risk of editable installs that follows from this behavior.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "With `pip install .` (normal mode), Python will import the installed copy placed in `site-packages`; changes made later in `/work/proj` will not affect what gets imported unless you reinstall (or otherwise update the installed distribution). With `pip install -e .` (editable mode), Python will import directly from the working directory `/work/proj`, so changes to files there are immediately reflected on import.\n\nAn edge-case risk of editable installs is that the environment becomes dependent on the mutable state of that directory: accidental deletions, uncommitted experimental edits, switching branches, or partially-built/generated files can immediately break imports or change runtime behavior, because the “installed package” is whatever currently exists in the source tree.",
+      "explanation": "Normal installs copy code into `site-packages`, decoupling runtime imports from later edits in the source directory. Editable installs avoid copying and instead point imports at the source directory, which is convenient for development but can be fragile because the runtime package is not a stable snapshot.",
+      "difficulty": "advanced",
+      "tags": [
+        "pip",
+        "editable-install",
+        "site-packages",
+        "reproducibility",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate says: \"Our CI is failing because `uv` reported a yanked version warning, so yanked packages are errors.\" Using the concept of yanked packages, explain whether this claim is correct and what the recommended action is when you encounter a yanked version that still installs successfully.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The claim is incorrect: a yanked package version produces a warning, not an error, and the version is still installable. A yanked flag means maintainers marked that specific version as problematic (e.g., bug, security issue, accidental release). Recommended action is to upgrade to a different, non-yanked stable version when possible (for example: `uv add --upgrade wandb`).",
+      "explanation": "The key distinction is semantic and operational: yanked is a maintainer advisory signal. Tools warn to encourage choosing safer versions, but installations can still proceed. The appropriate response is to plan an upgrade rather than treating it as immediate breakage unless your policy escalates warnings to failures.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "yanked-releases",
+        "ci-policy",
+        "risk-management",
+        "dependency-hygiene"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want `pytest` to be installed only for a specific dependency group named `test` (not as a normal runtime dependency). Write the `uv` command to do this, and briefly state what file(s) should be updated as a result.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Command:\n```bash\nuv add --group test pytest\n```\nThis updates `pyproject.toml` (adding `pytest` to the `test` dependency group) and updates `uv.lock` to reflect the new resolved dependency set.",
+      "explanation": "Using `--group test` places the dependency into a named dependency group rather than default runtime dependencies. As with other `uv add` operations, `pyproject.toml` is updated to record the dependency and `uv.lock` is updated to capture the resolved versions.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "dependency groups",
+        "uv add --group",
+        "pytest",
+        "pyproject.toml",
+        "uv.lock"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A project fails to lock with an error suggesting `uv.lock` is inconsistent because `sqlglot` appears multiple times without proper source information. Describe a systematic troubleshooting plan using uv that:\n1) prioritizes the safest remediation steps,\n2) checks for conflicting dependency declarations or multiple sources in `pyproject.toml`, and\n3) includes how you would rule out an older uv bug.\n\nYour answer should include the specific commands you would run and what you would look for in `pyproject.toml`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong plan includes: (1) remove and regenerate the lock file: `rm uv.lock` then `uv lock`; (2) if it persists, retry with a clean cache: `rm uv.lock; uv cache clean; uv lock`; (3) inspect `pyproject.toml` for multiple declarations or multiple sources for `sqlglot` (e.g., both a PyPI version constraint and a Git dependency, or multiple dependency groups specifying different sources/versions) and consolidate to a single intended source/version; (4) upgrade uv to rule out known/older bugs: `pip install --upgrade uv` and rerun `uv lock`. The rationale is to first rebuild consistent source metadata from scratch, then eliminate cache effects, then remove ambiguity in dependency sources, and finally ensure the tool itself is not the root cause.",
+      "explanation": "This sequence mirrors best practice: start with the least invasive, most deterministic fix (rebuild the lock), then address environmental state that can influence resolution (cache), then address the underlying cause of ambiguity (conflicting specifications or mixed sources for the same package), and finally rule out tool defects by upgrading uv. Including commands and what to look for in `pyproject.toml` demonstrates understanding of how duplicate packages can arise from multiple sources and why uv needs unambiguous source information.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "pyproject.toml",
+        "dependency-conflicts",
+        "multiple-sources",
+        "lockfile-consistency",
+        "tooling-bugs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following scenario:\n\n- You have multiple virtual environments on your machine.\n- Your CI pipeline activates a pre-provisioned venv (not located at `./.venv`) before running tests.\n- The repository may or may not contain a `.venv` directory.\n\nYou add this step:\n\n```bash\nuv run pytest\n```\n\nTests unexpectedly run with dependencies from a newly created `./.venv` instead of the CI-provisioned environment.\n\nWhich change best ensures `uv run` uses the CI-activated environment, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Replace the command with `uv run --active pytest` because it forces uv to respect the currently activated venv instead of creating/using `./.venv`",
+        "B. Replace the command with `uv run --no-venv pytest` because it disables all virtual environments and uses the system Python",
+        "C. Add `source .venv/bin/activate` before `uv run pytest` so uv will detect the activation and never create a venv",
+        "D. Add `uv run --recreate pytest` so uv rebuilds `.venv` from scratch and matches the CI-provisioned environment"
+      ],
+      "correct_answer": "A",
+      "explanation": "Without `--active`, `uv run` prefers a project `.venv` and will create one if missing, ignoring whatever the CI already activated. Using `uv run --active` makes uv use the shell’s currently activated environment, which matches the CI workflow that handles activation externally.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "ci-cd",
+        "virtualenv",
+        "active-flag",
+        "environment-management",
+        "pytest"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate adds a new dependency to `pyproject.toml` (or `requirements.txt`) and commits it. You pull the changes and run:\n\n```bash\nuv run --no-sync main.py\n```\n\nThe script crashes with an import error for the newly added package.\n\n1) Explain why this happened in terms of `uv run` behavior.\n2) Provide two concrete ways to fix or prevent this issue in the future while balancing speed and reliability.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) It happened because `--no-sync` tells `uv run` to skip its automatic dependency synchronization. Since the new dependency was not installed in your environment yet, the script started immediately and failed at import time.\n\n2) Fix/prevent options include:\n- Run without `--no-sync` (i.e., `uv run main.py`) so `uv` performs the sync and installs the new dependency before execution.\n- Keep using `--no-sync` for fast iteration, but manually sync/install dependencies when dependency files change (e.g., run a dependency sync step once after pulling changes) before resuming `--no-sync` runs.",
+      "explanation": "This tests the edge case/tradeoff of `--no-sync`: it optimizes for speed by skipping dependency checks, which shifts failure from a pre-run install/update step to runtime imports. A robust workflow either relies on the default sync for correctness or uses `--no-sync` with an explicit habit/step to sync when dependency definitions change.",
+      "difficulty": "advanced",
+      "tags": [
+        "uv",
+        "uv-run",
+        "no-sync",
+        "pyproject-toml",
+        "requirements-txt",
+        "dependency-management",
+        "failure-modes",
+        "workflow-design"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes when the `VIRTUAL_ENV` environment variable is set?\n\n```bash\npython -m venv .venv\n# (no activation)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "`VIRTUAL_ENV` is set by `python -m venv` at creation time and persists until the directory is deleted.",
+        "`VIRTUAL_ENV` is set only after running `source .venv/bin/activate` (or equivalent) in the current shell session.",
+        "`VIRTUAL_ENV` is set automatically whenever you run `.venv/bin/python`, even without activation.",
+        "`VIRTUAL_ENV` is set by `pip` the first time you install a package into the environment."
+      ],
+      "correct_answer": "B",
+      "explanation": "`VIRTUAL_ENV` is set by the activation script (`activate`) when you source it into your shell. Creating a venv with `python -m venv` does not set `VIRTUAL_ENV` in your current shell, and running the venv’s Python directly also does not set it.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "venv",
+        "virtualenv",
+        "environment-variables",
+        "activation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which command installs the current project in *editable (development) mode* so that code changes take effect immediately without reinstalling?",
+      "question_type": "mc",
+      "options": [
+        "pip install .",
+        "pip install -e .",
+        "pip install --freeze .",
+        "pip install --no-deps ."
+      ],
+      "correct_answer": "B",
+      "explanation": "`pip install -e .` installs the package in editable mode. In editable mode, pip links the installed package back to the source directory so edits are reflected immediately when importing the package, without re-running installation after each change.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip",
+        "editable-install",
+        "development-mode",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what `uv run script.py` does by default?",
+      "question_type": "mc",
+      "options": [
+        "Runs the script using the system Python without creating or using a virtual environment",
+        "Creates or reuses a uv-managed environment, resolves/installs dependencies, then executes the script inside that environment",
+        "Only installs dependencies listed in `requirements.txt` but does not execute the script",
+        "Builds a wheel for the project and runs the wheel entry point"
+      ],
+      "correct_answer": "B",
+      "explanation": "`uv run` is designed to execute a script/command inside an environment managed by uv. It detects dependencies (from sources like `pyproject.toml`, `requirements.txt`, or inline PEP 723 metadata), creates or reuses a virtual environment with those dependencies (using caching for speed), and then runs the script.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "uv-run",
+        "virtual-environment",
+        "dependency-resolution",
+        "python-execution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What does running the following command do?\n\n```bash\nuv tree\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Displays the project's dependency tree including transitive dependencies in a visual tree format",
+        "B. Installs all dependencies listed in the project configuration",
+        "C. Removes unused dependencies from the environment",
+        "D. Updates all dependencies to their latest versions"
+      ],
+      "correct_answer": "A",
+      "explanation": "`uv tree` is a read-only inspection command that prints the dependency graph as a tree, showing both direct and transitive dependencies. Installing, removing, or updating packages are different operations and are not performed by `uv tree`.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "uv-tree",
+        "dependency-tree",
+        "transitive-dependencies",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which command checks whether `uv.lock` is consistent with `pyproject.toml` **without** modifying any files?\n\n```bash\n# Choose the correct command\n```\n",
+      "question_type": "mc",
+      "options": [
+        "uv lock --check",
+        "uv sync --check",
+        "uv lock --dry-run",
+        "uv check lock"
+      ],
+      "correct_answer": "A",
+      "explanation": "`uv lock --check` verifies that the lock file matches the dependency definitions in `pyproject.toml` and does not change files. The other options are not the documented command/flag combination for this check in uv.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "lockfile",
+        "pyproject.toml",
+        "consistency-check",
+        "cli"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When you update `pyproject.toml` to add or change dependencies in a project using `uv`, what should you typically commit to version control?\n\n```bash\n# After updating pyproject.toml\nuv lock\nuv sync\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Commit only `pyproject.toml`, because `uv` will always resolve the same versions",
+        "Commit only `uv.lock`, because it fully replaces `pyproject.toml` for dependency definitions",
+        "Commit both `pyproject.toml` and `uv.lock`, because they serve different purposes",
+        "Commit neither file; dependencies should be installed manually per developer"
+      ],
+      "correct_answer": "C",
+      "explanation": "`pyproject.toml` declares intended dependencies and constraints, while `uv.lock` records the exact resolved versions (including transitive dependencies). Committing both ensures teammates and CI install the same dependency set and can run the updated code reliably.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "lockfile",
+        "pyproject.toml",
+        "reproducible-builds",
+        "dependency-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect you have two installations of the `modal` CLI: one from conda `(base)` and one installed via `uv`. Which command best confirms which `modal` binary your shell is actually executing?\n\n```bash\n# choose one\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. which modal",
+        "B. modal --version",
+        "C. pip show modal",
+        "D. conda list modal"
+      ],
+      "correct_answer": "A",
+      "explanation": "`which modal` reports the path of the executable that will run when you type `modal`. This directly reveals whether your PATH is resolving to the conda-managed binary (e.g., `.../anaconda3/bin/modal`) or another installation. `modal --version` shows a version but not where it came from; `pip show` and `conda list` show package metadata in specific environments but don’t prove which binary is being executed by the shell.",
+      "difficulty": "beginner",
+      "tags": [
+        "package-management",
+        "path-resolution",
+        "shell",
+        "which",
+        "conda",
+        "uv"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When you install `pre-commit` via Homebrew on macOS, which statement best describes what happens regarding Python?\n",
+      "question_type": "mc",
+      "options": [
+        "Homebrew overwrites the macOS system Python with its own Python (e.g., 3.13).",
+        "Homebrew installs its own Python as a dependency in its own prefix (e.g., `/opt/homebrew` or `/usr/local`) and does not overwrite macOS’s system Python.",
+        "Homebrew deletes any other Python versions you installed manually (e.g., via pyenv or conda) to avoid conflicts.",
+        "Homebrew forces `/usr/bin/python3` to point to the Homebrew Python by modifying macOS system files."
+      ],
+      "correct_answer": "B",
+      "explanation": "Homebrew installs dependencies (including Python) into its own managed directories (e.g., `/opt/homebrew/Cellar/...` on Apple Silicon or `/usr/local/Cellar/...` on Intel). It does not overwrite macOS system components. Any change in which `python3` you run is typically due to PATH ordering, not Homebrew modifying `/usr/bin`.",
+      "difficulty": "beginner",
+      "tags": [
+        "homebrew",
+        "macos",
+        "python",
+        "dependencies",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You see the following shell prompt:\n\n```text\n(myenv) user@machine:~/project$\n```\n\nWhat does the `(myenv)` most likely indicate?",
+      "question_type": "mc",
+      "options": [
+        "A. The current Git branch is `myenv`",
+        "B. A Python virtual environment named `myenv` is currently active",
+        "C. The system Python interpreter has been upgraded to `myenv`",
+        "D. The current directory is `~/myenv`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Many shells (or shell configurations) prepend the active Python virtual environment name in parentheses to the prompt. Seeing `(myenv)` at the start typically means the `myenv` virtual environment is activated in the current shell session.",
+      "difficulty": "beginner",
+      "tags": [
+        "virtualenv",
+        "shell-prompt",
+        "environment-activation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what `uv lock` does compared to `uv sync`?",
+      "question_type": "mc",
+      "options": [
+        "`uv lock` installs packages into the environment, while `uv sync` only computes versions.",
+        "`uv lock` computes and records a consistent set of pinned versions; `uv sync` installs exactly what the lock file specifies.",
+        "`uv lock` upgrades all dependencies to the newest versions by default; `uv sync` keeps existing versions.",
+        "`uv lock` only reads dev dependencies; `uv sync` reads project dependencies."
+      ],
+      "correct_answer": "B",
+      "explanation": "`uv lock` performs dependency resolution and writes a lock file (`uv.lock`) with exact versions, hashes, and metadata, but it does not install anything. `uv sync` consumes the lock file and installs those exact pinned versions into the environment.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "lockfile",
+        "dependency-resolution",
+        "uv-lock",
+        "uv-sync"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When you run `uv lock --check` in a **non-workspace** project, how does `uv` decide which `pyproject.toml` to use by default?",
+      "question_type": "mc",
+      "options": [
+        "It always uses the `pyproject.toml` in your home directory.",
+        "It uses the `pyproject.toml` in the current working directory only; it never searches upward.",
+        "It looks for a `pyproject.toml` in the current working directory and then searches upward until it finds the project root.",
+        "It always uses the `pyproject.toml` next to the `uv` executable."
+      ],
+      "correct_answer": "C",
+      "explanation": "By default, `uv` starts in the current working directory and searches upward to find the project root (and thus the `pyproject.toml` it should operate on). The other options describe behaviors not mentioned and not consistent with the described default search strategy.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "pyproject.toml",
+        "project-root-detection",
+        "uv-lock-check"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "On macOS, you want to install Terraform using Homebrew in a way that also makes future upgrades straightforward. Which sequence of commands best matches the recommended approach?\n\n```bash\n# (choose the best sequence)\n```",
+      "question_type": "mc",
+      "options": [
+        "brew install terraform && terraform -version",
+        "brew update && brew install terraform && brew upgrade terraform",
+        "brew update && brew tap hashicorp/tap && brew install hashicorp/tap/terraform && terraform -version",
+        "brew tap terraform/tap && brew install terraform && terraform --version"
+      ],
+      "correct_answer": "C",
+      "explanation": "The recommended Homebrew method is to update brew metadata, add HashiCorp's tap, install Terraform from that tap, and verify with `terraform -version`. Option C matches: `brew update`, `brew tap hashicorp/tap`, `brew install hashicorp/tap/terraform`, then `terraform -version`. The other options either omit the tap, use an incorrect tap name, or mix in an upgrade command incorrectly.",
+      "difficulty": "beginner",
+      "tags": [
+        "terraform",
+        "homebrew",
+        "macos",
+        "package-management",
+        "hashicorp-tap"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which command creates a pyenv-managed virtual environment named `myenv` based on Python 3.10.6?",
+      "question_type": "mc",
+      "options": [
+        "pyenv install myenv 3.10.6",
+        "pyenv virtualenv 3.10.6 myenv",
+        "pyenv activate 3.10.6 myenv",
+        "pyenv local 3.10.6 myenv"
+      ],
+      "correct_answer": "B",
+      "explanation": "`pyenv virtualenv <python_version> <env_name>` is the syntax used by the pyenv-virtualenv plugin to create an isolated environment. `pyenv install` installs a Python version, `pyenv activate` activates an existing environment, and `pyenv local` sets the environment/version for the current directory but does not create it.",
+      "difficulty": "beginner",
+      "tags": [
+        "pyenv",
+        "pyenv-virtualenv",
+        "virtual-environments",
+        "python-versions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a `justfile`, which of the following correctly sets default parameter values for numeric-looking parameters?\n\n```just\ncreate-cue-questions input=\"seed_questions.jsonl\" output=\"output.jsonl\" num_questions=2 num_rounds=2:\n```\n\nChoose the valid corrected version.",
+      "question_type": "mc",
+      "options": [
+        "```just\ncreate-cue-questions input=\"seed_questions.jsonl\" output=\"output.jsonl\" num_questions=\"2\" num_rounds=\"2\":\n```",
+        "```just\ncreate-cue-questions input=\"seed_questions.jsonl\" output=\"output.jsonl\" num_questions=2 num_rounds=\"2\":\n```",
+        "```just\ncreate-cue-questions input=\"seed_questions.jsonl\" output=\"output.jsonl\" num_questions='2' num_rounds=2:\n```",
+        "```just\ncreate-cue-questions input=\"seed_questions.jsonl\" output=\"output.jsonl\" num_questions=(2) num_rounds=(2):\n```"
+      ],
+      "correct_answer": "A",
+      "explanation": "In justfiles, default parameter values must be quoted strings. Even if the value is numeric, writing it as a bare integer (e.g., `2`) is invalid syntax for a default parameter value. Quoting both `\"2\"` values makes the recipe definition valid.",
+      "difficulty": "beginner",
+      "tags": [
+        "just",
+        "justfile",
+        "default-parameters",
+        "syntax",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In which scenario is `pip install -e .` (editable mode) most appropriate?",
+      "question_type": "mc",
+      "options": [
+        "A. Installing a third-party library you do not plan to modify, so you get a stable copy in site-packages",
+        "B. Developing your own package locally and repeatedly editing the code while running tests/importing it",
+        "C. Installing packages only for a single Python session without writing to disk",
+        "D. Installing a package from PyPI in a way that prevents it from being imported by other projects"
+      ],
+      "correct_answer": "B",
+      "explanation": "Editable mode is designed for active development: you install the package once and then changes to the source code are immediately reflected when you import/run tests, avoiding repeated reinstall cycles. Normal installs are best when consuming someone else’s package without modifying it.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip",
+        "editable-install",
+        "package-development",
+        "site-packages"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the context of Python package management, what is a primary benefit of installing a local package in editable mode (e.g., `pip install -e .`) for IDE behavior?",
+      "question_type": "mc",
+      "options": [
+        "A. It makes the IDE treat the package as installed, improving import resolution and features like autocomplete",
+        "B. It compiles the package into bytecode so the IDE can index it faster",
+        "C. It permanently copies the package into the global Python installation to avoid virtual environments",
+        "D. It prevents the IDE from showing type errors by disabling type checking"
+      ],
+      "correct_answer": "A",
+      "explanation": "Editable installs register the project as an installed package in the active environment, which helps the IDE resolve imports and enables features like autocomplete, go-to-definition, linting, and type checking. The other options describe behaviors that editable mode does not perform (no special compilation step, no forced global install, and it does not disable type checking).",
+      "difficulty": "beginner",
+      "tags": [
+        "pip",
+        "editable-install",
+        "ide",
+        "import-resolution",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which command lists the available released versions of a package on PyPI (typically newest to oldest)?",
+      "question_type": "mc",
+      "options": [
+        "A. pip index versions <package-name>",
+        "B. pip list --versions <package-name>",
+        "C. pip show --all-versions <package-name>",
+        "D. pip install --dry-run <package-name>"
+      ],
+      "correct_answer": "A",
+      "explanation": "`pip index versions <package-name>` is the built-in pip command used to query PyPI and print the available released versions, usually in descending (newest-to-oldest) order. The other commands either don’t exist in pip as written or don’t list all published versions from PyPI.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip",
+        "pypi",
+        "package-management",
+        "version-discovery",
+        "pip-index"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a Python test runner file named `run_tests.py` in your project. Running `poetry run run_tests.py` results in the error: `Command not found: run_tests.py`. What is the correct way to execute this file using Poetry?\n\n```bash\n# you tried\npoetry run run_tests.py\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. poetry run python run_tests.py",
+        "B. poetry run run_tests.py --python",
+        "C. poetry python run_tests.py",
+        "D. poetry exec run_tests.py"
+      ],
+      "correct_answer": "A",
+      "explanation": "`poetry run` executes a command inside Poetry’s virtual environment. A `.py` file is not a standalone command, so Poetry can’t execute it directly. You must invoke the Python interpreter explicitly: `poetry run python run_tests.py`.",
+      "difficulty": "beginner",
+      "tags": [
+        "poetry",
+        "poetry-run",
+        "python-scripts",
+        "virtualenv",
+        "command-not-found"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which Poetry command lists the installed packages in the current Poetry-managed virtual environment (showing package names and versions)?",
+      "question_type": "mc",
+      "options": [
+        "poetry show",
+        "poetry show --dev",
+        "poetry show --no-dev",
+        "poetry run pip list"
+      ],
+      "correct_answer": "A",
+      "explanation": "`poetry show` is the standard Poetry command to list installed packages in the active Poetry environment, including versions (and often brief descriptions). `--dev` and `--no-dev` are filters, and `poetry run pip list` uses pip rather than Poetry’s own listing command.",
+      "difficulty": "beginner",
+      "tags": [
+        "poetry",
+        "package-management",
+        "dependencies",
+        "poetry-show"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following `pyproject.toml` snippet:\n\n```toml\n[tool.poetry.scripts]\ntest = \"run_tests:main\"\nspecific-test = \"run_tests:specific_test\"\n```\n\nWhich command runs the `specific_test()` function?",
+      "question_type": "mc",
+      "options": [
+        "poetry run test",
+        "poetry run specific-test",
+        "poetry run run_tests:specific_test",
+        "poetry test specific-test"
+      ],
+      "correct_answer": "B",
+      "explanation": "Poetry exposes script entry points defined under `[tool.poetry.scripts]` as runnable commands via `poetry run <script-name>`. Since `specific-test` maps to `run_tests:specific_test`, the correct invocation is `poetry run specific-test`. `poetry run test` would call `run_tests:main`, and Poetry does not run `module:function` directly as a CLI command in this context.",
+      "difficulty": "beginner",
+      "tags": [
+        "poetry",
+        "pyproject.toml",
+        "tool.poetry.scripts",
+        "entry-points",
+        "cli"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes the difference between `pip install .` and `pip install -e .`?",
+      "question_type": "mc",
+      "options": [
+        "`pip install .` creates a link to your working directory, while `pip install -e .` copies files into `site-packages`.",
+        "`pip install .` copies the package into `site-packages`, while `pip install -e .` installs a live reference to the source directory so imports use that directory.",
+        "Both commands copy the package into `site-packages`, but `-e` additionally pins the newest version from PyPI.",
+        "`pip install -e .` installs the most updated version of the package from the internet, while `pip install .` installs an older cached version."
+      ],
+      "correct_answer": "B",
+      "explanation": "`pip install .` performs a normal installation by copying package files into the environment’s `site-packages`. In contrast, `pip install -e .` (editable mode) does not copy the code; it makes the environment import the package directly from the source directory, effectively treating that directory as the installed package.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip",
+        "editable-install",
+        "site-packages",
+        "python-packaging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the context of `uv` package management, what does it mean when a package version is marked as \"yanked\" (e.g., `wandb==0.24.0`)?",
+      "question_type": "mc",
+      "options": [
+        "The version has been flagged by maintainers as problematic, but it is still installable and should be avoided if possible.",
+        "The version has been permanently removed from all package indexes and cannot be installed.",
+        "The version is the newest stable release and is recommended for production use.",
+        "The version is missing required dependencies, so `uv` will always fail to install it."
+      ],
+      "correct_answer": "A",
+      "explanation": "A yanked release is a maintainer signal that a specific version has issues (bug, security problem, accidental release). It remains installable, but tools warn you so you can choose a different version when possible.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "package-management",
+        "yanked-releases",
+        "versioning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "After running the following command, what changes should you expect in your project?\n\n```bash\nuv add requests\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It installs `requests` immediately and only updates `uv.lock`.",
+        "It adds `requests` to `pyproject.toml` under `[project.dependencies]`, updates `uv.lock`, and you then run `uv sync` to install.",
+        "It adds `requests` only to a dev dependency section and does not touch `uv.lock`.",
+        "It removes any existing `requests` entry from `pyproject.toml` and pins a new version in `uv.lock`."
+      ],
+      "correct_answer": "B",
+      "explanation": "`uv add <package>` records the dependency in `pyproject.toml` under `[project.dependencies]` and updates `uv.lock` to reflect the resolved dependency set. Installation happens when you run `uv sync` afterward.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "uv add",
+        "pyproject.toml",
+        "uv.lock",
+        "uv sync",
+        "dependencies"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You encounter an error indicating your `uv.lock` is in an inconsistent state (e.g., the same package such as `sqlglot` appears multiple times without enough source info to disambiguate). What is the safest first step to resolve this?\n\n```bash\n# choose the best first action\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Delete `uv.lock` and regenerate it with `uv lock`",
+        "B. Edit `uv.lock` manually to remove duplicate entries for the package",
+        "C. Run `uv cache clean` only (without regenerating the lock file)",
+        "D. Uninstall and reinstall Python to reset the environment"
+      ],
+      "correct_answer": "A",
+      "explanation": "The safest first step is to remove the lock file and regenerate it (`rm uv.lock` then `uv lock`). This forces uv to rebuild a consistent lock from the declared dependencies, including correct source metadata. Manually editing the lock is error-prone, cleaning cache alone doesn’t rebuild the lock, and reinstalling Python is unrelated to lock-file consistency.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "lockfile",
+        "uv.lock",
+        "dependency-resolution",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `uv run`, what does the `--active` flag do?",
+      "question_type": "mc",
+      "options": [
+        "A. Forces uv to always create a new `.venv` in the current project before running",
+        "B. Tells uv to use the currently activated virtual environment in the shell instead of managing/choosing one",
+        "C. Activates the project's `.venv` automatically in the current shell session",
+        "D. Disables use of any virtual environment and runs in the system Python environment"
+      ],
+      "correct_answer": "B",
+      "explanation": "`--active` makes `uv run` respect whatever virtual environment is already activated in your shell. Without it, uv will look for a project `.venv`, create it if missing, and use it regardless of what you have activated.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "uv-run",
+        "virtualenv",
+        "active-flag",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `uv run`, what does the `--no-sync` flag do?",
+      "question_type": "mc",
+      "options": [
+        "A. Forces `uv run` to reinstall all dependencies from scratch before running",
+        "B. Skips the automatic dependency synchronization step and runs the command immediately",
+        "C. Prevents `uv run` from reading `pyproject.toml` or `requirements.txt` entirely",
+        "D. Locks dependencies to exact versions and refuses to run if versions differ"
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, `uv run` checks dependency definitions (e.g., `pyproject.toml` or `requirements.txt`) and ensures dependencies are installed/up to date before running. The `--no-sync` flag disables that synchronization step, so the command starts immediately. It does not force reinstalls, ignore project files entirely, or perform locking behavior.",
+      "difficulty": "beginner",
+      "tags": [
+        "uv",
+        "uv-run",
+        "no-sync",
+        "dependency-sync",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following commands:\n\n```bash\npython -m venv .venv\n.venv/bin/python -c 'import os; print(os.environ.get(\"VIRTUAL_ENV\"))'\n```\n\nWhat output should you expect, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "You should expect `None` (or a blank line depending on how it’s printed), because `VIRTUAL_ENV` is not set just by creating a venv or by invoking `.venv/bin/python` directly. `VIRTUAL_ENV` is set only when you source the activation script (e.g., `source .venv/bin/activate`) in the current shell.",
+      "explanation": "Environment variables like `VIRTUAL_ENV` are inherited from the shell environment. The `venv` module creates files on disk, but it doesn’t modify your current shell’s environment. Only sourcing `activate` changes the shell environment to set `VIRTUAL_ENV`, adjust `PATH`, and update the prompt.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "venv",
+        "shell",
+        "environment-variables",
+        "PATH"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are developing a package located at `/path/to/package` and want to test changes immediately after editing the source. Which command should you run, and what is the key difference in how pip installs it compared to a normal install?\n\nAnswer in 2–4 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Run `pip install -e /path/to/package`. In editable mode, pip does not copy the package files into `site-packages`; instead it creates a link (pointer) back to the source directory. Because imports resolve to the source, changes to the code are reflected immediately without reinstalling.",
+      "explanation": "The question tests both the correct command syntax for a specific path and the conceptual mechanism: editable installs link back to the source tree rather than copying files, enabling immediate reflection of edits during development.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pip",
+        "editable-install",
+        "site-packages",
+        "development-workflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a standalone script that imports `requests` and `rich`, but you do not want to create a full project or manually install packages. Using PEP 723-style inline metadata, which snippet correctly declares these dependencies so `uv run script.py` can install them automatically?\n\n```python\n# (choose the correct header)\n\nimport requests\nfrom rich import print\n```\n",
+      "question_type": "mc",
+      "options": [
+        "# requirements: requests, rich",
+        "# /// script\n# dependencies = [\"requests\", \"rich\"]\n# ///",
+        "# pyproject.toml\n# [project]\n# dependencies = [\"requests\", \"rich\"]",
+        "# /// uv\n# install = \"requests rich\"\n# ///"
+      ],
+      "correct_answer": "B",
+      "explanation": "The source content specifies PEP 723-style inline script metadata using a `# /// script` block and a `dependencies = [...]` line. With that header present, `uv run script.py` can detect and install `requests` and `rich` automatically before executing the script.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "uv-run",
+        "pep-723",
+        "inline-metadata",
+        "dependencies"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect a package is present only because another dependency pulled it in. Which command best answers: \"Why is `requests` included in my project?\"",
+      "question_type": "mc",
+      "options": [
+        "A. `uv tree --depth 1 --package requests`",
+        "B. `uv tree --invert --package requests`",
+        "C. `uv tree --outdated --package requests`",
+        "D. `uv tree --help requests`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`--invert` reverses the tree to show the chain of dependencies that lead to a package being included (a reverse lookup). Adding `--package requests` focuses the inverted view specifically on `requests`. `--depth 1` limits depth but doesn’t explain why a transitive dependency exists, and `--outdated` is about newer versions, not inclusion reasons.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "uv-tree",
+        "invert",
+        "reverse-dependency",
+        "dependency-graph"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You add a new dependency to `pyproject.toml` but forget to update `uv.lock`. In CI, you run:\n\n```bash\nuv lock --check\n```\n\nWhat should you expect to happen, and why is this useful in CI pipelines?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The command should exit with a non-zero status code because `uv.lock` is now inconsistent with `pyproject.toml` (dependencies changed but the lock file was not regenerated). This is useful in CI because it fails the build when the committed lock file is out of date, enforcing that developers commit an up-to-date `uv.lock` so environments are reproducible.",
+      "explanation": "`uv lock --check` is explicitly designed to validate sync between `pyproject.toml` and `uv.lock` without making changes. A mismatch causes a non-zero exit code, which CI systems interpret as failure. This prevents merges where dependency definitions changed but the lock file was not updated, protecting reproducibility and avoiding “works on my machine” dependency drift.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "ci",
+        "exit-codes",
+        "reproducibility",
+        "lockfile",
+        "pyproject.toml"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate pulls your branch after you added a new dependency to `pyproject.toml`, but you forgot to commit `uv.lock`. In CI, the job runs `uv sync` and starts failing intermittently.\n\nExplain *why* omitting `uv.lock` can cause intermittent failures, and describe the correct workflow to avoid this problem.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Without `uv.lock`, `uv` must resolve dependencies from scratch each time based on `pyproject.toml`. Fresh resolution can select different versions over time (or across environments) due to newly released packages, differing resolution choices, or changes in transitive dependencies, leading to nondeterministic installs and intermittent CI failures. The correct workflow is: after updating `pyproject.toml`, run `uv lock` to regenerate `uv.lock`, run `uv sync` to verify the environment locally, then commit both `pyproject.toml` and `uv.lock` together so everyone (and CI) installs the same locked versions.",
+      "explanation": "Lock files capture the full resolved dependency graph at specific versions, making builds deterministic and reproducible. If the lock file is not committed, each install is effectively a new resolution, which can drift as upstream packages change, causing “works on my machine” and flaky CI issues. Regenerating and committing the lock file ties the code change to a known-good dependency set.",
+      "difficulty": "intermediate",
+      "tags": [
+        "deterministic-builds",
+        "ci",
+        "dependency-resolution",
+        "transitive-dependencies",
+        "uv-sync"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Scenario: Running `which modal` prints `/Users/alex/anaconda3/bin/modal`, but you intended to use the `uv`-managed `modal`. According to best practice in the provided guidance, what is the simplest fix to get `modal==1.3.0` working in the currently active conda `(base)` environment?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Run `uv pip install modal==1.3.0` so uv overrides conda’s PATH",
+        "B. Run `pip install modal==1.3.0` (without `uv`) while conda is active",
+        "C. Delete the conda installation of Python so only uv remains",
+        "D. Run `conda deactivate` and then run `pip install modal==1.3.0` into conda"
+      ],
+      "correct_answer": "B",
+      "explanation": "If `which modal` points to the conda binary, your shell is using conda’s Python/pip toolchain. Installing/upgrading via conda’s `pip` (`pip install modal==1.3.0`) updates the package that matches the binary on PATH, making it the simplest path forward. Deactivating conda changes which environment is active; it does not install into conda. Deleting conda is unnecessary and risky. Using `uv` does not automatically override the already-selected conda binary on PATH.",
+      "difficulty": "intermediate",
+      "tags": [
+        "conda",
+        "pip",
+        "uv",
+        "version-pinning",
+        "path",
+        "multiple-installs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You installed `pre-commit` with Homebrew and now `python3 --version` shows a Homebrew Python (e.g., 3.13) instead of the one you expected. Which change most directly explains why Homebrew’s `python3` is being used by default?\n",
+      "question_type": "mc",
+      "options": [
+        "Homebrew replaced `/usr/bin/python3` with a symlink to its own Python.",
+        "Your PATH has `/opt/homebrew/bin` or `/usr/local/bin` earlier than `/usr/bin`, so the shell finds Homebrew’s `python3` first.",
+        "macOS automatically removes non-Apple Python installations after a reboot.",
+        "Installing `pre-commit` via Homebrew disables `pyenv` and `conda` permanently."
+      ],
+      "correct_answer": "B",
+      "explanation": "Shell command resolution typically follows PATH order: the first matching executable wins. Homebrew places shims/binaries in `/opt/homebrew/bin` (Apple Silicon) or `/usr/local/bin` (Intel). If that directory appears before `/usr/bin` in PATH, `python3` will resolve to Homebrew’s Python without any need to modify system files.",
+      "difficulty": "intermediate",
+      "tags": [
+        "path",
+        "shell",
+        "homebrew",
+        "python3",
+        "macos",
+        "command-resolution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to programmatically check whether a Python virtual environment is active in your current shell session, and if so, get its location. Which command best fits this purpose?\n\n```bash\n# choose one\n...\n```",
+      "question_type": "mc",
+      "options": [
+        "A. `echo $VIRTUAL_ENV`",
+        "B. `echo $PATH`",
+        "C. `pwd`",
+        "D. `python --version`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`VIRTUAL_ENV` is typically set by virtual environment activation scripts. `echo $VIRTUAL_ENV` prints the full path to the active virtual environment, and prints nothing (empty output) when no virtual environment is active. The other commands may change or be informative, but they do not directly and reliably indicate the active venv path.",
+      "difficulty": "intermediate",
+      "tags": [
+        "VIRTUAL_ENV",
+        "environment-variables",
+        "shell",
+        "virtualenv"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have the following constraints implied by your dependency graph:\n\n- Package A requires `foo>=2.0`\n- Package B requires `foo<2.0`\n\nWhat is the expected outcome when running `uv lock`, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`uv lock` should fail dependency resolution because the constraints on `foo` are mutually incompatible. There is no version of `foo` that can satisfy both `>=2.0` and `<2.0` simultaneously, so the constraint satisfaction problem has no solution.",
+      "explanation": "During the “resolve the dependency graph” phase, `uv lock` tries to find a set of package versions that satisfies all direct and transitive constraints. Conflicting constraints like `foo>=2.0` and `foo<2.0` create an unsatisfiable set, so resolution fails rather than producing a lock file with inconsistent pins.",
+      "difficulty": "intermediate",
+      "tags": [
+        "constraints",
+        "conflict-resolution",
+        "transitive-dependencies",
+        "dependency-graph",
+        "uv-lock"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a monorepo with a workspace root at `/repo` and two member packages under `/repo/packages/a` and `/repo/packages/b`. The root `pyproject.toml` contains `[tool.uv.workspace]` listing both members, and there is a single `/repo/uv.lock`.\n\nIf you run `uv lock --check` from `/repo/packages/a`, which lock file and configuration does `uv` validate against?\n",
+      "question_type": "mc",
+      "options": [
+        "It validates against `/repo/packages/a/uv.lock` and `/repo/packages/a/pyproject.toml` only.",
+        "It validates against the workspace root lock file `/repo/uv.lock` and the workspace root `pyproject.toml` configuration.",
+        "It validates against whichever `pyproject.toml` is closest to the current directory, but always uses `/repo/uv.lock`.",
+        "It refuses to run unless you pass `--directory /repo` explicitly."
+      ],
+      "correct_answer": "B",
+      "explanation": "In a workspace setup, the root `pyproject.toml` defines the workspace members and a single `uv.lock` at the workspace root covers all member packages. Running `uv lock --check` from anywhere in the workspace validates against the root lock file (and thus the workspace root configuration).",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "workspace",
+        "monorepo",
+        "uv.lock",
+        "uv-lock-check",
+        "tool.uv.workspace"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You installed Terraform via the manual binary method (downloaded a `.zip`, unzipped it) and now `terraform -version` returns: `zsh: command not found: terraform`.\n\nUsing the process described, what is the most likely missing step and what command would you run to fix it?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The Terraform binary was not moved into a directory on the user's `$PATH`. Move it into a common PATH location such as `/usr/local/bin`:\n\n```bash\nsudo mv terraform /usr/local/bin/\n```\n\nThen verify with:\n\n```bash\nterraform -version\n```",
+      "explanation": "With a manual install, unzipping only produces the `terraform` executable in the current folder. The shell can only find commands that are in directories listed in `$PATH`. Moving the binary to `/usr/local/bin/` (a typical PATH directory on macOS) makes `terraform` invokable from anywhere.",
+      "difficulty": "intermediate",
+      "tags": [
+        "terraform",
+        "manual-install",
+        "binary-install",
+        "path",
+        "macos",
+        "shell"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a project directory to automatically use a specific pyenv virtual environment whenever you `cd` into it.\n\n1) What command should you run inside the project directory?\n2) What file does this create, and what is its purpose?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Run `pyenv local myenv` inside the project directory.\n2) This creates a `.python-version` file in that directory. Its purpose is to tell pyenv which Python version or virtualenv to automatically select when you are in that directory, so the environment activates implicitly based on directory context.",
+      "explanation": "`pyenv local <name>` writes the chosen version/virtualenv name into `.python-version`. pyenv reads this file when determining which Python to use in the current directory, enabling per-project isolation without manually activating each time.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pyenv",
+        "pyenv-local",
+        ".python-version",
+        "project-isolation",
+        "shell-integration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You see this `justfile` recipe failing to parse:\n\n```just\ncreate-cue-questions input=\"seed_questions.jsonl\" output=\"output.jsonl\" num_questions=2 num_rounds=2:\n  echo \"running\"\n```\n\nRewrite only the recipe signature line (the first line) so it uses valid default parameter value syntax while keeping the same defaults.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```just\ncreate-cue-questions input=\"seed_questions.jsonl\" output=\"output.jsonl\" num_questions=\"2\" num_rounds=\"2\":\n```",
+      "explanation": "The parse error occurs because `2` is a bare integer used as a default parameter value. In justfiles, default parameter values must be quoted strings, so both numeric defaults must be written as strings: `\"2\"`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "just",
+        "justfile",
+        "recipe-signature",
+        "default-parameters",
+        "quoting",
+        "syntax"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building a library `mylib` and an application `myapp` that depends on it. You want `myapp` to use your local in-progress `mylib` code while you edit it, without reinstalling `mylib` after every change.\n\nWhich workflow best matches this goal?\n\n```bash\n# from mylib/\npip install -e .\n\n# from myapp/\npytest\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `pip install .` in `mylib` after every code change so `site-packages` is updated each time",
+        "B. Use `pip install -e .` in `mylib` once, then edit `mylib` and rerun `myapp` tests as needed",
+        "C. Avoid installing `mylib` entirely; copy its `.py` files into `myapp` before each test run",
+        "D. Use `pip uninstall mylib` before each test run to ensure `myapp` imports the local version"
+      ],
+      "correct_answer": "B",
+      "explanation": "Editable mode is intended for exactly this: developing a library while another project depends on it. Installing `mylib` in editable mode links the importable package to your working directory so edits take effect immediately, eliminating the need to rerun `pip install .` after each change.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pip",
+        "editable-install",
+        "monorepo",
+        "dependency-development",
+        "testing-workflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a project using a `src/` layout:\n\n```text\nrepo/\n  pyproject.toml\n  src/\n    mypkg/\n      __init__.py\n      core.py\n  tests/\n    test_core.py\n```\n\nIn VS Code, `from mypkg.core import ...` shows as an unresolved import (red squiggles), even though running tests in the activated virtual environment works only after you install the project.\n\nWhich action is the most direct, environment-based fix that often makes IDE resolution and tooling (autocomplete, go-to-definition) work without adding IDE-specific path settings?",
+      "question_type": "mc",
+      "options": [
+        "A. Run `pip install -e .` in the project root using the same interpreter the IDE is configured to use",
+        "B. Rename `src/` to `source/` so the IDE can autodetect the package directory",
+        "C. Add `__init__.py` to the `tests/` folder so the IDE recognizes it as a package",
+        "D. Run `python -m compileall src/` to generate `.pyc` files for indexing"
+      ],
+      "correct_answer": "A",
+      "explanation": "With a `src/` layout, some IDEs may not infer the import root correctly. An editable install (`pip install -e .`) makes `mypkg` an installed distribution in the selected environment, so the IDE can resolve `import mypkg` the same way Python does at runtime, without IDE-specific path tweaks. Renaming folders or compiling bytecode does not address import resolution, and making `tests/` a package is unrelated to resolving `mypkg` from `src/`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "src-layout",
+        "pip",
+        "editable-install",
+        "vscode",
+        "pylance",
+        "import-resolution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You plan to install a specific version of a library, but want to avoid a failed install due to a typo or non-existent version. Describe a safe workflow using pip commands to (1) verify the version exists on PyPI and (2) install it. Include the exact command forms.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Verify the version exists by listing published versions: `pip index versions <package-name>` and check that `<version>` appears in the output.\n2) Install the exact version: `pip install <package-name>==<version>`.",
+      "explanation": "Listing versions first prevents surprises by confirming the target version is actually published. Then pinning with `==` ensures pip installs exactly that release rather than upgrading/downgrading to a different one.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pip",
+        "version-pinning",
+        "pip-install",
+        "pip-index-versions",
+        "reproducibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to be able to run your test runner via `poetry run run-tests` instead of `poetry run python run_tests.py`. Given that `run_tests.py` contains a function `main()`, which `pyproject.toml` snippet correctly defines this command?\n",
+      "question_type": "mc",
+      "options": [
+        "A. \n```toml\n[tool.poetry.scripts]\nrun-tests = \"python run_tests.py\"\n```",
+        "B. \n```toml\n[tool.poetry.scripts]\nrun-tests = \"run_tests.py\"\n```",
+        "C. \n```toml\n[tool.poetry.scripts]\nrun-tests = \"run_tests:main\"\n```",
+        "D. \n```toml\n[tool.poetry.scripts]\nrun-tests = \"run_tests/main\"\n```"
+      ],
+      "correct_answer": "C",
+      "explanation": "Poetry scripts map a command name to a Python import path in the form `module:function`. If the file is `run_tests.py` and it defines `main()`, the correct entry point is `run_tests:main`. Then `poetry run run-tests` will import `run_tests` and call `main()`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "poetry",
+        "pyproject-toml",
+        "tool-poetry-scripts",
+        "entry-points",
+        "python-modules"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to verify which packages are installed *only as development dependencies* (i.e., those declared under dev dependencies in `pyproject.toml`). Which command should you run?",
+      "question_type": "mc",
+      "options": [
+        "poetry show --tree",
+        "poetry show --dev",
+        "poetry show --no-dev",
+        "poetry run pip list"
+      ],
+      "correct_answer": "B",
+      "explanation": "`poetry show --dev` filters the output to development dependencies. `--no-dev` does the opposite (excludes dev dependencies). `--tree` shows a dependency hierarchy (not specifically dev-only), and `poetry run pip list` lists everything installed in the environment without distinguishing dev vs non-dev from `pyproject.toml`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "poetry",
+        "dev-dependencies",
+        "pyproject-toml",
+        "dependency-filtering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to add a Poetry script that runs a new function `smoke()` from `run_tests.py`. Write the `pyproject.toml` entry and the command you would run to execute it. Assume `run_tests.py` is at the project root and contains a `def smoke(): ...` function.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "In `pyproject.toml`:\n\n```toml\n[tool.poetry.scripts]\nsmoke-test = \"run_tests:smoke\"\n```\n\nCommand:\n\n```bash\npoetry run smoke-test\n```",
+      "explanation": "Under `[tool.poetry.scripts]`, each key becomes the command name used with `poetry run`, and the value is an entry point in the form `module:function`. Mapping `smoke-test` to `run_tests:smoke` makes `poetry run smoke-test` call `smoke()` from `run_tests.py`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "poetry",
+        "pyproject.toml",
+        "tool.poetry.scripts",
+        "entry-points",
+        "test-runner"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are developing a package `mypkg` and run the following:\n\n```bash\ncd /path/to/mypkg\npip install -e .\n```\n\nLater, you edit the source file `/path/to/mypkg/mypkg/core.py` and delete a function that other code imports. Without reinstalling, you run a Python process that imports `mypkg`. What behavior should you expect, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "You should expect the import/use of `mypkg` to reflect the current contents of `/path/to/mypkg` immediately (including failures). Because `pip install -e .` installs an editable “live link” to the source directory rather than copying files into `site-packages`, Python imports directly from that directory. If you deleted a function, the import or subsequent attribute access will fail accordingly (e.g., ImportError or AttributeError), since the installed package is whatever is currently in the source tree.",
+      "explanation": "Editable installs do not guarantee a “most updated version” from a registry; they simply point the environment at a directory. The runtime uses whatever code exists there at import time, for better or worse—so breaking changes in the working tree immediately affect imports.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pip",
+        "editable-install",
+        "python-import-system",
+        "development-workflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You see a warning that `wandb==0.24.0` is yanked, but your environment still installs and runs. Which `uv` command best addresses the warning by moving to a non-yanked stable version?\n\n```bash\n# choose the best command\n```\n",
+      "question_type": "mc",
+      "options": [
+        "uv remove wandb",
+        "uv add --upgrade wandb",
+        "uv add wandb==0.24.0",
+        "uv lock --frozen"
+      ],
+      "correct_answer": "B",
+      "explanation": "`uv add --upgrade wandb` upgrades the dependency to the latest stable version that is not yanked (when available). The other commands either remove the package, pin the yanked version again, or enforce existing locked versions without upgrading.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "upgrade",
+        "dependency-management",
+        "yanked-releases",
+        "cli"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to ensure your project uses exactly version 2.31.0 of `requests`. Which command should you run?\n\nAssume you are using `uv` and managing dependencies via `pyproject.toml`.\n",
+      "question_type": "mc",
+      "options": [
+        "uv add requests@2.31.0",
+        "uv add requests=2.31.0",
+        "uv add requests==2.31.0",
+        "uv add --pin requests 2.31.0"
+      ],
+      "correct_answer": "C",
+      "explanation": "The documented version pinning syntax is `uv add requests==2.31.0`, which adds a requirement pinned to that exact version and updates the lockfile accordingly.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "version pinning",
+        "uv add",
+        "dependencies",
+        "requests"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "After regenerating the lock file, the same inconsistency error persists. Which command sequence most directly addresses the possibility of stale/corrupted cached artifacts influencing resolution?\n\n```bash\n# pick the best sequence\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `uv lock` then `uv cache clean`",
+        "B. `rm uv.lock; uv cache clean; uv lock`",
+        "C. `pip install --upgrade pip; uv lock`",
+        "D. `rm -rf .venv; uv lock`"
+      ],
+      "correct_answer": "B",
+      "explanation": "If simply regenerating `uv.lock` doesn’t work, cleaning uv’s cache and then regenerating is the recommended next step: remove the potentially broken lock file, clear cached data (`uv cache clean`), then rerun `uv lock`. Cleaning after locking (A) doesn’t help the failed lock attempt, upgrading pip (C) is not targeted, and deleting a virtualenv (D) doesn’t directly address uv’s cache or the lock’s inconsistent metadata.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "uv cache clean",
+        "lockfile-regeneration",
+        "cache",
+        "package-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are in a project directory that already contains a `.venv`. You also manually activated a different environment before running commands:\n\n```bash\nsource ~/venvs/other/bin/activate\nuv run python -c \"import sys; print(sys.prefix)\"\n```\n\nWhich environment will `uv run` use by default, and how would you change it to use the currently activated environment?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "By default (without `--active`), `uv run` will use the project's `.venv` (creating it if needed) regardless of the currently activated `~/venvs/other`. To force it to use the currently activated environment, run `uv run --active ...` (e.g., `uv run --active python -c ...`).",
+      "explanation": "The default behavior of `uv run` is to prefer a project-local `.venv` and use it even if another venv is activated. The `--active` flag switches behavior to respect the shell’s active venv, which is useful when you explicitly manage activation yourself.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "uv-run",
+        "venv-selection",
+        "shell-activation",
+        "workflow-integration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are iterating on a script and running it repeatedly:\n\n```bash\nuv run app.py\nuv run app.py\nuv run app.py\n```\n\nEach run has a small delay before execution. You are confident dependencies are already installed and unchanged. What command best reduces the repeated overhead, and what tradeoff does it introduce?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `uv run --no-sync app.py` to skip the dependency synchronization step on each run. The tradeoff is that if dependencies are missing or out of date, `uv` will not install/update them and the script may fail at runtime (e.g., with an `ImportError`).",
+      "explanation": "`uv run` normally syncs dependencies before executing, which adds a small delay. `--no-sync` removes that check, improving iteration speed. However, you lose the safety net: dependency issues surface as runtime errors instead of being automatically resolved before execution.",
+      "difficulty": "intermediate",
+      "tags": [
+        "uv",
+        "uv-run",
+        "no-sync",
+        "developer-workflow",
+        "iteration-speed",
+        "importerror"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

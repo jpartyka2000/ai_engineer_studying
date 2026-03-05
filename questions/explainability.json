@@ -1,0 +1,1917 @@
+{
+  "metadata": {
+    "subject_slug": "explainability",
+    "subject_name": "ML Explainability",
+    "exported_at": "2026-03-05T20:01:47.021725",
+    "question_count": 93,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Consider a binary `LogisticRegression` model trained on features with strong correlations (e.g., two highly collinear measurements). You want SHAP explanations that respect the joint distribution of inputs.\n\nWhich approach is most appropriate, and what is the main computational trade-off?\n\nA. Use `feature_dependence=\"independent\"` because it is always correct; trade-off is slower runtime due to sampling.\nB. Use `feature_dependence=\"correlation_dependent\"`; trade-off is estimating and inverting the background covariance matrix (can be expensive/unstable for large p).\nC. Use `KernelExplainer` with a very small background set; trade-off is exact Shapley values but higher memory usage.\nD. Use `data_in_log_space=True` to account for correlation; trade-off is that SHAP values are returned in probability space instead of log-odds.",
+      "question_type": "mc",
+      "options": [
+        "A. Use `feature_dependence=\"independent\"` because it is always correct; trade-off is slower runtime due to sampling.",
+        "B. Use `feature_dependence=\"correlation_dependent\"`; trade-off is estimating and inverting the background covariance matrix (can be expensive/unstable for large p).",
+        "C. Use `KernelExplainer` with a very small background set; trade-off is exact Shapley values but higher memory usage.",
+        "D. Use `data_in_log_space=True` to account for correlation; trade-off is that SHAP values are returned in probability space instead of log-odds."
+      ],
+      "correct_answer": "B",
+      "explanation": "When features are correlated, `feature_dependence=\"independent\"` can misattribute credit because it treats changing one feature while holding others fixed as plausible even when the data distribution does not support that. `correlation_dependent` adjusts attributions using the background mean and covariance (a closed-form that respects correlations). The key cost is computing a reliable covariance matrix and (explicitly or implicitly) its inverse; this can be \\(O(p^3)\\) and numerically challenging when p is large or the covariance is ill-conditioned (e.g., strong collinearity). Options C and D misunderstand: `KernelExplainer` is generally approximate (sampling-based), and `data_in_log_space` concerns output scale (log-odds vs probabilities), not feature correlation.",
+      "difficulty": "advanced",
+      "tags": [
+        "logistic-regression",
+        "feature-correlation",
+        "correlation_dependent",
+        "covariance-matrix",
+        "numerical-stability",
+        "log-odds"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the dependency plot call in the example:\n\n```python\nshap.dependence_plot((0, 1), shap_interaction_values, X_test, feature_names=feature_names)\n```\n\nExplain what this plot is intended to show and how you would use it to determine whether `Feature_1` and `Feature_2` interact in the model. Your answer should mention (1) what is on the axes, and (2) what visual pattern would indicate a meaningful interaction.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The plot is intended to visualize how the effect of Feature_1 on the model output depends on Feature_2 using SHAP interaction values. Typically, the x-axis is the value of the primary feature (Feature_1, index 0), and the y-axis is the SHAP interaction contribution for the pair (Feature_1, Feature_2) (i.e., the interaction component rather than the total SHAP value). Points are colored by the interacting feature’s value (Feature_2, index 1). A meaningful interaction is suggested when the SHAP interaction contribution changes systematically with Feature_2—for example, the scatter separates into different bands/curves by color, or shows a clear gradient where high Feature_2 values correspond to consistently higher (or lower) interaction contributions at the same Feature_1 value. If there is little interaction, the y-values will be near zero and show no structured color-dependent pattern.",
+      "explanation": "A dependence plot for interactions is meant to reveal conditional effects: whether the contribution associated with Feature_1 depends on Feature_2. The key diagnostic is *structure tied to the color feature*: if at the same x-value, points with different colors (different Feature_2 values) have systematically different y-values, that indicates the model is using the two features together (interaction) rather than purely additively.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "dependence-plot",
+        "feature-interactions",
+        "visual-diagnostics",
+        "model-interpretability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are using SHAP with KernelExplainer on a large dataset (200k rows) and the computation is too slow. You decide to use a smaller background dataset.\n\n(a) Explain *why* reducing the background dataset size can speed up KernelExplainer.\n(b) Describe the main accuracy/faithfulness risk introduced by using too small of a background dataset.\n(c) Propose a practical strategy for choosing a background dataset that balances speed and representativeness (e.g., sampling or clustering), and explain why it helps.\n(d) Briefly contrast this with TreeExplainer on tree-based models: what role does the background dataset play there with respect to speed vs. defining a reference distribution?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) KernelExplainer estimates SHAP values by approximating expectations over a background (reference) feature distribution and repeatedly evaluating the model on perturbed samples anchored to that background. Fewer background points means fewer model evaluations and a smaller expectation-estimation workload, so runtime drops.\n\n(b) If the background dataset is too small or not representative, the estimated expectations (and thus SHAP values) can be biased/high-variance. Explanations may reflect the idiosyncrasies of the chosen background rather than the true data distribution, leading to misleading attributions.\n\n(c) Strategy: choose a small but representative set, e.g., (i) stratified sampling across key segments/classes, or (ii) k-means clustering on the training data and use cluster centroids (or a few points per cluster) as background. This preserves coverage of the feature distribution while keeping the background size small, improving the speed–accuracy trade-off.\n\n(d) For TreeExplainer, computation leverages tree structure and is already highly optimized (often exact), so shrinking the background dataset usually provides limited speed benefit. The background is more about defining the baseline/reference distribution (what ‘missing’ or ‘unknown’ features are integrated over) rather than being required to make the algorithm fast.",
+      "explanation": "A strong answer ties KernelExplainer’s cost to expectation estimation over the background distribution (more background points → more model evaluations) and identifies the core trade-off: speed vs representativeness/approximation quality. It also proposes a concrete selection method (e.g., stratified sampling or clustering/centroids) that improves representativeness per background point. Finally, it distinguishes TreeExplainer’s model-specific efficiency from KernelExplainer’s sampling dependence, noting that background in TreeExplainer is primarily about the reference distribution rather than a primary runtime lever.",
+      "difficulty": "advanced",
+      "tags": [
+        "kernel-explainer",
+        "background-selection",
+        "approximation-error",
+        "representativeness",
+        "kmeans",
+        "stratified-sampling",
+        "tree-explainer",
+        "baseline-reference"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to generate a matrix of LIME explanations for many instances so you can feed it into downstream NumPy-based analysis. Write a function that:\n\n- Takes `explainer`, `predict_proba_fn`, `X` (2D NumPy array), and `feature_names`.\n- For each row in `X`, calls `explainer.explain_instance(row, predict_proba_fn)`.\n- Converts each explanation into a 1D NumPy array aligned to `feature_names` with 0 for missing features.\n- Returns a 2D NumPy array of shape `(n_samples, n_features)`.\n\nYou may assume the explanation uses the same feature naming scheme as `feature_names`.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef lime_explanations_to_matrix(explainer, predict_proba_fn, X, feature_names):\n    n_samples = X.shape[0]\n    n_features = len(feature_names)\n    M = np.zeros((n_samples, n_features), dtype=float)\n\n    for i in range(n_samples):\n        exp = explainer.explain_instance(X[i], predict_proba_fn)\n        importance_dict = dict(exp.as_list())\n        M[i, :] = np.array([importance_dict.get(f, 0.0) for f in feature_names], dtype=float)\n\n    return M\n```",
+      "explanation": "A correct solution must (1) call `explain_instance` per sample to obtain local explanations, (2) extract weights via `as_list()` (feature, weight pairs), (3) align weights to the full `feature_names` order, and (4) insert 0 for any feature not present in the explanation. Preallocating the output matrix to `(n_samples, n_features)` ensures the returned result is a NumPy matrix suitable for downstream analysis.",
+      "difficulty": "advanced",
+      "tags": [
+        "lime",
+        "batch-processing",
+        "numpy-matrix",
+        "local-explanations",
+        "feature-ordering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A stakeholder says: \"The x-axis in the SHAP summary plot should be labeled 'CLV ($)' because those are the predicted CLV values.\" Write a short response correcting them. Your response must:\n1) State what the x-axis actually represents.\n2) Mention the role of the baseline/expected value.\n3) Propose an improved axis label.\n\nKeep it to 3–5 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The x-axis in a SHAP summary plot shows SHAP values: how much each feature pushes the model prediction up or down, not the final predicted CLV itself. These values are measured relative to the baseline (the expected value of the model output). Because the model output is in dollars, the contributions are also in dollars. A clearer label would be \"SHAP Value ($)\", \"Impact on CLV ($)\", or \"Change in CLV ($)\".",
+      "explanation": "A correct answer distinguishes SHAP contributions from predictions, explains that contributions are relative to the expected value (baseline), and proposes a label that communicates 'change/impact' rather than 'final value'. This tests conceptual understanding of SHAP units and the meaning of the summary plot axis.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "explainability-communication",
+        "baseline",
+        "expected-value",
+        "clv",
+        "data-visualization",
+        "axis-labeling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following two SHAP setups:\n\n```python\n# Setup 1\nexplainer1 = shap.TreeExplainer(tree_model)\nsv1 = explainer1.shap_values(X_eval)\n\n# Setup 2\nexplainer2 = shap.KernelExplainer(predict_fn, background_X)\nsv2 = explainer2.shap_values(X_eval)\n```\n\nWhich statement best explains why `background_X` appears in Setup 2 but not in Setup 1, and why neither setup passes `y_eval` to `shap_values()`?",
+      "question_type": "mc",
+      "options": [
+        "A. KernelExplainer needs a background feature dataset to estimate expected predictions via sampling, while TreeExplainer can compute SHAP values exactly from the tree structure; targets y are not needed because SHAP explains the model output given X.",
+        "B. TreeExplainer implicitly uses y_eval to compute leaf contributions, while KernelExplainer requires y_eval explicitly as background_X.",
+        "C. background_X is required only to provide feature names, and y_eval is omitted because SHAP cannot handle supervised learning targets.",
+        "D. KernelExplainer uses y_eval to build the baseline distribution, but TreeExplainer uses X_eval as the baseline so it does not need background_X."
+      ],
+      "correct_answer": "A",
+      "explanation": "TreeExplainer exploits tree internals to compute SHAP values efficiently (often exactly) without needing a separate reference dataset. KernelExplainer is model-agnostic and approximates Shapley values using sampling; it needs a background feature distribution (background_X) to approximate the expected model output used as a baseline. In both cases, the targets y are not passed to `shap_values()` because SHAP values attribute the model’s prediction (a function of X) rather than compare to ground-truth labels.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "treeexplainer",
+        "kernelexplainer",
+        "background_dataset",
+        "sampling",
+        "expected_value",
+        "baseline"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a procedure to assess whether bootstrapping is making SHAP predictor influence charts \"less reliable\" for an ExtraTreesClassifier.\n\nYour answer must:\n1) Distinguish between \"unreliable\" and \"reflecting model uncertainty\".\n2) Include a concrete method to quantify stability across random seeds.\n3) Propose at least two mitigation strategies (one may be disabling bootstrap, but at least one must keep bootstrap enabled).\n\nYou may include pseudocode or a short code sketch.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer will say that variability in SHAP under bootstrap is not automatically unreliability; it can reflect epistemic uncertainty due to limited/noisy data and sensitivity of tree structure. It will propose fitting multiple models with different random seeds (and fixed hyperparameters) and computing SHAP values per model, then quantifying stability (e.g., rank correlation of mean(|SHAP|) feature importances across runs, coefficient of variation for each feature’s mean(|SHAP|), confidence intervals via bootstrap over runs, or overlap of top-k features). It will include mitigations such as increasing n_estimators (e.g., 300–500) to average out variability, SHAP bagging (averaging SHAP values across multiple seeded models), and/or increasing dataset size/using cross-validation. It may also mention disabling bootstrap (bootstrap=False) if deterministic stability is required, and ensuring enough trees and consistent preprocessing. A code sketch might loop over seeds, fit model, compute TreeExplainer SHAP, aggregate per-feature mean(|SHAP|), then compute stability metrics and plot distributions.",
+      "explanation": "This question tests understanding that (1) bootstrap-induced SHAP variability arises from changes in tree structure and split usage, (2) stability can be empirically measured rather than guessed, and (3) mitigations target variance reduction either by averaging (more trees, SHAP bagging) or by removing the source of sampling variability (bootstrap=False). Quantifying stability (rank correlation, CIs, top-k overlap) directly addresses the \"reliability\" claim and separates expected uncertainty from pathological instability.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "model-uncertainty",
+        "bootstrap",
+        "stability-metrics",
+        "bagging",
+        "extratrees",
+        "reproducibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Design an explainability workflow for a model under active development that balances (1) debugging during early iterations and (2) communicating generalizable behavior to stakeholders. Your answer must:\n- Specify which dataset(s) you would generate SHAP plots on at each stage (e.g., training, validation, test/holdout)\n- Justify each choice in terms of overfitting artifacts, bias reduction, and generalization insight\n- Include at least one concrete check you would perform when train and test explanations disagree",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong workflow uses training data SHAP early for diagnosis/debugging (to see whether the model is learning expected relationships and to guide feature engineering), then shifts to validation/test/holdout SHAP for confirming generalizable behavior and for stakeholder communication. Justification: training explanations can reflect memorization or idiosyncrasies; using unseen data reduces bias in interpretation and provides realistic generalization insight. When train/test explanations disagree, perform checks such as: (a) compare feature distributions between splits (shift), (b) investigate leakage/proxy features, (c) evaluate performance gap (train vs test), (d) run cross-validation SHAP consistency checks, and (e) test stability by retraining with different seeds or regularization and observing whether SHAP patterns persist on holdout data.",
+      "explanation": "This answer is correct because it explicitly separates two valid uses of explainability: (1) training-set explanations as a development-time diagnostic tool, and (2) holdout-set explanations as the primary evidence of how the model will behave on unseen data. It ties each dataset choice to the core reasons in the source content: avoiding overfitting artifacts, reducing bias, and gaining generalization insight. It also includes a concrete, actionable plan for resolving discrepancies between training and test explanations rather than assuming either is automatically correct.",
+      "difficulty": "advanced",
+      "tags": [
+        "explainability-workflow",
+        "shap",
+        "train-test-split",
+        "generalization",
+        "bias-reduction",
+        "overfitting",
+        "stakeholder-communication"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a model with strong dependence between two features (e.g., `x1` and `x2` are highly correlated) and strong interaction effects. You plot a PDP for `x1` and observe a smooth monotonic increase, but many individual ICE curves for `x1` vary widely and even cross.\n\n(a) Explain why the PDP can be misleading in this situation.\n(b) Name one alternative plot/technique that addresses the issue and briefly explain how it helps.\n\nYour answer should reference interactions and the averaging/marginalization behavior of PDPs.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) The PDP averages predictions over the joint distribution of the other features, effectively marginalizing over `x2` and any interactions. With strong correlation and interactions, this averaging can combine unrealistic or unrepresentative feature combinations and wash out heterogeneous effects, producing a smooth trend that does not reflect individual behavior (as seen in diverse/crossing ICE curves).\n(b) An ALE plot is a good alternative because it estimates local effects conditional on the observed feature distribution, reducing bias from correlated features and better reflecting interaction-driven behavior. Alternatively, SHAP (including SHAP interaction values) can quantify feature contributions and interactions without relying on the same marginal averaging assumption as PDPs.",
+      "explanation": "Crossing ICE curves indicate heterogeneity: the effect of `x1` depends on other features (interaction) and/or differs across instances. PDPs collapse this into a single average curve by marginalizing over other features, which can hide or distort interaction effects—especially when features are correlated. ALE mitigates correlation-related artifacts by accumulating local differences in regions supported by the data, and SHAP can provide interaction-aware attributions.",
+      "difficulty": "advanced",
+      "tags": [
+        "pdp-limitations",
+        "ice",
+        "ale",
+        "feature-correlation",
+        "feature-interactions",
+        "global-vs-local"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are using SHAP in a high-stakes setting (e.g., lending). Occasionally you observe significant additivity gaps when using an approximate explainer (e.g., KernelExplainer):\n\nadditivity_gap = |(expected_value + sum(shap_values)) - prediction|\n\nAnswer the following:\n1) Why can this gap occur in practice even though additivity is a core SHAP property?\n2) Provide at least three concrete actions you would take to diagnose and reduce the gap.\n3) Explain why periodically verifying additivity is a useful diagnostic, even if you do not check it for every instance.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) In theory, Shapley values satisfy additivity/local accuracy, but in practice approximate algorithms (e.g., sampling-based KernelExplainer) estimate SHAP values with finite samples and numerical approximations, leading to estimation error so expected_value + Σφ may not exactly equal f(x). Significant gaps can also indicate misconfiguration (too few samples, inappropriate background dataset, convergence issues) or implementation/numerical problems.\n\n2) Actions (any three or more, with rationale):\n- Increase the number of samples / nsamples to reduce Monte Carlo variance and improve the SHAP estimate.\n- Use a more exact explainer when applicable (e.g., TreeExplainer for tree models) to enforce strict additivity.\n- Review and improve the background (reference) dataset: ensure it is representative and sufficiently large; poor baselines can increase instability.\n- Check whether you are explaining the correct output (e.g., probability vs log-odds) and keep the link/transform consistent between prediction and SHAP computation.\n- Run repeated explanations with different random seeds to quantify variance; large variance suggests insufficient sampling.\n- Inspect for numerical issues (very large/small values, ill-conditioned models) and consider regularization or stable computation settings.\n\n3) Periodic additivity checks act as a sanity test that the explainer is behaving as expected. If gaps drift upward over time (due to data drift, changed background set, altered explainer parameters, or model updates), explanations may become unreliable. In high-stakes use, this diagnostic helps detect when approximation error is no longer ‘small’ and prompts corrective action before explanations are used for decisions or audits.",
+      "explanation": "This answer connects the theoretical guarantee (additivity for true Shapley values) with practical realities (approximation and numerical error), then proposes concrete mitigation steps that directly target common causes: sampling variance, mismatch between explained output and SHAP space, and poor reference distribution. Finally, it justifies additivity checks as an ongoing reliability diagnostic rather than a one-time property.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "additivity",
+        "high-stakes-ml",
+        "kernel-explainer",
+        "sampling",
+        "background-dataset",
+        "model-output-link",
+        "explanation-reliability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team uses LIME explanations from 200 randomly chosen instances to claim they have learned the model’s *global* feature importance.\n\nExplain why this conclusion can be misleading, and propose one more appropriate approach (or artifact) for obtaining a global view. Your answer should explicitly reference how LIME generates explanations (perturbations + local surrogate) and why model behavior can vary across regions.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "It can be misleading because LIME produces local explanations by perturbing samples near each specific instance and fitting a simple surrogate that is only faithful in that neighborhood. Aggregating many local surrogates does not necessarily recover a coherent global rule: the black-box model may use different decision boundaries/feature interactions in different regions, so a feature that is locally important for some instances may be irrelevant elsewhere (and vice versa). A more appropriate global approach is to use a method designed for global summaries, such as SHAP summary plots (global distribution of attributions) or model-specific global feature importance (e.g., tree-based feature importance) to characterize overall feature influence across the dataset.",
+      "explanation": "The key issue is scope: LIME’s surrogate is trained on perturbed points around an instance, so its fidelity is local by construction. When the true model is non-linear or heterogeneous across the input space, stitching together local linear approximations can yield an unstable or biased picture of global importance. Global methods summarize behavior across the dataset and are intended to represent overall influence rather than neighborhood-specific effects.",
+      "difficulty": "advanced",
+      "tags": [
+        "lime",
+        "global-vs-local",
+        "shap",
+        "feature-importance",
+        "surrogate-models"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a model \\(f\\) with \\(M\\) features and want the SHAP value \\(\\phi_j(x)\\) for feature \\(j\\) on a single instance \\(x\\).\n\n1) Using the Shapley-value definition, explain what the terms \\(f_S(x_S)\\) and \\(f_{S\\cup\\{j\\}}(x_{S\\cup\\{j\\}})\\) represent in the context of “missing” features.\n\n2) Explain the role of the combinatorial weight\n\\(\\frac{|S|!\\,(M-|S|-1)!}{M!}\\) in the sum.\n\n3) Why is brute-force computation over all subsets usually infeasible, and how does TreeSHAP improve the computational cost for tree ensembles (state the complexity in terms of \\(T\\) and \\(D\\))?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) f_S(x_S) is the model’s expected output when only the features in subset S are known/fixed to their values from x, and all other features are treated as “missing” and marginalized out (integrated/averaged over their distribution). f_{S∪{j}}(x_{S∪{j}}) is the corresponding expected output when you also reveal feature j in addition to S.\n\n2) The weight |S|!(M−|S|−1)!/M! makes the contribution of adding feature j averaged fairly over all possible feature orderings (permutations). Equivalently, it is the fraction of permutations where the set of features that appear before j is exactly S, ensuring Shapley’s fairness axioms.\n\n3) The Shapley definition sums over all subsets S not containing j, which is 2^(M−1) subsets per feature (exponential), making brute force infeasible for moderate/large M. For tree ensembles, TreeSHAP exploits tree structure and dynamic programming to compute SHAP values in O(T × D^2) time (T = number of trees, D = maximum tree depth), avoiding enumeration of all subsets.",
+      "explanation": "A correct answer must connect “missingness” to marginalization/expectation (not simply setting features to zero), interpret the factorial weight as an averaging over permutations (fair share), and recognize the exponential subset explosion as the core infeasibility. It must also state TreeSHAP’s improvement for trees as O(T × D^2) via dynamic programming over tree paths/structure.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "shapley-values",
+        "marginalization",
+        "subset-enumeration",
+        "treeshap",
+        "computational-complexity",
+        "tree-ensembles"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are computing MeanAbsSHAP for a feature by sampling without replacement from a dataset of size \\(N\\). You plan to sample \\(n=25{,}000\\) instances.\n\n(a) Write the standard error formula for \\(\\bar Y\\) that includes the finite-population correction (FPC).\n(b) For \\(N=1{,}000{,}000\\), compute the FPC factor \\(\\sqrt{\\tfrac{N-n}{N-1}}\\) approximately and state whether ignoring it is reasonable.\n(c) For \\(N=50{,}000\\), compute the FPC factor approximately and explain how this changes your uncertainty estimate and any conclusions about feature-ranking stability.\n\nAssume the same sample standard deviation \\(s\\) in both cases; focus on the multiplicative effect of FPC.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) SE_FPC(Ȳ) ≈ (s/√n) × √((N−n)/(N−1)).\n(b) For N=1,000,000 and n=25,000: FPC ≈ √(975,000/999,999) ≈ √(0.975000975) ≈ 0.9874 (about 1.26% reduction vs no FPC). Ignoring it is usually reasonable because it is close to 1.\n(c) For N=50,000 and n=25,000: FPC ≈ √(25,000/49,999) ≈ √(0.50001) ≈ 0.7071. This reduces SE by ~29.3% compared to s/√n, meaning the mean estimate is substantially more precise than the i.i.d.-with-replacement approximation suggests; confidence intervals shrink, and small differences between features are more likely to be statistically distinguishable (ranking stability appears stronger).",
+      "explanation": "When sampling without replacement from a finite population, \\(\\mathrm{Var}(\\bar Y)\\) is reduced relative to sampling with replacement; the FPC \\(\\sqrt{(N-n)/(N-1)}\\) captures this. If \\(n \\ll N\\), the factor is near 1 and has negligible effect (case b). When \\(n\\) is a large fraction of \\(N\\), the factor can be far below 1 (case c), meaning the naive \\(s/\\sqrt{n}\\) overstates uncertainty; using FPC can materially affect error bars and conclusions about whether feature MeanAbsSHAP differences are real versus sampling noise.",
+      "difficulty": "advanced",
+      "tags": [
+        "finite-population-correction",
+        "standard-error",
+        "sampling-without-replacement",
+        "meanabsshap",
+        "ranking-stability",
+        "uncertainty-quantification"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are explaining a ReLU network using Integrated Gradients with baseline \\(x'\\) and input \\(x\\). A teammate claims: \"Integrated Gradients works with non-differentiable models, so it will always be well-defined even if the network has non-differentiable points like ReLU at 0.\" \n\nIs this claim correct? Provide a nuanced answer that addresses (1) differentiability requirements, (2) what happens at non-differentiable points in practice, and (3) why IG is often described as producing smoother/more stable attributions than single-point gradients.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The claim is not strictly correct. (1) IG is fundamentally gradient-based, so it requires a model for which gradients (or subgradients) can be computed almost everywhere along the path from x' to x; it is not truly applicable to arbitrary non-differentiable, non-gradient models (e.g., decision trees) without additional machinery. (2) For ReLU networks, the function is piecewise differentiable and non-differentiable only on measure-zero boundaries (e.g., exactly at 0 pre-activation). In practice, autodiff frameworks use subgradients or a conventional choice at kinks, and the integral is typically approximated by a Riemann sum over many points; hitting the exact kink is unlikely with continuous inputs, and even if some sample points land near it, the effect is usually limited. (3) IG is often smoother/more stable than simple gradients because it averages gradient information across many points along the baseline→input path, reducing sensitivity to local saturation or noisy/unstable gradients at a single point; the path integral aggregates contributions rather than relying on ∂f/∂x evaluated only at x.",
+      "explanation": "A correct answer distinguishes between (a) truly model-agnostic methods (e.g., perturbation-based) and (b) gradient-based methods like IG. IG can handle common deep nets with kinks (ReLU) because they are differentiable almost everywhere and subgradients are used at non-differentiable points, but it does not automatically extend to models with no meaningful gradients. The stability claim comes from integrating/averaging gradients along a path, which mitigates the brittleness of single-point gradients.",
+      "difficulty": "advanced",
+      "tags": [
+        "integrated-gradients",
+        "differentiability",
+        "relu",
+        "subgradients",
+        "stability",
+        "path-methods"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building an interactive dashboard for a classification model where users can:\n1) move a slider for a feature (e.g., `sw_state`),\n2) see how predicted probability changes,\n3) zoom/hover to inspect regions, and\n4) avoid misleading conclusions when strong feature interactions exist.\n\nDesign an approach using the libraries mentioned (SHAP, Streamlit/Dash, Plotly, LIME). Your answer must:\n- Choose which library (or combination) you would use for the visualization layer and for the explanation layer.\n- Explain how you would incorporate both a global view (PDP-like) and an instance-level view (ICE-like or local explanation).\n- Describe one concrete mitigation for the “interactions can mislead PDP” issue in the UI or computation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong approach is: use Streamlit (or Dash) for the dashboard UI + Plotly for interactive plotting (hover/zoom), and use SHAP for the explanation layer. Provide a global PDP-like curve (computed via `partial_dependence` or by aggregating predictions on a grid) rendered with Plotly, and alongside it provide ICE-style curves (per-sample curves) or a selectable subset of ICE curves so users can see heterogeneity. For instance-level view, let the user pick a row `i` and show a SHAP force plot (or a local SHAP explanation) for that specific prediction, optionally combined with a SHAP dependence plot for the selected feature.\n\nMitigation for interaction-induced PDP misleadingness: explicitly show ICE curves (or clustered ICE) next to the PDP and/or add a control to condition on another feature (e.g., stratify the PDP by bins of an interacting feature, or color points/curves by the interacting feature as SHAP dependence plots do). This makes interaction effects visible rather than hidden by averaging.",
+      "explanation": "Streamlit/Dash and Plotly address the interactivity requirements (sliders, hover, zoom). SHAP contributes interaction-aware diagnostics (dependence plots can highlight interactions; local explanations explain a single prediction). A purely global PDP can average away important conditional behavior when interactions exist; adding ICE curves, stratified/conditional PDPs, or SHAP interaction-aware views makes the dashboard more faithful and reduces the risk of misinterpretation.",
+      "difficulty": "advanced",
+      "tags": [
+        "interactive_dashboards",
+        "plotly",
+        "streamlit",
+        "shap",
+        "pdp",
+        "ice",
+        "feature_interactions",
+        "classification_probabilities"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A SHAP summary dot plot shows the top feature with a strong color separation: most red dots (high values) are at positive SHAP values and most blue dots (low values) are at negative SHAP values. However, you also notice a minority of red dots on the negative side and a minority of blue dots on the positive side.\n\nProvide two plausible, model-based reasons why this could happen, and explain how each reason would produce these “exceptions” in the plot.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two plausible reasons are:\n1) Feature interactions / context dependence: The effect of the feature can change depending on other features. For some observations, even a high value (red) could reduce the prediction if combined with other feature values that flip the marginal contribution (e.g., high value only increases CLV when another feature is also high). This yields some red dots with negative SHAP values and some blue dots with positive SHAP values.\n2) Non-monotonic relationships or threshold effects learned by the model: The model may learn that mid/high values increase CLV up to a point, but extremely high values decrease CLV (or vice versa). Then some high values (still colored red) can have negative SHAP values, and some low values (blue) can have positive SHAP values depending on where they fall relative to the learned thresholds.\n(Other acceptable explanations include correlated features causing attribution to shift across features, or heterogeneous subpopulations where the feature behaves differently.)",
+      "explanation": "A clean red-right/blue-left pattern indicates a generally monotonic direction (high values increase prediction, low values decrease). Exceptions arise when the SHAP contribution is conditional on other inputs (interactions), or when the model’s learned function is not globally monotonic (e.g., U-shaped effects, piecewise rules in trees). In both cases, the same raw feature value range (high/low) can correspond to opposite marginal contributions for certain observations, producing dots of the “unexpected” color on each side of zero.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "summary-plot",
+        "feature-interactions",
+        "non-monotonicity",
+        "context-dependence",
+        "tree-models"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team claims: \"Explainability is always a post-processing step; you can only explain a model after it has been trained.\" Using the ideas in the source content, write a short response that:\n\n- Refutes or supports the claim,\n- Gives one example of a post-hoc explainability method,\n- Gives one example of an interpretable-by-design model or an approach that integrates interpretability into training.\n\nKeep your answer to 4–8 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The claim is incorrect because explainability is often post-hoc but does not have to be. Post-hoc explainability refers to applying an external method after training to explain a trained model’s predictions (e.g., SHAP or LIME). However, some models are interpretable by design, such as linear regression or a decision tree, where the model structure/parameters can be inspected directly. Additionally, interpretability can be integrated into training via methods that add constraints or objectives that encourage simpler, more explainable behavior. Therefore, explainability can be post-processing, but it can also be built in from the start or incorporated during training.",
+      "explanation": "A strong answer distinguishes post-hoc tools (applied after training) from interpretable-by-design models (transparent structure) and mentions that some approaches incorporate interpretability into the training process. This directly addresses the misconception that explainability must always be post-processing.",
+      "difficulty": "advanced",
+      "tags": [
+        "post-hoc-explainability",
+        "interpretable-models",
+        "training-time-interpretability",
+        "conceptual-argumentation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained a model on one-hot-encoded features and computed SHAP values per encoded column. You want to explain results at the level of the original categorical variables and also reduce confusion in plots.\n\nGiven:\n- `shap_values`: a 2D array-like of shape `(n_samples, n_features_ohe)` with SHAP values for each one-hot column\n- `feature_names`: list of length `n_features_ohe` (e.g., `[\"city_NY\", \"city_SF\", \"device_mobile\", \"device_desktop\", ...]`)\n- A mapping `groups` from original variable name to list of one-hot feature indices, e.g.:\n  - `groups[\"city\"] = [0, 1, 2, 3]`\n  - `groups[\"device\"] = [4, 5]`\n\nFree-response: Describe (a) how you would compute grouped SHAP values for each original variable, and (b) one reason this is especially helpful when interpreting SHAP interaction effects for one-hot encoded variables. Mention one caveat related to missing-value categories.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "a) For each original variable g (e.g., \"city\"), compute a grouped SHAP value per sample by summing the SHAP values across its one-hot columns: grouped_shap[:, g] = sum(shap_values[:, idx] for idx in groups[g]). This is a post-hoc aggregation that produces one contribution per original categorical variable. (b) Interaction effects can be fragmented across multiple dummy columns (e.g., city_NY interacting with income, city_SF interacting with income). Grouping lets you interpret the overall interaction of the original variable (\"city\") with another feature by aggregating interactions across its dummies, making the combined interaction easier to understand. Caveat: if missingness was encoded as its own category (e.g., city_missing), SHAP will treat it as a separate dummy; when grouping, you must decide whether to include it in the original variable’s group and interpret it carefully because it represents missingness behavior rather than a substantive category.",
+      "explanation": "Summing SHAP values across one-hot columns belonging to the same original feature is the standard way to recover an explanation at the semantic level users care about (e.g., \"city\" rather than \"city_NY\"). This also applies to SHAP interaction values: without grouping, interactions are split among several dummies and can appear weaker or harder to interpret. Handling a dedicated missing category requires care because it can encode data quality/collection effects; grouping it blindly can hide the fact that the model is reacting to missingness rather than the underlying category.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "shap-interaction-values",
+        "one-hot-encoding",
+        "feature-grouping",
+        "missing-values",
+        "visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to place the SHAP summary plot's colorbar in a custom location (e.g., a thin bar on the far right) and avoid the \"cannot find colorbar\" error. Write a code snippet that:\n1) creates `fig, ax` for the plot,\n2) creates a dedicated colorbar axis using `fig.add_axes([...])`,\n3) passes both `ax` and `cax` to `shap.summary_plot`.\n\nAssume `shap_values` and `features` already exist.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport matplotlib.pyplot as plt\nimport shap\n\nfig, ax = plt.subplots()\n# [left, bottom, width, height] in figure coordinates\ncax = fig.add_axes([0.9, 0.1, 0.02, 0.8])\n\nshap.summary_plot(shap_values, features, ax=ax, cax=cax)\nplt.show()\n```",
+      "explanation": "The dedicated `cax` gives Matplotlib an explicit Axes to draw the colorbar into, eliminating ambiguity about where the colorbar should be placed. Passing `ax` ensures the main plot is drawn on a known Axes, and passing `cax` ensures the colorbar is drawn in the custom location rather than trying to \"steal\" space from the main plot.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "matplotlib",
+        "cax",
+        "fig.add_axes",
+        "colorbar-placement"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You present SHAP summary dot plots for a regression model and a binary classification model to a non-technical audience. Describe:\n1) What stays consistent in interpretation across both plots.\n2) What must be interpreted differently for the classification model.\n3) One common pitfall when comparing the magnitude of SHAP values across these two tasks.\n\nAnswer in 4–8 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) In both regression and classification, each dot’s SHAP value represents how a feature value for a specific sample pushes the model output above or below a baseline (expected prediction), and the spread shows the distribution/variability of that feature’s influence. 2) For classification, the SHAP values must be tied to a particular class output (often probability or log-odds for the positive class), so ‘increasing the output’ means increasing that class’s predicted probability (or its log-odds), not increasing a continuous target. 3) A common pitfall is directly comparing SHAP magnitudes between regression and classification without accounting for different output scales (e.g., continuous units vs probability/log-odds), which can make one model’s SHAP values appear ‘larger’ or ‘smaller’ even when the practical impact is not comparable.",
+      "explanation": "The core SHAP concept—additive contributions relative to a baseline—remains the same across model types, and the dot plot consistently communicates direction (left/right) and distribution (spread) of contributions per feature. What changes is the meaning of the model output being explained: regression output is in target units, while classification output is class-specific and often on a probability or log-odds scale. Comparing magnitudes across tasks can be misleading because the units and ranges of the outputs differ, so SHAP values are not inherently on the same scale across different problem types.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "regression",
+        "binary_classification",
+        "summary_dot_plot",
+        "communication",
+        "pitfalls",
+        "output_scale"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A SHAP dot summary plot shows the feature `sensor_offset` as an almost perfectly gray vertical cloud, but the feature is numeric. You suspect it might be nearly constant.\n\n(a) Describe a concrete procedure to verify whether low/no variability is the cause (include at least two checks).\n(b) If the feature is nearly constant, explain two different actions you could take in your ML pipeline and how each would affect interpretability and/or model behavior.\n\nAnswer in 5–10 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good answer should: (a) propose checking distribution/variability (e.g., compute std/variance, count unique values, min/max range, histogram/quantiles) and confirm the feature values passed to SHAP match the raw data (e.g., after preprocessing). It may also mention checking for missing-value imputation that collapsed values. (b) propose two actions such as: removing the feature (likely minimal impact; simplifies model and explanations), fixing data collection/preprocessing to restore variability (may improve model and produce meaningful color gradients), or treating it as a constant/bias term. It should explain that a near-constant feature provides little information, so SHAP color won’t vary and the model may assign minimal or unstable importance.",
+      "explanation": "Gray points in a SHAP dot plot usually mean feature values do not vary enough to span the colormap or are not interpretable for coloring. For a numeric feature, verifying low variability requires direct statistical checks (std/unique/range/quantiles) and ensuring preprocessing didn’t collapse the feature. If it is nearly constant, removing it can reduce noise and simplify explanations with little predictive loss, while correcting upstream data/preprocessing can restore informative variation and yield more meaningful SHAP patterns.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "summary-plot",
+        "feature-variance",
+        "data-quality",
+        "preprocessing",
+        "model-interpretability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A colleague reports this error when explaining a LightGBM model:\n\n```\nAttributeError: 'TreeEnsemble' object has no attribute 'values'\n```\n\nThey are currently using:\n\n```python\nexplainer = shap.Explainer(model, X_clean)\nshap_values = explainer(X_clean)\n```\n\nProvide a robust remediation plan that:\n1) gives at least two short-term workarounds (with code), and\n2) states the long-term fix, including the relevant SHAP version guidance.\n\nKeep your answer focused on why each step avoids the bug.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Short-term workaround 1 (bypass unified wrapper):\n```python\nimport shap\nexplainer = shap.TreeExplainer(model)\nshap_values = explainer.shap_values(X_clean)\n```\nWhy: This uses the legacy tree-specific explainer directly and avoids the buggy unified `shap.Explainer` wrapper path that ends up accessing a missing `.values` attribute on an internal `TreeEnsemble`.\n\nShort-term workaround 2 (pass a prediction function to unified API):\n```python\nimport shap\nexplainer = shap.Explainer(model.predict, X_clean)\nshap_values = explainer(X_clean)\n```\nWhy: Passing a callable instead of the model object forces `shap.Explainer` onto a simpler generic-function code path that does not hit the internal `TreeEnsemble` `.values` access.\n\nLong-term fix (upgrade SHAP):\nUpgrade SHAP to a version where the bug is fixed (≥ 0.41), after which the unified API works again:\n```python\nexplainer = shap.Explainer(model, X_clean)\nshap_values = explainer(X_clean)\n```\nWhy: The upstream fix removes/adjusts the faulty `.values` access in the unified wrapper for tree models.",
+      "explanation": "A complete answer must (1) identify two distinct mitigation strategies that avoid the failing unified-wrapper tree path: using `TreeExplainer(model)` directly, and using `shap.Explainer(model.predict, X_clean)` to force a different internal code path; and (2) provide the durable solution: upgrading SHAP to a fixed release (≥ 0.41) so `shap.Explainer(model, X_clean)` works without the `TreeEnsemble.values` `AttributeError`. The key reasoning is that both workarounds change which internal explainer implementation is used, thereby avoiding the buggy attribute access.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "lightgbm",
+        "tree-models",
+        "debugging",
+        "versioning",
+        "treeexplainer",
+        "unified-explainer"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response: You run the example and obtain `interaction_values` with shape `(n_samples, n_features, n_features)`. Describe a robust procedure (in words or pseudocode) to compute the **top 10 most important feature interaction pairs** across the whole test set.\n\nYour procedure should address:\n1) How to aggregate interaction strength across samples\n2) How to avoid double-counting symmetric pairs `(j, k)` and `(k, j)`\n3) Whether you include or exclude diagonal terms `(j, j)` and why",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct approach:\n- For each sample i, take the interaction matrix M_i = interaction_values[i] (shape F×F).\n- Exclude diagonal terms j==k if the goal is *pairwise interactions*, because diagonal entries represent main effects rather than interactions.\n- Aggregate interaction strength across samples using mean absolute value (or sum of absolute values):\n  S[j,k] = mean_i |M_i[j,k]|.\n- Because interactions are symmetric (j,k) and (k,j) represent the same pair, only consider one triangle (e.g., upper triangle where j<k) to avoid double counting.\n- Create a list of pairs (feature_j, feature_k, S[j,k]) for all j<k, sort descending by S, and take the top 10.\n\nPseudocode:\n1) S = mean(abs(interaction_values), axis=0)  # F×F\n2) For j in 0..F-1:\n     For k in j+1..F-1:\n        score = S[j,k]\n        store (j,k,score)\n3) sort stored pairs by score desc; return top 10 (mapped to feature names).",
+      "explanation": "Averaging (typically mean absolute) over samples yields a global importance measure for each interaction pair. Taking absolute values avoids cancellation between positive and negative interactions across samples. Considering only j<k prevents counting the same interaction twice due to symmetry. Excluding the diagonal is appropriate when the question is specifically about interactions, since diagonal entries correspond to main effects (feature’s individual contribution) rather than pairwise interaction effects.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "interaction-values",
+        "global-aggregation",
+        "feature-interactions",
+        "interpretability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team claims: “Because our dataset has 2.5 billion rows, a sample of 25,000 rows is always enough for any SHAP analysis; sampling error only depends on n.”\n\nProvide a critical response that:\n- Explains why the statement is mostly true for typical SHAP summary statistics (e.g., mean |SHAP|, proportions/densities).\n- Identifies at least TWO scenarios where a 25,000 sample can still be inadequate, and proposes a mitigation for each.\n\nKeep your answer focused on sampling error and SHAP summary plots.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Mostly true: For estimators like the sample mean of |SHAP|, SE ≈ σ/√n, and for proportions/densities SE ≈ √(p(1−p)/n). When N ≫ n, finite population correction is ~1, so N contributes negligibly; precision is governed by n and the distribution’s variability.\n\nHowever, 25,000 can be inadequate in scenarios such as:\n1) Extremely rare subgroups/events (e.g., prevalence 1 in 10 million). A random sample of 25,000 may contain zero such cases, making subgroup SHAP estimates impossible or highly unstable. Mitigation: stratified sampling, targeted oversampling of the rare subgroup, or ensuring minimum counts per stratum.\n2) Heavy-tailed, highly skewed, or multi-modal SHAP distributions where small but important modes exist. A sample of 25,000 may miss small peaks or poorly estimate tail behavior, affecting distributional interpretations. Mitigation: increase n, use robust summaries/quantiles, or use representative summarization methods such as shap.kmeans (or clustering-based background/summary selection).\n(Other acceptable scenario: needing precise estimates per many slices/segments; effective n per slice becomes small. Mitigation: allocate sample per segment/stratum.)",
+      "explanation": "The key nuance is that while SE formulas for common statistics don’t depend on N when N ≫ n, adequacy depends on whether the sample captures the relevant structure of the distribution and subpopulations. Rare events and complex/heavy-tailed distributions can require larger or smarter sampling designs even if the overall dataset is enormous.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "sampling-design",
+        "rare-subgroups",
+        "heavy-tails",
+        "multimodal-distributions",
+        "stratified-sampling",
+        "shap-kmeans",
+        "ml-explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a robust Python snippet that handles both possible return types of `explainer.shap_values(X_test)` described below:\n\n- If it returns a **NumPy array** (single-output: regression or binary classification), use it directly.\n- If it returns a **list of NumPy arrays** (multiclass), select the SHAP values for a specified `class_idx`.\n\nYour code should assign the final matrix to a variable named `sv`.\n\nAssume `class_idx` is defined and valid for the multiclass case.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nshap_values = explainer.shap_values(X_test)\n\n# Multiclass: list of arrays (one per class)\nif isinstance(shap_values, list):\n    sv = shap_values[class_idx]\nelse:\n    # Single-output: regression or (as described) binary classification\n    sv = shap_values\n```",
+      "explanation": "The key is to branch on the return type: multiclass explanations are represented as a list (one array per class), while single-output models return a single NumPy array. Indexing the list by `class_idx` extracts the class-specific SHAP matrix with the same shape as `X_test`.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "defensive-programming",
+        "return-types",
+        "multiclass-classification",
+        "binary-classification",
+        "regression"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to ship SHAP-based explanations for a Spark MLlib classifier that is not directly supported by SHAP. Your plan is to train a scikit-learn GradientBoosting/RandomForest surrogate and use TreeExplainer.\n\nDescribe a robust procedure to (1) train the surrogate and (2) validate that its SHAP values are likely to be meaningful for the MLlib model. Your answer should explicitly address fidelity risks and what you would compare between the two models (at least two concrete checks).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer should propose: (1) training a surrogate on the same feature set and preprocessing as used for the MLlib model (or a faithfully replicated pipeline), using the MLlib model’s outputs as targets when appropriate (e.g., distillation on predicted probabilities/logits) and/or training on the same labels but tuning to match behavior; (2) validating fidelity by comparing predictions between MLlib and surrogate on held-out data (e.g., correlation/MAE of predicted probabilities, agreement rate of predicted classes, calibration curves), and confirming comparable task metrics (AUC/accuracy/log-loss) for both models; optionally, checking local agreement in regions of interest (e.g., near decision boundary) and investigating disagreement slices; only after acceptable alignment, computing SHAP with TreeExplainer and communicating that explanations are for the surrogate with documented fidelity metrics and limitations.",
+      "explanation": "This procedure directly addresses the core concern: SHAP explains the model it is applied to. Therefore, to use a surrogate, you must (a) make the surrogate compatible with SHAP (tree-based for TreeExplainer) and (b) demonstrate high fidelity to the MLlib model. Comparing only surrogate accuracy or relying on TreeExplainer compatibility misses the main risk: explanations can be misleading if the surrogate’s decision boundaries differ. Concrete prediction-alignment checks plus comparable performance metrics provide evidence the surrogate is a reasonable stand-in, making the SHAP values more likely to reflect the production model’s behavior.",
+      "difficulty": "advanced",
+      "tags": [
+        "surrogate-model",
+        "knowledge-distillation",
+        "fidelity-validation",
+        "shap",
+        "treeexplainer",
+        "mllib",
+        "model-risk"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following code for a binary classifier:\n\n```python\nexplainer = shap.TreeExplainer(model)\nshap_values = explainer.shap_values(X_test)\nshap.summary_plot(shap_values, X_test)\n```\n\nIt errors or produces an unexpected plot because `shap_values` is not in the expected format. Provide a robust fix that:\n\n- Produces a summary plot for the positive class\n- Mentions how you would handle the case where SHAP returns a 3D array instead of a list (implementation-dependent)\n\nWrite corrected code and briefly justify the indexing/shape handling.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\nimport shap\n\nexplainer = shap.TreeExplainer(model)\nshap_values = explainer.shap_values(X_test)\n\n# Handle common return types:\n# 1) list of arrays: one array per class\nif isinstance(shap_values, list):\n    sv_pos = shap_values[1]  # positive class\n# 2) ndarray with class dimension (e.g., (n_samples, n_features, n_classes))\nelif isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:\n    sv_pos = shap_values[:, :, 1]\nelse:\n    # already a 2D array (n_samples, n_features)\n    sv_pos = shap_values\n\nshap.summary_plot(sv_pos, X_test)\n```\nJustification: In binary classification, SHAP commonly provides per-class explanations. Selecting index 1 focuses on the positive class. Some SHAP versions/models return a 3D array with the last dimension as classes; slicing `[:, :, 1]` extracts the positive-class SHAP matrix required by `summary_plot` (shape: n_samples × n_features).",
+      "explanation": "The key is matching `summary_plot`’s expected input: a 2D matrix of SHAP values aligned with `X_test` (rows=samples, columns=features). Binary classification often yields per-class SHAP values; failing to select the class dimension leads to shape/type mismatches or misleading plots. A robust solution checks whether SHAP returns a list (per-class arrays) or a 3D array (explicit class axis) and extracts the positive class accordingly.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "treeexplainer",
+        "summary_plot",
+        "binary_classification",
+        "debugging",
+        "array_shapes",
+        "per_class_shap"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a global SHAP summary plot for a model trained on 2.5M rows. A critical stakeholder cares about a rare failure mode that occurs in ~0.005% of rows (about 125 rows). You can only afford to compute SHAP values for at most 10,000 rows.\n\nDesign a sampling/selection plan that (1) preserves the global trends for the overall population and (2) reliably represents the rare failure mode in the SHAP summary. Justify your plan using concepts from the prompt (e.g., why 1% is usually enough, when it isn’t, and optional enhancements).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid plan:\n\n1) Use a two-part sample within the 10,000-row budget:\n- Global component: draw a large random sample (e.g., 9,000 rows) from the full dataset to capture dense regions and average effects. This leverages the Law of Large Numbers; aggregate metrics (mean(|SHAP|), overall beeswarm shape) will be stable with thousands of points, and compute scales roughly O(n × model_complexity).\n- Rare-mode component: explicitly include rare failure-mode rows (e.g., all 125 failure rows if available, or at least a fixed quota like 500 rows enriched for failures via stratification on the failure label or on predicted risk quantiles).\n\n2) Combine and compute SHAP on the union. In the summary plot, optionally annotate or facet (e.g., separate color/marker or separate plots) to avoid the rare-mode points being visually swamped by the majority.\n\nJustification:\n- Pure random sampling could easily miss or severely under-sample a 0.005% subgroup; in 10,000 random rows you expect only ~0.5 such cases on average, so the failure mode would not be represented.\n- Stratifying (by target/failure label or predicted quantiles) guarantees representation of the rare subgroup while the remaining random sample preserves global trends.\n- As an alternative or complement, shap.kmeans(X, K) (e.g., K=100–200) can provide representative coverage of feature space for the global component, but it still should be paired with explicit inclusion of rare failure cases if they are not well captured by clustering.",
+      "explanation": "This question targets deep understanding of when random sampling works (global, dense trends) and when it fails (extremely rare segments). The key is to recognize that a 0.005% event is unlikely to appear in a small random sample, so you must stratify or otherwise force inclusion. The plan also demonstrates the compute/insight trade-off: thousands of points are enough for stable global patterns, freeing budget to oversample the rare mode. Mentioning shap.kmeans shows awareness of representative summarization, while still addressing the need to explicitly capture rare cases.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "global-explainability",
+        "rare-events",
+        "stratified-sampling",
+        "predicted-quantiles",
+        "compute-budget",
+        "kmeans",
+        "sampling-strategy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team claims: “Using 25,000 rows is always enough to reliably rank features by mean |SHAP|, because the standard error is tiny.”\n\nProvide a nuanced critique using the sampling-error ideas in the prompt. Your answer should (1) explain when the 1/\\sqrt{n} argument supports the claim, and (2) describe at least two realistic situations where 25,000 might *not* be enough (or where the estimate could still be misleading), even if the SE formulas look small.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer should note that SE(mean)=σ/√n implies stability of the *mean* when the sample is i.i.d. and σ is not extreme; with n≈25k the expected mean error can be ~0.01 or smaller, so if gaps between top features’ mean |SHAP| are much larger than this, rankings are likely stable. It should then give at least two caveats such as: (i) very small separations between features (differences comparable to the SE) can lead to rank swapping; (ii) non-i.i.d. sampling / distribution shift (time-based drift, stratification issues, clustered data) breaks representativeness; (iii) heavy tails/outliers or high variance σ for |SHAP| increases SE and makes the mean unstable; (iv) interest in tails/rare subpopulations (minority segments) where effective n for that subgroup/bin is much smaller, inflating MoE; (v) dependence between rows reduces effective sample size; (vi) multiple-comparisons/selection effects when ranking many features can require more care than single-feature SE suggests.",
+      "explanation": "The prompt’s 1/\\sqrt{n} scaling justifies why tens of thousands can yield small sampling error for means/proportions under i.i.d. assumptions and moderate variance. However, “always enough” is too strong: ranking depends on effect-size gaps, variance, and representativeness. Rare segments, dependence, drift, or heavy-tailed SHAP magnitudes can all make a 25k sample insufficient or misleading even if a naive SE calculation seems small.",
+      "difficulty": "advanced",
+      "tags": [
+        "feature-ranking",
+        "shap",
+        "sampling-bias",
+        "effective-sample-size",
+        "heavy-tails",
+        "subpopulation-analysis",
+        "uncertainty"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A regression model uses a feature `age`. In the SHAP dot summary plot, the dots for `age` show a wide spread on the x-axis, and the color encoding indicates that low `age` values (blue) tend to have positive SHAP values while high `age` values (red) tend to have negative SHAP values. Meanwhile, the SHAP summary bar plot shows `age` as highly important.\n\nExplain what the dot summary plot is telling you about the relationship between `age` and the model’s predictions, and why the bar plot alone is insufficient to understand this behavior.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The dot summary plot indicates a systematic relationship between feature value and contribution: low values of `age` are generally pushing predictions upward (positive SHAP), while high values of `age` are generally pushing predictions downward (negative SHAP). The wide spread suggests substantial variability across instances (heterogeneity), potentially due to interactions, non-linear effects, or subgroups. The bar plot alone is insufficient because it aggregates (typically mean absolute) SHAP values: it can show that `age` matters on average, but it discards directionality (sign) and the distribution across instances, so it cannot reveal that the effect flips sign depending on whether `age` is low or high.",
+      "explanation": "This answer connects three key advantages of dot plots for regression explainability: (1) directionality via signed SHAP values, (2) feature-value relationships via color, and (3) heterogeneity/distributional insight via the spread across instances. It also correctly contrasts this with the bar plot’s aggregation of absolute SHAP values, which hides sign and instance-level variation.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "dot-summary-plot",
+        "feature-value-relationship",
+        "directionality",
+        "heterogeneity",
+        "nonlinear-effects",
+        "regression"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain **why** the Central Limit Theorem (CLT) is invoked to justify using Normal-based inference (e.g., \\(\\bar Y \\pm 1.96\\,\\mathrm{SE}\\)) for MeanAbsSHAP, and clarify the distinction between:\n\n1) being able to compute \\(\\mathrm{SE}=s/\\sqrt{n}\\) at all, and\n2) being allowed to use z-based confidence intervals/hypothesis tests.\n\nYour answer should mention what happens when the underlying \\(|\\phi_j|\\) distribution is skewed or heavy-tailed, and what “large enough \\(n\\)” is doing conceptually.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "SE can always be computed for the sample mean as an estimate of the standard deviation of the mean’s sampling distribution (typically s/√n), regardless of whether that sampling distribution is Normal. The CLT is invoked because it provides (under mild conditions, and as n grows) an approximate Normal distribution for the sample mean even when the underlying |SHAP| values are skewed or heavy-tailed. Normality matters not for defining SE, but for the validity of z-based inference: if (Ȳ−μ)/SE is approximately N(0,1), then using ±1.96·SE yields an approximate 95% CI and z-tests are approximately calibrated. “Large enough n” means the averaging effect makes the distribution of Ȳ close to Gaussian (with variance σ²/n), so Normal-based intervals become accurate even if individual |φ| values are non-Normal; for small n or extremely heavy tails/violations of CLT conditions, Normal-based CIs/tests may be unreliable even though SE is still computable.",
+      "explanation": "A complete answer separates (a) the definition/estimation of SE from (b) the distributional assumption needed to turn SE into a z-statistic with known reference distribution. The CLT specifically addresses (b): it justifies approximate Normality of the sample mean for large n, enabling Normal quantiles (like 1.96) to produce approximately correct coverage even when individual |SHAP| values are skewed or heavy-tailed.",
+      "difficulty": "advanced",
+      "tags": [
+        "central-limit-theorem",
+        "normal-based-inference",
+        "z-test",
+        "confidence-interval",
+        "mean-absolute-shap",
+        "heavy-tails",
+        "sampling-distribution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes when `shap.LinearExplainer` is appropriate and what it computes?\n\nA. It approximates Shapley values for any model by sampling feature coalitions, so it is best for neural networks.\nB. It computes exact Shapley values in closed form for truly linear models (weighted sums of inputs), avoiding sampling.\nC. It computes exact Shapley values only for tree ensembles by traversing decision paths.\nD. It computes feature attributions by fitting a local linear surrogate around each point, so it does not need background data.",
+      "question_type": "mc",
+      "options": [
+        "A. It approximates Shapley values for any model by sampling feature coalitions, so it is best for neural networks.",
+        "B. It computes exact Shapley values in closed form for truly linear models (weighted sums of inputs), avoiding sampling.",
+        "C. It computes exact Shapley values only for tree ensembles by traversing decision paths.",
+        "D. It computes feature attributions by fitting a local linear surrogate around each point, so it does not need background data."
+      ],
+      "correct_answer": "B",
+      "explanation": "`LinearExplainer` leverages the linear form \\(f(x)=\\beta_0+\\beta^T x\\) to compute Shapley values exactly via a closed-form expression (no coalition sampling). Option A describes `KernelExplainer`, option C describes `TreeExplainer`, and option D is closer to LIME-style explanations and also incorrectly claims background data is unnecessary (SHAP needs a background distribution to define \\(E[f(x)]\\)).",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "linearexplainer",
+        "shapley-values",
+        "linear-models",
+        "kernel-explainer",
+        "tree-explainer"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the provided example, what does the **SHAP interaction matrix** (computed as `np.abs(shap_interaction_values).mean(axis=0)`) represent?\n\n```python\nshap_interaction_values = explainer.shap_interaction_values(X_test)\ninteraction_matrix = np.abs(shap_interaction_values).mean(axis=0)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. The average signed SHAP contribution of each feature to the prediction across samples",
+        "B. The average magnitude of main effects and pairwise interaction effects between features across samples",
+        "C. The correlation matrix of the input features, weighted by the model’s predictions",
+        "D. The model’s feature importances (gain) converted into a 2D matrix"
+      ],
+      "correct_answer": "B",
+      "explanation": "`shap_interaction_values` contains (for each sample) a square matrix where diagonal entries correspond to main effects and off-diagonal entries correspond to pairwise interaction effects. Taking `abs(...)` then `mean(axis=0)` produces an average *magnitude* interaction matrix across samples (not signed contributions, not correlations, and not XGBoost gain importances).",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "shap-interaction-values",
+        "interaction-matrix",
+        "model-interpretability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why can using a smaller, representative background dataset speed up SHAP value computation for sampling-based explainers like KernelExplainer?",
+      "question_type": "mc",
+      "options": [
+        "A. It reduces the number of model evaluations needed to approximate the expectation over the feature distribution",
+        "B. It makes SHAP values exact by eliminating the need for approximation",
+        "C. It changes the model weights so predictions are faster to compute",
+        "D. It removes the need to compute any conditional expectations"
+      ],
+      "correct_answer": "A",
+      "explanation": "KernelExplainer (and similar sampling-based approaches) estimate an expectation over a background (reference) distribution. Using fewer background points reduces how many times the model must be evaluated during this approximation, which directly reduces runtime. The trade-off is that fewer points can worsen approximation quality if the background is not representative.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "kernel-explainer",
+        "background-dataset",
+        "sampling",
+        "computational-efficiency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In LIME for tabular data, what does calling `explanation.as_list()` typically return?\n\n```python\nexplanation = explainer.explain_instance(instance, model.predict_proba)\nitems = explanation.as_list()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A list of (feature_name, importance_value) tuples for the explained instance",
+        "A NumPy array of importance values already aligned to the original feature order",
+        "A pandas DataFrame containing global feature importances across the dataset",
+        "A dictionary mapping class labels to confusion-matrix counts"
+      ],
+      "correct_answer": "A",
+      "explanation": "`explanation.as_list()` is designed to be human-readable and returns a list of tuples like `(feature, weight)` for the local explanation. It does not directly return a NumPy array aligned to the full original feature list; that alignment requires post-processing.",
+      "difficulty": "beginner",
+      "tags": [
+        "lime",
+        "explanation-object",
+        "as_list",
+        "local-explanations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a SHAP summary plot for a model that predicts Customer Lifetime Value (CLV) in dollars, what does the x-axis value represent?",
+      "question_type": "mc",
+      "options": [
+        "The final predicted CLV in dollars for each observation",
+        "The feature's contribution (shift) to the prediction relative to the baseline, in dollars",
+        "The average CLV of the dataset in dollars",
+        "The feature value itself converted into dollars"
+      ],
+      "correct_answer": "B",
+      "explanation": "SHAP summary plot x-axis values are SHAP values: the marginal contribution of a feature to the model output for a given observation, relative to the expected value (baseline). If the model output is in dollars, these contributions are also in dollars. They are not the final prediction, nor the dataset average, nor the raw feature value.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary-plot",
+        "baseline",
+        "expected-value",
+        "clv",
+        "axis-labeling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When using SHAP's TreeExplainer with a trained tree-based model, what do you typically pass to `shap_values()`?\n\n```python\nexplainer = shap.TreeExplainer(model)\nsv = explainer.shap_values( ? )\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Only the feature matrix X",
+        "B. The feature matrix X and target vector y",
+        "C. Only the target vector y",
+        "D. A list of feature names and the target vector y"
+      ],
+      "correct_answer": "A",
+      "explanation": "For TreeExplainer (and most SHAP explainers), SHAP values explain the model's prediction as a function of the input features. The prediction is computed from X, so `shap_values()` typically takes only X. The target y is not required to compute per-sample attributions for a trained model.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "treeexplainer",
+        "shap_values",
+        "model_explainability",
+        "tree_models"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In an ExtraTreesClassifier, why can enabling bootstrapping make SHAP predictor influence (summary) plots appear less stable across runs?\n\nA. Bootstrapping forces every tree to use all features equally, which makes SHAP values noisier.\nB. Each tree is trained on a different resampled dataset (~63% unique rows), which can change split choices and thus SHAP attributions.\nC. Bootstrapping disables random feature selection in ExtraTrees, causing overfitting and unstable SHAP.\nD. SHAP values are computed only from the training labels, so resampling labels changes SHAP directly.",
+      "question_type": "mc",
+      "options": [
+        "A. Bootstrapping forces every tree to use all features equally, which makes SHAP values noisier.",
+        "B. Each tree is trained on a different resampled dataset (~63% unique rows), which can change split choices and thus SHAP attributions.",
+        "C. Bootstrapping disables random feature selection in ExtraTrees, causing overfitting and unstable SHAP.",
+        "D. SHAP values are computed only from the training labels, so resampling labels changes SHAP directly."
+      ],
+      "correct_answer": "B",
+      "explanation": "With bootstrap=True, each tree sees a different sample (with replacement), containing about 63% unique observations on average. This sampling noise can change which features are selected for splits and the resulting tree structure. TreeSHAP (and related tree-based SHAP methods) is sensitive to tree structure and split paths, so changing the structure across trees/runs can lead to more variability in aggregated SHAP summary plots. The other options describe incorrect mechanisms (e.g., SHAP is not computed only from labels, and bootstrapping does not force equal feature usage or disable ExtraTrees randomness).",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "extratrees",
+        "bootstrap",
+        "tree-structure",
+        "feature-influence"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is it usually preferred to generate SHAP explainability plots on test (holdout) data rather than training data?",
+      "question_type": "mc",
+      "options": [
+        "Because SHAP values can only be computed on data the model has not seen during training",
+        "Because explaining unseen data provides insight into generalization and reduces the risk of interpreting overfitting artifacts",
+        "Because training data explanations are always biased and therefore invalid for any purpose",
+        "Because SHAP values on training data are always smaller in magnitude than on test data"
+      ],
+      "correct_answer": "B",
+      "explanation": "Test/holdout data better reflects real-world deployment conditions. Explanations on training data can be distorted by memorization or idiosyncrasies (overfitting artifacts), which can mislead interpretation. SHAP can be computed on any dataset (A is false), training explanations can still be useful for debugging (C is too absolute), and there is no rule that SHAP magnitudes are always smaller on training data (D is false).",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "test-data",
+        "holdout-set",
+        "generalization",
+        "overfitting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what a Partial Dependence Plot (PDP) explains?",
+      "question_type": "mc",
+      "options": [
+        "A PDP explains the contribution of each feature to a single prediction by decomposing it into additive terms.",
+        "A PDP shows the average marginal effect of a feature on the model’s predictions across the dataset.",
+        "A PDP quantifies pairwise feature interactions for a single instance using game-theoretic attribution.",
+        "A PDP explains how predictions change for one specific instance as you vary a feature while holding others fixed."
+      ],
+      "correct_answer": "B",
+      "explanation": "PDPs are global explainability tools: they estimate how the prediction changes on average as one feature varies, marginalizing (averaging) over the distribution of other features. They do not provide a per-instance decomposition (that’s SHAP) and do not focus on a single instance’s curve (that’s ICE).",
+      "difficulty": "beginner",
+      "tags": [
+        "pdp",
+        "global-explainability",
+        "feature-effect",
+        "model-interpretation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In SHAP, what does the additivity property state for a single instance?",
+      "question_type": "mc",
+      "options": [
+        "The SHAP values sum to 1 across all features.",
+        "The sum of all SHAP values equals the model prediction (without any baseline term).",
+        "The expected value plus the sum of all SHAP values equals the model’s prediction for that instance.",
+        "Each SHAP value equals the feature’s raw coefficient in a linear model."
+      ],
+      "correct_answer": "C",
+      "explanation": "Additivity (also called local accuracy) means the explanation exactly reconstructs the prediction: expected_value + Σ_i φ_i = f(x). Equivalently, Σ_i φ_i = f(x) − E[f(X)]. The other options confuse additivity with normalization, omit the baseline term, or incorrectly equate SHAP values with model coefficients.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "additivity",
+        "local-accuracy",
+        "baseline",
+        "expected-value"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best explains why LIME is considered a *local* explanation method?",
+      "question_type": "mc",
+      "options": [
+        "A. It approximates the model using perturbations sampled near the specific instance being explained and fits an interpretable model in that neighborhood.",
+        "B. It computes feature importance by averaging contributions across the entire training dataset.",
+        "C. It extracts the full set of decision rules from the black-box model to produce a single explanation that applies everywhere.",
+        "D. It guarantees the same feature weights for any instance because it uses a deterministic global surrogate model."
+      ],
+      "correct_answer": "A",
+      "explanation": "LIME is local because it generates perturbed samples around the instance of interest and fits a simple, interpretable surrogate (often linear) to approximate the black-box model only in that small region. The other options describe global explanations (B), rule extraction/global understanding (C), or incorrectly claim identical explanations for all instances (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "lime",
+        "local-explanations",
+        "model-agnostic",
+        "surrogate-models"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In SHAP, what does the term **absolute SHAP value** for feature *j* on an instance *x* mean?",
+      "question_type": "mc",
+      "options": [
+        "A. A different algorithm that re-trains the model without feature j and measures the performance drop",
+        "B. The absolute value of the Shapley contribution \\(\\phi_j(x)\\), i.e., \\(|\\phi_j(x)|\\)",
+        "C. The model output \\(f(x)\\) computed using only feature j",
+        "D. The expected model output when feature j is missing, \\(f_{\\{1,\\dots,M\\}\\setminus\\{j\\}}(x)\\)"
+      ],
+      "correct_answer": "B",
+      "explanation": "SHAP values \\(\\phi_j(x)\\) are Shapley (fair-share) contributions for a single instance. The **absolute SHAP value** is not a new method; it is simply \\(|\\phi_j(x)|\\), often used so that positive and negative contributions do not cancel when aggregating importance across many instances.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "shapley-values",
+        "absolute-shap",
+        "local-explanations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You estimate a feature’s MeanAbsSHAP by sampling n instances and computing \\(Y_i = |\\phi_j(x^{(i)})|\\). Which statement best explains why the standard error \\(\\mathrm{SE}(\\bar Y) \\approx s/\\sqrt{n}\\) is a valid measure of uncertainty for this estimate (when \\(n \\ll N\\))?",
+      "question_type": "mc",
+      "options": [
+        "A. Because SHAP values are always Normally distributed, so the sample mean is exactly Normal for any n.",
+        "B. Because random sampling makes the \\(Y_i\\) approximately i.i.d. (when \\(n \\ll N\\)), and the CLT implies the sample mean has variance \\(\\sigma^2/n\\).",
+        "C. Because taking absolute values forces \\(Y_i\\) to have zero variance, making the standard error small by definition.",
+        "D. Because the finite-population correction (FPC) is always close to 0, so uncertainty is negligible."
+      ],
+      "correct_answer": "B",
+      "explanation": "MeanAbsSHAP is a sample mean of \\(Y_i = |\\phi_j(x^{(i)})|\\) over randomly sampled instances. When sampling without replacement but with \\(n \\ll N\\), dependence is negligible and the \\(Y_i\\) behave approximately i.i.d. With finite variance, the CLT implies \\(\\bar Y\\) is approximately Normal for large n and \\(\\mathrm{Var}(\\bar Y)=\\sigma^2/n\\), leading to \\(\\mathrm{SE}(\\bar Y)\\approx s/\\sqrt{n}\\). A is wrong (SHAP values need not be Normal). C is wrong (absolute values do not eliminate variance). D is wrong (FPC is close to 1, not 0, when \\(n \\ll N\\).)",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "meanabsshap",
+        "standard-error",
+        "central-limit-theorem",
+        "iid-assumption"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best characterizes Integrated Gradients (IG) in terms of what it explains and at what scope?\n\nAssume IG is computed for a single input x relative to a baseline x'.",
+      "question_type": "mc",
+      "options": [
+        "A. IG provides a global explanation by summarizing feature importance across the entire dataset.",
+        "B. IG provides a local explanation by attributing a single prediction to input features via integrating gradients from a baseline to the input.",
+        "C. IG is a rule-extraction method that converts a neural network into an interpretable decision tree.",
+        "D. IG is a perturbation-based method that fits a linear surrogate model on randomly perturbed samples."
+      ],
+      "correct_answer": "B",
+      "explanation": "Integrated Gradients is a local attribution method: it explains one prediction at a time by integrating the model’s input gradients along a straight-line path from a baseline x' to the actual input x. It is not inherently global (A), does not extract symbolic rules/trees (C), and is not based on perturbation + surrogate fitting (that describes LIME-like approaches) (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "integrated-gradients",
+        "local-explanations",
+        "feature-attribution",
+        "baselines"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want an explanation tool that can highlight *feature interactions* while showing how the model output changes as a feature value varies. Which option best matches this requirement?\n\nA. Streamlit slider + scikit-learn `partial_dependence` because it is web-based and therefore captures interactions automatically\nB. SHAP `shap.dependence_plot` because it can show how output changes with a feature and can highlight interactions with other features\nC. Plotly line chart because hover/zoom reveals interactions between features\nD. LIME `explain_instance` because perturbations always produce global interaction plots",
+      "question_type": "mc",
+      "options": [
+        "A. Streamlit slider + scikit-learn `partial_dependence` because it is web-based and therefore captures interactions automatically",
+        "B. SHAP `shap.dependence_plot` because it can show how output changes with a feature and can highlight interactions with other features",
+        "C. Plotly line chart because hover/zoom reveals interactions between features",
+        "D. LIME `explain_instance` because perturbations always produce global interaction plots"
+      ],
+      "correct_answer": "B",
+      "explanation": "SHAP’s `dependence_plot` is specifically designed to plot SHAP values (feature attributions) against a feature’s value and can color/annotate points to reveal interaction effects with another feature. Streamlit and Plotly mainly provide *UI/plot interactivity*; they don’t inherently add interaction detection. LIME is primarily a *local* surrogate explanation and does not inherently produce global interaction plots like a SHAP dependence plot.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "dependence_plot",
+        "feature_interactions",
+        "model_explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a SHAP summary dot plot, what does each dot represent?",
+      "question_type": "mc",
+      "options": [
+        "A single feature’s average SHAP value across the dataset",
+        "A single observation’s SHAP value for a specific feature",
+        "A model coefficient for a feature (like in linear regression)",
+        "The raw feature value for an observation, plotted against the target"
+      ],
+      "correct_answer": "B",
+      "explanation": "In a SHAP summary dot plot, each dot corresponds to one observation (row) and shows that observation’s SHAP value for the feature on that row of the plot. The dot’s x-position is the SHAP value (contribution to the prediction), while the dot’s color encodes the original feature value (e.g., high vs. low).",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary-plot",
+        "dot-plot",
+        "local-explanations",
+        "feature-contribution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In ML explainability, what does it mean to treat explainability as a post-processing (post-hoc) task?",
+      "question_type": "mc",
+      "options": [
+        "A. You design the model architecture so that its parameters are directly human-interpretable during training",
+        "B. You train the model first, then apply an external method to explain its predictions after it is already making outputs",
+        "C. You modify the training labels to make the model easier to explain",
+        "D. You only evaluate model accuracy after deployment, not during development"
+      ],
+      "correct_answer": "B",
+      "explanation": "Post-processing (post-hoc) explainability means the model is trained as usual, and then an additional technique (e.g., SHAP, LIME) is applied afterward to analyze or attribute predictions. The explanation method is not inherently part of the model’s structure or training objective.",
+      "difficulty": "beginner",
+      "tags": [
+        "post-hoc-explainability",
+        "definitions",
+        "shap",
+        "lime"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When explaining a model with SHAP, what is a key interpretation issue introduced by one-hot encoding a categorical variable (e.g., `color` -> `color_red`, `color_blue`, `color_green`)?",
+      "question_type": "mc",
+      "options": [
+        "SHAP automatically merges one-hot columns back into the original categorical variable, so there is no issue.",
+        "SHAP treats each one-hot column as an independent feature, which can fragment the contribution of the original categorical variable.",
+        "SHAP cannot compute values for binary features, so one-hot encoding must be avoided.",
+        "One-hot encoding forces SHAP values to be zero for all but one category, making explanations invalid."
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, SHAP operates on the input feature columns it is given. With one-hot encoding, a single conceptual variable becomes multiple binary columns, and SHAP will attribute contributions to each binary column separately. This can make interpretation harder because the overall effect of the original categorical variable is split across several features unless you post-process (e.g., sum/group SHAP values by the original variable).",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "one-hot-encoding",
+        "feature-grouping",
+        "interpretability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In SHAP, the error \"cannot find colorbar\" (or similar) when calling `shap.summary_plot(...)` most commonly means what?\n\nA. The SHAP values contain NaNs, so the colorbar cannot be computed.\nB. Matplotlib cannot find a suitable Axes to attach the colorbar to (no place to steal space).\nC. The model is not supported by SHAP, so plotting fails at the colorbar step.\nD. The features were passed as a NumPy array instead of a pandas DataFrame, so the colorbar cannot be labeled.",
+      "question_type": "mc",
+      "options": [
+        "A. The SHAP values contain NaNs, so the colorbar cannot be computed.",
+        "B. Matplotlib cannot find a suitable Axes to attach the colorbar to (no place to steal space).",
+        "C. The model is not supported by SHAP, so plotting fails at the colorbar step.",
+        "D. The features were passed as a NumPy array instead of a pandas DataFrame, so the colorbar cannot be labeled."
+      ],
+      "correct_answer": "B",
+      "explanation": "The plotting code tries to add a Matplotlib colorbar, which requires an Axes to attach to (or to resize/\"steal\" space from). The error arises when SHAP/Matplotlib cannot identify an appropriate Axes for the colorbar. NaNs, model support, or DataFrame vs NumPy can cause other issues, but they are not the typical root cause of this specific error.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "matplotlib",
+        "colorbar",
+        "axes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a SHAP summary dot plot, what does the x-axis (SHAP value) represent for both regression and classification models?",
+      "question_type": "mc",
+      "options": [
+        "The raw feature value (e.g., age, income) for each sample",
+        "The feature’s contribution to the model output relative to a baseline (direction and magnitude)",
+        "The model’s residual error for each sample",
+        "The p-value of the feature’s coefficient"
+      ],
+      "correct_answer": "B",
+      "explanation": "A SHAP summary dot plot visualizes SHAP values, which quantify how much each feature pushes the model output away from a baseline (expected value). This interpretation holds across regression and classification; what changes is the meaning/scale of the model output (e.g., continuous prediction vs probability/log-odds for a class).",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "dot_plot",
+        "baseline",
+        "feature_contribution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a SHAP summary (dot) plot, a particular feature’s points appear entirely gray rather than showing a red-to-blue gradient. Which explanation is MOST consistent with this observation?",
+      "question_type": "mc",
+      "options": [
+        "The feature has little to no variability (nearly constant), so values map to a neutral midpoint color.",
+        "The feature has extremely high variability, so SHAP saturates the colormap to gray.",
+        "The model ignores the feature completely, so SHAP forces points to gray to indicate zero importance.",
+        "The SHAP values for the feature are all positive, so the plot uses gray to avoid misleading color cues."
+      ],
+      "correct_answer": "A",
+      "explanation": "In SHAP dot plots, point color typically encodes the feature value (low=blue, high=red). If the feature values barely vary (or are constant), they map to essentially the same position in the colormap, often appearing gray/neutral. Gray can also occur if values aren’t interpreted for color mapping, but the single best answer here is low/no variability.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary-plot",
+        "feature-variability",
+        "colormap"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the described SHAP bug with the unified `shap.Explainer` wrapper for tree models (e.g., LightGBM), what is the immediate cause of the `AttributeError`?\n\n```python\nexplainer = shap.Explainer(model, X_clean)\nshap_values = explainer(X_clean)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. The wrapper internally holds a `TreeEnsemble` object and later tries to access a `.values` attribute that does not exist",
+        "B. LightGBM models cannot be explained by SHAP because they do not support feature attribution methods",
+        "C. `X_clean` must always be a NumPy matrix; passing a pandas DataFrame triggers `.values` errors inside SHAP",
+        "D. The error occurs because `explainer(X_clean)` is invalid; SHAP explainers must be called with `explainer.shap_values(X_clean)`"
+      ],
+      "correct_answer": "A",
+      "explanation": "The bug is specifically in SHAP’s unified `shap.Explainer` wrapper path for tree models: it ends up storing a `TreeEnsemble` (wrapping the LightGBM model) and later attempts to read a `.values` attribute that the `TreeEnsemble` instance doesn’t have, causing the `AttributeError`. The other options are plausible misunderstandings (data type issues or API usage differences), but they are not the root cause described.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "explainer",
+        "treeexplainer",
+        "lightgbm",
+        "bug",
+        "attributeerror"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the provided SHAP interaction example, `interaction_values = explainer.shap_interaction_values(X_test)` is described as a 3D array with shape `[samples, features, features]`. What does an entry `interaction_values[i][j][k]` represent?\n\nA. The raw value of feature `j` for sample `i` multiplied by the raw value of feature `k`\nB. The contribution to prediction `i` that is specifically due to the interaction between features `j` and `k`\nC. The correlation between features `j` and `k` computed over the entire test set\nD. The change in model accuracy if feature `j` and feature `k` are removed together",
+      "question_type": "mc",
+      "options": [
+        "A. The raw value of feature `j` for sample `i` multiplied by the raw value of feature `k`",
+        "B. The contribution to prediction `i` that is specifically due to the interaction between features `j` and `k`",
+        "C. The correlation between features `j` and `k` computed over the entire test set",
+        "D. The change in model accuracy if feature `j` and feature `k` are removed together"
+      ],
+      "correct_answer": "B",
+      "explanation": "SHAP interaction values decompose a prediction into main effects (diagonal terms) and pairwise interaction effects (off-diagonal terms). The entry `[i][j][k]` quantifies how much the *interaction between features j and k* contributes to the prediction for sample `i`, not raw feature arithmetic, correlation, or an accuracy-based ablation metric.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "interaction-values",
+        "treeexplainer",
+        "model-explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the context of estimating summary statistics for SHAP values from a large dataset, which statement best describes how the sampling standard error behaves when the population size N is much larger than the sample size n (N \\gg n)?",
+      "question_type": "mc",
+      "options": [
+        "A. The standard error depends primarily on N; increasing N always reduces standard error even if n is fixed.",
+        "B. The standard error depends primarily on n (and variability), and is effectively independent of N when N \\gg n.",
+        "C. The standard error depends equally on N and n, so doubling either one halves the standard error.",
+        "D. The standard error depends on N only when sampling is done with replacement; otherwise it depends on n."
+      ],
+      "correct_answer": "B",
+      "explanation": "For common estimators used in SHAP summary plots (e.g., mean |SHAP| or a proportion/density estimate), the standard error formulas are driven by sample size n and variability (e.g., \\(\\sigma\\) or \\(p(1-p)\\)). When the population is huge relative to the sample (N \\gg n), the finite population correction is ~1, so N contributes negligibly.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "sampling-error",
+        "standard-error",
+        "finite-population-correction",
+        "ml-explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When calling `explainer.shap_values(X_test)`, which scenario most commonly results in a **list of NumPy arrays** being returned (instead of a single NumPy array)?",
+      "question_type": "mc",
+      "options": [
+        "A. Regression model (single continuous target)",
+        "B. Binary classification model that returns a single probability score to explain",
+        "C. Multiclass classification model (e.g., 3 classes)",
+        "D. Any model, as SHAP returns a list whenever `X_test` has more than one feature"
+      ],
+      "correct_answer": "C",
+      "explanation": "SHAP returns a list of NumPy arrays for multiclass classification because there are multiple outputs (one per class). Each list element contains the SHAP value matrix for a specific class. Regression and many binary-classification explanations are single-output and therefore typically return a single NumPy array. The number of input features does not determine list-vs-array; the number of model outputs does.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "shap_values",
+        "multiclass-classification",
+        "return-types",
+        "model-outputs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the context of explaining an MLlib production model with SHAP using a surrogate scikit-learn model, what does **fidelity** primarily refer to?",
+      "question_type": "mc",
+      "options": [
+        "A. How quickly SHAP can compute explanations for the surrogate model",
+        "B. How closely the surrogate model matches the MLlib model’s predictions/decision behavior",
+        "C. Whether the surrogate model uses the same feature scaling as the MLlib model",
+        "D. Whether the surrogate model is a tree-based model compatible with TreeExplainer"
+      ],
+      "correct_answer": "B",
+      "explanation": "Fidelity is about how well the surrogate approximates the production model’s behavior (predictions and decision boundaries). If fidelity is low, SHAP values computed on the surrogate may not reflect the true feature contributions of the MLlib model, even if SHAP runs fast or the model is compatible.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "surrogate-model",
+        "fidelity",
+        "mllib",
+        "model-approximation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a binary classification setting using a tree-based model (e.g., `ExtraTreesClassifier`), you compute SHAP values with:\n\n```python\nexplainer = shap.TreeExplainer(model)\nshap_values = explainer.shap_values(X_test)\n```\n\nWhich call correctly generates a SHAP summary plot focused on the *positive* class?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `shap.summary_plot(shap_values, X_test)`",
+        "B. `shap.summary_plot(shap_values[1], X_test)`",
+        "C. `shap.summary_plot(shap_values[0], X_test)`",
+        "D. `shap.summary_plot(explainer, X_test)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "For many binary classifiers, `explainer.shap_values(X)` returns a list/array-like structure with one set of SHAP values per class. Index `1` corresponds to the positive class, so `shap.summary_plot(shap_values[1], X_test)` visualizes how features push predictions toward (positive) class 1. Using `shap_values` without indexing is typically the wrong shape/type for `summary_plot`, and passing `explainer` is invalid because the plot expects SHAP values, not the explainer object.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "treeexplainer",
+        "summary_plot",
+        "binary_classification",
+        "shap_values_indexing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have 2.5 million rows and want to create a global SHAP summary (beeswarm) plot. You randomly sample 1% (≈25,000 rows). Which statement best explains why this sample size is typically sufficient to capture global feature influence trends?\n\nAssume you care about feature ranking by mean(|SHAP|) and the overall distribution shape in the summary plot.",
+      "question_type": "mc",
+      "options": [
+        "A. Because SHAP values are deterministic, any sample size produces the same summary plot as the full dataset.",
+        "B. Because the Law of Large Numbers makes aggregate quantities like mean(|SHAP|) stable, and the standard error shrinks as 1/sqrt(n), making 25,000 points low-noise for global patterns.",
+        "C. Because SHAP summary plots only use the top 1% of rows by prediction confidence, so sampling 1% is effectively exact.",
+        "D. Because model complexity decreases when fewer rows are used, which makes SHAP values more accurate than using the full dataset."
+      ],
+      "correct_answer": "B",
+      "explanation": "Global SHAP summary plots emphasize aggregate trends (e.g., mean(|SHAP|) and dense regions of the SHAP distribution). By the Law of Large Numbers, these aggregates stabilize as sample size grows; the standard error of the mean scales like σ/√n. With n≈25,000, even σ≈1 yields SE≈0.006, typically small enough to preserve feature ranking and the overall distribution shape. The other options are incorrect: SHAP is not identical across samples (A), summary plots do not inherently use the top 1% by confidence (C), and reducing rows does not make SHAP intrinsically “more accurate” (D)—it mainly reduces compute.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary-plot",
+        "sampling",
+        "law-of-large-numbers",
+        "standard-error",
+        "global-explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You estimate the population mean of |SHAP_j| using a random sample. Which statement best explains why sampling 25,000 rows (out of 2.5M) can still be representative of the overall trend in the mean feature importance?\n\nAssume the sample is i.i.d. from the population.",
+      "question_type": "mc",
+      "options": [
+        "Because the sampling error of the sample mean shrinks proportionally to 1/n, so doubling n halves the error.",
+        "Because the standard error of the sample mean shrinks proportionally to 1/\\sqrt{n}, so tens of thousands of points can make the mean very stable.",
+        "Because SHAP values are always normally distributed, so any sample size produces an unbiased and low-variance estimate.",
+        "Because using 1% of the data guarantees the same feature ranking as using 100% of the data."
+      ],
+      "correct_answer": "B",
+      "explanation": "For estimating a mean, the standard error is SE( x̄ ) = σ/√n. This √n rate is why moving from a few thousand to ~25k points dramatically reduces “wiggle room,” even if the full dataset is 2.5M. Option A is wrong (it claims 1/n). Option C is wrong because SHAP values need not be normal; CLT gives approximate normality for x̄ at large n. Option D is too strong: 1% does not guarantee identical rankings in all cases.",
+      "difficulty": "beginner",
+      "tags": [
+        "sampling-error",
+        "standard-error",
+        "shap",
+        "law-of-large-numbers",
+        "central-limit-theorem"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a SHAP dot summary plot for a regression model, what does the x-axis position of each dot primarily represent?",
+      "question_type": "mc",
+      "options": [
+        "The raw feature value for that instance",
+        "The SHAP value (contribution) of that feature to the prediction for that instance, including sign",
+        "The mean absolute SHAP value of the feature across the dataset",
+        "The model residual (y_true − y_pred) for that instance"
+      ],
+      "correct_answer": "B",
+      "explanation": "In a dot summary plot, each dot corresponds to one instance’s SHAP value for a given feature. The x-axis shows the signed SHAP value, indicating whether that feature pushes the prediction up (positive) or down (negative) for that instance. Raw feature values are typically encoded by color, while mean absolute SHAP values are what bar plots aggregate.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "dot-summary-plot",
+        "regression",
+        "directionality",
+        "local-explanations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the context of estimating MeanAbsSHAP (the sample mean of |SHAP| values), what does the **standard error** (SE) primarily quantify?\n\nLet \\(\\bar Y = \\frac{1}{n}\\sum_{i=1}^n |\\phi_j(x^{(i)})|\\).",
+      "question_type": "mc",
+      "options": [
+        "A. The spread (standard deviation) of the underlying |SHAP| values in the population",
+        "B. The spread (standard deviation) of the sampling distribution of the sample mean \\(\\bar Y\\)",
+        "C. The probability that \\(\\bar Y\\) is exactly equal to the true mean \\(\\mu\\)",
+        "D. The bias of \\(\\bar Y\\) as an estimator of \\(\\mu\\)"
+      ],
+      "correct_answer": "B",
+      "explanation": "SE is defined as the standard deviation of the sampling distribution of an estimator (here, the mean). For a mean, \\(\\mathrm{SE}(\\bar Y)=\\sigma/\\sqrt{n}\\) (or estimated by \\(s/\\sqrt{n}\\)). It is not the raw spread of individual |SHAP| values (that’s \\(\\sigma\\) or \\(s\\)), not the probability of exact equality (which is effectively 0 for continuous variables), and not the estimator’s bias.",
+      "difficulty": "beginner",
+      "tags": [
+        "standard-error",
+        "sampling-distribution",
+        "mean-absolute-shap",
+        "shap-values"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You fit a linear regression model with\n\n\\(f(x)=\\beta_0 + \\beta_1 x_1 + \\beta_2 x_2\\), where \\(\\beta_0=1\\), \\(\\beta_1=2\\), \\(\\beta_2=-1\\).\n\nYour background data has feature means \\(E[X_1]=3\\) and \\(E[X_2]=10\\). For a point \\(x\\) with \\(x_1=5\\), \\(x_2=7\\), and using `feature_dependence=\"independent\"`, compute:\n1) the baseline \\(E[f(x)]\\) (i.e., \\(\\phi_0\\))\n2) \\(\\phi_1(x)\\) and \\(\\phi_2(x)\\)\n3) verify the sum-to-difference property \\(\\phi_1+\\phi_2 = f(x)-E[f(x)]\\).\n\nShow your calculations.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Baseline: E[f] = β0 + β1 E[X1] + β2 E[X2] = 1 + 2·3 + (-1)·10 = 1 + 6 - 10 = -3.\n2) φ1 = β1 (x1 - E[X1]) = 2·(5-3) = 4.  φ2 = β2 (x2 - E[X2]) = (-1)·(7-10) = 3.\n3) f(x) = 1 + 2·5 + (-1)·7 = 1 + 10 - 7 = 4.  f(x) - E[f] = 4 - (-3) = 7.  φ1 + φ2 = 4 + 3 = 7, which matches.",
+      "explanation": "With `feature_dependence=\"independent\"`, `LinearExplainer` uses the closed-form \\(\\phi_j=\\beta_j(x_j-\\mu_j)\\), where \\(\\mu_j=E[X_{bg,j}]\\). The baseline (bias term) is the expected model output over the background: \\(E[f]=\\beta_0+\\sum_j \\beta_j\\mu_j\\). Summing the feature attributions reproduces the difference between the model output and the baseline, which is the core SHAP additivity property.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linearexplainer",
+        "closed-form",
+        "baseline",
+        "expected-value",
+        "feature_dependence",
+        "additivity"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the code below on a dataset with exactly 2 features, `Feature_1` and `Feature_2`.\n\n```python\nshap_interaction_values = explainer.shap_interaction_values(X_test)\ninteraction_matrix = np.abs(shap_interaction_values).mean(axis=0)\n```\n\nWhich statement is most accurate about the **shape and interpretation** of `shap_interaction_values`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. It has shape `(n_samples, 2)`; each row gives the interaction strength between the two features for that sample",
+        "B. It has shape `(2, 2)`; it is a single global interaction matrix computed directly from the model",
+        "C. It has shape `(n_samples, 2, 2)`; each sample has its own 2×2 matrix with main effects on the diagonal and interactions off-diagonal",
+        "D. It has shape `(n_samples,)`; it stores one interaction score per sample summarizing all interactions"
+      ],
+      "correct_answer": "C",
+      "explanation": "SHAP interaction values are defined per sample and per pair of features, so for 2 features the per-sample result is a 2×2 matrix. Stacking across samples yields `(n_samples, 2, 2)`. The diagonal corresponds to main effects; off-diagonal entries correspond to the pairwise interaction between `Feature_1` and `Feature_2` for that sample.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "tensor-shapes",
+        "pairwise-interactions",
+        "xgboost",
+        "explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are explaining predictions from a tree-based model (e.g., XGBoost/LightGBM) and a black-box model (e.g., an arbitrary Python function). Which statement best describes when a background dataset is likely to provide a performance benefit for SHAP computations?\n\nAssume you are choosing between TreeExplainer and KernelExplainer where applicable.",
+      "question_type": "mc",
+      "options": [
+        "A. A background dataset significantly speeds up TreeExplainer because TreeExplainer relies on Monte Carlo sampling over the background distribution",
+        "B. A background dataset can significantly speed up KernelExplainer by reducing expectation-estimation cost; TreeExplainer is already optimized for fast (often exact) computation so performance gains are usually smaller or unnecessary",
+        "C. A background dataset speeds up both explainers equally because both compute the same expectation in the same way",
+        "D. A background dataset never affects runtime; it only affects the sign of SHAP values"
+      ],
+      "correct_answer": "B",
+      "explanation": "KernelExplainer typically approximates SHAP values via sampling/weighted regression and must repeatedly evaluate the model over background samples to estimate expectations; fewer representative background points can reduce runtime substantially. TreeExplainer uses model structure to compute SHAP values efficiently (often exactly for trees), so it does not generally need a smaller background set for speed—though a background/reference distribution may still be used for defining the baseline/reference behavior.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tree-explainer",
+        "kernel-explainer",
+        "tree-models",
+        "black-box-models",
+        "runtime-tradeoffs",
+        "reference-distribution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a NumPy array of LIME feature importances aligned to `feature_names` (including zeros for any feature not present in the explanation). Which snippet correctly produces an ordered array?\n\nAssume:\n- `feature_names` is a list of the original column names in the desired order\n- `explanation` is the result of `explainer.explain_instance(...)`\n\n",
+      "question_type": "mc",
+      "options": [
+        "importance_array = np.array(explanation.as_list())",
+        "importance_array = np.array([v for _, v in explanation.as_list()])",
+        "importance_dict = dict(explanation.as_list()); importance_array = np.array([importance_dict.get(f, 0) for f in feature_names])",
+        "importance_array = np.array(explanation.as_map())"
+      ],
+      "correct_answer": "C",
+      "explanation": "The key requirement is alignment to `feature_names` and filling missing features with 0. Converting the list to a dict enables lookup by feature name, and iterating over `feature_names` enforces the correct order. Option B loses alignment (it uses LIME's returned order and omits missing features). Option A creates an array of tuples, not a numeric vector. Option D uses a different representation and is not directly a feature-name-aligned numeric vector without additional mapping.",
+      "difficulty": "intermediate",
+      "tags": [
+        "lime",
+        "numpy",
+        "feature-alignment",
+        "post-processing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are reviewing a SHAP summary plot for a CLV model (predictions in USD). The x-axis label is currently \"($CLV)\". Which replacement label is the most accurate and why?",
+      "question_type": "mc",
+      "options": [
+        "\"Predicted CLV ($)\" because SHAP values equal the model prediction",
+        "\"Change in CLV ($)\" because the axis shows how features move the prediction up/down from the baseline",
+        "\"CLV Feature Value ($)\" because SHAP values are the feature values expressed in dollars",
+        "\"Probability of CLV ($)\" because SHAP values represent probabilities"
+      ],
+      "correct_answer": "B",
+      "explanation": "The SHAP summary plot x-axis shows SHAP values, i.e., the impact/contribution of each feature on the prediction relative to the expected value (baseline). Since the model output is dollars, the contribution is in dollars. Labeling it as \"Predicted CLV ($)\" incorrectly implies it is the final prediction; the other options confuse SHAP values with feature values or probabilities.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "interpretability",
+        "axis-labeling",
+        "clv",
+        "model-output-units",
+        "baseline"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are explaining predictions from a trained gradient-boosted tree model. A teammate argues that SHAP must be given the true labels `y_test` to compute SHAP values correctly.\n\nWrite a short response that:\n1) States whether `y_test` is required for `TreeExplainer.shap_values(X_test)`.\n2) Clarifies what kind of additional data might be needed for other explainers (e.g., KernelExplainer) and why it is different from passing targets.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `y_test` is not required for `TreeExplainer.shap_values(X_test)`; TreeExplainer computes contributions to the model output using only the feature values because the model prediction depends only on X.\n2) Some explainers such as KernelExplainer often require a background (reference) dataset of feature rows to approximate expectations/sampling; this is a representative sample of X used to define a baseline, not the target labels y. Even then, targets are not typically passed into `shap_values()`.",
+      "explanation": "TreeExplainer leverages the structure of tree models to compute SHAP values directly from the model and the input features. The labels are not part of the model's forward prediction and therefore are unnecessary for attribution. In contrast, model-agnostic explainers like KernelExplainer approximate SHAP values via sampling and need a background feature distribution to estimate expected values; this is conceptually different from supplying ground-truth targets.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "treeexplainer",
+        "kernelexplainer",
+        "background_dataset",
+        "baseline",
+        "model_agnostic_explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You train an ExtraTreesClassifier with `bootstrap=True` on a small, noisy dataset and generate a SHAP summary plot. Across different random seeds, the top-3 features sometimes change order.\n\nWhich action is MOST likely to improve the stability of the SHAP influence ranking while still keeping bootstrapping enabled?\n\nA. Decrease `n_estimators` to make each tree more influential.\nB. Increase `n_estimators` (e.g., to 300–500) so variability averages out across more trees.\nC. Set `max_depth=1` so SHAP values become identical across seeds.\nD. Turn off SHAP and use impurity-based feature importance instead; it is seed-invariant under bootstrapping.",
+      "question_type": "mc",
+      "options": [
+        "A. Decrease `n_estimators` to make each tree more influential.",
+        "B. Increase `n_estimators` (e.g., to 300–500) so variability averages out across more trees.",
+        "C. Set `max_depth=1` so SHAP values become identical across seeds.",
+        "D. Turn off SHAP and use impurity-based feature importance instead; it is seed-invariant under bootstrapping."
+      ],
+      "correct_answer": "B",
+      "explanation": "Bootstrapping increases variance in individual trees because each tree is trained on a different resample. Aggregating over more trees reduces this variance by averaging, which typically stabilizes both predictions and SHAP attributions derived from the ensemble’s structure. Decreasing the number of trees generally makes instability worse (A). Shallowing trees (C) may reduce complexity but does not guarantee identical SHAP across seeds under bootstrapping. Impurity-based importances (D) are also affected by randomness and bootstrapping and are not seed-invariant.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "stability",
+        "n_estimators",
+        "bootstrap",
+        "ensemble-variance",
+        "extratrees"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe that a SHAP summary plot computed on the training set shows feature `zip_code` as the top driver of predictions, but on the test set it is much less important. Which interpretation and next step is MOST appropriate?\n\nA) Conclude the model is correct and keep `zip_code` because training explanations are the most reliable.\nB) Suspect `zip_code` may be exploiting training-specific artifacts; validate on unseen data and consider regularization, leakage checks, or feature redesign.\nC) Ignore the test SHAP plot because SHAP is not meaningful on unseen data.\nD) Remove `zip_code` immediately without further checks because any difference between train and test explanations proves bias.",
+      "question_type": "mc",
+      "options": [
+        "Conclude the model is correct and keep `zip_code` because training explanations are the most reliable.",
+        "Suspect `zip_code` may be exploiting training-specific artifacts; validate on unseen data and consider regularization, leakage checks, or feature redesign.",
+        "Ignore the test SHAP plot because SHAP is not meaningful on unseen data.",
+        "Remove `zip_code` immediately without further checks because any difference between train and test explanations proves bias."
+      ],
+      "correct_answer": "B",
+      "explanation": "A large discrepancy between training and test explanations is a common sign that the model may be relying on patterns that do not generalize (overfitting artifacts) or potential leakage/proxy effects. The correct response is to treat training explanations as a debugging signal, then confirm behavior on unseen data and investigate why the feature behaves differently (e.g., leakage checks, distribution shift, regularization, or feature engineering). A and C contradict the goal of generalization insight, and D is overly absolute—differences warrant investigation, not automatic removal.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "train-vs-test",
+        "feature-importance",
+        "overfitting-artifacts",
+        "model-debugging",
+        "generalization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to explain why a model predicted a high risk score for a particular customer (a single instance). The model is known to have feature interactions (e.g., income and debt-to-income ratio jointly matter). Which approach is the best fit, and why? Answer in 2–4 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use SHAP values (optionally supplemented by an ICE plot). SHAP provides a local explanation by attributing the single instance’s prediction to per-feature contributions and can capture interactions in a principled way (e.g., via SHAP interaction values). ICE can additionally show how that specific customer’s prediction would change as one feature varies, revealing heterogeneity/interactions that a PDP might hide.",
+      "explanation": "The key requirements are (1) local explainability for one prediction and (2) interaction awareness. PDPs are global averages and can be misleading under strong interactions; SHAP directly explains an individual prediction and can reflect interactions, while ICE provides per-instance response curves that reveal heterogeneity compared to the global average.",
+      "difficulty": "intermediate",
+      "tags": [
+        "local-explainability",
+        "shap",
+        "ice",
+        "feature-interactions",
+        "individual-predictions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You compute SHAP values for a model using an approximate method (e.g., KernelExplainer with sampling). For one instance you get:\n- expected_value = 0.20\n- model prediction f(x) = 0.95\n- sum of SHAP values Σφ = 0.68\n\nWhich interpretation is most appropriate?\n",
+      "question_type": "mc",
+      "options": [
+        "The explanation satisfies additivity because the SHAP values are close to the prediction.",
+        "The explanation violates additivity because expected_value + Σφ = 0.88, which differs from 0.95; this may be due to approximation error and could warrant increasing samples or using a more exact explainer.",
+        "The explanation is invalid because additivity must always hold exactly, regardless of explainer type.",
+        "The explanation is fine because additivity only applies to classification models, not regression models."
+      ],
+      "correct_answer": "B",
+      "explanation": "Additivity requires expected_value + Σφ = f(x). Here, 0.20 + 0.68 = 0.88, which differs from 0.95 by 0.07. With approximation-based explainers, small deviations can occur due to estimation error; a common response is to increase the number of samples, adjust explainer settings, or switch to an exact method when feasible. It is not true that additivity always holds exactly for approximate methods, nor is it limited to classification.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "kernel-explainer",
+        "approximation-error",
+        "additivity-check",
+        "diagnostics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run LIME on two different instances from the same dataset and get noticeably different feature attributions.\n\nWhich interpretation is most accurate?",
+      "question_type": "mc",
+      "options": [
+        "A. This indicates a bug: LIME should return the same explanation for all instances if the underlying model is fixed.",
+        "B. This is expected because LIME fits a separate local surrogate model per instance, and the black-box model may behave differently in different regions of the input space.",
+        "C. This means the black-box model is linear globally; otherwise LIME would not be able to produce explanations.",
+        "D. This happens only when LIME perturbs points far away from the instance; with correct settings, explanations must be identical."
+      ],
+      "correct_answer": "B",
+      "explanation": "LIME is designed to explain a single prediction at a time by sampling/perturbing near that instance and fitting a local interpretable model. If the black-box model uses different decision logic in different parts of the feature space, local explanations can differ across instances. The other options incorrectly assume LIME is global or that identical explanations are required.",
+      "difficulty": "intermediate",
+      "tags": [
+        "lime",
+        "instance-level-explanations",
+        "local-surrogates",
+        "decision-boundary"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider computing global feature importance for a SHAP **summary bar plot** using SHAP values \\(\\phi_j(x^{(i)})\\) for instances \\(i=1,\\dots,n\\). Which aggregation matches how the bar plot ranking is typically computed?\n\nAssume you have a matrix `phi[i][j]` of SHAP values.\n\n```text\nphi[i][j] = φ_j(x^(i))\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. For each feature j, compute \\(\\frac{1}{n}\\sum_{i=1}^n \\phi_j(x^{(i)})\\)",
+        "B. For each feature j, compute \\(\\sum_{i=1}^n \\phi_j(x^{(i)})^2\\)",
+        "C. For each feature j, compute \\(\\frac{1}{n}\\sum_{i=1}^n |\\phi_j(x^{(i)})|\\)",
+        "D. For each feature j, compute \\(\\max_i \\phi_j(x^{(i)})\\)"
+      ],
+      "correct_answer": "C",
+      "explanation": "A SHAP summary **bar** plot typically ranks features by the **mean absolute SHAP value**: \\(\\text{MeanAbsSHAP}_j = \\frac{1}{n}\\sum_{i=1}^n |\\phi_j(x^{(i)})|\\). Taking absolute values prevents positive and negative contributions from canceling out, providing a magnitude-based global importance measure.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "global-importance",
+        "summary-bar-plot",
+        "mean-absolute-shap",
+        "aggregation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You computed \\(Y_i = |\\phi_j(x^{(i)})|\\) for a feature on a random sample of \\(n=10{,}000\\) instances. The sample standard deviation is \\(s=0.80\\).\n\n1) Compute the estimated standard error of MeanAbsSHAP.\n2) Using a Normal approximation, compute an approximate 95% confidence interval half-width (margin of error) as \\(1.96\\times \\mathrm{SE}\\).\n\nShow your calculations.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) SE ≈ s/√n = 0.80/√10000 = 0.80/100 = 0.008.\n2) 95% margin ≈ 1.96×0.008 = 0.01568 ≈ 0.0157 (about 0.016). So the CI is MeanAbsSHAP ± 0.0157.",
+      "explanation": "The standard error of a sample mean is estimated by \\(s/\\sqrt{n}\\). With \\(n=10{,}000\\), \\(\\sqrt{n}=100\\), so \\(\\mathrm{SE}=0.80/100=0.008\\). Under the CLT, \\(\\bar Y\\) is approximately Normal for large n even if \\(Y_i\\) is skewed, so a 95% CI uses \\(\\pm 1.96\\,\\mathrm{SE}\\), giving \\(\\pm 0.0157\\).",
+      "difficulty": "intermediate",
+      "tags": [
+        "standard-error",
+        "confidence-interval",
+        "meanabsshap",
+        "clt",
+        "sampling-uncertainty"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the 1D model \\(f(x)=x^2\\) with baseline \\(x'=0\\) and input \\(x=3\\). Using Integrated Gradients,\n\\[\n\\text{IG}(x) = (x-x')\\int_0^1 \\frac{\\partial f(x' + \\alpha(x-x'))}{\\partial x}\\, d\\alpha,\n\\]\ncompute \\(\\text{IG}(3)\\). Show your steps.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "For f(x)=x^2, f'(x)=2x. Along the path x(α)=0+α(3-0)=3α, the gradient is f'(x(α))=2(3α)=6α. Then IG(3)=(3-0)∫_0^1 6α dα = 3 * [3α^2]_0^1 = 3 * 3 = 9.",
+      "explanation": "Integrated Gradients accumulates (integrates) the gradient along the straight-line path from baseline to input and then scales by (x−x'). Here, the integral of 6α over [0,1] is 3, and multiplying by 3 yields 9. This also matches the completeness intuition for this simple case: f(3)−f(0)=9−0=9.",
+      "difficulty": "intermediate",
+      "tags": [
+        "integrated-gradients",
+        "path-integration",
+        "gradients",
+        "completeness",
+        "toy-example"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the Streamlit partial dependence snippet below:\n\n```python\nfeature_value = st.slider(\n    f\"Adjust {feature}\",\n    float(X[feature].min()),\n    float(X[feature].max()),\n    float(X[feature].mean())\n)\n\npd_results = partial_dependence(model, X, [feature_idx], grid_resolution=50)\nx_values, y_values = pd_results['values'][0], pd_results['average'][0]\n\npredicted_value = np.interp(feature_value, x_values, y_values)\n```\n\nExplain what `predicted_value` represents and why `np.interp` is used here. Also state one limitation of interpreting this value as the model’s prediction for a single instance.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`predicted_value` is the partial dependence estimate (the averaged model output) at the slider’s selected feature value, obtained by interpolating between the discrete grid points `x_values` used to compute partial dependence. `np.interp` is used because partial dependence is computed on a finite grid; the slider can return any value in the feature range, so interpolation approximates the PD curve value at that exact slider position. A key limitation is that partial dependence is a global average over the dataset (marginalizing over other features), so it is not the model’s prediction for a specific individual instance; it can hide heterogeneity/interaction effects that would appear in ICE or per-instance predictions.",
+      "explanation": "scikit-learn’s `partial_dependence` returns model output averaged over the dataset for each point on a grid of feature values. The slider value will usually not coincide exactly with a grid point, so interpolation provides a smooth estimate on the curve. Interpreting this as an individual prediction is incorrect because PD averages over the distribution of other features; for a single instance you would need to fix other feature values (or use ICE/per-instance evaluation).",
+      "difficulty": "intermediate",
+      "tags": [
+        "partial_dependence",
+        "streamlit",
+        "scikit-learn",
+        "np.interp",
+        "global_explanations",
+        "ice_vs_pdp"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are interpreting the top row (most important feature) in a SHAP summary dot plot for predicting CLV (in dollars). You observe that red dots are mostly on the right (positive SHAP values) and blue dots are mostly on the left (negative SHAP values). What is the best interpretation?\n\nAssume the standard SHAP summary plot color mapping: red = high feature value, blue = low feature value.",
+      "question_type": "mc",
+      "options": [
+        "High feature values tend to decrease predicted CLV, and low feature values tend to increase predicted CLV",
+        "The feature has no relationship with CLV because both colors appear on both sides",
+        "High feature values tend to increase predicted CLV, and low feature values tend to decrease predicted CLV",
+        "The model is biased because red and blue dots should be evenly mixed around zero"
+      ],
+      "correct_answer": "C",
+      "explanation": "The x-axis is the SHAP value: positive values push the prediction higher (increase CLV), negative values push it lower (decrease CLV). If red (high feature values) cluster on the positive side, high values are associated with increasing the prediction. If blue (low feature values) cluster on the negative side, low values tend to decrease the prediction.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "summary-plot",
+        "directionality",
+        "feature-effects",
+        "clv"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have trained a gradient-boosted tree model and are deciding between two explainability approaches:\n\n1) Use SHAP to explain predictions after training.\n2) Replace the model with a single decision tree to make it interpretable by design.\n\nWhich statement best captures the trade-off described in the source content?",
+      "question_type": "mc",
+      "options": [
+        "A. SHAP is an inherently interpretable model, while a decision tree is always post-hoc",
+        "B. Both approaches are post-processing because they are applied after training",
+        "C. SHAP is typically post-hoc, while a single decision tree can be interpretable by design (not necessarily post-hoc)",
+        "D. Interpretable-by-design models cannot be used for prediction, only for explanation"
+      ],
+      "correct_answer": "C",
+      "explanation": "SHAP is commonly used as a post-hoc tool applied after a model is trained, especially for complex models. In contrast, a single decision tree is often considered interpretable by design because its structure can be inspected directly without needing an external explainer (though one could still use post-hoc methods if desired).",
+      "difficulty": "intermediate",
+      "tags": [
+        "interpretable-by-design",
+        "post-hoc-explainability",
+        "model-choice",
+        "decision-trees",
+        "ensemble-methods"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You one-hot encode a categorical variable with k categories into k binary columns (no dropped baseline). You notice SHAP summary plots show several of these dummy columns as important, and the importance seems \"spread out\".\n\nWhich action most directly addresses redundancy/multicollinearity from the encoding and can simplify SHAP interpretation without changing the information content of the encoded variable?\n",
+      "question_type": "mc",
+      "options": [
+        "Switch from SHAP to permutation importance; SHAP cannot handle categorical variables.",
+        "Drop one of the one-hot columns (dummy encoding using k-1 columns) to remove redundancy.",
+        "Normalize each one-hot column to have mean 0 and variance 1 before computing SHAP.",
+        "Compute SHAP interaction values; this automatically removes redundancy in k-column encodings."
+      ],
+      "correct_answer": "B",
+      "explanation": "Using k columns for a k-category variable is redundant because the columns sum to 1 (assuming exactly one category is active). Dropping one column (dummy encoding with k-1 columns) removes this redundancy and reduces multicollinearity. This typically makes SHAP attributions easier to interpret because there is a clear baseline category and fewer correlated dummy features competing for attribution.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "dummy-encoding",
+        "multicollinearity",
+        "redundancy",
+        "one-hot-encoding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are getting a SHAP dot/summary plot colorbar error in a notebook environment. Which change is the most direct fix while keeping the colorbar enabled?\n\n```python\nimport shap\n# shap_values, features already computed\nshap.summary_plot(shap_values, features)\n```\n\nA. Convert `features` to a pandas DataFrame.\nB. Create a Matplotlib figure/axis and pass the axis via `ax`.\nC. Set `color_bar=False`.\nD. Recompute SHAP values using a different explainer (e.g., KernelExplainer).",
+      "question_type": "mc",
+      "options": [
+        "A. Convert `features` to a pandas DataFrame.",
+        "B. Create a Matplotlib figure/axis and pass the axis via `ax`.",
+        "C. Set `color_bar=False`.",
+        "D. Recompute SHAP values using a different explainer (e.g., KernelExplainer)."
+      ],
+      "correct_answer": "B",
+      "explanation": "Passing an explicit Matplotlib Axes provides SHAP/Matplotlib a clear target to draw into and a reference to place the colorbar. Disabling the colorbar (C) avoids the issue but does not keep it enabled. Converting to DataFrame (A) is sometimes helpful for labels but does not address missing/ambiguous Axes. Changing explainers (D) is not relevant to colorbar placement.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "matplotlib",
+        "ax",
+        "colorbar"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You train a multi-class classifier (3 classes) and want to use SHAP summary dot plots to explain it. Which approach best matches how SHAP summary plots should be interpreted in classification?\n\nA) Create one summary plot using SHAP values aggregated across all classes; interpret it as a global explanation for every class simultaneously.\nB) Create separate summary plots per class (or focus on one class) so the SHAP values are interpreted as contributions to that class’s output.\nC) Use the same summary plot as regression and interpret SHAP values as contributions to the continuous target.\nD) Do not use summary dot plots for classification because SHAP only applies to regression.",
+      "question_type": "mc",
+      "options": [
+        "Create one summary plot using SHAP values aggregated across all classes; interpret it as a global explanation for every class simultaneously.",
+        "Create separate summary plots per class (or focus on one class) so the SHAP values are interpreted as contributions to that class’s output.",
+        "Use the same summary plot as regression and interpret SHAP values as contributions to the continuous target.",
+        "Do not use summary dot plots for classification because SHAP only applies to regression."
+      ],
+      "correct_answer": "B",
+      "explanation": "In classification, SHAP values are typically defined with respect to a specific class output (e.g., probability or log-odds for class k). For multi-class problems, producing class-specific plots (one per class or a chosen class) avoids mixing interpretations and makes it clear which outcome the feature contributions relate to.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "multiclass_classification",
+        "class_specific_explanations",
+        "summary_plot",
+        "interpretation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You generate a SHAP summary plot and notice the feature `zip_code` is rendered as a gray blob (no red/blue gradient). The feature is stored as strings like \"02139\" and \"94107\". What is the most appropriate next step to diagnose and address the issue so the color gradient becomes meaningful?",
+      "question_type": "mc",
+      "options": [
+        "Increase the number of samples passed to the SHAP explainer so more colors appear.",
+        "Check whether `zip_code` is non-numeric/uninterpretable for color mapping and encode it appropriately (e.g., numeric/ordinal only if meaningful, or one-hot/target encoding) before plotting.",
+        "Switch from a dot summary plot to a bar summary plot; bar plots automatically infer colors for categorical features.",
+        "Normalize the SHAP values for `zip_code` to the range [0, 1] so the colormap can be applied."
+      ],
+      "correct_answer": "B",
+      "explanation": "A fully gray feature can indicate that SHAP cannot interpret the feature’s values for color mapping (commonly when the feature is non-numeric/categorical without appropriate handling). The correct diagnostic action is to verify the dtype/encoding and then apply a suitable encoding strategy. Simply increasing samples or normalizing SHAP values does not fix color mapping of feature values; bar plots avoid value-color encoding rather than making it meaningful.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "categorical-features",
+        "encoding",
+        "summary-plot",
+        "debugging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are stuck on an older SHAP version that triggers the unified-wrapper bug when running `shap.Explainer(model, X_clean)` for a LightGBM model. Which workaround avoids the buggy code path by providing a raw prediction function?\n\nAssume `model` is a trained LightGBM model and `X_clean` is the background / evaluation dataset.\n",
+      "question_type": "mc",
+      "options": [
+        "A. `explainer = shap.Explainer(model, X_clean); shap_values = explainer.shap_values(X_clean)`",
+        "B. `explainer = shap.Explainer(model.predict, X_clean); shap_values = explainer(X_clean)`",
+        "C. `explainer = shap.TreeExplainer(model.predict); shap_values = explainer(X_clean)`",
+        "D. `explainer = shap.KernelExplainer(model, X_clean); shap_values = explainer.shap_values(X_clean)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Passing `model.predict` (a callable) into `shap.Explainer` makes SHAP treat it as a generic prediction function and fall back to a simpler, non-tree-specific path that avoids the buggy unified tree wrapper that tries to access the missing `.values` attribute. Option A still passes the model object and stays on the buggy path; C misuses `TreeExplainer` (it expects a model object for tree-specific optimization, not a prediction function); D changes explainer type and is not the described workaround (and may be much slower).",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "explainer",
+        "workaround",
+        "modelpredict",
+        "lightgbm",
+        "api-usage"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You computed SHAP interaction values for a LightGBM classifier and want to inspect how the effect of `age` changes depending on `education-num`, as in the example. Which code snippet best matches that goal?\n\nA.\n```python\nshap.dependence_plot(\"age\", explainer.shap_values(X_test), X_test)\n```\nB.\n```python\nshap.dependence_plot((\"age\", \"education-num\"), interaction_values, X_test)\n```\nC.\n```python\nshap.summary_plot(explainer.shap_values(X_test), X_test, max_display=10)\n```\nD.\n```python\nshap.summary_plot(interaction_values[\"age\", \"education-num\"], X_test)\n```",
+      "question_type": "mc",
+      "options": [
+        "A.\n```python\nshap.dependence_plot(\"age\", explainer.shap_values(X_test), X_test)\n```",
+        "B.\n```python\nshap.dependence_plot((\"age\", \"education-num\"), interaction_values, X_test)\n```",
+        "C.\n```python\nshap.summary_plot(explainer.shap_values(X_test), X_test, max_display=10)\n```",
+        "D.\n```python\nshap.summary_plot(interaction_values[\"age\", \"education-num\"], X_test)\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "To visualize an interaction pair, SHAP’s `dependence_plot` can take a tuple `(primary_feature, interacting_feature)` and the `interaction_values` tensor. Option A uses main-effect SHAP values (not interaction values). Option C is a global summary plot, not a targeted interaction plot. Option D is not the correct way to index the 3D interaction tensor and also misuses `summary_plot` for a single pair.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "dependence-plot",
+        "interaction-values",
+        "lightgbm",
+        "visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You compute a SHAP summary plot by sampling \\(n=25{,}000\\) rows from a dataset with \\(N=2.5\\times 10^9\\) rows (sampling without replacement). \n\n1) Compute the finite population correction (FPC): \\(\\sqrt{\\frac{N-n}{N-1}}\\).\n2) Briefly interpret whether accounting for FPC meaningfully changes the standard error.\n\nYou may approximate.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) FPC = sqrt((N-n)/(N-1)) = sqrt((2.5e9-2.5e4)/(2.5e9-1)) ≈ sqrt(0.99999) ≈ 0.999995.\n2) This is essentially 1 (a ~0.0005% reduction in SE), so it does not meaningfully change the standard error; sampling error is effectively determined by n (and variance), not by N.",
+      "explanation": "The FPC only matters when the sample is a non-trivial fraction of the population (rule of thumb: >~5%). Here, n/N = 25,000 / 2.5e9 = 1e-5, so the correction factor is extremely close to 1, making its impact on SE practically zero.",
+      "difficulty": "intermediate",
+      "tags": [
+        "finite-population-correction",
+        "standard-error",
+        "shap-summary-plot",
+        "sampling-without-replacement",
+        "approximation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained a 3-class classifier and computed SHAP values:\n\n```python\nshap_values = explainer.shap_values(X_test)\n```\n\nYou want the SHAP values for **class index 2** to use in a summary plot. Which code snippet correctly selects the right SHAP values object for that class (based on SHAP's typical return type for multiclass classification)?",
+      "question_type": "mc",
+      "options": [
+        "A. `shap_values_class2 = shap_values[:, 2]`",
+        "B. `shap_values_class2 = shap_values[2]`",
+        "C. `shap_values_class2 = shap_values.get_class(2)`",
+        "D. `shap_values_class2 = shap_values.class(2)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "For multiclass classification, `explainer.shap_values(X_test)` typically returns a **list of NumPy arrays**, one per class. Therefore, selecting the SHAP values for class index 2 is done by indexing the list: `shap_values[2]`. Option A assumes a single NumPy array with a class dimension in the second axis, which does not match the described behavior in the source content.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "multiclass-classification",
+        "python-indexing",
+        "shap_values",
+        "summary-plot"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You train a scikit-learn tree-based surrogate model so you can use SHAP’s TreeExplainer, because your production model is in Spark MLlib. Which validation approach best supports the claim that the surrogate’s SHAP explanations are meaningful for the production model?\n\nAssume you have a held-out validation set with features X_val and you can obtain predictions from both models.",
+      "question_type": "mc",
+      "options": [
+        "A. Only verify that the surrogate has high accuracy on the validation set, regardless of how close it is to the MLlib model’s predictions",
+        "B. Compare the surrogate’s SHAP values to the surrogate’s feature importances; if they match, the surrogate is valid",
+        "C. Check that the surrogate and MLlib model have comparable performance metrics and that their predictions are closely aligned on the same data",
+        "D. Ensure the surrogate is tree-based so TreeExplainer can be used; this guarantees the explanations transfer to the MLlib model"
+      ],
+      "correct_answer": "C",
+      "explanation": "The key requirement is that the surrogate reliably mimics the MLlib model. That is supported by validating comparable performance on key metrics and also checking agreement/consistency of predictions (or decision behavior) between the two models on the same data. High surrogate accuracy alone doesn’t ensure it matches the MLlib model, and TreeExplainer compatibility does not guarantee transferability.",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "surrogate-model",
+        "shap",
+        "treeexplainer",
+        "mllib",
+        "prediction-alignment"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You generated a SHAP summary plot (beeswarm) for a tree-based classifier. Explain what the following elements represent:\n\n1) Why features are ordered from top to bottom\n2) What each dot corresponds to\n3) What the dot color (red vs blue) indicates\n4) What the horizontal axis (SHAP value) means in terms of model output\n\nYour answer should connect the visualization to how features influence predictions.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Features are ordered by overall importance, typically the mean absolute SHAP value across samples, so the most influential features appear at the top.\n2) Each dot represents one observation (one row/sample) for that feature.\n3) Dot color encodes the feature’s actual value for that observation (commonly red = high feature value, blue = low feature value).\n4) The horizontal axis is the SHAP value, which is the feature’s contribution to the model output relative to the baseline (expected value). Positive SHAP values push the prediction toward a higher model output (e.g., higher probability/log-odds for the plotted class), while negative SHAP values push it lower.",
+      "explanation": "A SHAP summary (beeswarm) plot aggregates local explanations. Ordering by mean |SHAP| conveys global importance. Each point is a local contribution for a single sample. Color ties contribution patterns to feature magnitude (e.g., whether high values tend to increase or decrease predictions). The x-position is the signed contribution to the model output for the class being plotted, showing direction (increase/decrease) and magnitude of effect.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "beeswarm",
+        "feature_importance",
+        "local_explanations",
+        "model_output"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are generating a SHAP beeswarm summary plot for a dataset with 2.5M rows. You want a 100×–500× speed-up with minimal loss of global interpretability.\n\n(a) Explain why increasing the sample size beyond a few thousand points often yields diminishing returns for the summary plot.\n(b) Give one concrete scenario where plain random 1% sampling could be misleading, and propose a mitigation strategy based on the provided content.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) SHAP summary plots are visual summaries of distributions and average effects; empirically, the beeswarm’s overall shape and feature ordering tend to stabilize around 2,000–5,000 points. Beyond that, additional points reduce sampling noise only marginally (since noise drops as 1/√n) while compute cost grows roughly linearly with sample size, so you pay much more time for little visual/interpretive change.\n\n(b) Random 1% sampling can under-represent very rare subgroups or outliers (e.g., a rare class <0.01% of rows, or an important tail segment), potentially hiding their feature-attribution patterns. Mitigations include stratified sampling on the target class or predicted quantiles to guarantee subgroup coverage, or using shap.kmeans(X, K) to select representative cluster centers that better cover the feature space than naive random sampling.",
+      "explanation": "Part (a) tests understanding of the compute-vs-insight trade-off: summary plots focus on dense regions and aggregate trends, so after a few thousand points the plot is already stable; further sampling mainly reduces already-small variance at a cost that scales with sample size. Part (b) checks recognition of edge cases (rare groups/outliers) and the ability to choose an appropriate enhancement: stratification ensures representation of rare but important segments; k-means summarization provides coverage of feature space with a small set of representative points.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "beeswarm",
+        "sampling-bias",
+        "rare-subgroups",
+        "stratified-sampling",
+        "compute-tradeoff",
+        "kmeans-summarization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You build a SHAP beeswarm/density summary and want to estimate the proportion p of points whose SHAP value for feature j falls into a particular bin. Using n = 25,000 and p = 0.5, what is the approximate 95% margin of error (MoE) for this proportion?\n\nUse: MoE ≈ 1.96 * sqrt(p(1-p)/n).",
+      "question_type": "mc",
+      "options": [
+        "≈ 0.062 (±6.2 percentage points)",
+        "≈ 0.0062 (±0.62 percentage points)",
+        "≈ 0.00062 (±0.062 percentage points)",
+        "≈ 0.196 (±19.6 percentage points)"
+      ],
+      "correct_answer": "B",
+      "explanation": "Compute SE(p) = sqrt(0.5*0.5/25000) = sqrt(0.25/25000) = sqrt(0.00001) = 0.003162. Then MoE ≈ 1.96 * 0.003162 ≈ 0.0062, i.e., about ±0.62 percentage points. The other options are off by factors of 10 or more.",
+      "difficulty": "intermediate",
+      "tags": [
+        "proportions",
+        "margin-of-error",
+        "confidence-interval",
+        "shap-summary-plot",
+        "sampling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are comparing a SHAP summary bar plot to a SHAP dot summary plot for a regression model. Which scenario is the dot summary plot most likely to reveal that the bar plot can obscure?\n\nA. The overall ranking of features by average impact\nB. Whether a feature has both positive and negative effects across different instances (heterogeneity)\nC. The model’s overall accuracy (e.g., R^2)\nD. The number of missing values per feature",
+      "question_type": "mc",
+      "options": [
+        "The overall ranking of features by average impact",
+        "Whether a feature has both positive and negative effects across different instances (heterogeneity)",
+        "The model’s overall accuracy (e.g., R^2)",
+        "The number of missing values per feature"
+      ],
+      "correct_answer": "B",
+      "explanation": "The bar plot typically aggregates mean absolute SHAP values, so it can hide directionality and the spread of effects. The dot summary plot shows the full distribution of SHAP values per feature, making it easier to detect heterogeneity—e.g., a feature that increases predictions for some subgroups but decreases them for others, or non-linear patterns that average out in a bar chart.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "summary-bar-plot",
+        "dot-summary-plot",
+        "heterogeneity",
+        "distributional-insight",
+        "regression-explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You compute MeanAbsSHAP for a feature over \\(n=10{,}000\\) samples. The sample standard deviation of the \\(|\\phi_j|\\) values is \\(s=0.50\\), and the sample mean is \\(\\bar Y=0.20\\).\n\nAssuming CLT conditions are adequate, which 95% confidence interval is the best Normal-based approximation for the true mean \\(\\mu\\)?",
+      "question_type": "mc",
+      "options": [
+        "A. \\(0.20 \\pm 1.96\\times 0.50\\)",
+        "B. \\(0.20 \\pm 1.96\\times (0.50/\\sqrt{10{,}000})\\)",
+        "C. \\(0.20 \\pm 1.96\\times (0.50\\times \\sqrt{10{,}000})\\)",
+        "D. \\(0.20 \\pm 1.96\\times (0.20/\\sqrt{10{,}000})\\)"
+      ],
+      "correct_answer": "B",
+      "explanation": "A Normal-based 95% CI for a mean uses \\(\\bar Y \\pm 1.96\\,\\mathrm{SE}(\\bar Y)\\). The SE of the mean is estimated as \\(s/\\sqrt{n}\\), not \\(s\\), not \\(s\\sqrt{n}\\), and not \\(\\bar Y/\\sqrt{n}\\). Here \\(\\mathrm{SE}\\approx 0.50/100=0.005\\), so the CI is \\(0.20\\pm 1.96\\times 0.005\\approx 0.20\\pm 0.0098\\).",
+      "difficulty": "intermediate",
+      "tags": [
+        "confidence-interval",
+        "central-limit-theorem",
+        "normal-approximation",
+        "standard-error",
+        "mean-absolute-shap"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

@@ -1,0 +1,1377 @@
+{
+  "metadata": {
+    "subject_slug": "logging",
+    "subject_name": "Python Logging",
+    "exported_at": "2026-03-05T20:01:47.066563",
+    "question_count": 66,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You want every log line to include a correlation/request ID using `%(request_id)s` in the formatter, without changing every logging call site.\n\n1) Explain where in the logging pipeline you can inject this field into each `LogRecord`.\n2) Provide a minimal code example that adds `request_id` to records and uses it in a formatter.\n\n(Assume `get_correlation_id()` returns the current request ID.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "You can inject extra fields into each `LogRecord` in a `Filter` (records pass through filters before handlers emit them). The filter can mutate the record by setting `record.request_id = ...`, and then a formatter can reference `%(request_id)s`.\n\nMinimal example:\n\n```python\nimport logging\n\n\ndef get_correlation_id():\n    return \"abc123\"  # placeholder\n\n\nclass RequestIdFilter(logging.Filter):\n    def filter(self, record: logging.LogRecord) -> bool:\n        record.request_id = get_correlation_id()\n        return True  # keep the record\n\n\nlogger = logging.getLogger(\"myapp\")\nlogger.setLevel(logging.INFO)\n\nhandler = logging.StreamHandler()\nhandler.addFilter(RequestIdFilter())\nhandler.setFormatter(logging.Formatter(\"%(levelname)s %(request_id)s %(message)s\"))\n\nlogger.addHandler(handler)\n\nlogger.info(\"Hello\")\n```\n\nThis works because format strings like `%(request_id)s` are resolved by looking up attributes on the `LogRecord` during formatting.",
+      "explanation": "Filters are explicitly part of the `LogRecord` lifecycle: a record is created (via `Logger.makeRecord()` internally), then passed through filters (which can drop or mutate it), and then to handlers/formatters. Adding `record.request_id` in a filter avoids changing each logging call, and the formatter can safely reference that attribute. (An alternative advanced approach is subclassing `LogRecord` and overriding `Logger.makeRecord()`, but a filter is the minimal, idiomatic solution for runtime enrichment.)",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "logrecord",
+        "filters",
+        "custom-fields",
+        "formatter",
+        "context-propagation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are diagnosing a production FastAPI service that has become slow and occasionally fails. Using Logfire features described in the source, outline a practical observability approach (steps and what signals you would look at) to:\n1) identify whether the latency is coming from API endpoints, application code, or database queries, and\n2) confirm the cause of intermittent failures.\n\nYour answer should reference specific Logfire capabilities mentioned (e.g., automatic instrumentation, spans/traces, error/exception tracking, SQL query analysis, custom metrics/events, OpenTelemetry-based tracing, etc.).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong approach would include: (1) enabling Logfire with minimal setup (e.g., `logfire.configure()`), relying on automatic instrumentation for FastAPI to capture request/endpoint traces and performance metrics; (2) inspecting endpoint monitoring and traces to find which routes show increased latency and examining the trace breakdown to see where time is spent; (3) adding explicit spans (e.g., `with logfire.span(\"process_data\"):`) around suspected slow sections to isolate application-code bottlenecks; (4) using database query performance and SQL query analysis to identify slow queries and correlate them with slow traces/endpoints; (5) checking error and exception tracking to see stack traces, frequency, and correlation with specific endpoints/traces; (6) optionally emitting custom events/metrics (e.g., payload size, cache hit rate, external API timing) to validate hypotheses and correlate spikes with latency/errors; (7) leveraging the OpenTelemetry-based tracing model to correlate across components consistently. For intermittent failures, focus on the error/exception view, correlate failures to specific traces/endpoints and database queries, and use the trace context to see what operation preceded the exception.",
+      "explanation": "The question asks for application of multiple features in a realistic scenario. The source explicitly lists what Logfire tracks (performance metrics/traces, errors/exceptions, API endpoint monitoring, database query performance, SQL query analysis, custom events/metrics) and highlights automatic framework instrumentation and spans for tracing. A correct answer ties these signals together: start with automatic endpoint traces, drill into trace spans, isolate code via custom spans, confirm DB contribution via query performance/SQL analysis, and diagnose failures via exception tracking correlated to traces; custom metrics/events help validate root-cause hypotheses.",
+      "difficulty": "advanced",
+      "tags": [
+        "logfire",
+        "fastapi",
+        "observability-strategy",
+        "distributed-tracing",
+        "sql-query-analysis",
+        "error-tracking",
+        "performance-debugging",
+        "custom-metrics",
+        "opentelemetry"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are debugging an application where a third-party library configures logging before your code runs, so your call to `logging.basicConfig(...)` appears to have no effect.\n\nWrite a short code snippet that *reliably* applies your desired configuration anyway, and explain briefly why it works. Your solution must use `logging.basicConfig()` (not `dictConfig`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport logging\n\nlogging.basicConfig(\n    level=logging.INFO,\n    format=\"%(asctime)s %(levelname)s %(name)s: %(message)s\",\n    datefmt=\"%Y-%m-%d %H:%M:%S\",\n    force=True,  # Python 3.8+\n)\n```\n\nExplanation: `basicConfig()` normally does nothing if the root logger already has handlers (which a third-party library may have added). With `force=True`, it removes existing handlers from the root logger first, then applies the new configuration (level/handler/formatter), making the configuration take effect reliably.",
+      "explanation": "This addresses the key edge case: `basicConfig()` is intentionally a one-time configuration helper and becomes a no-op once handlers exist on the root logger. `force=True` (Python 3.8+) is specifically designed to override that behavior by clearing existing root handlers before configuring. A correct alternative advanced solution could also use `handlers=[...]` plus `force=True` to attach custom handlers, but the essential idea is to force reconfiguration of the root logger.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "basicConfig",
+        "force",
+        "root-logger",
+        "handlers",
+        "reconfiguration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a custom logging filter that (1) drops any record whose message contains the substring \"SECRET\" and (2) injects a new attribute `record.is_business_hours` (boolean) indicating whether the current local time is between 09:00 (inclusive) and 17:00 (exclusive).\n\nThen show how you would attach it so that it applies **only** to a specific handler.\n\nYou may assume `import logging, datetime` are available.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid solution:\n\n```python\nimport datetime\nimport logging\n\nclass SecretAndBusinessHoursFilter:\n    def filter(self, record: logging.LogRecord) -> bool:\n        # Inject attribute for downstream formatters/handlers\n        hour = datetime.datetime.now().hour\n        record.is_business_hours = (9 <= hour < 17)\n\n        # Drop sensitive messages\n        msg = record.getMessage()\n        if \"SECRET\" in msg:\n            return False\n        return True\n\nhandler = logging.StreamHandler()\nhandler.addFilter(SecretAndBusinessHoursFilter())  # handler-level attachment\n```\n\nThis attaches the filter to the handler, so only that handler’s emission is affected.",
+      "explanation": "A custom filter is any object with filter(record) -> bool. You can both mutate the record (e.g., inject `record.is_business_hours`) and decide pass/drop by returning True/False. Using `record.getMessage()` is a robust way to obtain the rendered message (including %-formatting) before checking for sensitive substrings. Attaching via `handler.addFilter(...)` ensures the filtering/augmentation applies only to that handler, not globally to all handlers on the logger.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "custom-filters",
+        "LogRecord-augmentation",
+        "handler-filters",
+        "record-attributes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are debugging duplicate log lines in a larger application.\n\nGiven the code below:\n\n```python\nimport logging\n\nlogging.basicConfig(level=logging.INFO, format=\"ROOT:%(name)s:%(message)s\")\n\nchild = logging.getLogger(\"myapp.module\")\nchild.setLevel(logging.INFO)\n\nh = logging.StreamHandler()\nh.setFormatter(logging.Formatter(\"CHILD:%(name)s:%(message)s\"))\nchild.addHandler(h)\n\nchild.info(\"started\")\n```\n\n1) Explain why two lines may appear for a single call to child.info(...).\n2) Provide a minimal code change to ensure the message is handled only by the child logger’s handler (not by the root logger).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Two lines can appear because the child logger has its own StreamHandler, and by default child.propagate is True, so the same LogRecord also propagates up to the root logger, where the handler installed by basicConfig emits it again.\n2) Set propagation off for the child logger:\n\n```python\nchild.propagate = False\n```\n\nThis prevents the record from bubbling up to the root logger’s handlers.",
+      "explanation": "By default, loggers form a hierarchy where records propagate upward. Adding a handler to a child logger without disabling propagation results in both the child’s handler and the root’s handler handling the same record, causing duplicates. Setting propagate=False on the child stops upward propagation, so only the child’s handler emits the message.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "root-logger",
+        "propagation",
+        "handlers",
+        "duplicate-logs",
+        "logger-hierarchy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are debugging a production LLM agent that sometimes produces low-quality answers and is also expensive. Using Weave’s features, propose a concrete workflow (steps) to:\n1) Identify where cost and latency are coming from in the agent/chain,\n2) Reproduce and debug failures with exact prompt/response pairs,\n3) Systematically evaluate and compare improvements (e.g., prompt changes or model changes).\n\nYour answer should reference specific Weave capabilities (e.g., trace viewer, dataset management, A/B testing, custom metrics, versioning).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer includes a step-by-step workflow such as: (1) instrument the agent/chain with Weave (init project and wrap key steps with `@weave.op()`), then use the visual trace viewer to inspect end-to-end execution paths and identify the slow/expensive operations; review token usage and cost-per-call to find cost hotspots and use latency analysis to find slow steps. (2) Use Weave’s debugging/error tracking to filter traces for failures or low-quality outcomes; inspect the exact prompt/response pairs and intermediate steps in the chain/agent path to reproduce issues, including inputs/outputs and timing. (3) Create and version a test dataset in Weave representing real problematic cases; run systematic evaluations across variants (different prompts/models), use A/B testing to compare outputs, and score results with custom metrics; track prompt versions automatically so changes are attributable; compare runs to validate that quality improves while cost/latency decreases.",
+      "explanation": "This workflow demonstrates understanding of how Weave ties together observability (traces, prompt/response inspection, chain/agent execution paths, error tracking) with optimization signals (token usage, cost tracking, latency analysis) and evaluation (datasets, versioning, systematic evals, A/B tests, custom metrics). The key is connecting production monitoring and debugging to a repeatable evaluation loop rather than making ad-hoc changes.",
+      "difficulty": "advanced",
+      "tags": [
+        "production-monitoring",
+        "cost-tracking",
+        "token-usage",
+        "latency-analysis",
+        "trace-viewer",
+        "dataset-versioning",
+        "ab-testing",
+        "custom-metrics",
+        "agent-workflows"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to implement a maintainable logging API for a CLI tool that prints:\n- section headers/footers without timestamps\n- data lines with timestamps\n\nConstraints:\n1) Use **one logger** with **two handlers**.\n2) Avoid duplicating output.\n3) Make the call sites readable (e.g., `log_header(...)` and `log_data(...)`).\n\nWrite Python code that sets this up using wrapper functions. Your solution must include:\n- logger configuration\n- two handlers with different formatters\n- a routing mechanism (filtering) so each message goes to exactly one handler\n- `log_header(msg)` and `log_data(msg)` functions\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid solution:\n\n```python\nimport logging\nimport sys\n\nlogger = logging.getLogger(\"my_app\")\nlogger.setLevel(logging.DEBUG)\nlogger.propagate = False  # optional: prevents duplicate output via root handlers\n\n# Plain handler: used for headers/footers\nplain_handler = logging.StreamHandler(sys.stdout)\nplain_handler.setLevel(logging.DEBUG)\nplain_handler.setFormatter(logging.Formatter(\"%(message)s\"))\nplain_handler.addFilter(lambda record: record.levelno == logging.DEBUG)\n\n# Timestamped handler: used for regular data lines\ntime_handler = logging.StreamHandler(sys.stdout)\ntime_handler.setLevel(logging.INFO)\ntime_handler.setFormatter(logging.Formatter(\"%(asctime)s - %(levelname)s - %(message)s\"))\ntime_handler.addFilter(lambda record: record.levelno >= logging.INFO)\n\nlogger.addHandler(plain_handler)\nlogger.addHandler(time_handler)\n\ndef log_header(msg: str) -> None:\n    # DEBUG is routed to the plain handler\n    logger.debug(msg)\n\ndef log_data(msg: str) -> None:\n    # INFO+ is routed to the timestamped handler\n    logger.info(msg)\n```\n",
+      "explanation": "This uses a single logger with two handlers, each with its own formatter. Routing is achieved with filters: DEBUG records go only to the plain handler, and INFO-and-above records go only to the timestamped handler. Wrapper functions make intent clear at the call site and reduce the chance of accidentally using the wrong level/format. Setting `logger.propagate = False` is a common hardening step to avoid duplicates if the root logger is configured elsewhere.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "wrapper-functions",
+        "handlers",
+        "filters",
+        "formatters",
+        "propagation",
+        "maintainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this code:\n\n```python\nimport logging\n\nlogger = logging.getLogger(\"myapp\")\nlogger.setLevel(logging.DEBUG)\n\nhandler = logging.FileHandler(\"app.log\")\nlogger.addHandler(handler)\n\nlogger.info(\"Application started\")\n```\n\nThe developer expects `app.log` to contain the message, but it remains empty after running the script.\n\nGive TWO likely causes related to handler configuration and show a corrected code snippet that addresses them.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two likely causes:\n1) The handler's level is effectively filtering out messages (e.g., it was set higher than INFO elsewhere), so explicitly set it.\n2) The handler has no formatter and/or output is not flushed/closed at program end in the environment, so explicitly add a formatter and close/shutdown logging.\n\nExample fix:\n```python\nimport logging\n\nlogger = logging.getLogger(\"myapp\")\nlogger.setLevel(logging.DEBUG)\n\nhandler = logging.FileHandler(\"app.log\", encoding=\"utf-8\")\nhandler.setLevel(logging.DEBUG)\nhandler.setFormatter(logging.Formatter(\"%(levelname)s:%(name)s:%(message)s\"))\n\nlogger.addHandler(handler)\nlogger.propagate = False\n\nlogger.info(\"Application started\")\nlogging.shutdown()\n```",
+      "explanation": "Even when a logger is set to `DEBUG`, a handler can still filter records if its level is higher (levels are checked at both logger and handler). Additionally, adding a formatter makes the output predictable, and calling `logging.shutdown()` (or ensuring handlers are closed) helps guarantee buffered data is flushed to disk in short-lived scripts or some execution environments. Disabling propagation can also prevent unexpected interactions with root logger configuration when other logging setup exists.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "filehandler",
+        "handler-levels",
+        "formatters",
+        "shutdown",
+        "propagation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following logging setup:\n\n```python\nimport logging, sys\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.DEBUG)\n\nh = logging.StreamHandler(sys.stdout)\nh.setLevel(logging.INFO)\nh.addFilter(lambda r: r.levelno <= logging.INFO)\n\nlogger.addHandler(h)\n\nlogger.debug(\"D\")\nlogger.info(\"I\")\nlogger.warning(\"W\")\nlogger.error(\"E\")\n```\n\n1) Which messages are emitted by the handler, and why?\n2) Modify the handler configuration (show the minimal code change) so it emits **only** DEBUG and INFO (still not WARNING/ERROR).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Only \"I\" is emitted. The handler level is INFO, so it rejects DEBUG before the filter is even considered. The filter (`levelno <= INFO`) would allow DEBUG and INFO, but it cannot override the handler’s threshold.\n\n2) Lower the handler level to DEBUG so DEBUG records can reach the filter, keeping the filter to block WARNING+:\n\n```python\nh.setLevel(logging.DEBUG)\n# keep: h.addFilter(lambda r: r.levelno <= logging.INFO)\n```",
+      "explanation": "Logging emission is governed by multiple gates. The handler’s `setLevel` is a threshold (level and above). A filter can further restrict what passes, but it cannot resurrect records already discarded by the handler’s level check. Therefore with `h.setLevel(INFO)`, DEBUG never reaches the filter. Setting the handler to DEBUG (or lower) allows DEBUG and INFO through the threshold, and the filter then excludes WARNING/ERROR by enforcing `levelno <= INFO`.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "handler-level",
+        "filters",
+        "levelno",
+        "debug-info-only"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a decorator `@capture_info_logs` that, when applied to a function, returns a tuple `(result, logs)` where:\n\n- `result` is the original return value of the function.\n- `logs` is a single string containing all `INFO` log messages emitted by a specified logger during the function call.\n\nConstraints:\n- Use `io.StringIO` and `logging.StreamHandler`.\n- Ensure the handler is always removed (even if the function raises).\n- Avoid changing every `log.info(...)` call inside the function.\n\nYou may assume the logger is `log = logging.getLogger(__name__)`.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution:\n\n```python\nimport logging\nimport io\nfrom functools import wraps\n\nlog = logging.getLogger(__name__)\n\ndef capture_info_logs(func):\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        buf = io.StringIO()\n        handler = logging.StreamHandler(buf)\n        handler.setLevel(logging.INFO)\n\n        # Optional: keep formatting simple/consistent\n        # handler.setFormatter(logging.Formatter('%(message)s'))\n\n        log.addHandler(handler)\n        try:\n            result = func(*args, **kwargs)\n        finally:\n            log.removeHandler(handler)\n\n        logs = buf.getvalue().strip()\n        return result, logs\n\n    return wrapper\n```\n\nUsage:\n\n```python\n@capture_info_logs\ndef f():\n    log.info('A')\n    log.info('B')\n    return 123\n\nresult, logs = f()\n```\n",
+      "explanation": "The decorator works by attaching a temporary `StreamHandler` that writes to an in-memory `StringIO` buffer. Because existing `log.info(...)` calls still go through the same logger, no call sites need to be modified. The `try/finally` ensures the handler is removed even if the wrapped function raises, preventing handler leaks and duplicated logging in later calls. Returning `(result, logs)` preserves the function’s original return value while also providing the captured log output.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "decorators",
+        "streamhandler",
+        "io-stringio",
+        "handler-lifecycle",
+        "exception-safety"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A library you use is noisy. You tried:\n\n```python\nimport logging\nlogging.getLogger('noisylib').setLevel(logging.ERROR)\n```\n\nbut INFO logs still appear. You suspect the library either logs to the root logger or uses a different logger name.\n\nDescribe a practical runtime approach to discover the logger name(s) being used, and then show how you would silence (a) only that library and (b) everything below ERROR in the entire application. Provide short code snippets for both parts.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One workable runtime approach is to temporarily enable DEBUG on the root and ensure at least one handler exists so you can see log output that includes the logger name. Then run the code path that emits logs and inspect the prefix (logger name) in each line. After identifying the name, set the level on that logger (or its parent) to ERROR.\n\nExample discovery:\n```python\nimport logging\n\nlogging.root.setLevel(logging.DEBUG)\nlogging.basicConfig()  # ensure there is a handler\n\n# run the code that triggers the library logs...\n```\nYou then look for lines like:\n`noisylib.submodule INFO ...` or `root INFO ...`\n\n(a) Silence only that library (once you found the name, e.g. 'noisylib' or 'noisylib.submodule'):\n```python\nimport logging\nlogging.getLogger('noisylib').setLevel(logging.ERROR)\n# or, if logs show 'noisylib.submodule':\n# logging.getLogger('noisylib.submodule').setLevel(logging.ERROR)\n```\n\n(b) Silence everything below ERROR application-wide (root logger):\n```python\nimport logging\nlogging.getLogger().setLevel(logging.ERROR)\n```\n",
+      "explanation": "At runtime, the easiest way to learn logger names is to make sure logs are emitted with their logger name visible: set the root level low (DEBUG) and configure a handler (e.g., via `basicConfig`). The emitted records typically show the logger name, letting you identify whether the library uses `noisylib`, a sub-logger like `noisylib.x`, or the root logger. Once identified, setting the level on the exact logger name (or its parent) filters that library’s records. If the library logs to root (or you want a global policy), setting the root logger’s level to `ERROR` filters everything below `ERROR` across the process (subject to handler configuration).",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "runtime-debugging",
+        "root-logger",
+        "logger-discovery",
+        "basicConfig",
+        "propagation",
+        "log-level"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given a logger object and want to write a function that detects whether it is the root logger using only the logger’s `name` attribute (no identity checks, no global variables).\n\nWrite a function `is_root_logger(logger) -> bool` and explain why it works.\n\n```python\nimport logging\n\ndef is_root_logger(logger) -> bool:\n    # your code here\n    ...\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\ndef is_root_logger(logger) -> bool:\n    return logger.name == \"root\"\n```\n\nThis works because in Python’s logging system the root logger’s `name` is the string `'root'`, while non-root loggers have the exact name string passed to `logging.getLogger(name)` (e.g., `'app.database'`). Comparing `logger.name` to `'root'` is therefore a reliable name-based check.",
+      "explanation": "The `name` attribute is always available on `Logger` objects and is the canonical way to retrieve the logger’s configured name. The root logger is uniquely named `'root'` in the logging hierarchy, so checking `logger.name == 'root'` distinguishes the root logger from named loggers like `'app'` or `'app.database'` without relying on object identity.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "logging",
+        "root-logger",
+        "logger-name",
+        "debugging",
+        "logger-hierarchy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a helper function `log_blank(logger, count=1)` that logs `count` blank lines using the provided `logger`. The function must:\n\n1) Not raise an error for the default call `log_blank(logger)`\n2) Log exactly `count` blank lines\n3) Use the logger correctly (i.e., always provide the required message argument)\n\nProvide the function implementation in Python.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\ndef log_blank(logger, count=1):\n    \"\"\"Log one or more blank lines.\"\"\"\n    for _ in range(count):\n        logger.info(\"\")\n```",
+      "explanation": "The key requirement is that logging methods like `logger.info` require a `msg` argument. Passing an empty string (`\"\"`) satisfies the signature and emits a blank line when the formatter is `'%(message)s'`. Looping `count` times ensures exactly `count` blank lines are produced, and the default `count=1` makes `log_blank(logger)` work without extra arguments.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "logging",
+        "helper-functions",
+        "logger.info",
+        "control-flow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want the following behavior:\n\n- Console: show only WARNING and above\n- `app.log`: store INFO and above\n- `errors.log`: store ERROR and above\n- Ensure DEBUG messages are not written anywhere\n\nWrite a Python logging setup (logger + handlers + levels) that achieves this. Briefly justify why your chosen logger level is correct in relation to the handler levels.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution:\n\n```python\nimport logging\nimport sys\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.INFO)  # gatekeeper: drop DEBUG everywhere\n\nconsole = logging.StreamHandler(sys.stdout)\nconsole.setLevel(logging.WARNING)\n\napp_file = logging.FileHandler(\"app.log\")\napp_file.setLevel(logging.INFO)\n\nerr_file = logging.FileHandler(\"errors.log\")\nerr_file.setLevel(logging.ERROR)\n\nlogger.addHandler(console)\nlogger.addHandler(app_file)\nlogger.addHandler(err_file)\n```\n\nJustification: setting the logger to INFO ensures DEBUG records are discarded before reaching any handler (so they cannot appear anywhere). Handler levels then route the processed records to the appropriate destinations (WARNING+ to console, INFO+ to app.log, ERROR+ to errors.log).",
+      "explanation": "This tests the two-stage filtering model. The logger level must be set to the lowest severity you want processed anywhere; otherwise messages below it will never reach any handler. Here we explicitly want DEBUG to be dropped globally, so the logger is set to INFO. Each handler then applies its own threshold to decide what it emits, enabling different outputs for different severities.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "multi-handler",
+        "logger-level-strategy",
+        "routing-by-severity",
+        "filehandler",
+        "streamhandler"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run this script and only see one line of output. Explain why, and provide the minimal change needed so that both messages appear.\n\n```python\nimport logging\n\nlogging.basicConfig()\nlogging.debug(\"debug details\")\nlogging.warning(\"something happened\")\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Only the warning appears because `logging.basicConfig()` defaults the root logger level to `WARNING`, which suppresses `DEBUG`. Minimal fix: lower the threshold, e.g. `logging.basicConfig(level=logging.DEBUG)` (or `INFO` if you only need info and above).",
+      "explanation": "The root logger's default level is `WARNING` when `basicConfig()` is called without `level`. Since `DEBUG` has lower severity than `WARNING`, it is filtered out. Setting `level=logging.DEBUG` changes the threshold so debug messages are no longer suppressed.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "logging",
+        "basicConfig",
+        "debug",
+        "warning",
+        "log-filtering",
+        "root-logger"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A script is run multiple times and configures logging like this:\n\n```python\nimport logging\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.INFO)\n\nfile_handler = logging.FileHandler(\"log.txt\")\nlogger.addHandler(file_handler)\n\nlogger.info(\"Run started\")\n```\n\n1) Explain what happens to `log.txt` across multiple runs and why.\n2) Modify the snippet so that each run overwrites `log.txt` instead of appending.\n\nProvide both the explanation and the corrected code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `log.txt` will keep growing across runs because `logging.FileHandler` defaults to `mode='a'` (append), so new log records are added to the end of the existing file rather than truncating it.\n\n2) Set `mode='w'` when creating the handler:\n\n```python\nimport logging\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.INFO)\n\nfile_handler = logging.FileHandler(\"log.txt\", mode='w')\nlogger.addHandler(file_handler)\n\nlogger.info(\"Run started\")\n```",
+      "explanation": "The key concept is the file open mode used by `FileHandler`. Default append mode preserves existing content; write mode truncates the file at open, ensuring a fresh log per initialization/run.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "FileHandler",
+        "file-modes",
+        "append-vs-write",
+        "log-file-lifecycle"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re designing logging for a long-running service that:\n\n1) Must show INFO+ logs in the console for operators (ephemeral output is fine)\n2) Must persist DEBUG+ logs to disk for later investigation\n3) Must avoid unbounded log growth via rotation\n4) May run multiple *processes* on the same machine\n\nPropose a handler setup (which handler classes you would choose and why). Include any important caveats for multi-process logging to the same file.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a StreamHandler for console output (e.g., INFO level) and a file-based rotating handler for persistence (e.g., RotatingFileHandler or TimedRotatingFileHandler at DEBUG level). Example: attach StreamHandler(sys.stderr) with an INFO threshold and a formatter for operator readability; attach RotatingFileHandler(\"app.log\", maxBytes=..., backupCount=...) or TimedRotatingFileHandler(\"app.log\", when=..., interval=..., backupCount=...) with DEBUG threshold and a timestamped formatter. Caveat: multiple processes writing to the same file via FileHandler/RotatingFileHandler can lead to interleaving/corruption; mitigate by using a process-safe approach such as a logging server/SocketHandler/QueueHandler with a single writer process, or a third-party concurrent handler (e.g., ConcurrentLogHandler) designed for multi-process file writes.",
+      "explanation": "This meets each requirement by mapping the handler to the destination and behavior needed: StreamHandler provides immediate console visibility without persistence; rotating file handlers provide disk persistence plus bounded growth (neither StreamHandler nor FileHandler rotates by itself). The multi-process caveat is critical because naive file handlers can corrupt logs when multiple processes write concurrently; centralizing writes or using a concurrency-safe handler avoids that failure mode.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "streamhandler",
+        "filehandler",
+        "rotatingfilehandler",
+        "timedrotatingfilehandler",
+        "multiprocessing",
+        "concurrency",
+        "log-rotation",
+        "architecture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are integrating Python logging into a GUI that must update a text widget in near real time. You decide to pass a custom object as the `stream` to `logging.StreamHandler`.\n\nWrite a minimal `GuiStream` class suitable for `StreamHandler` that:\n1) Implements the required method(s) so logging does not crash.\n2) Ensures log messages are pushed to the GUI immediately (i.e., does not stay buffered).\n\nYou may use placeholders like `widget.append(text)` and `widget.repaint()`.\n\nProvide the class code and briefly explain why each method is needed.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nclass GuiStream:\n    def __init__(self, widget):\n        self.widget = widget\n\n    def write(self, msg: str):\n        # StreamHandler delivers each formatted log line here\n        self.widget.append(msg)\n\n    def flush(self):\n        # Called by StreamHandler after write(); ensure the GUI updates now\n        self.widget.repaint()\n```\n\nExplanation: `write()` is required because `StreamHandler` calls `stream.write(formatted_message)` to output each log record; without it, logging fails with `AttributeError`. `flush()` is optional but important for buffered/queued outputs: `StreamHandler` calls it after writing so the UI can be forced to update immediately rather than showing messages later.",
+      "explanation": "A correct solution must implement `write(msg)` because `StreamHandler` uses it to deliver each formatted log record. To make output appear immediately in a buffered or event-driven environment (like a GUI), implementing `flush()` is the standard hook: `StreamHandler` calls `flush()` after `write()`, allowing the stream to force a repaint/drain any pending updates. The exact GUI calls can vary; the key is that `flush()` triggers immediate visibility of what `write()` queued.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "StreamHandler",
+        "custom-stream",
+        "gui-logging",
+        "write-method",
+        "flush-method"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport logging\nimport sys\n\nroot = logging.getLogger()\nroot.setLevel(logging.INFO)\nroot_handler = logging.StreamHandler(sys.stdout)\nroot_handler.setFormatter(logging.Formatter(\"ROOT: %(message)s\"))\nroot.addHandler(root_handler)\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.INFO)\n\nplain = logging.StreamHandler(sys.stdout)\nplain.setFormatter(logging.Formatter(\"PLAIN: %(message)s\"))\n\nstamped = logging.StreamHandler(sys.stdout)\nstamped.setFormatter(logging.Formatter(\"STAMP: %(asctime)s %(message)s\"))\n\nlogger.addHandler(plain)\nlogger.addHandler(stamped)\n\nlogger.info(\"Hello\")\n```\n\nAssuming no other logging configuration exists, how many lines will be printed and why?",
+      "question_type": "mc",
+      "options": [
+        "2 lines: the logger chooses exactly one handler based on formatter type.",
+        "3 lines: both handlers on `app` emit, and the record also propagates to the root handler.",
+        "1 line: only the root handler emits because child loggers never emit directly.",
+        "2 lines: only the root handler and the last added handler emit due to handler overwrite."
+      ],
+      "correct_answer": "B",
+      "explanation": "The `app` logger has two handlers, so the LogRecord is emitted twice there (PLAIN and STAMP). Because `logger.propagate` defaults to `True`, the record is then passed to ancestor loggers, ultimately reaching the root logger, which emits it a third time via `root_handler`. To prevent the extra root emission, set `logger.propagate = False` (or avoid configuring root handlers that overlap).",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "propagation",
+        "root-logger",
+        "handlers",
+        "duplicate-output",
+        "logger-hierarchy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following custom stream object used with `StreamHandler`:\n\n```python\nimport logging\n\nclass Collector:\n    def __init__(self):\n        self.data = []\n\n    def write(self, msg):\n        self.data.append(msg)\n\ncollector = Collector()\nh = logging.StreamHandler(collector)\nlogger = logging.getLogger(\"app\")\nlogger.addHandler(h)\nlogger.setLevel(logging.INFO)\nlogger.info(\"Hello\")\n```\n\n1) Will this work (i.e., emit the message without raising an exception)?\n2) What method(s) are minimally required on the stream object for `StreamHandler` to be usable, and what additional method is recommended?\n\nAnswer in a few sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) It will generally work: `StreamHandler` writes to the provided stream via `stream.write(...)`, and `Collector` implements `write`, so the log record can be emitted and appended to `collector.data`.\n2) Minimally, the stream should implement `.write()`. It is also recommended to implement `.flush()` so the handler can flush output when appropriate (some logging configurations/handlers call flush).",
+      "explanation": "`StreamHandler` is designed to write formatted log messages to a stream-like object. The core requirement is that the object supports `.write()` so the handler can output text. While many streams also support `.flush()`, it’s not strictly required in all cases, but it is recommended to behave like standard streams and to support flushing semantics.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "StreamHandler",
+        "custom-stream",
+        "file-like-interface",
+        "write",
+        "flush"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are debugging an application and try to increase verbosity mid-run by calling `logging.basicConfig(level=logging.DEBUG)` inside a function, but DEBUG messages still do not appear.\n\n1) Explain why this can happen.\n2) Provide a corrected approach that reliably increases verbosity for a specific logger at runtime.\n\nUse a short code snippet in your answer.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) This can happen because `logging.basicConfig()` only has an effect the first time it is called in a process (subsequent calls are ignored if handlers are already configured). If logging was configured earlier (directly or indirectly by another module), calling `basicConfig(level=DEBUG)` later will not change the existing root logger configuration, so DEBUG messages may remain filtered out.\n\n2) To reliably increase verbosity at runtime, change the level on the specific logger (or the root logger) using `setLevel()`.\n\nExample:\n```python\nimport logging\n\nlogging.basicConfig(level=logging.INFO)\nlogger = logging.getLogger(\"app\")\n\ndef enable_debug():\n    logger.setLevel(logging.DEBUG)  # reliably changes this logger's level\n\nlogger.debug(\"hidden\")\nenable_debug()\nlogger.debug(\"now visible\")\n```\n(Alternatively, `logging.getLogger().setLevel(logging.DEBUG)` changes the root logger's level.)",
+      "explanation": "`basicConfig()` is intended for one-time initialization of the root logger. After handlers exist, it typically does nothing, so it is not a reliable way to change verbosity dynamically. `setLevel()` directly updates a logger’s threshold during execution, which is the correct mechanism for runtime changes (either on a named logger to target one subsystem, or on the root logger to affect defaults).",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "basicConfig",
+        "setLevel",
+        "root-logger",
+        "runtime-configuration",
+        "debugging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building an application with multiple subsystems (e.g., `api`, `database`, `security`). You want:\n\n- `api` logs to console at INFO\n- `database` logs to a file at DEBUG\n- `security` logs to a separate file at WARNING\n- No duplication via the root logger\n- The application should still be able to configure the root logger to capture third-party library logs\n\nWrite a `setup_logging()` function (code) that configures these three named loggers appropriately, including handler setup and any propagation settings. Briefly explain why your propagation choice prevents duplication while still allowing root to capture third-party logs.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport logging\nimport sys\n\ndef setup_logging():\n    # Optional: configure root for third-party/fallback logging\n    # (e.g., warnings from requests, urllib3, etc.)\n    logging.basicConfig(\n        level=logging.WARNING,\n        format=\"%(name)s:%(levelname)s:%(message)s\",\n        handlers=[logging.StreamHandler(sys.stderr)],\n    )\n\n    # API logger -> console\n    api_logger = logging.getLogger(\"api\")\n    api_logger.setLevel(logging.INFO)\n    api_handler = logging.StreamHandler(sys.stdout)\n    api_handler.setFormatter(logging.Formatter(\"%(asctime)s %(name)s %(levelname)s %(message)s\"))\n    api_logger.handlers.clear()\n    api_logger.addHandler(api_handler)\n    api_logger.propagate = False\n\n    # Database logger -> file\n    db_logger = logging.getLogger(\"database\")\n    db_logger.setLevel(logging.DEBUG)\n    db_handler = logging.FileHandler(\"database.log\")\n    db_handler.setFormatter(logging.Formatter(\"%(asctime)s %(name)s %(levelname)s %(message)s\"))\n    db_logger.handlers.clear()\n    db_logger.addHandler(db_handler)\n    db_logger.propagate = False\n\n    # Security logger -> separate file\n    sec_logger = logging.getLogger(\"security\")\n    sec_logger.setLevel(logging.WARNING)\n    sec_handler = logging.FileHandler(\"security.log\")\n    sec_handler.setFormatter(logging.Formatter(\"%(asctime)s %(name)s %(levelname)s %(message)s\"))\n    sec_logger.handlers.clear()\n    sec_logger.addHandler(sec_handler)\n    sec_logger.propagate = False\n\n    return api_logger, db_logger, sec_logger\n```\n\nExplanation: Each subsystem logger has its own handler(s) and sets `propagate = False`, so once a record is handled by that logger it will not bubble up to parent/root and be handled a second time (avoiding duplication). The root logger can still be configured (at app startup) to capture logs from third-party libraries because those libraries typically use named loggers that propagate to root by default; we are only disabling propagation for our specific subsystem loggers, not globally for all loggers.",
+      "explanation": "A correct solution must (1) create named loggers, (2) attach the correct handler types and levels, and (3) set `propagate=False` on those named loggers to prevent messages from being re-handled by root. It should also recognize that configuring root can be useful for third-party logs, because third-party loggers typically propagate to root unless explicitly disabled.",
+      "difficulty": "advanced",
+      "tags": [
+        "python-logging",
+        "multi-logger-configuration",
+        "propagate",
+        "handlers",
+        "root-logger",
+        "third-party-logs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what a `LogRecord` represents in Python’s logging system?\n\nA. A configuration object that stores handler and formatter settings\nB. A single log event object containing message and contextual metadata used by handlers/formatters\nC. A file-like object that handlers write log lines to\nD. A filter object that decides whether a message should be emitted",
+      "question_type": "mc",
+      "options": [
+        "A. A configuration object that stores handler and formatter settings",
+        "B. A single log event object containing message and contextual metadata used by handlers/formatters",
+        "C. A file-like object that handlers write log lines to",
+        "D. A filter object that decides whether a message should be emitted"
+      ],
+      "correct_answer": "B",
+      "explanation": "A `LogRecord` is created for each logging call (e.g., `logger.info(...)`) and carries all relevant data about that event (logger name, level, file/line, message template, args, thread/process info, exception info, etc.). Handlers and formatters consume the `LogRecord` to decide how to output the event. Configuration, output streams, and filters are separate concepts.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "logrecord",
+        "logging-basics",
+        "handlers",
+        "formatters"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes Logfire based on the provided content?",
+      "question_type": "mc",
+      "options": [
+        "A Python observability platform (launched in 2024) built by the Pydantic team to monitor, debug, and understand Python apps with minimal setup",
+        "A replacement for Python's built-in logging module that only supports unstructured text logs",
+        "A database migration tool that focuses on schema versioning and rollback strategies",
+        "A frontend JavaScript console logger designed for browser-only applications"
+      ],
+      "correct_answer": "A",
+      "explanation": "The source describes Logfire as an observability platform created by the Pydantic team (launched in 2024) aimed at monitoring, debugging, and understanding Python applications with minimal setup. The other options describe unrelated tools or contradict key details (e.g., “only unstructured logs” conflicts with structured logging and Pydantic integration).",
+      "difficulty": "beginner",
+      "tags": [
+        "logfire",
+        "observability",
+        "pydantic",
+        "python-logging",
+        "definition"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python’s logging module, which statement best describes what `logging.basicConfig()` does by default?\n\n(Assume `basicConfig()` is called for the first time in the process and no handlers have been configured yet.)",
+      "question_type": "mc",
+      "options": [
+        "It configures a new logger with the given name and attaches a FileHandler to it.",
+        "It performs a one-time configuration of the root logger, adding a StreamHandler that writes to `sys.stderr` by default.",
+        "It always reconfigures logging every time it is called, replacing any existing handlers.",
+        "It only sets the log message format; it does not set levels or handlers."
+      ],
+      "correct_answer": "B",
+      "explanation": "`logging.basicConfig()` is a convenience function that configures the **root logger** once. If no handlers exist yet, it typically creates and attaches a `StreamHandler` that outputs to `sys.stderr`, and applies the provided level/format settings. It does not create a named logger (A), it does not always reconfigure (C), and it can configure level and handlers in addition to format (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "basicConfig",
+        "root-logger",
+        "StreamHandler",
+        "stderr"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python’s logging framework, what determines whether a Filter allows a specific LogRecord to be processed?\n\n```python\nclass MyFilter:\n    def filter(self, record):\n        ...\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. The filter() method returns True to allow the record; False to drop it",
+        "B. The filter() method returns the modified LogRecord to allow it; None to drop it",
+        "C. The filter() method raises logging.FilterError to drop the record",
+        "D. The filter() method changes the logger’s level, which decides whether the record is processed"
+      ],
+      "correct_answer": "A",
+      "explanation": "A logging filter is any object that provides a filter(record) method returning a boolean. Returning True means the LogRecord passes through to later stages (handlers/formatters); returning False drops it. Returning a record object or raising special exceptions is not the filtering contract.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "filters",
+        "LogRecord",
+        "filter-interface"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python’s logging module, which statement about the **root logger** is correct?",
+      "question_type": "mc",
+      "options": [
+        "A. The root logger’s name is \"root\" and it must be created explicitly with logging.getLogger(\"root\").",
+        "B. logging.getLogger() with no arguments returns the root logger, which sits at the top of the logger hierarchy.",
+        "C. The root logger never has handlers unless you call logging.basicConfig().",
+        "D. Child loggers do not propagate records to the root logger unless propagate is manually set to True."
+      ],
+      "correct_answer": "B",
+      "explanation": "The root logger is the top of the logging hierarchy, and calling logging.getLogger() with no arguments returns it. The other options are incorrect: the root logger does not require explicit creation (A), it can still emit via the last-resort handler even without basicConfig (C), and child loggers default to propagate=True (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "root-logger",
+        "logger-hierarchy",
+        "getLogger"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what Weave is used for in LLM applications?",
+      "question_type": "mc",
+      "options": [
+        "A general-purpose Python logging formatter focused on structlog integration",
+        "An observability and evaluation platform for LLM apps that traces calls, tracks prompts/outputs, and supports evaluations",
+        "A replacement for OpenAI/Anthropic SDKs that provides a unified API for all LLM providers",
+        "A database migration tool for versioning datasets used in machine learning"
+      ],
+      "correct_answer": "B",
+      "explanation": "Weave (by Weights & Biases) is purpose-built for LLM applications: it traces LLM calls, captures prompt/response pairs, tracks token usage/cost/latency, and provides an evaluation framework (datasets, comparisons, A/B tests, custom metrics). The other options describe tools outside Weave’s scope (logging formatter, provider SDK replacement, DB migrations).",
+      "difficulty": "beginner",
+      "tags": [
+        "weave",
+        "observability",
+        "llm",
+        "wandb",
+        "evaluation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a **single logger** to emit two different output formats: \n- header/footer lines (e.g., separators made of `=`) should be printed **without** timestamps\n- regular messages should be printed **with** timestamps\n\nWhich logging configuration best matches this requirement while keeping a single logger?\n",
+      "question_type": "mc",
+      "options": [
+        "Create one logger with two handlers; give each handler its own formatter and add filters to route records to the correct handler.",
+        "Create one handler and change its formatter right before each `logger.info(...)` call depending on the message type.",
+        "Create one logger with one handler; call `logger.setFormatter(...)` to switch formats per message.",
+        "Create two handlers with different formatters and attach them both, but do not use filters; the logging module will automatically pick the right formatter based on message content."
+      ],
+      "correct_answer": "A",
+      "explanation": "A logger can have multiple handlers, and each handler can have its own formatter. However, if both handlers are attached to the same logger, each log record will normally be processed by both handlers, causing duplicate output. Filters (e.g., checking whether the message contains a separator like `'=' * 5`) are the standard way to route records to the appropriate handler so that header/footer lines go to the plain formatter and regular lines go to the timestamped formatter.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "logger",
+        "handlers",
+        "formatters",
+        "filters",
+        "routing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Complete the code to add a handler that writes log messages to a file called `app.log`:\n\n```python\nimport logging\n\nlogger = logging.getLogger(\"myapp\")\nlogger.setLevel(logging.DEBUG)\n\nhandler = logging._____________(\"app.log\")\nlogger.addHandler(handler)\n\nlogger.info(\"Application started\")\n```\nWhich class should replace the blank?",
+      "question_type": "mc",
+      "options": [
+        "StreamHandler",
+        "FileHandler",
+        "Handler",
+        "Logger"
+      ],
+      "correct_answer": "B",
+      "explanation": "`logging.FileHandler` is the built-in handler designed to write log records to a file. `StreamHandler` writes to a stream like stdout/stderr, `Handler` is a base class not typically instantiated directly, and `Logger` is the object you log through rather than a handler.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "filehandler",
+        "handlers",
+        "basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python logging, what does calling `handler.setLevel(logging.INFO)` mean for which records the handler will emit?",
+      "question_type": "mc",
+      "options": [
+        "It emits only records whose level is exactly INFO.",
+        "It emits records at INFO and below (INFO, DEBUG, NOTSET).",
+        "It emits records at INFO and above (INFO, WARNING, ERROR, CRITICAL).",
+        "It emits records only if the logger's level is also set to INFO."
+      ],
+      "correct_answer": "C",
+      "explanation": "`setLevel()` on a handler establishes a severity threshold: the handler processes records with `record.levelno >= handler.level`. Therefore `INFO` allows INFO, WARNING, ERROR, and CRITICAL, but not DEBUG. Exact matching (only INFO) requires adding a filter.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "handler",
+        "setLevel",
+        "log-level-threshold"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the pattern shown below, what is the primary purpose of using `io.StringIO()` together with `logging.StreamHandler`?\n\n```python\nimport logging, io\n\nlog = logging.getLogger(__name__)\nlog.setLevel(logging.INFO)\n\nbuf = io.StringIO()\nhandler = logging.StreamHandler(buf)\nlog.addHandler(handler)\n\nlog.info(\"Hello\")\n\nlog.removeHandler(handler)\ntext = buf.getvalue()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. To redirect `print()` output to the logging system",
+        "B. To capture log records into an in-memory string buffer so they can be retrieved as a string",
+        "C. To permanently change the logger so it always logs to a file-like object",
+        "D. To increase logging performance by bypassing handlers"
+      ],
+      "correct_answer": "B",
+      "explanation": "`io.StringIO()` provides an in-memory text buffer that behaves like a file. `logging.StreamHandler(buf)` writes formatted log messages into that buffer, allowing you to call `buf.getvalue()` to retrieve all emitted log text as a single string. It does not redirect `print()`, does not permanently change the logger if you remove the handler, and it does not inherently improve performance.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "streamhandler",
+        "io-stringio",
+        "capture-logs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python logging, under which condition will the following line reliably silence a third-party library’s INFO messages?\n\n```python\nimport logging\nlogging.getLogger('lightgbm').setLevel(logging.ERROR)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Only if the library actually logs using a logger named 'lightgbm' (or its children) and those records propagate to handlers that would otherwise emit them",
+        "B. Always, because any call to logging.getLogger(name) globally mutes all loggers in the process",
+        "C. Only if you call logging.basicConfig(level=logging.ERROR) before importing the library; otherwise setLevel has no effect",
+        "D. Only if the library uses print() internally; setLevel redirects stdout/stderr to the logging system"
+      ],
+      "correct_answer": "A",
+      "explanation": "Calling `logging.getLogger('lightgbm')` is always allowed, but it only affects records emitted on that logger name (and its children in the hierarchy). It works when the library uses that logger (e.g., `logging.getLogger('lightgbm')` or `logging.getLogger(__name__)` within the `lightgbm` package) and the records propagate to handlers where level filtering can occur. It does not affect code that uses `print()` or a different logger name, and it is not inherently dependent on `basicConfig` (though you need handlers somewhere to see output).",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "getLogger",
+        "logger-name",
+        "log-level",
+        "third-party-libraries",
+        "propagation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python’s `logging` module, how do you retrieve the name of an existing logger object?\n\n```python\nimport logging\nlogger = logging.getLogger(\"my_app.module\")\n# ???\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Use `logger.getName()`",
+        "Use `logger.name`",
+        "Use `logger.__name__`",
+        "Use `logging.name(logger)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "A logger’s name is stored on the logger instance as the `name` attribute. `getName()` is not a standard `Logger` method, `__name__` is a module attribute (not a logger attribute), and `logging.name(logger)` does not exist.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "logging",
+        "logger",
+        "attributes",
+        "logger-name"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's logging module, what happens if you call `logger.info()` with no arguments?\n\n```python\nimport logging\nlogger = logging.getLogger(\"test\")\nlogger.info()\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It logs an empty line because the default message is an empty string",
+        "B. It logs the string \"None\" because msg defaults to None",
+        "C. It raises a TypeError because the required `msg` argument is missing",
+        "D. It silently does nothing because the logger ignores empty calls"
+      ],
+      "correct_answer": "C",
+      "explanation": "`logger.info` (and other level methods like `debug`, `warning`, etc.) require at least one positional argument: `msg`. The method signature is effectively `info(self, msg, *args, **kwargs)`, so calling it with no arguments raises `TypeError: info() missing 1 required positional argument: 'msg'`.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "logging",
+        "logger.info",
+        "exceptions",
+        "function-signature"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python logging, which statement best describes the relationship between a logger's level and a handler's level?\n\n```text\nLog Record → Logger level check → Handler level check → Output\n```",
+      "question_type": "mc",
+      "options": [
+        "A. If a handler accepts a record, it will be output even if the logger's level would normally block it.",
+        "B. The logger level decides whether a record is created; the handler level only changes the record's severity.",
+        "C. A record must pass BOTH the logger level and the handler level to be output by that handler.",
+        "D. Only the handler level matters; the logger level is ignored once any handler is attached."
+      ],
+      "correct_answer": "C",
+      "explanation": "Python logging applies two filtering stages: first the logger checks whether it will process the message at all (logger level). Only if it passes does the record reach handlers. Then each handler applies its own level filter to decide whether to emit the record. Therefore, both checks must pass for output to occur.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "logger-level",
+        "handler-level",
+        "filtering",
+        "log-record-flow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's logging module, what is the default logging level threshold when you call `logging.basicConfig()` without specifying `level`?",
+      "question_type": "mc",
+      "options": [
+        "A) DEBUG",
+        "B) INFO",
+        "C) WARNING",
+        "D) ERROR"
+      ],
+      "correct_answer": "C",
+      "explanation": "`logging.basicConfig()` defaults the root logger's level to `WARNING`. That means `WARNING`, `ERROR`, and `CRITICAL` messages are emitted, while `DEBUG` and `INFO` are suppressed unless you explicitly set a lower threshold (e.g., `level=logging.INFO`).",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "logging",
+        "basicConfig",
+        "default-level",
+        "root-logger"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python’s logging module, what is the default file mode used by `logging.FileHandler(...)` when no `mode` is specified?",
+      "question_type": "mc",
+      "options": [
+        "A. 'w' (write) — overwrites the file on each run",
+        "B. 'a' (append) — adds new log records to the end of the file",
+        "C. 'x' (exclusive create) — fails if the file already exists",
+        "D. 'r' (read) — reads existing log records"
+      ],
+      "correct_answer": "B",
+      "explanation": "`FileHandler` defaults to append mode (`'a'`), meaning existing log content is preserved and new log entries are appended to the end. Using `'w'` would overwrite the file instead.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "FileHandler",
+        "file-modes",
+        "append-mode"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python’s built-in `logging` module, what is the key difference in the *destination* of `StreamHandler` vs `FileHandler`?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "`StreamHandler` writes to a stream-like object (default `sys.stderr`), while `FileHandler` writes to a disk file you specify.",
+        "`StreamHandler` automatically rotates logs by size, while `FileHandler` automatically rotates logs by time.",
+        "`StreamHandler` can only write to `sys.stdout`, while `FileHandler` can only write to `sys.stderr`.",
+        "`StreamHandler` persists logs across restarts, while `FileHandler` only shows logs in the console."
+      ],
+      "correct_answer": "A",
+      "explanation": "`StreamHandler` emits log records to a stream-like object (anything with a `.write()` method), and defaults to `sys.stderr`. `FileHandler` opens a file path you provide and writes log records to disk, making logs persistent. Rotation is not provided by either handler by itself (you’d use `RotatingFileHandler`/`TimedRotatingFileHandler`).",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "handlers",
+        "streamhandler",
+        "filehandler",
+        "stderr",
+        "stdout"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When you pass a custom object as the `stream` argument to `logging.StreamHandler(stream=...)`, which method must that object implement for logging to work?\n\nA. `emit(record)`\nB. `write(msg: str)`\nC. `handle(record)`\nD. `format(record)`",
+      "question_type": "mc",
+      "options": [
+        "emit(record)",
+        "write(msg: str)",
+        "handle(record)",
+        "format(record)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`StreamHandler` sends the formatted log message to the provided stream by calling `stream.write(msg)`. If `write()` is missing, the handler cannot output anything and will raise an `AttributeError`. Methods like `emit`, `handle`, and `format` belong to handlers/loggers/formatters, not the stream object passed into `StreamHandler`.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "StreamHandler",
+        "write-method",
+        "custom-stream"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python logging, you configure one logger with two handlers that both write to stdout, but each handler has a different formatter. You then call `logger.info(\"Hello\")` once.\n\nWhat output behavior should you expect by default (assuming no filters and both handlers are attached to the same logger)?",
+      "question_type": "mc",
+      "options": [
+        "Only the first handler prints the message because handlers are mutually exclusive.",
+        "Only the second handler prints the message because it was added last.",
+        "Both handlers print the message, resulting in duplicate output (two differently formatted lines).",
+        "Neither handler prints unless `logger.propagate = True`."
+      ],
+      "correct_answer": "C",
+      "explanation": "A logger dispatches each LogRecord to all attached handlers (subject to handler level and filters). If two StreamHandlers are attached to the same logger and both are eligible to handle the record, the same message will be emitted twice—once per handler—each using its own formatter.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "logger",
+        "handlers",
+        "formatter",
+        "duplicate-output"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python’s logging module, what stream does `logging.StreamHandler()` use by default when no argument is provided?\n\n```python\nimport logging\nh = logging.StreamHandler()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `sys.stdout`",
+        "B. `sys.stderr`",
+        "C. A new file named `logging.log` in the current directory",
+        "D. No stream; it buffers messages until a stream is set"
+      ],
+      "correct_answer": "B",
+      "explanation": "`StreamHandler.__init__(stream=None)` sets `stream = sys.stderr` when `stream` is `None`, so the default destination is standard error, not standard output or a file.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "StreamHandler",
+        "sys.stderr",
+        "defaults"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's logging module, what does calling `logging.basicConfig(level=logging.DEBUG)` primarily configure?\n\n```python\nimport logging\nlogging.basicConfig(level=logging.DEBUG)\nlogger = logging.getLogger(\"my_logger\")\nlogger.debug(\"hello\")\n```",
+      "question_type": "mc",
+      "options": [
+        "It sets the level only for the logger named \"my_logger\"",
+        "It sets the level for the root logger, which other loggers inherit by default",
+        "It sets the level for all existing loggers, overriding any levels previously set with `setLevel()`",
+        "It sets the level for handlers only, not for any logger"
+      ],
+      "correct_answer": "B",
+      "explanation": "`basicConfig(level=...)` configures the root logger (and typically its default handler). Named loggers obtained via `getLogger(name)` inherit the effective level from the root logger unless they have their own level set explicitly via `setLevel()`.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "basicConfig",
+        "root-logger",
+        "log-levels",
+        "inheritance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes when you should **avoid** configuring the root logger (e.g., calling `logging.basicConfig(...)`)?",
+      "question_type": "mc",
+      "options": [
+        "A. In a reusable library/module, because configuring the root logger imposes global logging behavior on the application using the library",
+        "B. In a quick one-off script, because the root logger cannot print to the console by default",
+        "C. When using third-party libraries, because their loggers never propagate to the root logger",
+        "D. When you want a default handler for all loggers, because the root logger only affects `logging.info()` calls"
+      ],
+      "correct_answer": "A",
+      "explanation": "Libraries should not configure the root logger because it is global application state. If a library calls `basicConfig()`, it can unexpectedly change formatting, levels, and handlers for the entire host application (and other libraries). In contrast, quick scripts often *do* use root for convenience, third-party libraries typically propagate to root, and the root logger can provide default handlers for named loggers.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-logging",
+        "root-logger",
+        "basicConfig",
+        "library-best-practices"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this logging call:\n\n```python\nlogger.info(\"User %s logged in\", username)\n```\n\nWhich `LogRecord` attributes most directly correspond to the *unformatted* message template and its formatting arguments (before interpolation)?",
+      "question_type": "mc",
+      "options": [
+        "A. `message` holds the template; `args` holds the formatted final string",
+        "B. `msg` holds the template; `args` holds the arguments used to format it",
+        "C. `levelname` holds the template; `levelno` holds the arguments",
+        "D. `pathname` holds the template; `filename` holds the arguments"
+      ],
+      "correct_answer": "B",
+      "explanation": "`LogRecord.msg` stores the user-supplied message format string (e.g., \"User %s logged in\"), and `LogRecord.args` stores the arguments (e.g., `(username,)`). The `LogRecord.message` attribute is the fully formatted result of applying `msg % args` (typically computed during formatting).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "logrecord",
+        "message-formatting",
+        "msg-vs-message",
+        "args"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following code, what is the primary purpose of the `with logfire.span(\"process_data\"):` block?\n\n```python\nimport logfire\n\nlogfire.configure()\n\nwith logfire.span(\"process_data\"):\n    # Your code here\n    pass\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It disables automatic instrumentation so the code inside is excluded from monitoring",
+        "It creates a traced span to measure and record timing/trace information (and related context) for the enclosed operation",
+        "It converts all exceptions inside the block into warnings so they are not reported as errors",
+        "It forces all logs inside the block to be printed only to the local console and not sent to Logfire"
+      ],
+      "correct_answer": "B",
+      "explanation": "The content labels this as “Automatic tracing” and shows `logfire.span(...)` as a context manager. In observability tooling, a span represents a timed operation within a trace, capturing performance and contextual information for the code executed inside the block.",
+      "difficulty": "intermediate",
+      "tags": [
+        "logfire",
+        "tracing",
+        "spans",
+        "performance-monitoring",
+        "python"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport logging\n\nlogging.basicConfig(level=logging.INFO, format=\"%(levelname)s:%(message)s\")\nlogging.info(\"first\")\n\n# A library adds a handler later (simulated here)\nlogging.getLogger().addHandler(logging.StreamHandler())\n\n# Attempt to reconfigure\nlogging.basicConfig(level=logging.DEBUG, format=\"DEBUG:%(message)s\")\nlogging.debug(\"second\")\nlogging.info(\"third\")\n```\n\nWhich statement is correct about what happens and why?",
+      "question_type": "mc",
+      "options": [
+        "The second call to `basicConfig()` reconfigures the root logger to DEBUG, so both \"second\" and \"third\" are emitted with the \"DEBUG:\" prefix.",
+        "The second call to `basicConfig()` does nothing because the root logger already has handlers; \"second\" is not emitted, and \"third\" uses the original format.",
+        "The second call to `basicConfig()` removes the handler added by the library and replaces it with a FileHandler.",
+        "The second call to `basicConfig()` changes only the format but not the level, so \"second\" is emitted but \"third\" is not."
+      ],
+      "correct_answer": "B",
+      "explanation": "`basicConfig()` checks whether the **root logger already has handlers**. If it does, `basicConfig()` is a no-op (unless `force=True` in Python 3.8+). After the library adds a handler, the root has handlers, so the second `basicConfig()` does not change the level to DEBUG or the format. Therefore `logging.debug(\"second\")` is still filtered out because the root logger remains at INFO, while `logging.info(\"third\")` is emitted using the original format from the first configuration.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "basicConfig",
+        "handlers",
+        "root-logger",
+        "log-level",
+        "formatting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a logger with two handlers: a console handler and a file handler. You want to drop messages that contain the substring \"SECRET\" **only** from the file output, while still showing them on the console.\n\nWhich approach correctly achieves this goal?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Attach the filter to the logger so both handlers are affected equally",
+        "B. Attach the filter only to the file handler so only file emission is affected",
+        "C. Set the file handler’s level higher (e.g., ERROR) so it drops only \"SECRET\" messages",
+        "D. Use logging.Filter(\"SECRET\") because logging.Filter filters by message contents"
+      ],
+      "correct_answer": "B",
+      "explanation": "Logger-level filters affect which records the logger passes to all handlers, so they would impact both console and file. Handler-level filters apply only to that handler’s emission, which is exactly what you want for filtering only file output. Handler levels filter by severity, not message content. The built-in logging.Filter(name) filters by logger name hierarchy, not message text.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "handler-filters",
+        "logger-vs-handler",
+        "selective-logging",
+        "sensitive-data"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following script (assume Python 3.8+):\n\n```python\nimport logging\n\nlogging.basicConfig(level=logging.INFO, format=\"FIRST:%(levelname)s:%(message)s\")\nlogging.basicConfig(level=logging.DEBUG, format=\"SECOND:%(levelname)s:%(message)s\")\n\nlog = logging.getLogger(\"app\")\nlog.info(\"hello\")\nlog.debug(\"details\")\n```\n\nWhich output is expected on the console?",
+      "question_type": "mc",
+      "options": [
+        "A. Both lines are printed using the SECOND format because the second basicConfig overrides the first.",
+        "B. Only the INFO line is printed using the FIRST format; the DEBUG line is suppressed.",
+        "C. Both lines are printed using the FIRST format because the first basicConfig sets INFO and later calls are ignored.",
+        "D. No output appears because only the root logger can emit messages."
+      ],
+      "correct_answer": "B",
+      "explanation": "The first call to basicConfig configures the root logger (level=INFO and the FIRST formatter/handler). Subsequent calls to basicConfig do nothing unless force=True is provided, so the root logger remains at INFO. Therefore log.info(\"hello\") propagates to the root and is emitted with the FIRST format, while log.debug(\"details\") is below the root’s level and is filtered out.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "basicConfig",
+        "root-logger",
+        "log-levels",
+        "propagation",
+        "python-3.8"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following Weave setup:\n\n```python\nimport weave\n\nweave.init('my-project')\n\n@weave.op()\ndef call_llm(prompt):\n    response = openai.complete(prompt)\n    return response\n```\n\nWhat is the most accurate expectation of what Weave will automatically capture when `call_llm()` is executed (assuming the OpenAI call succeeds)?",
+      "question_type": "mc",
+      "options": [
+        "Only Python exceptions raised inside `call_llm`, but not inputs/outputs or timing",
+        "Inputs and outputs of `call_llm` plus timing/trace information for the operation (useful for debugging chains)",
+        "Only token usage and cost, but not the prompt or completion content",
+        "Nothing unless you manually call a `weave.log()` function inside `call_llm`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Decorating a function with `@weave.op()` instruments it as an operation in a trace. The source content states it “Automatically tracks inputs, outputs, timing,” enabling debugging and latency analysis. While Weave can also track token usage/cost for LLM calls, the key guaranteed behavior from the snippet is capturing the op’s inputs/outputs and timing/trace context; it does not require manual `weave.log()` calls.",
+      "difficulty": "intermediate",
+      "tags": [
+        "weave.op",
+        "tracing",
+        "latency",
+        "debugging",
+        "prompt-response"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following logging setup (single logger, two handlers, routing by log level):\n\n```python\nimport logging, sys\n\nlogger = logging.getLogger(\"my_app\")\nlogger.setLevel(logging.DEBUG)\n\nheader_handler = logging.StreamHandler(sys.stdout)\nheader_handler.setLevel(logging.DEBUG)\nheader_handler.setFormatter(logging.Formatter('%(message)s'))\n\nclass DebugOnlyFilter(logging.Filter):\n    def filter(self, record):\n        return record.levelno == logging.DEBUG\n\nheader_handler.addFilter(DebugOnlyFilter())\n\nregular_handler = logging.StreamHandler(sys.stdout)\nregular_handler.setLevel(logging.INFO)\nregular_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))\n\nclass InfoAndAboveFilter(logging.Filter):\n    def filter(self, record):\n        return record.levelno >= logging.INFO\n\nregular_handler.addFilter(InfoAndAboveFilter())\n\nlogger.addHandler(header_handler)\nlogger.addHandler(regular_handler)\n\nlogger.debug(\"====\")\nlogger.info(\"hello\")\nlogger.warning(\"warn\")\n```\n\nWhich statement best describes what will be printed?\n",
+      "question_type": "mc",
+      "options": [
+        "All three lines will be printed twice: once by each handler, because both handlers are attached to the same logger.",
+        "Only `\"====\"` will be printed (without timestamp); `\"hello\"` and `\"warn\"` will be dropped because the header handler is DEBUG-only.",
+        "`\"====\"` will be printed without timestamp; `\"hello\"` and `\"warn\"` will be printed with timestamps (and level names) exactly once each.",
+        "`\"hello\"` will be printed twice (once plain, once timestamped), while `\"warn\"` will be printed only once (timestamped)."
+      ],
+      "correct_answer": "C",
+      "explanation": "The header handler accepts only records with level DEBUG due to `DebugOnlyFilter`, so it prints only `logger.debug(\"====\")` using the plain `%(message)s` formatter. The regular handler accepts records with level INFO and above due to `InfoAndAboveFilter`, so it prints the INFO and WARNING records using the timestamped formatter. Because the filters are mutually exclusive by level, each record is handled by exactly one handler, preventing duplicates.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "handlers",
+        "filters",
+        "log-levels",
+        "formatters",
+        "routing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want your application to overwrite the log file each time it starts and ensure the file is written in UTF-8. Fill in the missing arguments:\n\n```python\nimport logging\n\nlogger = logging.getLogger(\"myapp\")\nlogger.setLevel(logging.DEBUG)\n\nhandler = logging.FileHandler(\"app.log\", __________, __________)\nlogger.addHandler(handler)\n\nlogger.info(\"Application started\")\n```\nWrite the completed `FileHandler(...)` call.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "handler = logging.FileHandler(\"app.log\", mode='w', encoding='utf-8')",
+      "explanation": "`FileHandler` supports optional parameters `mode` (default `'a'` for append) and `encoding`. Using `mode='w'` truncates/overwrites the file on each run, and `encoding='utf-8'` ensures Unicode text is encoded consistently.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "filehandler",
+        "encoding",
+        "file-modes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a handler to output **only** `INFO` messages (not WARNING/ERROR). Which configuration correctly achieves this?\n\n```python\nimport logging, sys\nh = logging.StreamHandler(sys.stdout)\n# ???\n```\n",
+      "question_type": "mc",
+      "options": [
+        "```python\nh.setLevel(logging.INFO)\n```\n",
+        "```python\nh.setLevel(logging.INFO)\nh.addFilter(lambda r: r.levelno == logging.INFO)\n```\n",
+        "```python\nh.setLevel(logging.WARNING)\nh.addFilter(lambda r: r.levelno == logging.INFO)\n```\n",
+        "```python\nh.setLevel(logging.INFO)\nh.addFilter(lambda r: r.levelno >= logging.INFO)\n```\n"
+      ],
+      "correct_answer": "B",
+      "explanation": "To get **only** INFO, you need both: (1) a threshold that does not exclude INFO (`setLevel(logging.INFO)` is fine), and (2) a filter that enforces exact level equality (`record.levelno == logging.INFO`). Option A is a range (INFO and above). Option C blocks INFO because the handler threshold is WARNING. Option D is still a range (INFO and above).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "filters",
+        "exact-level-matching",
+        "StreamHandler"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to implement a helper `capture_logs(func, *args, **kwargs)` that captures all `log.info()` output produced during `func` execution and returns it as a string. Which approach best ensures the handler is removed even if `func` raises an exception?\n\nAssume `log` is a module-level logger.\n",
+      "question_type": "mc",
+      "options": [
+        "A. Add the handler before calling `func` and remove it after calling `func` (no error handling needed)",
+        "B. Use `handler.flush()` after calling `func` and omit removing the handler",
+        "C. Wrap the `func` call in a `try/finally` and remove the handler in the `finally` block",
+        "D. Set `log.propagate = False` to prevent exceptions and then remove the handler"
+      ],
+      "correct_answer": "C",
+      "explanation": "A `try/finally` guarantees cleanup code runs regardless of whether `func` returns normally or raises. Without it (A), an exception would skip the removal and the temporary handler could remain attached, causing duplicated output or unexpected capture in later calls. Flushing (B) does not detach the handler. `propagate` (D) controls whether records bubble to ancestor loggers; it does not prevent exceptions or ensure handler removal.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "handlers",
+        "exception-safety",
+        "resource-cleanup",
+        "try-finally"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are trying to silence DEBUG logs coming from your module `myapp.worker`. The module contains:\n\n```python\n# myapp/worker.py\nimport logging\nlogger = logging.getLogger(__name__)\n\ndef run():\n    logger.debug('starting worker')\n```\n\nIn your entrypoint you wrote:\n\n```python\nimport logging\nlogging.basicConfig(level=logging.DEBUG)\nlogging.getLogger('worker').setLevel(logging.WARNING)\n\nfrom myapp.worker import run\nrun()\n```\n\nYet you still see `starting worker` printed. What is the most likely reason?",
+      "question_type": "mc",
+      "options": [
+        "A. The logger name is actually 'myapp.worker', so setting the level on 'worker' does not affect it",
+        "B. basicConfig(level=logging.DEBUG) forces all loggers to emit DEBUG regardless of per-logger levels",
+        "C. __name__ always evaluates to '__main__', so the logger is the root logger",
+        "D. setLevel only works on the root logger; non-root loggers ignore level changes"
+      ],
+      "correct_answer": "A",
+      "explanation": "Inside `myapp.worker`, `logging.getLogger(__name__)` uses the module’s fully-qualified name, which is `myapp.worker` (not `worker`). Setting `logging.getLogger('worker').setLevel(...)` changes a different logger that is not used by the module, so it won’t filter those records. The fix is typically `logging.getLogger('myapp.worker').setLevel(logging.WARNING)` (or set a level on `myapp` to affect children).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "__name__",
+        "module-loggers",
+        "logger-hierarchy",
+        "setLevel",
+        "basicConfig"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Assume the following code is inside a file named `my_module.py`. What will be printed?\n\n```python\nimport logging\n\nlogger = logging.getLogger(__name__)\nprint(logger.name)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "\"__main__\" always",
+        "\"my_module\"",
+        "\"my_module.py\"",
+        "\"logging\""
+      ],
+      "correct_answer": "B",
+      "explanation": "When a module is imported or executed, `__name__` is the module name (without the `.py` extension). In `my_module.py`, `__name__` is typically `\"my_module\"` (unless it is the entry-point script, in which case it could be `\"__main__\"`, but the question states it is inside `my_module.py` and asks the module name behavior). The logger name mirrors the string passed to `getLogger()`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "logging",
+        "__name__",
+        "modules",
+        "getLogger",
+        "logger-name"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to print a visual separator and then exactly one blank line using Python logging.\n\nGiven this setup:\n\n```python\nimport logging\nimport sys\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.INFO)\nh = logging.StreamHandler(sys.stdout)\nh.setFormatter(logging.Formatter('%(message)s'))\nlogger.addHandler(h)\n\nlogger.info(\"SUMMARY\")\n# TODO: log exactly one blank line here\nlogger.info(\"Total records: 1000\")\n```\n\nWhich statement should replace the TODO line to produce exactly one blank line between the two messages?",
+      "question_type": "mc",
+      "options": [
+        "A. `logger.info()`",
+        "B. `logger.info(\"\")`",
+        "C. `logger.info(\"\\n\\n\")`",
+        "D. `logger.info(None)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`logger.info(\"\")` passes the required `msg` argument and, with the formatter `'%(message)s'`, results in an empty message being emitted, which appears as a single blank line. `logger.info()` raises `TypeError`. `\"\\n\\n\"` would create more than one blank line (depending on handler/terminator behavior). `None` is not the intended message value and may be formatted as the string \"None\" rather than producing a blank line.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "logging",
+        "formatters",
+        "streamhandler",
+        "newlines"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following configuration:\n\n```python\nimport logging\nimport sys\n\nlogger = logging.getLogger(\"my_app\")\nlogger.setLevel(logging.INFO)\n\nh = logging.StreamHandler(sys.stdout)\nh.setLevel(logging.ERROR)\nlogger.addHandler(h)\n\nlogger.debug(\"Debug\")\nlogger.info(\"Info\")\nlogger.warning(\"Warning\")\nlogger.error(\"Error\")\n```\n\nWhich messages appear on stdout?",
+      "question_type": "mc",
+      "options": [
+        "A. Debug, Info, Warning, Error",
+        "B. Info, Warning, Error",
+        "C. Error only",
+        "D. Warning and Error only"
+      ],
+      "correct_answer": "C",
+      "explanation": "The logger is set to INFO, so DEBUG is discarded before reaching any handler. INFO and WARNING pass the logger, but the handler is set to ERROR, so it emits only ERROR and above. Thus only the \"Error\" message is printed.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "streamhandler",
+        "logger-setlevel",
+        "handler-setlevel",
+        "stdout"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code. What lines will be printed to the console when it runs (assume no other logging configuration has been done)?\n\n```python\nimport logging\n\nlogging.basicConfig()\nlogging.info(\"I\")\nlogging.warning(\"W\")\nlogging.error(\"E\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A) Only `I`",
+        "B) `I` and `W`",
+        "C) `W` and `E`",
+        "D) `I`, `W`, and `E`"
+      ],
+      "correct_answer": "C",
+      "explanation": "With `basicConfig()` and no `level` argument, the threshold is `WARNING`. `INFO` is below the threshold so it is suppressed, while `WARNING` and `ERROR` meet/exceed the threshold and are output.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "logging",
+        "basicConfig",
+        "log-levels",
+        "severity-threshold"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want each program run to start with a fresh log file (i.e., overwrite any existing log file). Complete the code by choosing the correct `mode` value.\n\n```python\nimport logging\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.INFO)\n\nhandler = logging.FileHandler(\"app.log\", mode=____)\nlogger.addHandler(handler)\n\nlogger.info(\"Started\")\n```\n\nWhich value should replace `____`?",
+      "question_type": "mc",
+      "options": [
+        "A. 'a'",
+        "B. 'w'",
+        "C. 'r'",
+        "D. 'x'"
+      ],
+      "correct_answer": "B",
+      "explanation": "Using `mode='w'` opens the log file in write mode, which truncates (overwrites) the file if it already exists. `mode='a'` would keep old content and append; `'r'` is not suitable for writing; `'x'` would raise an error if the file already exists.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "FileHandler",
+        "file-modes",
+        "overwrite",
+        "write-mode"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport logging\n\nlogger = logging.getLogger(\"app\")\nlogger.setLevel(logging.DEBUG)\n\nfh = logging.FileHandler(\"app.log\", mode=\"a\", encoding=\"utf-8\", delay=True)\nfh.setLevel(logging.DEBUG)\nlogger.addHandler(fh)\n\nlogger.debug(\"first\")\n```\n\nWhich statement best describes what `delay=True` changes in this setup?",
+      "question_type": "mc",
+      "options": [
+        "The file `app.log` is opened immediately when `FileHandler` is constructed.",
+        "The file `app.log` is opened only when the first log record is emitted (e.g., on `logger.debug(\"first\")`).",
+        "The file `app.log` is opened only when `logger.setLevel(logging.DEBUG)` is called.",
+        "The file `app.log` is opened only when `fh.flush()` is called."
+      ],
+      "correct_answer": "B",
+      "explanation": "`FileHandler(..., delay=True)` defers opening the underlying file until the handler actually emits its first record. This can reduce startup work and avoid creating/opening the file if no logs are ever written. It does not depend on `setLevel`, and `flush()` affects buffering, not when the file is opened.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "filehandler",
+        "delay",
+        "io",
+        "handlers"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following custom stream used with `StreamHandler`:\n\n```python\nimport logging\n\nclass BufferingStream:\n    def __init__(self):\n        self.buffer = []\n\n    def write(self, msg):\n        # store messages; do not display immediately\n        self.buffer.append(msg)\n\nlogger = logging.getLogger(\"demo\")\nlogger.setLevel(logging.INFO)\n\nstream = BufferingStream()\nhandler = logging.StreamHandler(stream=stream)\nlogger.addHandler(handler)\n\nlogger.info(\"Hello\")\n```\n\nWhich statement best describes what happens and why?\n\nA. The message will be displayed immediately because `StreamHandler` always forces output.\nB. The message will be written to `buffer`, but may not be visible/forwarded immediately because `flush()` is missing.\nC. An `AttributeError` is raised because `flush()` is required.\nD. A `TypeError` is raised because `write()` must accept bytes, not str.",
+      "question_type": "mc",
+      "options": [
+        "The message will be displayed immediately because `StreamHandler` always forces output.",
+        "The message will be written to `buffer`, but may not be visible/forwarded immediately because `flush()` is missing.",
+        "An `AttributeError` is raised because `flush()` is required.",
+        "A `TypeError` is raised because `write()` must accept bytes, not str."
+      ],
+      "correct_answer": "B",
+      "explanation": "`StreamHandler` requires `write()` and will call it with the formatted log line (typically including a newline). `flush()` is optional: if it’s not implemented, logging can still proceed, but buffered streams may not push output immediately. In this example, `write()` appends to an in-memory list; without a `flush()` implementation (and without any other mechanism to forward/display), the message can remain effectively “queued” in the buffer.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "StreamHandler",
+        "flush-method",
+        "buffering",
+        "write-method"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want header/footer lines to appear *without* timestamps, while data lines should include timestamps. You started with one logger and two handlers (plain and timestamped), but every message is printed twice.\n\nWrite a Python logging setup (code) that routes header messages to a plain formatter and data messages to a timestamped formatter **without duplicate output**. You may choose either (a) two separate loggers, or (b) one logger with routing (e.g., filters). Include the key configuration that prevents messages from also being emitted by ancestor/root loggers.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution is to use two separate loggers with their own handlers/formatters and disable propagation:\n\n```python\nimport logging\nimport sys\n\n# Logger for headers/footers (plain)\nheader_logger = logging.getLogger(\"headers\")\nheader_logger.setLevel(logging.INFO)\nheader_handler = logging.StreamHandler(sys.stdout)\nheader_handler.setFormatter(logging.Formatter(\"%(message)s\"))\nheader_logger.addHandler(header_handler)\nheader_logger.propagate = False\n\n# Logger for data (timestamped)\ndata_logger = logging.getLogger(\"data\")\ndata_logger.setLevel(logging.INFO)\ndata_handler = logging.StreamHandler(sys.stdout)\ndata_handler.setFormatter(logging.Formatter(\"%(asctime)s - %(levelname)s - %(message)s\"))\ndata_logger.addHandler(data_handler)\ndata_logger.propagate = False\n\n# Usage\nheader_logger.info(\"=\" * 60)\nheader_logger.info(\"SUMMARY\")\nheader_logger.info(\"=\" * 60)\n\ndata_logger.info(\"Columns compared: 'column1' vs 'column2'\")\ndata_logger.info(\"Match rate: 95.3%\")\n\nheader_logger.info(\"=\" * 60)\n```",
+      "explanation": "Using two loggers cleanly separates concerns: header messages go only to the header logger’s handler (plain formatter) and data messages go only to the data logger’s handler (timestamped formatter). Setting `propagate = False` prevents the record from bubbling up to the root/ancestor loggers (which could otherwise cause additional, unexpected duplicate output if the root logger is configured with handlers).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "multiple-loggers",
+        "propagate",
+        "streamhandler",
+        "formatter",
+        "routing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to capture log output in memory for later inspection (e.g., in a unit test). Which option correctly configures a `StreamHandler` to write to an in-memory buffer?\n\nAssume you will later call `buffer.getvalue()` to read the logged text.",
+      "question_type": "mc",
+      "options": [
+        "A. `buffer = [] ; handler = logging.StreamHandler(buffer)`",
+        "B. `import io; buffer = io.StringIO(); handler = logging.StreamHandler(buffer)`",
+        "C. `buffer = \"\" ; handler = logging.StreamHandler(buffer)`",
+        "D. `handler = logging.StreamHandler(\"out.log\")`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`StreamHandler` accepts a file-like object (a stream) that implements at least `.write()` (and ideally `.flush()`). `io.StringIO()` is an in-memory text stream that provides `.write()` and `.getvalue()`. A list or string is not a file-like object, and passing a filename string does not open a file or provide `.write()`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "StreamHandler",
+        "io.StringIO",
+        "unit-testing",
+        "file-like-objects"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code. Which messages are expected to be emitted (assuming default propagation and no custom handlers/filters)?\n\n```python\nimport logging\n\nlogging.basicConfig(level=logging.INFO)\n\nlogger1 = logging.getLogger(\"module1\")\nlogger2 = logging.getLogger(\"module2\")\n\nlogger1.debug(\"d1\")\nlogger1.info(\"i1\")\n\nlogger2.setLevel(logging.DEBUG)\nlogger2.debug(\"d2\")\nlogger2.info(\"i2\")\n```",
+      "question_type": "mc",
+      "options": [
+        "Only i1 and i2",
+        "Only i1, d2, and i2",
+        "Only d2 (because DEBUG overrides INFO globally)",
+        "All four messages (d1, i1, d2, i2)"
+      ],
+      "correct_answer": "B",
+      "explanation": "The root logger is configured at INFO, so `logger1` inherits INFO and suppresses DEBUG (`d1` is hidden, `i1` is shown). `logger2.setLevel(DEBUG)` sets a specific level for `logger2`, making it more verbose than the root; thus both `d2` and `i2` are emitted.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "setLevel",
+        "basicConfig",
+        "effective-level",
+        "named-loggers",
+        "root-logger"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport logging\nimport sys\n\nlogging.basicConfig(level=logging.INFO, format=\"ROOT:%(message)s\")\n\nlogger = logging.getLogger(\"my_app\")\nlogger.setLevel(logging.INFO)\n\nh = logging.StreamHandler(sys.stdout)\nh.setFormatter(logging.Formatter(\"LOCAL:%(message)s\"))\nlogger.addHandler(h)\n\nlogger.propagate = False\n\nlogger.info(\"hello\")\nlogging.info(\"world\")\n```\n\nWhat output should you expect (ignoring timestamps and assuming standard stream handling)?",
+      "question_type": "mc",
+      "options": [
+        "A. Two lines: `LOCAL:hello` and `ROOT:world`",
+        "B. Two lines: `ROOT:hello` and `ROOT:world`",
+        "C. One line: `LOCAL:hello` only",
+        "D. Two lines: `LOCAL:hello` and `ROOT:hello` (duplicate), plus `ROOT:world`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`logger.info(\"hello\")` is emitted by the named logger `my_app`, which has its own handler and formatter. Because `logger.propagate = False`, the record does **not** bubble up to the root logger, so you do not get a `ROOT:hello` line. `logging.info(\"world\")` uses the root logger directly, so it is formatted by the root configuration as `ROOT:world`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-logging",
+        "propagate",
+        "handlers",
+        "named-loggers",
+        "root-logger"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

@@ -1,0 +1,2162 @@
+{
+  "metadata": {
+    "subject_slug": "scikit-learn",
+    "subject_name": "scikit-learn",
+    "exported_at": "2026-03-05T20:01:47.050252",
+    "question_count": 102,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You are building a preprocessing pipeline and want to ensure that a feature (column) that is entirely missing in the training data is not dropped during imputation.\n\n1) Which `SimpleImputer` parameter controls this behavior?\n2) What attribute can you inspect after fitting to see the per-feature fill values that were computed?\n\nAnswer in the form:\n- parameter: ...\n- attribute: ...",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "- parameter: keep_empty_features\n- attribute: statistics_",
+      "explanation": "`keep_empty_features` determines whether features that are all missing are retained rather than being removed. After fitting, `statistics_` stores the imputation value for each feature (e.g., mean/median/mode or constant), allowing you to inspect what will be used to fill missing entries.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "SimpleImputer",
+        "keep_empty_features",
+        "statistics_",
+        "pipelines",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider you are tuning an expensive model with BayesSearchCV. Explain (1) why BayesSearchCV can converge to good hyperparameters in fewer evaluations than RandomizedSearchCV, and (2) how the surrogate model and acquisition function contribute to the exploration vs. exploitation trade-off. Your answer should mention the *sequential* nature of the search.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "BayesSearchCV can converge in fewer evaluations because it does not sample hyperparameters blindly; it uses past trial results to model how performance depends on hyperparameters and then chooses the next evaluation to be informative or promising. The surrogate model (often a Gaussian Process) approximates the expensive objective (e.g., CV score) cheaply and provides both a predicted mean performance and uncertainty across the search space. The acquisition function (e.g., Expected Improvement or UCB) uses these predictions to balance exploitation (try points with high predicted score) and exploration (try uncertain regions that might yield better-than-expected performance). The process is sequential: each new hyperparameter setting is selected after updating the surrogate with results from previous evaluations, which makes the search increasingly focused compared with RandomizedSearchCV’s independent random draws.",
+      "explanation": "A strong answer connects the key mechanisms: (a) sequential updates based on observed CV scores, (b) a surrogate model that is cheaper than full training and provides uncertainty estimates, and (c) an acquisition function that explicitly encodes the explore/exploit decision. This explains why BayesSearchCV often finds good regions with fewer trials, especially when each model fit is expensive.",
+      "difficulty": "advanced",
+      "tags": [
+        "bayessearchcv",
+        "bayesian-optimization",
+        "surrogate-model",
+        "acquisition-function",
+        "exploration-exploitation",
+        "expensive-models"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a labeled pandas DataFrame confusion matrix for a 3-class problem with class order `['cat', 'dog', 'rabbit']`, ensuring the rows/columns match that exact order.\n\nWrite code that:\n1) Computes the confusion matrix with the specified class ordering.\n2) Wraps it in a `pd.DataFrame` whose index and columns are the class names in that same order.\n\n(Assume `y_true` and `y_pred` already exist.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom sklearn.metrics import confusion_matrix\nimport pandas as pd\n\nlabels = ['cat', 'dog', 'rabbit']\ncm = confusion_matrix(y_true, y_pred, labels=labels)\ncm_df = pd.DataFrame(cm, index=labels, columns=labels)\n```",
+      "explanation": "In multiclass settings, you should pass the desired `labels=` ordering to `confusion_matrix` so the resulting array’s row/column order matches your intended class list. Then, using the same list for `index=` and `columns=` in `pd.DataFrame` ensures the DataFrame labels align with the matrix layout (rows=true labels, columns=predicted labels).",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "confusion-matrix",
+        "multiclass-classification",
+        "pandas",
+        "labels-ordering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom sklearn.dummy import DummyClassifier\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import log_loss\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, stratify=y, random_state=42\n)\n\ndummy = DummyClassifier(strategy=\"most_frequent\", random_state=42)\ndummy.fit(X_train, y_train)\n\ny_pred_proba = dummy.predict_proba(X_test)\nprint(log_loss(y_test, y_pred_proba))\n```\n\nWhich change is the most appropriate if your goal is to compute a meaningful baseline log-loss that reflects the training label distribution (rather than a degenerate one-class prediction)?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Keep `most_frequent`, but set `constant=0` so `predict_proba` becomes probabilistic.",
+        "B. Switch to `strategy=\"stratified\"` so predicted probabilities and sampled labels follow the empirical class distribution.",
+        "C. Switch to `strategy=\"constant\"` and set `constant` to the minority class to avoid bias.",
+        "D. Remove `stratify=y` from `train_test_split` so the baseline is not influenced by the training distribution."
+      ],
+      "correct_answer": "B",
+      "explanation": "For log-loss you typically want non-trivial class probabilities that reflect uncertainty. A baseline that mirrors the empirical class distribution is provided by `stratified`, which uses the learned class prior to generate predictions (and associated probabilities). Options A and C misunderstand `constant` (it forces a single label, not a distribution), and D makes the split potentially unrepresentative, which usually harms baseline validity rather than improving it.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "DummyClassifier",
+        "log-loss",
+        "predict_proba",
+        "baseline",
+        "stratified-sampling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You fit a `LabelEncoder` on training labels and then try to transform test labels that contain a new, unseen category. What will happen, and what is a correct way to avoid the issue?\n\n```python\nfrom sklearn.preprocessing import LabelEncoder\n\ny_train = [\"negative\", \"positive\", \"negative\"]\ny_test  = [\"negative\", \"neutral\"]\n\nle = LabelEncoder().fit(y_train)\nle.transform(y_test)\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "It will raise a ValueError because \"neutral\" was not seen during fitting. To avoid this, ensure the encoder is fit on all possible classes (e.g., fit on the union of train/test labels or a predefined list of classes) before transforming, or handle/clean unknown labels prior to transform (e.g., map unknowns to a known class or filter them).",
+      "explanation": "`LabelEncoder` can only transform labels that were present in `fit` (stored in `classes_`). When `transform` encounters an unseen label, it errors rather than inventing a new code, which prevents silent label mismatches. A robust workflow is to define the complete set of allowed classes up front (or otherwise guarantee no unseen labels at inference time) and handle unexpected labels explicitly.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "LabelEncoder",
+        "classes_",
+        "unseen-labels",
+        "inference",
+        "error-handling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the convergence check described for solvers like `lbfgs`/`sag`/`saga`:\n\n```text\n|loss_new − loss_old| < tol × (1 + |loss_old|)\n```\n\n1) Explain how tightening `tol` from `1e-4` to `1e-6` affects training time and the stopping condition.\n2) After calling `.fit()` on a multiclass problem, what does `model.n_iter_` represent and how can it differ from the binary case?\n3) If you want faster convergence without changing `tol`, name one data-preprocessing step that commonly reduces the number of iterations for `sag`/`lbfgs` and briefly explain why.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Tightening `tol` (e.g., 1e-4 → 1e-6) makes the stopping condition stricter: the solver must drive the per-iteration change in objective to a much smaller value before stopping. This usually increases the number of iterations/epochs and thus training time (and may require a higher `max_iter` to avoid a ConvergenceWarning).\n\n2) `model.n_iter_` reports how many iterations the solver actually ran. In binary classification it is typically a single integer. In multiclass settings (e.g., one-vs-rest), it can be an array with one entry per class/OVR subproblem, because each subproblem may converge in a different number of iterations.\n\n3) Feature scaling/standardization (e.g., `StandardScaler`) often speeds convergence for `sag`/`lbfgs` because it improves conditioning: features on comparable scales lead to more stable and efficient optimization steps, reducing the iterations needed to meet the same tolerance.",
+      "explanation": "1) The inequality shows `tol` directly scales the allowed loss-change threshold. Smaller `tol` means a smaller threshold, so more work is needed to reduce the loss change below it.\n2) scikit-learn exposes the realized iteration count via `n_iter_`; multiclass can involve multiple optimization problems whose convergence speeds differ.\n3) Many first/second-order methods converge faster on well-conditioned problems; scaling reduces ill-conditioning caused by disparate feature magnitudes, which commonly reduces epochs/steps for SAG/SAGA and LBFGS.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "tol",
+        "n_iter_",
+        "multiclass",
+        "feature-scaling",
+        "sag",
+        "lbfgs",
+        "convergence-criterion"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.ensemble import RandomForestRegressor\n\nmodel = RandomForestRegressor(random_state=42)\n# X, y are your regression features/targets\nscores = cross_val_score(model, X, y, cv=5, scoring=\"neg_mean_absolute_error\")\nmean_score = scores.mean()\n```\n\n1) Explain precisely what `scores` contains (what is computed per fold and why the values are negative).\n2) Write a short code snippet to convert `mean_score` into the corresponding (positive) MAE value.\n3) If `mean_score` improves from -3.0 to -2.0, explain what that implies about MAE and model performance.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `scores` contains one value per CV fold. For each fold, scikit-learn computes the mean absolute error (MAE) on that fold’s validation split and then negates it, returning `-MAE` so that higher scores indicate better performance. Therefore values are typically negative (or zero in the perfect case).\n\n2) Example conversion:\n```python\nmae = -mean_score\n```\n(or equivalently `mae = abs(mean_score)` if you know it is non-positive, but `-mean_score` is the direct inverse of the definition.)\n\n3) Going from -3.0 to -2.0 means the MAE decreased from 3.0 to 2.0 (since MAE = -neg_MAE). A less negative score is higher, indicating improved performance because the average absolute prediction error is smaller.",
+      "explanation": "This tests understanding that scikit-learn’s scoring API is oriented around score maximization. For MAE, scikit-learn returns the negative so that better models yield larger (closer to 0) values. Converting back requires undoing the negation. Interpreting changes in the negated score requires mapping it back to MAE: higher neg-MAE (less negative) corresponds to lower MAE and better regression accuracy.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "cross_val_score",
+        "scoring-api",
+        "neg_mean_absolute_error",
+        "mean_absolute_error",
+        "regression",
+        "metric-interpretation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following call:\n\n```python\nfrom sklearn.metrics import precision_recall_fscore_support\n\ny_true = [0, 0, 0, 0]\ny_pred = [1, 1, 1, 1]\n\nprec, rec, f1, sup = precision_recall_fscore_support(\n    y_true, y_pred,\n    labels=[0, 1],\n    average=None,\n    zero_division=0\n)\n```\n\n1) What are the returned `support` values for labels `[0, 1]`?\n2) What precision and recall are returned for label `0`?\n3) Why does `zero_division=0` matter in this example, and for which label(s)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) support = [4, 0] because label 0 occurs 4 times in y_true and label 1 occurs 0 times.\n2) For label 0: TP=0 (no predicted 0), FP=0 (no predicted 0), FN=4 (all true 0 missed). Precision is TP/(TP+FP)=0/(0+0) which is undefined; with zero_division=0 it is set to 0. Recall is TP/(TP+FN)=0/(0+4)=0.\n3) zero_division=0 matters because there is a zero denominator case. For label 0, there are no predicted positives for class 0 so TP+FP=0, making precision undefined; zero_division forces it to 0 (and avoids a warning). For label 1, support is 0 so recall would be TP/(TP+FN)=0/0 (also undefined) and is likewise set to 0 under zero_division=0.",
+      "explanation": "With `average=None`, metrics are computed per label in the provided `labels` order. Support is taken from `y_true` only. Here, the model predicts only class 1, so class 0 has no predicted positives (precision denominator 0) and class 1 has no true instances (recall denominator 0). `zero_division=0` specifies that such undefined metrics should be returned as 0 rather than raising/warning (default is to warn and set to 0).",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "sklearn.metrics",
+        "precision_recall_fscore_support",
+        "labels-parameter",
+        "zero_division",
+        "edge-cases",
+        "multiclass"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained a `RandomForestQuantileRegressor` and obtained prediction intervals using the 5th and 95th percentiles. Describe (1) what these two predictions represent in terms of the conditional distribution of the target given features, and (2) one practical reason this can be more informative than a single point prediction in a scikit-learn workflow.\n\nYour answer should explicitly refer to quantiles/conditional distribution and uncertainty (e.g., prediction intervals).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The 5th and 95th percentile predictions are estimates of the lower and upper quantiles of the conditional distribution of the target variable given the input features (i.e., y | X). For each test sample, the model is not just predicting an expected value; it is estimating where the lower 5% tail and upper 5% tail of plausible outcomes lie, forming an approximate 90% prediction interval. This is more informative than a single point prediction because it quantifies uncertainty/variability around the prediction (e.g., allowing risk-aware decisions, identifying inputs with high uncertainty, or communicating a range of likely outcomes rather than a single number) while still fitting into the scikit-learn-style API.",
+      "explanation": "Quantile Regression Forests are highlighted in the content as providing quantiles of the conditional target distribution, which directly supports uncertainty estimation. A point prediction (like mean/median alone) hides dispersion; prediction intervals expose it, enabling downstream decisions that account for uncertainty within typical scikit-learn pipelines and evaluation workflows.",
+      "difficulty": "advanced",
+      "tags": [
+        "conditional-distribution",
+        "quantile-regression-forest",
+        "uncertainty",
+        "prediction-intervals",
+        "scikit-learn-api",
+        "model-interpretation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You use this custom scoring function with `SelectKBest`:\n\n```python\nfrom sklearn.ensemble import ExtraTreesRegressor\n\ndef tree_score(X, y):\n    model = ExtraTreesRegressor(n_estimators=50, random_state=42)\n    model.fit(X, y)\n    return model.feature_importances_\n```\n\nExplain two potential pitfalls of this approach when used inside a modeling workflow, and propose one concrete mitigation for each pitfall (you may describe mitigations conceptually or with brief pseudocode).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Pitfall 1 (data leakage / optimistic selection): If feature selection is performed using the full dataset (or outside cross-validation), the feature importances are computed using information from data that should be held out, leading to overly optimistic performance estimates. Mitigation: Put `SelectKBest(score_func=tree_score, ...)` inside a `Pipeline` and evaluate with cross-validation, so the scoring model is fit only on each training fold.\n\nPitfall 2 (instability / variability of importances): Tree-based importances can vary due to randomness (bootstrap sampling, feature subsampling) and correlated predictors; small changes in data can change which features are selected. Mitigation: Increase stability by using more trees and fixed `random_state`, use repeated CV/bootstrapping and aggregate importances, or consider permutation importance computed on validation folds.\n\n(Other acceptable pitfalls include computational cost because the tree model is trained inside `score_func` every time selection is fit; mitigation: reduce estimators, use warm-start where appropriate, or prefit and reuse an estimator via a custom transformer.)",
+      "explanation": "This approach trains a tree model during feature selection, so it inherits common workflow issues: (1) leakage if selection is not nested within CV, because selection uses target information; and (2) instability and bias in impurity-based `feature_importances_`, especially with correlated features and model randomness. Mitigations focus on correct nesting (Pipeline + CV) and improving robustness (more trees, repeated resampling, or alternative importance measures).",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "feature-selection",
+        "Pipeline",
+        "cross-validation",
+        "data-leakage",
+        "feature_importances_",
+        "stability",
+        "ExtraTreesRegressor"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a binary (0/1) feature that is 1 in 2% of training rows and 0 in 98% of rows.\n\n1) Compute its variance.\n2) If you apply `VarianceThreshold(threshold=0.02)`, will this feature be dropped?\n3) Briefly explain why dropping such a low-variance feature can be risky in a supervised learning problem.\n\nAssume the variance is computed as the population variance (divide by `n`, as in the provided formula).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) For a Bernoulli feature with p=0.02, variance = p(1-p) = 0.02 * 0.98 = 0.0196.\n2) Yes. VarianceThreshold drops features with Var ≤ threshold, and 0.0196 ≤ 0.02.\n3) VarianceThreshold is unsupervised (does not use y). A rare binary indicator can have low variance yet be highly predictive (e.g., it occurs mostly/only in one class). Dropping it based only on variance can remove an important signal, especially under class imbalance or when rare events are informative.",
+      "explanation": "For binary features, variance depends only on the prevalence p. With p=0.02, the variance is 0.0196, which falls below (or equal to) a 0.02 threshold, so it would be removed. This illustrates a key caveat: low variance does not imply low predictive power, because variance thresholding ignores the relationship to the target label.",
+      "difficulty": "advanced",
+      "tags": [
+        "VarianceThreshold",
+        "binary-features",
+        "class-imbalance",
+        "feature-selection-caveats",
+        "unsupervised-filtering",
+        "variance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate claims: “In `LogisticRegression`, setting `max_iter=200` always means 200 epochs.” Provide a technical rebuttal that distinguishes what an “iteration” means for at least three different solvers, and explain how you would verify how many iterations actually ran after fitting.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The claim is false because the meaning of an “iteration” depends on the solver. For `solver='sag'` or `'saga'`, one iteration is one full pass over the training data (an epoch), so `max_iter=200` can be interpreted as up to 200 epochs. For `solver='lbfgs'` or `'newton-cg'`, an iteration is a single quasi-Newton step (e.g., line search plus Hessian approximation/update), not a full dataset sweep. For `solver='liblinear'`, iterations correspond to passes in an inner coordinate-descent loop over features (coordinates), not epochs over samples. To verify how many iterations were performed, inspect `model.n_iter_` after calling `fit` (noting it may be per class for multiclass), and only for SAG/SAGA does that number directly equal the number of epochs.",
+      "explanation": "A strong answer must (1) state that “iteration ≠ epoch” in general, (2) correctly map iteration semantics to solvers (SAG/SAGA = epochs; LBFGS/Newton-CG = quasi-Newton steps; liblinear = coordinate-descent feature passes), and (3) identify `n_iter_` as the post-fit diagnostic for actual iteration counts and clarify that only SAG/SAGA makes `n_iter_` interpretable as epochs.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "optimization",
+        "solvers",
+        "epochs-vs-iterations",
+        "n_iter_",
+        "sag",
+        "saga",
+        "lbfgs",
+        "newton-cg",
+        "liblinear"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to use Bayesian optimization to tune *both* (a) which features are selected and (b) `RandomForestClassifier` hyperparameters in a `scikit-learn`-style workflow.\n\nDescribe (1) how you would represent the feature-selection search space, (2) how you would represent at least two RandomForest hyperparameters in the search space, and (3) how the evaluation should be performed to avoid overfitting to a single train/test split.\n\nYour answer should be specific to using `skopt`/`BayesSearchCV` with scikit-learn concepts (e.g., cross-validation and scoring).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer includes:\n1) Feature-selection space: represent each feature as a binary decision variable (e.g., `Categorical([0, 1])` per feature) forming a mask; the mask is used to subset columns (or via a transformer) before fitting.\n2) Hyperparameter space: include RandomForest hyperparameters as `Integer`/`Real`/`Categorical` dimensions, e.g., `n_estimators=Integer(50, 500)`, `max_depth=Integer(1, 50)` or `max_features=Categorical(['sqrt', 'log2'])`.\n3) Evaluation: use cross-validation (e.g., `cross_val_score` or `BayesSearchCV`’s internal CV) with an appropriate scoring metric (accuracy/F1/etc.) so each candidate (mask + hyperparams) is scored by mean CV performance rather than a single split; optionally mention nested CV if you need an unbiased final performance estimate.",
+      "explanation": "Bayesian optimization requires a well-defined search space. Feature selection can be encoded as a set of binary variables (a mask). Hyperparameters are additional dimensions in the same search space. Using cross-validation ensures the objective reflects generalization across folds rather than performance on a single split, reducing the risk of selecting a feature subset/hyperparameters that only work for one partition of the data.",
+      "difficulty": "advanced",
+      "tags": [
+        "bayesian-optimization",
+        "feature-selection",
+        "hyperparameter-tuning",
+        "bayessearchcv",
+        "search-space",
+        "cross-validation",
+        "scoring"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom sklearn.base import BaseEstimator\nfrom sklearn.ensemble import RandomForestClassifier\n\nmodel: BaseEstimator = RandomForestClassifier(random_state=42)\n\n# Later in the code:\npreds = model.predict(X_test)\n```\n\n1) Explain why `model.fit(X_train, y_train)` works at runtime.\n2) Explain a potential issue with `model.predict(X_test)` *from a static type-checking perspective* (even if it works at runtime), and give one improved type annotation that better captures the presence of `predict()`.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `fit()` works because the runtime object is a `RandomForestClassifier`, which implements `fit()` as part of the scikit-learn estimator API; Python dispatches method calls to the concrete object (polymorphism), and the `BaseEstimator` annotation does not affect runtime behavior.\n\n2) Static type checkers may complain because `BaseEstimator` does not guarantee a `predict()` method in its type definition (some estimators/transformers don’t implement `predict`). A better annotation is to use a protocol or a more specific base type that includes `predict`, e.g. `from sklearn.base import ClassifierMixin` and annotate as `BaseEstimator | ClassifierMixin` (or an intersection-like protocol), or define a `Protocol` such as `class Predictable(Protocol):\n    def fit(self, X, y=None): ...\n    def predict(self, X): ...` and annotate `model: Predictable`.",
+      "explanation": "This tests understanding of two separate layers: (a) runtime polymorphism (actual object has the method), and (b) static typing (the annotated type must declare the method to satisfy type checkers). `BaseEstimator` is a common superclass but does not necessarily express the full interface (like `predict`) for all estimators, so a protocol or a more specific mixin/interface is more accurate when you need `predict()`.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "polymorphism",
+        "BaseEstimator",
+        "predict",
+        "static-typing",
+        "type-hints",
+        "Protocol",
+        "mypy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are running repeated experiments in a loop and need to ensure that each run starts from a fresh, unfitted estimator configuration identical to an initial prototype model.\n\nWrite a short code snippet that:\n1) Creates a prototype estimator with chosen hyperparameters,\n2) Fits it once (to simulate that it may already be fitted),\n3) Then, inside a loop, obtains a fresh unfitted estimator each iteration without manually retyping hyperparameters.\n\nUse scikit-learn's recommended approach for this scenario and briefly explain why it works.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom sklearn.base import clone\nfrom sklearn.ensemble import RandomForestClassifier\n\n# 1) prototype with hyperparameters\nproto = RandomForestClassifier(n_estimators=200, random_state=42)\n\n# 2) fit once (proto is now fitted)\nproto.fit(X_train, y_train)\n\n# 3) repeated runs: clone returns a fresh unfitted estimator each time\nfor seed in [0, 1, 2]:\n    model = clone(proto)          # unfitted, same hyperparameters as proto\n    model.set_params(random_state=seed)  # optional: vary a parameter per run\n    model.fit(X_train, y_train)\n    score = model.score(X_valid, y_valid)\n```\n\nExplanation: scikit-learn estimators have no standardized in-place reset(). `clone(proto)` creates a new estimator instance with the same hyperparameters but without any learned attributes from fitting, ensuring each loop iteration starts from a clean pre-fit state without re-specifying all parameters.",
+      "explanation": "A correct answer should use `sklearn.base.clone` (or re-instantiation) to obtain a *new* estimator per iteration. This tests understanding that scikit-learn does not reset estimators in place, and that cloning copies configuration (hyperparameters) but not learned state from `fit()`. Varying parameters via `set_params` is optional but demonstrates practical use in experiments.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "experimentation",
+        "sklearn.base.clone",
+        "reproducibility",
+        "hyperparameters",
+        "model-lifecycle"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to manually construct a DataFrame from an OpenML Bunch and ensure that the target column has a custom name. Consider the code:\n\n```python\nimport pandas as pd\nfrom sklearn.datasets import fetch_openml\n\ndiabetes = fetch_openml(\"diabetes\", version=1, as_frame=True)\n\ndf = pd.concat([diabetes.data, diabetes.target], axis=1)\ndf = df.rename(columns={\"target\": \"y\"})\n```\n\nWhich statement best explains why the rename step may fail to rename the target column, and what is the most robust fix?",
+      "question_type": "mc",
+      "options": [
+        "A. It will always work because `diabetes.target` is guaranteed to be a DataFrame with column name `\"target\"`.",
+        "B. It may fail because `diabetes.target` can be a Series whose name is not `\"target\"`; set the name before concatenation, e.g. `diabetes.target.rename(\"y\")` (or `diabetes.target.to_frame(\"y\")`) and then concat.",
+        "C. It may fail because `axis=1` concatenates by rows; change to `axis=0` and then rename.",
+        "D. It may fail because `pd.concat` drops column names; you must use `pd.merge` instead."
+      ],
+      "correct_answer": "B",
+      "explanation": "When `as_frame=True`, `diabetes.target` is often a Pandas Series and its `.name` may be something other than the literal string `\"target\"` (for OpenML it can be the actual target attribute name). After concatenation, the resulting column label will be whatever the Series name is, so renaming `{\"target\": \"y\"}` may do nothing. A robust approach is to explicitly set the target name before concatenation, e.g. `pd.concat([diabetes.data, diabetes.target.rename(\"y\")], axis=1)` or convert to a one-column DataFrame with `diabetes.target.to_frame(\"y\")`.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "fetch_openml",
+        "Bunch",
+        "pandas",
+        "Series",
+        "column-names",
+        "concat",
+        "dataframe-construction"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response: Explain, step by step, what happens under the hood when calling `cross_val_predict(model, X, y, cv=cv, method=\"predict_proba\")`. Your answer must include:\n\n1) How `(train_idx, test_idx)` are generated,\n2) What is fit on which data in each fold,\n3) Where predictions are written in the final output array,\n4) Why this procedure prevents training-on-test leakage for the returned predictions.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `cv.split(X, y)` produces a sequence of `(train_idx, test_idx)` pairs defining the folds. 2) For each pair, `cross_val_predict` clones the estimator (conceptually) and fits it using only `X[train_idx]` and `y[train_idx]`. 3) It then calls the requested method (here `predict_proba`) on `X[test_idx]` and writes those predictions into the output array at positions `test_idx` (so the output is aligned with the original sample order). 4) Because each sample’s prediction is computed only when that sample is in the held-out `test_idx` for its fold, the model that produced `y_pred[i]` was trained without sample `i`, preventing training-on-test leakage for these returned predictions.",
+      "explanation": "A correct explanation should describe the fold loop and the alignment step: predictions are only produced for the held-out fold at each iteration and stored back into the corresponding indices. This is what makes the outputs “out-of-fold” predictions and ensures each sample’s prediction comes from a model that never saw that sample during fitting.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "cross_val_predict",
+        "cross-validation",
+        "out-of-fold-predictions",
+        "data-leakage",
+        "cv.split"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following scenario:\n\n```python\nfrom sklearn.ensemble import ExtraTreesClassifier\n\nclf = ExtraTreesClassifier(random_state=0)\nclf.fit(X1, y1)\n\n# Later...\nclf.fit(X2, y2)\n```\n\n1) Explain what happens to the model state after the second `.fit()` call.\n2) If your goal is to incorporate `(X2, y2)` without losing what was learned from `(X1, y1)`, describe a scikit-learn-compatible strategy and name at least one estimator that supports it.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The second `.fit(X2, y2)` overwrites the fitted state from the first training run: the estimator reinitializes its learned parameters and refits from scratch on `(X2, y2)`, discarding what it learned from `(X1, y1)`.\n2) Use an incremental-learning estimator that supports `partial_fit` and train in batches (first on `(X1, y1)`, then update with `(X2, y2)`). Examples include `SGDClassifier` (classification) or `SGDRegressor` (regression).",
+      "explanation": "In scikit-learn, `.fit()` is not an 'update' operation; it is a full training procedure that replaces the previously learned state. Preserving and updating knowledge across batches requires an estimator designed for online/incremental learning, typically exposed through `partial_fit`. Since `ExtraTreesClassifier` lacks `partial_fit`, you must choose a compatible estimator (e.g., SGD-based models) if incremental updates are required.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "fit",
+        "model-retraining",
+        "incremental-learning",
+        "partial_fit",
+        "online-learning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Early stopping is often described as “tuning the number of epochs” using validation performance. Explain, in terms of inner-loop vs outer-loop optimization, why it is important that you do NOT backpropagate (or otherwise fit model parameters to) the validation loss when using early stopping. Then describe one concrete failure mode that can happen if validation data influences the fitted parameters directly.\n\n(Answer in 4–8 sentences.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Early stopping uses the validation metric in the outer loop to decide when to stop training (effectively selecting the epoch count), while the inner loop updates parameters using only the training loss. If you backpropagate validation loss, the validation set stops being an unbiased proxy for unseen data because the model parameters are being optimized to that specific validation sample. This collapses the separation between training and validation, causing selection bias and overly optimistic validation scores. A concrete failure mode is that the model can overfit the validation set (e.g., repeatedly improving validation loss by “learning” idiosyncrasies of X_val/y_val), so the chosen stopping point and reported validation performance look good, but test performance degrades. In extreme cases, repeated evaluation/optimization on validation behaves like training on it, effectively leaking labels and invalidating the model selection process.",
+      "explanation": "The key concept is the two-level optimization: parameters/weights (inner loop) must be learned from training data only, while validation is reserved for decisions about hyperparameters such as when to stop. Allowing validation to influence parameter updates turns validation into part of training, which biases model selection and leads to poor generalization despite good validation metrics.",
+      "difficulty": "advanced",
+      "tags": [
+        "early-stopping",
+        "model-selection-bias",
+        "data-leakage",
+        "validation",
+        "inner-loop",
+        "outer-loop",
+        "generalization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need repeated cross-validation predictions for analysis: for each sample, you want the *average* predicted probability across multiple repeats of stratified K-fold. `cross_val_predict` fails because the splits overlap across repeats.\n\nWrite pseudocode or Python-like code that:\n1) Iterates over the `(train_idx, test_idx)` splits from a `RepeatedStratifiedKFold`\n2) Fits the model on each training fold\n3) Accumulates predicted probabilities for the test fold\n4) Returns the mean probability per sample across all times that sample appeared in a test fold\n\nAssume binary classification and use `predict_proba` for class 1.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A correct solution loops over the repeated CV splits, accumulates probabilities and counts per sample, then divides. For example:\n\n```python\nimport numpy as np\nfrom sklearn.model_selection import RepeatedStratifiedKFold\n\nrkf = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=0)\n\nsum_proba = np.zeros(len(y), dtype=float)\ncount = np.zeros(len(y), dtype=int)\n\nfor train_idx, test_idx in rkf.split(X, y):\n    model = clone(clf)  # or re-instantiate estimator\n    model.fit(X[train_idx], y[train_idx])\n    p = model.predict_proba(X[test_idx])[:, 1]\n    sum_proba[test_idx] += p\n    count[test_idx] += 1\n\nmean_proba = sum_proba / np.maximum(count, 1)\n```\n\nThis produces an average out-of-sample probability per sample over all repeats.",
+      "explanation": "`cross_val_predict` cannot be used with overlapping test folds because it expects a single, unique out-of-fold prediction per sample. Repeated CV intentionally reuses samples in multiple test folds, so you must manually aggregate. The key ideas are (1) track an accumulator array aligned to the original sample order, (2) add predictions into the accumulator for each test fold, (3) track how many times each sample was tested, and (4) compute the mean by dividing sums by counts. Cloning/recreating the estimator each iteration avoids leakage of fitted state across folds.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "cross-validation",
+        "RepeatedStratifiedKFold",
+        "cross_val_predict",
+        "out-of-fold predictions",
+        "probability calibration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a function that returns a pandas DataFrame version of a scikit-learn classification report.\n\nRequirements:\n- Signature: `def report_df(y_true, y_pred, target_names=None, digits=3):`\n- Use `classification_report` with `output_dict=True`\n- Return a DataFrame where rows are labels plus summary rows (e.g., accuracy/macro avg/weighted avg) and columns include `precision`, `recall`, `f1-score`, `support`\n- Ensure `support` is numeric (not an object dtype)\n\nProvide the code.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom sklearn.metrics import classification_report\nimport pandas as pd\n\n\ndef report_df(y_true, y_pred, target_names=None, digits=3):\n    report = classification_report(\n        y_true,\n        y_pred,\n        output_dict=True,\n        target_names=target_names,\n        digits=digits\n    )\n    df = pd.DataFrame(report).T\n\n    # Ensure support is numeric when present\n    if \"support\" in df.columns:\n        df[\"support\"] = pd.to_numeric(df[\"support\"], errors=\"coerce\")\n\n    return df\n```",
+      "explanation": "The key steps are: (1) call `classification_report` with `output_dict=True` so the result is a dict of metrics; (2) build a DataFrame and transpose it so each class/summary item is a row; (3) coerce the `support` column to numeric because mixed rows (like `accuracy`) can otherwise lead pandas to store the column as object dtype.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "classification_report",
+        "output_dict",
+        "pandas",
+        "DataFrame",
+        "dtype"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing a debugging utility that logs both (1) the estimator's class name and (2) the full class object for later inspection. Which snippet correctly logs both pieces of information for any scikit-learn estimator instance `model`?\n\nAssume `model` is already created.\n",
+      "question_type": "mc",
+      "options": [
+        "A. \n```python\ncls = model.__class__\nprint(cls.__name__)\nprint(cls)\n```",
+        "B. \n```python\ncls = model.__class__.__name__\nprint(cls)\nprint(cls.__name__)\n```",
+        "C. \n```python\ncls = model.__name__\nprint(cls)\nprint(type(cls))\n```",
+        "D. \n```python\ncls = type(model).__name__\nprint(type(model))\nprint(cls.__class__)\n```"
+      ],
+      "correct_answer": "A",
+      "explanation": "A is correct: `model.__class__` is the class object, `cls.__name__` is the class name string, and printing `cls` prints the class object representation including module path. B is wrong because `model.__class__.__name__` is a string, so `cls.__name__` would fail. C is wrong because instances typically do not have `__name__`. D is wrong because `cls` is a string (from `type(model).__name__`), so `cls.__class__` is `<class 'str'>`, not the estimator class.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "python",
+        "introspection",
+        "debugging",
+        "type",
+        "__class__"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following estimator instance:\n\n```python\nfrom sklearn.linear_model import LogisticRegression\n\nclf = LogisticRegression(\n    penalty='l2',\n    solver='saga',\n    C=0.1,\n    max_iter=200,\n    random_state=42\n)\n\nhparams = clf.get_params()\n```\n\nExplain (a) what kind of object `hparams` is, and (b) whether `hparams` should contain only the parameters explicitly passed (`penalty`, `solver`, `C`, `max_iter`, `random_state`) or also other parameters (e.g., `tol`, `fit_intercept`). Justify your answer based on scikit-learn’s estimator API.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) `hparams` is a Python `dict` mapping hyperparameter names (strings) to their values for the estimator instance. (b) It should contain not only the explicitly passed parameters but also the other constructor parameters with their current values (often defaults) such as `tol`, `fit_intercept`, etc. In scikit-learn, `get_params()` is designed to expose the full set of estimator hyperparameters (the estimator’s configuration) and their values, not just the subset you provided when instantiating the object.",
+      "explanation": "`get_params()` is part of the uniform estimator interface in scikit-learn. It returns a dictionary of parameter names to values for the estimator, reflecting the full configuration used for model construction and compatibility with tools like `GridSearchCV`. Because it reports the estimator’s parameters, it includes defaults for parameters you did not specify, not merely the arguments you passed.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "get_params",
+        "hyperparameters",
+        "defaults",
+        "GridSearchCV",
+        "estimator-api"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the custom report function below:\n\n```python\nimport numpy as np\nfrom sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score\n\ndef regression_report(y_true, y_pred):\n    return {\n        \"MAE\": mean_absolute_error(y_true, y_pred),\n        \"MSE\": mean_squared_error(y_true, y_pred),\n        \"RMSE\": np.sqrt(mean_squared_error(y_true, y_pred)),\n        \"R2\": r2_score(y_true, y_pred)\n    }\n```\n\nWhich change improves efficiency while keeping the output identical (assuming `y_true` and `y_pred` are unchanged)?",
+      "question_type": "mc",
+      "options": [
+        "A. Replace `r2_score(y_true, y_pred)` with `1 - mean_squared_error(y_true, y_pred)` to avoid extra computation.",
+        "B. Compute `mse = mean_squared_error(y_true, y_pred)` once, then use `mse` for both the MSE and RMSE entries.",
+        "C. Compute `rmse = np.sqrt(mean_absolute_error(y_true, y_pred))` because MAE is always smaller than MSE.",
+        "D. Remove the MAE entry because it is redundant with RMSE."
+      ],
+      "correct_answer": "B",
+      "explanation": "The function currently computes `mean_squared_error(y_true, y_pred)` twice: once for MSE and once inside the RMSE computation. Storing it in a variable (e.g., `mse = mean_squared_error(...)`) and reusing it avoids duplicate work and produces the exact same results. The other options either change the metric definitions (A, C) or remove a distinct metric (D).",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "sklearn.metrics",
+        "performance",
+        "RMSE",
+        "mean_squared_error",
+        "custom-report"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You fit a large, dense dataset with `LogisticRegression(solver='sag')` and see a `ConvergenceWarning`. After fitting, you also observe that `model.n_iter_` equals `max_iter`.\n\n1) What does `n_iter_ == max_iter` strongly suggest about why training stopped?\n2) Give two concrete changes you could make to address the issue, and briefly explain the trade-offs.\n\n(Answer in terms of `solver`, `max_iter`, `tol`, and any relevant best practices mentioned.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) It strongly suggests the optimizer hit the iteration cap (`max_iter`) before meeting the convergence criterion (`tol`), i.e., it likely did not truly converge.\n\n2) Two fixes (any two of the following, with trade-offs):\n- Increase `max_iter` (e.g., 1000→2000/5000) so SAG has more epochs to reach the tolerance; trade-off is longer runtime.\n- Loosen `tol` (e.g., 1e-4→1e-3 or 1e-2) so the stopping criterion is easier to satisfy; trade-off is potentially less precise coefficients and possibly a small accuracy/probability-calibration impact.\n- Scale features (e.g., `StandardScaler`) to improve conditioning so SAG converges in fewer epochs; trade-off is added preprocessing complexity and the need to apply the same scaling at inference.\n- If penalty requirements change (e.g., need L1/ElasticNet), switch to `saga` (not strictly required for convergence, but relevant solver choice); trade-off is different performance characteristics.\n",
+      "explanation": "`n_iter_` records how many iterations the solver actually used. When it equals `max_iter`, it’s a strong diagnostic that the run ended due to the iteration limit, not because the objective/gradient change fell below `tol`. Addressing it typically means giving the solver more opportunity to converge (`max_iter`), relaxing the definition of “converged” (`tol`), and/or improving numerical behavior via feature scaling so fewer iterations are needed. Each change trades runtime vs. solution precision and workflow complexity.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "convergencewarning",
+        "n_iter_",
+        "max_iter",
+        "tol",
+        "feature-scaling",
+        "sag"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a scikit-learn solution that ensures an `ExtraTreesRegressor` can be trained when `X` contains NaNs, without manually precomputing `X_imputed`. Use a `Pipeline` so that the same preprocessing is applied consistently at training and prediction time. Provide code.\n\nAssume:\n- `X_train, X_test, y_train` are defined\n- You want mean imputation\n- You want to fit the model and then call `predict` on `X_test`",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.ensemble import ExtraTreesRegressor\n\npipe = Pipeline([\n    (\"imputer\", SimpleImputer(strategy=\"mean\")),\n    (\"model\", ExtraTreesRegressor(random_state=0))\n])\n\npipe.fit(X_train, y_train)\ny_pred = pipe.predict(X_test)\n```",
+      "explanation": "A `Pipeline` chains preprocessing and the estimator into a single object. `SimpleImputer` replaces NaNs (here using column means learned from `X_train` during `fit`). Then `ExtraTreesRegressor` is fit on the imputed output. When calling `predict`, the same imputer (fit on training data) transforms `X_test` before passing it to the model, preventing NaN-related fit/predict errors and avoiding data leakage from fitting imputation on test data.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "Pipeline",
+        "SimpleImputer",
+        "ExtraTreesRegressor",
+        "missing-values",
+        "data-leakage"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code snippet:\n\n```python\nfrom sklearn.ensemble import ExtraTreesClassifier\n\nmodel = ExtraTreesClassifier(\n    n_estimators=200,\n    bootstrap=False,\n    oob_score=True,\n    random_state=42\n)\nmodel.fit(X_train, y_train)\nprint(model.oob_score_)\n```\n\n1) Explain what will happen when this code is run (e.g., error/warning/attribute behavior) and why.\n2) Provide a corrected version that computes an OOB-based error curve over a list of `n_estimators` values.\n\nYour answer should reference the relationship between `bootstrap` and OOB scoring in scikit-learn.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) OOB scoring requires bootstrap sampling. With `bootstrap=False`, there are no “out-of-bag” samples for any tree, so scikit-learn cannot compute an OOB estimate. In practice, this configuration will fail (commonly raising a `ValueError` stating that OOB score is only available if `bootstrap=True`) or otherwise prevent `oob_score_` from being meaningfully computed.\n\n2) Corrected version (example):\n\n```python\nimport matplotlib.pyplot as plt\nfrom sklearn.ensemble import ExtraTreesClassifier\n\ntree_counts = [10, 50, 100, 200, 500]\nerrors = []\n\nfor n in tree_counts:\n    model = ExtraTreesClassifier(\n        n_estimators=n,\n        bootstrap=True,   # must be True for OOB\n        oob_score=True,\n        random_state=42,\n        n_jobs=-1\n    )\n    model.fit(X_train, y_train)\n    errors.append(1.0 - model.oob_score_)\n\nplt.plot(tree_counts, errors, marker='o')\nplt.xlabel('n_estimators')\nplt.ylabel('OOB error (1 - oob_score_)')\nplt.grid(True)\nplt.show()\n```\n\nKey point: OOB estimates are computed from samples excluded by each bootstrap draw, so `bootstrap=True` is a prerequisite for `oob_score=True` to work.",
+      "explanation": "OOB evaluation is defined only in the presence of bootstrap resampling: each tree is trained on a bootstrap sample and evaluated on the training points not selected for that tree. If bootstrapping is disabled, every tree sees the full training set, leaving no out-of-bag points. Therefore scikit-learn cannot produce a valid `oob_score_`. The corrected code enables `bootstrap=True`, loops over candidate `n_estimators`, and converts OOB accuracy to OOB error via `1 - oob_score_` to plot an error curve for model sizing/early-stopping heuristics.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "ExtraTreesClassifier",
+        "oob_score",
+        "bootstrap",
+        "error-curve",
+        "debugging",
+        "n_estimators"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code using `cast`:\n\n```python\nfrom typing import cast\nfrom sklearn.base import BaseEstimator\nfrom sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor\n\ndef get_model(flag: bool) -> BaseEstimator:\n    if flag:\n        return RandomForestRegressor(n_estimators=10)\n    return ExtraTreesRegressor(n_estimators=10)\n\nmodel: BaseEstimator = get_model(flag=False)\nrf_model = cast(RandomForestRegressor, model)\n\n# Later\nprint(rf_model.oob_score_)\n```\n\n1) Explain what `cast(RandomForestRegressor, model)` does and does *not* do.\n2) Identify the potential runtime problem in this snippet and propose a safer alternative pattern.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `cast(RandomForestRegressor, model)` only tells static type checkers (e.g., mypy/pyright) to treat `model` as a `RandomForestRegressor` for type checking; it does not change the object and does not validate the type at runtime.\n\n2) With `flag=False`, `model` is actually an `ExtraTreesRegressor`. After the cast, accessing `rf_model.oob_score_` may raise an `AttributeError` (and even if the attribute exists, its meaning may differ) because the object is not guaranteed to be a `RandomForestRegressor`. A safer alternative is to check the runtime type before using subclass-specific features:\n\n```python\nif isinstance(model, RandomForestRegressor):\n    print(model.oob_score_)\nelse:\n    # handle ExtraTreesRegressor or other estimators\n    ...\n```\n\nIf you need a single variable with narrowed type in a branch, you can assign inside the `isinstance` block; the type checker will narrow the type there without an unsafe cast.",
+      "explanation": "This tests the key distinction between static typing hints and runtime behavior. `cast` is purely for static analysis; it cannot prevent runtime failures when the underlying object is a different subclass. The robust approach is to use `isinstance` (or other runtime checks) to guard subclass-specific access, which also enables type narrowing in most type checkers.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "BaseEstimator",
+        "typing.cast",
+        "static-vs-runtime-typing",
+        "type-narrowing",
+        "isinstance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a code snippet using `xgboost.XGBClassifier` (scikit-learn wrapper) that:\n1) Splits data into train/validation sets,\n2) Fits with early stopping using an `eval_set`,\n3) Uses `verbose` to log training progress,\n4) Computes both accuracy and ROC AUC on the validation set.\n\nAssume `X` and `y` already exist and `y` is binary (0/1).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom xgboost import XGBClassifier\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import accuracy_score, roc_auc_score\n\nX_train, X_val, y_train, y_val = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)\n\nclf = XGBClassifier(\n    objective='binary:logistic',\n    eval_metric='auc',\n    use_label_encoder=False,\n    n_estimators=500,\n    learning_rate=0.05,\n    max_depth=6,\n    random_state=42,\n    n_jobs=-1\n)\n\nclf.fit(\n    X_train, y_train,\n    eval_set=[(X_val, y_val)],\n    early_stopping_rounds=50,\n    verbose=100\n)\n\ny_prob = clf.predict_proba(X_val)[:, 1]\ny_pred = clf.predict(X_val)\n\nprint('Accuracy:', accuracy_score(y_val, y_pred))\nprint('AUC:     ', roc_auc_score(y_val, y_prob))\n```",
+      "explanation": "A correct solution must use the sklearn wrapper (`XGBClassifier`) and follow sklearn conventions: splitting with `train_test_split`, fitting via `fit(X_train, y_train)` while providing `eval_set=[(X_val, y_val)]` so early stopping can monitor validation performance, and passing `early_stopping_rounds` plus `verbose` to control training logs. For metrics, accuracy should use hard labels from `.predict()`, while ROC AUC should use a continuous score—typically the positive-class probability from `.predict_proba()[:, 1]`.",
+      "difficulty": "advanced",
+      "tags": [
+        "xgboost",
+        "scikit-learn-wrapper",
+        "early-stopping",
+        "eval_set",
+        "verbose",
+        "train_test_split",
+        "accuracy",
+        "roc-auc"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You add debugging prints inside a custom scoring function used with `SelectKBest`:\n\n```python\ndef custom_correlation(X, y):\n    print(\"X shape:\", X.shape)\n    print(\"y shape:\", y.shape)\n    y_series = pd.Series(y)\n    scores = [X[col].corr(y_series) for col in X.columns]\n    return np.array(scores), np.zeros_like(scores)\n```\n\nDuring `selector.fit_transform(X, y)`, the output is:\n\n```\nX shape: (100, 20)\ny shape: (100, 1)\n```\n\n1) Explain why `y` having shape `(100, 1)` can be a problem for a correlation-based scoring function that expects a 1D target.\n2) Provide a robust fix inside `custom_correlation` so it works whether `y` is shaped `(n_samples,)` or `(n_samples, 1)`.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Many correlation utilities (including `pandas.Series` construction and `Series.corr`) conceptually expect a 1D target aligned with samples. If `y` is 2D `(n_samples, 1)`, converting it to a `Series` may yield a Series of arrays/objects or raise/produce misaligned behavior, causing incorrect correlations or errors. Also, scikit-learn generally treats `y` as 1D for univariate feature scoring.\n\n2) Coerce `y` to a 1D vector before computing correlations, e.g.:\n\n```python\ndef custom_correlation(X, y):\n    y = np.asarray(y)\n    if y.ndim == 2 and y.shape[1] == 1:\n        y = y.ravel()\n    elif y.ndim != 1:\n        raise ValueError(f\"Expected y to be 1D or (n_samples, 1), got shape {y.shape}\")\n\n    y_series = pd.Series(y)\n    scores = np.array([X[col].corr(y_series) for col in X.columns])\n    return scores, np.zeros_like(scores)\n```\n\nThis ensures the scoring function always correlates each feature column against a 1D target of length `n_samples`.",
+      "explanation": "The key issue is understanding scikit-learn’s expectation that `y` is typically a 1D target vector for univariate feature scoring, and that correlation computations are defined between two 1D aligned vectors. A robust solution is to defensively reshape/validate `y` inside the scoring function (e.g., `ravel()` for `(n_samples, 1)`), ensuring consistent behavior regardless of how `y` was provided upstream.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "SelectKBest",
+        "debugging",
+        "target-shape",
+        "numpy-ravel",
+        "pandas-corr",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the custom scoring function below used with `SelectKBest`:\n\n```python\nimport numpy as np\nfrom scipy.stats import pearsonr\n\ndef custom_correlation(X, y):\n    scores = []\n    for i in range(X.shape[1]):\n        corr, _ = pearsonr(X[:, i], y)\n        scores.append(abs(corr))\n    # BUG: p-values array has wrong shape\n    return np.array(scores), np.zeros(X.shape[0])\n```\n\nIf `X` has shape `(100, 20)`, what is the most likely outcome when calling `SelectKBest(score_func=custom_correlation, k=5).fit(X, y)`?\n\nA. It succeeds; scikit-learn ignores the p-values array entirely.\nB. It succeeds but selects features incorrectly because p-values are used as scores.\nC. It raises an error due to inconsistent lengths between `scores` and `pvalues`.\nD. It silently truncates the p-values to length 20 to match the number of features.",
+      "question_type": "mc",
+      "options": [
+        "A. It succeeds; scikit-learn ignores the p-values array entirely.",
+        "B. It succeeds but selects features incorrectly because p-values are used as scores.",
+        "C. It raises an error due to inconsistent lengths between scores and pvalues.",
+        "D. It silently truncates the p-values to length 20 to match the number of features."
+      ],
+      "correct_answer": "C",
+      "explanation": "A `score_func` for `SelectKBest` must return `(scores, pvalues)` where both arrays align per feature (length `n_features`). Here, `scores` has length 20 but `pvalues` is created with length `n_samples` (100). scikit-learn validates the output shapes/lengths and will typically raise a `ValueError` (or similar) rather than ignore, misuse, or silently truncate mismatched arrays. The fix is `np.zeros_like(scores)` (length 20).",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "SelectKBest",
+        "custom-score-function",
+        "shape-mismatch",
+        "debugging",
+        "feature-selection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are using scikit-learn to tune a model and you have a specific hyperparameter combination you must evaluate for compliance reasons (e.g., `max_depth=7`, `learning_rate=0.1`, plus specific values for other parameters). At the same time, you want to explore the rest of the space efficiently.\n\nWhich strategy best satisfies BOTH requirements, and why?\n\nA. Use only `RandomizedSearchCV` because it is more efficient and will eventually sample the required combination.\nB. Use only `GridSearchCV` over a large grid so the required combination is guaranteed to be included.\nC. Use `RandomizedSearchCV` with distributions, but also explicitly add the required combination to the candidate set (e.g., by running an additional targeted evaluation or combining with a small grid that includes it).\nD. Use neither; manual tuning is the only way to guarantee a specific combination is evaluated.",
+      "question_type": "mc",
+      "options": [
+        "A. Use only `RandomizedSearchCV` because it is more efficient and will eventually sample the required combination.",
+        "B. Use only `GridSearchCV` over a large grid so the required combination is guaranteed to be included.",
+        "C. Use `RandomizedSearchCV` with distributions, but also explicitly add the required combination to the candidate set (e.g., by running an additional targeted evaluation or combining with a small grid that includes it).",
+        "D. Use neither; manual tuning is the only way to guarantee a specific combination is evaluated."
+      ],
+      "correct_answer": "C",
+      "explanation": "Random search does not guarantee it will hit any particular combination, especially in large or continuous spaces. Grid search can guarantee inclusion, but making the grid large enough to cover a broad space can be computationally prohibitive. A robust approach is to use random search for efficient exploration while separately ensuring the required configuration is evaluated (e.g., an additional fit/validation run for that exact parameter set, or a small grid that contains it). This satisfies the guarantee requirement without incurring the full exponential cost of a large exhaustive grid.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "RandomizedSearchCV",
+        "GridSearchCV",
+        "hyperparameter-tuning",
+        "search-strategy",
+        "guarantees-vs-efficiency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building a pipeline for an SVM classifier and are deciding between `StandardScaler` and `MinMaxScaler`. Consider the dataset below, where one feature contains an extreme outlier:\n\n```python\nX = [[1.0], [2.0], [3.0], [4.0], [1000.0]]\n```\n\nAnswer the following:\n1) Explain qualitatively what happens to the *non-outlier* points (1–4) after applying `MinMaxScaler` vs `StandardScaler`.\n2) Based on this scenario, which scaler is more likely to make the non-outlier points numerically “bunched together”, and why?\n3) Name one scikit-learn scaler that is often preferred when outliers are present.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) With MinMaxScaler, the outlier sets X_max very large, so values 1–4 are mapped to numbers extremely close to 0 (compressed into a tiny interval near 0). With StandardScaler, the outlier inflates the mean and standard deviation, shifting/scaling all points; 1–4 will still move (often to negative z-scores) but they are not forced into a near-zero interval by a fixed [0,1] range.\n2) MinMaxScaler is more likely to bunch 1–4 together because the range (X_max − X_min) becomes dominated by the outlier, making differences among small values negligible after scaling.\n3) RobustScaler (uses median and IQR) is commonly preferred with outliers.",
+      "explanation": "MinMaxScaler depends directly on the observed min and max; a single extreme max can compress the bulk of the data into a narrow region, reducing effective resolution among typical points. StandardScaler depends on mean and standard deviation; outliers still affect both (so it is not “outlier-proof”), but it does not enforce a strict [0,1] mapping that can collapse most values near 0. When outliers are present, RobustScaler is often used because median and IQR are less sensitive to extreme values.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "preprocessing",
+        "StandardScaler",
+        "MinMaxScaler",
+        "outliers",
+        "RobustScaler",
+        "SVM",
+        "feature-scaling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following setup:\n\n- You have a **classification** dataset with 3 classes.\n- Class counts are: A = 50, B = 10, C = 3.\n- You plan to run repeated cross-validation with `n_splits=5`.\n\nWhich statement is most accurate?\n\n```python\nfrom sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold\n\n# intended: n_splits=5\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. RepeatedStratifiedKFold is ideal here; it will always ensure each fold contains at least one sample from every class.",
+        "B. RepeatedStratifiedKFold may fail because stratification requires each class to have at least `n_splits` samples; class C has only 3 samples.",
+        "C. RepeatedKFold is guaranteed to keep class proportions identical in every fold, so it is safer than RepeatedStratifiedKFold.",
+        "D. Both RepeatedKFold and RepeatedStratifiedKFold will behave identically because repetition removes the need for stratification."
+      ],
+      "correct_answer": "B",
+      "explanation": "Stratified splitting has a feasibility constraint: each class must have at least as many samples as the number of folds (`n_splits`) so that each fold can receive at least one sample from that class. With class C having only 3 samples, `n_splits=5` cannot be satisfied, so `RepeatedStratifiedKFold` may raise an error or be impossible to perform as intended. `RepeatedKFold` does not enforce class representation and therefore can run, but it may produce folds missing the rare class, making evaluation unreliable.",
+      "difficulty": "advanced",
+      "tags": [
+        "scikit-learn",
+        "cross-validation",
+        "RepeatedStratifiedKFold",
+        "class-imbalance",
+        "edge-cases",
+        "n_splits"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what `SimpleImputer` does in scikit-learn?",
+      "question_type": "mc",
+      "options": [
+        "It removes any rows containing missing values from the dataset.",
+        "It replaces missing values using a statistic (or constant) computed according to the chosen strategy.",
+        "It automatically detects categorical vs numeric columns and one-hot encodes them.",
+        "It scales features to zero mean and unit variance before model training."
+      ],
+      "correct_answer": "B",
+      "explanation": "`SimpleImputer` fills (imputes) missing values by replacing them with a statistic (mean/median/most_frequent) computed from the data during `fit`, or with a fixed value when `strategy='constant'`. It does not drop rows, encode categories, or scale features.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "SimpleImputer",
+        "missing-values",
+        "imputation",
+        "preprocessing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes how BayesSearchCV chooses the next hyperparameter setting to evaluate compared with GridSearchCV and RandomizedSearchCV?",
+      "question_type": "mc",
+      "options": [
+        "A. It evaluates every combination of hyperparameters in a predefined grid.",
+        "B. It samples hyperparameters uniformly at random for a fixed number of trials.",
+        "C. It builds a surrogate model of performance and uses an acquisition function to pick the next promising point sequentially.",
+        "D. It trains multiple estimators simultaneously and averages their hyperparameters to propose the next trial."
+      ],
+      "correct_answer": "C",
+      "explanation": "BayesSearchCV performs Bayesian optimization: it fits a surrogate model (often a Gaussian Process) to approximate the objective function (e.g., CV score as a function of hyperparameters) and then uses an acquisition function (e.g., Expected Improvement, UCB) to select the next hyperparameter setting, balancing exploration and exploitation. GridSearchCV is exhaustive (A), RandomizedSearchCV is random sampling (B), and (D) is not how BayesSearchCV proposes candidates.",
+      "difficulty": "beginner",
+      "tags": [
+        "bayessearchcv",
+        "scikit-optimize",
+        "bayesian-optimization",
+        "surrogate-model",
+        "acquisition-function"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, `sklearn.metrics.confusion_matrix(y_true, y_pred)` returns a 2-D array where entry `[i, j]` represents what?\n\n(Assume classes are encoded as integers 0..n_classes-1.)",
+      "question_type": "mc",
+      "options": [
+        "The number of samples predicted as class i but truly belonging to class j",
+        "The number of samples truly belonging to class i but predicted as class j",
+        "The probability that a sample of class i is predicted as class j",
+        "The number of classes incorrectly predicted as i"
+      ],
+      "correct_answer": "B",
+      "explanation": "By definition, `confusion_matrix` returns an array of shape `(n_classes, n_classes)` where rows correspond to true labels and columns correspond to predicted labels. Therefore, `[i, j]` counts samples with true class i that were predicted as class j.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "metrics",
+        "confusion-matrix",
+        "classification"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes the purpose and behavior of `sklearn.dummy.DummyClassifier`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. It learns a linear decision boundary from the input features and provides a quick baseline.",
+        "B. It ignores input features and predicts using simple rules based on the training label distribution (or a constant), making it useful as a baseline.",
+        "C. It performs k-nearest neighbors classification using a fixed k to provide a non-parametric baseline.",
+        "D. It automatically balances class weights during training to improve performance on imbalanced datasets."
+      ],
+      "correct_answer": "B",
+      "explanation": "`DummyClassifier` is designed as a baseline: it does not use `X` to learn feature-based patterns. Instead, it predicts according to simple strategies such as always predicting the most frequent class, sampling according to the class distribution, sampling uniformly, or always predicting a constant label. This makes it a performance floor/sanity check for real models.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "DummyClassifier",
+        "baseline-model",
+        "classification"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, what is the primary purpose of `LabelEncoder`?\n\n```python\nfrom sklearn.preprocessing import LabelEncoder\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Convert categorical target labels into unique integer values (0..n_classes-1)",
+        "B. Perform one-hot encoding of categorical input features",
+        "C. Scale numeric features to zero mean and unit variance",
+        "D. Reduce dimensionality of high-dimensional sparse feature matrices"
+      ],
+      "correct_answer": "A",
+      "explanation": "`LabelEncoder` is designed to encode a single vector of labels (commonly the target `y`) by mapping each unique class to an integer starting at 0. One-hot encoding for features is handled by `OneHotEncoder`, scaling by `StandardScaler`, and dimensionality reduction by tools like `PCA`.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "preprocessing",
+        "LabelEncoder",
+        "classification",
+        "target-encoding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn’s `LogisticRegression`, what does the `tol` parameter primarily control?\n\n(Assume a solver like `lbfgs` or `sag`.)",
+      "question_type": "mc",
+      "options": [
+        "A. The maximum number of iterations the solver is allowed to run",
+        "B. The minimum change in the optimizer’s stopping criterion (typically regularized loss) required to continue iterating",
+        "C. The learning rate used by the optimizer on each iteration",
+        "D. The strength of regularization (inverse of `C`)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`tol` is a convergence tolerance: the solver stops when the improvement in the objective (regularized logistic loss) between iterations becomes small enough. `max_iter` limits iterations, `C` controls regularization strength, and solvers like `lbfgs`/`sag` do not expose a user learning rate via `tol`.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "tol",
+        "convergence",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, why does the scoring string for MAE-based evaluation often appear as `\"neg_mean_absolute_error\"` instead of `\"mean_absolute_error\"` when used with functions like `cross_val_score`?\n\nA. Because MAE can be negative, and scikit-learn must negate it to make it valid\nB. Because scikit-learn assumes higher scores are better, so it negates error metrics to fit a maximization convention\nC. Because negating MAE makes the metric more robust to outliers than MAE\nD. Because `\"mean_absolute_error\"` is only available for classification, not regression",
+      "question_type": "mc",
+      "options": [
+        "A. Because MAE can be negative, and scikit-learn must negate it to make it valid",
+        "B. Because scikit-learn assumes higher scores are better, so it negates error metrics to fit a maximization convention",
+        "C. Because negating MAE makes the metric more robust to outliers than MAE",
+        "D. Because `\"mean_absolute_error\"` is only available for classification, not regression"
+      ],
+      "correct_answer": "B",
+      "explanation": "MAE is an error metric where lower is better. Many scikit-learn model selection utilities (e.g., `cross_val_score`) are designed to maximize a score, so scikit-learn provides a negated version of MAE (`neg_mean_absolute_error = -MAE`) so that “higher is better” still holds. MAE itself is non-negative (so A is incorrect), negation does not change robustness properties (C is incorrect), and MAE is a regression metric (D is incorrect).",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "scoring",
+        "neg_mean_absolute_error",
+        "mean_absolute_error",
+        "cross_val_score",
+        "regression"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `sklearn.metrics.precision_recall_fscore_support`, what does **support** represent?\n\nA. The number of predicted occurrences of each class in `y_pred`\nB. The number of true occurrences of each class in `y_true`\nC. The number of classes included after applying `labels`\nD. The number of correct predictions (TP + TN) for each class",
+      "question_type": "mc",
+      "options": [
+        "A. The number of predicted occurrences of each class in `y_pred`",
+        "B. The number of true occurrences of each class in `y_true`",
+        "C. The number of classes included after applying `labels`",
+        "D. The number of correct predictions (TP + TN) for each class"
+      ],
+      "correct_answer": "B",
+      "explanation": "In `precision_recall_fscore_support`, **support** is defined as the count of *true* instances for each label (i.e., how many times each class actually appears in `y_true`). It is not based on predictions, not the number of labels, and not overall accuracy-like counts.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "sklearn.metrics",
+        "precision_recall_fscore_support",
+        "support",
+        "classification-metrics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what scikit-garden (skgarden) adds on top of scikit-learn in the provided content?",
+      "question_type": "mc",
+      "options": [
+        "It replaces scikit-learn’s estimators with GPU-only implementations for faster training.",
+        "It extends scikit-learn with additional ensemble methods, notably Quantile Regression Forests, to estimate prediction uncertainty via quantiles.",
+        "It provides a new data manipulation API that replaces pandas for ML workflows.",
+        "It is a deep learning library that integrates with scikit-learn pipelines."
+      ],
+      "correct_answer": "B",
+      "explanation": "The content states that scikit-garden extends scikit-learn by adding additional ensemble methods, most notably Quantile Regression Forests. These are used to obtain quantiles of the conditional target distribution, enabling uncertainty estimates such as prediction intervals. The other options describe capabilities (GPU-only, replacing pandas, deep learning) not mentioned and not aligned with scikit-garden’s purpose here.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-garden",
+        "scikit-learn",
+        "ensembles",
+        "quantile-regression-forest",
+        "uncertainty-estimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, which statement best describes using a \"tree score\" with `SelectKBest`?\n\n```python\nfrom sklearn.feature_selection import SelectKBest\n\nselector = SelectKBest(score_func=tree_score, k=5)\nX_new = selector.fit_transform(X, y)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `SelectKBest` has a built-in \"tree score\" option that automatically uses RandomForest feature importances when `score_func` is omitted.",
+        "B. A \"tree score\" is typically a custom `score_func` that trains (or uses) a tree-based estimator and returns per-feature importance values to rank features.",
+        "C. A \"tree score\" is the same as `f_classif` but computed on decision-tree leaf indices instead of raw features.",
+        "D. A \"tree score\" is only available for classification problems and cannot be used for regression targets."
+      ],
+      "correct_answer": "B",
+      "explanation": "`SelectKBest` does not include a built-in \"tree score\". If you want to rank features by their importance under a tree model (e.g., `feature_importances_` from RandomForest/ExtraTrees), you provide a custom `score_func` that returns a score for each feature. The other options incorrectly claim a built-in option, equate it with statistical tests, or restrict it to classification.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "feature-selection",
+        "SelectKBest",
+        "custom-scoring",
+        "feature_importances_"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, what does `VarianceThreshold(threshold=0.0)` do when fitted on a dataset `X`?",
+      "question_type": "mc",
+      "options": [
+        "Drops any feature whose variance is strictly less than 0.0",
+        "Drops any feature whose variance is less than or equal to 0.0 (i.e., constant features)",
+        "Keeps only the top-k features with the highest variance",
+        "Drops features that are uncorrelated with the target `y`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`VarianceThreshold` is an unsupervised (filter) feature selector that removes features with variance not meeting a minimum threshold. With `threshold=0.0`, it removes features with variance ≤ 0.0, which in practice means features with exactly zero variance (constant columns). It does not use `y`, and it does not select a fixed number of features.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "feature-selection",
+        "VarianceThreshold",
+        "low-variance-features",
+        "unsupervised-preprocessing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn's `LogisticRegression`, for which solver does `max_iter` most directly correspond to the number of full passes (epochs) over the training data?",
+      "question_type": "mc",
+      "options": [
+        "A. solver='lbfgs'",
+        "B. solver='liblinear'",
+        "C. solver='sag'",
+        "D. solver='newton-cg'"
+      ],
+      "correct_answer": "C",
+      "explanation": "For `solver='sag'` (and also `'saga'`), scikit-learn treats one “iteration” as one full pass over the dataset, i.e., an epoch. For `lbfgs` and `newton-cg`, an iteration is a quasi-Newton step rather than a full data sweep. For `liblinear`, iterations relate to an inner coordinate-descent loop over features rather than epochs.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "solvers",
+        "sag",
+        "epochs",
+        "max_iter"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Bayesian optimization-based feature selection using `skopt` (e.g., `BayesSearchCV`), what does a binary feature mask represent?",
+      "question_type": "mc",
+      "options": [
+        "A list of feature importances computed by the model",
+        "A set of hyperparameters controlling tree depth and number of estimators",
+        "A per-feature include/exclude decision (1 = include, 0 = exclude)",
+        "A probability distribution over class labels used for calibration"
+      ],
+      "correct_answer": "C",
+      "explanation": "A binary feature mask encodes the feature subset: each feature gets a 0/1 decision indicating whether it is excluded or included. Bayesian optimization searches over these mask configurations to maximize a cross-validation score.",
+      "difficulty": "beginner",
+      "tags": [
+        "bayesian-optimization",
+        "feature-selection",
+        "skopt",
+        "bayessearchcv",
+        "binary-mask"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, why does the following code work even though the variable is annotated as `BaseEstimator`?\n\n```python\nfrom sklearn.base import BaseEstimator\nfrom sklearn.ensemble import RandomForestClassifier\n\nmodel: BaseEstimator = RandomForestClassifier(random_state=42)\nmodel.fit(X_train, y_train)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Because `BaseEstimator` implements `fit()` and all subclasses inherit the same implementation.",
+        "B. Because scikit-learn estimators follow a common API and the runtime object provides its own `fit()` implementation (polymorphism).",
+        "C. Because Python ignores type annotations and automatically converts `BaseEstimator` into `RandomForestClassifier` at runtime.",
+        "D. Because `fit()` is a global function in scikit-learn that can be called on any object."
+      ],
+      "correct_answer": "B",
+      "explanation": "Scikit-learn estimators conform to a shared estimator interface (API). The key idea is polymorphism: although the variable is annotated as `BaseEstimator`, the actual runtime object is a `RandomForestClassifier`, which implements `fit()`. Type annotations don’t change runtime behavior; method dispatch uses the concrete object’s methods.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "estimator-api",
+        "BaseEstimator",
+        "polymorphism",
+        "fit"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you have fitted an estimator and want to get back to a *pre-fit* (unfitted) state with the same hyperparameters. Which option is the standard scikit-learn approach?\n\n```python\nfrom sklearn.ensemble import RandomForestClassifier\n\nmodel = RandomForestClassifier(random_state=42)\nmodel.fit(X_train, y_train)\n# now reset it\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Call model.reset() to clear learned attributes while keeping hyperparameters",
+        "Use sklearn.base.clone(model) or re-instantiate the estimator to obtain a new unfitted estimator with the same hyperparameters",
+        "Call model.fit(None, None) to clear internal state",
+        "Delete model.__dict__ to remove learned attributes and keep the object usable"
+      ],
+      "correct_answer": "B",
+      "explanation": "scikit-learn does not define a standardized in-place reset() API for estimators. The typical practice is to create a fresh estimator with the same configuration—either by re-instantiating the class with the same hyperparameters, or by using sklearn.base.clone(), which returns a new unfitted estimator with identical parameters. The other options are not supported patterns and can lead to errors or undefined behavior.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "estimators",
+        "fit",
+        "clone",
+        "model-reset"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You load the dataset as follows:\n\n```python\nfrom sklearn.datasets import fetch_openml\n\ndiabetes = fetch_openml(\"diabetes\", version=1, as_frame=True)\n```\n\nWhich expression directly returns a Pandas DataFrame that already contains both the feature columns and the target column?",
+      "question_type": "mc",
+      "options": [
+        "A. diabetes.data",
+        "B. diabetes.target",
+        "C. diabetes.frame",
+        "D. diabetes.to_frame()"
+      ],
+      "correct_answer": "C",
+      "explanation": "With `as_frame=True`, `fetch_openml` returns a Bunch where `.data` holds the feature DataFrame and `.target` holds the target (often a Series). The attribute `.frame` is the combined Pandas DataFrame containing both features and target together, so `diabetes.frame` directly provides what you want. `to_frame()` is not a method of the Bunch returned by `fetch_openml`.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "fetch_openml",
+        "Bunch",
+        "as_frame",
+        "pandas",
+        "dataframe"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, what does `cross_val_predict` guarantee about each returned prediction?\n\n```python\ny_pred_proba = cross_val_predict(\n    model, X, y,\n    cv=cv,\n    method=\"predict_proba\"\n)[:, 1]\n```",
+      "question_type": "mc",
+      "options": [
+        "Each prediction is produced by a model trained on the full dataset (all samples).",
+        "Each prediction is produced by a model trained on all folds except the sample’s own test fold (i.e., the sample was not used in training for its prediction).",
+        "Each prediction is produced by averaging predictions from models trained on each fold’s training set (an ensemble over folds).",
+        "Each prediction is produced by fitting a separate model per sample (leave-one-out), regardless of the `cv` object."
+      ],
+      "correct_answer": "B",
+      "explanation": "`cross_val_predict` iterates over folds from `cv.split(X, y)`. For each fold it fits the estimator on the training indices and predicts only on that fold’s held-out indices, then places those predictions back into the output array at the corresponding positions. Therefore, each sample’s prediction comes from a model that did not train on that sample.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "model_selection",
+        "cross_val_predict",
+        "cross-validation",
+        "data-leakage"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, what happens if you call `.fit()` a second time on the *same* estimator instance (e.g., `ExtraTreesClassifier`) with new training data?",
+      "question_type": "mc",
+      "options": [
+        "A. The estimator continues training from the previous state and adds new trees/parameters on top of the old fit",
+        "B. The estimator merges the old and new datasets internally and refits using the combined data",
+        "C. The estimator reinitializes its learned parameters and refits from scratch, discarding what it learned previously",
+        "D. The estimator raises an error because `.fit()` can only be called once per instance"
+      ],
+      "correct_answer": "C",
+      "explanation": "In scikit-learn, calling `.fit()` again on the same estimator overwrites the previous fitted state. The model parameters are reinitialized and the estimator is trained from scratch on the new data; information from the earlier fit is discarded.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "fit",
+        "estimator-lifecycle",
+        "model-state"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you are tuning hyperparameters for an `ExtraTreesClassifier` using a validation set (or cross-validation). Which statement best describes the correct role of the validation data during this process?",
+      "question_type": "mc",
+      "options": [
+        "A. The validation set is used to compute gradients that update the model’s weights/parameters during training.",
+        "B. The validation set is used only to choose among hyperparameter settings (outer loop); it should not be used to update fitted parameters (inner loop).",
+        "C. The validation set should be merged into the training set before any hyperparameter search to reduce variance in validation scores.",
+        "D. The validation set labels are used to calibrate predicted probabilities during training, but not to choose hyperparameters."
+      ],
+      "correct_answer": "B",
+      "explanation": "Hyperparameter tuning is a two-level process: the model is fit on training data (inner loop), then evaluated on validation data to decide which hyperparameters to try/keep (outer loop). The validation set should not influence the fitted parameters of a given candidate model; it is only used to compare candidates and select hyperparameters.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "ExtraTrees",
+        "validation-set",
+        "hyperparameter-tuning",
+        "inner-loop",
+        "outer-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, when does `cross_val_predict` raise `ValueError: cross_val_predict only works for partitions`?\n\nA. When `X` is a pandas DataFrame instead of a NumPy array\nB. When the estimator does not implement `predict_proba`\nC. When the cross-validation splitter produces overlapping test sets (not a strict partition)\nD. When `n_splits` is greater than the number of features",
+      "question_type": "mc",
+      "options": [
+        "A. When `X` is a pandas DataFrame instead of a NumPy array",
+        "B. When the estimator does not implement `predict_proba`",
+        "C. When the cross-validation splitter produces overlapping test sets (not a strict partition)",
+        "D. When `n_splits` is greater than the number of features"
+      ],
+      "correct_answer": "C",
+      "explanation": "`cross_val_predict` stitches out-of-sample predictions back into a single array where each sample must receive exactly one prediction. That requires the CV strategy to form a partition of the data: each sample appears in exactly one test fold. If test folds overlap (e.g., repeats or expanding windows), a sample can be predicted multiple times and the mapping is ambiguous, so scikit-learn raises this ValueError. Pandas DataFrames are generally fine, and lack of `predict_proba` would raise a different error related to the requested `method`.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "model_selection",
+        "cross_val_predict",
+        "cross-validation",
+        "partitions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you want `classification_report` to return a structure that can be directly converted into a pandas DataFrame (instead of a formatted string). Which argument enables this?\n\n```python\nfrom sklearn.metrics import classification_report\nreport = classification_report(y_true, y_pred, ____)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. as_frame=True",
+        "B. output_dict=True",
+        "C. to_pandas=True",
+        "D. return_df=True"
+      ],
+      "correct_answer": "B",
+      "explanation": "`classification_report` normally returns a human-readable string. Setting `output_dict=True` makes it return a Python dictionary of metrics (precision/recall/f1/support, plus averages), which can then be wrapped with `pd.DataFrame(...)`.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "classification_report",
+        "output_dict",
+        "pandas"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you have an instantiated estimator `model`. Which expression returns the *class object* of the estimator (not just its name as a string)?",
+      "question_type": "mc",
+      "options": [
+        "A. type(model)",
+        "B. model.__class__.__name__",
+        "C. model.__name__",
+        "D. model.class"
+      ],
+      "correct_answer": "A",
+      "explanation": "`type(model)` returns the class object of the instance (e.g., `<class 'sklearn.ensemble._forest.ExtraTreesRegressor'>`). `model.__class__.__name__` returns only the class name string (e.g., `'ExtraTreesRegressor'`). `model.__name__` is not defined for instances, and `model.class` is not a valid attribute in Python.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "python",
+        "introspection",
+        "type",
+        "estimators"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you instantiate an estimator and want to retrieve the hyperparameter names and values it was created with. Which method is designed for that?\n\n```python\nfrom sklearn.linear_model import LogisticRegression\nclf = LogisticRegression(C=0.1, solver=\"saga\", max_iter=200)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. clf.get_params()",
+        "B. clf.score_params()",
+        "C. LogisticRegression.__init__.__defaults__",
+        "D. inspect.signature(clf.fit)"
+      ],
+      "correct_answer": "A",
+      "explanation": "`get_params()` is the standard scikit-learn estimator API for returning a dictionary of hyperparameter names and values for an estimator instance. The other options are either not real scikit-learn APIs (B), not the recommended/robust way to retrieve instance configuration (C), or are unrelated to constructor hyperparameters (D inspects the `fit` method signature, not what was passed at instantiation).",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "estimators",
+        "get_params",
+        "hyperparameters",
+        "api"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, which statement best describes the availability of a built-in comprehensive regression report (analogous to `classification_report`)?",
+      "question_type": "mc",
+      "options": [
+        "A. scikit-learn provides `regression_report` in `sklearn.metrics` that summarizes MAE, MSE, RMSE, and R² in one call.",
+        "B. scikit-learn provides `classification_report` for classification, but there is no built-in equivalent comprehensive regression report; you typically compute and format regression metrics yourself.",
+        "C. scikit-learn provides `regression_report` inside `sklearn.model_selection` as part of cross-validation utilities.",
+        "D. scikit-learn automatically prints a regression report when calling `fit()` on any regressor."
+      ],
+      "correct_answer": "B",
+      "explanation": "scikit-learn includes `classification_report` for classification tasks, but it does not include an official, comprehensive regression report object/function that aggregates common regression metrics in a single formatted output. For regression, you usually call metric functions such as `mean_absolute_error`, `mean_squared_error`, and `r2_score` from `sklearn.metrics` and optionally combine them into a custom report.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "sklearn.metrics",
+        "classification_report",
+        "regression-metrics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn's `LogisticRegression`, what does the `tol` parameter primarily control?\n\n```python\nfrom sklearn.linear_model import LogisticRegression\nmodel = LogisticRegression(solver='sag', tol=1e-4, max_iter=2000)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. The strength of L2 regularization (inverse of C), shrinking coefficients toward zero",
+        "B. The stopping tolerance for convergence; training can stop early when improvements fall below this threshold",
+        "C. The number of CPU cores used for training; smaller values reduce parallel overhead",
+        "D. The maximum number of epochs/passes over the data; training always stops exactly at this number"
+      ],
+      "correct_answer": "B",
+      "explanation": "`tol` is the convergence tolerance used by the solver: if the change in the objective (or a related criterion such as gradient norm, depending on solver) becomes smaller than `tol`, optimization stops even if `max_iter` has not been reached. It does not set regularization strength (that’s `C`) and does not control CPU usage (`n_jobs`) or force the run to last exactly `max_iter` iterations.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "tol",
+        "convergence",
+        "sag"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, what typically happens if you call `ExtraTreesRegressor().fit(X, y)` when `X` contains NaN values (and you have not done any missing-value handling)?",
+      "question_type": "mc",
+      "options": [
+        "A. The model automatically imputes NaNs with the column mean and fits normally.",
+        "B. The model drops any rows containing NaNs and fits on the remaining data.",
+        "C. The fit call raises an error because `ExtraTreesRegressor` does not support NaNs in `X` by default.",
+        "D. The model treats NaNs as a separate category and splits on them during tree building."
+      ],
+      "correct_answer": "C",
+      "explanation": "By default, scikit-learn’s `ExtraTreesRegressor` does not accept missing values encoded as NaN in `X`. If NaNs are present and not handled (e.g., via imputation or row removal), `fit()` will typically raise a ValueError indicating that input contains NaN.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "ExtraTreesRegressor",
+        "missing-values",
+        "NaN",
+        "model-fit"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn bagging-style ensembles (e.g., `ExtraTreesClassifier` with `bootstrap=True`), what does the out-of-bag (OOB) score/error estimate use?\n\nA. The training samples that were included in every bootstrap sample\nB. The samples left out of each tree’s bootstrap sample, aggregated across trees\nC. The held-out test set created by `train_test_split`\nD. K-fold cross-validation splits created internally by the estimator",
+      "question_type": "mc",
+      "options": [
+        "A. The training samples that were included in every bootstrap sample",
+        "B. The samples left out of each tree’s bootstrap sample, aggregated across trees",
+        "C. The held-out test set created by `train_test_split`",
+        "D. K-fold cross-validation splits created internally by the estimator"
+      ],
+      "correct_answer": "B",
+      "explanation": "OOB evaluation relies on bootstrap sampling: for each tree, some training points are not selected (\"out-of-bag\"). Those left-out points act like a mini validation set for that tree. Aggregating predictions across trees where a point was OOB yields an estimate of generalization performance without using the separate test split or running cross-validation.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "oob_score",
+        "bootstrap",
+        "bagging",
+        "extra-trees"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you have a function that may return either `RandomForestRegressor` or `ExtraTreesRegressor`. Which return type annotation best matches the intent of returning a general estimator object?\n\n```python\nfrom sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor\n\ndef get_model():\n    ...\n```\n",
+      "question_type": "mc",
+      "options": [
+        "`RandomForestRegressor`",
+        "`ExtraTreesRegressor`",
+        "`BaseEstimator`",
+        "`numpy.ndarray`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`RandomForestRegressor` and `ExtraTreesRegressor` both inherit from `sklearn.base.BaseEstimator`, so annotating the return type as `BaseEstimator` correctly expresses that the function returns a scikit-learn estimator without committing to a specific subclass. Annotating as one concrete regressor would be incorrect when the other regressor may be returned, and `numpy.ndarray` is not an estimator type.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "BaseEstimator",
+        "type-hints",
+        "inheritance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which XGBoost classes provide native scikit-learn–style wrappers (i.e., implement `.fit()`, `.predict()`, and sklearn conventions like `get_params()`/`set_params()`)?",
+      "question_type": "mc",
+      "options": [
+        "A. `xgboost.train` and `xgboost.cv`",
+        "B. `xgboost.DMatrix` and `xgboost.Booster`",
+        "C. `xgboost.XGBClassifier` and `xgboost.XGBRegressor`",
+        "D. `sklearn.ensemble.GradientBoostingClassifier` and `sklearn.ensemble.RandomForestRegressor`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`XGBClassifier` and `XGBRegressor` are the scikit-learn API wrappers shipped with XGBoost. They expose the familiar estimator interface (`fit`, `predict`, `predict_proba` for classifiers) and integrate with sklearn utilities via `get_params`/`set_params`. The other options are either lower-level XGBoost APIs (`train`, `Booster`, `DMatrix`) or unrelated sklearn models.",
+      "difficulty": "beginner",
+      "tags": [
+        "xgboost",
+        "scikit-learn-api",
+        "estimators",
+        "XGBClassifier",
+        "XGBRegressor"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, when you call `selector.fit_transform(X, y)` using `SelectKBest(score_func=custom_correlation, k=2)`, what shapes are passed to `custom_correlation(X, y)`?\n\nAssume `X` contains 5 samples and 3 features.\n",
+      "question_type": "mc",
+      "options": [
+        "A. `X` has shape (3, 5) and `y` has shape (3,)",
+        "B. `X` has shape (5, 3) and `y` has shape (5,)",
+        "C. `X` has shape (5,) and `y` has shape (5, 3)",
+        "D. `X` has shape (5, 3) and `y` has shape (3,)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`SelectKBest` passes the full feature matrix `X` and target vector `y` into the scoring function during `fit`/`fit_transform`. By convention in scikit-learn, `X` is 2D with shape `(n_samples, n_features)` and `y` is 1D with shape `(n_samples,)`. With 5 samples and 3 features, that becomes `(5, 3)` for `X` and `(5,)` for `y`.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "SelectKBest",
+        "feature-selection",
+        "array-shapes",
+        "fit_transform"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you want to use a custom scoring function with `SelectKBest`. Which function signature and return format is expected for `score_func`?\n\nA.\n```python\ndef score_func(X, y):\n    # returns a single float\n    return 0.5\n```\n\nB.\n```python\ndef score_func(X, y):\n    # returns (scores, pvalues)\n    return scores, pvalues\n```\n\nC.\n```python\ndef score_func(feature_vector, target_vector):\n    # called once per feature\n    return score, pvalue\n```\n\nD.\n```python\ndef score_func(X):\n    # unsupervised: y not allowed\n    return scores\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Returns a single float score for the entire dataset",
+        "B. Takes (X, y) and returns (scores_per_feature, pvalues_per_feature)",
+        "C. Takes one feature at a time and returns (score, pvalue) per call",
+        "D. Takes only X and returns scores_per_feature; y must not be provided"
+      ],
+      "correct_answer": "B",
+      "explanation": "`SelectKBest(score_func=...)` expects a callable that receives the full feature matrix `X` of shape `(n_samples, n_features)` and the target `y` of shape `(n_samples,)`. It must return a tuple `(scores, pvalues)` where `scores` is an array-like of length `n_features`. If p-values are not meaningful, a same-length array (often zeros) can be returned. The other options mismatch the required inputs (missing `y`) or outputs (single scalar, per-feature calling convention).",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "feature-selection",
+        "SelectKBest",
+        "score_func",
+        "api-contract"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, you are tuning a model with `GridSearchCV`. You specify `learning_rate = [0.01, 0.1, 1.0]` and `max_depth = [3, 5, 7]`. Ignoring cross-validation folds, how many model fits will GridSearchCV perform?\n\n(Assume there are no other hyperparameters being tuned.)",
+      "question_type": "mc",
+      "options": [
+        "A. 6",
+        "B. 9",
+        "C. 3",
+        "D. 12"
+      ],
+      "correct_answer": "B",
+      "explanation": "Grid search evaluates every combination in the Cartesian product of the candidate values. Here there are 3 choices for `learning_rate` and 3 choices for `max_depth`, so total fits = 3 × 3 = 9 (before accounting for CV folds, which would multiply this count).",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "GridSearchCV",
+        "grid-search",
+        "hyperparameter-tuning",
+        "cartesian-product"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn, what does `StandardScaler` do to each feature by default?",
+      "question_type": "mc",
+      "options": [
+        "A. Scales values into the range [0, 1] using the feature min and max",
+        "B. Centers to mean 0 and scales to standard deviation 1 using the feature mean and standard deviation",
+        "C. Divides each value by the feature maximum so the maximum becomes 1",
+        "D. Converts each feature to ranks (percentiles) between 0 and 1"
+      ],
+      "correct_answer": "B",
+      "explanation": "`StandardScaler` standardizes features using z-score normalization: X' = (X − μ) / σ, producing (approximately) mean 0 and standard deviation 1 per feature on the training data. It does not guarantee a [0,1] range (that is `MinMaxScaler`).",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "preprocessing",
+        "StandardScaler",
+        "feature-scaling",
+        "z-score"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In scikit-learn cross-validation, which splitter is the most appropriate default choice for a **regression** problem when you want to use repeated CV?\n\nAssume `y` is continuous.",
+      "question_type": "mc",
+      "options": [
+        "A. RepeatedKFold",
+        "B. RepeatedStratifiedKFold",
+        "C. StratifiedKFold",
+        "D. GroupKFold"
+      ],
+      "correct_answer": "A",
+      "explanation": "For regression, the target `y` is continuous and does not define discrete classes, so stratification is not applicable. `RepeatedKFold` is designed for repeated CV without preserving class proportions, which matches the regression setting.",
+      "difficulty": "beginner",
+      "tags": [
+        "scikit-learn",
+        "cross-validation",
+        "regression",
+        "RepeatedKFold"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the code below:\n\n```python\nimport numpy as np\nfrom sklearn.impute import SimpleImputer\n\nX = [[1, 2], [np.nan, 3], [7, 6]]\nimputer = SimpleImputer(strategy='mean')\nX_imputed = imputer.fit_transform(X)\n```\n\nWhat is the value of `X_imputed`?",
+      "question_type": "mc",
+      "options": [
+        "[[1, 2], [4, 3], [7, 6]]",
+        "[[1, 2], [np.nan, 3], [7, 6]]",
+        "[[1, 2], [4, 3], [7, 6]] where 4 is the mean of the entire matrix",
+        "[[1, 2], [1, 3], [7, 6]]"
+      ],
+      "correct_answer": "A",
+      "explanation": "With `strategy='mean'`, `SimpleImputer` computes the mean per feature (column) on `fit`. Column 0 has values 1 and 7 (ignoring NaN), so mean = (1+7)/2 = 4. Column 1 has no missing values and remains unchanged. Therefore the NaN in row 2, column 0 becomes 4, producing `[[1, 2], [4, 3], [7, 6]]`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "SimpleImputer",
+        "strategy",
+        "mean-imputation",
+        "numpy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want BayesSearchCV to tune a RandomForestClassifier with:\n- `max_depth` as an integer from 1 to 50\n- `max_features` as a real number from 0.1 to 1.0\n- `criterion` as one of {\"gini\", \"entropy\"}\n\nWhich search space definition is most appropriate?\n\n```python\n# Choose one option\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. ```python\nsearch_space = {\n  'max_depth': (1, 50),\n  'max_features': (0.1, 1.0),\n  'criterion': ('gini', 'entropy')\n}\n```",
+        "B. ```python\nfrom skopt.space import Integer, Real, Categorical\nsearch_space = {\n  'max_depth': Integer(1, 50),\n  'max_features': Real(0.1, 1.0),\n  'criterion': Categorical(['gini', 'entropy'])\n}\n```",
+        "C. ```python\nfrom skopt.space import Integer, Real\nsearch_space = {\n  'max_depth': Real(1, 50),\n  'max_features': Integer(0.1, 1.0),\n  'criterion': Integer(['gini', 'entropy'])\n}\n```",
+        "D. ```python\nsearch_space = [\n  ('max_depth', [1, 50]),\n  ('max_features', [0.1, 1.0]),\n  ('criterion', [0, 1])\n]\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "BayesSearchCV supports parameter spaces with explicit types via `skopt.space`: `Integer` for discrete integer ranges, `Real` for continuous ranges, and `Categorical` for a fixed set of categories. Option B correctly encodes each parameter type. Option A uses ambiguous Python tuples (and a tuple for criterion) rather than explicit `Categorical`. Option C mismatches types (e.g., `max_depth` should be integer). Option D is not the expected mapping format and loses categorical meaning for `criterion`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "bayessearchcv",
+        "search-space",
+        "skopt.space",
+        "randomforestclassifier",
+        "categorical-parameters"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You computed a binary confusion matrix with scikit-learn:\n\n```python\nfrom sklearn.metrics import confusion_matrix\ncm = confusion_matrix(y_true, y_pred)\nprint(cm)\n```\n\nIt prints:\n\n```text\n[[50 10]\n [ 5 35]]\n```\n\nWhich statement is correct according to scikit-learn’s binary confusion matrix layout `[[TN, FP], [FN, TP]]`?",
+      "question_type": "mc",
+      "options": [
+        "TN=50, FP=10, FN=5, TP=35",
+        "TN=50, FP=5, FN=10, TP=35",
+        "TN=35, FP=5, FN=10, TP=50",
+        "TN=10, FP=50, FN=35, TP=5"
+      ],
+      "correct_answer": "A",
+      "explanation": "For binary classification, scikit-learn uses `[[TN, FP], [FN, TP]]`. Mapping the printed matrix gives TN=50 (top-left), FP=10 (top-right), FN=5 (bottom-left), TP=35 (bottom-right).",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "confusion-matrix",
+        "binary-classification",
+        "tn-fp-fn-tp"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a 3-class training set with label distribution: class 0 = 70%, class 1 = 20%, class 2 = 10%.\n\nFor each `DummyClassifier` strategy below, what is the expected behavior of predictions on a large test set?\n\n1) `most_frequent`\n2) `stratified`\n3) `uniform`\n\nAnswer in terms of the approximate proportion of predicted labels (0/1/2) produced by each strategy.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) most_frequent: predicts class 0 for (approximately) 100% of samples.\n2) stratified: predicts classes in proportion to the training distribution, i.e., ~70% class 0, ~20% class 1, ~10% class 2 (up to sampling noise).\n3) uniform: predicts each class with equal probability, i.e., ~33.3% class 0, ~33.3% class 1, ~33.3% class 2 (up to sampling noise).",
+      "explanation": "`most_frequent` always outputs the majority class seen during fitting. `stratified` samples labels according to the empirical class prior learned from `y_train`, so the long-run prediction frequencies match the training distribution. `uniform` samples labels uniformly across all known classes, independent of the training distribution.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "DummyClassifier",
+        "most_frequent",
+        "stratified",
+        "uniform",
+        "class-imbalance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a pandas DataFrame with multiple categorical input feature columns (not the target). Which encoder is most appropriate if you want to encode each category to an integer per column (ordinal-style encoding), and why?\n\nA dataset example:\n```python\nimport pandas as pd\nX = pd.DataFrame({\n    \"Color\": [\"Red\", \"Blue\", \"Green\"],\n    \"Size\":  [\"S\", \"M\", \"L\"]\n})\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. LabelEncoder, because it is designed to encode multiple feature columns at once",
+        "B. OrdinalEncoder, because it encodes multiple feature columns by mapping categories to integers per column",
+        "C. OneHotEncoder, because it always produces a single integer per column",
+        "D. StandardScaler, because it converts strings to standardized numeric values"
+      ],
+      "correct_answer": "B",
+      "explanation": "`OrdinalEncoder` is intended for encoding multiple categorical feature columns in a 2D array/DataFrame, producing integer codes per column. `LabelEncoder` is primarily for a 1D label vector (typically the target). `OneHotEncoder` expands categories into multiple binary columns rather than a single integer code, and `StandardScaler` only scales numeric inputs and cannot encode strings.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "OrdinalEncoder",
+        "LabelEncoder",
+        "categorical-features",
+        "dataframe",
+        "feature-encoding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You fit a logistic regression model and get a `ConvergenceWarning` saying it failed to converge.\n\nWhich action is the most direct way to allow the solver to keep iterating toward the same convergence criterion (i.e., without relaxing the convergence requirement)?",
+      "question_type": "mc",
+      "options": [
+        "A. Increase `max_iter`",
+        "B. Increase `tol` (e.g., from 1e-4 to 1e-3)",
+        "C. Decrease `C` (stronger regularization) to guarantee convergence in fewer steps",
+        "D. Set `n_jobs=-1` to force convergence by using all CPU cores"
+      ],
+      "correct_answer": "A",
+      "explanation": "A `ConvergenceWarning` typically means the solver hit `max_iter` before meeting the tolerance-based stopping condition. Increasing `max_iter` gives it more iterations to satisfy the same `tol`. Increasing `tol` relaxes the criterion (stops earlier), changing the requirement. Changing `C` may change the optimization landscape but does not directly “allow more iterations.” `n_jobs` affects parallelism, not the convergence condition.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "ConvergenceWarning",
+        "max_iter",
+        "tol"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You evaluate two regression models using 5-fold cross-validation with `scoring=\"neg_mean_absolute_error\"`.\n\n- Model 1 mean score: **-2.5**\n- Model 2 mean score: **-1.8**\n\nWhich model has the better MAE performance, and what are the corresponding MAE values (based on these mean scores)?\n\nA. Model 1 is better; MAE values are 2.5 (Model 1) and 1.8 (Model 2)\nB. Model 2 is better; MAE values are 2.5 (Model 1) and 1.8 (Model 2)\nC. Model 1 is better; MAE values are -2.5 (Model 1) and -1.8 (Model 2)\nD. Model 2 is better; MAE values are -2.5 (Model 1) and -1.8 (Model 2)",
+      "question_type": "mc",
+      "options": [
+        "A. Model 1 is better; MAE values are 2.5 (Model 1) and 1.8 (Model 2)",
+        "B. Model 2 is better; MAE values are 2.5 (Model 1) and 1.8 (Model 2)",
+        "C. Model 1 is better; MAE values are -2.5 (Model 1) and -1.8 (Model 2)",
+        "D. Model 2 is better; MAE values are -2.5 (Model 1) and -1.8 (Model 2)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`neg_mean_absolute_error = -MAE`. So a mean score of -2.5 corresponds to MAE = 2.5, and -1.8 corresponds to MAE = 1.8. Lower MAE is better, so Model 2 is better. The negated scores are negative by construction, but MAE itself is non-negative, which rules out C and D.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "model-evaluation",
+        "cross-validation",
+        "neg_mean_absolute_error",
+        "mean_absolute_error",
+        "regression"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are evaluating a **multiclass** classifier on an imbalanced dataset. You want an aggregate metric that reflects class prevalence so that majority classes contribute more to the final score. Which `average` setting in `precision_recall_fscore_support` best matches this goal?\n\nA. `'macro'`\nB. `'micro'`\nC. `'weighted'`\nD. `None`",
+      "question_type": "mc",
+      "options": [
+        "A. `'macro'`",
+        "B. `'micro'`",
+        "C. `'weighted'`",
+        "D. `None`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`average='weighted'` computes per-class metrics and then averages them **weighted by support** (the number of true instances per class). This makes the final metric reflect class prevalence. By contrast, `'macro'` treats all classes equally, `'micro'` aggregates global TP/FP/FN (often dominated by frequent classes but not explicitly support-weighted per-class), and `None` returns per-class arrays rather than a single aggregate.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "sklearn.metrics",
+        "precision_recall_fscore_support",
+        "average",
+        "weighted-average",
+        "imbalanced-data",
+        "multiclass"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the following code, which pair of calls correctly produces an approximate 90% prediction interval for each sample in `X_test`?\n\n```python\nlower = qrf.predict(X_test, quantile=5)\nupper = qrf.predict(X_test, quantile=95)\n```\n\nAssume the model has been fit and `quantile` is interpreted as a percentile.\n",
+      "question_type": "mc",
+      "options": [
+        "`quantile=5` for the lower bound and `quantile=95` for the upper bound",
+        "`quantile=10` for the lower bound and `quantile=90` for the upper bound",
+        "`quantile=0.05` for the lower bound and `quantile=0.95` for the upper bound",
+        "`quantile=50` for both bounds, because the median defines a 90% interval"
+      ],
+      "correct_answer": "A",
+      "explanation": "A central 90% interval corresponds to the 5th and 95th percentiles (leaving 5% in each tail). Option B would produce an 80% interval (10th–90th). Option C uses probabilities rather than percentiles, which does not match the code/comments in the provided example. Option D yields the median (a point estimate), not an interval.",
+      "difficulty": "intermediate",
+      "tags": [
+        "prediction-intervals",
+        "quantiles",
+        "RandomForestQuantileRegressor",
+        "scikit-garden",
+        "uncertainty-estimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to use `SelectKBest` with a custom tree-based scoring function for regression. Which implementation best matches what `SelectKBest` expects from `score_func`?\n\nA.\n```python\ndef tree_score(X, y):\n    model = ExtraTreesRegressor(n_estimators=50, random_state=42)\n    model.fit(X, y)\n    return model.feature_importances_\n```\n\nB.\n```python\ndef tree_score(X, y):\n    model = ExtraTreesRegressor(n_estimators=50, random_state=42)\n    model.fit(X, y)\n    return model.score(X, y)\n```\n\nC.\n```python\ndef tree_score(X, y):\n    model = ExtraTreesRegressor(n_estimators=50, random_state=42)\n    model.fit(X, y)\n    return model.feature_importances_.reshape(-1, 1)\n```\n\nD.\n```python\ndef tree_score(X, y):\n    return np.argsort(np.random.rand(X.shape[1]))\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "A",
+      "explanation": "`SelectKBest` expects `score_func(X, y)` to return an array-like of shape `(n_features,)` containing a score per feature (optionally it may also return a tuple `(scores, pvalues)` for some built-ins). Returning a single scalar (B) is not a per-feature score. Returning a column vector (C) has the wrong shape. Returning indices or random ranks (D) is not a meaningful per-feature score and does not match the intended contract (it should be scores, not an ordering).",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "SelectKBest",
+        "score_func",
+        "ExtraTreesRegressor",
+        "feature_importances_",
+        "shape"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the data matrix below, you fit `VarianceThreshold(threshold=0.0)`.\n\n```python\nimport numpy as np\nfrom sklearn.feature_selection import VarianceThreshold\n\nX = np.array([\n    [0, 2, 0, 10],\n    [0, 1, 1, 10],\n    [0, 1, 0, 10],\n    [0, 2, 0, 10],\n    [0, 1, 1, 10],\n    [0, 2, 0, 10],\n])\n\nsel = VarianceThreshold(threshold=0.0)\nX_trans = sel.fit_transform(X)\nmask = sel.get_support()\n```\n\nWhich support mask is correct (True = kept feature, False = dropped feature)?",
+      "question_type": "mc",
+      "options": [
+        "[True, True, True, True]",
+        "[False, True, True, False]",
+        "[True, False, False, True]",
+        "[False, False, True, True]"
+      ],
+      "correct_answer": "B",
+      "explanation": "Feature 0 is all zeros, so its variance is 0 and it is dropped. Feature 3 is all 10s, so its variance is 0 and it is dropped. Features 1 and 2 vary across samples, so their variances are > 0 and they are kept. Therefore the mask is `[False, True, True, False]`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "VarianceThreshold",
+        "get_support",
+        "numpy",
+        "constant-features"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You train a multinomial logistic regression model and want to interpret `model.n_iter_` as “number of epochs.” Which choice correctly describes when this interpretation is valid?\n\n```python\nfrom sklearn.linear_model import LogisticRegression\n\nclf = LogisticRegression(\n    solver=..., multi_class=\"multinomial\", max_iter=1000\n)\nclf.fit(X, y)\nprint(clf.n_iter_)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Always valid; `n_iter_` is always the number of epochs regardless of solver.",
+        "B. Valid only for `solver='sag'` or `solver='saga'`; otherwise `n_iter_` counts solver-specific steps.",
+        "C. Valid only for `solver='lbfgs'` or `solver='newton-cg'` because they use second-order information.",
+        "D. Valid only for `solver='liblinear'` because coordinate descent makes one pass per epoch."
+      ],
+      "correct_answer": "B",
+      "explanation": "`n_iter_` reports how many iterations the chosen optimization routine performed. Only for `sag`/`saga` does one iteration correspond to a full pass over the data (an epoch). For `lbfgs`/`newton-cg`, an iteration is a quasi-Newton step (line search/Hessian update behavior), not a full sweep. For `liblinear`, iterations are tied to coordinate-descent passes over features (inner loop), not dataset epochs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "n_iter_",
+        "solvers",
+        "saga",
+        "lbfgs",
+        "liblinear",
+        "epochs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing Bayesian optimization for feature selection and want to score each candidate subset using cross-validation.\n\nGiven the snippet below, which change best prevents the optimizer from *crashing* when it proposes a mask that selects no features, while also making the scoring objective meaningful?\n\n```python\nmask = [bool(param) for param in params]\nX_subset = X.iloc[:, mask]\nmodel = RandomForestClassifier(random_state=42)\nscore = cross_val_score(model, X_subset, y, cv=3, scoring='accuracy').mean()\nreturn score\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Wrap `cross_val_score(...)` in a try/except and return `np.nan` on error",
+        "If `X_subset.shape[1] == 0`, return a very low score (e.g., 0.0) to penalize empty subsets",
+        "Set `cv=1` so cross-validation always succeeds even with zero features",
+        "Replace `accuracy` with `neg_log_loss` because it supports empty feature matrices"
+      ],
+      "correct_answer": "B",
+      "explanation": "Most estimators (including `RandomForestClassifier`) cannot fit on an empty feature matrix, so the search can fail when no features are selected. Detecting the empty-subset case and returning a low score both avoids runtime errors and communicates to the optimizer that selecting no features is a poor solution (a penalty). Returning `np.nan` can break or confuse the optimization, and changing `cv` or the metric does not solve the fundamental issue that the estimator cannot train with zero features.",
+      "difficulty": "intermediate",
+      "tags": [
+        "cross-validation",
+        "objective-function",
+        "feature-selection",
+        "random-forest",
+        "skopt",
+        "error-handling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing a helper function that should train *any* scikit-learn estimator (classifier or regressor) passed in. Which function signature best matches the scikit-learn estimator API idea described in the prompt?\n\nAssume `X_train` and `y_train` are defined.\n",
+      "question_type": "mc",
+      "options": [
+        "A. `def train(model: BaseEstimator, X_train, y_train): model.fit(X_train, y_train); return model`",
+        "B. `def train(model: BaseEstimator, X_train, y_train): BaseEstimator.fit(model, X_train, y_train); return model`",
+        "C. `def train(model: BaseEstimator, X_train, y_train): model.train(X_train, y_train); return model`",
+        "D. `def train(model: BaseEstimator, X_train, y_train): model = BaseEstimator(model); model.fit(X_train, y_train); return model`"
+      ],
+      "correct_answer": "A",
+      "explanation": "The estimator API expects an estimator instance with a `.fit(X, y)` method. Option A correctly calls `model.fit(...)` on the passed estimator, relying on polymorphism. B incorrectly assumes `fit` should be called as a `BaseEstimator` class method. C uses a non-existent standard method (`train`). D incorrectly tries to wrap/construct a `BaseEstimator` from an existing estimator (not how scikit-learn works).",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "estimator-api",
+        "BaseEstimator",
+        "fit",
+        "polymorphism",
+        "type-hints"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.base import clone\n\nmodel = RandomForestClassifier(random_state=42)\nmodel.fit(X_train, y_train)\n\nmodel2 = clone(model)\n```\n\nWhich statement best describes `model2` immediately after cloning?",
+      "question_type": "mc",
+      "options": [
+        "`model2` is the same Python object as `model`, but its learned attributes have been cleared",
+        "`model2` is a new estimator instance with the same hyperparameters as `model`, and it is unfitted (no learned state)",
+        "`model2` is a deep copy of `model`, including all learned trees from training",
+        "`model2` shares the fitted state with `model` but uses a different random_state for future predictions"
+      ],
+      "correct_answer": "B",
+      "explanation": "sklearn.base.clone constructs a new estimator with the same parameters (hyperparameters) obtained via get_params, but it does not copy learned attributes created during fit (e.g., estimators_, feature_names_in_, classes_). Therefore `model2` is unfitted and distinct from `model` as a Python object.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "sklearn.base.clone",
+        "hyperparameters",
+        "fitted-state",
+        "object-identity"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Assume you have:\n\n```python\ndiabetes = fetch_openml(\"diabetes\", version=1, as_frame=True)\n```\n\nWrite code to manually build a single DataFrame that includes both features and target using `pd.concat`. Your solution should concatenate along columns.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport pandas as pd\n\ndf_diabetes = pd.concat([diabetes.data, diabetes.target], axis=1)\n```",
+      "explanation": "`diabetes.data` contains the feature columns (as a DataFrame) and `diabetes.target` contains the target (often a Series or single-column object). `pd.concat([...], axis=1)` concatenates them side-by-side (column-wise) into one DataFrame, matching rows by index.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "fetch_openml",
+        "Bunch",
+        "pandas",
+        "concat",
+        "axis",
+        "target"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You compute out-of-fold probabilities using:\n\n```python\ny_pred_proba = cross_val_predict(\n    model, X, y,\n    cv=5,\n    method=\"predict_proba\"\n)[:, 1]\n```\n\nAssume `X` has shape `(n_samples, n_features)` and this is a binary classification problem. Which statement best describes the shape and meaning of `cross_val_predict(..., method=\"predict_proba\")` before slicing with `[:, 1]`?",
+      "question_type": "mc",
+      "options": [
+        "Shape `(n_samples,)`; each entry is the probability of the positive class from a model trained on all data.",
+        "Shape `(n_samples, 2)`; each row contains class probabilities for that sample, computed when the sample was in the held-out fold for its split.",
+        "Shape `(5, n_samples)`; each row is the probabilities from one fold’s model across all samples.",
+        "Shape `(n_samples, n_features)`; each feature is replaced by its predicted probability."
+      ],
+      "correct_answer": "B",
+      "explanation": "For binary classification, `predict_proba` returns probabilities for each class, so the output is `(n_samples, 2)`. With `cross_val_predict`, each row corresponds to a sample’s out-of-fold prediction: the probability vector produced by the fold-specific model that did not include that sample in training. Slicing `[:, 1]` selects the positive-class probability column.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "cross_val_predict",
+        "predict_proba",
+        "array-shapes",
+        "binary-classification"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained an `ExtraTreesClassifier` and then received additional labeled data. You want to update the model *without discarding* what it learned from the original data. Which approach is appropriate in scikit-learn?\n\n```python\nfrom sklearn.ensemble import ExtraTreesClassifier\n\nclf = ExtraTreesClassifier(random_state=0)\nclf.fit(X_train, y_train)\n\n# Later you get more data\nclf.fit(X_new, y_new)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `clf.fit(X_new, y_new)`; ExtraTrees will automatically perform incremental learning",
+        "B. Use `clf.partial_fit(X_new, y_new)`; ExtraTrees supports incremental learning via `partial_fit`",
+        "C. Switch to an estimator that supports incremental learning (e.g., `SGDClassifier`) and use `partial_fit` on new batches",
+        "D. Set `warm_start=True` on `ExtraTreesClassifier` and then call `partial_fit` to update it"
+      ],
+      "correct_answer": "C",
+      "explanation": "`ExtraTreesClassifier` does not support `partial_fit`, so it cannot be updated incrementally in the usual scikit-learn way. To train incrementally on streaming/batched data without discarding prior learning, you must choose an estimator that supports incremental learning (commonly via `partial_fit`), such as `SGDClassifier` or `SGDRegressor`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "incremental-learning",
+        "partial_fit",
+        "ExtraTreesClassifier",
+        "SGDClassifier"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following scikit-learn-style pseudocode for tuning an `ExtraTreesRegressor`:\n\n```python\nbest_score = float(\"inf\")\nbest_hypers = None\nbest_model = None\n\nfor hypers in grid:\n    model = ExtraTreesRegressor(**hypers, random_state=0)\n    model.fit(X_train, y_train)\n    val_score = mean_squared_error(y_val, model.predict(X_val))\n\n    if val_score < best_score:\n        best_score = val_score\n        best_hypers = hypers\n        best_model = model\n```\n\nAfter the loop, you want a final model to evaluate on a held-out test set. Which option best matches the recommended practice described in the source content, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Evaluate `best_model` directly on the test set; retraining is never recommended because it changes the selected hyperparameters.",
+        "B. Retrain a fresh model using `best_hypers` on `X_train` only (excluding `X_val`) to avoid any risk of leakage, then test.",
+        "C. Retrain a fresh model using `best_hypers` on the combined `X_train + X_val` data, then evaluate once on the test set.",
+        "D. Fit on `X_val` only using `best_hypers` to ensure the model is optimized for the validation distribution, then test."
+      ],
+      "correct_answer": "C",
+      "explanation": "The validation set’s job is to select hyperparameters, not to provide the final reported performance. Once hyperparameters are chosen, a common recommendation is to retrain from scratch on the combined training+validation data to use as much labeled data as possible for fitting, then evaluate once on the held-out test set for an unbiased estimate of generalization.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "ExtraTreesRegressor",
+        "model-selection",
+        "retraining",
+        "train-validation-split",
+        "test-set"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following code and get `ValueError: cross_val_predict only works for partitions`:\n\n```python\nfrom sklearn.model_selection import RepeatedStratifiedKFold, cross_val_predict\n\ncv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=0)\nproba = cross_val_predict(clf, X, y, cv=cv, method=\"predict_proba\")[:, 1]\n```\n\nWhich change is the most appropriate fix if you want exactly one out-of-fold probability per sample?\n\nA. Replace `RepeatedStratifiedKFold` with `StratifiedKFold` (no repeats)\nB. Set `n_repeats=1` but keep `RepeatedStratifiedKFold`\nC. Set `method=\"predict\"` instead of `method=\"predict_proba\"`\nD. Convert `X` from a pandas DataFrame to a NumPy array with `X.values`",
+      "question_type": "mc",
+      "options": [
+        "A. Replace `RepeatedStratifiedKFold` with `StratifiedKFold` (no repeats)",
+        "B. Set `n_repeats=1` but keep `RepeatedStratifiedKFold`",
+        "C. Set `method=\"predict\"` instead of `method=\"predict_proba\"`",
+        "D. Convert `X` from a pandas DataFrame to a NumPy array with `X.values`"
+      ],
+      "correct_answer": "A",
+      "explanation": "The error is caused by overlapping test sets: repeated CV means each sample can appear in the test set multiple times across repeats, which violates the partition requirement of `cross_val_predict`. Using `StratifiedKFold` (without repeats) produces disjoint test folds so each sample is predicted exactly once. Option B is not a reliable fix because `RepeatedStratifiedKFold` is still conceptually for repeats; the standard approach is to use the non-repeated splitter. Changing the method (C) does not change the overlap issue, and converting data types (D) is unrelated to the partition constraint.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "cross_val_predict",
+        "RepeatedStratifiedKFold",
+        "StratifiedKFold",
+        "predict_proba"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following code:\n\n```python\nfrom sklearn.metrics import classification_report\nimport pandas as pd\n\nreport_dict = classification_report(\n    y_true,\n    y_pred,\n    output_dict=True,\n    target_names=[\"Class 0\", \"Class 1\"],\n    digits=3\n)\n\ndf1 = pd.DataFrame(report_dict)\ndf2 = pd.DataFrame(report_dict).T\n```\n\nWhich statement best describes the difference between `df1` and `df2`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `df1` has classes as rows and metrics as columns; `df2` has metrics as rows and classes as columns.",
+        "B. `df1` has metrics as rows and classes/averages as columns; `df2` has classes/averages as rows and metrics as columns.",
+        "C. `df1` includes only per-class metrics; `df2` includes only macro/weighted averages.",
+        "D. `df1` rounds to 3 digits but `df2` does not; `.T` changes rounding behavior."
+      ],
+      "correct_answer": "B",
+      "explanation": "The dict returned by `classification_report(..., output_dict=True)` is keyed by label names (e.g., \"Class 0\", \"Class 1\", \"accuracy\", \"macro avg\", \"weighted avg\"). When you do `pd.DataFrame(report_dict)`, those keys become columns, and the index tends to be metric names (precision/recall/f1-score/support). Transposing with `.T` swaps axes so each class/summary becomes a row and the metrics become columns, which is typically the desired tabular format.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "classification_report",
+        "pandas",
+        "DataFrame",
+        "transpose"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the code below, fill in the missing line so that it prints exactly `ExtraTreesRegressor` (just the class name, not the full module path).\n\n```python\nfrom sklearn.ensemble import ExtraTreesRegressor\n\nmodel = ExtraTreesRegressor(random_state=42)\n\n# TODO: add one line here\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "print(model.__class__.__name__)",
+      "explanation": "`model.__class__` gives the class object, and `.__name__` on that class gives only the class name as a string. Printing `model.__class__` or `type(model)` would include the full module path in the representation, not just `ExtraTreesRegressor`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "python",
+        "introspection",
+        "__class__",
+        "__name__"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to compare two ways of understanding an estimator’s configuration:\n\n1) Seeing which arguments the estimator constructor accepts (and their defaults)\n2) Seeing the actual hyperparameter values used when a particular estimator instance was created\n\nWhich pairing correctly matches the tool to the goal?\n",
+      "question_type": "mc",
+      "options": [
+        "A. (1) clf.get_params(); (2) inspect.signature(LogisticRegression.__init__)",
+        "B. (1) inspect.signature(LogisticRegression.__init__); (2) clf.get_params()",
+        "C. (1) inspect.getsource(LogisticRegression); (2) clf.__dict__",
+        "D. (1) clf.get_params(); (2) clf.fit(X, y)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`inspect.signature(LogisticRegression.__init__)` shows the constructor signature (accepted parameters and default values). `clf.get_params()` returns a dictionary reflecting the hyperparameter values for that specific instance (including defaults for parameters you didn’t explicitly pass). The other pairings either reverse the intent (A), rely on less appropriate/less stable internals (C), or are unrelated to parameter inspection (D).",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "inspect",
+        "signature",
+        "get_params",
+        "defaults",
+        "constructor"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a single consolidated view of multiple regression metrics. Complete the function below so it returns a dictionary with MAE, MSE, RMSE, and R².\n\n```python\nimport numpy as np\nfrom sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score\n\ndef regression_report(y_true, y_pred):\n    report = {\n        \"MAE\": mean_absolute_error(y_true, y_pred),\n        \"MSE\": mean_squared_error(y_true, y_pred),\n        \"RMSE\": __BLANK1__,\n        \"R2\": __BLANK2__\n    }\n    return report\n```\n\nFill in `__BLANK1__` and `__BLANK2__` with correct expressions.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "__BLANK1__ = np.sqrt(mean_squared_error(y_true, y_pred)); __BLANK2__ = r2_score(y_true, y_pred)",
+      "explanation": "RMSE is defined as the square root of MSE, so you compute MSE using `mean_squared_error(...)` and then apply `np.sqrt(...)`. The R² score is computed with `r2_score(y_true, y_pred)` from `sklearn.metrics`. Returning these in a dictionary provides a simple custom regression report.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "sklearn.metrics",
+        "mean_squared_error",
+        "r2_score",
+        "RMSE",
+        "custom-report"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to fit logistic regression with L1 regularization. Which solver choice below is compatible, and why?\n\n```python\nfrom sklearn.linear_model import LogisticRegression\nmodel = LogisticRegression(penalty='l1', solver=??? )\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `solver='sag'` because it is variance-reduced and supports L1 and ElasticNet penalties",
+        "B. `solver='lbfgs'` because quasi-Newton methods directly implement L1 regularization in scikit-learn",
+        "C. `solver='saga'` because it is a variant of SAG that supports L1 (and ElasticNet) penalties",
+        "D. `solver='newton-cg'` because Newton methods require sparse solutions and therefore work with L1"
+      ],
+      "correct_answer": "C",
+      "explanation": "In scikit-learn, `sag` supports only `penalty='l2'` (or `'none'`). To use `penalty='l1'`, you need a solver that supports it, such as `saga` (and often `liblinear` for smaller datasets). `lbfgs` and `newton-cg` do not support L1 in `LogisticRegression` because the L1 term is non-differentiable at zero and isn’t implemented for those solvers in scikit-learn.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "logistic-regression",
+        "solver",
+        "saga",
+        "sag",
+        "l1-regularization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are fitting an `ExtraTreesRegressor` but your feature matrix `X` contains NaNs. Which code snippet correctly handles missing values using scikit-learn before fitting?\n\n```python\nfrom sklearn.ensemble import ExtraTreesRegressor\n\nmodel = ExtraTreesRegressor(random_state=0)\n# X, y already defined\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. \n```python\nmodel.fit(X, y)\n```\n",
+        "B. \n```python\nfrom sklearn.impute import SimpleImputer\nimputer = SimpleImputer(strategy='mean')\nX_imputed = imputer.fit_transform(X)\nmodel.fit(X_imputed, y)\n```\n",
+        "C. \n```python\nX_imputed = X.fillna('mean')\nmodel.fit(X_imputed, y)\n```\n",
+        "D. \n```python\nfrom sklearn.impute import SimpleImputer\nimputer = SimpleImputer(strategy='mean')\nmodel.fit(imputer, X, y)\n```\n"
+      ],
+      "correct_answer": "B",
+      "explanation": "`SimpleImputer` is used to learn imputation values from the training data via `fit_transform(X)`, producing a NumPy array with NaNs replaced (here, by column means). `ExtraTreesRegressor` can then be fit on `X_imputed`. Option A does not handle NaNs. Option C uses a pandas-style method incorrectly and uses the string 'mean' rather than computing means. Option D misuses the estimator API; `fit` expects `(X, y)`, not an imputer object as an argument.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "SimpleImputer",
+        "imputation",
+        "ExtraTreesRegressor",
+        "pipeline-preprocessing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You plot OOB error (1 - `model.oob_score_`) versus `n_estimators` for an `ExtraTreesClassifier` with `bootstrap=True` and `oob_score=True`. The curve decreases quickly from 10 to 100 trees, then changes very little from 200 to 500 trees.\n\nWhich choice best describes how you should use this plot to select `n_estimators`?\n\nA. Choose the largest `n_estimators` (e.g., 500) because OOB error always strictly decreases with more trees\nB. Choose the smallest `n_estimators` after the “elbow” (e.g., ~200) to save compute with minimal performance loss\nC. Choose `n_estimators=10` because early trees are the most diverse and later trees overfit\nD. Ignore the OOB curve and always tune only on the separate test set",
+      "question_type": "mc",
+      "options": [
+        "A. Choose the largest `n_estimators` (e.g., 500) because OOB error always strictly decreases with more trees",
+        "B. Choose the smallest `n_estimators` after the “elbow” (e.g., ~200) to save compute with minimal performance loss",
+        "C. Choose `n_estimators=10` because early trees are the most diverse and later trees overfit",
+        "D. Ignore the OOB curve and always tune only on the separate test set"
+      ],
+      "correct_answer": "B",
+      "explanation": "The plot is used for model sizing: once the OOB error curve flattens (the elbow/plateau), adding more trees yields diminishing returns. Selecting the smallest value beyond that elbow typically gives a cost-effective model. OOB error is not guaranteed to strictly decrease at every step, and the test set should not be used for iterative tuning because it biases the final evaluation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "n_estimators",
+        "model-selection",
+        "oob-error",
+        "extra-trees",
+        "diminishing-returns"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have code that returns a general scikit-learn estimator typed as `BaseEstimator`, but later you want to safely use behavior specific to `RandomForestRegressor`.\n\nWhich option best demonstrates a *runtime-safe* way to do this?\n\n```python\nfrom sklearn.base import BaseEstimator\nfrom sklearn.ensemble import RandomForestRegressor\n\nmodel: BaseEstimator = get_model()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Use `cast(RandomForestRegressor, model)` and then call RandomForestRegressor-specific attributes; this ensures safety at runtime.",
+        "Use `isinstance(model, RandomForestRegressor)` before accessing RandomForestRegressor-specific methods/attributes.",
+        "Compare `type(model) == 'RandomForestRegressor'` (string comparison) and then access subclass-specific attributes.",
+        "Access RandomForestRegressor-specific attributes directly; Python will adapt at runtime if the object is different."
+      ],
+      "correct_answer": "B",
+      "explanation": "`isinstance(model, RandomForestRegressor)` is a runtime check that confirms the object is actually a `RandomForestRegressor` before using subclass-specific functionality. `cast()` only affects static type checking and does not enforce or validate the type at runtime. String comparisons of types are brittle/incorrect, and directly accessing subclass-specific attributes without checking can raise runtime errors when the model is an `ExtraTreesRegressor` (or any other estimator).",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "BaseEstimator",
+        "isinstance",
+        "runtime-type-checking",
+        "typing.cast"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained an `XGBClassifier` for binary classification and want to compute ROC AUC on a validation set.\n\nGiven the code below, which line correctly produces the probability scores needed for `roc_auc_score(y_val, y_score)`?\n\n```python\n# clf is an already-fitted XGBClassifier\n# X_val is the validation feature matrix\n\n# Choose the correct y_score assignment\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `y_score = clf.predict(X_val)`",
+        "B. `y_score = clf.predict_proba(X_val)[:, 1]`",
+        "C. `y_score = clf.get_params()['objective']`",
+        "D. `y_score = clf.predict_proba(X_val)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "ROC AUC requires a continuous score that ranks examples (typically the predicted probability of the positive class). For binary classification, `predict_proba(X)[:, 1]` extracts the probability of class 1. `predict(X)` returns hard class labels (0/1), which generally loses ranking information. Returning the full 2D array from `predict_proba` (option D) is the wrong shape for `roc_auc_score` in the common binary case, which expects a 1D score vector.",
+      "difficulty": "intermediate",
+      "tags": [
+        "xgboost",
+        "scikit-learn",
+        "predict_proba",
+        "roc_auc_score",
+        "binary-classification",
+        "metrics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing a custom scoring function for `SelectKBest` that computes correlation between each feature column in `X` and the target `y`.\n\nWhich of the following scoring functions is most appropriate for `SelectKBest` (assume `X` is a pandas DataFrame and `y` is array-like), given that scikit-learn expects a score per feature?\n\n```python\n# Option snippets\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. \n```python\ndef custom_correlation(X, y):\n    y = pd.Series(y)\n    scores = np.array([X[col].corr(y) for col in X.columns])\n    return scores, np.zeros_like(scores)\n```",
+        "B. \n```python\ndef custom_correlation(X, y):\n    y = pd.Series(y)\n    score = X.corrwith(y).mean()\n    return score\n```",
+        "C. \n```python\ndef custom_correlation(X, y):\n    y = pd.Series(y)\n    scores = [X[col].corr(y) for col in X.columns]\n    return np.array(scores).reshape(-1, 1), None\n```",
+        "D. \n```python\ndef custom_correlation(X, y):\n    y = pd.Series(y)\n    scores = np.array([X[col].corr(y) for col in X.columns])\n    return scores[0], np.zeros_like(scores[0])\n```"
+      ],
+      "correct_answer": "A",
+      "explanation": "`SelectKBest` expects the scoring function signature `score_func(X, y)` to return `(scores, pvalues)` where `scores` is a 1D array of length `n_features` (one score per column). Option A returns a vector of per-feature correlations and a matching p-values array (here zeros as a placeholder), which matches the expected contract. Option B collapses to a single scalar score (not per feature). Option C returns a 2D `(n_features, 1)` array and `None` p-values, which can break expectations. Option D returns only the first feature's score, not all features.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "SelectKBest",
+        "custom-score-function",
+        "correlation",
+        "p-values",
+        "API-contract"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to use absolute Pearson correlation as a custom `SelectKBest` score. Fill in the missing parts so the function works with scikit-learn and returns arrays of the correct shape.\n\n```python\nimport numpy as np\nfrom scipy.stats import pearsonr\n\ndef abs_pearson_score(X, y):\n    scores = []\n    for j in range(X.shape[1]):\n        r, _ = pearsonr(X[:, j], y)\n        scores.append(____)\n    scores = np.array(scores)\n    return ____, ____\n```\n\nWrite the completed code for the blanks.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `abs(r)` for the score, and return `(scores, np.zeros_like(scores))`.\n\nCompleted:\n```python\nimport numpy as np\nfrom scipy.stats import pearsonr\n\ndef abs_pearson_score(X, y):\n    scores = []\n    for j in range(X.shape[1]):\n        r, _ = pearsonr(X[:, j], y)\n        scores.append(abs(r))\n    scores = np.array(scores)\n    return scores, np.zeros_like(scores)\n```",
+      "explanation": "`SelectKBest` ranks features by the first returned array (`scores`), which must have one value per feature. The example uses absolute correlation so that strong negative and positive relationships are both considered important. Since Pearson p-values are not used for selection here, returning a same-shaped placeholder array (commonly zeros via `np.zeros_like(scores)`) satisfies the expected `(scores, pvalues)` return contract.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "SelectKBest",
+        "custom-scoring",
+        "pearson-correlation",
+        "numpy",
+        "scipy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a scikit-learn model with 8 hyperparameters. Each hyperparameter has 5 candidate values.\n\n1) Approximately how many model configurations would an exhaustive grid search evaluate?\n2) Given a fixed compute budget (e.g., you can only afford ~100 model fits), which approach is typically more appropriate in scikit-learn: `GridSearchCV` or `RandomizedSearchCV`? Explain why.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) 5^8 = 390,625 configurations.\n2) RandomizedSearchCV is typically more appropriate under a fixed budget and higher-dimensional spaces because you can set `n_iter` (e.g., 100) to cap the number of fits. Random search tends to explore influential hyperparameters more effectively without paying the exponential cost of enumerating all combinations.",
+      "explanation": "Grid search scales exponentially with the number of hyperparameters: with k hyperparameters and n choices each, it requires n^k evaluations. For 8 hyperparameters and 5 values each, that is 5^8 = 390,625, which is usually infeasible. Randomized search lets you choose a fixed number of sampled configurations (`n_iter`), making it far more practical when dimensionality is high or compute is limited, and it often finds strong configurations sooner when only a few hyperparameters matter most.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "RandomizedSearchCV",
+        "GridSearchCV",
+        "random-search",
+        "compute-budget",
+        "curse-of-dimensionality"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a single feature `X = [[10], [20], [30], [40], [50]]`. You apply `MinMaxScaler()` (default feature_range=(0,1)). What is the transformed value for the original input 40?\n\n```python\nimport numpy as np\nfrom sklearn.preprocessing import MinMaxScaler\n\nX = np.array([[10], [20], [30], [40], [50]])\nX_scaled = MinMaxScaler().fit_transform(X)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. 0.60",
+        "B. 0.75",
+        "C. 0.71",
+        "D. 1.00"
+      ],
+      "correct_answer": "B",
+      "explanation": "`MinMaxScaler` uses X' = (X − X_min) / (X_max − X_min). Here X_min=10 and X_max=50, so for X=40: (40−10)/(50−10)=30/40=0.75. Option C (0.71) is a value you might see from `StandardScaler` in the example, not `MinMaxScaler`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "preprocessing",
+        "MinMaxScaler",
+        "feature-scaling",
+        "normalization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are evaluating a classifier on a dataset with 95% of samples in class 0 and 5% in class 1. You want repeated cross-validation where each fold has approximately the same class proportions as the full dataset.\n\nWhich cross-validation strategy best matches this goal, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use RepeatedStratifiedKFold because it preserves (approximately) the overall class distribution in each fold across repeated splits, which is especially important for imbalanced classification to reduce metric variance caused by uneven class representation.",
+      "explanation": "In imbalanced classification, non-stratified folds can end up with very different minority-class counts (or even none), causing unstable and misleading evaluation. `RepeatedStratifiedKFold` repeatedly generates stratified folds so each fold mirrors the dataset’s class proportions, improving reliability of metrics like accuracy, F1, ROC-AUC, etc.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scikit-learn",
+        "cross-validation",
+        "classification",
+        "class-imbalance",
+        "RepeatedStratifiedKFold"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

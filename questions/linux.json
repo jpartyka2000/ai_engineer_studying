@@ -1,0 +1,1209 @@
+{
+  "metadata": {
+    "subject_slug": "linux",
+    "subject_name": "Linux",
+    "exported_at": "2026-03-05T20:01:47.018785",
+    "question_count": 57,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Given the script below, determine exactly what it prints for each case.\n\n```bash\n#!/usr/bin/env bash\nmodel=\"$1\"\n\nif [ -n \"$model\" ]; then\n  echo \"MODEL_ARG=--model $model\"\nelse\n  echo \"MODEL_ARG=\"\nfi\n\nif [ -z \"$model\" ]; then\n  echo \"missing\"\nelse\n  echo \"present\"\nfi\n```\n\nCases:\n1) Run as: `./script.sh gpt-4`\n2) Run as: `./script.sh \"\"`\n3) Run as: `./script.sh` (no arguments)\n\nWrite the output lines for each case (in order).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) For `./script.sh gpt-4`:\nMODEL_ARG=--model gpt-4\npresent\n\n2) For `./script.sh \"\"`:\nMODEL_ARG=\nmissing\n\n3) For `./script.sh`:\nMODEL_ARG=\nmissing",
+      "explanation": "`model=\"$1\"` assigns the first positional parameter. If the argument is `gpt-4`, the string is non-empty so `-n` is true and `-z` is false, producing `MODEL_ARG=--model gpt-4` then `present`. If the argument is an empty string, `$1` is empty, so `-n` is false (prints `MODEL_ARG=`) and `-z` is true (prints `missing`). If no argument is provided, `$1` expands to an empty string as well, so the behavior matches the empty-string case.",
+      "difficulty": "advanced",
+      "tags": [
+        "bash",
+        "positional-parameters",
+        "string-tests",
+        "-n",
+        "-z",
+        "control-flow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Scenario: On a multi-user Linux system, you need to terminate only the Python processes owned by user `john` (and not affect other users). Write a command using `pkill` to do this. Then briefly explain why this command is safer than killing by name alone.\n\nInclude the exact command line.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Command:\n```bash\npkill -u john python\n```\nExplanation: The `-u john` filter restricts matches to processes owned by user `john`, preventing accidental termination of other users' Python processes that would be matched by `pkill python` alone.",
+      "explanation": "Using `pkill -u john python` applies two constraints: (1) process name matches `python` and (2) the process owner is `john`. This reduces collateral damage on shared systems compared to `pkill python`, which could kill every Python process regardless of ownership.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "pkill",
+        "multi-user",
+        "process-ownership",
+        "safety"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A user reports that `cat` prints extra headers and colors output, and you suspect a function or alias is overriding the real `/bin/cat`.\n\n1) Show the exact commands you would run to confirm whether `cat` is an alias, function, builtin, or external program.\n2) Explain why `which cat` might miss the real cause in this scenario.\n\n(Answer in terms of bash/zsh behavior.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Run `type cat` to see what the shell resolves first, and `type -a cat` to list all definitions. Optionally also run `command -v cat` as a portable check of what would be executed.\n\n2) `which cat` generally searches for external executables in `PATH`, so it may show `/bin/cat` even if the shell will actually run a function or alias named `cat` first. Therefore `which` can fail to reveal shadowing by aliases/functions, while `type` reports the shell’s actual resolution order.",
+      "explanation": "`type` is designed to report how the shell interprets a command name, including aliases/functions/builtins that can override external commands. Using `type -a` is key for diagnosing shadowing because it shows all candidates, not just the first. `which` is not a shell keyword and commonly only inspects `PATH`, so it can mislead when the unexpected behavior comes from an alias or function rather than the external binary.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "shell",
+        "bash",
+        "zsh",
+        "type",
+        "which",
+        "command-v",
+        "path",
+        "alias",
+        "function",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A function override is defined in your `.zshrc`:\n\n```bash\ncat() { echo \"I broke cat\"; }\n```\n\nIn a running terminal, you execute:\n\n```bash\nunset -f cat\n```\n\n1) What happens immediately in the current terminal?\n2) What happens when you open a new terminal window?\n3) Give one concrete way to make the fix persistent.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The function definition `cat()` is removed from the current shell session, so running `cat` will again invoke the real external command (e.g., `/bin/cat`) in that terminal.\n2) In a new terminal, the function will reappear because `.zshrc` is sourced again, redefining `cat()`.\n3) Edit `.zshrc` to remove or comment out the function (or guard/rename it), then reload the config (e.g., `source ~/.zshrc`) or start a new shell session.",
+      "explanation": "`unset -f` only changes the current shell’s function table; it does not modify startup files. Since `.zshrc` is executed for new interactive shells, the function will be recreated unless you remove/alter the definition in the config file (or otherwise prevent it from being defined).",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "zsh",
+        "unset",
+        "functions",
+        "shell-startup-files",
+        "session-scope"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate says: “`cat -A` shows a `$` at the end of each line. If the last line has no `$`, the file is missing a newline at end-of-file.”\n\nExplain why this happens and give one practical reason (tooling or workflow) why a missing final newline can matter.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "In `cat -A`, the `$` is not a literal character from the file; it is a visual marker that `cat` prints to indicate an end-of-line (i.e., that a newline `\\n` was present). If the last line has no `$`, it means the file did not end with a terminating newline, so the final line is not newline-terminated. This can matter because many tools expect text files to end with a newline: diffs/patches and version control (e.g., git) may warn “No newline at end of file”, and line-oriented processing tools can produce awkward output (e.g., the shell prompt or subsequent output appears on the same line as the file’s last line, or concatenation may merge lines unexpectedly).",
+      "explanation": "The key concept is that `cat -A` visualizes line structure: `$` corresponds to a newline character. A missing final newline means the final line is unterminated, which can affect line-based tools and workflows (diffs/patch application, clean concatenation, predictable display).",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "cat",
+        "cat-A",
+        "newline",
+        "text-files",
+        "git",
+        "diff",
+        "tooling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the interactive session below:\n\n```bash\n$ printf 'OLD\\n' > somefile.txt\n$ cat > somefile.txt\nnew line 1\nnew line 2\n```\n\nAt this point, the user has NOT pressed Ctrl+D yet. Which statement is most accurate?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `somefile.txt` still contains `OLD` until Ctrl+D is pressed, because the file is only written on exit",
+        "B. `somefile.txt` was truncated when the command started; it will contain whatever has been written so far (e.g., the typed lines), even before Ctrl+D",
+        "C. `somefile.txt` now contains both `OLD` and the new lines, because `cat` always appends",
+        "D. Nothing can be written to `somefile.txt` until EOF is received; until then, `cat` buffers everything in memory"
+      ],
+      "correct_answer": "B",
+      "explanation": "The shell performs `>` redirection before running `cat`, opening `somefile.txt` for writing and truncating it immediately. As the user types, `cat` writes data to the file as it reads from standard input (typically line-buffered by the terminal, but not “saved only at exit”). Ctrl+D (EOF) just tells `cat` there is no more input so it can exit; it does not control when truncation or writing begins.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "cat",
+        "redirection",
+        "truncate",
+        "interactive-io",
+        "buffering",
+        "eof",
+        "ctrl-d"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect your login shell is set to bash, but your terminal session is actually running zsh. Provide a short sequence of commands (2–4 commands) that:\n1) Shows the configured default login shell\n2) Shows the current shell for the running session\n\nThen, in one or two sentences, explain why these two values can differ.\n\n(Use commands discussed in the source content.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n```bash\necho $SHELL\necho $0\n# or: ps -p $$\n```\nExplanation: `$SHELL` usually reflects the user’s configured default login shell, while `echo $0` (or `ps -p $$`) shows what shell is actually running in the current process/session. They can differ if you start another shell inside your default shell or if the session was launched with a different shell than the login default.",
+      "explanation": "This answer uses the intended tools: `echo $SHELL` for the default login shell and `echo $0` or `ps -p $$` for the current shell. The key concept is that environment variables can describe account defaults, while process inspection (or `$0`) reflects what is currently executing.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "shell",
+        "SHELL",
+        "ps",
+        "processes",
+        "current-shell-vs-default-shell"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a directory `site/`, there is a symlink `site/current` that points to a large directory elsewhere. You need a ZIP of `site/` that stores the symlink itself (so extracting recreates the link), not the contents of the symlink target.\n\n1) Write the `zip` command you would use.\n2) Briefly explain what would happen if you used `zip -r` without the additional flag.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `zip -ry archive.zip site`\n2) With plain `zip -r`, `zip` follows symlinks and stores the target’s contents in the archive. Adding `-y` tells `zip` to store the symlink itself instead of dereferencing it.",
+      "explanation": "This tests understanding of symlink behavior. By default, recursive zipping (`-r`) dereferences symlinks, which can unexpectedly pull in large external trees. The `-y` option changes this behavior so the archive records the link entry, preserving the symlink relationship on extraction.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "zip",
+        "symlinks",
+        "archive-contents",
+        "recursive",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A user says: “In bash, Ctrl+U deletes from the cursor to the beginning of the line. I switched to zsh and now Ctrl+U deletes the entire line, even when my cursor is in the middle.” Which explanation best accounts for this behavior?",
+      "question_type": "mc",
+      "options": [
+        "A. zsh uses a different default line editor behavior: Ctrl+U kills the entire line by default, unlike bash where it typically kills from cursor to start of line.",
+        "B. Ctrl+U is reserved by the kernel in zsh, so it always clears the whole terminal screen instead of the current line.",
+        "C. The behavior is caused by terminal emulation differences; Ctrl+U always sends a different keycode in zsh than in bash.",
+        "D. Ctrl+U only deletes the entire line when the command contains quotes; otherwise it behaves like bash."
+      ],
+      "correct_answer": "A",
+      "explanation": "The source content notes a key difference: in zsh, Ctrl+U deletes the entire line by default, whereas in bash it commonly deletes from the cursor back to the beginning of the line. The other options describe incorrect causes (kernel reservation, terminal keycode differences as a rule, or quote-dependent behavior).",
+      "difficulty": "advanced",
+      "tags": [
+        "zsh",
+        "bash",
+        "shell-differences",
+        "line-editing",
+        "ctrl-u"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are in a directory where `github_credentials` currently exists, but you are not sure whether it is a file or a directory. You need `github_credentials` to end up as a regular file, and you must avoid deleting an existing regular file with that name.\n\nWrite a safe shell command sequence that:\n1) Removes `github_credentials` only if it is a directory\n2) Then creates `github_credentials` as a file\n3) Fails (does not delete) if `github_credentials` is already a regular file\n\nProvide commands and briefly justify how they meet the safety requirement.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One safe sequence is:\n```bash\nif [ -d github_credentials ]; then\n  rmdir github_credentials\nfi\n: > github_credentials\n```\nJustification: `-d` ensures we only attempt removal when it is a directory. `rmdir` removes only empty directories (safer than `rm -rf`). If `github_credentials` is already a regular file, the `if` block does nothing and `: > github_credentials` truncates/creates the file; to strictly fail instead of truncating an existing file, use noclobber:\n```bash\nset -o noclobber\nif [ -d github_credentials ]; then rmdir github_credentials; fi\n> github_credentials\n```\nWith `noclobber`, the final redirection fails if the file already exists, satisfying the “do not delete/overwrite an existing regular file” constraint.",
+      "explanation": "The key is distinguishing file types before removal. Testing with `[ -d name ]` ensures only directories are targeted. Using `rmdir` avoids recursively deleting contents. To meet the stricter requirement of not overwriting an existing regular file, `set -o noclobber` makes `> github_credentials` fail if the file exists, preventing accidental truncation.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "shell",
+        "bash",
+        "file-types",
+        "safety",
+        "rmdir",
+        "noclobber",
+        "redirection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A user complains that `mdfind` returns no results for a file they are sure exists in a directory mounted from a network share. They can locate it with `find`.\n\nExplain why this can happen, and provide a command (or commands) you would use to reliably search for the file by name in this situation. Include any error-suppression or case-sensitivity considerations you think are appropriate.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "This can happen because `mdfind` relies on Spotlight’s index; if Spotlight indexing is disabled, incomplete, or the location (e.g., a network-mounted share or other excluded paths) is not indexed, `mdfind` may return nothing even though the file exists. In that case, use `find`, which traverses the filesystem directly.\n\nExample reliable search (case-sensitive):\n```bash\nfind /path/to/mount -name \"report*.pdf\" 2>/dev/null\n```\nIf you want case-insensitive matching:\n```bash\nfind /path/to/mount -iname \"report*.pdf\" 2>/dev/null\n```\n`2>/dev/null` suppresses permission errors encountered during traversal.",
+      "explanation": "The key concept is the difference between index-based search (`mdfind`, fast but limited to indexed locations) and traversal-based search (`find`, slower but comprehensive for reachable paths). A correct answer should mention Spotlight indexing limitations/exclusions and demonstrate using `find` with appropriate `-name`/`-iname` and optional stderr redirection to handle permission-denied noise.",
+      "difficulty": "advanced",
+      "tags": [
+        "mdfind",
+        "find",
+        "spotlight-index",
+        "non-indexed-paths",
+        "network-mounts",
+        "troubleshooting",
+        "iname"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain two different key sequences that will clear the entire current input line in an interactive Bash prompt using default Readline keybindings, even if the cursor is in the middle of the line. For each sequence, briefly describe what each key does.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two valid sequences are:\n\n1) Ctrl+A then Ctrl+K\n- Ctrl+A: move cursor to the start of the line.\n- Ctrl+K: kill (clear) from the cursor to the end of the line.\nResult: the whole line is removed.\n\n2) Ctrl+E then Ctrl+U\n- Ctrl+E: move cursor to the end of the line.\n- Ctrl+U: kill (clear) from the cursor back to the start of the line.\nResult: the whole line is removed.",
+      "explanation": "The core idea is that Ctrl+U and Ctrl+K each delete only one side of the cursor. To guarantee clearing the entire line from an arbitrary cursor position, first move the cursor to one end (Ctrl+A or Ctrl+E), then use the kill command that deletes across the full remaining line (Ctrl+K from the start, or Ctrl+U from the end).",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "bash",
+        "readline",
+        "line-kill",
+        "interactive-shell"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a shell one-liner that appends a newline to `yourfile` *only if it is missing* (i.e., do not add an extra blank line if it already ends with `\\n`). You may use the approach shown in the source content (checking the last byte with `tail -c 1` and making it visible with `cat -A`).\n\nProvide the command and briefly explain why it works.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid answer:\n\n```bash\n[ \"$(tail -c 1 yourfile | cat -A)\" = \"^J\" ] || printf '\\n' >> yourfile\n```\n\nThis checks the last byte: if it renders as `^J` under `cat -A`, the file already ends with a newline and nothing is done. Otherwise, `printf '\\n' >> yourfile` appends exactly one newline. (You could also invert the test with `!=`.)",
+      "explanation": "The key is to test the last byte rather than scanning the whole file. `tail -c 1` returns the final byte; `cat -A` converts a newline byte into the visible marker `^J`. The short-circuit `||` ensures the append happens only when the test fails (newline missing), preventing accidental extra newlines.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "shell",
+        "bash",
+        "tail",
+        "cat",
+        "newline",
+        "file-editing",
+        "one-liner"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A script is intended to ensure a file exists and is empty before writing fresh output. The author wrote:\n\n```bash\ntouch output.txt\n```\n\n1) Explain why this may be incorrect if `output.txt` already exists.\n2) Provide a safe replacement command (or commands) that ensures `output.txt` becomes empty without deleting it.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `touch output.txt` will not truncate or overwrite an existing file; it only updates timestamps, so any previous contents remain. 2) Use truncation via shell redirection, e.g. `> output.txt` or `: > output.txt`, which empties the file (sets size to zero) while keeping the same filename.",
+      "explanation": "The key distinction is metadata vs. content: `touch` updates timestamps (and creates the file only if missing), but does not change the file's data. To guarantee an empty file, you must truncate it; the POSIX shell redirection `> file` (or `: > file`) opens the file for writing and truncates it to zero bytes.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "touch",
+        "truncate",
+        "shell-redirection",
+        "scripting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following ZSH workflow:\n\n```bash\ncd ~/projects/myapp\nfc -p .local_history 100 100\n# run some commands\nfc -P\n```\n\nExplain:\n1) What history file is used during the temporary session and what do the two numbers control?\n2) What happens to your original history when `fc -p` is run and when `fc -P` is run?\n3) Give one practical reason to use this approach in a project directory.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) During the temporary session, ZSH uses `~/projects/myapp/.local_history` as the history file. The first `100` sets `HISTSIZE` (how many history lines are kept in memory), and the second `100` sets `SAVEHIST` (how many lines are saved to the history file).\n2) `fc -p` pushes the current history list onto a stack and starts a fresh history list (separate from the original). `fc -P` pops the stack, restoring the previous/original history list.\n3) Practical reason: maintain project-specific command history (e.g., build/test/deploy commands) separate from your global shell history, making it easier to recall relevant commands when working on that project.",
+      "explanation": "This tests understanding of `fc -p` as history stack management (push/pop), not deletion. It also checks comprehension of how a custom history file and size parameters isolate history per context (project directory) and how `HISTSIZE`/`SAVEHIST` affect in-memory vs persisted history.",
+      "difficulty": "advanced",
+      "tags": [
+        "zsh",
+        "fc-p",
+        "fc-P",
+        "history-file",
+        "HISTSIZE",
+        "SAVEHIST",
+        "project-workflows"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which command uses a **byte position** that is intentionally larger than any realistic file size to move Vim to the last character of the file?",
+      "question_type": "mc",
+      "options": [
+        "A. :9999999999999go",
+        "B. :normal gg$",
+        "C. :$",
+        "D. :go 9999999999999"
+      ],
+      "correct_answer": "A",
+      "explanation": "`:9999999999999go` tells Vim to go to the specified byte offset; because the number is larger than the file, Vim lands on the last character. `:normal gg$` goes to the first line then end of that line. `:$` refers to the last line in Ex addressing but does not, by itself, move to the last character. `:go 9999999999999` is not the correct syntax; the count precedes `go` in this usage.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "vim",
+        "byte-offset",
+        "go-command",
+        "end-of-file",
+        "ex-commands"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A file contains 999 newline characters (`\\n`). The editor shows 1000 lines because the last line has text but no trailing newline. You want `wc -l` to report 1000 without modifying any existing text content.\n\n1) What command can you run to fix the file?\n2) Why does that change make `wc -l` match the editor?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Run: `echo >> yourfile`.\n2) This appends a newline character to the end of the file (creating a terminating `\\n` for the last line). Since `wc -l` counts newline characters, adding the missing final newline increases the newline count from 999 to 1000, making `wc -l` align with the editor’s displayed line count.",
+      "explanation": "The mismatch is caused by the last line lacking a terminating newline. Appending a newline does not alter the existing characters of the last line; it only adds the missing line terminator. That changes the count that `wc -l` uses (number of `\\n` characters), so it now matches what editors display as line count.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "wc",
+        "echo",
+        "newline-termination",
+        "text-files",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain what each of the following `wget` flags does in the context of downloading a web page for offline viewing, and give a complete command that downloads a Wikipedia page *with assets* and avoids going up to parent directories.\n\nFlags to explain:\n- `--page-requisites` (or `-p`)\n- `--convert-links` (or `-k`)\n- `--adjust-extension` (or `-E`)\n- `--no-parent`\n\nYour answer should include both explanations and an example command.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Explanations: `--page-requisites`/`-p` downloads the resources needed to display the page properly offline (e.g., images, CSS, and other linked assets). `--convert-links`/`-k` rewrites links in the downloaded HTML so they point to the locally downloaded files instead of the original web URLs. `--adjust-extension`/`-E` ensures saved files have appropriate extensions (commonly adding `.html`) so browsers open them correctly. `--no-parent` prevents wget from ascending to parent directories when following links, limiting downloads to within the specified path. Example command: `wget --page-requisites --convert-links --adjust-extension --no-parent https://en.wikipedia.org/wiki/Page_Name`.",
+      "explanation": "A correct answer must connect each flag to the offline-viewing goal: fetching required assets (`-p`), making local navigation work (`-k`), ensuring browser-friendly filenames (`-E`), and constraining download scope (`--no-parent`). The provided command combines these flags to produce a more self-contained offline copy while reducing unintended traversal outside the target page path.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "wget",
+        "offline-mirroring",
+        "no-parent",
+        "link-conversion",
+        "web-assets"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a single total line count for *all files* under the current directory, recursively. You also want to avoid running `wc` once per file for performance reasons.\n\nWrite a command using `find` and standard shell utilities to produce one total line count (one number).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "find . -type f -exec cat {} + | wc -l",
+      "explanation": "`find . -type f` enumerates all regular files recursively. `-exec cat {} +` batches many file paths into fewer `cat` invocations (more efficient than `\\;` per file). Piping into `wc -l` counts the total number of lines across the concatenated content, producing a single total line count.",
+      "difficulty": "advanced",
+      "tags": [
+        "linux",
+        "find",
+        "wc",
+        "performance",
+        "pipelines",
+        "exec-plus"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Bash script, what does the following condition test?\n\n```bash\nif [ -n \"$model\" ]; then\n  echo \"Model provided\"\nfi\n```",
+      "question_type": "mc",
+      "options": [
+        "A. True if the string in $model is NOT empty",
+        "B. True if the string in $model is empty",
+        "C. True if $model is a number greater than 0",
+        "D. True if a file named by $model exists"
+      ],
+      "correct_answer": "A",
+      "explanation": "`[ -n STRING ]` is true when STRING has non-zero length (i.e., is not empty). Here it checks whether the variable `model` contains at least one character. Empty (`\"\"`) makes the test false.",
+      "difficulty": "beginner",
+      "tags": [
+        "bash",
+        "test",
+        "string-tests",
+        "-n",
+        "if-statement"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Linux, what is the primary difference between `pkill` and `kill`?\n\nA. `pkill` kills by PID, while `kill` kills by process name\nB. `pkill` kills by process name/pattern, while `kill` kills by PID\nC. `pkill` can only send SIGKILL, while `kill` can send any signal\nD. `pkill` is available only on macOS, while `kill` is available only on Linux",
+      "question_type": "mc",
+      "options": [
+        "A. `pkill` kills by PID, while `kill` kills by process name",
+        "B. `pkill` kills by process name/pattern, while `kill` kills by PID",
+        "C. `pkill` can only send SIGKILL, while `kill` can send any signal",
+        "D. `pkill` is available only on macOS, while `kill` is available only on Linux"
+      ],
+      "correct_answer": "B",
+      "explanation": "`pkill` targets processes by name or pattern (and can optionally match the full command line with `-f`). `kill` targets a specific process ID (PID). Option C is incorrect because `pkill` can send different signals (e.g., `-9` for SIGKILL), not only SIGKILL. Option D is incorrect because both commands are available on Linux and many Unix-like systems.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "process-management",
+        "pkill",
+        "kill",
+        "signals"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In bash/zsh, what is the primary purpose of the `type` command?\n\n```bash\ntype <command_name>\n```",
+      "question_type": "mc",
+      "options": [
+        "It prints the manual page for the command",
+        "It shows how the shell will interpret and resolve the command name (alias/function/builtin/path)",
+        "It searches only the current directory for an executable with that name",
+        "It runs the command in a dry-run mode and shows what would happen"
+      ],
+      "correct_answer": "B",
+      "explanation": "`type` answers: “When I type this command, what actually runs?” It reports whether the name resolves to an alias, function, shell builtin, or an external program (often including the path). It does not display man pages, restrict to the current directory, or simulate execution.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "shell",
+        "bash",
+        "zsh",
+        "type",
+        "command-resolution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What does the `unset` command do in a Linux shell session?",
+      "question_type": "mc",
+      "options": [
+        "Deletes a file from the filesystem permanently",
+        "Removes variables or functions from the current shell session",
+        "Stops a running process by name",
+        "Edits your shell startup files (e.g., `.bashrc`, `.zshrc`) to remove definitions"
+      ],
+      "correct_answer": "B",
+      "explanation": "`unset` removes shell variables or functions from the current shell environment. It does not delete files, kill processes, or modify startup/config files; therefore its effects are limited to the current shell session (and what it spawns).",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "shell",
+        "unset",
+        "environment-variables",
+        "functions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Linux, what does the `-A` option do when running `cat -A file.txt`?",
+      "question_type": "mc",
+      "options": [
+        "A. Shows all files, including hidden ones, similar to `ls -A`",
+        "B. Shows normally invisible characters (e.g., tabs, end-of-line markers, control characters)",
+        "C. Appends the contents of `file.txt` to the end of the terminal scrollback buffer",
+        "D. Converts all line endings to Windows CRLF before printing"
+      ],
+      "correct_answer": "B",
+      "explanation": "`cat -A` is shorthand for `cat --show-all`. It makes normally invisible characters visible (e.g., tabs as `^I`, end-of-line/newline markers as `$`, control characters in `^X` notation, and high-bit characters with an `M-` prefix). The other choices describe unrelated behaviors.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "cat",
+        "cat-A",
+        "whitespace",
+        "control-characters"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the effect of running the following command?\n\n```bash\ncat > somefile.txt\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. It appends whatever you type to the end of somefile.txt until you press Ctrl+C",
+        "B. It opens somefile.txt for interactive input, creating it if needed, and overwrites it; you finish by sending EOF (Ctrl+D)",
+        "C. It displays the contents of somefile.txt on the terminal and then exits",
+        "D. It creates somefile.txt only if it does not exist; if it exists, it refuses to modify it"
+      ],
+      "correct_answer": "B",
+      "explanation": "`>` redirects standard output to a file. With `cat` reading from standard input, `cat > somefile.txt` will take what you type and write it into `somefile.txt`. If the file does not exist, it is created; if it exists, it is truncated (overwritten) before writing begins. You end input by sending EOF, typically with Ctrl+D in a terminal.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "cat",
+        "redirection",
+        "stdout",
+        "stdin",
+        "file-creation",
+        "truncate",
+        "ctrl-d",
+        "eof"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Linux, what does the following command typically display?\n\n```bash\necho $SHELL\n```",
+      "question_type": "mc",
+      "options": [
+        "The path to your default login shell",
+        "The PID of the current shell process",
+        "The path to the currently running shell executable for this session",
+        "A list of all shells installed on the system"
+      ],
+      "correct_answer": "A",
+      "explanation": "$SHELL is an environment variable that usually contains the path to the user's default *login* shell (the one configured in the account settings, e.g., /etc/passwd). It does not necessarily reflect the shell currently executing your commands in the active terminal session.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "shell",
+        "environment-variables",
+        "SHELL",
+        "login-shell"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which command will create a ZIP archive containing an entire directory and its subdirectories?\n\nA.\n```bash\nzip archive.zip /path/to/folder\n```\nB.\n```bash\nzip -r archive.zip /path/to/folder\n```\nC.\n```bash\nzip -x archive.zip /path/to/folder\n```\nD.\n```bash\nzip -y archive.zip /path/to/folder\n```",
+      "question_type": "mc",
+      "options": [
+        "zip archive.zip /path/to/folder",
+        "zip -r archive.zip /path/to/folder",
+        "zip -x archive.zip /path/to/folder",
+        "zip -y archive.zip /path/to/folder"
+      ],
+      "correct_answer": "B",
+      "explanation": "To include a directory’s contents (including subdirectories), you must use recursive mode. The `-r` flag tells `zip` to traverse into subdirectories and add their contents. Without `-r`, `zip` won’t recursively include the directory tree. The `-x` option is for excluding patterns, and `-y` affects symlink handling rather than recursion.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "zip",
+        "command-line",
+        "directories",
+        "recursive"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In zsh, which keyboard shortcut deletes the entire current command line regardless of cursor position?",
+      "question_type": "mc",
+      "options": [
+        "A. Ctrl+U",
+        "B. Ctrl+K",
+        "C. Ctrl+W",
+        "D. Ctrl+C"
+      ],
+      "correct_answer": "A",
+      "explanation": "In zsh, Ctrl+U deletes the entire line regardless of where the cursor is. Ctrl+K deletes from the cursor to end of line, Ctrl+W deletes the word before the cursor, and Ctrl+C cancels the current command (aborts input and returns to a fresh prompt).",
+      "difficulty": "beginner",
+      "tags": [
+        "zsh",
+        "readline",
+        "line-editing",
+        "keyboard-shortcuts",
+        "shell"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Linux filesystem, what happens if you try to create a regular file with the same name as an existing directory in the same parent directory?\n\nExample:\n```bash\nmkdir foo\ntouch foo\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. The file is created inside the directory automatically (as foo/foo).",
+        "B. The directory is replaced by a file named foo.",
+        "C. The command fails with an error like “File exists”.",
+        "D. The filesystem allows both because files and directories are different types."
+      ],
+      "correct_answer": "C",
+      "explanation": "Directory entries map a name to an inode. Names must be unique within a single directory, regardless of whether the inode is a file or a directory. Therefore, attempting to create a file named the same as an existing directory (or vice versa) fails, typically with an error such as “File exists”.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "filesystem",
+        "directories",
+        "touch",
+        "mkdir",
+        "name-collision"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following command:\n\n```bash\nfind / -name \"*.txt\" 2>/dev/null\n```\n\nWhich statement best explains what `2>/dev/null` does in this context?",
+      "question_type": "mc",
+      "options": [
+        "A. Redirects standard output to `/dev/null` so matching filenames are hidden",
+        "B. Redirects standard error to `/dev/null` so permission-denied messages are suppressed",
+        "C. Sends the search to run in the background so the terminal stays responsive",
+        "D. Limits the search to hidden files only to reduce noise"
+      ],
+      "correct_answer": "B",
+      "explanation": "`2>/dev/null` redirects file descriptor 2 (standard error) to `/dev/null`, discarding error messages such as \"Permission denied\" that occur when `find` traverses directories it cannot read. The matching results (standard output) are still printed normally.",
+      "difficulty": "beginner",
+      "tags": [
+        "find",
+        "stderr",
+        "redirection",
+        "dev-null",
+        "filesystem-search"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In an interactive Bash prompt using the default Readline keybindings, what does **Ctrl + U** do?",
+      "question_type": "mc",
+      "options": [
+        "Clears from the cursor to the end of the line",
+        "Clears from the cursor back to the start of the line",
+        "Moves the cursor to the start of the line",
+        "Deletes the previous word only"
+      ],
+      "correct_answer": "B",
+      "explanation": "In default Readline bindings, Ctrl+U is the \"kill-line\" behavior backward: it deletes (kills) text from the current cursor position back to the beginning of the line. Ctrl+K is the forward equivalent (cursor to end). Ctrl+A moves to start of line, and deleting the previous word is typically Ctrl+W.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "bash",
+        "readline",
+        "keyboard-shortcuts",
+        "command-line-editing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to check whether a text file ends with a newline character (LF, `\\n`) using `hexdump`. Which command best matches that goal?\n\n```bash\n?\n```",
+      "question_type": "mc",
+      "options": [
+        "hexdump -C yourfile | tail -n 1",
+        "hexdump -n 1 -C yourfile | head -n 1",
+        "hexdump -C yourfile | head -n 1",
+        "hexdump -C yourfile | grep -q 0a"
+      ],
+      "correct_answer": "A",
+      "explanation": "`hexdump -C yourfile | tail -n 1` shows the final displayed line of the hex/ASCII dump, which includes the last bytes of the file. If the very last byte shown is `0a`, the file ends with a newline (LF). The other options either inspect the beginning of the file (`head`), only read the first byte (`-n 1`), or use a grep that can match `0a` anywhere in the dump rather than ensuring it is the final byte.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "hexdump",
+        "newline",
+        "text-files",
+        "cli"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Linux, what happens when you run the following command on a file that already exists and contains data?\n\n```bash\ntouch report.txt\n```",
+      "question_type": "mc",
+      "options": [
+        "A. The file is overwritten with an empty (zero-byte) file",
+        "B. The file's contents are preserved and its timestamps are updated",
+        "C. The file is appended with a newline character",
+        "D. The file is renamed to report.txt.bak and a new file is created"
+      ],
+      "correct_answer": "B",
+      "explanation": "`touch` does not overwrite or truncate existing files. If the file exists, it updates timestamps (access and modification times, depending on options and system behavior) while leaving the file contents unchanged.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "touch",
+        "timestamps",
+        "file-metadata"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In ZSH, what is the primary effect of running the following command?\n\n```bash\nfc -p\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Clears and permanently deletes your existing shell history file",
+        "Pushes a new history list onto a stack, starting a fresh history session without destroying the existing one",
+        "Prints the current history list with timestamps to stdout",
+        "Disables history recording for the rest of the terminal session"
+      ],
+      "correct_answer": "B",
+      "explanation": "`fc -p` in ZSH pushes a new (fresh) history list onto a history stack. Your original history is preserved and can be restored later (e.g., via `fc -P` to pop back). It does not permanently delete history (A), does not list history (C; that is `fc -l`/`fc -li`), and does not globally disable history (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "zsh",
+        "history",
+        "fc",
+        "history-stack"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Vim normal mode, which keystrokes move the cursor to the **last character of the file**?\n\n(Assume you are currently anywhere in the file.)",
+      "question_type": "mc",
+      "options": [
+        "A. G",
+        "B. G$",
+        "C. $G",
+        "D. gg$"
+      ],
+      "correct_answer": "B",
+      "explanation": "`G` moves to the last line of the file, and then `$` moves to the end of that line (the last character on the line). Together, `G$` lands on the last character of the file. `G` alone goes to the last line but not necessarily the last character; `$G` is not a valid combined motion in that order; `gg$` goes to the first line then end of that line.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "vim",
+        "normal-mode",
+        "cursor-movement",
+        "end-of-file"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Linux, `wc -l file.txt` reports 999 lines, but your editor shows 1000 lines. Which explanation best fits this mismatch?",
+      "question_type": "mc",
+      "options": [
+        "`wc -l` counts visible lines on screen, but editors count logical lines in memory.",
+        "`wc -l` counts the number of newline (`\\n`) characters; if the last line lacks a trailing newline, it is not counted by `wc`.",
+        "`wc -l` ignores blank lines, while editors count blank lines.",
+        "`wc -l` counts characters, not lines, unless you pass `-l` twice."
+      ],
+      "correct_answer": "B",
+      "explanation": "`wc -l` counts newline characters, not “lines” as displayed by an editor. If the file’s last line does not end with a newline, editors still display that last line, but `wc -l` will not count it because there is no terminating `\\n` to count.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "wc",
+        "newline",
+        "text-files",
+        "line-counting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to download a Wikipedia page as a *single HTML file only* (no images/CSS) using a tool that is typically pre-installed on macOS. Which command best matches this requirement?\n\n```bash\n# Choose one\n```",
+      "question_type": "mc",
+      "options": [
+        "A. curl -o page.html https://en.wikipedia.org/wiki/Page_Name",
+        "B. wget -p -k -E https://en.wikipedia.org/wiki/Page_Name",
+        "C. wget --page-requisites --convert-links --adjust-extension --no-parent https://en.wikipedia.org/wiki/Page_Name",
+        "D. brew install wget && wget https://en.wikipedia.org/wiki/Page_Name"
+      ],
+      "correct_answer": "A",
+      "explanation": "`curl` is commonly pre-installed on macOS and `-o page.html` saves the retrieved content to a file. This downloads only the HTML returned by the URL and does not fetch page requisites like images/CSS. Options B and C explicitly download assets (`-p/--page-requisites`). Option D includes installing wget and then downloading, which is unnecessary for the stated requirement and still just fetches the HTML by default.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "macos",
+        "curl",
+        "wget",
+        "download-html"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which `wc` flag counts the number of lines in a file?\n\nExample:\n```bash\nwc -l file.txt\n```",
+      "question_type": "mc",
+      "options": [
+        "-w",
+        "-l",
+        "-c",
+        "-m"
+      ],
+      "correct_answer": "B",
+      "explanation": "`wc -l` reports the number of newline characters, which corresponds to the line count. `-w` counts words, `-c` counts bytes, and `-m` counts characters.",
+      "difficulty": "beginner",
+      "tags": [
+        "linux",
+        "wc",
+        "line-count",
+        "command-flags"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to add a CLI argument only when `model` is provided (non-empty). Which snippet correctly implements this behavior?\n\nAssume `model` may be empty.\n",
+      "question_type": "mc",
+      "options": [
+        "A. ```bash\nif [ -z \"$model\" ]; then\n  MODEL_ARG=\"--model $model\"\nfi\n```",
+        "B. ```bash\nif [ -n \"$model\" ]; then\n  MODEL_ARG=\"--model $model\"\nfi\n```",
+        "C. ```bash\nif [ \"$model\" ]; then\n  MODEL_ARG=\"--model $model\"\nelse\n  MODEL_ARG=\"--model\"\nfi\n```",
+        "D. ```bash\nif [ -f \"$model\" ]; then\n  MODEL_ARG=\"--model $model\"\nfi\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "The requirement is to set `MODEL_ARG` only when `model` is non-empty. `[ -n \"$model\" ]` explicitly tests for non-zero string length. Option A uses `-z` (true when empty), which is the opposite. Option C is problematic because the else branch still sets a `--model` flag even when empty, and its test is less explicit. Option D checks file existence, not string content.",
+      "difficulty": "intermediate",
+      "tags": [
+        "bash",
+        "string-tests",
+        "-n",
+        "-z",
+        "cli-arguments",
+        "conditional-logic"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to terminate only the process running `python my_long_running_script.py`, without killing other Python processes. Which command best fits?\n\nA. `pkill python`\nB. `pkill -f \"python my_long_running_script.py\"`\nC. `killall -9 python`\nD. `kill -9 python`",
+      "question_type": "mc",
+      "options": [
+        "A. `pkill python`",
+        "B. `pkill -f \"python my_long_running_script.py\"`",
+        "C. `killall -9 python`",
+        "D. `kill -9 python`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`pkill -f` matches against the full command line, allowing you to target a specific invocation such as `python my_long_running_script.py`. `pkill python` (A) would match all processes with the name `python`. `killall -9 python` (C) would also kill all Python processes and force-kill them. `kill -9 python` (D) is invalid because `kill` expects a PID (numeric), not a process name.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "pkill",
+        "pattern-matching",
+        "command-line",
+        "signals"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect `cat` is behaving oddly because it might be shadowed. You want to see *every* definition the shell would consider (e.g., function and external binary). Which command is most appropriate?\n\nAssume bash or zsh.\n",
+      "question_type": "mc",
+      "options": [
+        "which -a cat",
+        "type -a cat",
+        "type -p cat",
+        "command -s cat"
+      ],
+      "correct_answer": "B",
+      "explanation": "`type -a cat` lists all matches the shell knows about for that name (aliases, functions, builtins, and external commands). `which` typically focuses on executables in `PATH` (and behavior varies by system), `type -p` is not the option described for listing all definitions, and `command -s` is not the standard way to enumerate all definitions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "shell",
+        "bash",
+        "zsh",
+        "type-a",
+        "shadowing",
+        "debugging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect the `cat` command is being overridden by a shell function. Consider:\n\n```bash\ncat() { echo \"I broke cat\"; }\n\necho \"$MY_VAR\"\n```\n\nYou also have a variable named `cat` in your session. Which command most safely restores access to the real `/bin/cat` without affecting the variable?",
+      "question_type": "mc",
+      "options": [
+        "unset cat",
+        "unset -v cat",
+        "unset -f cat",
+        "rm -f cat"
+      ],
+      "correct_answer": "C",
+      "explanation": "`unset -f cat` explicitly removes the function named `cat`. This is the safest choice when a variable and a function share the same name, because `-f` targets functions only. `unset -v cat` would remove the variable, and `unset cat` can be ambiguous depending on the shell. `rm -f cat` would attempt to remove a file named `cat`, which is unrelated.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "shell",
+        "unset",
+        "functions",
+        "name-collision",
+        "command-overriding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following commands:\n\n```bash\nprintf \"hello\\tworld\\nlastline\" > test.txt\ncat -A test.txt\n```\n\nWhich output matches what `cat -A` will display?",
+      "question_type": "mc",
+      "options": [
+        "A. \n```text\nhello\\tworld\nlastline\n```\n",
+        "B. \n```text\nhello^Iworld$\nlastline$\n```\n",
+        "C. \n```text\nhello^Iworld$\nlastline\n```\n",
+        "D. \n```text\nhello world$\nlastline\n```\n"
+      ],
+      "correct_answer": "C",
+      "explanation": "`\\t` is a tab and is shown as `^I` by `cat -A`. `\\n` ends the first line, and `cat -A` shows that line ending with `$`. The second line (`lastline`) has no trailing newline because the `printf` string ends without `\\n`, so there is no `$` after `lastline`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "cat",
+        "cat-A",
+        "printf",
+        "newline",
+        "tabs",
+        "end-of-line"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You accidentally ran:\n\n```bash\ncat > notes.txt\n```\n\nand started typing. Halfway through, you realize `notes.txt` already had important content you needed to keep. Based on how `>` works, what has already happened to the previous contents of `notes.txt`, and why?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The previous contents have already been lost because `>` truncates (empties) the target file as soon as the redirection is set up, before `cat` starts copying your typed input into it. Even if you haven’t finished typing or haven’t pressed Ctrl+D yet, the shell has already opened `notes.txt` for writing and truncated it.",
+      "explanation": "In the shell, output redirection (`> notes.txt`) is handled before the command runs. The shell opens the file for writing and truncates it immediately. Then `cat` runs and writes whatever it reads from standard input into that now-empty file. This is why `cat > existingfile` is dangerous if you meant to preserve existing content.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "shell-redirection",
+        "truncate",
+        "cat",
+        "data-loss",
+        "stdout",
+        "file-descriptors"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following commands in a terminal and get different results:\n\n```bash\necho $SHELL\n# output: /bin/bash\n\necho $0\n# output: zsh\n```\n\nWhich explanation best fits this situation?",
+      "question_type": "mc",
+      "options": [
+        "Your default shell is bash, but you started a zsh session inside it (so the current shell is zsh).",
+        "Your default shell is zsh, but $SHELL always prints /bin/bash on Linux.",
+        "echo $0 prints the default login shell, while $SHELL prints the current shell only.",
+        "This can only happen if /etc/shells is missing or corrupted."
+      ],
+      "correct_answer": "A",
+      "explanation": "$SHELL typically indicates the configured default login shell (here, /bin/bash). $0 reflects the name of the currently running shell for that session (here, zsh). This mismatch commonly occurs if you launch another shell from within your default shell (e.g., typing `zsh` inside bash) or if a terminal emulator starts a different shell than the login default.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "shell",
+        "SHELL",
+        "echo-0",
+        "current-shell",
+        "login-shell"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to zip the directory `project/` recursively but exclude any `.DS_Store` files anywhere inside the tree. Which command best matches this requirement?\n\nA.\n```bash\nzip -r archive.zip project -x '*.DS_Store'\n```\nB.\n```bash\nzip archive.zip project -x '*.DS_Store'\n```\nC.\n```bash\nzip -r -y archive.zip project '*.DS_Store'\n```\nD.\n```bash\nzip -r archive.zip project --exclude .DS_Store\n```",
+      "question_type": "mc",
+      "options": [
+        "zip -r archive.zip project -x '*.DS_Store'",
+        "zip archive.zip project -x '*.DS_Store'",
+        "zip -r -y archive.zip project '*.DS_Store'",
+        "zip -r archive.zip project --exclude .DS_Store"
+      ],
+      "correct_answer": "A",
+      "explanation": "`-r` is required to zip directories recursively, and `-x` specifies exclude patterns. Using `-x '*.DS_Store'` skips any entries matching that filename throughout the recursion. Option B omits `-r`, so it won’t reliably include the directory contents. Option C passes `'*.DS_Store'` as an input file argument (not an exclude) and adds `-y` unnecessarily. Option D uses a `--exclude` flag that is not part of the basic `zip` syntax shown (and is not the standard `zip` exclude option).",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "zip",
+        "exclude",
+        "globbing",
+        "recursive",
+        "macos-artifacts"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are editing the following command in zsh, with the cursor positioned where the `|` is:\n\n```sh\necho \"alpha beta gamma\" | tr a-z A-Z\n```\n\nFor each shortcut below, state what text is deleted:\n1) Ctrl+K\n2) Ctrl+W\n3) Ctrl+C\n\nAnswer in plain English (you do not need to reproduce the whole line).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Ctrl+K deletes everything from the cursor to the end of the line (i.e., `| tr a-z A-Z`).\n2) Ctrl+W deletes the word immediately before the cursor (i.e., the space before `|` and the preceding token `gamma\"`, effectively removing the word before the cursor).\n3) Ctrl+C cancels the current command entry: it aborts editing, clears the line, and returns you to a fresh prompt (the command is not executed).",
+      "explanation": "Ctrl+K is the \"kill to end of line\" action, so it removes from the cursor onward. Ctrl+W is \"backward kill word\" and removes the previous word (up to whitespace/punctuation boundaries depending on shell settings, but conceptually the word before the cursor). Ctrl+C sends an interrupt/cancel for the current input, abandoning the line and giving a new prompt.",
+      "difficulty": "intermediate",
+      "tags": [
+        "zsh",
+        "line-editing",
+        "ctrl-k",
+        "ctrl-w",
+        "ctrl-c",
+        "command-line"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why a Linux directory cannot contain both a file and a directory with the exact same name (e.g., both named `github_credentials`). Your answer should reference how directory entries work (name → inode) and why that implies uniqueness.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A directory is a table of entries that map a filename (string) to an inode number. The inode then describes what the object is (regular file, directory, symlink, etc.). Because the mapping key is the name and keys must be unique within a directory, a single directory cannot contain two entries with the same name pointing to different inodes (one for a file and one for a directory). Therefore, you cannot have both a file and a directory with the same exact name in the same parent directory.",
+      "explanation": "The core concept is that the directory stores names, and each name can only appear once in that directory. The object type is not part of the name; it is a property of the inode the name points to. This is why the system rejects attempts to create a second object with the same name in the same directory.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "unix",
+        "inode",
+        "directory-entries",
+        "filesystem-internals"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to search for files whose names match `report*.pdf` across your machine, and you want the fastest approach when indexing is available. Which command best fits this requirement?\n\n(Assume Spotlight indexing is enabled.)",
+      "question_type": "mc",
+      "options": [
+        "A. `find / -name \"report*.pdf\" 2>/dev/null`",
+        "B. `mdfind -name \"report*.pdf\"`",
+        "C. `mdfind \"kMDItemFSName == 'report*.pdf'\"`",
+        "D. `find / -iname \"report*.pdf\" 2>/dev/null`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`mdfind` queries the Spotlight index and is typically much faster than `find` traversing the filesystem. For wildcard-style filename matching, the source content shows using a Spotlight metadata query: `mdfind \"kMDItemFSName == 'report*.pdf'\"`. Option B is plausible but not the shown wildcard approach; `-name` is used for a simple name term (e.g., `mdfind -name \"report\"`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "mdfind",
+        "spotlight",
+        "indexing",
+        "performance",
+        "wildcards",
+        "kMDItemFSName"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You typed the following at a Bash prompt and your cursor is positioned in the middle of the line (not necessarily at the start or end):\n\n```bash\nsudo apt install nginx\n```\n\nWhich key sequence will reliably wipe the *entire* current input line regardless of cursor position (default Readline keybindings)?",
+      "question_type": "mc",
+      "options": [
+        "Ctrl + K",
+        "Ctrl + U",
+        "Ctrl + A then Ctrl + K",
+        "Ctrl + E then Ctrl + K"
+      ],
+      "correct_answer": "C",
+      "explanation": "Ctrl+K only kills from the cursor to end, and Ctrl+U only kills from the cursor back to the start—so neither alone guarantees clearing the whole line unless the cursor is at an endpoint. Ctrl+A moves to the start of the line, then Ctrl+K kills from there to the end, clearing everything. (An alternate correct approach not listed here would be Ctrl+E then Ctrl+U.)",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "bash",
+        "readline",
+        "cursor-movement",
+        "command-line-editing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the command below:\n\n```bash\ntail -c 1 yourfile | cat -A\n```\n\nWhat output indicates that `yourfile` *does* end with a newline character?\n",
+      "question_type": "mc",
+      "options": [
+        "It prints `^J`",
+        "It prints `0a`",
+        "It prints `$`",
+        "It prints nothing (no output)"
+      ],
+      "correct_answer": "A",
+      "explanation": "`tail -c 1` outputs the last byte of the file. Piping that single byte into `cat -A` makes control characters visible; a newline (LF) is displayed as `^J`. If nothing is printed, the last byte was not a newline (or there was no byte to print, e.g., empty file). `0a` is the hex representation you would see in tools like `hexdump`, not what `cat -A` prints.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "tail",
+        "cat",
+        "cat-A",
+        "newline",
+        "pipes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to empty a log file but keep the same filename and permissions. Which command accomplishes this (and why), given the options below?\n\nAssume `app.log` already exists and contains data.\n",
+      "question_type": "mc",
+      "options": [
+        "A. `touch app.log`",
+        "B. `> app.log`",
+        "C. `cat app.log`",
+        "D. `mv app.log app.log.bak`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`> app.log` redirects nothing into the file, which truncates it to zero bytes while keeping the same path (and typically the same ownership/permissions, since it's the same inode being truncated). `touch` only updates timestamps and does not clear contents.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "redirection",
+        "truncate",
+        "shell",
+        "touch"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to run sensitive commands in ZSH so that nothing is written to disk, while still keeping your normal history intact for later. Which command best achieves this?\n\nAssume you will return to your original history afterward.\n",
+      "question_type": "mc",
+      "options": [
+        "```bash\nfc -p /dev/null\n```",
+        "```bash\nfc -W /dev/null\n```",
+        "```bash\nfc -R /dev/null\n```",
+        "```bash\nfc -l /dev/null\n```"
+      ],
+      "correct_answer": "A",
+      "explanation": "`fc -p /dev/null` starts a new history session whose history file is `/dev/null`, so nothing is saved to disk. Your previous history remains on the stack and can be restored with `fc -P` (or by closing the terminal). `fc -W` writes history to a file, `fc -R` reads history from a file, and `fc -l` lists history; none of those create a private, non-persisted history session.",
+      "difficulty": "intermediate",
+      "tags": [
+        "zsh",
+        "history",
+        "privacy",
+        "fc-p",
+        "dev-null"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are editing a file in Vim and want to jump to the last character using a single Ex command (starting with `:`). Write the command you would type.\n\nAnswer with the exact command.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": ":normal G$",
+      "explanation": "`:normal` executes the following keys as if typed in normal mode. Since `G$` in normal mode moves to the last line and then to the end of that line, `:normal G$` performs the same jump using a single Ex command.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "vim",
+        "ex-commands",
+        "normal-command",
+        "end-of-file"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect a file’s last line is missing a trailing newline, causing `wc -l` to undercount. Explain how the following command helps confirm the issue, and what output would indicate the file *does* end with a newline:\n\n```bash\ntail -n 1 -c 1 yourfile | od -c\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The command extracts the last byte of the file (`tail -c 1`) and displays it in a readable form (`od -c`). If the file ends with a newline, `od -c` should show `\\n` as the last character (e.g., output containing `\\n`). If it prints nothing (empty output) or shows a different character, then the file does not end with a newline.",
+      "explanation": "`tail -c 1` reads the final byte only; piping to `od -c` reveals whether that byte is the newline character. This directly tests the condition that affects `wc -l`: presence/absence of the final `\\n`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "tail",
+        "od",
+        "newline",
+        "diagnostics",
+        "wc"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to save a Wikipedia page so it works well offline in a browser, including images/CSS, and with links rewritten to point to the local files. Which `wget` command is most appropriate?\n\n```bash\n# Choose the best command\n```",
+      "question_type": "mc",
+      "options": [
+        "A. wget https://en.wikipedia.org/wiki/Page_Name",
+        "B. wget -p -k -E https://en.wikipedia.org/wiki/Page_Name",
+        "C. curl -o page.html https://en.wikipedia.org/wiki/Page_Name",
+        "D. brew install wget"
+      ],
+      "correct_answer": "B",
+      "explanation": "`-p` (`--page-requisites`) downloads required assets (images, CSS, etc.), `-k` (`--convert-links`) rewrites links to work locally, and `-E` (`--adjust-extension`) ensures an `.html` extension when appropriate. A downloads only the HTML and does not rewrite links. C downloads only HTML and does not fetch requisites. D only installs wget and does not download anything.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "wget",
+        "offline-browsing",
+        "page-requisites",
+        "convert-links",
+        "adjust-extension"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to count lines in all Python files under the current directory recursively (including subdirectories). Which command best matches this requirement?\n\nAssume standard GNU tools are available.\n```bash\n# Choose one\n```",
+      "question_type": "mc",
+      "options": [
+        "wc -l -r *.py",
+        "find . -type f -name \"*.py\" -exec wc -l {} +",
+        "find . -type d -name \"*.py\" -exec wc -l {} +",
+        "find . -name \"*.py\" | wc -l"
+      ],
+      "correct_answer": "B",
+      "explanation": "`wc` has no recursive flag, so recursion is handled by `find`. Option B finds regular files (`-type f`) whose names match `*.py`, then executes `wc -l` on them efficiently using `+` to pass multiple paths per invocation. A is invalid because `wc` doesn’t support `-r` and `*.py` is not recursive. C searches directories, not files. D counts how many matching paths were found (number of files), not the total lines inside them.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linux",
+        "find",
+        "wc",
+        "recursive",
+        "file-globbing",
+        "exec"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

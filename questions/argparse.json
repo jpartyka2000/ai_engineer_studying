@@ -1,0 +1,439 @@
+{
+  "metadata": {
+    "subject_slug": "argparse",
+    "subject_name": "Argparse",
+    "exported_at": "2026-03-05T20:01:47.060732",
+    "question_count": 21,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Write a custom `argparse.Action` that uppercases the value passed to `--name` before storing it in the namespace.\n\nRequirements:\n- Use a subclass of `argparse.Action`.\n- Implement `__call__(self, parser, namespace, values, option_string=None)`.\n- After parsing, `--name jeff` should result in `args.name == \"JEFF\"`.\n\nProvide the code snippet that defines the action and registers the argument.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport argparse\n\nclass UpperNameAction(argparse.Action):\n    def __call__(self, parser, namespace, values, option_string=None):\n        setattr(namespace, self.dest, values.upper())\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--name\", action=UpperNameAction)\n\nargs = parser.parse_args()\n```",
+      "explanation": "A custom action must subclass `argparse.Action` and implement `__call__`. `values` is the parsed value for the option; `self.dest` is the attribute name where argparse stores the result. Using `setattr(namespace, self.dest, values.upper())` transforms the input and stores the transformed value, so `--name jeff` becomes `args.name == \"JEFF\"`.",
+      "difficulty": "advanced",
+      "tags": [
+        "argparse",
+        "custom-action",
+        "argparse.Action",
+        "add_argument",
+        "namespace",
+        "callable-action"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing a CLI with `argparse` and want to hide an advanced option from the `-h/--help` output while still allowing it to be parsed if the user knows about it.\n\nWrite a minimal code snippet that adds an optional argument `--secret` that:\n1) does not appear in the help text, and\n2) is still accepted by the parser if provided.\n\nAlso briefly explain why this works.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--secret\", help=argparse.SUPPRESS)\nargs = parser.parse_args()\n```\n\nExplanation: Setting `help=argparse.SUPPRESS` tells `argparse` to omit that argument from the generated `-h/--help` output, but it does not remove the argument from the parser. The option is still recognized and parsed normally when supplied on the command line.",
+      "explanation": "Using `help=argparse.SUPPRESS` suppresses only the display of that option in the help output. The argument definition still exists in the parser, so `--secret` remains a valid option and will be parsed into `args` when provided.",
+      "difficulty": "advanced",
+      "tags": [
+        "argparse",
+        "SUPPRESS",
+        "help",
+        "hidden-options",
+        "add_argument"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are troubleshooting a script that uses `argparse`. A user reports that running `python tool.py -h` does **not** show the help message.\n\nExplain at least **two** plausible reasons this could happen (based on how `argparse` normally behaves), and for each reason, state a concrete fix.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two plausible reasons and fixes include:\n1) The script never calls `parser.parse_args()` (or exits before reaching it), so argparse never processes `-h/--help`. Fix: ensure `args = parser.parse_args()` is executed in the main code path (e.g., under `if __name__ == \"__main__\":`).\n2) Help was disabled by constructing the parser with `add_help=False`, so `-h/--help` is not added automatically. Fix: remove `add_help=False` or manually add a help option (or create a custom help action).\nOther acceptable reasons: the script catches `SystemExit` from argparse and suppresses output; `-h` is being consumed by a wrapper script before reaching Python; or a conflicting argument definition overrides `-h`/`--help` behavior. Fixes would involve not suppressing `SystemExit` output, passing through arguments correctly, or resolving the conflicting option definitions.",
+      "explanation": "`argparse` normally adds `-h/--help` automatically and prints help when those flags are parsed. If help is not shown, it generally means argument parsing did not occur, help was intentionally disabled, or the help-triggering behavior was intercepted/overridden. Providing fixes demonstrates understanding of the normal argparse flow and what can prevent it.",
+      "difficulty": "advanced",
+      "tags": [
+        "argparse",
+        "debugging",
+        "add_help",
+        "parse_args",
+        "SystemExit"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You define two positional arguments in this order:\n\n```python\nparser.add_argument(\"src\")\nparser.add_argument(\"dst\")\n```\n\n1) Explain why `argparse` cares about the order of these positional arguments.\n2) Give two example command lines: one that parses correctly and one that fails due to positional ordering/shape.\n\n(Assume there are no other arguments.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `argparse` assigns positional arguments based on their position in the command line, not by name, so it binds the first bare token to `src` and the second bare token to `dst`. Therefore, the order matters.\n2) Correct example: `python script.py input.txt output.txt` (binds `src=input.txt`, `dst=output.txt`). Failing example: `python script.py input.txt` (missing `dst`) or `python script.py output.txt input.txt extra.txt` (too many positionals).",
+      "explanation": "Positional arguments are not identified by flags; they are identified solely by where they appear. This is why swapping them changes meaning (even if parsing still succeeds) and why missing/extra positional tokens cause errors: `argparse` expects exactly the number and structure of positional arguments declared (unless `nargs` changes that expectation).",
+      "difficulty": "advanced",
+      "tags": [
+        "argparse",
+        "positional-arguments",
+        "argument-binding",
+        "cli-design",
+        "nargs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You define arguments like this:\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--verbose\", action=\"store_true\")\nparser.add_argument(\"first\")\nparser.add_argument(\"second\")\n```\n\nA user runs:\n\n```bash\npython script.py A --verbose B\n```\n\n1) What values will `first`, `second`, and `verbose` have?\n2) Explain the parsing rule that makes this work.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) first='A', second='B', verbose=True.\n2) Argparse identifies optional arguments by their leading '-' or '--' prefix regardless of where they appear. Positional arguments have no prefix and are therefore filled in left-to-right order from the remaining non-option tokens, so 'A' maps to `first` and 'B' maps to `second`.",
+      "explanation": "The token `--verbose` is recognized as an optional flag anywhere in the command line, so it sets `verbose=True` and does not consume positional slots. The remaining non-option tokens are assigned to `first` then `second` in order.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "argparse",
+        "parsing-rules",
+        "positionals-order",
+        "optional-flags"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a script intended to run both (1) from the Databricks Web Terminal with real CLI arguments and (2) from a Databricks notebook cell where IPython injects extra arguments. Write a robust `main()` that:\n\n1) Uses `argparse` to parse `--environment` (choices: development/staging/production, default development)\n2) Drops/ignores unknown args (so notebook execution doesn't fail)\n3) If *any* unknown args remain, prints them to stderr as a warning but continues\n\nProvide a complete code snippet for the parsing portion (imports + parser + parsing + warning + returning the environment string).\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport argparse\nimport sys\n\n\ndef main(argv=None) -> str:\n    if argv is None:\n        argv = sys.argv[1:]\n\n    parser = argparse.ArgumentParser(\n        description=\"Kicks off and configures ML Pieces\"\n    )\n    parser.add_argument(\n        \"-e\",\n        \"--environment\",\n        choices=[\"development\", \"staging\", \"production\"],\n        default=\"development\",\n        help=(\n            \"Corresponds to the schema data will be written. \"\n            \"Expects 'development', 'staging', or 'production'\"\n        ),\n    )\n\n    args, unknown = parser.parse_known_args(argv)\n\n    if unknown:\n        print(f\"Warning: ignoring unknown arguments: {unknown}\", file=sys.stderr)\n\n    return args.environment.lower()\n\n\nif __name__ == \"__main__\":\n    env = main()\n    # continue with env\n```\n",
+      "explanation": "Using `parse_known_args()` is the key to preventing failures when the IPython kernel passes flags like `-f`. Passing `argv` (defaulting to `sys.argv[1:]`) makes the function testable and keeps behavior consistent across terminal and notebook. Printing unknown args to stderr preserves visibility into unexpected inputs while still allowing the program to continue with the known parsed arguments.",
+      "difficulty": "advanced",
+      "tags": [
+        "argparse",
+        "parse_known_args",
+        "robust-cli",
+        "sys.argv",
+        "stderr",
+        "databricks",
+        "ipython"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `argparse`, what does setting `action=\"store_true\"` on an optional argument do?\n\n```python\nimport argparse\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--debug\", action=\"store_true\")\nargs = parser.parse_args()\n```\n\nAssume `--debug` is not provided on the command line.",
+      "question_type": "mc",
+      "options": [
+        "It stores the next command-line token (e.g., a string) into `args.debug`.",
+        "It sets `args.debug` to `True` when `--debug` is present; otherwise it is `False`.",
+        "It appends each occurrence of `--debug` into a list stored in `args.debug`.",
+        "It counts how many times `--debug` appears and stores the integer count in `args.debug`."
+      ],
+      "correct_answer": "B",
+      "explanation": "`action=\"store_true\"` is a convenience boolean action. If the flag is present, the destination becomes `True`; if absent, it defaults to `False`. It does not consume a following value (unlike the default `store` action), does not build a list (`append`), and does not count occurrences (`count`).",
+      "difficulty": "beginner",
+      "tags": [
+        "argparse",
+        "add_argument",
+        "action",
+        "store_true",
+        "flags",
+        "boolean-options"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `argparse`, what does the `help=` keyword in `parser.add_argument(...)` primarily control?",
+      "question_type": "mc",
+      "options": [
+        "It changes how the argument is parsed and validated at runtime.",
+        "It provides the description text shown when the user runs the program with `-h/--help`.",
+        "It sets the default value used when the argument is omitted.",
+        "It automatically makes the argument required."
+      ],
+      "correct_answer": "B",
+      "explanation": "The `help` parameter is used to generate the descriptive text displayed in the auto-generated help/usage output (shown with `-h` or `--help`). It does not change parsing behavior, defaults, or whether an argument is required (those are controlled by other parameters like `default=` and `required=`).",
+      "difficulty": "beginner",
+      "tags": [
+        "argparse",
+        "add_argument",
+        "help",
+        "cli",
+        "usage-output"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Python script that uses `argparse.ArgumentParser()` and calls `parse_args()`, which command-line flags are automatically available to display the help/usage message?\n\nA script is run like:\n```bash\npython script.py <flags>\n```",
+      "question_type": "mc",
+      "options": [
+        "-h and --help",
+        "-help and --h",
+        "-usage and --usage",
+        "-? and --?"
+      ],
+      "correct_answer": "A",
+      "explanation": "By default, `argparse` automatically adds the `-h` and `--help` options to an `ArgumentParser`. Running the script with either flag prints the usage message and the descriptions of defined arguments, then exits.",
+      "difficulty": "beginner",
+      "tags": [
+        "argparse",
+        "help-flag",
+        "cli-basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `argparse`, which statement best describes how argument order is handled by default?",
+      "question_type": "mc",
+      "options": [
+        "Optional arguments (e.g., `--verbose`) must appear before positional arguments.",
+        "Optional arguments can appear in any order, but positional arguments must appear in the order they were defined.",
+        "Positional arguments can appear in any order, but optional arguments must appear in the order they were defined.",
+        "Both optional and positional arguments can appear in any order."
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, `argparse` matches optional arguments by their flag names (e.g., `--verbose`, `--count`), so their relative order does not matter. Positional arguments are matched by position, so they must appear in the order they were declared in the parser.",
+      "difficulty": "beginner",
+      "tags": [
+        "argparse",
+        "positional-arguments",
+        "optional-arguments",
+        "cli-parsing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `argparse`, which statement best describes where optional arguments (e.g., `--verbose`) may appear relative to positional arguments (e.g., `filename`)?",
+      "question_type": "mc",
+      "options": [
+        "Optional arguments must appear before all positional arguments.",
+        "Optional arguments must appear after all positional arguments.",
+        "Optional arguments can appear either before or after positional arguments; positional arguments are identified by order.",
+        "Optional arguments can appear either before or after positional arguments; positional arguments are identified by a `--` prefix."
+      ],
+      "correct_answer": "C",
+      "explanation": "Argparse recognizes optionals by their leading `-`/`--`, so they can be placed before or after positionals. Positionals do not have a prefix; they are assigned based on their position in the command line relative to other positionals (i.e., order matters for multiple positionals).",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "argparse",
+        "optional-arguments",
+        "positional-arguments",
+        "cli-parsing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run a Python script that uses `argparse` from inside a Databricks notebook cell and get an error like `unrecognized arguments: -f ...`. What is the most likely cause?\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--x\", type=int, default=1)\nargs = parser.parse_args()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Databricks disables `argparse` in notebooks, so `parse_args()` always fails",
+        "B. The IPython kernel injects its own command-line arguments (e.g., `-f`) that `argparse` does not recognize",
+        "C. `argparse` only works when arguments are provided as environment variables, not command-line flags",
+        "D. The error occurs because the argument `--x` is missing and `argparse` requires all arguments to be provided"
+      ],
+      "correct_answer": "B",
+      "explanation": "When code is executed in an IPython-based environment (such as a Databricks notebook), the kernel is launched with its own flags (commonly including `-f` for a connection file). `argparse.parse_args()` reads from `sys.argv` and will raise an error on unknown flags unless you explicitly handle them.",
+      "difficulty": "beginner",
+      "tags": [
+        "argparse",
+        "databricks",
+        "ipython",
+        "sys.argv",
+        "unknown-arguments"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which line correctly creates an `argparse.ArgumentParser` with a description that will appear in `-h/--help` output?\n\n```python\nimport argparse\n# Choose the correct line\n```\n",
+      "question_type": "mc",
+      "options": [
+        "parser = argparse.ArgumentParser(description=\"A simple calculator program\")",
+        "parser = argparse.ArgumentParser(help=\"A simple calculator program\")",
+        "parser = argparse.ArgumentParser(usage=\"A simple calculator program\")",
+        "parser = argparse.ArgumentParser(desc=\"A simple calculator program\")"
+      ],
+      "correct_answer": "A",
+      "explanation": "`ArgumentParser` is instantiated with `argparse.ArgumentParser(...)`. The `description` keyword sets the descriptive text shown near the top of the help message. `help` is not a valid `ArgumentParser` constructor parameter (it is used on individual arguments via `add_argument`). `usage` controls the usage line, and `desc` is not a recognized parameter name.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "argparse",
+        "ArgumentParser",
+        "description",
+        "help-output"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want your program to show a short summary when users run `python app.py -h`. Complete the code to create the parser with the correct description.\n\n```python\nimport argparse\n\ndef build_parser():\n    # TODO: create the parser\n    return parser\n```\n\nWrite the missing line(s) needed inside `build_parser()`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "parser = argparse.ArgumentParser(description=\"A simple calculator program\")",
+      "explanation": "The `ArgumentParser` constructor accepts a `description` keyword argument. This text is displayed in the automatically generated help output (`-h/--help`), giving users a brief overview of what the program does.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "argparse",
+        "ArgumentParser",
+        "description",
+        "functions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a CLI option `--tag` that can be specified multiple times and results in a Python list of all provided tags.\n\nGiven:\n\n```python\nimport argparse\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--tag\", action=?)\n```\n\nWhich `action` should replace `?` so that running:\n\n```bash\npython script.py --tag a --tag b\n```\n\nyields `args.tag == [\"a\", \"b\"]`?",
+      "question_type": "mc",
+      "options": [
+        "\"store\"",
+        "\"append\"",
+        "\"count\"",
+        "\"store_const\""
+      ],
+      "correct_answer": "B",
+      "explanation": "`action=\"append\"` collects each occurrence of the option into a list, preserving order. `store` would keep only the last value (`\"b\"`), `count` would produce an integer count, and `store_const` stores a fixed constant rather than the provided values.",
+      "difficulty": "intermediate",
+      "tags": [
+        "argparse",
+        "action",
+        "append",
+        "repeated-options",
+        "add_argument"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser(prog=\"demo\")\nparser.add_argument(\"--count\", default=10, help=\"Number of items (default: %(default)s) for %(prog)s\")\n```\n\nWhen running `python demo.py -h`, which help line best matches what `argparse` will display for `--count` (ignoring spacing/alignment differences)?",
+      "question_type": "mc",
+      "options": [
+        "--count COUNT  Number of items (default: %(default)s) for %(prog)s",
+        "--count COUNT  Number of items (default: 10) for demo",
+        "--count COUNT  Number of items (default: COUNT) for demo",
+        "--count COUNT  Number of items (default: 10) for %(prog)s"
+      ],
+      "correct_answer": "B",
+      "explanation": "`argparse` performs %-style substitution in the `help` string. `%(default)s` is replaced with the argument's default value (`10`), and `%(prog)s` is replaced with the program name (`demo`, set via `ArgumentParser(prog=...)`). Therefore the displayed text includes both substitutions: \"default: 10\" and \"for demo\".",
+      "difficulty": "intermediate",
+      "tags": [
+        "argparse",
+        "help-formatting",
+        "default",
+        "prog",
+        "add_argument"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following script:\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser(description=\"Demo program\")\nparser.add_argument(\"--verbose\", action=\"store_true\", help=\"Increase output detail\")\nparser.add_argument(\"filename\", help=\"Input file\")\nargs = parser.parse_args()\n```\n\nWhich of the following best describes what happens when you run:\n\n```bash\npython script.py -h\n```",
+      "question_type": "mc",
+      "options": [
+        "It runs the program normally and sets `args.h` to True.",
+        "It prints a help/usage message showing `filename` and `--verbose`, then exits.",
+        "It raises an error because `filename` was not provided.",
+        "It prints help only for `--verbose` and ignores positional arguments."
+      ],
+      "correct_answer": "B",
+      "explanation": "When `-h`/`--help` is used, `argparse` prints a usage message including positional arguments (like `filename`), optional arguments (like `--verbose`), and the default help option itself, then exits successfully. The help flag takes precedence over missing required positional arguments.",
+      "difficulty": "intermediate",
+      "tags": [
+        "argparse",
+        "usage-message",
+        "positional-arguments",
+        "optional-arguments"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following script:\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--verbose\", action=\"store_true\")\nparser.add_argument(\"--count\", type=int, default=0)\nparser.add_argument(\"filename\")\nargs = parser.parse_args()\nprint(args)\n```\n\nWhich command will fail to parse (assuming `script.py` is the filename of the script)?",
+      "question_type": "mc",
+      "options": [
+        "python script.py mydata.txt --verbose --count 3",
+        "python script.py --count 3 mydata.txt --verbose",
+        "python script.py --verbose mydata.txt --count 3",
+        "python script.py mydata.txt 3 --count --verbose"
+      ],
+      "correct_answer": "D",
+      "explanation": "A–C all work because `--verbose` and `--count` are options and can appear in any order relative to each other and relative to the positional `filename`. D fails because `3` is a bare token (no dash), so `argparse` treats it as a positional argument. But only one positional (`filename`) is defined, so the extra positional token causes an error. Additionally, `--count` requires a value after it, but in D it is followed by `--verbose`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "argparse",
+        "argument-order",
+        "positional-arguments",
+        "optional-arguments",
+        "parse-errors"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following program:\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--verbose\", action=\"store_true\")\nparser.add_argument(\"src\")\nparser.add_argument(\"dst\")\nargs = parser.parse_args()\nprint(args)\n```\n\nWhich command correctly sets `verbose=True`, `src=\"in.txt\"`, and `dst=\"out.txt\"`?\n",
+      "question_type": "mc",
+      "options": [
+        "python script.py in.txt out.txt --verbose",
+        "python script.py in.txt --verbose out.txt",
+        "python script.py --verbose in.txt out.txt",
+        "All of the above"
+      ],
+      "correct_answer": "D",
+      "explanation": "All three commands work. `--verbose` is an optional recognized by its `--` prefix, so it can be placed before, between, or after the positional arguments. The positionals `src` and `dst` are assigned by order: the first non-optional token fills `src`, the next fills `dst`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "argparse",
+        "option-ordering",
+        "positionals",
+        "store_true"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You must run this script inside a Databricks notebook cell, but you want to *drop/ignore* any unknown arguments (like IPython's `-f ...`) before processing the known ones. Which modification best achieves that behavior?\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"-e\", \"--environment\", choices=[\"development\",\"staging\",\"production\"], default=\"development\")\n# TODO: modify parsing here\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `args = parser.parse_args([])`",
+        "B. `args = parser.parse_args(ignore_unknown=True)`",
+        "C. `args, unknown = parser.parse_known_args()`",
+        "D. `unknown = parser.parse_args(); args = unknown[0]`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`parse_known_args()` returns a tuple `(args, unknown)` where `args` contains the recognized options and `unknown` contains the remaining tokens. This is the standard `argparse` mechanism for tolerating extra flags injected by environments like IPython. The other options are not valid `argparse` APIs (B, D) or discard all CLI arguments entirely (A), which is usually not what you want.",
+      "difficulty": "intermediate",
+      "tags": [
+        "argparse",
+        "parse_known_args",
+        "unknown-arguments",
+        "databricks-notebook",
+        "ipython"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following script:\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser(\n    description=\"A simple calculator program\",\n    usage=\"calc.py [options]\"\n)\n\n# (no arguments added)\n```\n\nWhen a user runs `python calc.py -h`, which statement is most accurate about what they will see?",
+      "question_type": "mc",
+      "options": [
+        "They will see both the custom usage line and the description in the help output.",
+        "They will see the description, but not the usage line because `usage` only works after adding arguments.",
+        "They will see the usage line, but the description will be hidden unless `add_help=False` is set.",
+        "They will see neither usage nor description unless at least one argument is added."
+      ],
+      "correct_answer": "A",
+      "explanation": "Both `usage` and `description` are properties of the parser itself and affect the generated help output regardless of whether any arguments have been added. `usage` customizes the usage line, and `description` adds a summary section in the help text. `add_help=False` would disable the automatic `-h/--help` option, not enable descriptions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "argparse",
+        "ArgumentParser",
+        "description",
+        "usage",
+        "help-output"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

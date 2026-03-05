@@ -1,0 +1,1690 @@
+{
+  "metadata": {
+    "subject_slug": "testing",
+    "subject_name": "Testing",
+    "exported_at": "2026-03-05T20:01:47.073283",
+    "question_count": 81,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You introduce a custom marker `@pytest.mark.integration` and want to:\n1) avoid “unknown marker” warnings/errors, and\n2) make it easy to deselect these tests from the command line.\n\nWrite the relevant `pytest.ini` configuration block and give an example `pytest` command that runs everything *except* integration tests.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A correct solution includes declaring the marker under a `markers =` block and using `-m \"not integration\"` to deselect it. Example:\n\n```ini\n[pytest]\nmarkers =\n    integration: for integration tests\n```\n\nCommand:\n\n```bash\npytest -m \"not integration\"\n```",
+      "explanation": "Declaring custom markers in `pytest.ini` (via the `markers` list) tells pytest that `integration` is an intentional marker, suppressing unknown-marker warnings/errors. Marker expressions on the CLI (e.g., `-m \"not integration\"`) allow selecting/deselecting tests based on those markers without changing code.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "markers",
+        "custom markers",
+        "test selection",
+        "cli",
+        "deselection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the fixture below, explain **why** `delete=False` is used and describe a **cross-platform pitfall** that could occur if you instead used `delete=True` and/or kept the file handle open while the test tries to reopen the file by path.\n\n```python\n@pytest.fixture\ndef temp_seed_file(seed_questions_jsonl):\n    with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:\n        f.write(seed_questions_jsonl)\n        temp_path = f.name\n    yield temp_path\n    Path(temp_path).unlink(missing_ok=True)\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Using `delete=False` ensures the temporary file is not removed when the `with` block exits (i.e., when the file is closed). This matters because the fixture yields only the path and the test may need to open/read the file later by that filesystem path. A common cross-platform pitfall is Windows file-locking semantics: if the file is still open (or if `NamedTemporaryFile` is configured to delete on close), reopening the same file by path from another handle can fail with permission/sharing errors, or the file may already be deleted when the test tries to open it. By closing the file before yielding and managing deletion manually afterward, the fixture remains reliable across platforms.",
+      "explanation": "This tests understanding of lifecycle and platform behavior. `delete=False` decouples the file’s existence from the context manager so the path remains valid for the test. On Windows in particular, open files can be locked and `NamedTemporaryFile` patterns that work on Unix (reopening a still-open temp file by name) can fail. Manual teardown cleanup preserves test isolation while avoiding OS-specific handle/locking issues.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "tempfile",
+        "windows",
+        "file-locking",
+        "pytest",
+        "fixtures",
+        "cross-platform",
+        "resource-lifecycle"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a unit test that mocks an async dependency correctly and asserts it was awaited.\n\nAssume you have this code in `pkg/module.py`:\n\n```python\n# pkg/module.py\n\nasync def async_func():\n    ...\n\nasync def use_async():\n    return await async_func()\n```\n\nTask:\n- Use `unittest.mock.patch` with `new_callable=AsyncMock` to replace `pkg.module.async_func`.\n- Make the mock return the string `\"ok\"`.\n- Assert that `await use_async()` returns `\"ok\"`.\n- Assert the mock was awaited exactly once.\n\nProvide the full test function (you may assume `pytest` + `pytest.mark.asyncio` are available).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport pytest\nfrom unittest.mock import AsyncMock, patch\n\nfrom pkg.module import use_async\n\n@pytest.mark.asyncio\n@patch(\"pkg.module.async_func\", new_callable=AsyncMock)\nasync def test_use_async_returns_ok_and_awaits_dependency(mock_async_func):\n    mock_async_func.return_value = \"ok\"\n\n    result = await use_async()\n\n    assert result == \"ok\"\n    mock_async_func.assert_awaited_once()\n```",
+      "explanation": "Async functions must be mocked with `AsyncMock` so that `await async_func()` works correctly. Patching `pkg.module.async_func` replaces the function at the lookup location used by `use_async`. Setting `return_value` controls what the awaited call produces, and `assert_awaited_once()` verifies the coroutine was awaited exactly once (stronger and more precise than `assert_called_once`).",
+      "difficulty": "advanced",
+      "tags": [
+        "unittest.mock",
+        "AsyncMock",
+        "patch",
+        "asyncio",
+        "pytest",
+        "assert_awaited_once"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run `pytest` from the project root and it unexpectedly executes tests outside the `tests/` directory. Your `pytest.ini` includes `testpaths = tests`.\n\nWhich explanation best accounts for this behavior?\n",
+      "question_type": "mc",
+      "options": [
+        "`testpaths` is ignored unless you run `pytest tests/` explicitly.",
+        "`testpaths` only affects collecting doctests, not normal tests.",
+        "`testpaths` is only used when running from the directory that contains `pytest.ini`; otherwise pytest may fall back to broader discovery rules.",
+        "`testpaths` prevents running tests in `tests/` unless you specify a file path."
+      ],
+      "correct_answer": "C",
+      "explanation": "`testpaths` in `pytest.ini` is applied when pytest finds and uses that configuration file. If you run pytest from a location where it does not locate the intended `pytest.ini` (e.g., not the project root or configuration not discovered), pytest can revert to its default discovery behavior, which may include other directories. The other options incorrectly describe `testpaths` behavior.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "configuration",
+        "pytest.ini",
+        "testpaths",
+        "test-discovery",
+        "project-root"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following pytest fixtures:\n\n```python\nimport pytest\n\n@pytest.fixture(scope=\"session\", autouse=True, params=[\"v1\", \"v2\"])\ndef config_variant(request):\n    use_config(request.param)\n\n@pytest.fixture(autouse=True)\ndef b(a):\n    ...\n\n@pytest.fixture(autouse=True)\ndef a():\n    ...\n```\n\n1) Explain how `config_variant` affects the number of tests executed.\n2) Explain what guarantees (if any) exist about whether `a` runs before `b`.\n3) Give one concrete change you could make to reduce surprise or test explosion while keeping the intent clear.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) A parametrized autouse fixture duplicates tests for each parameter value within the fixture’s scope. With `scope=\"session\"` and `params=[\"v1\",\"v2\"]`, pytest will run the entire test suite twice (once per config), which can dramatically increase runtime.\n\n2) The order between same-scope autouse fixtures is not guaranteed unless expressed via dependencies. Here, `b(a)` declares a dependency on `a`, so `a` is guaranteed to run before `b` for any test where both apply.\n\n3) Example improvements (any one acceptable):\n- Narrow the scope of `config_variant` (e.g., to `function` or `module`) to limit duplication to a smaller subset.\n- Remove `autouse=True` from `config_variant` and apply it explicitly using `@pytest.mark.usefixtures(\"config_variant\")` only where needed.\n- Keep it autouse but add an opt-out marker check (e.g., skip heavy setup when a marker is present) to limit impact.\n- Centralize broad autouse fixtures in a single `conftest.py` per subtree and/or rename to `_config_variant` to reduce accidental explicit use.",
+      "explanation": "Parametrizing a fixture causes pytest to create separate execution variants for each parameter value; when that fixture is autouse, every test in its scope is affected, which can multiply the whole suite. Fixture ordering is only deterministic when dependencies are declared (e.g., `b(a)`), otherwise pytest does not promise an order among same-scope fixtures. Reducing scope or making application explicit are common ways to avoid hidden preconditions and runaway test counts.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "autouse",
+        "parametrized-fixtures",
+        "fixture-scope",
+        "test-explosion",
+        "fixture-ordering",
+        "dependencies"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect pytest is not discovering a specific test function inside `tests/test_end_to_end.py`. Write a command that:\n1) targets only that file, and\n2) collects tests without running them, and\n3) prints a flat list of node IDs.\n\nAlso explain (briefly) how you would use the output to confirm the test function is being discovered.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example command:\n\n```bash\npytest tests/test_end_to_end.py:: --collect-only -q\n```\n\nUse the output to check that the expected node ID(s) appear, e.g. `tests/test_end_to_end.py::test_end_to_end_tasks`. If the function’s node ID is listed, pytest is discovering it; if it’s missing, discovery/collection is not finding it (wrong name, wrong path, skipped by configuration, etc.).",
+      "explanation": "Targeting `tests/test_end_to_end.py::` restricts collection to that file. `--collect-only` ensures no tests are executed. `-q` requests quieter output, commonly producing a flat list of node IDs that you can visually scan for the specific test function name.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "collect-only",
+        "node-id",
+        "test-discovery",
+        "test-targeting",
+        "cli"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are testing an ML model and want to record metrics (e.g., accuracy) so they appear in CI reports (JUnit/HTML) while keeping passing runs quiet.\n\nWrite a pytest-style test function that:\n1) evaluates accuracy,\n2) records it into the report metadata using a fixture (e.g., `record_property`), and\n3) asserts the accuracy is above a threshold.\n\nAlso briefly explain why this approach is preferred over printing the metric every run.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```python\ndef test_model_accuracy(model, test_data, record_property):\n    acc = evaluate(model, test_data)\n    record_property(\"accuracy\", acc)\n    assert acc > 0.95\n```\n\nExplanation: `record_property` stores metrics in structured test report outputs (e.g., JUnit/XML or HTML) without cluttering standard output on successful runs. This keeps logs readable while still preserving important diagnostics for CI dashboards and historical tracking. Assertion failures still surface automatically with pytest’s failure reporting.",
+      "explanation": "A correct answer should (1) compute a metric, (2) use a reporting/metadata mechanism such as `record_property` to capture it, and (3) assert on a meaningful threshold. The key concept is separating always-available structured diagnostics (reports/metadata) from noisy console output, while relying on pytest’s built-in failure output when something goes wrong.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "ml-testing",
+        "metrics",
+        "record_property",
+        "ci-reporting",
+        "test-output-conventions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to enforce a single naming convention where test files must start with `test_` (i.e., disallow `*_test.py`), while keeping pytest's default class/function discovery rules.\n\nWrite a minimal `pytest.ini` that:\n1) searches tests only under the `tests` directory,\n2) enforces only `test_*.py` for test modules,\n3) keeps default discovery for test classes and functions.\n\n(You may omit unrelated settings like markers/warnings.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "[pytest]\ntestpaths = tests\npython_files = test_*.py",
+      "explanation": "Setting `testpaths = tests` limits discovery to the `tests/` directory. Setting `python_files = test_*.py` enforces the stricter file naming convention and excludes `*_test.py`. You do not need to set `python_classes` or `python_functions` because their defaults are already `Test*` and `test_*`, respectively; omitting them preserves the defaults.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "test-discovery",
+        "defaults",
+        "naming-conventions",
+        "python_classes",
+        "python_functions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A CI pipeline runs unit tests on every commit and integration tests nightly. A test named `test_create_user` is flaky: it sometimes fails due to network timeouts when calling a remote database service. The test also asserts that the returned user ID is an integer.\n\nWhich change best aligns the test suite with the intended roles of unit vs integration tests while reducing flakiness?",
+      "question_type": "mc",
+      "options": [
+        "A. Keep the test as-is but rerun it up to 5 times on failure to hide transient timeouts.",
+        "B. Convert `test_create_user` into a unit test by mocking the database call for the per-commit suite, and add/keep a separate integration test that uses a controlled test database environment for nightly runs.",
+        "C. Move all integration tests to run on every commit so failures are detected earlier, even if they are slow and flaky.",
+        "D. Remove the test entirely because network timeouts make it impossible to test user creation reliably."
+      ],
+      "correct_answer": "B",
+      "explanation": "The flakiness comes from relying on a remote external dependency (network + remote DB). Unit tests should avoid such dependencies and use mocks/stubs to remain fast and deterministic, which makes them suitable for every-commit execution. Integration tests should validate real component interactions, but they should run in a controlled environment (e.g., local/containerized test DB) and less frequently. Splitting the concerns preserves coverage while reducing noise and instability in the per-commit suite.",
+      "difficulty": "advanced",
+      "tags": [
+        "ci-cd",
+        "test-strategy",
+        "flaky-tests",
+        "integration-testing",
+        "unit-testing",
+        "test-environments",
+        "mocks"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are running pytest in Databricks and you *do* want bytecode caching for performance, but `/Workspace/...` cannot create `__pycache__`. Write a shell-based approach that allows tests to run with bytecode writes enabled, and briefly explain why it works.\n\nYour answer should include a command sequence (e.g., `cp` + `pytest`) and reference where `__pycache__` will be created.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```sh\n%sh\ncp -r /Workspace/Users/me/project /tmp/project\npytest /tmp/project/tests/test_end_to_end.py::test_end_to_end_tasks -q --disable-warnings --maxfail=1\n```\n\nExplanation: Copying the project into a truly writable directory like `/tmp` ensures that when Python imports modules during pytest collection/execution, it can create `__pycache__` directories and write `.pyc` files under `/tmp/project/...`. This avoids the Workspace mount limitation while preserving bytecode caching.",
+      "explanation": "This solution addresses the root constraint (Workspace filesystem not supporting `__pycache__` creation) without disabling bytecode generation. By relocating both source and test files into a writable filesystem (e.g., `/tmp`), Python’s normal import behavior can create `__pycache__` and write `.pyc` files, eliminating the OSError while keeping caching enabled.",
+      "difficulty": "advanced",
+      "tags": [
+        "databricks",
+        "pytest",
+        "bytecode-caching",
+        "filesystem-permissions",
+        "tmp-directory"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to debug a failing end-to-end test and need both (1) `print()` output and (2) live streaming of `logging.info(...)` (and higher) to appear during the run. Write a pytest CLI command that:\n\n- runs only `tests/test_end_to_end.py::test_end_to_end_tasks`\n- enables live CLI logging\n- sets the live log level to INFO\n- shows `print()` output\n- increases pytest verbosity\n- stops after the first failure\n- disables warnings summary output\n\nUse the flags/options that match the source content.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```bash\npytest \\\n  tests/test_end_to_end.py::test_end_to_end_tasks \\\n  -vv -s \\\n  -o log_cli=true \\\n  -o log_cli_level=INFO \\\n  --maxfail=1 --disable-warnings\n```",
+      "explanation": "The node id `tests/test_end_to_end.py::test_end_to_end_tasks` runs only that test. `-o log_cli=true` enables live CLI logging, and `-o log_cli_level=INFO` sets the minimum displayed level. `-s` disables output capture so `print()` is visible, `-vv` increases verbosity, `--maxfail=1` stops after the first failure, and `--disable-warnings` suppresses warnings summary output.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "node-id",
+        "cli",
+        "live-logging",
+        "log_cli",
+        "verbosity",
+        "output-capture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have two `conftest.py` files that define the same fixture name:\n\n`project/conftest.py`\n```python\nimport pytest\n\n@pytest.fixture\ndef db_url():\n    return \"sqlite:///root.db\"\n```\n\n`project/tests/foo/conftest.py`\n```python\nimport pytest\n\n@pytest.fixture\ndef db_url():\n    return \"sqlite:///foo.db\"\n```\n\nThere are two tests:\n\n`project/tests/foo/test_a.py`\n```python\ndef test_a(db_url):\n    assert db_url.endswith(\".db\")\n```\n\n`project/tests/bar/test_b.py`\n```python\ndef test_b(db_url):\n    assert db_url.endswith(\".db\")\n```\n\n1) State which `db_url` value each test will receive.\n2) Explain the rule that determines this behavior.\n\nAnswer in plain text.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `tests/foo/test_a.py` receives `\"sqlite:///foo.db\"`; `tests/bar/test_b.py` receives `\"sqlite:///root.db\"`.\n2) Pytest loads/merges fixtures from `conftest.py` files along the directory tree above each test. A fixture defined in a child directory overrides a fixture with the same name from a parent directory, but only for tests in that child directory (and its subdirectories). Fixtures in a subdirectory are not visible to tests in parent or sibling directories.",
+      "explanation": "`test_a.py` is inside `tests/foo/`, so it sees both the root `conftest.py` and `tests/foo/conftest.py`. Because the fixture name is the same, the closer (child) definition takes precedence, overriding the parent for that subtree. `test_b.py` is in `tests/bar/`, which does not have (and is not under) `tests/foo/`, so it cannot see the `tests/foo/conftest.py` fixture and therefore uses the root definition.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "conftest.py",
+        "fixture-overriding",
+        "fixture-scope-by-directory",
+        "test-layout"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You still get `found no collectors` after copying the repo to `/tmp` and running pytest. Describe a systematic debugging procedure using pytest to verify what it is (and is not) collecting, and list at least two concrete things you would check in the output. Your answer should reference the specific pytest command recommended in the source content and connect it to likely causes in Databricks.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Run `pytest --collect-only -q` from the repo root directory on the real filesystem copy (e.g., after `cd /tmp/code/cue_reinforcement_learning`). Then inspect the collected items list to confirm (1) the test file `tests/test_end_to_end.py` appears as a collected module and (2) the specific test function `test_end_to_end_tasks` appears under it. If the file is missing, it suggests pytest’s root/working directory or path is wrong (e.g., not running from the real FS location or not in the repo root). If the file appears but the function does not, it suggests the function name/signature doesn’t match pytest discovery conventions (e.g., not prefixed with `test_`) or the test is being skipped/blocked during collection (import errors can also prevent collection). Use the collection output to validate that pytest is looking at the expected real-FS paths and recognizing the expected node ids before attempting to run the test.",
+      "explanation": "The source explicitly recommends `pytest --collect-only -q` as the way to see what pytest recognizes. In Databricks, collection problems often come from running against Workspace-mounted paths or from an incorrect working directory that prevents pytest from treating `tests/...` as part of the project. Verifying the presence of both the test module and the specific test function in the collection tree directly narrows the problem to either filesystem/path/rootdir issues (module not collected) or test naming/import/collection-time issues (module collected but test function absent).",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "collect-only",
+        "test-collection",
+        "databricks",
+        "debugging",
+        "rootdir"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A test uses Python’s logging module:\n\n```python\nimport logging\n\ndef test_something():\n    logging.info(\"starting\")\n    print(\"printed\")\n    assert True\n```\n\nYou run `pytest -vv -s` and you can see `printed`, but you still do not see the `logging.info(\"starting\")` message in real time.\n\nWhich pytest CLI addition best enables live display of pytest-managed logging at INFO level during the run?",
+      "question_type": "mc",
+      "options": [
+        "A) Add `-o log_cli=true -o log_cli_level=INFO`",
+        "B) Add `--disable-warnings --maxfail=1`",
+        "C) Replace `-s` with `-q`",
+        "D) Add `-v` only (remove `-s`)"
+      ],
+      "correct_answer": "A",
+      "explanation": "`-s` affects stdout capture (e.g., `print()`), but it does not automatically stream Python logging records. Enabling pytest’s live logging requires `-o log_cli=true` and setting an appropriate level such as `-o log_cli_level=INFO`. The other options do not enable live logging output.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "logging",
+        "log_cli",
+        "verbosity",
+        "stdout-capture",
+        "configuration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response:\n\nYou have test code that annotates a mock as a PySpark `DataFrame`:\n\n```python\nfrom pyspark.sql import DataFrame\nfrom unittest.mock import MagicMock\n\nmock_df: DataFrame = MagicMock()\n```\n\n1) At runtime, what is the actual type of `mock_df`?\n2) Why might a developer still add the `DataFrame` annotation?\n3) Name one risk or limitation of relying on this annotation when using mocks.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The actual runtime type is `unittest.mock.MagicMock`.\n2) The `DataFrame` annotation is for static type checking and tooling (e.g., mypy/Pyright, IDE autocomplete) so the mock can be passed where a `DataFrame` is expected without type errors.\n3) Limitation: the annotation does not enforce the DataFrame interface at runtime; tests can pass even if the mock is missing methods/attributes or returns unrealistic types, and type checkers may be misled because the object is not truly a `DataFrame`.",
+      "explanation": "Type annotations affect static analysis, not the runtime class of an object. A `MagicMock` can be annotated as `DataFrame` to satisfy type checkers and improve developer experience, but it remains a mock at runtime. This can hide interface mismatches or incorrect behavior if the mock isn’t configured to match real `DataFrame` semantics (e.g., chaining, attribute presence, return types).",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "testing",
+        "unittest.mock",
+        "magicmock",
+        "type-hinting",
+        "static-type-checking",
+        "pyspark"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your project is growing and you want to reorganize tests for scalability while keeping good test discovery and maintainability.\n\n1) Propose a scalable directory structure under `cue_training/agent/tests/` that separates unit tests, integration tests, and fixtures.\n2) Explain two concrete benefits of keeping tests in a dedicated `tests/` directory (instead of placing `test_*.py` next to each module).\n\nAnswer in plain text, and include a tree-style directory layout.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Example scalable structure:\n\n```text\ncue_training/\n├── agent/\n│   ├── analysis_tools.py\n│   ├── schemas/\n│   └── tests/\n│       ├── __init__.py\n│       ├── unit/\n│       │   ├── test_source.py\n│       │   ├── test_segment.py\n│       │   └── test_calculate.py\n│       ├── integration/\n│       │   └── test_pipeline.py\n│       └── fixtures/\n│           └── mock_data.py\n```\n\n2) Two benefits:\n- Clear separation of production vs. test code: makes it easier to package/deploy the application without shipping tests and reduces clutter when navigating source code.\n- Better organization and scalability: as the test suite grows you can group tests by type (unit/integration) and share fixtures cleanly; this also aligns with common test discovery conventions (directories/files named `test*` / `test_*.py`).",
+      "explanation": "A strong answer demonstrates understanding of (a) how to structure tests as the suite grows (unit vs. integration vs. fixtures) and (b) why the separation matters. The key points are maintainability (navigation, organization), deployability (excluding tests from distribution), and compatibility with common test discovery behavior.",
+      "difficulty": "advanced",
+      "tags": [
+        "test-organization",
+        "scalability",
+        "fixtures",
+        "unit-testing",
+        "integration-testing",
+        "test-discovery"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate insists that this command is wrong because the flags come after the file path:\n```bash\npytest tests/test_unit.py -s --collect-only\n```\nExplain whether the teammate is correct. In your answer, (1) state if the command is valid, and (2) describe what it does.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The teammate is incorrect: the command is valid because pytest does not care about the order of flags and paths. It targets tests in tests/test_unit.py, disables output capturing with -s (so prints/stdout are shown), and uses --collect-only to collect and list tests without running them.",
+      "explanation": "Pytest’s CLI allows mixing options and positional arguments. The semantics come from the presence of the flags and the specified path, not from their relative ordering. Here, -s affects output capture behavior, and --collect-only stops after collection, so no test bodies execute.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "cli",
+        "argument-order",
+        "collect-only",
+        "output-capture",
+        "test-collection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want your team to always run tests with verbose output and short tracebacks by default, but sometimes developers need:\n1) quiet output for CI logs, and\n2) long tracebacks for debugging.\n\nAssume `pytest.ini` contains:\n```ini\n[pytest]\naddopts = -v --tb=short\n```\nWrite the exact pytest commands developers should run for (1) and (2), and briefly explain why each command works given `addopts`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `pytest -q`\n2) `pytest --tb=long`\n\nExplanation: `addopts` adds `-v --tb=short` to every run, but command-line options can override those defaults. `-q` (quiet) overrides the verbosity implied by `-v`, and `--tb=long` overrides `--tb=short` by setting the same traceback option to a different value.",
+      "explanation": "This tests understanding that `addopts` is applied automatically but is not immutable: passing flags on the command line can replace conflicting settings. Quiet mode counters verbose output, and setting `--tb` to `long` replaces the configured `short` traceback format.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "addopts",
+        "cli-precedence",
+        "verbosity",
+        "traceback",
+        "ci"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are configuring CI to catch warnings early. You want *all* warnings to be treated as errors, except DeprecationWarnings coming from a third-party library package `thirdpartylib` (and any of its submodules), which should be ignored.\n\nWrite the `filterwarnings` section for `pytest.ini` that implements this. Also briefly explain why the order of the rules matters.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```ini\nfilterwarnings =\n    error\n    ignore::DeprecationWarning:thirdpartylib.*\n```\n\nOrder matters because pytest applies warning filters in sequence; placing the broad `error` rule first makes warnings errors by default, and the later, more specific ignore rule for `DeprecationWarning` from `thirdpartylib.*` overrides that for the matching warnings.",
+      "explanation": "A common CI pattern is to start with `error` to convert warnings into test failures, then add narrow exceptions for known/acceptable warnings (e.g., third-party deprecations you cannot fix). The module pattern `thirdpartylib.*` limits the ignore rule to that package and its submodules. The ordering is crucial: if you put the ignore rule first and then `error` after, the later `error` rule would re-classify those warnings as errors again.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "filterwarnings",
+        "CI",
+        "warning-policy",
+        "DeprecationWarning",
+        "module-filtering",
+        "pytest.ini"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A repository has many directories (e.g., `src/`, `docs/`, `data/`, `tests/`). Some non-test files in `docs/` happen to match pytest's test file naming patterns (e.g., `test_*.py`).\n\n1) Explain how setting `testpaths = tests` in `pytest.ini` changes test discovery when running `pytest` with no arguments.\n2) Give two concrete benefits of using `testpaths` in this situation.\n3) State what happens if a developer runs `pytest docs/test_examples.py` explicitly, and why.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) With `testpaths = tests`, running `pytest` with no arguments restricts collection to the `./tests/` directory instead of recursively searching from the current working directory.\n2) Benefits include: (a) faster runs because pytest skips scanning irrelevant directories like `src/`, `docs/`, `data/`; (b) avoiding false matches by preventing accidental collection of test-like files outside the intended test suite; (c) cleaner workflow because developers can run `pytest` instead of `pytest tests/`.\n3) If a developer runs `pytest docs/test_examples.py`, pytest will collect from that explicit path even though it is outside `testpaths`, because command-line paths override `testpaths`.",
+      "explanation": "The key concept is that `testpaths` only affects the default discovery behavior when no collection paths are provided. It is commonly used to improve speed and reduce accidental collection of files that look like tests in other directories. However, explicit command-line arguments always take precedence, allowing targeted runs anywhere in the repo.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "testpaths",
+        "test-discovery",
+        "performance",
+        "false-positives",
+        "collection-rules"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want pytest to discover BOTH naming styles for functions and classes:\n\n- functions starting with `test_` OR ending with `_test`\n- classes starting with `Test` OR ending with `Tests`\n\nWrite the relevant `pytest.ini` configuration (only the `[pytest]` section) that accomplishes this. Also briefly explain why the default behavior would miss the `_test` and `*Tests` patterns.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "[pytest]\npython_functions = test_* *_test\npython_classes = Test* *Tests\n\nDefault discovery only matches functions/methods starting with `test_` and classes starting with `Test`, so names that only end with `_test` or `Tests` are not collected unless these patterns are configured.",
+      "explanation": "The `python_functions` and `python_classes` settings control which function/method and class names pytest considers tests during discovery. Adding both patterns allows pytest to collect either prefix- or suffix-based naming. By default, pytest uses prefix-based rules (`test_` for functions and `Test` for classes), so suffix-only names are ignored unless you customize discovery.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "configuration",
+        "test-discovery",
+        "naming-patterns"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a module-level side effect that you want to observe while debugging import-time issues in pytest.\n\n```python\n# tests/test_unit.py\nfrom pathlib import Path\n\nprint(\"IMPORTING\", Path(__file__).parent)\n\nclass TestQuestion:\n    def test_ok(self):\n        assert True\n```\n\n1) Explain why `print(...)` may not show up when running `pytest -s`.\n2) Provide two different fixes (one that changes the test code structure, and one that keeps code at module level) so that you can reliably see the information during debugging. Include short code/command examples.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The `print` is at module level, so it runs when pytest imports the module during collection/test discovery. That happens before (or outside the scope where) `-s` affects output capturing for test execution, so the output may not appear as expected.\n\n2) Two fixes:\n- Move the print into a test (or fixture) so it runs during test execution:\n```python\nclass TestQuestion:\n    def test_ok(self):\n        from pathlib import Path\n        print(\"IMPORTING\", Path(__file__).parent)\n        assert True\n```\n- Use logging at module level (logging is typically shown for collection-time issues) or run collection explicitly:\n```python\nimport logging\nfrom pathlib import Path\nlogging.warning(\"IMPORTING %s\", Path(__file__).parent)\n```\nAnd/or run:\n```bash\npytest tests/test_unit.py -s --collect-only\n```",
+      "explanation": "This tests understanding of pytest phases: collection/import vs execution. Module-level code runs during import, not inside a test. `-s` is mainly about disabling capture during test execution, so it may not surface collection-time output. Moving the print into a test ensures it executes in the execution phase. Using `logging.warning(...)` at module level is a better tool for import-time debugging, and `--collect-only` helps focus on collection behavior.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "collection-phase",
+        "import-time-side-effects",
+        "logging",
+        "debugging-strategies"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are testing code that should call `db.connect()` (spelled exactly) and then `cursor().execute(...)`. With a plain `MagicMock`, a typo like `db.conect()` will not fail and can hide bugs.\n\nWrite a short test snippet that:\n1) Creates a mock that *prevents* access to misspelled attributes like `conect`.\n2) Demonstrates (e.g., via an exception) that `db.conect()` is not allowed.\n\nYou may use `spec` or `spec_set` and a minimal real class/interface definition.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid approach is to define a minimal real interface and create the mock with `spec_set` (or `spec`) so unknown attributes raise `AttributeError`.\n\n```python\nfrom unittest.mock import MagicMock\nimport pytest\n\nclass DB:\n    def connect(self):\n        ...\n\n# spec_set is stricter: disallows new attributes not on DB\nmdb = MagicMock(spec_set=DB)\n\nwith pytest.raises(AttributeError):\n    mdb.conect()  # typo should fail\n\n# And the correct attribute is allowed:\n_ = mdb.connect\n```\n\n(Using `spec=DB` is also acceptable; it restricts attribute access to those on `DB`, helping catch typos like `conect`.)",
+      "explanation": "`MagicMock` auto-creates attributes by default, so typos can silently pass. Using `spec`/`spec_set` ties the mock to a real object (or class) shape. When an attribute isn’t present on the spec (e.g., `conect`), attribute access raises `AttributeError`, causing the test to fail and revealing the typo. `spec_set` is stricter because it also prevents setting new attributes not on the spec.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "unittest.mock",
+        "MagicMock",
+        "spec",
+        "spec_set",
+        "typos",
+        "test-safety",
+        "testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are testing code that uses a context manager:\n\n```python\ndef fetch_status(db):\n    with db as conn:\n        return conn.connect()\n```\n\nWrite a unit-test snippet (using `MagicMock`) that:\n1) Makes `fetch_status(db)` return the string `\"connected\"`\n2) Correctly configures the context manager behavior (`__enter__` / `__exit__`)\n\nProvide the minimal code needed to set up the mock and call the function.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom unittest.mock import MagicMock\n\n# Arrange\ndb = MagicMock()\ndb.__enter__.return_value = db  # what `with db as conn` binds to `conn`\ndb.connect.return_value = \"connected\"\n\n# Act\nresult = fetch_status(db)\n\n# (Optional) Assert\nassert result == \"connected\"\n```",
+      "explanation": "A `with db as conn:` statement calls `db.__enter__()` and assigns its return value to `conn`. By setting `db.__enter__.return_value = db`, the code inside the `with` block uses the same mock object. Then `db.connect.return_value = \"connected\"` makes `conn.connect()` return the desired value. `MagicMock` is appropriate because it already supports magic methods like `__enter__` and `__exit__`, making it a natural drop-in for a context manager.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "unit-testing",
+        "unittest.mock",
+        "MagicMock",
+        "context-manager",
+        "__enter__",
+        "__exit__"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A repository currently separates tests by file:\n- `tests/test_unit.py`\n- `tests/test_integration.py`\n- `tests/test_external_services.py`\n\nDevelopers can already run subsets by file path (e.g., `pytest tests/test_unit.py`). However, some tests in `test_integration.py` are actually fast and do not require external services, while some tests in other files do require external services.\n\nExplain (1) why markers are not mandatory in this setup, and (2) when adding markers would provide clear value beyond file-based separation. Include at least two example marker commands that would be useful in this scenario.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Markers are not mandatory because pytest can run tests by discovery/naming conventions or by explicitly providing file paths; organizing tests into files already allows selective execution (e.g., running only `tests/test_unit.py`). Markers add value when the desired selection does not map cleanly to file boundaries (e.g., some integration tests are fast, some tests across multiple files require external services). In that case, markers like `@pytest.mark.slow` or `@pytest.mark.external` enable cross-cutting selection/exclusion regardless of file location. Useful commands include `pytest -m \"not external\"` to skip tests requiring external services, `pytest -m \"integration and not slow\"` to run only faster integration tests, or `pytest -m \"slow\"` to run only slow tests when needed.",
+      "explanation": "This tests understanding of the distinction between organization (files) and selection (markers). File-based separation can be sufficient when categories align with files. Markers are optional metadata that become powerful when categories overlap across files or when you need combinations (e.g., integration but not slow, or exclude external). The example commands demonstrate marker expressions used for selective runs and exclusions.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "markers",
+        "test-organization",
+        "ci",
+        "selective-testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team wants to stop using `requirements-test.txt` and instead define test dependencies in `pyproject.toml` using optional dependency groups. Write:\n\n1) A minimal `pyproject.toml` snippet that defines a `test` optional dependency group containing `pytest>=7.0` and `pytest-cov>=4.0`.\n2) The `pip` command to install the project in editable mode with the `test` extras.\n\nExplain briefly how this replaces the `requirements-test.txt` workflow.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1)\n```toml\n[project.optional-dependencies]\ntest = [\"pytest>=7.0\", \"pytest-cov>=4.0\"]\n```\n\n2)\n```bash\npip install -e \".[test]\"\n```\n\nExplanation: The optional dependency group `test` serves the same purpose as `requirements-test.txt` by listing test-only dependencies. Instead of `pip install -r requirements-test.txt`, you install the project with the `test` extras (e.g., `.[test]`), which pulls in pytest and related plugins before running `pytest`.",
+      "explanation": "A correct answer shows the `project.optional-dependencies` table with a `test` key and uses the extras syntax `.[test]` (often with `-e` for editable installs). This approach centralizes dependency definitions in `pyproject.toml` and replaces the separate test requirements file by letting tooling install test dependencies via an extras group.",
+      "difficulty": "advanced",
+      "tags": [
+        "pyproject.toml",
+        "optional-dependencies",
+        "extras",
+        "pip-editable",
+        "pytest",
+        "dependency-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to implement the following behavior using `conftest.py` hooks:\n\n- Add a command-line option `--runslow` (default: off)\n- By default, skip tests marked with `@pytest.mark.slow`\n- If `--runslow` is provided, run slow tests normally\n\nWrite the relevant `conftest.py` code (you may omit unrelated imports). Explain briefly why `conftest.py` is an appropriate place for this logic.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example solution:\n\n```python\n# conftest.py\nimport pytest\n\ndef pytest_addoption(parser):\n    parser.addoption(\n        \"--runslow\",\n        action=\"store_true\",\n        default=False,\n        help=\"run slow tests\",\n    )\n\n\ndef pytest_collection_modifyitems(config, items):\n    if config.getoption(\"--runslow\"):\n        return\n\n    skip_slow = pytest.mark.skip(reason=\"need --runslow option\")\n    for item in items:\n        if \"slow\" in item.keywords:\n            item.add_marker(skip_slow)\n```\n\nBrief explanation: `conftest.py` is auto-discovered by pytest and can register hook functions (like `pytest_addoption` and `pytest_collection_modifyitems`) that affect collection and execution for tests in its directory scope, making it a local, lightweight plugin for the test suite.",
+      "explanation": "This uses two pytest hooks:\n- `pytest_addoption` to register a new CLI flag.\n- `pytest_collection_modifyitems` to inspect collected tests and add a skip marker to those with the `slow` keyword when `--runslow` is not set.\n\nPlacing this in `conftest.py` is appropriate because pytest auto-discovers it and applies its hooks/fixtures to the directory tree, avoiding extra imports or installing a separate plugin.",
+      "difficulty": "advanced",
+      "tags": [
+        "pytest",
+        "conftest.py",
+        "hooks",
+        "pytest_addoption",
+        "pytest_collection_modifyitems",
+        "markers",
+        "test-selection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes the purpose of a `pytest.ini` file?\n\nA) It is required for pytest to run tests at all.\nB) It is the canonical place for project-wide pytest configuration so you don’t need to repeat CLI flags.\nC) It is only used to configure third-party plugins like `pytest-cov`.\nD) It is a per-test-file configuration that overrides command-line options.",
+      "question_type": "mc",
+      "options": [
+        "A) It is required for pytest to run tests at all.",
+        "B) It is the canonical place for project-wide pytest configuration so you don’t need to repeat CLI flags.",
+        "C) It is only used to configure third-party plugins like `pytest-cov`.",
+        "D) It is a per-test-file configuration that overrides command-line options."
+      ],
+      "correct_answer": "B",
+      "explanation": "`pytest.ini` (or `tox.ini` / `[tool.pytest.ini_options]` in `pyproject.toml`) is the standard location for repo-wide pytest defaults (collection rules, default CLI flags via `addopts`, markers, logging settings, etc.). It is not required to run pytest, not limited to plugins, and it is not per-file configuration.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "configuration",
+        "testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which `tempfile` function is specifically intended to create a temporary directory that is automatically cleaned up when used as a context manager?\n",
+      "question_type": "mc",
+      "options": [
+        "A. tempfile.NamedTemporaryFile()",
+        "B. tempfile.TemporaryFile()",
+        "C. tempfile.TemporaryDirectory()",
+        "D. tempfile.mkdtemp()"
+      ],
+      "correct_answer": "C",
+      "explanation": "`tempfile.TemporaryDirectory()` is designed for creating temporary directories and, when used in a `with` block, automatically deletes the directory when the context exits. By contrast, `mkdtemp()` returns a directory path but does not automatically manage cleanup, and the file-oriented functions create files rather than directories.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "tempfile",
+        "temporarydirectory",
+        "testing",
+        "cleanup"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes **where** you should apply `unittest.mock.patch` when testing code that imports a dependency?\n\nA module under test does `from pkg.module import func` and then calls `func()`.\n\nWhich patch target is correct to ensure the call is intercepted?",
+      "question_type": "mc",
+      "options": [
+        "A. Patch `pkg.module.func` because that is where `func` is originally defined.",
+        "B. Patch the name in the module under test (the import location), e.g. `your_module_under_test.func`.",
+        "C. Patch `builtins.func` because imported functions become builtins at runtime.",
+        "D. Patch `pkg.module` (the whole module) and mocks will automatically replace all functions used by the test."
+      ],
+      "correct_answer": "B",
+      "explanation": "`patch` must replace the object **where it is looked up** by the system under test. If the module under test executed `from pkg.module import func`, it now holds its own reference named `func`. Patching `pkg.module.func` won’t affect that already-imported reference; you must patch `your_module_under_test.func` (the import location).",
+      "difficulty": "beginner",
+      "tags": [
+        "unittest.mock",
+        "patch",
+        "import-binding",
+        "test-isolation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are in the project root and your `pytest.ini` contains:\n\n```ini\n[pytest]\ntestpaths = tests\n```\n\nWhich command will discover and run all tests under the `tests/` directory?\n",
+      "question_type": "mc",
+      "options": [
+        "pytest tests/test_unit.py::TestQuestion::test_default_lineage",
+        "pytest",
+        "pytest tests/test_unit.py::TestQuestion",
+        "pytest tests/test_unit.py"
+      ],
+      "correct_answer": "B",
+      "explanation": "With `testpaths = tests` configured in `pytest.ini`, running `pytest` from the project root uses that configuration to discover tests in the `tests/` directory automatically. The other commands target a specific file, class, or test function rather than full discovery via `testpaths`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "test-discovery",
+        "pytest.ini",
+        "testpaths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest, what does setting `autouse=True` on a fixture do?\n\n```python\nimport pytest\n\n@pytest.fixture(autouse=True)\ndef set_test_env(monkeypatch):\n    monkeypatch.setenv(\"APP_MODE\", \"test\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "The fixture must be explicitly listed as a parameter in every test that needs it.",
+        "The fixture is automatically applied to every test within its scope, even if not listed as a parameter.",
+        "The fixture runs only for tests marked with `@pytest.mark.usefixtures`.",
+        "The fixture runs once per session regardless of its declared scope."
+      ],
+      "correct_answer": "B",
+      "explanation": "`autouse=True` means pytest injects the fixture automatically for all tests covered by the fixture’s scope (function/class/module/session) without requiring it to appear as a test function argument. Scope still controls *how often* it runs; `autouse` controls *whether tests must explicitly request it*.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "fixtures",
+        "autouse",
+        "scope"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest, what is the purpose of running:\n\n```bash\npytest --collect-only\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Execute all discovered tests but skip fixtures",
+        "B. Show which tests pytest would run without executing them",
+        "C. Run only tests marked with a specific marker",
+        "D. Collect tests and automatically run only failing ones from the last run"
+      ],
+      "correct_answer": "B",
+      "explanation": "The `--collect-only` flag tells pytest to perform discovery/collection and report what it finds (test files, classes, functions, fixtures) without actually running any test code. The other options describe behaviors that are not provided by `--collect-only`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "test-collection",
+        "collect-only",
+        "test-discovery"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In typical unit/integration testing practice, what is the recommended convention for output when tests pass?\n\nA. Print verbose details for every test to prove it ran\nB. Keep tests quiet when passing; rely on assertion output on failure\nC. Always write results to a custom text file for later inspection\nD. Use logging at DEBUG level in every test to capture all intermediate values",
+      "question_type": "mc",
+      "options": [
+        "Print verbose details for every test to prove it ran",
+        "Keep tests quiet when passing; rely on assertion output on failure",
+        "Always write results to a custom text file for later inspection",
+        "Use logging at DEBUG level in every test to capture all intermediate values"
+      ],
+      "correct_answer": "B",
+      "explanation": "Most test suites are designed to be pass/fail with minimal noise. When a test fails, frameworks like pytest already surface assertion diffs and context. Printing or logging everything on every successful run makes it harder to notice real problems and clutters CI logs.",
+      "difficulty": "beginner",
+      "tags": [
+        "testing",
+        "pytest",
+        "test-output",
+        "best-practices",
+        "assertions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which set of patterns matches pytest's *default* test discovery for Python test files?\n\n(Assume no custom configuration overrides.)",
+      "question_type": "mc",
+      "options": [
+        "A. Only `test_*.py`",
+        "B. `test_*.py` and `*_test.py`",
+        "C. Only `*_test.py`",
+        "D. Any `*.py` file inside `tests/`"
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, pytest discovers test modules matching both `test_*.py` and `*_test.py`. Restricting to only `test_*.py` is a customization that excludes the `*_test.py` style.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "test-discovery",
+        "python_files",
+        "naming-conventions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes the difference between a unit test and an integration test?",
+      "question_type": "mc",
+      "options": [
+        "A unit test verifies interactions between real external systems, while an integration test isolates a single function using mocks.",
+        "A unit test checks a small piece of code in isolation (often with mocks/stubs for dependencies), while an integration test checks multiple components working together (often with real dependencies).",
+        "A unit test is always slower than an integration test because it runs more frequently.",
+        "A unit test must include a real database, while an integration test must never touch external systems."
+      ],
+      "correct_answer": "B",
+      "explanation": "Unit tests focus on the smallest unit of code (e.g., a function) and typically isolate it from external dependencies by using mocks or stubs. Integration tests validate that multiple components (e.g., application code + database layer) work correctly together, often using real or realistic dependencies, which makes them slower and more setup-heavy.",
+      "difficulty": "beginner",
+      "tags": [
+        "testing",
+        "unit-testing",
+        "integration-testing",
+        "test-pyramid",
+        "mocks",
+        "stubs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Databricks environment, running `pytest` from a `/Workspace/...` path fails with an error like \"Operation not supported\" when importing tests. What is the most likely cause?\n\n```text\nOSError: [Errno 95] Operation not supported: '.../__pycache__'\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Pytest requires internet access to download plugins and cannot run in Databricks",
+        "The Databricks Workspace filesystem does not support creating `__pycache__` directories for `.pyc` bytecode writes",
+        "The test file path uses `::` which is not supported on Linux filesystems",
+        "The `--ignore-glob` option forces pytest to delete `__pycache__` directories and triggers the error"
+      ],
+      "correct_answer": "B",
+      "explanation": "When Python imports modules (including `conftest.py` and tests), it typically writes compiled bytecode (`.pyc`) into `__pycache__` directories. The Databricks Workspace mount is effectively read-only or does not support creating those directories, so the import triggers an OSError. The other options do not match the described failure mode: `::` is valid pytest node-id syntax, `--ignore-glob` prevents collection rather than forcing deletion, and internet access is not inherently required for local test execution.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "databricks",
+        "filesystem",
+        "pycache",
+        "python-imports"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the following command, which option enables pytest’s live (CLI) logging output during the test run?\n\n```bash\npytest tests/test_end_to_end.py::test_end_to_end_tasks \\\n  -vv -s \\\n  -o log_cli=true \\\n  -o log_cli_level=INFO\n```\n",
+      "question_type": "mc",
+      "options": [
+        "-vv",
+        "-s",
+        "-o log_cli=true",
+        "-o log_cli_level=INFO"
+      ],
+      "correct_answer": "C",
+      "explanation": "`-o log_cli=true` turns on pytest’s built-in live logging to the terminal. `-o log_cli_level=INFO` only sets the minimum level that will be shown once live logging is enabled. `-vv` increases pytest verbosity, and `-s` disables output capture so you can see `print()` output.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "cli",
+        "logging",
+        "log_cli",
+        "test-output"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Pytest is collecting the test file `tests/foo/bar/test_something.py`. In which order will it search for `conftest.py` files to load fixtures?\n\nA.\n```\n<project root>/conftest.py\n<project root>/tests/conftest.py\n<project root>/tests/foo/conftest.py\n<project root>/tests/foo/bar/conftest.py\n```\n\nB.\n```\n<project root>/tests/foo/bar/conftest.py\n<project root>/tests/foo/conftest.py\n<project root>/tests/conftest.py\n<project root>/conftest.py\n```\n\nC.\n```\n<project root>/tests/conftest.py\n<project root>/tests/foo/conftest.py\n<project root>/tests/foo/bar/conftest.py\n<project root>/conftest.py\n```\n\nD.\n```\n<project root>/conftest.py\n<project root>/tests/foo/bar/conftest.py\n<project root>/tests/foo/conftest.py\n<project root>/tests/conftest.py\n```",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "B",
+      "explanation": "For a test file located at `tests/foo/bar/test_something.py`, pytest looks for `conftest.py` starting from the test file’s directory and walking upward through parent directories (and other relevant parents on `sys.path`). Concretely: `tests/foo/bar/conftest.py` → `tests/foo/conftest.py` → `tests/conftest.py` → `<project root>/conftest.py`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "conftest.py",
+        "fixture-discovery",
+        "directory-tree"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Databricks environment, pytest prints `found no collectors` when you run a test. Based on the provided recipe, what is the most likely root cause?\n\nA) The test function name must start with `run_` instead of `test_`\nB) Pytest cannot see the test file on a *real filesystem* path (it’s running against a Workspace-mounted path)\nC) The `conftest.py` file must be renamed to `pytest_config.py`\nD) The `-q` flag disables test discovery",
+      "question_type": "mc",
+      "options": [
+        "The test function name must start with `run_` instead of `test_`",
+        "Pytest cannot see the test file on a *real filesystem* path (it’s running against a Workspace-mounted path)",
+        "The `conftest.py` file must be renamed to `pytest_config.py`",
+        "The `-q` flag disables test discovery"
+      ],
+      "correct_answer": "B",
+      "explanation": "The source content states that “found no collectors” usually means pytest didn’t spot the file/test on the *real filesystem*. In Databricks, code under Workspace paths can be mounted in a way pytest doesn’t treat like a normal filesystem path. Copying the repo to a real FS location (e.g., `/tmp`) and running pytest from there resolves discovery/collection issues.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "databricks",
+        "test-discovery",
+        "found-no-collectors",
+        "filesystem"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest, which command-line flag combination will (1) increase verbosity so you see more detailed test names/output and (2) show `print()` output during the test run?\n\nA developer runs tests but cannot see `print()` statements and wants more detailed output.\n\nWhich option best satisfies both goals?",
+      "question_type": "mc",
+      "options": [
+        "A) `pytest -vv -s`",
+        "B) `pytest -q -s`",
+        "C) `pytest -vv --disable-warnings`",
+        "D) `pytest -s --maxfail=1`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`-vv` increases verbosity (more detailed reporting such as test names and additional run details), and `-s` disables output capture so `print()` output (and other stdout) is shown live. The other choices either do not increase verbosity (`-q` reduces it) or do not ensure both verbosity and printed output are visible.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "verbosity",
+        "stdout-capture",
+        "cli-flags"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following code, what is the runtime type of `mock_df`?\n\n```python\nfrom unittest.mock import MagicMock\n\nmock_df = MagicMock()\nprint(type(mock_df))\n```\n",
+      "question_type": "mc",
+      "options": [
+        "<class 'pyspark.sql.dataframe.DataFrame'>",
+        "<class 'unittest.mock.Mock'>",
+        "<class 'unittest.mock.MagicMock'>",
+        "<class 'typing.Any'>"
+      ],
+      "correct_answer": "C",
+      "explanation": "`MagicMock()` constructs an instance of `unittest.mock.MagicMock`, so the runtime (concrete) type printed by `type(mock_df)` is `unittest.mock.MagicMock`. Even if you configure it to behave like a PySpark `DataFrame`, mocking does not change the object’s actual runtime class.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "testing",
+        "unittest.mock",
+        "magicmock",
+        "runtime-type"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Python project like `cue_training/`, where should you place test files for the `agent` package to follow the recommended convention described?\n\nA sample structure is:\n\n```text\ncue_training/\n├── agent/\n│   ├── analysis_tools.py\n│   └── ...\n```\n\nWhere should `test_analysis_tools.py` go?",
+      "question_type": "mc",
+      "options": [
+        "cue_training/agent/test_analysis_tools.py",
+        "cue_training/agent/tests/test_analysis_tools.py",
+        "cue_training/tests/agent/test_analysis_tools.py",
+        "cue_training/agent/analysis_tools/tests/test_analysis_tools.py"
+      ],
+      "correct_answer": "B",
+      "explanation": "The recommended convention is to keep tests in a dedicated `tests/` directory under the package being tested (here, `agent/tests/`). This provides clear separation between production and test code and aligns with common Python project layouts and test discovery patterns.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "project-structure",
+        "tests-directory",
+        "conventions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest CLI usage, which statement is correct about the ordering of flags (options) and test paths?\n\nExample commands:\n```bash\npytest tests/test_unit.py -s --collect-only\npytest -s --collect-only tests/test_unit.py\n```",
+      "question_type": "mc",
+      "options": [
+        "Flags must always come before the test path; otherwise pytest ignores them.",
+        "The test path must always come first; otherwise pytest treats it as a flag.",
+        "Pytest does not care about the order; flags and paths can be mixed freely.",
+        "Only short flags (like -s) can be placed after the path; long flags must come first."
+      ],
+      "correct_answer": "C",
+      "explanation": "Pytest’s command-line parser accepts options and positional arguments (like file paths) in any order for typical usage. Therefore, placing flags before or after the test path results in the same behavior, as shown in the equivalent example commands.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "cli",
+        "argument-order",
+        "testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a `pytest.ini` file you have:\n```ini\n[pytest]\naddopts = -v --tb=short\n```\nWhat does this configuration do when you run `pytest` with no extra arguments?",
+      "question_type": "mc",
+      "options": [
+        "It makes `pytest` behave as if you ran `pytest -v --tb=short` every time.",
+        "It only affects runs where you explicitly pass `-v` on the command line.",
+        "It changes pytest defaults permanently so command-line flags can no longer override them.",
+        "It enables verbose output but disables all traceback output."
+      ],
+      "correct_answer": "A",
+      "explanation": "`addopts` defines command-line options that are automatically added to every pytest invocation. With `addopts = -v --tb=short`, running `pytest` is equivalent to running `pytest -v --tb=short` by default. Command-line options can still override these defaults (e.g., `--tb=long`).",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "addopts",
+        "configuration",
+        "cli-options"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest, when `filterwarnings` is left empty (the default), what happens to warnings during a test run?",
+      "question_type": "mc",
+      "options": [
+        "Warnings are completely hidden and never shown.",
+        "Warnings are shown inline immediately when they occur, and no summary is produced.",
+        "Warnings are collected and shown in a summary at the end of the test run.",
+        "Warnings are treated as errors and fail the test run."
+      ],
+      "correct_answer": "C",
+      "explanation": "With the default configuration, `filterwarnings` is empty, so pytest does not suppress warnings. Instead, it collects them and prints a \"warnings summary\" section at the end of the run (as shown in the source content).",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "filterwarnings",
+        "warnings-summary",
+        "testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a project with the following `pytest.ini`, what happens when you run `pytest` with no additional arguments?\n\n```ini\n[pytest]\ntestpaths = tests\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Pytest searches for tests recursively from the current directory, including src/ and docs/",
+        "B. Pytest only searches for tests under the ./tests/ directory",
+        "C. Pytest searches only the current directory (non-recursively) for tests",
+        "D. Pytest refuses to run unless you pass an explicit path"
+      ],
+      "correct_answer": "B",
+      "explanation": "`testpaths` defines the directories pytest will search when you run `pytest` without specifying any paths. With `testpaths = tests`, invoking `pytest` will limit discovery to `./tests/`, avoiding scanning other directories.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "testpaths",
+        "test-discovery"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest's default test discovery rules, which of the following will be discovered and executed automatically (assuming it is located in a test file that pytest is already collecting)?",
+      "question_type": "mc",
+      "options": [
+        "A) A function named `test_addition()`",
+        "B) A function named `addition_test()`",
+        "C) A class named `MathTests` with a method `test_subtraction()`",
+        "D) A class named `math` with a method `test_subtraction()`"
+      ],
+      "correct_answer": "A",
+      "explanation": "By default, pytest discovers test functions whose names start with `test_`. A function named `test_addition()` matches this rule. A function ending with `_test` (like `addition_test`) is not collected unless you customize discovery. Likewise, pytest's default class discovery expects class names to start with `Test`, so `MathTests` and `math` are not collected by default even if they contain `test_` methods.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "test-discovery",
+        "naming-conventions",
+        "python-functions",
+        "python-classes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have the following test file:\n\n```python\n# tests/test_unit.py\nfrom pathlib import Path\n\nprint(\"MODULE PATH:\", Path(__file__).parent)\n\ndef test_something():\n    assert True\n```\n\nWhen running `pytest tests/test_unit.py -s`, the `print(\"MODULE PATH:\", ...)` output may not appear as expected. What is the best explanation?",
+      "question_type": "mc",
+      "options": [
+        "A. `-s` only disables output capturing during test execution; module-level code runs during collection/import before that.",
+        "B. `-s` only works when combined with `-q`, otherwise prints are suppressed.",
+        "C. `print()` is always captured by pytest regardless of flags; only `logging` can show output.",
+        "D. Module-level code is executed after tests finish, so `-s` cannot affect it."
+      ],
+      "correct_answer": "A",
+      "explanation": "Pytest imports test modules to discover tests (collection phase). Module-level code (like a top-level `print`) runs at import time, i.e., during collection. The `-s` flag disables stdout/stderr capturing primarily for test execution, so it does not reliably surface output produced during collection/import. To see collection-time behavior, you can use `--collect-only` or use logging, or move the print into a test function.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "collection-phase",
+        "import-time",
+        "output-capturing",
+        "module-level-code"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What happens when you access an attribute that was never defined on a plain Python object vs. a `unittest.mock.MagicMock`?\n\n```python\nclass Foo:\n    pass\n\nf = Foo()\n\nfrom unittest.mock import MagicMock\nm = MagicMock()\n\n# Consider:\n# f.bar\n# m.bar\n```\n",
+      "question_type": "mc",
+      "options": [
+        "`f.bar` returns `None`, and `m.bar` raises `AttributeError`.",
+        "`f.bar` raises `AttributeError`, and `m.bar` returns another `MagicMock`.",
+        "Both `f.bar` and `m.bar` raise `AttributeError` unless `bar` was assigned first.",
+        "Both `f.bar` and `m.bar` return another object, but `m.bar` is a `dict`."
+      ],
+      "correct_answer": "B",
+      "explanation": "For a normal Python instance with no `bar` attribute, attribute access fails with `AttributeError`. `MagicMock` is designed to be permissive: when you access an unknown attribute (like `m.bar`), it auto-creates and returns a new `MagicMock`, enabling chained access such as `m.bar.baz` without prior setup.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "unittest.mock",
+        "MagicMock",
+        "attribute-access",
+        "testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes `MagicMock` in Python’s `unittest.mock`?\n\nA. `MagicMock` is unrelated to `Mock` and is used only for patching modules.\nB. `MagicMock` is a subclass of `Mock` that has common magic (dunder) methods pre-configured.\nC. `MagicMock` can only mock functions, not objects or classes.\nD. `MagicMock` is identical to `Mock` and provides no additional behavior.\n",
+      "question_type": "mc",
+      "options": [
+        "A. `MagicMock` is unrelated to `Mock` and is used only for patching modules.",
+        "B. `MagicMock` is a subclass of `Mock` that has common magic (dunder) methods pre-configured.",
+        "C. `MagicMock` can only mock functions, not objects or classes.",
+        "D. `MagicMock` is identical to `Mock` and provides no additional behavior."
+      ],
+      "correct_answer": "B",
+      "explanation": "`MagicMock` extends `Mock` by pre-defining many magic (dunder) methods (like `__len__`, `__iter__`, `__getitem__`, and context-manager methods). This makes it behave more naturally when code under test relies on Python protocols. The other options incorrectly claim it is unrelated, limited to functions, or identical to `Mock`.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "unittest",
+        "unittest.mock",
+        "MagicMock",
+        "Mock",
+        "dunder-methods"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest, are markers (e.g., `@pytest.mark.unit`) required for tests to be discovered and executed?\n\nA project has tests in files like `tests/test_unit.py` and `tests/test_integration.py` and runs them with:\n```bash\npytest tests/test_unit.py\n```\nWhich statement is correct?",
+      "question_type": "mc",
+      "options": [
+        "Yes. Without markers, pytest will not discover or run tests.",
+        "Yes. Markers are required whenever you want to run tests by file path.",
+        "No. Markers are optional; they are mainly for selecting/excluding subsets of tests.",
+        "No. Markers are optional, but only if tests are inside classes derived from `unittest.TestCase`."
+      ],
+      "correct_answer": "C",
+      "explanation": "Pytest can discover and run tests without any markers as long as they follow naming conventions (e.g., `test_*.py`, `test_*` functions) or are explicitly specified by path. Markers are optional metadata used to select or exclude tests (e.g., `pytest -m unit`, `pytest -m \"not slow\"`).",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "markers",
+        "test-discovery",
+        "test-selection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes how `pytest` uses a `requirements-test.txt` file?",
+      "question_type": "mc",
+      "options": [
+        "pytest automatically reads `requirements-test.txt` and installs missing packages before running tests.",
+        "`requirements-test.txt` is a human/CI convention; you must install it yourself (e.g., via `pip install -r requirements-test.txt`) before running pytest.",
+        "pytest reads `requirements-test.txt` only when invoked with `pytest --requirements requirements-test.txt`.",
+        "`requirements-test.txt` is required by pytest; tests will not run without it even if dependencies are installed."
+      ],
+      "correct_answer": "B",
+      "explanation": "pytest does not read or install from requirements files. A `requirements-test.txt` file is a convention typically used by humans and CI pipelines to list test-only dependencies (like `pytest` and plugins). You must explicitly install those dependencies (e.g., `pip install -r requirements-test.txt`) before running `pytest`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "requirements-test.txt",
+        "python-dependencies",
+        "testing-workflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pytest, what is the primary purpose of a `conftest.py` file?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "It is required to make the `tests/` directory a Python package so pytest can import tests.",
+        "It is an auto-discovered configuration file used to define shared fixtures and register local pytest hooks/plugins for a directory tree.",
+        "It is the only place where test functions are allowed to be defined for pytest to discover them.",
+        "It is a file that pytest executes only when tests fail, to generate extra debug output."
+      ],
+      "correct_answer": "B",
+      "explanation": "`conftest.py` is a special, auto-discovered pytest configuration file. It is commonly used to define fixtures (reusable setup/data) and to register pytest hook functions (e.g., adding CLI options, modifying collection). It is not required for package imports (A), not the only place for tests (C), and it is not executed only on failures (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "pytest",
+        "conftest.py",
+        "fixtures",
+        "hooks",
+        "test-configuration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want pytest to (1) only collect tests from the `tests/` directory and (2) treat both `test_*.py` and `*_test.py` as test files. Which `pytest.ini` snippet correctly accomplishes this?\n\nA)\n```ini\n[pytest]\nrootdir = tests\npython_files = tests\n```\n\nB)\n```ini\n[pytest]\ntestpaths = tests\npython_files = test_*.py *_test.py\n```\n\nC)\n```ini\n[pytest]\npython_paths = tests\npython_files = test_*.py, *_test.py\n```\n\nD)\n```ini\n[pytest]\ntestpaths = test\npython_files = test.py *_test.py\n```",
+      "question_type": "mc",
+      "options": [
+        "A)\n```ini\n[pytest]\nrootdir = tests\npython_files = tests\n```",
+        "B)\n```ini\n[pytest]\ntestpaths = tests\npython_files = test_*.py *_test.py\n```",
+        "C)\n```ini\n[pytest]\npython_paths = tests\npython_files = test_*.py, *_test.py\n```",
+        "D)\n```ini\n[pytest]\ntestpaths = test\npython_files = test.py *_test.py\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "`testpaths = tests` restricts collection to the `tests/` directory. `python_files = test_*.py *_test.py` sets the filename patterns pytest considers as test modules. The other options use incorrect keys (`rootdir`, `python_paths`), incorrect values, or incorrect directory/patterns.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "test discovery",
+        "collection",
+        "testpaths",
+        "python_files"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a pytest fixture that creates a temporary file, writes data into it, yields the *path* to the test, and then ensures the file is removed afterward (even though the file was closed before yielding). Which approach best matches that requirement?\n\n```python\nimport tempfile\nfrom pathlib import Path\nimport pytest\n\n@pytest.fixture\ndef temp_seed_file(seed_questions_jsonl):\n    # choose the best implementation\n    ...\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `tempfile.TemporaryFile()` in a `with` block, write data, then `yield f.name` and delete it afterward with `Path(f.name).unlink()`.",
+        "B. Use `tempfile.NamedTemporaryFile(delete=False)` in a `with` block, write data, store `f.name` in a variable, `yield` the path, then delete it with `Path(path).unlink(missing_ok=True)` in teardown.",
+        "C. Use `tempfile.mkstemp()`, ignore the returned file descriptor, `yield` the path, and rely on pytest to automatically close and delete the file.",
+        "D. Use `tempfile.NamedTemporaryFile()` with default arguments (including `delete=True`), close it before yielding, then `yield f.name` and open it later by name."
+      ],
+      "correct_answer": "B",
+      "explanation": "Option B matches the pattern shown in the source: `NamedTemporaryFile()` provides a filesystem-visible name via `f.name`. Setting `delete=False` prevents the file from being deleted when the context manager closes it, which is important because the fixture yields only the path and the test may need to open the file by name after the `with` block. The explicit teardown cleanup (`unlink`) ensures no files are left behind. A is unreliable because `TemporaryFile()` may not have a visible name (`f.name` may not be usable cross-platform). C is incorrect because `mkstemp()` returns a raw file descriptor that must be closed and cleanup is not automatic. D is incorrect because with `delete=True` the file is typically removed on close, so reopening by name after closing often fails.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pytest",
+        "fixtures",
+        "tempfile",
+        "namedtemporaryfile",
+        "cleanup"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a mock to behave differently across calls and also simulate an exception.\n\nGiven:\n\n```python\nfrom unittest.mock import Mock\n\ndef boom(*a, **k):\n    raise RuntimeError(\"nope\")\n\nm = Mock()\n# TODO: configure m so that:\n# - first call returns 1\n# - second call returns 2\n# - third call raises RuntimeError(\"nope\")\n```\n\nWhich configuration meets the requirement?",
+      "question_type": "mc",
+      "options": [
+        "A. `m.return_value = [1, 2, boom]`",
+        "B. `m.side_effect = [1, 2, RuntimeError(\"nope\")]`",
+        "C. `m.side_effect = boom; m.return_value = [1, 2]`",
+        "D. `m.return_value = 1; m.return_value = 2; m.side_effect = RuntimeError(\"nope\")`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`side_effect` can be set to an **iterable** to define per-call behavior. Values are returned in order; if an element is an exception instance (e.g., `RuntimeError(\"nope\")`), it is raised on that call. `return_value` is a single value returned for every call and does not sequence behavior across calls.",
+      "difficulty": "intermediate",
+      "tags": [
+        "unittest.mock",
+        "Mock",
+        "side_effect",
+        "return_value",
+        "exceptions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the file `tests/test_unit.py` containing a test class `TestQuestion` with a test function `test_default_lineage`, write the exact `pytest` command to run only that single test.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "pytest tests/test_unit.py::TestQuestion::test_default_lineage",
+      "explanation": "Pytest supports selecting tests using the node-id syntax `path::ClassName::test_name`. Providing the file, class, and test function narrows execution to exactly that one test.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "test-selection",
+        "node-id",
+        "test-targeting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want an autouse fixture that sets an environment variable for all tests under a directory subtree, but you also want to make the intent visible for a specific test module (without making it autouse globally). Which approach best matches this goal?\n",
+      "question_type": "mc",
+      "options": [
+        "Define the fixture with `autouse=True` in `conftest.py` and rely on pytest to show it in test output for visibility.",
+        "Define the fixture without `autouse=True` and add it as a parameter to every test function in the module.",
+        "Define the fixture normally (not autouse) and apply it to the module using `@pytest.mark.usefixtures(\"fixture_name\")`.",
+        "Define the fixture with `scope=\"session\"` so it applies to all tests and is therefore visible everywhere."
+      ],
+      "correct_answer": "C",
+      "explanation": "If you want to avoid hidden global behavior while still applying setup broadly within a module/class, `@pytest.mark.usefixtures(\"name\")` makes the dependency explicit at the module/class level. Using `autouse=True` in `conftest.py` is convenient but can hide preconditions; passing the fixture into every test is explicit but noisy and error-prone.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "fixtures",
+        "autouse",
+        "conftest.py",
+        "usefixtures",
+        "test-visibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a flat list of collected test node IDs (not the default tree view) without executing tests. Which command best matches that goal?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `pytest -q`",
+        "B. `pytest --collect-only -q`",
+        "C. `pytest --collect-only --verbose`",
+        "D. `pytest -qq`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`--collect-only` prevents execution and performs collection; adding `-q` (or `-qq`) makes the output quieter and typically results in a flat list of node IDs rather than the full tree. `-q` or `-qq` alone does not prevent test execution.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "collect-only",
+        "node-id",
+        "quiet-mode",
+        "cli"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a CI-friendly artifact that summarizes test runs without spamming console output. Which approach best matches the conventions described?\n\nA. Add `print()` statements to every test so the CI log contains full details\nB. Use `pytest --html=report.html` (or similar reporting plugin) to generate a report\nC. Replace assertions with `try/except` so failures can be printed more nicely\nD. Log every intermediate variable at INFO level in all tests",
+      "question_type": "mc",
+      "options": [
+        "Add `print()` statements to every test so the CI log contains full details",
+        "Use `pytest --html=report.html` (or similar reporting plugin) to generate a report",
+        "Replace assertions with `try/except` so failures can be printed more nicely",
+        "Log every intermediate variable at INFO level in all tests"
+      ],
+      "correct_answer": "B",
+      "explanation": "HTML/JUnit-style reports are designed for CI consumption: they capture pass/fail status and metadata in a structured artifact without requiring noisy stdout from every test. Printing and excessive logging increase noise, and catching exceptions to print them can hide useful assertion introspection and stack traces.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "ci",
+        "reporting",
+        "pytest-html",
+        "test-output"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given this `pytest.ini`, which of the following files will **NOT** be collected as a test module by pytest (assuming it is under the `tests/` directory and contains valid tests)?\n\n```ini\n[pytest]\ntestpaths = tests\npython_files = test_*.py\npython_classes = Test*\npython_functions = test_*\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `tests/test_math.py`",
+        "B. `tests/math_test.py`",
+        "C. `tests/test_api_client.py`",
+        "D. `tests/test__edgecases.py`"
+      ],
+      "correct_answer": "B",
+      "explanation": "The configuration sets `python_files = test_*.py`, which is more restrictive than pytest's default. It excludes the `*_test.py` naming style, so `math_test.py` will not be collected, while the `test_*.py` files will be.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "pytest.ini",
+        "test-discovery",
+        "python_files",
+        "configuration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are testing the function below. Which testing approach is most appropriate if your goal is to verify only the function's logic (not the database behavior), and why?\n\n```python\nclass UserRepo:\n    def __init__(self, db):\n        self.db = db\n\n    def create_user(self, name: str) -> int:\n        user_id = self.db.insert(\"users\", {\"name\": name})\n        return user_id\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a unit test: replace `db` with a mock/stub so the test verifies `create_user` calls `insert` correctly and returns the expected `user_id` without requiring a real database. This isolates the function’s behavior and keeps the test fast and deterministic.",
+      "explanation": "The requirement is to verify only the function’s logic, not the database. A unit test isolates the code under test by mocking/stubbing external dependencies (here, the database object). An integration test would intentionally include a real (or realistic) database to verify the interaction across components, which is not the goal in this scenario.",
+      "difficulty": "intermediate",
+      "tags": [
+        "unit-testing",
+        "mocking",
+        "dependency-isolation",
+        "python",
+        "repositories",
+        "integration-testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to run a single pytest test on Databricks from a `/Workspace/...` path, but the filesystem cannot create `__pycache__`. Which command best prevents Python from writing `.pyc` files during the run?\n\nAssume you want to run:\n\n```sh\npytest /Workspace/Users/me/project/tests/test_end_to_end.py::test_end_to_end_tasks\n```\n",
+      "question_type": "mc",
+      "options": [
+        "```sh\npytest -q --disable-warnings --maxfail=1\n```",
+        "```sh\npython -B -m pytest /Workspace/Users/me/project/tests/test_end_to_end.py::test_end_to_end_tasks\n```",
+        "```sh\npytest --ignore-glob='*/__pycache__' /Workspace/Users/me/project/tests/test_end_to_end.py::test_end_to_end_tasks\n```",
+        "```sh\npython -m compileall /Workspace/Users/me/project\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "The `-B` flag (or setting `PYTHONDONTWRITEBYTECODE=1`) tells Python not to write bytecode files at all, preventing attempts to create `__pycache__` directories. `--ignore-glob` can reduce test collection in certain paths but does not stop Python from trying to write `.pyc` for imported modules. `-q/--disable-warnings/--maxfail` are output/behavior controls unrelated to bytecode. `compileall` would attempt to generate bytecode, worsening the problem on a non-writable filesystem.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pytest",
+        "bytecode",
+        "PYTHONDONTWRITEBYTECODE",
+        "databricks"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run this command:\n\n```bash\npytest -o log_cli=true -o log_cli_level=INFO -s\n```\n\nAssume your code under test emits the following logs:\n\n```python\nimport logging\nlogging.debug(\"debug message\")\nlogging.info(\"info message\")\nlogging.warning(\"warning message\")\n```\n\nWhich messages should appear in the terminal as live logs?\n",
+      "question_type": "mc",
+      "options": [
+        "Only the debug message",
+        "The debug and info messages only",
+        "The info and warning messages only",
+        "All three messages"
+      ],
+      "correct_answer": "C",
+      "explanation": "With `log_cli=true`, pytest streams logs live to the terminal. `log_cli_level=INFO` sets the minimum level shown to INFO, so DEBUG is filtered out. INFO and WARNING are at or above the threshold and should appear.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "logging-levels",
+        "log_cli_level",
+        "cli-logging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given this project layout:\n\n```\nproject/\n├─ conftest.py           # defines fixture root_fx\n└─ tests/\n   ├─ conftest.py        # defines fixture tests_fx\n   ├─ foo/\n   │  ├─ conftest.py     # defines fixture foo_fx\n   │  └─ test_x.py\n   └─ bar/\n      └─ test_y.py\n```\n\nWhich statement is correct about fixture visibility?\n\nA. `test_y.py` can use `root_fx`, `tests_fx`, and `foo_fx`.\n\nB. `test_x.py` can use `root_fx` and `tests_fx`, but not `foo_fx`.\n\nC. `test_y.py` can use `root_fx` and `tests_fx`, but not `foo_fx`.\n\nD. `test_x.py` can use only `foo_fx` because child conftest files hide parent fixtures.",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "C",
+      "explanation": "Fixtures are inherited from parent to child directories. So `test_x.py` (under `tests/foo/`) can see `root_fx` (project root), `tests_fx` (`tests/`), and `foo_fx` (`tests/foo/`). But `test_y.py` (under `tests/bar/`) can only see fixtures from `project/` and `tests/`, not from sibling directory `tests/foo/`. Child-to-parent (or sibling) fixture visibility does not occur.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "fixtures",
+        "conftest.py",
+        "fixture-visibility",
+        "test-collection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You copied your repository to `/tmp/code/...` and want to run exactly one test function successfully. Which command best matches the recommended approach (run from the repo root and use a relative path + node id)?\n\nA)\n```bash\npytest /Workspace/Users/jeff@pathahead.ai/cue_reinforcement_learning/tests/test_end_to_end.py -q\n```\n\nB)\n```bash\ncd /tmp/code/cue_reinforcement_learning\npytest tests/test_end_to_end.py::test_end_to_end_tasks -q --disable-warnings --maxfail=1\n```\n\nC)\n```bash\ncd /tmp/code/cue_reinforcement_learning/tests\npytest test_end_to_end.py -q --collect-only\n```\n\nD)\n```bash\ncd /tmp/code/cue_reinforcement_learning\npytest -q --disable-warnings --maxfail=1 test_end_to_end_tasks\n```",
+      "question_type": "mc",
+      "options": [
+        "```bash\npytest /Workspace/Users/jeff@pathahead.ai/cue_reinforcement_learning/tests/test_end_to_end.py -q\n```",
+        "```bash\ncd /tmp/code/cue_reinforcement_learning\npytest tests/test_end_to_end.py::test_end_to_end_tasks -q --disable-warnings --maxfail=1\n```",
+        "```bash\ncd /tmp/code/cue_reinforcement_learning/tests\npytest test_end_to_end.py -q --collect-only\n```",
+        "```bash\ncd /tmp/code/cue_reinforcement_learning\npytest -q --disable-warnings --maxfail=1 test_end_to_end_tasks\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "The recipe emphasizes: (1) run from a real filesystem copy (e.g., `/tmp/code/...`), (2) `cd` into the repo root so pytest’s root and import paths are correct, and (3) use a relative path plus node id (`tests/test_end_to_end.py::test_end_to_end_tasks`) to target a single test. Option B matches all three. A uses a Workspace path (the common cause of collection failure). C uses `--collect-only` (debugging, not running) and changes into `tests/` rather than the repo root (can affect import resolution). D is not a valid node id/path specification for pytest.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "node-id",
+        "databricks",
+        "relative-paths",
+        "test-execution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to run only a single end-to-end test function from a specific file and get very verbose output, see `print()` output, stop after the first failure, and suppress warning summaries.\n\nWrite the pytest command (including the node id) that matches these requirements, based on the example structure below:\n\n```bash\npytest \\\n  tests/test_end_to_end.py::test_end_to_end_tasks \\\n  ...\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```bash\npytest \\\n  tests/test_end_to_end.py::test_end_to_end_tasks \\\n  -vv -s \\\n  --disable-warnings --maxfail=1\n```",
+      "explanation": "The node id `tests/test_end_to_end.py::test_end_to_end_tasks` selects a single test function. `-vv` increases verbosity, `-s` shows `print()` output by disabling capture, `--maxfail=1` stops after the first failure, and `--disable-warnings` suppresses warning output/summary.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "node-id",
+        "test-selection",
+        "maxfail",
+        "warnings",
+        "verbosity",
+        "stdout-capture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a `MagicMock` to mimic a PySpark DataFrame well enough for code that does method chaining like `df.filter(...).count()`.\n\nWhich configuration best supports this chaining behavior?\n\n```python\nfrom unittest.mock import MagicMock\nmock_df = MagicMock()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `mock_df.filter.return_value = mock_df` and `mock_df.count.return_value = 100`",
+        "B. `mock_df.filter = mock_df` and `mock_df.count = 100`",
+        "C. `mock_df.filter.return_value = 100` and `mock_df.count.return_value = mock_df`",
+        "D. `mock_df.filter.side_effect = TypeError` and `mock_df.count.return_value = 100`"
+      ],
+      "correct_answer": "A",
+      "explanation": "For chaining, `filter(...)` must return an object that itself has `.count()`. Setting `mock_df.filter.return_value = mock_df` makes `mock_df.filter(...)` return the same mock, enabling `mock_df.filter(...).count()`. Setting `mock_df.count.return_value = 100` makes `.count()` return a realistic scalar. The other options either replace methods with non-callables, return the wrong types, or intentionally break the call.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "testing",
+        "unittest.mock",
+        "magicmock",
+        "method-chaining",
+        "pyspark"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You moved a test file to `cue_training/agent/tests/test_analysis_tools.py`. Which import statement best matches the recommended import path for testing `analysis_tools.py`?\n\nAssume the project root is `cue_training/` and `analysis_tools.py` is located at `cue_training/agent/analysis_tools.py`.",
+      "question_type": "mc",
+      "options": [
+        "from agent.analysis_tools import source, segment, calculate",
+        "from analysis_tools import source, segment, calculate",
+        "from cue_training.agent.analysis_tools import source, segment, calculate",
+        "from cue_training.tests.agent.analysis_tools import source, segment, calculate"
+      ],
+      "correct_answer": "C",
+      "explanation": "The described convention imports via the full package path rooted at the top-level package (`cue_training`), then the subpackage/module (`agent.analysis_tools`). This is consistent and avoids relying on the test file’s location or implicit working-directory behavior.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-imports",
+        "pytest",
+        "package-layout",
+        "test-modules"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to run pytest on a single file, show output (disable capture), and only collect tests (do not execute them). Which of the following commands is equivalent to the others?\n\nA.\n```bash\npytest -s --collect-only tests/test_unit.py\n```\nB.\n```bash\npytest -s tests/test_unit.py --collect-only\n```\nC.\n```bash\npytest tests/test_unit.py -s --collect-only\n```\nD.\n(All of the above)\n",
+      "question_type": "mc",
+      "options": [
+        "A only",
+        "B only",
+        "C only",
+        "All of the above"
+      ],
+      "correct_answer": "D",
+      "explanation": "All three commands include the same two flags (-s and --collect-only) and the same test path (tests/test_unit.py). Pytest does not require a specific ordering of options relative to paths, so these are equivalent invocations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "cli",
+        "collect-only",
+        "output-capture",
+        "argument-order"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given this configuration:\n```ini\n[pytest]\naddopts = -v --tb=short\n```\nWhich command best demonstrates *overriding* an option set in `addopts` (not just adding another behavior)?",
+      "question_type": "mc",
+      "options": [
+        "pytest -k \"unit\"",
+        "pytest --tb=long",
+        "pytest -v",
+        "pytest --strict-markers"
+      ],
+      "correct_answer": "B",
+      "explanation": "`--tb=long` overrides `--tb=short` from `addopts` because it sets the same option (`--tb`) to a different value. `-k \"unit\"` and `--strict-markers` add additional behavior, and `-v` repeats the same option already present rather than overriding it.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "addopts",
+        "overriding-options",
+        "traceback",
+        "command-line"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want DeprecationWarnings to be shown only once per *location* (file/line), but UserWarnings should fail the test run. Which `pytest.ini` `filterwarnings` configuration best matches this requirement?\n\n```ini\n# choose the best option\n```",
+      "question_type": "mc",
+      "options": [
+        "A)\n```ini\nfilterwarnings =\n    always::DeprecationWarning\n    error::UserWarning\n```",
+        "B)\n```ini\nfilterwarnings =\n    default::DeprecationWarning\n    error::UserWarning\n```",
+        "C)\n```ini\nfilterwarnings =\n    once::DeprecationWarning\n    ignore::UserWarning\n```",
+        "D)\n```ini\nfilterwarnings =\n    module::DeprecationWarning\n    default::UserWarning\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "`default` means \"show once per location\" (matching the requirement for DeprecationWarning). `error::UserWarning` turns UserWarning into an exception, which makes tests fail when that warning is raised. The other options either show DeprecationWarnings too often (`always`), not in the requested granularity (`once` is once total, `module` is once per module), or do not fail on UserWarning.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "filterwarnings",
+        "DeprecationWarning",
+        "UserWarning",
+        "pytest.ini",
+        "warning-actions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have this configuration:\n\n```ini\n[pytest]\ntestpaths = tests\n```\n\nYou run the following command:\n\n```bash\npytest tests/test_unit.py\n```\n\nWhich statement best describes what pytest will do and why?",
+      "question_type": "mc",
+      "options": [
+        "A. It will ignore `tests/test_unit.py` and run everything under `tests/` because `testpaths` takes priority",
+        "B. It will run only `tests/test_unit.py` because an explicit path overrides `testpaths`",
+        "C. It will run tests from `tests/test_unit.py` and also scan the current directory recursively for more tests",
+        "D. It will error because specifying a file conflicts with `testpaths`"
+      ],
+      "correct_answer": "B",
+      "explanation": "When you pass an explicit path (file or directory) on the command line, pytest uses that argument for collection and does not rely on `testpaths`. Therefore `pytest tests/test_unit.py` collects and runs only that file (and whatever it imports/executes), regardless of the `testpaths` setting.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "testpaths",
+        "command-line",
+        "test-selection",
+        "test-discovery"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code in a file that pytest is collecting:\n\n```python\nclass MathTests:\n    def test_subtraction(self):\n        assert 2 - 1 == 1\n\ndef addition_test():\n    assert 1 + 1 == 2\n\nclass TestMath:\n    def subtraction_test(self):\n        assert 2 - 1 == 1\n```\n\nUnder pytest's default discovery rules, which tests will run?",
+      "question_type": "mc",
+      "options": [
+        "A) Only `MathTests.test_subtraction` runs",
+        "B) Only `addition_test` runs",
+        "C) Only `TestMath.subtraction_test` runs",
+        "D) No tests run"
+      ],
+      "correct_answer": "D",
+      "explanation": "Default pytest discovery requires: (1) test classes start with `Test` and (2) test functions/methods start with `test_`. Here: `MathTests` does not start with `Test`, so its method is ignored. `addition_test` ends with `test` rather than starting with `test_`, so it is ignored. `TestMath` is a valid test class name, but its method is named `subtraction_test` (does not start with `test_`), so it is ignored. Therefore, none are discovered by default.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "test-discovery",
+        "naming-conventions",
+        "test-functions",
+        "test-classes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect that a test module fails or behaves oddly during import/collection, and you want to see output produced at module import time. Which command best matches this goal?\n\nAssume the file is `tests/test_unit.py`.",
+      "question_type": "mc",
+      "options": [
+        "A. `pytest tests/test_unit.py -s`",
+        "B. `pytest tests/test_unit.py -s --collect-only`",
+        "C. `pytest tests/test_unit.py --maxfail=1`",
+        "D. `pytest tests/test_unit.py -k collect`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`--collect-only` makes pytest stop after collection (importing modules and discovering tests) and report what it collected. Combining it with `-s` is a common way to ensure you can observe collection-time output/behavior while focusing specifically on the collection phase. The other options do not specifically target collection-time output.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "collect-only",
+        "test-discovery",
+        "debugging",
+        "stdout"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following test setup, what is printed?\n\n```python\nfrom unittest.mock import MagicMock\n\ndb = MagicMock()\ndb.connect().cursor().execute.return_value = \"OK\"\n\nprint(db.connect().cursor().execute(\"SELECT 1\"))\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It raises `AttributeError` because `connect` and `cursor` were never defined.",
+        "It prints a `MagicMock` object representation (not the string).",
+        "It prints `OK`.",
+        "It prints `None` because `execute()` has no explicit return value."
+      ],
+      "correct_answer": "C",
+      "explanation": "Each unknown attribute/method in the chain (`connect`, `cursor`, `execute`) is auto-created as a `MagicMock`. Setting `db.connect().cursor().execute.return_value = \"OK\"` configures the final mock in that chain so that calling `execute(\"SELECT 1\")` returns the string \"OK\".",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "unittest.mock",
+        "MagicMock",
+        "method-chaining",
+        "return_value",
+        "testing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom unittest.mock import Mock, MagicMock\n\nm1 = Mock()\nm2 = MagicMock()\n\nresult1 = None\ntry:\n    result1 = m1[0]\nexcept Exception as e:\n    result1 = type(e).__name__\n\nresult2 = m2[0]\n```\n\nWhat is the most likely outcome?\n\nA. `result1` is a new `Mock`, and `result2` is a new `Mock`.\nB. `result1` is \"TypeError\", and `result2` is a new `MagicMock` (or another mock object).\nC. `result1` is \"KeyError\", and `result2` is \"TypeError\".\nD. Both `result1` and `result2` are \"TypeError\".\n",
+      "question_type": "mc",
+      "options": [
+        "A. `result1` is a new `Mock`, and `result2` is a new `Mock`.",
+        "B. `result1` is \"TypeError\", and `result2` is a new `MagicMock` (or another mock object).",
+        "C. `result1` is \"KeyError\", and `result2` is \"TypeError\".",
+        "D. Both `result1` and `result2` are \"TypeError\"."
+      ],
+      "correct_answer": "B",
+      "explanation": "Plain `Mock` does not implement `__getitem__` by default, so subscripting it (`m1[0]`) raises `TypeError: 'Mock' object is not subscriptable`. `MagicMock` includes `__getitem__` and other magic methods, so `m2[0]` succeeds and returns another mock (typically another `MagicMock`) that can be further configured or asserted against.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "testing",
+        "unittest.mock",
+        "MagicMock",
+        "Mock",
+        "__getitem__",
+        "protocol-methods"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have the following tests:\n\n```python\nimport pytest\n\n@pytest.mark.unit\ndef test_fast_math():\n    assert 1 + 1 == 2\n\n@pytest.mark.slow\n@pytest.mark.unit\ndef test_heavy_computation():\n    assert sum(range(10_000)) > 0\n\n@pytest.mark.integration\ndef test_api_call():\n    assert True\n```\n\nWhich pytest command runs only unit tests that are NOT slow?",
+      "question_type": "mc",
+      "options": [
+        "pytest -m \"unit and not slow\"",
+        "pytest -m \"unit or not slow\"",
+        "pytest -m \"not unit and slow\"",
+        "pytest -m \"unit not slow\""
+      ],
+      "correct_answer": "A",
+      "explanation": "Marker expressions use boolean logic. `unit and not slow` selects tests marked `unit` while excluding those marked `slow`. Option B would include many tests (anything unit OR anything not slow), option C is the opposite of what is desired, and option D is not valid syntax (missing boolean operator).",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "markers",
+        "marker-expressions",
+        "test-selection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are setting up a CI job to run tests. Your project has `requirements.txt` (production deps) and `requirements-test.txt` (pytest and plugins). Which CI step sequence is most appropriate?\n\nA.\n```yaml\n- name: Run tests\n  run: |\n    pytest\n```\n\nB.\n```yaml\n- name: Install test dependencies\n  run: |\n    pytest -r requirements-test.txt\n- name: Run tests\n  run: pytest\n```\n\nC.\n```yaml\n- name: Install dependencies\n  run: |\n    pip install -r requirements.txt\n    pip install -r requirements-test.txt\n- name: Run tests\n  run: pytest\n```\n\nD.\n```yaml\n- name: Install dependencies\n  run: |\n    pip install requirements-test.txt\n- name: Run tests\n  run: pytest --install-deps\n```",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "C",
+      "explanation": "A correct CI workflow installs dependencies explicitly before running tests. `pip install -r requirements.txt` installs production dependencies; `pip install -r requirements-test.txt` installs test-only dependencies. pytest itself does not install dependencies or accept a requirements file to do so, so options B and D use non-existent/incorrect commands, and A omits dependency installation entirely.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ci",
+        "github-actions",
+        "pip",
+        "requirements.txt",
+        "requirements-test.txt",
+        "pytest"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this project structure:\n\n```\nproject/\n  tests/\n    conftest.py        # defines fixture: db\n    test_root.py\n    unit/\n      test_unit.py\n  other/\n    test_other.py\n```\n\n`tests/conftest.py` defines a fixture named `db`.\n\nWhich set of test modules can request the `db` fixture by name **without importing it**?",
+      "question_type": "mc",
+      "options": [
+        "Only `tests/test_root.py` (same directory), but not subdirectories.",
+        "`tests/test_root.py` and `tests/unit/test_unit.py`, but not `other/test_other.py`.",
+        "All tests anywhere in the repository, including `other/test_other.py`.",
+        "Only `tests/unit/test_unit.py` (subdirectory), but not `tests/test_root.py`."
+      ],
+      "correct_answer": "B",
+      "explanation": "`conftest.py` is directory-scoped: it applies to tests in the same directory and all subdirectories. Therefore, tests under `tests/` (including `tests/unit/`) can use the fixture by name without imports. A `conftest.py` under `tests/` does not automatically apply to a sibling directory like `other/`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytest",
+        "conftest.py",
+        "fixture-discovery",
+        "directory-scope",
+        "test-structure"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

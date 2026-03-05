@@ -1,0 +1,1952 @@
+{
+  "metadata": {
+    "subject_slug": "pathlib",
+    "subject_name": "Pathlib",
+    "exported_at": "2026-03-05T20:01:47.064206",
+    "question_count": 93,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You find this code in a codebase:\n\n```python\nfrom pathlib import Path\n\ndef validate(p: Path) -> bool:\n    # Intended: return True only if p is an absolute path\n    return bool(p.is_absolute)\n```\n\n1) Explain the bug.\n2) Provide a corrected implementation.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The bug is that `p.is_absolute` is a bound method object, not the boolean result of the check. `bool(p.is_absolute)` will always be `True` because bound method objects are truthy, so the function incorrectly returns `True` for both relative and absolute paths.\n\n2) Correct implementation:\n```python\nfrom pathlib import Path\n\ndef validate(p: Path) -> bool:\n    return p.is_absolute()\n```\n",
+      "explanation": "`is_absolute()` is a method and must be called with parentheses to compute the boolean result. Using the method object itself (without calling it) does not perform any check; it merely references the method, which is truthy when converted to `bool`.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "is_absolute",
+        "bound-method",
+        "bug-fix"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a function `safe_count_visible_py_files(path: str) -> int` using `pathlib` that counts **visible** (non-hidden) `.py` files directly inside `path` (no recursion). It must:\n\n1) Return `0` if the path does not exist, is not a directory, or cannot be accessed due to permissions.\n2) Be memory-efficient (do not build a list of all directory entries).\n3) Exclude hidden entries (names starting with `.`).\n\nProvide the implementation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pathlib import Path\n\ndef safe_count_visible_py_files(path: str) -> int:\n    p = Path(path)\n    try:\n        if not p.exists() or not p.is_dir():\n            return 0\n        return sum(\n            1\n            for item in p.iterdir()\n            if item.is_file()\n            and not item.name.startswith('.')\n            and item.suffix == '.py'\n        )\n    except PermissionError:\n        return 0\n```",
+      "explanation": "This solution uses `Path.iterdir()` (non-recursive) and a generator expression inside `sum(...)` to count items without materializing them into a list (memory-efficient). It filters to files only, excludes hidden names via `not item.name.startswith('.')`, and checks `item.suffix == '.py'`. It returns 0 for non-existent paths, non-directories, and handles `PermissionError` as required.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.iterdir",
+        "error-handling",
+        "PermissionError",
+        "filtering",
+        "generators",
+        "non-recursive"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the code below:\n\n```python\nfrom pathlib import Path\np = Path(\"/data/processed/2024/reports\")\n\np.mkdir(exist_ok=True)\n```\n\nAssume `/data/processed/2024` does NOT exist yet. What is the most likely outcome and why?",
+      "question_type": "mc",
+      "options": [
+        "A. It succeeds because `exist_ok=True` also creates missing parent directories.",
+        "B. It raises `FileNotFoundError` because missing parent directories are not created without `parents=True`.",
+        "C. It raises `FileExistsError` because `exist_ok=True` is ignored unless `parents=True` is also set.",
+        "D. It creates `/data/processed/2024` but not `reports`, because `mkdir()` only creates parents by default."
+      ],
+      "correct_answer": "B",
+      "explanation": "`exist_ok=True` only changes behavior when the *target directory* already exists; it does not create missing parents. Without `parents=True`, `Path.mkdir()` requires the immediate parent (`/data/processed/2024`) to exist, otherwise it fails (commonly with `FileNotFoundError` / missing parent error).",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.mkdir",
+        "error-handling",
+        "parents-vs-exist_ok"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this code:\n\n```python\nfrom pathlib import Path\nbase = Path(\"/home/user\")\nresult = base / \"documents/file.txt\"\n```\n\nWhich statement best describes `result`?\n",
+      "question_type": "mc",
+      "options": [
+        "`result` is a string because the right-hand side contains a slash.",
+        "`result` is a `Path` whose final components are \"documents\" and \"file.txt\" (i.e., it joins the provided relative path).",
+        "`result` raises a `ValueError` because path parts passed to `/` must not contain slashes.",
+        "`result` becomes exactly `Path(\"documents/file.txt\")`, discarding `base`."
+      ],
+      "correct_answer": "B",
+      "explanation": "The `/` operator joins path components and returns a `Path`. The right-hand operand may itself contain separators (e.g., \"documents/file.txt\"), which is treated as a relative path to be appended to `base`. The base is not discarded, and no error is raised simply because the string contains a slash.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "operator-overloading",
+        "joinpath",
+        "relative-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given a `Path` object `p` that may be POSIX or Windows-style, and may be absolute or relative.\n\nWrite a function `strip_anchor(p: Path) -> Path` that returns the portion of the path *after* the anchor, using these rules:\n\n- If `p` is absolute (i.e., has a non-empty `.anchor`), return a new `Path` made from all parts after the anchor.\n- If `p` is relative (empty `.anchor`), return `p` unchanged.\n- Do **not** use string slicing on `str(p)`; use `pathlib` attributes like `.anchor` and/or `.parts`.\n\nExample behavior (conceptual):\n- `Path(\"/home/user/docs\")-> Path(\"home/user/docs\")`\n- `Path(\"C:/Users/docs\")-> Path(\"Users/docs\")`\n- `Path(\"relative/path\")-> Path(\"relative/path\")`\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "from pathlib import Path\n\ndef strip_anchor(p: Path) -> Path:\n    # If there is an anchor, it will be the first element of parts\n    if p.anchor:\n        return Path(*p.parts[1:])\n    return p\n",
+      "explanation": "For absolute paths, the anchor (root/drive/UNC share) is always the first element of `p.parts`, so `p.parts[1:]` represents the path components after the anchor. Rebuilding with `Path(*...)` avoids brittle string manipulation and works for both POSIX and Windows path semantics. For relative paths, `.anchor` is `''`, so the function returns `p` unchanged.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.anchor",
+        "Path.parts",
+        "cross-platform",
+        "path-manipulation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write code that collects **all** `.py` files recursively under the `src` directory into a Python list named `py_files`. Use `pathlib` and ensure the result is a list (not a generator).\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "from pathlib import Path\npy_files = list(Path(\"src\").rglob(\"*.py\"))",
+      "explanation": "`Path.rglob(\"*.py\")` is shorthand for `Path(\"src\").glob(\"**/*.py\")` and searches recursively. Wrapping the result in `list(...)` materializes the generator into a list of `Path` objects.",
+      "difficulty": "advanced",
+      "tags": [
+        "pathlib",
+        "rglob",
+        "glob",
+        "recursive",
+        "generators",
+        "Path"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider relative paths and root edge cases in pathlib.\n\n1) What is the value of `Path(\"/\").parent`?\n2) What is the value of `tuple(Path(\"a/b/c\").parents)`?\n\nWrite your answers exactly as Path-like strings (e.g., `/home`, `.`), and briefly justify each.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) /  2) ('a/b', 'a', '.')\nJustification: The root directory is its own parent in pathlib. For a relative path `a/b/c`, the parents sequence walks up to `a/b`, then `a`, then the current directory `.`.",
+      "explanation": "This tests two edge cases: (1) pathlib defines the parent of root (`/`) as itself to avoid producing an invalid path above the filesystem root. (2) For relative paths, `parents` ends at `.` (current directory), reflecting that there is no absolute root in a purely relative path.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parent",
+        "Path.parents",
+        "relative-paths",
+        "root-edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the difference between `parts` and `parents`.\n\nFor the path below:\n\n```python\nfrom pathlib import Path\np = Path(\"/a/b/c.txt\")\n```\n\n1) Write the exact value of `p.parts`.\n2) Write the exact sequence of paths you would get from `list(p.parents)`.\n\nAnswer using POSIX-style paths (i.e., `/` root).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) p.parts is (\"/\", \"a\", \"b\", \"c.txt\").\n2) list(p.parents) is [Path(\"/a/b\"), Path(\"/a\"), Path(\"/\")].",
+      "explanation": "`p.parts` breaks the path into its individual components and returns them as a tuple; because the path is absolute, the root `/` is the first component. `p.parents` is an ordered sequence of the path’s ancestor directories (excluding the path itself), starting from the immediate parent and walking up to the root: `/a/b`, then `/a`, then `/`.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parts",
+        "Path.parents",
+        "path-ancestors",
+        "posix-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Python 3.12+ adds the `walk_up` parameter to `Path.relative_to()`. Fill in the blank so the code returns `Path(\"../docs\")`.\n\n```python\nfrom pathlib import Path\n\np = Path(\"/home/user/docs\")\nbase = Path(\"/home/user/projects\")\n\nresult = ______________________\n# Expected: Path(\"../docs\")\n```\n\nAlso briefly explain why `walk_up=True` is needed here.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "p.relative_to(base, walk_up=True)\n\nExplanation: Without `walk_up=True`, `relative_to()` requires `p` to be a subpath of `base` and would raise `ValueError`. With `walk_up=True`, it is allowed to add `..` components to walk up from `/home/user/projects` to `/home/user`, then down into `docs`, producing `../docs`.",
+      "explanation": "The two paths share a common prefix (`/home/user`) but `p` is not inside `base`. `walk_up=True` tells `relative_to` to compute a relative path that may include `..` to move upward from the base to the common ancestor before descending to the target.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "relative_to",
+        "walk_up",
+        "python-3.12",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to move a file to a location that may be on a different filesystem/drive (cross-device move). Write a robust function using pathlib that attempts to move via rename() first, but falls back to shutil when rename() fails due to cross-device limitations.\n\nConstraints:\n- Input: src (Path), dst (Path)\n- Output: Path to the moved file\n- Ensure parent directory of dst exists\n- Use rename() when possible; otherwise fall back to shutil.move\n\nWrite the function code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pathlib import Path\nimport shutil\n\n\ndef move_file(src: Path, dst: Path) -> Path:\n    src = Path(src)\n    dst = Path(dst)\n    dst.parent.mkdir(parents=True, exist_ok=True)\n\n    try:\n        return src.rename(dst)\n    except OSError:\n        # Commonly raised for cross-device moves (EXDEV), among other cases.\n        shutil.move(str(src), str(dst))\n        return dst\n```",
+      "explanation": "Path.rename() is the preferred/fast path and is typically atomic on the same filesystem, but it can fail for cross-device moves (often raising OSError). In that case, shutil.move() performs a copy+delete strategy that works across filesystems. Creating dst.parent ensures the destination directory exists before moving.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.rename",
+        "cross-device",
+        "shutil.move",
+        "error-handling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response: You are writing a CLI tool that accepts a user-provided path and must store a canonical absolute path in a config file.\n\n1) Explain why `Path.resolve()` is useful in this scenario.\n2) Describe one potential pitfall/edge case when calling `resolve()` (e.g., related to symlinks or existence of the path) and how you would handle it in robust code.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `Path.resolve()` is useful because it converts a user-provided path (which may be relative and contain `.`/`..`) into an absolute, normalized path and (typically) resolves symlinks, producing a canonical location suitable for consistent storage and comparison.\n2) A key pitfall is that resolving symlinks and canonicalizing may depend on filesystem state; for non-existent paths, `resolve()` may raise an error on some Python versions/platforms (or behave differently depending on `strict`). Robust handling includes using `resolve(strict=False)` when you want normalization without requiring existence, and/or catching `FileNotFoundError` and validating existence separately when required. Another pitfall is that resolving symlinks can change the apparent location (e.g., a path under a symlinked directory resolves to the target), which may be undesirable if you intended to preserve the symlink path; handle by avoiding `resolve()` in that case or by documenting the behavior.",
+      "explanation": "`resolve()` provides a canonical absolute representation, which prevents issues like storing multiple textual variants of the same location (e.g., `./data`, `data`, `../proj/data`). The main edge cases revolve around filesystem-dependent resolution (symlinks and existence). Using the `strict` parameter appropriately (or catching exceptions) and deciding whether you want to preserve symlink paths are key to robust behavior.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.resolve",
+        "strict",
+        "FileNotFoundError",
+        "symlinks",
+        "cli",
+        "robustness"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a single Python expression (no loops) that returns an iterator over all `.py` files under `project_dir` recursively, *without using* `rglob()`.\n\n```python\nfrom pathlib import Path\nproject_dir = Path(\"/myproject\")\npython_files = ______\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "project_dir.glob(\"**/*.py\")",
+      "explanation": "`Path.glob(\"**/*.py\")` uses the `**` pattern to mean “this directory and all subdirectories”, making it equivalent to `project_dir.rglob(\"*.py\")`. It returns an iterator of matching `Path` objects recursively.",
+      "difficulty": "advanced",
+      "tags": [
+        "pathlib",
+        "glob",
+        "double-star-pattern",
+        "recursive-glob",
+        "directory-operations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to create an empty marker file `logs/.gitkeep`, but the `logs/` directory might not exist. Write code using `pathlib` that ensures the directory exists and then creates (or updates) the `.gitkeep` file. Also state what would happen if you called `Path(\"logs/.gitkeep\").touch()` without creating the parent directory first.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pathlib import Path\np = Path(\"logs/.gitkeep\")\np.parent.mkdir(parents=True, exist_ok=True)\np.touch()\n```\n\nIf you call `Path(\"logs/.gitkeep\").touch()` when `logs/` does not exist, it fails because `touch()` does not create parent directories (typically raising `FileNotFoundError`).",
+      "explanation": "`touch()` only operates on the target file; it does not create missing parent directories. Creating the parent directory first with `mkdir(parents=True, exist_ok=True)` ensures the path is valid, then `touch()` can create the empty file (or update its timestamp if it already exists). Without the directory, the OS cannot create the file at that path, so the call fails.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.touch",
+        "Path.mkdir",
+        "parents",
+        "exist_ok",
+        "FileNotFoundError",
+        "filesystem-edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given a text file that may contain non-ASCII characters (e.g., \"café\"), write pathlib code that:\n1) Reads the entire file as a string using UTF-8.\n2) Writes that same string to a new file, overwriting any existing content.\n\nUse `Path` objects named `src` and `dst`.\n\n```python\nfrom pathlib import Path\nsrc = Path(\"notes.txt\")\ndst = Path(\"copy.txt\")\n# your code here\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "content = src.read_text(encoding=\"utf-8\")\ndst.write_text(content, encoding=\"utf-8\")",
+      "explanation": "`read_text(encoding=\"utf-8\")` ensures decoding is done with UTF-8 (important for non-ASCII text). `write_text(..., encoding=\"utf-8\")` encodes the string back to UTF-8 and overwrites the destination file. Both methods manage opening/closing automatically.",
+      "difficulty": "advanced",
+      "tags": [
+        "pathlib",
+        "read_text",
+        "write_text",
+        "encoding",
+        "utf-8",
+        "file-io"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing a cross-platform build tool that must compute a relative path from `start` to `dest`.\n\n1) In Python 3.12+, you want to use `Path.relative_to(start, walk_up=True)`.\n2) You must handle cases where `relative_to(..., walk_up=True)` still raises `ValueError`.\n\nExplain **two distinct situations** where `relative_to(..., walk_up=True)` will still raise `ValueError`, and provide a short code snippet that falls back to `os.path.relpath()` when needed.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two situations that still raise ValueError are: (1) different anchors, e.g., on Windows different drives like `Path('D:/data').relative_to('C:/users', walk_up=True)`; (2) mixing absolute and relative paths (different anchors), e.g., `Path('/home/user').relative_to('relative/path', walk_up=True)`. A robust approach is to try `relative_to(..., walk_up=True)` and on `ValueError` (or on Python < 3.12) fall back to `os.path.relpath()`.\n\nExample:\n```python\nfrom pathlib import Path\nimport os, sys\n\ndef rel_between(start, dest):\n    start_p = Path(start)\n    dest_p = Path(dest)\n\n    if sys.version_info >= (3, 12):\n        try:\n            return dest_p.relative_to(start_p, walk_up=True)\n        except ValueError:\n            # e.g., different anchors (drive letter) or abs vs rel mismatch\n            return Path(os.path.relpath(dest_p, start_p))\n    else:\n        return Path(os.path.relpath(dest_p, start_p))\n```\n",
+      "explanation": "`walk_up=True` expands `relative_to()` to handle `..` traversal, but it does not remove anchor constraints: paths must share the same anchor (same drive/root semantics) and must both be absolute or both be relative. When anchors differ, `relative_to()` raises `ValueError`. A practical tool should either enforce same-anchor inputs or catch `ValueError` and use `os.path.relpath()` (which is more forgiving but returns a string).",
+      "difficulty": "advanced",
+      "tags": [
+        "pathlib",
+        "relative_to",
+        "walk_up",
+        "ValueError",
+        "anchors",
+        "windows-paths",
+        "os.path.relpath",
+        "compatibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing a secure file read helper that should:\n1) Ensure `allowed_dir` exists.\n2) Resolve a user-supplied relative path against `allowed_dir`.\n3) Reject directory traversal attempts (e.g., `../secret.txt`).\n4) Fail fast if the requested path doesn't exist.\n\nWrite a function `safe_read_file(user_input, allowed_dir)` using `pathlib.Path.resolve()` and its `strict` parameter to meet the requirements. Include the key checks and exception behavior.\n\n(You may assume a custom `SecurityError` exception exists.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution:\n\n```python\nfrom pathlib import Path\n\nclass SecurityError(Exception):\n    pass\n\ndef safe_read_file(user_input, allowed_dir):\n    allowed = Path(allowed_dir).resolve(strict=True)  # (1) must exist\n\n    # (2) Join then resolve; strict=True ensures existence and resolves symlinks\n    requested = (allowed / user_input).resolve(strict=True)  # (4) fail fast if missing\n\n    # (3) Ensure the resolved requested path stays within allowed\n    # Prefer Path-based check when available; fallback to string prefix if needed.\n    try:\n        requested.relative_to(allowed)\n    except ValueError:\n        raise SecurityError(\"Path traversal attempt detected\")\n\n    return requested.read_text()\n```\n",
+      "explanation": "A secure approach resolves `allowed_dir` with `strict=True` to guarantee it exists. It then combines `allowed_dir` with the user input and resolves with `strict=True` so that missing files (or broken symlinks) raise `FileNotFoundError` immediately and symlinks are fully resolved. Finally, it verifies the resolved `requested` path is still inside `allowed` (e.g., via `requested.relative_to(allowed)`), which detects traversal like `../` after normalization/resolution. Only after these checks should the file be read.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.resolve",
+        "strict",
+        "security",
+        "path-traversal",
+        "symlinks",
+        "FileNotFoundError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer writes:\n\n```python\nfrom pathlib import Path\n\ndef load_config():\n    p = Path(__name__)\n    return p.read_text(encoding=\"utf-8\")\n```\n\n1) Explain why this function often fails when the module is run as a script.\n2) Rewrite the function so it reliably reads a file named `config.txt` located in the same directory as the current script/module.\n\nAssume `config.txt` exists next to the script file.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) It fails because `Path(__name__)` creates a path from the module name string (often \"__main__\" when run as a script). `Path()` does not error on creation, but `read_text()` requires the path to exist as a real file; typically there is no file literally named \"__main__\" in the working directory, so `read_text()` raises `FileNotFoundError`.\n\n2)\n```python\nfrom pathlib import Path\n\ndef load_config():\n    config_path = Path(__file__).with_name(\"config.txt\")\n    return config_path.read_text(encoding=\"utf-8\")\n```\n\nThis uses `__file__` to anchor the path to the actual script location and then targets `config.txt` in the same directory.",
+      "explanation": "The key concept is that `Path` objects are just path representations and accept any string; they do not validate existence at construction time. Failures occur only when you perform filesystem-dependent operations like `read_text()`, `stat()`, or `open()`. Using `__file__` provides a real filesystem path to the current module, allowing you to build a reliable path to sibling resources such as `config.txt` regardless of the current working directory.",
+      "difficulty": "advanced",
+      "tags": [
+        "pathlib",
+        "__file__",
+        "__name__",
+        "read_text",
+        "FileNotFoundError",
+        "resource-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to traverse upward from an arbitrary starting `Path` and collect each directory until you reach the filesystem root, without risking an infinite loop.\n\nWrite a function `ancestors_to_root(p: Path) -> list[Path]` that returns a list of paths encountered while moving upward (excluding the root itself), and stops correctly at the root.\n\nExample (POSIX): starting from `Path('/some/file.txt')` should eventually stop when `p` becomes `Path('/')`.\n\nUse the `pathlib` behavior that the root’s parent is itself to define the termination condition.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution is:\n\n```python\nfrom pathlib import Path\n\ndef ancestors_to_root(p: Path) -> list[Path]:\n    out = []\n    while p != p.parent:   # terminates at root because root == root.parent\n        out.append(p)\n        p = p.parent\n    return out\n```\n\nThis excludes the root because the loop stops when `p` becomes the root.",
+      "explanation": "The key edge case is that `Path('/') == Path('/').parent` (and similarly `Path('C:\\\\') == Path('C:\\\\').parent` on Windows). That makes `p != p.parent` a reliable termination condition for upward traversal. If you used a condition like `while p:` or expected `p.parent` to become `None`, you could loop forever or write incorrect termination logic. Appending before updating `p` collects each ancestor encountered, and stopping when `p == p.parent` prevents an infinite loop at the root.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parent",
+        "root-directory",
+        "loop-termination",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want the \"real\" base name of a file by removing *all* suffixes (including compound extensions). Complete the function below using pathlib properties (not regex).\n\n```python\nfrom pathlib import Path\n\ndef real_stem(p: Path) -> str:\n    # Return the filename without any suffixes.\n    # Example: Path(\"/backups/data.tar.gz\") -> \"data\"\n    # Example: Path(\"report.final.v1.pdf\") -> \"report\"\n    return ________\n```\n\nWhich expression best completes the function?",
+      "question_type": "mc",
+      "options": [
+        "p.stem",
+        "p.name.replace(p.suffix, \"\")",
+        "p.name.replace(\"\".join(p.suffixes), \"\")",
+        "p.with_suffix(\"\").name"
+      ],
+      "correct_answer": "C",
+      "explanation": "`p.name.replace(\"\".join(p.suffixes), \"\")` removes the concatenation of all suffixes from the full filename, producing the base name without any extensions (e.g., `data.tar.gz` -> remove `.tar.gz` -> `data`). `p.stem` removes only the last suffix. Replacing only `p.suffix` removes only the last extension. `with_suffix(\"\")` removes only one suffix per call, so it does not handle multiple suffixes in one step.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "compound-extensions",
+        "suffixes",
+        "string-manipulation",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the path:\n\n```python\nfrom pathlib import Path\np = Path(\"/projects/webapp/src/archive/helpers.tar.gz\")\n```\n\nWhat does `p.stem` return?",
+      "question_type": "mc",
+      "options": [
+        "\"helpers\"",
+        "\"helpers.tar\"",
+        "\"tar.gz\"",
+        "\"helpers.tar.gz\""
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.stem` removes only the *final* suffix from the filename. For `helpers.tar.gz`, the final suffix is `.gz`, so the remaining name is `helpers.tar`. (To remove all suffixes you would need a different approach, e.g., using `p.suffixes`.)",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "stem",
+        "suffix",
+        "suffixes",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\n\np = Path(\"data.csv\")\nsize = p.stat().st_size\nprint(size)\n```\n\nWhich statement best describes the behavior of this code when `data.csv` does not exist at runtime?",
+      "question_type": "mc",
+      "options": [
+        "It prints 0 because missing files have size 0 by default.",
+        "It prints `None` because `st_size` is undefined for missing files.",
+        "It raises `FileNotFoundError` when calling `p.stat()`.",
+        "It raises `AttributeError` because `Path` has no attribute `stat`."
+      ],
+      "correct_answer": "C",
+      "explanation": "`Path.stat()` performs a filesystem stat call. If the path does not exist, the underlying OS call fails and Python raises `FileNotFoundError`. The code never reaches `.st_size` in that case.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.stat",
+        "FileNotFoundError",
+        "filesystem-metadata",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a symbolic link `link` that points to an existing directory `real_dir`.\n\n```python\nfrom pathlib import Path\nlink = Path(\"/tmp/link\")\n```\n\nAssume `/tmp/link` exists and is a symlink to a directory. What do the following calls return, and why?\n\n- `link.exists()`\n- `link.is_dir()`\n- `link.is_symlink()`\n\n(Answer in terms of `True`/`False` and provide a brief justification.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "link.exists() -> True; link.is_dir() -> True; link.is_symlink() -> True. exists() is True because the path resolves to something that exists. is_dir() is True because the symlink points to a directory (it follows the link for this check). is_symlink() is True because the path itself is a symlink.",
+      "explanation": "`Path.is_symlink()` tests the nature of the path entry itself (whether it is a symlink). `Path.is_dir()` and `Path.exists()` generally follow symlinks: if the symlink target exists and is a directory, `is_dir()` returns `True`, and `exists()` returns `True`. This distinguishes \"what the path is\" (symlink) from \"what it points to\" (directory).",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "symlink",
+        "exists",
+        "is_dir",
+        "is_symlink",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a function using pathlib that attempts to delete a file and does not raise an error if the file does not exist (Python 3.8+). The function should:\n\n- Accept a path-like argument (string or Path)\n- Delete the file if present\n- Do nothing if the file is missing\n- Still raise an error for other problems (e.g., permission denied, path is a directory)\n\nProvide the code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "from pathlib import Path\n\ndef safe_delete_file(path):\n    p = Path(path)\n    p.unlink(missing_ok=True)\n",
+      "explanation": "Path.unlink(missing_ok=True) (Python 3.8+) removes the file if it exists and suppresses FileNotFoundError if it doesn't. It does not suppress other exceptions such as PermissionError, and it will still fail if the target is a directory (since unlink is for files). Converting to Path allows accepting either a string or a Path object.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "unlink",
+        "missing_ok",
+        "exceptions",
+        "robust-file-operations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to append to a potentially large text file (`log.txt`). Consider the following options:\n\nA.\n```python\np.write_text(p.read_text() + \"New log entry\\n\")\n```\n\nB.\n```python\nwith p.open(\"a\") as f:\n    f.write(\"New log entry\\n\")\n```\n\nC.\n```python\np.write_text(\"New log entry\\n\")\n```\n\nD.\n```python\nwith p.open(\"w\") as f:\n    f.write(\"New log entry\\n\")\n```\n\nWhich option is the best choice for large files, and why?",
+      "question_type": "mc",
+      "options": [
+        "A, because it uses only pathlib convenience methods and avoids open()",
+        "B, because it appends in constant memory and does not rewrite the whole file",
+        "C, because write_text() automatically appends when the file exists",
+        "D, because opening with \"w\" is safer and prevents partial writes"
+      ],
+      "correct_answer": "B",
+      "explanation": "B uses append mode (`'a'`), which writes only the new data at the end of the file and does not require reading the entire file into memory. A reads the whole file and rewrites it, which is inefficient (time and memory) for large files and can risk data loss if interrupted mid-write. C and D overwrite/truncate the file rather than appending.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "file-io",
+        "performance",
+        "append-vs-overwrite",
+        "memory-usage"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a `Path` object `base_dir = Path(\"some/nested/path\")`. Explain what each of the parameters `parents=True` and `exist_ok=True` changes in the behavior of `base_dir.mkdir(...)`. Also describe what exception(s) you would expect if you removed each parameter in two separate scenarios:\n\n1) Some parent directories do not exist.\n2) The final directory already exists.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Calling `base_dir.mkdir(parents=True, exist_ok=True)` creates the target directory and (with `parents=True`) also creates any missing parent directories. `exist_ok=True` prevents an error if the target directory already exists.\n\nIf you remove `parents=True` (keeping `exist_ok=True`):\n- Scenario 1 (missing parents): `mkdir` will fail because the immediate parent path does not exist; you should expect an error such as `FileNotFoundError`.\n- Scenario 2 (final directory exists): it will still succeed because `exist_ok=True` suppresses `FileExistsError`.\n\nIf you remove `exist_ok=True` (keeping `parents=True`):\n- Scenario 1 (missing parents): it will still succeed because `parents=True` creates the parents.\n- Scenario 2 (final directory exists): it will raise `FileExistsError` because the target directory already exists and `exist_ok` is not allowing that condition.",
+      "explanation": "`parents` controls whether missing parent directories are created; without it, `mkdir` requires the parent to exist. `exist_ok` controls whether an existing target directory is treated as an error; without it, an existing directory causes `FileExistsError`. Distinguishing these two parameters is crucial: one is about the path *leading to* the directory, the other is about the directory *already being there*.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.mkdir",
+        "parents",
+        "exist_ok",
+        "exceptions",
+        "filesystem-edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate claims the following function is a correct pathlib-only implementation to copy a text file:\n\n```python\nfrom pathlib import Path\n\ndef copy_text(src: str, dst: str) -> int:\n    # returns number of bytes written\n    return Path(dst).write_text(Path.read_text(src))\n```\n\n1) Identify the bug precisely (what is being called incorrectly and why).\n2) Provide a corrected implementation that returns the number of bytes written.\n3) Briefly state what the method signatures imply about what arguments are allowed for `.read_text()` vs `.write_text()`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Bug: `Path.read_text(src)` calls `read_text` as if it were a class/static method and passes the path as an argument. In pathlib, `read_text()` must be called on a Path instance for the file, e.g., `Path(src).read_text()`.\n\n2) Corrected:\n```python\nfrom pathlib import Path\n\ndef copy_text(src: str, dst: str) -> int:\n    return Path(dst).write_text(Path(src).read_text())\n```\n\n3) Signatures: `.read_text(encoding=None, errors=None)` takes only optional decoding parameters and no path argument, because the path is the object it is called on. `.write_text(data, encoding=None, errors=None, newline=None)` requires the text `data` to write (plus optional parameters), again because the destination path is the object it is called on.",
+      "explanation": "This tests the core pathlib concept: the Path instance *is* the file path, so file operations are instance methods. Calling `Path.read_text(src)` misuses the API by treating `read_text` like a function that accepts a filename; it doesn't. The corrected one-liner uses `Path(src).read_text()` to obtain a string and passes that string into `Path(dst).write_text(...)`, which returns the number of bytes written. The method signatures reinforce that `.read_text()` has no `path` parameter, while `.write_text(...)` requires the `data` argument.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "api-misuse",
+        "method-signatures",
+        "read_text",
+        "write_text"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer claims: “Since `Path` prints like a string, we can treat it like a string everywhere.”\n\nProvide a short response that:\n1) Explains why this claim is misleading (mention what happens when printing / f-strings), and\n2) Gives two concrete code examples: one where a `Path` works without conversion, and one where you must explicitly convert to `str()`.\n\nUse Python examples.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The claim is misleading because printing (and f-strings) only require a string representation; they call `Path.__str__()` automatically, but the object remains a `Path` with different methods/behavior than `str`.\n\nExample where `Path` works without conversion:\n```python\nfrom pathlib import Path\np = Path('config.json')\nwith open(p, 'r') as f:\n    data = f.read()  # open() accepts Path\n```\n(or `import os; os.path.exists(p)`)\n\nExample where explicit `str()` is needed (string-only API or string methods):\n```python\nfrom pathlib import Path\np = Path('/home/user/config.json')\nif str(p).startswith('/home'):\n    print('in home')\n```\n(Any equivalent example showing a string method or a library that requires a string is acceptable.)",
+      "explanation": "A strong answer distinguishes *representation* from *type*: `print(p)` and `f\"{p}\"` display the path by invoking `__str__()`, but `p` is still a `Path` object. Many modern APIs accept `Path` directly (e.g., `open`, many `os.path` functions), but not all string operations apply to `Path`. Demonstrating both a no-conversion success case and a conversion-required case shows real understanding of when `Path` behaves “string-like” and when it does not.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "__str__",
+        "f-strings",
+        "compatibility",
+        "string-methods"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a secure function `safe_join(base: Path, user_input: str) -> Path` that prevents a user from escaping `base` when constructing a path. Your solution must handle cases where `user_input` is absolute (e.g., `/etc/passwd`) and/or contains traversal segments (e.g., `../secret.txt`). Use `pathlib` and raise `ValueError` if the resulting path is outside `base`.\n\nProvide the code and briefly explain why it is safe.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom pathlib import Path\n\ndef safe_join(base: Path, user_input: str) -> Path:\n    base_resolved = base.resolve()\n    # Prevent absolute-path replacement; treat input as relative\n    rel = user_input.lstrip(\"/\")\n    candidate = (base_resolved / rel).resolve()\n\n    # Ensure candidate is within base\n    try:\n        candidate.relative_to(base_resolved)\n    except ValueError:\n        raise ValueError(\"Path escape attempt\")\n\n    return candidate\n```\n\nThis is safe because leading slashes are removed so an absolute input cannot replace the base during joining, and `resolve()` + `relative_to()` ensures that `..` traversal (or symlink-based escapes depending on filesystem state) cannot produce a path outside `base` without being detected.",
+      "explanation": "A secure approach must address two issues: (1) an absolute `user_input` would replace `base` during `/` joining, and (2) traversal segments like `..` could escape the directory. Stripping leading `/` prevents absolute replacement. Resolving the path normalizes `..` segments. Finally, checking `candidate.relative_to(base_resolved)` enforces that the resolved candidate remains inside the resolved base; otherwise a `ValueError` is raised.",
+      "difficulty": "advanced",
+      "tags": [
+        "pathlib",
+        "secure-coding",
+        "path-traversal",
+        "resolve",
+        "relative_to",
+        "absolute-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\np = Path(\"/data/reports/2024/sales.csv\")\nq = p.with_suffix(\"json\")\n```\n\nWhat happens when this code runs?",
+      "question_type": "mc",
+      "options": [
+        "It produces `Path('/data/reports/2024/sales.json')`",
+        "It produces `Path('/data/reports/2024/salesjson')` (no dot is inserted automatically)",
+        "It raises a `ValueError` because the new suffix must start with a dot (or be empty)",
+        "It modifies `p` in place so that `p` becomes `/data/reports/2024/sales.json`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`Path.with_suffix()` requires the provided suffix to either be an empty string (to remove the suffix) or to begin with a dot (e.g., `.json`). Passing `\"json\"` violates that requirement and raises `ValueError`. Also, `with_suffix()` returns a new `Path`; it never modifies `p` in place.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "with_suffix",
+        "exceptions",
+        "ValueError",
+        "immutability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to scan a very large directory tree and (1) determine whether any `*.py` files exist, and (2) if they do, obtain the first match, without building a full list of all matches.\n\nWrite a short `pathlib` code snippet that accomplishes both goals efficiently, and explain why it is memory-efficient. (Assume `p = Path(\"/huge/directory\")`.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One efficient approach is:\n\n```python\nfrom pathlib import Path\n\np = Path(\"/huge/directory\")\n\ngen = p.rglob(\"*.py\")\nfirst_match = next(gen, None)\nhas_python = first_match is not None\n```\n\nThis is memory-efficient because `rglob()` returns a generator, so it yields paths lazily. `next(gen, None)` stops after producing at most one match, avoiding traversal/storage of all matches. If you only need existence, you could also use `any(p.rglob(\"*.py\"))`, which short-circuits on the first match.",
+      "explanation": "A correct solution should rely on the laziness of the generator returned by `rglob()` and should avoid `list(p.rglob(...))` for large trees. Using `next(..., None)` retrieves at most one element and stops immediately, which minimizes filesystem traversal work and avoids storing all results in memory. Using `any(...)` is also efficient because it short-circuits as soon as a match is found.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "pathlib",
+        "rglob",
+        "generators",
+        "next",
+        "any",
+        "short-circuiting",
+        "performance",
+        "memory-efficiency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, which expression correctly checks whether a Path is absolute?\n\n```python\nfrom pathlib import Path\np = Path(\"/home/user/file.txt\")\n\nis_abs = ______\n```\n",
+      "question_type": "mc",
+      "options": [
+        "p.is_absolute",
+        "p.is_absolute()",
+        "p.absolute",
+        "p.absolute()"
+      ],
+      "correct_answer": "B",
+      "explanation": "`is_absolute()` is a method that must be called to return a boolean. Without parentheses (`p.is_absolute`), you get a bound method object rather than `True`/`False`. `absolute()` is a different method that returns a Path (typically an absolute version), not a boolean check.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "is_absolute",
+        "methods-vs-properties"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what `Path.iterdir()` returns and what it yields?",
+      "question_type": "mc",
+      "options": [
+        "It returns a list of strings containing the names of files in the directory (excluding subdirectories).",
+        "It returns a generator that yields `Path` objects for each item (files and directories) in the directory.",
+        "It returns a generator that yields strings for each item, including recursive contents of subdirectories.",
+        "It returns a sorted list of `Path` objects, excluding hidden files by default."
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.iterdir()` is lazy (returns a generator/iterator) and yields `Path` objects for each immediate child item in the directory, including both files and directories. It does not recurse, does not sort, and includes hidden entries.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.iterdir",
+        "generators"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `pathlib`, which call most closely matches the shell command `mkdir -p /data/processed/2024/reports` (create parents as needed and do not error if the directory already exists)?",
+      "question_type": "mc",
+      "options": [
+        "A. `Path(\"/data/processed/2024/reports\").mkdir()`",
+        "B. `Path(\"/data/processed/2024/reports\").mkdir(parents=True)`",
+        "C. `Path(\"/data/processed/2024/reports\").mkdir(exist_ok=True)`",
+        "D. `Path(\"/data/processed/2024/reports\").mkdir(parents=True, exist_ok=True)`"
+      ],
+      "correct_answer": "D",
+      "explanation": "`parents=True` creates any missing parent directories (like `mkdir -p`), and `exist_ok=True` prevents a `FileExistsError` if the target directory already exists. Using only one of these flags either fails when parents are missing (no `parents=True`) or fails when the directory already exists (no `exist_ok=True`).",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.mkdir",
+        "directory-operations",
+        "parents",
+        "exist_ok"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, what does the overloaded `/` operator do when used with `Path` objects?\n\n```python\nfrom pathlib import Path\nbase = Path(\"/home/user\")\nresult = base / \"documents\" / \"file.txt\"\nprint(result)\nprint(type(result))\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It concatenates strings and returns a `str` like \"/home/user/documents/file.txt\".",
+        "It joins path components and returns a new `Path` object representing \"/home/user/documents/file.txt\".",
+        "It raises `TypeError` because `/` cannot be used with `Path` objects.",
+        "It returns a list of path parts like [\"home\", \"user\", \"documents\", \"file.txt\"]."
+      ],
+      "correct_answer": "B",
+      "explanation": "In `pathlib`, `/` is overloaded to mean “join paths”. Chaining `base / \"documents\" / \"file.txt\"` produces a new `Path` (e.g., `PosixPath` or `WindowsPath`). Printing the object shows a path-like string, but `type(result)` remains a `Path` subclass. This avoids error-prone manual string concatenation and mirrors `joinpath()` behavior.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "operator-overloading",
+        "path-joining"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, what does the `.anchor` property return for a *relative* path such as `Path(\"docs/report.txt\")`?",
+      "question_type": "mc",
+      "options": [
+        "\"/\"",
+        "\"docs/\"",
+        "\"\" (empty string)",
+        "A `Path` object representing the current working directory"
+      ],
+      "correct_answer": "C",
+      "explanation": "`.anchor` returns the filesystem-anchoring prefix (root/drive/UNC). Relative paths have no such prefix, so `.anchor` is the empty string. Also, `.anchor` returns a string, not a `Path` object.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.anchor",
+        "absolute-vs-relative"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, what does `Path.glob()` return?\n\n```python\nfrom pathlib import Path\np = Path(\"data\")\nresults = p.glob(\"*.csv\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. A list of file names (strings)",
+        "B. A generator that yields `Path` objects",
+        "C. A single `Path` object representing the first match",
+        "D. A dictionary mapping file names to absolute paths"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.glob()` returns an iterator-like generator, not a list. Iterating over it yields `Path` objects for each match. If you need a list, you must wrap it with `list(...)`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "glob",
+        "generators",
+        "Path"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, which statement correctly accesses the immediate parent directory of a Path object?\n\n```python\nfrom pathlib import Path\np = Path(\"/home/user/docs/file.txt\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. p.parent()",
+        "B. p.parent",
+        "C. p.parents()",
+        "D. p.parents[0]()"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.parent` is a *property*, not a method, so it is accessed without parentheses. Calling `p.parent()` raises a `TypeError`. `parents` is also a property, and indexing it (e.g., `p.parents[0]`) yields a Path, but adding `()` would again attempt to call a Path object.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parent",
+        "properties-vs-methods"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `pathlib`, what does the `Path.parts` property return?\n\n```python\nfrom pathlib import Path\np = Path(\"/home/user/docs/file.txt\")\nprint(p.parts)\n```",
+      "question_type": "mc",
+      "options": [
+        "[\"/\", \"home\", \"user\", \"docs\", \"file.txt\"]",
+        "(\"/\", \"home\", \"user\", \"docs\", \"file.txt\")",
+        "(\"home\", \"user\", \"docs\", \"file.txt\")",
+        "(\"/home\", \"/home/user\", \"/home/user/docs\", \"/home/user/docs/file.txt\")"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.parts` returns a tuple of the path’s individual components. For an absolute POSIX path, the root separator `/` is included as the first element. It is not a list (so not `[...]`), and it does not return cumulative parent paths (that’s closer to iterating `p.parents`).",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parts",
+        "posix-paths",
+        "path-components"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `pathlib`, which expression returns the part of `file_path` that comes after `base`?\n\n```python\nfrom pathlib import Path\n\nfile_path = Path(\"/home/user/projects/webapp/src/app.py\")\nbase = Path(\"/home/user/projects\")\n\nrelative = ____\n# Expected: Path(\"webapp/src/app.py\")\n```",
+      "question_type": "mc",
+      "options": [
+        "file_path.relative_to(base)",
+        "base.relative_to(file_path)",
+        "file_path.resolve(base)",
+        "file_path.relpath(base)"
+      ],
+      "correct_answer": "A",
+      "explanation": "`Path.relative_to(base)` returns a new `Path` consisting of the portion of `file_path` after `base`. Here, `/home/user/projects` is removed from the start of `/home/user/projects/webapp/src/app.py`, leaving `webapp/src/app.py`. The other options are incorrect: reversing the arguments changes the meaning, and `resolve`/`relpath` are not valid `Path` methods for this purpose.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "relative_to",
+        "paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pathlib, which method should you use to rename (or move) a file represented by a Path object?\n\n```python\nfrom pathlib import Path\np = Path(\"old_name.txt\")\n# rename to new_name.txt\n____\n```",
+      "question_type": "mc",
+      "options": [
+        "p.mv(\"new_name.txt\")",
+        "p.rename(\"new_name.txt\")",
+        "p.move(\"new_name.txt\")",
+        "p.copy(\"new_name.txt\")"
+      ],
+      "correct_answer": "B",
+      "explanation": "Pathlib provides Path.rename() to rename or move a file. There is no Path.mv() or Path.move() method, and copy() would duplicate rather than rename/move.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "rename",
+        "file-operations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `pathlib`, what does `Path.resolve()` do?",
+      "question_type": "mc",
+      "options": [
+        "Checks whether the path exists and raises an error if it does not",
+        "Returns an absolute path with symlinks and any `.`/`..` components resolved",
+        "Splits the path into its individual components (parts)",
+        "Converts the `Path` object into a string using the OS path separator"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.resolve()` produces an absolute path and normalizes it by eliminating `.` and `..` components. It also resolves symbolic links (where possible), yielding the canonical path representation.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.resolve",
+        "path-resolution",
+        "symlinks",
+        "absolute-path"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `pathlib`, which expression finds all `.py` files inside `project_dir` *and all of its subdirectories*?\n\n```python\nfrom pathlib import Path\nproject_dir = Path(\"/myproject\")\npython_files = ______\n```",
+      "question_type": "mc",
+      "options": [
+        "project_dir.iterdir()",
+        "project_dir.glob(\"*.py\")",
+        "project_dir.rglob(\"*.py\")",
+        "project_dir.glob(\"*/*.py\")"
+      ],
+      "correct_answer": "C",
+      "explanation": "`Path.rglob(\"*.py\")` performs a recursive glob search, yielding all matching `.py` files in `project_dir` and every nested subdirectory. By contrast, `iterdir()` does not filter by pattern, `glob(\"*.py\")` only searches the immediate directory, and `glob(\"*/*.py\")` searches only one directory level deep.",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "Path",
+        "rglob",
+        "glob",
+        "recursive-search",
+        "file-matching"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `pathlib`, which method behaves like the Unix `touch` command (create an empty file if missing, otherwise update its modification time)?\n\n```python\nfrom pathlib import Path\np = Path(\"newfile.txt\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "p.create()",
+        "p.touch()",
+        "p.new()",
+        "p.make_file()"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.touch()` is the `pathlib` method that mirrors the Unix `touch` behavior: it creates the file if it doesn't exist, or updates the file's modification timestamp if it does exist. The other methods listed are not valid `Path` APIs.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.touch",
+        "file-creation",
+        "timestamps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In pathlib, what is the simplest one-liner to read the entire contents of a text file into a string?\n\n```python\nfrom pathlib import Path\np = Path(\"notes.txt\")\ncontent = ______\n```",
+      "question_type": "mc",
+      "options": [
+        "p.contents()",
+        "p.read_text()",
+        "p.read_bytes()",
+        "Path.read(p)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.read_text()` opens the file, reads the entire contents as a Python `str`, and closes the file automatically. `read_bytes()` returns `bytes` (not `str`), and the other options are not valid pathlib APIs for reading file contents.",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "read_text",
+        "file-io",
+        "text-files"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python 3.12+, what does setting `walk_up=True` change about `Path.relative_to()`?\n\n```python\nfrom pathlib import Path\n\ndest = Path(\"/home/user/docs/file.txt\")\nstart = Path(\"/home/user/projects\")\n\nresult = dest.relative_to(start, walk_up=True)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It makes `relative_to()` return a string instead of a `Path` object.",
+        "It allows `relative_to()` to compute relative paths that require \"..\" traversal to a common ancestor.",
+        "It makes `relative_to()` automatically resolve symlinks before computing the relative path.",
+        "It allows `relative_to()` to compute relative paths even when the paths are on different Windows drives."
+      ],
+      "correct_answer": "B",
+      "explanation": "`walk_up=True` (Python 3.12+) allows `relative_to()` to \"walk up\" using `..` to find a common ancestor and then descend to the destination, enabling sibling/cousin relationships (e.g., returning `../docs/file.txt`). It still returns a `Path`, does not imply symlink resolution, and it still fails across different anchors (e.g., different Windows drives).",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "Path.relative_to",
+        "walk_up",
+        "python-3.12",
+        "relative-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python 3.6+, what does the `strict` parameter control in `Path.resolve()`?\n\n```python\nfrom pathlib import Path\np = Path(\"/home/user/nonexistent/file.txt\")\n```\n\nWhich statement is correct?",
+      "question_type": "mc",
+      "options": [
+        "A. `strict=False` raises `FileNotFoundError` if the path does not exist; `strict=True` returns the resolved path anyway.",
+        "B. `strict=True` raises `FileNotFoundError` if the path does not exist; `strict=False` returns the resolved path even if it doesn't exist.",
+        "C. `strict` controls whether the returned path is absolute or relative.",
+        "D. `strict` controls whether symlinks are resolved, but never checks existence."
+      ],
+      "correct_answer": "B",
+      "explanation": "`strict` determines whether `.resolve()` verifies existence on the filesystem. With `strict=False` (the default in Python 3.6+), `.resolve()` returns a normalized absolute path even if it doesn't exist. With `strict=True`, `.resolve()` performs an existence check and raises `FileNotFoundError` if any component required to resolve the path is missing.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.resolve",
+        "strict",
+        "FileNotFoundError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which import and constructor correctly create a `Path` object for the file `/home/user/data.csv`?\n\n```python\n# Choose the correct option\n____\nfile_path = ____\n```",
+      "question_type": "mc",
+      "options": [
+        "A. `from pathlib import Path` and `Path('/home/user/data.csv')`",
+        "B. `import Path from pathlib` and `Path('/home/user/data.csv')`",
+        "C. `from pathlib import PurePath` and `PurePath('/home/user/data.csv')`",
+        "D. `from pathlib import WindowsPath` and `WindowsPath('/home/user/data.csv')`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`Path` is the standard entry point in `pathlib`: you import it with `from pathlib import Path` and instantiate it with the path string. Option C creates a *pure* path (no filesystem operations), while D forces a Windows-specific path class and is not appropriate as the general solution (and may be invalid on non-Windows systems). Option B is invalid Python syntax.",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "Path",
+        "import",
+        "path-creation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Fill in the blanks to create a `Path` object representing the file `/home/user/data.csv`:\n\n```python\nfrom pathlib import ______\nfile_path = ______(\"/home/user/data.csv\")\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Path\nPath",
+      "explanation": "You import `Path` from `pathlib`, then call `Path(...)` with the string path: `from pathlib import Path` and `file_path = Path('/home/user/data.csv')`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "Path",
+        "fill-in-the-blank",
+        "path-creation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\n\np = Path(__name__)\nprint(p)\nprint(p.name)\nprint(p.exists())\n```\n\nWhen this script is run directly (so `__name__ == \"__main__\"`), what is the most accurate description of what happens?",
+      "question_type": "mc",
+      "options": [
+        "A. `Path(__name__)` raises `TypeError` because `__name__` is not a filesystem path",
+        "B. The `Path` object is created successfully; `p.name` is \"__main__\"; `p.exists()` returns `False` (typically)",
+        "C. The `Path` object is created successfully; `p.name` is \"__name__\"; `p.exists()` returns `True` because the module exists",
+        "D. The `Path` object is created successfully, but printing `p` raises `FileNotFoundError` because the path does not exist"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path()` accepts any string and does not validate existence at construction time. When run directly, `__name__` is the string \"__main__\", so `p.name` is \"__main__\". Methods like `exists()` consult the filesystem; unless a file named \"__main__\" happens to exist in the current working directory, `p.exists()` will be `False`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "Path",
+        "__name__",
+        "exists",
+        "filesystem"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `pathlib`, what is the value of `Path(\"/\").parent` on a POSIX system?\n\n```python\nfrom pathlib import Path\nroot = Path(\"/\")\nprint(root.parent)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It raises a `ValueError` because the root has no parent",
+        "B. It returns `None` because the root has no parent",
+        "C. It returns `Path(\"/\")` (the root itself)",
+        "D. It returns `Path(\".\")` because the parent of everything is the current directory"
+      ],
+      "correct_answer": "C",
+      "explanation": "The filesystem root is the top of the directory tree and has no real parent. `pathlib` handles this edge case by returning the root itself rather than raising an error or returning `None`. Therefore, `Path(\"/\").parent == Path(\"/\")`.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parent",
+        "root-directory",
+        "posix-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, given:\n\n```python\nfrom pathlib import Path\np = Path(\"/backups/data.tar.gz\")\n```\n\nWhich expression returns *all* file suffixes as a list (e.g., `[\".tar\", \".gz\"]`)?",
+      "question_type": "mc",
+      "options": [
+        "p.suffix",
+        "p.suffixes",
+        "p.suffix(get_all=True)",
+        "p.extensions"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.suffixes` is a property that returns a list of all suffixes in the filename (e.g., `[\".tar\", \".gz\"]`). `Path.suffix` returns only the last suffix (e.g., `\".gz\"`). The other options are not valid pathlib APIs.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "suffixes",
+        "file-extensions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `pathlib`, given:\n\n```python\nfrom pathlib import Path\np = Path(\"/projects/webapp/src/utils/helpers.py\")\n```\n\nWhich expression returns the filename *without* its extension (i.e., `\"helpers\"`)?",
+      "question_type": "mc",
+      "options": [
+        "p.name",
+        "p.suffix",
+        "p.stem",
+        "p.parent"
+      ],
+      "correct_answer": "C",
+      "explanation": "`Path.stem` returns the final path component without its last suffix. Here, `p.name` is `\"helpers.py\"`, `p.suffix` is `\".py\"`, and `p.parent` is the directory path. Therefore `p.stem` yields `\"helpers\"`.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "stem",
+        "path-properties"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, which expression correctly retrieves the size of a file in bytes?\n\n```python\nfrom pathlib import Path\np = Path(\"data.csv\")\nsize_in_bytes = ____\n```",
+      "question_type": "mc",
+      "options": [
+        "p.size()",
+        "p.stat().st_size",
+        "p.stat_size",
+        "len(p.read_bytes())"
+      ],
+      "correct_answer": "B",
+      "explanation": "Path objects do not provide a direct `.size()` method. The correct approach is to call `p.stat()` to obtain an `os.stat_result` containing filesystem metadata, then read the `st_size` attribute, which is the file size in bytes. `len(p.read_bytes())` can also yield the size, but it reads the entire file into memory, which is unnecessary and inefficient for large files.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.stat",
+        "st_size",
+        "file-size"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `pathlib`, which method checks whether a path exists (regardless of whether it is a file or a directory)?\n\n```python\nfrom pathlib import Path\np = Path(\"/tmp/something\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "p.is_file()",
+        "p.is_dir()",
+        "p.exists()",
+        "p.is_symlink()"
+      ],
+      "correct_answer": "C",
+      "explanation": "`Path.exists()` returns `True` if the path exists in the filesystem, whether it is a file, directory, symlink, etc. In contrast, `is_file()` and `is_dir()` check for specific existing types, and `is_symlink()` checks whether the path itself is a symbolic link.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "filesystem",
+        "exists",
+        "path-exists"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, which method deletes a file at a given path?\n\n```python\nfrom pathlib import Path\np = Path(\"temp_file.txt\")\n\n# Delete the file\n____\n```",
+      "question_type": "mc",
+      "options": [
+        "p.delete()",
+        "p.remove()",
+        "p.unlink()",
+        "p.rmdir()"
+      ],
+      "correct_answer": "C",
+      "explanation": "Path.unlink() is the pathlib method used to remove (delete) a file. The name comes from the Unix concept of unlinking a directory entry. Path.rmdir() is for deleting directories (and only if they are empty), while delete()/remove() are not pathlib Path methods.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "unlink",
+        "file-deletion"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which approach correctly appends text to an existing file using `pathlib.Path` without overwriting the file?\n\n```python\nfrom pathlib import Path\np = Path(\"log.txt\")\n\n# Append \"New log entry\\n\" to the file\n____\n```",
+      "question_type": "mc",
+      "options": [
+        "p.append_text(\"New log entry\\n\")",
+        "p.write_text(\"New log entry\\n\")",
+        "with p.open(\"a\") as f:\n    f.write(\"New log entry\\n\")",
+        "p.open(\"w\").write(\"New log entry\\n\")"
+      ],
+      "correct_answer": "C",
+      "explanation": "`Path` has no `append_text()` method, so A is invalid. `write_text()` overwrites the entire file, so B does not append. Opening with mode `'w'` also overwrites (and D also fails to safely close the file). Using `with p.open(\"a\")` opens the file in append mode and the context manager ensures proper closing, so it appends without overwriting.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "file-io",
+        "append",
+        "context-manager"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `pathlib`, what is the effect of calling the following?\n\n```python\nfrom pathlib import Path\nbase_dir = Path(\"some/nested/path\")\nbase_dir.mkdir(parents=True, exist_ok=True)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Creates only the final directory (\"path\") and fails if \"some/nested\" does not already exist",
+        "Creates the directory and any missing parent directories; does not error if the directory already exists",
+        "Creates the directory only if it is empty; otherwise raises `FileExistsError`",
+        "Creates the directory but always raises an error if any parent directory is missing"
+      ],
+      "correct_answer": "B",
+      "explanation": "`parents=True` tells `mkdir` to create any missing parent directories on the way to the target path. `exist_ok=True` suppresses `FileExistsError` if the target directory already exists. Together, they make the call safe for repeated runs and for nested paths whose parents may not exist yet.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.mkdir",
+        "parents",
+        "exist_ok"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's pathlib, which snippet correctly reads text from `/home/user/data.txt` and writes it to `/home/user/backup.txt` using only pathlib (no `open()`)?",
+      "question_type": "mc",
+      "options": [
+        "A. `Path.write_text(\"/home/user/backup.txt\", Path.read_text(\"/home/user/data.txt\"))`",
+        "B. `Path(\"/home/user/backup.txt\").write_text(Path(\"/home/user/data.txt\").read_text())`",
+        "C. `p = Path(); p.read_text(\"/home/user/data.txt\"); p.write_text(\"/home/user/backup.txt\")`",
+        "D. `Path(\"/home/user/data.txt\").write_text(Path(\"/home/user/backup.txt\").read_text())`"
+      ],
+      "correct_answer": "B",
+      "explanation": "In pathlib, the Path object represents the file path, and methods like `.read_text()` and `.write_text(...)` are called on that Path instance. Option B correctly constructs a Path for the source file and calls `.read_text()` with no path argument, then constructs a Path for the destination file and calls `.write_text(...)` with the read string. Options A and C incorrectly pass paths into methods or use an empty Path. Option D reverses source/destination (it would overwrite `data.txt` with the contents of `backup.txt`).",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "read_text",
+        "write_text",
+        "file-operations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\n\np = Path('/home/user/config.json')\nprint(p)\n```\n\nWhy does `print(p)` display a string-like path (e.g., `/home/user/config.json`) even though `p` is not a `str`?",
+      "question_type": "mc",
+      "options": [
+        "Because `Path` inherits directly from `str`.",
+        "Because `print()` calls `repr(p)` which always returns a file system string.",
+        "Because `print()` uses `p.__str__()` (string conversion) to produce display text.",
+        "Because `Path` objects are automatically cast to `str` at assignment time."
+      ],
+      "correct_answer": "C",
+      "explanation": "`p` is a `Path` (e.g., `PosixPath`/`WindowsPath`), not a `str`. When you pass an object to `print()`, Python converts it to text using its string form, which comes from `__str__()`. `Path.__str__()` returns the path as a string, so it *prints* like a string even though the type is still `Path`.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "__str__",
+        "printing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `pathlib`, what is the result of joining a base path with an absolute path using the `/` operator?\n\n```python\nfrom pathlib import Path\nbase = Path(\"/home/user\")\nresult = base / \"/etc/passwd\"\nprint(result)\n```",
+      "question_type": "mc",
+      "options": [
+        "Path(\"/home/user/etc/passwd\")",
+        "Path(\"/etc/passwd\")",
+        "Path(\"/home/user//etc/passwd\")",
+        "Raises ValueError because absolute paths cannot be joined"
+      ],
+      "correct_answer": "B",
+      "explanation": "In `pathlib`, joining with an absolute path discards the base path and returns the absolute path. This mirrors `os.path.join`, where any absolute component replaces everything before it. No exception is raised; the behavior is intentional.",
+      "difficulty": "beginner",
+      "tags": [
+        "pathlib",
+        "Path",
+        "path-joining",
+        "absolute-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `pathlib`, which expression creates a new `Path` with the file extension changed from `.csv` to `.json` without modifying the original?\n\n```python\nfrom pathlib import Path\np = Path(\"/data/reports/2024/sales.csv\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "p.with_suffix(\".json\")",
+        "p.suffix = \".json\"",
+        "p.with_name(\"sales.json\")",
+        "p.replace_suffix(\".json\")"
+      ],
+      "correct_answer": "A",
+      "explanation": "`Path.with_suffix()` returns a new `Path` object with the suffix (extension) replaced. `pathlib.Path` objects are immutable, so you don't assign to `p.suffix`. `with_name()` can also produce the target path here, but it replaces the entire filename (not specifically the suffix). `replace_suffix()` is not a `Path` method.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "with_suffix",
+        "immutability",
+        "file-extension"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `pathlib`, why do `Path.glob()` and `Path.rglob()` return generators instead of lists?\n\n```python\nfrom pathlib import Path\np = Path(\"/project\")\nresult = p.glob(\"*.py\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "To guarantee the results are returned in sorted order",
+        "To improve performance and memory efficiency by producing matches lazily",
+        "Because the filesystem API cannot return lists of paths",
+        "To allow random access (indexing) into results without conversion"
+      ],
+      "correct_answer": "B",
+      "explanation": "`glob()`/`rglob()` return generators (lazy iterators) so they can yield matches one at a time as you iterate, rather than building and storing a potentially huge list in memory. This is especially important for large directory trees (e.g., tens of thousands of files). They do not inherently guarantee sorting, and generators do not support random access without converting to a concrete collection like a list.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "pathlib",
+        "glob",
+        "rglob",
+        "generators",
+        "lazy-iteration",
+        "memory-efficiency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the output of the following code?\n\n```python\nfrom pathlib import Path\n\np1 = Path(\"docs/file.txt\")\np2 = Path(\"/etc/hosts\")\n\nprint(p1.is_absolute())\nprint(p2.is_absolute())\n```\n",
+      "question_type": "mc",
+      "options": [
+        "True\\nTrue",
+        "True\\nFalse",
+        "False\\nTrue",
+        "False\\nFalse"
+      ],
+      "correct_answer": "C",
+      "explanation": "`Path(\"docs/file.txt\")` is a relative path, so `is_absolute()` returns `False`. `Path(\"/etc/hosts\")` starts from the filesystem root on POSIX systems, so it is absolute and `is_absolute()` returns `True`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "is_absolute",
+        "relative-vs-absolute"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\n\np = Path(\"/tmp/example\")\nitems = p.iterdir()\n\nfirst_pass = [x.name for x in items]\nsecond_pass = [x.name for x in items]\n\nprint(len(first_pass), len(second_pass))\n```\n\nAssuming `/tmp/example` exists and is a directory with at least one item, what is the most likely output pattern and why?",
+      "question_type": "mc",
+      "options": [
+        "Both lengths are the same because `iterdir()` can be iterated multiple times without side effects.",
+        "The second length is 0 because `iterdir()` returns an exhaustible generator/iterator.",
+        "The first length is 0 because `iterdir()` skips hidden files by default.",
+        "Both lengths are 0 because `iterdir()` only yields directories, not files."
+      ],
+      "correct_answer": "B",
+      "explanation": "`iterdir()` returns an iterator (generator-like) that is consumed as you iterate. After building `first_pass`, the iterator is exhausted, so iterating again produces no items and `second_pass` is empty. To iterate multiple times, materialize it once: `items = list(p.iterdir())`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.iterdir",
+        "iterators",
+        "generator-exhaustion"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Fill in the blank to create the nested directory structure, creating parent directories if needed and not raising an error if it already exists:\n\n```python\nfrom pathlib import Path\np = Path(\"/data/processed/2024/reports\")\n\n____\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "p.mkdir(parents=True, exist_ok=True)",
+      "explanation": "`p` already represents the target path, so `mkdir()` should be called on `p` without passing a path string. `parents=True` ensures `/data/processed/2024` is created if missing, and `exist_ok=True` makes the call succeed even if `/data/processed/2024/reports` already exists.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "Path.mkdir",
+        "nested-directories"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Rewrite the following path construction using `joinpath()` so that it produces the same `Path` as the `/` operator expression.\n\n```python\nfrom pathlib import Path\nbase = Path(\"/home/user\")\nresult = base / \"documents\" / \"file.txt\"\n```\n\nProvide the `joinpath()` version (one line) and state what type `result` is.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "result = base.joinpath(\"documents\", \"file.txt\"); result is a Path object (e.g., pathlib.PosixPath on Unix/macOS or pathlib.WindowsPath on Windows).",
+      "explanation": "`Path.joinpath()` performs the same path-joining operation as the overloaded `/` operator. Both return a new `Path` object rather than a string. The concrete class depends on the OS (`PosixPath` vs `WindowsPath`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "joinpath",
+        "Path",
+        "path-creation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the relationship between `.anchor`, `.drive`, and `.root` in `pathlib`.\n\nWhich statement is correct across platforms?\n",
+      "question_type": "mc",
+      "options": [
+        "`.anchor` is always equal to `.root`",
+        "`.anchor` is always equal to `.drive`",
+        "`.anchor` equals `.drive + .root`",
+        "`.anchor` returns a `Path` object that can be joined with `/`"
+      ],
+      "correct_answer": "C",
+      "explanation": "In pathlib, the documented relationship is `anchor = drive + root`. On Unix, `.drive` is typically `''` and `.root` is `'/'` for absolute paths, so `.anchor` becomes `'/'`. On Windows, `.drive` might be `'C:'` (or a UNC share like `\\\\server\\share`) and `.root` is `'\\\\'`, producing anchors like `'C:\\\\'` or `'\\\\\\\\server\\\\share\\\\'`. Also, `.anchor` returns a string, not a `Path` object.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.anchor",
+        "Path.drive",
+        "Path.root",
+        "cross-platform"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to find **all** Python files under a project directory, including in nested subdirectories. Which expression correctly does this?\n\nAssume:\n```python\nfrom pathlib import Path\np = Path(\"src\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `p.glob(\"*.py\")`",
+        "B. `p.glob(\"**/*.py\")`",
+        "C. `p.glob(\"*/*.py\")`",
+        "D. `p.glob(\"**.py\")`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Recursive globbing in `pathlib` uses the `**` pattern. `p.glob(\"**/*.py\")` matches `.py` files at any depth under `src`. `p.glob(\"*.py\")` only checks the immediate directory, and `*/*.py` only checks exactly one directory deep.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "glob",
+        "recursive",
+        "double-star",
+        "patterns"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the following code, what will be printed?\n\n```python\nfrom pathlib import Path\np = Path(\"/home/user/docs/file.txt\")\nprint(p.parents[2])\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. /home/user/docs",
+        "B. /home/user",
+        "C. /home",
+        "D. /"
+      ],
+      "correct_answer": "C",
+      "explanation": "`p.parents` is an immutable sequence of ancestor directories. For `/home/user/docs/file.txt`: `p.parents[0]` is `/home/user/docs`, `p.parents[1]` is `/home/user`, `p.parents[2]` is `/home`, and `p.parents[3]` is `/`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parents",
+        "indexing",
+        "ancestor-directories"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to rebuild a path from its components using `Path.parts`.\n\nGiven:\n\n```python\nfrom pathlib import Path\np = Path(\"/var/log/nginx/access.log\")\nparts = p.parts\nrebuilt = Path(*parts)\n```\n\nWhat is the value of `rebuilt` (on a POSIX system)?",
+      "question_type": "mc",
+      "options": [
+        "Path(\"var/log/nginx/access.log\")",
+        "Path(\"/var/log/nginx/access.log\")",
+        "Path(\"/\", \"var\", \"log\", \"nginx\", \"access.log\")",
+        "It raises a TypeError because `parts` is a tuple."
+      ],
+      "correct_answer": "B",
+      "explanation": "`parts` is a tuple of strings like (`\"/\"`, `\"var\"`, `\"log\"`, ...). Passing it to `Path(*parts)` expands the components as positional arguments. On POSIX, a leading `\"/\"` component makes the result absolute, so the rebuilt path is `Path(\"/var/log/nginx/access.log\")`. Option C is not how `Path` is displayed/constructed in practice (it will normalize into the standard absolute path). A tuple is fine to unpack with `*`, so no TypeError.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parts",
+        "path-reconstruction",
+        "argument-unpacking"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What happens when you call `relative_to()` with a base that is not a prefix of the path?\n\n```python\nfrom pathlib import Path\n\np = Path(\"/home/user/file.txt\")\nbase = Path(\"/other\")\n\nresult = p.relative_to(base)\n```\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "It returns `Path(\"../../home/user/file.txt\")` automatically.",
+        "It returns `Path(\"file.txt\")` because only the filename is kept.",
+        "It raises `ValueError` because `p` is not under `base`.",
+        "It returns `None` to indicate there is no relative path."
+      ],
+      "correct_answer": "C",
+      "explanation": "`relative_to()` requires that the path actually start with (be contained under) the provided base. If it is not a subpath, `pathlib` raises a `ValueError` rather than guessing a path with `..` components.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "relative_to",
+        "exceptions",
+        "ValueError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\np = Path(\"old_name.txt\")\nnew_p = p.rename(\"new_name.txt\")\n```\n\nAfter this runs successfully, which statement is correct?",
+      "question_type": "mc",
+      "options": [
+        "p now points to \"new_name.txt\" and new_p points to \"old_name.txt\".",
+        "Both p and new_p point to \"new_name.txt\".",
+        "p still represents the path \"old_name.txt\" (which no longer exists), and new_p represents \"new_name.txt\".",
+        "rename() returns None; you must construct the new Path manually."
+      ],
+      "correct_answer": "C",
+      "explanation": "Path.rename() returns a new Path object pointing to the target path. The original Path object (p) is unchanged as an object; it still represents the old pathname string, even though the file at that old location has been renamed/moved.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.rename",
+        "return-value",
+        "file-rename"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Assume the current working directory is `/home/user/projects` and the filesystem contains a symlink `/home/user/projects/current -> /home/user/releases/v2`.\n\nWhat is the result of the following code?\n\n```python\nfrom pathlib import Path\np = Path(\"current/../current/app/./config\")\nprint(p.resolve())\n```\n",
+      "question_type": "mc",
+      "options": [
+        "/home/user/projects/current/../current/app/config",
+        "/home/user/projects/app/config",
+        "/home/user/releases/v2/app/config",
+        "/home/user/releases/app/config"
+      ],
+      "correct_answer": "C",
+      "explanation": "`resolve()` makes the path absolute, removes `.` and `..`, and resolves symlinks. `current` points to `/home/user/releases/v2`, so `current/app/./config` becomes `/home/user/releases/v2/app/config`. The `current/..` portion returns to the parent of the symlink *target* after resolution, but because the final canonical path is computed, the net result is the canonical target path `/home/user/releases/v2/app/config`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.resolve",
+        "symlinks",
+        "dotdot",
+        "canonical-path",
+        "cwd"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a *list* of all Python files under `project_dir` recursively. Which snippet correctly produces a list?\n\n```python\nfrom pathlib import Path\nproject_dir = Path(\"/myproject\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "python_files = project_dir.rglob(\"*.py\")",
+        "python_files = list(project_dir.rglob(\"*.py\"))",
+        "python_files = list(project_dir.glob(\"*.py\"))",
+        "python_files = project_dir.glob(\"**/*.py\")"
+      ],
+      "correct_answer": "B",
+      "explanation": "`rglob()` returns an iterator (generator-like) of `Path` objects; wrapping it in `list(...)` materializes the results. `glob(\"*.py\")` is non-recursive, and using `glob(\"**/*.py\")` without `list(...)` still returns an iterator rather than a list.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "rglob",
+        "glob",
+        "generators",
+        "list-materialization",
+        "recursive-search"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What happens when you call `touch()` with `exist_ok=False` on a path that already exists as a file?\n\n```python\nfrom pathlib import Path\np = Path(\"data.txt\")\n# Assume data.txt already exists\np.touch(exist_ok=False)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It silently updates the modification time and returns.",
+        "It truncates the existing file to 0 bytes.",
+        "It raises `FileExistsError`.",
+        "It creates a new file named `data (1).txt`."
+      ],
+      "correct_answer": "C",
+      "explanation": "With `exist_ok=False`, `Path.touch()` will not allow an existing file at that path and raises `FileExistsError`. The default is `exist_ok=True`, which would update the timestamp instead.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.touch",
+        "exist_ok",
+        "exceptions",
+        "FileExistsError"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to write the string \"hello world\" to a file using pathlib, ensuring the file is overwritten if it already exists. Which code snippet is correct?\n\nAssume:\n```python\nfrom pathlib import Path\np = Path(\"out.txt\")\n```",
+      "question_type": "mc",
+      "options": [
+        "p.write_text(\"hello world\")",
+        "p.write_bytes(\"hello world\")",
+        "p.read_text(\"hello world\")",
+        "p.open(\"w\").write_text(\"hello world\")"
+      ],
+      "correct_answer": "A",
+      "explanation": "`Path.write_text(\"...\")` writes a `str` to the file and overwrites existing contents. `write_bytes()` requires a `bytes` object (e.g., `b\"hello world\"`). `read_text()` reads rather than writes. `p.open(\"w\")` returns a file object, which has `.write()`, not `.write_text()`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "write_text",
+        "file-io",
+        "overwrite",
+        "text-files"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given Python 3.12+ and the following code, what is the value of `rel`?\n\n```python\nfrom pathlib import Path\n\nstart = Path(\"/a/b/x/y/z\")\ndest = Path(\"/a/b/c/d/e\")\n\nrel = dest.relative_to(start, walk_up=True)\nprint(rel)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "`../../c/d/e`",
+        "`../../../c/d/e`",
+        "`../c/d/e`",
+        "Raises `ValueError` because `dest` is not a subpath of `start`."
+      ],
+      "correct_answer": "B",
+      "explanation": "With `walk_up=True`, `relative_to()` finds the common ancestor (`/a/b`), then goes up from `/a/b/x/y/z` to `/a/b` (3 levels: `../../..`), then down to `c/d/e`, producing `../../../c/d/e`. Without `walk_up=True` it would raise `ValueError`, but here it computes the `..` traversal.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "relative_to",
+        "walk_up",
+        "common-ancestor",
+        "posix-paths"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are migrating code from Python 3.5 to Python 3.11. In Python 3.5, this code raised an exception for missing paths:\n\n```python\nfrom pathlib import Path\nPath(\"/nonexistent\").resolve()\n```\n\nIn Python 3.11, it no longer raises and instead returns a resolved path. Which change best preserves the Python 3.5 behavior in Python 3.11?",
+      "question_type": "mc",
+      "options": [
+        "A. Replace `.resolve()` with `.absolute()`.",
+        "B. Use `.resolve(strict=True)`.",
+        "C. Call `.resolve()` and then `.exists()`; this is identical in behavior to Python 3.5 in all cases.",
+        "D. Use `.resolve(strict=False)` explicitly to force the old behavior."
+      ],
+      "correct_answer": "B",
+      "explanation": "Python 3.5 behaved like `strict=True` (and the `strict` parameter did not exist). Starting in Python 3.6, `strict` was introduced and the default changed to `strict=False`, so missing paths no longer raise by default. Using `.resolve(strict=True)` restores the fail-fast behavior for non-existent paths. While `resolve(); exists()` can be used, it is not identical in all cases because it separates resolution from the atomic existence check and can lead to different exception timing/handling.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "version-differences",
+        "Path.resolve",
+        "strict"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing cross-platform code that must work on both Linux and Windows. You want to create an object representing the path `\"/home/user/data.csv\"` without hard-coding OS-specific path classes. Which statement best explains why using `Path` is preferred over directly using `PosixPath` or `WindowsPath`?\n\nChoose one.",
+      "question_type": "mc",
+      "options": [
+        "A. `Path` automatically selects the appropriate concrete path class for the current OS, while `PosixPath`/`WindowsPath` force a specific flavor.",
+        "B. `Path` always creates a `PosixPath` regardless of OS, making it the most portable choice.",
+        "C. `PosixPath` and `WindowsPath` are deprecated, so `Path` is the only supported class.",
+        "D. `Path` returns a plain string path, while `PosixPath` and `WindowsPath` return objects."
+      ],
+      "correct_answer": "A",
+      "explanation": "`Path` is designed as the main entry point: it constructs the correct concrete path type for the running platform (POSIX on Linux/macOS, Windows on Windows). Using `PosixPath` or `WindowsPath` directly hard-codes a specific path flavor and can be inappropriate or error-prone on the other OS. The other options are incorrect: `Path` does not always create `PosixPath`, the OS-specific classes are not generally deprecated, and `Path` returns an object, not a string.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "Path",
+        "PosixPath",
+        "WindowsPath",
+        "cross-platform"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to get the directory containing the currently running script using `pathlib`. Which snippet correctly does this, and why?\n\nA.\n```python\nfrom pathlib import Path\nscript_dir = Path(__name__).parent\n```\n\nB.\n```python\nfrom pathlib import Path\nscript_dir = Path(__file__).parent\n```\n\nC.\n```python\nfrom pathlib import Path\nscript_dir = Path(\"__main__\").parent\n```\n\nD.\n```python\nfrom pathlib import Path\nscript_dir = Path.cwd().parent\n```",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "B",
+      "explanation": "`__file__` is the path to the current module/script file, so `Path(__file__).parent` gives the directory containing that file. `__name__` is a module name (e.g., \"__main__\" when run directly), not a filesystem path, so using it does not reliably locate the script. `Path.cwd().parent` depends on the process working directory, which may differ from the script location.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "__file__",
+        "__name__",
+        "script-directory",
+        "Path.parent"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\n\np = Path(\"/a/b/c\")\nprint(list(p.parents))\n```\n\nWhich output best matches what `pathlib` produces on a POSIX system?",
+      "question_type": "mc",
+      "options": [
+        "A. `[Path('/a/b'), Path('/a'), Path('/'), Path('/'), Path('/'), ...]` (repeats root forever)",
+        "B. `[Path('/a/b'), Path('/a'), Path('/')]`",
+        "C. `[Path('/a/b'), Path('/a'), Path('.')]`",
+        "D. `[Path('/a/b/c'), Path('/a/b'), Path('/a'), Path('/')]`"
+      ],
+      "correct_answer": "B",
+      "explanation": "The `.parents` attribute is a finite sequence of logical ancestors, stopping at the root. It does not repeat `Path('/')` infinitely. Also, `.parents` does not include the path itself (that would be `.parents` vs something like iterating `p, p.parent, ...`). For `/a/b/c`, the parents are `/a/b`, `/a`, and `/`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.parents",
+        "root-directory",
+        "ancestor-traversal"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Fill in the blanks by writing the exact outputs for each pathlib property.\n\n```python\nfrom pathlib import Path\np = Path(\"/backups/data.tar.gz\")\n\n# Write the outputs as Python literals (strings / lists)\na = p.name\nb = p.stem\nc = p.suffix\nd = p.suffixes\n```\n\nWhat are `a`, `b`, `c`, and `d`?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "a = \"data.tar.gz\"\nb = \"data.tar\"\nc = \".gz\"\nd = [\".tar\", \".gz\"]",
+      "explanation": "`name` is the final path component including all extensions. `stem` removes only the last suffix, so it keeps `\".tar\"` as part of the stem. `suffix` is only the final extension, and `suffixes` returns all suffixes as a list in order.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.name",
+        "Path.stem",
+        "Path.suffix",
+        "Path.suffixes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given:\n\n```python\nfrom pathlib import Path\np = Path(\"/projects/webapp/src/utils/helpers.py\")\n```\n\nWrite a single expression that produces the string `\"helpers.txt\"` (i.e., replace the suffix with `.txt`, keeping the same stem).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "p.stem + \".txt\"",
+      "explanation": "`p.stem` extracts the base filename without the extension (`\"helpers\"`). Concatenating `\".txt\"` forms the new filename `\"helpers.txt\"`. This directly applies the concept of `stem` being the name without suffix.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "stem",
+        "suffix",
+        "string-manipulation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to print the size of a file in bytes and handle the case where the file does not exist.\n\nWrite a function `file_size_bytes(path_str)` that returns the file size as an integer if the path exists, and returns `None` if it does not.\n\nUse `pathlib` and the `stat()` approach.\n\n```python\nfrom pathlib import Path\n\ndef file_size_bytes(path_str: str):\n    # your code here\n    ...\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "from pathlib import Path\n\ndef file_size_bytes(path_str: str):\n    p = Path(path_str)\n    try:\n        return p.stat().st_size\n    except FileNotFoundError:\n        return None",
+      "explanation": "`Path.stat()` queries the filesystem and returns an `os.stat_result`; `st_size` is the size in bytes. If the path does not exist, `stat()` raises `FileNotFoundError`, which should be caught to return `None` as requested.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "exceptions",
+        "FileNotFoundError",
+        "Path.stat",
+        "st_size"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to validate that a user-supplied path points to an existing *regular file* (not a directory). Which check is most appropriate?\n\n```python\nfrom pathlib import Path\np = Path(user_input)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "p.exists()",
+        "p.is_file()",
+        "p.is_dir()",
+        "p.is_symlink()"
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path.is_file()` returns `True` only if the path exists and is a regular file. `exists()` is too broad (it would also return `True` for directories). `is_dir()` checks for directories. `is_symlink()` only checks whether the path is a symlink, not whether it is a regular file.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "filesystem-checks",
+        "is_file",
+        "input-validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to delete an empty directory using pathlib. Which code correctly does this?\n\n```python\nfrom pathlib import Path\np = Path(\"temp_dir\")\n# Assume temp_dir exists and is empty\n____\n```",
+      "question_type": "mc",
+      "options": [
+        "p.unlink()",
+        "p.rmdir()",
+        "p.unlink(missing_ok=True)",
+        "p.remove_dir()"
+      ],
+      "correct_answer": "B",
+      "explanation": "Path.rmdir() removes an empty directory. Path.unlink() is for files, not directories. unlink(missing_ok=True) only changes behavior when the path is missing; it still targets files. remove_dir() is not a pathlib API.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "rmdir",
+        "directories",
+        "file-operations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to append a line to a log file using `pathlib`, but you wrote code that fails:\n\n```python\nfrom pathlib import Path\np = Path(\"log.txt\")\np.append_text(\"New log entry\\n\")\n```\n\n1) Explain why this fails.\n2) Provide a correct replacement that appends the text (does not overwrite).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "It fails because `pathlib.Path` does not implement an `append_text()` method (only convenience methods like `read_text()` and `write_text()`). A correct replacement is to open the file in append mode and write:\n\n```python\nfrom pathlib import Path\np = Path(\"log.txt\")\nwith p.open(\"a\", encoding=\"utf-8\") as f:\n    f.write(\"New log entry\\n\")\n```",
+      "explanation": "`append_text()` is a non-existent API on `Path`, so calling it raises an `AttributeError`. Appending requires falling back to `Path.open()` (or `open(p, ...)`) with mode `'a'`, which appends to the end of the file rather than truncating it.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "file-io",
+        "append",
+        "api-limitations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Suppose you run this code on a filesystem where `a/` exists, but `a/b/` does not:\n\n```python\nfrom pathlib import Path\np = Path(\"a/b/c\")\n\n# Option 1\np.mkdir(exist_ok=True)\n```\n\nWhat is the most likely outcome and why?",
+      "question_type": "mc",
+      "options": [
+        "It creates `a/b/c` successfully because `exist_ok=True` implies `parents=True`",
+        "It raises `FileNotFoundError` because the parent directory `a/b` does not exist and `parents` was not set",
+        "It raises `FileExistsError` because `a/` already exists",
+        "It creates `a/b` but not `a/b/c` because `mkdir` only creates parents by default"
+      ],
+      "correct_answer": "B",
+      "explanation": "`exist_ok=True` only affects what happens if the *target directory* already exists (it prevents `FileExistsError`). It does not create missing parents. Without `parents=True`, `Path.mkdir()` requires the immediate parent (`a/b`) to already exist; otherwise it fails (commonly with `FileNotFoundError`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path.mkdir",
+        "parents",
+        "exist_ok",
+        "exceptions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given this incorrect code:\n\n```python\nfrom pathlib import Path\n\np = Path()\ntext = p.read_text(\"/home/user/data.txt\")\np.write_text(text, \"/home/user/backup.txt\")\n```\n\nRewrite it so it works, using only pathlib methods (no `open()`). Use variables for readability.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "from pathlib import Path\n\nsource = Path(\"/home/user/data.txt\")\ndest = Path(\"/home/user/backup.txt\")\ncontent = source.read_text()\ndest.write_text(content)\n",
+      "explanation": "The bug is treating `.read_text()` and `.write_text()` as if they accept a path string argument. In pathlib, you call these methods on the Path object that points to the file. The corrected solution creates `source` and `dest` Path objects, reads the text from `source` via `source.read_text()`, then writes it to `dest` via `dest.write_text(content)`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "path-objects",
+        "method-calls",
+        "file-copy-text"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have the following code:\n\n```python\nfrom pathlib import Path\n\nconfig_file = Path('/home/user/config.json')\n\nprint(config_file)                 # 1\nprint(str(config_file))            # 2\nprint(config_file.exists())        # 3\nprint(config_file.startswith('/')) # 4\n```\n\nWhich line will raise an exception, and why?",
+      "question_type": "mc",
+      "options": [
+        "Line 1, because `print()` cannot print `Path` objects without conversion.",
+        "Line 2, because `str()` cannot convert `Path` objects on Windows.",
+        "Line 3, because `.exists()` is only available on strings, not on `Path`.",
+        "Line 4, because `.startswith()` is a string method and `Path` does not implement it."
+      ],
+      "correct_answer": "D",
+      "explanation": "Lines 1 and 2 work because `Path` can be printed and explicitly converted with `str()`. Line 3 works because `.exists()` is a `Path` method. Line 4 fails because `.startswith()` is a `str` method; `Path` objects don’t provide general string methods. You’d need `str(config_file).startswith('/')` if you want to use string operations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "str",
+        "methods",
+        "type-errors"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building a file path under an uploads directory, but `filename` comes from user input.\n\n```python\nfrom pathlib import Path\n\ndef upload_path(filename: str) -> Path:\n    base = Path(\"/safe/uploads\")\n    return base / filename\n\nprint(upload_path(\"/etc/passwd\"))\n```\n\nWhich statement best describes the problem and outcome?",
+      "question_type": "mc",
+      "options": [
+        "The result is `Path(\"/safe/uploads/etc/passwd\")`, because `/` always appends components.",
+        "The result is `Path(\"/etc/passwd\")`, because an absolute `filename` replaces the base path, creating a path traversal risk.",
+        "A `ValueError` is raised automatically to prevent escaping `/safe/uploads`.",
+        "The result is `Path(\"/safe/uploads//etc/passwd\")`, which is safe because double slashes are normalized."
+      ],
+      "correct_answer": "B",
+      "explanation": "If `filename` is absolute (starts with `/` on POSIX), `base / filename` discards `base` and returns the absolute path. That means user input can escape the intended directory (e.g., `/safe/uploads`) and point to sensitive files like `/etc/passwd`. `pathlib` does not automatically reject this; you must sanitize or validate.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "security",
+        "path-traversal",
+        "absolute-paths",
+        "input-validation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have the following path:\n\n```python\nfrom pathlib import Path\np = Path(\"/data/reports/2024/sales.csv\")\n```\n\nWrite a single expression that returns a new `Path` for `/data/reports/2024/sales` (i.e., remove the extension), without modifying `p`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "p.with_suffix(\"\")",
+      "explanation": "`with_suffix(\"\")` removes the suffix entirely and returns a new `Path`. This keeps the directory and filename stem the same while dropping the extension, and it does not mutate `p`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "Path",
+        "with_suffix",
+        "remove-extension",
+        "immutability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nfrom pathlib import Path\np = Path(\"/project\")\n\ngen = p.rglob(\"*.py\")\na = list(gen)\nb = list(gen)\nprint(len(a), len(b))\n```\n\nAssuming there is at least one `*.py` file under `/project`, what is the most accurate description of what will be printed and why?",
+      "question_type": "mc",
+      "options": [
+        "Both lengths will be equal because `rglob()` caches results internally",
+        "The first length will be > 0 and the second will be 0 because generators are exhausted after iteration",
+        "The first length will be 0 and the second will be > 0 because the generator starts producing values only on the second iteration",
+        "A `TypeError` will occur because `list()` cannot consume generators"
+      ],
+      "correct_answer": "B",
+      "explanation": "`p.rglob(\"*.py\")` returns a generator. Converting it to a list consumes (iterates through) the generator fully, producing all matches into `a`. After that, the generator is exhausted, so converting it again yields an empty list `b`. To iterate again, you must either call `p.rglob(\"*.py\")` again to get a fresh generator or store the results in a reusable collection (like `a`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "pathlib",
+        "rglob",
+        "generators",
+        "exhaustion",
+        "iterators",
+        "list-conversion"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}
