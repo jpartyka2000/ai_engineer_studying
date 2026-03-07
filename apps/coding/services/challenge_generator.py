@@ -4,7 +4,7 @@ import hashlib
 import logging
 from typing import Literal
 
-from apps.coding.models import CodingChallenge
+from apps.coding.models import CodingChallenge, TestCase
 from apps.coding.schemas import GeneratedChallenge, GeneratedChallengeSet
 from apps.core.services.claude_service import ClaudeAPIError, get_claude_service
 from apps.subjects.models import Subject
@@ -153,6 +153,16 @@ You must respond with valid JSON only."""
             else "Vary difficulty levels appropriately."
         )
 
+        # Add test case instruction for Python
+        test_case_instruction = ""
+        if language == "python":
+            test_case_instruction = """
+- Include test_cases array with 4-6 test cases for automated validation
+- Test cases should have: name, function_name, input_data (as kwargs dict), expected_output
+- Mark 1-2 test cases as is_sample=true to show in problem description
+- Mark 1-2 test cases as is_hidden=true to only reveal after submission
+- Cover edge cases and typical cases"""
+
         prompt = f"""Generate {num_challenges} coding challenges about "{topic}"
 in the subject area of "{subject.name}" using {language}.
 
@@ -163,7 +173,7 @@ Requirements:
 - Include clear evaluation criteria (4-6 specific points)
 - Provide 2-3 progressive hints
 - Include a reference solution
-- Estimate reasonable completion time
+- Estimate reasonable completion time{test_case_instruction}
 
 For 'modify' type challenges, provide starter code with intentional issues:
 - Bugs to fix
@@ -184,6 +194,17 @@ Respond with a JSON object containing a "challenges" array with these fields:
 - difficulty: "beginner", "intermediate", or "advanced"
 - tags: Array of relevant topic tags
 - estimated_time_minutes: Estimated completion time"""
+
+        # Add test_cases field for Python
+        if language == "python":
+            prompt += """
+- test_cases: Array of test cases, each with:
+  - name: Descriptive name (e.g., "Basic case", "Empty input", "Large numbers")
+  - function_name: Name of function to test (default: "solution")
+  - input_data: Object with keyword arguments (e.g., {"n": 5, "k": 2})
+  - expected_output: Expected return value
+  - is_sample: true if this should be shown as an example
+  - is_hidden: true if this should only be revealed after submission"""
 
         try:
             response = self.claude.generate_json_completion(
@@ -482,6 +503,28 @@ Respond with a JSON object containing a "challenges" array with these fields:
                 source=CodingChallenge.Source.CLAUDE_API,
                 source_hash=source_hash,
             )
+
+            # Save test cases if present
+            if gen_c.test_cases:
+                for order, tc in enumerate(gen_c.test_cases):
+                    TestCase.objects.create(
+                        challenge=challenge,
+                        name=tc.name,
+                        test_type=tc.test_type,
+                        function_name=tc.function_name,
+                        input_data=tc.input_data,
+                        expected_output=tc.expected_output,
+                        is_hidden=tc.is_hidden,
+                        is_sample=tc.is_sample,
+                        is_llm_generated=True,
+                        order=order,
+                    )
+                logger.info(
+                    "Saved %d test cases for challenge: %s",
+                    len(gen_c.test_cases),
+                    challenge.title,
+                )
+
             saved.append(challenge)
             logger.info("Saved challenge: %s", challenge.title)
 

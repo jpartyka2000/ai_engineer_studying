@@ -1,6 +1,39 @@
 """Pydantic models for coding challenge data validation."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+class GeneratedTestCase(BaseModel):
+    """Schema for a generated test case."""
+
+    name: str = Field(default="Test", description="Descriptive test name")
+    test_type: str = Field(
+        default="return",
+        description="Type: 'return' for return value, 'stdout' for output, 'assert' for custom assertion",
+    )
+    function_name: str = Field(
+        default="solution", description="Name of the function to test"
+    )
+    input_data: dict = Field(
+        default_factory=dict, description="Keyword arguments to pass to function"
+    )
+    expected_output: object = Field(
+        default=None, description="Expected return value or stdout"
+    )
+    is_hidden: bool = Field(
+        default=False, description="Hidden tests shown only after submission"
+    )
+    is_sample: bool = Field(
+        default=False, description="Sample tests shown in problem description"
+    )
+
+    @field_validator("input_data", mode="before")
+    @classmethod
+    def ensure_dict(cls, v):
+        """Ensure input_data is a dict."""
+        if v is None:
+            return {}
+        return v
 
 
 class GeneratedChallenge(BaseModel):
@@ -25,6 +58,9 @@ class GeneratedChallenge(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Topic tags")
     estimated_time_minutes: int = Field(
         default=15, description="Estimated completion time"
+    )
+    test_cases: list[GeneratedTestCase] = Field(
+        default_factory=list, description="Test cases for automated validation"
     )
 
 
