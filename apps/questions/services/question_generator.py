@@ -406,6 +406,129 @@ for each question:
             source_file=str(file_path),
         )
 
+    def generate_from_image(
+        self,
+        image_path: Path,
+        subject: Subject,
+        topic: str,
+        num_questions: int = 3,
+        difficulty: str | None = None,
+    ) -> list[GeneratedQuestion]:
+        """
+        Generate exam questions from an image (screenshot) using vision capabilities.
+
+        Args:
+            image_path: Path to the image file.
+            subject: The subject this image belongs to.
+            topic: The specific topic name (e.g., from filename).
+            num_questions: Number of questions to generate.
+            difficulty: Target difficulty level.
+
+        Returns:
+            List of generated questions.
+
+        Raises:
+            LLMAPIError: If question generation fails.
+        """
+        # Build difficulty instruction
+        if difficulty:
+            difficulty_instruction = (
+                f"- Generate questions at the '{difficulty}' difficulty level"
+            )
+        else:
+            difficulty_instruction = (
+                "- Assign appropriate difficulty level (beginner/intermediate/advanced) to each question based on complexity"
+            )
+
+        prompt = f"""Analyze this image/screenshot about "{topic}" in the subject area of "{subject.name}".
+
+The image may contain:
+- Mathematical equations and formulas
+- Diagrams or visual explanations
+- Code snippets
+- Technical concepts
+
+Based on what you see, generate {num_questions} exam questions that test understanding of the content.
+
+Requirements:
+{difficulty_instruction}
+- Include a mix of multiple choice (mc) and free text (free) questions
+- For multiple choice questions, provide exactly 4 options labeled A, B, C, D
+- The correct_answer for MC questions should be just the letter (e.g., "A")
+- Include clear explanations for each answer
+- Reference specific content from the image in your questions
+
+Respond with a JSON object containing a "questions" array. Each question should have:
+- question_text: The question (may include LaTeX for math)
+- question_type: "mc" or "free"
+- options: Array of 4 strings for MC (empty array for free text)
+- correct_answer: Letter for MC, full answer for free text
+- explanation: Why this is the correct answer
+- difficulty: One of "beginner", "intermediate", or "advanced"
+- tags: Array of relevant topic tags"""
+
+        try:
+            response = self.llm.generate_vision_json_completion(
+                image_path=image_path,
+                prompt=prompt,
+                system_message=self.SYSTEM_PROMPT,
+                max_tokens=4096,
+                temperature=0.7,
+            )
+
+            question_set = GeneratedQuestionSet.model_validate(response)
+            return question_set.questions
+
+        except Exception as e:
+            logger.exception("Failed to generate questions from image: %s", str(e))
+            raise LLMAPIError(f"Image question generation failed: {e}") from e
+
+    def import_from_image(
+        self,
+        image_path: Path,
+        subject: Subject,
+        num_questions: int = 3,
+        difficulty: str | None = None,
+    ) -> list[Question]:
+        """
+        Import questions from an image file (screenshot).
+
+        Uses vision capabilities to analyze the image and generate questions,
+        then saves them to the database.
+
+        Args:
+            image_path: Path to the image file.
+            subject: The subject this image belongs to.
+            num_questions: Number of questions to generate.
+            difficulty: Target difficulty level.
+
+        Returns:
+            List of saved Question instances.
+        """
+        # Extract topic from filename
+        topic = image_path.stem.replace("_", " ")
+
+        # Generate questions from image
+        try:
+            generated = self.generate_from_image(
+                image_path=image_path,
+                subject=subject,
+                topic=topic,
+                num_questions=num_questions,
+                difficulty=difficulty,
+            )
+        except LLMAPIError as e:
+            logger.error("Failed to generate questions from image %s: %s", image_path, e)
+            return []
+
+        # Save questions
+        return self.save_questions(
+            questions=generated,
+            subject=subject,
+            source=Question.Source.LLM_STUDYING,
+            source_file=str(image_path),
+        )
+
 
 # Singleton instances per provider
 _question_generators: dict[str | None, QuestionGeneratorService] = {}

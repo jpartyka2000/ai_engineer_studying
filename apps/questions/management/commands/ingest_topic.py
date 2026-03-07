@@ -19,6 +19,10 @@ class Command(BaseCommand):
 
     help = "Ingest all documents from llm_studying folder and generate questions"
 
+    # Supported file extensions
+    TEXT_EXTENSIONS = [".txt", ".md"]
+    IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+
     # Mapping of folder names to display names and categories
     FOLDER_MAPPINGS = {
         "python": ("Python", "Python Core"),
@@ -222,11 +226,11 @@ class Command(BaseCommand):
         return subject
 
     def get_document_files(self, topic_dir: Path, max_files: int | None) -> list[Path]:
-        """Get all document files from the topic directory."""
-        extensions = [".txt", ".md"]
+        """Get all document files (text and images) from the topic directory."""
+        all_extensions = self.TEXT_EXTENSIONS + self.IMAGE_EXTENSIONS
         files = []
 
-        for ext in extensions:
+        for ext in all_extensions:
             files.extend(topic_dir.glob(f"*{ext}"))
 
         # Sort by name for consistent ordering
@@ -237,6 +241,10 @@ class Command(BaseCommand):
 
         return files
 
+    def is_image_file(self, file_path: Path) -> bool:
+        """Check if a file is an image based on extension."""
+        return file_path.suffix.lower() in self.IMAGE_EXTENSIONS
+
     def show_dry_run(
         self, files: list[Path], subject: Subject | None, options: dict
     ) -> None:
@@ -244,10 +252,20 @@ class Command(BaseCommand):
         self.stdout.write("\n" + self.style.WARNING("DRY RUN - No changes made"))
         self.stdout.write(f"\nWould ingest {len(files)} document(s):\n")
 
+        text_count = 0
+        image_count = 0
         for f in files:
-            content = f.read_text(encoding="utf-8", errors="ignore")
-            tokens = len(content) // 4
-            self.stdout.write(f"  - {f.name} ({tokens:,} tokens)")
+            if self.is_image_file(f):
+                size_kb = f.stat().st_size / 1024
+                self.stdout.write(f"  - {f.name} (image, {size_kb:.1f} KB)")
+                image_count += 1
+            else:
+                content = f.read_text(encoding="utf-8", errors="ignore")
+                tokens = len(content) // 4
+                self.stdout.write(f"  - {f.name} ({tokens:,} tokens)")
+                text_count += 1
+
+        self.stdout.write(f"\n  Text files: {text_count}, Image files: {image_count}")
 
         if not options["skip_questions"]:
             total_questions = len(files) * options["questions_per_file"]
@@ -256,25 +274,34 @@ class Command(BaseCommand):
     def ingest_documents(
         self, files: list[Path], subject: Subject
     ) -> list[StudyMaterial]:
-        """Ingest document files as StudyMaterial records."""
+        """Ingest document files (text and images) as StudyMaterial records."""
         materials = []
 
         for file_path in files:
+            is_image = self.is_image_file(file_path)
+
             try:
-                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                if is_image:
+                    # For images, read binary and use placeholder content
+                    image_bytes = file_path.read_bytes()
+                    content_hash = hashlib.sha256(image_bytes).hexdigest()
+                    content = f"[Image file: {file_path.name}]"
+                    token_estimate = 0  # Images don't have tokens
+                    size_info = f"{len(image_bytes) / 1024:.1f} KB"
+                else:
+                    # For text files, read content
+                    content = file_path.read_text(encoding="utf-8", errors="ignore")
+                    if not content.strip():
+                        self.stdout.write(f"  Skipping empty file: {file_path.name}")
+                        continue
+                    content_hash = hashlib.sha256(content.encode()).hexdigest()
+                    token_estimate = len(content) // 4
+                    size_info = f"{token_estimate:,} tokens"
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(f"  Error reading {file_path.name}: {e}")
                 )
                 continue
-
-            # Skip empty files
-            if not content.strip():
-                self.stdout.write(f"  Skipping empty file: {file_path.name}")
-                continue
-
-            # Generate content hash
-            content_hash = hashlib.sha256(content.encode()).hexdigest()
 
             # Check for existing material
             try:
@@ -285,14 +312,15 @@ class Command(BaseCommand):
                         "title": file_path.stem.replace("_", " ").title(),
                         "content": content,
                         "source_file": str(file_path),
-                        "token_estimate": len(content) // 4,
+                        "token_estimate": token_estimate,
                     },
                 )
 
                 if created:
+                    file_type = "image" if is_image else "text"
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f"  + {file_path.name} ({material.token_estimate:,} tokens)"
+                            f"  + {file_path.name} ({file_type}, {size_info})"
                         )
                     )
                     materials.append(material)
@@ -312,7 +340,7 @@ class Command(BaseCommand):
         delay: float,
         provider: str | None = None,
     ) -> None:
-        """Generate questions from study materials."""
+        """Generate questions from study materials (text and images)."""
         if not materials:
             return
 
@@ -325,15 +353,28 @@ class Command(BaseCommand):
         )
 
         for material in materials:
-            self.stdout.write(f"  Processing: {material.title}")
+            source_path = Path(material.source_file)
+            is_image = self.is_image_file(source_path)
+            file_type = "image" if is_image else "text"
+            self.stdout.write(f"  Processing ({file_type}): {material.title}")
 
             try:
-                questions = generator.import_from_file(
-                    file_path=Path(material.source_file),
-                    subject=subject,
-                    num_questions=questions_per_file,
-                    difficulty=None,  # Let Claude assign difficulty
-                )
+                if is_image:
+                    # Use vision API for images
+                    questions = generator.import_from_image(
+                        image_path=source_path,
+                        subject=subject,
+                        num_questions=questions_per_file,
+                        difficulty=None,  # Let LLM assign difficulty
+                    )
+                else:
+                    # Use text API for documents
+                    questions = generator.import_from_file(
+                        file_path=source_path,
+                        subject=subject,
+                        num_questions=questions_per_file,
+                        difficulty=None,  # Let LLM assign difficulty
+                    )
 
                 # Update material with question count
                 material.questions_generated = len(questions)

@@ -4,7 +4,9 @@ Claude API service layer.
 All Claude API interactions should go through this service.
 """
 
+import base64
 import logging
+from pathlib import Path
 from typing import Any, Iterator
 
 from anthropic import Anthropic
@@ -143,6 +145,146 @@ class ClaudeService:
         except json.JSONDecodeError as e:
             logger.error("Failed to parse JSON response: %s", cleaned_response[:500])
             raise ClaudeAPIError(f"Invalid JSON response from Claude: {e}") from e
+
+    def generate_vision_completion(
+        self,
+        image_path: Path | str,
+        prompt: str,
+        system_message: str | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+    ) -> str:
+        """
+        Generate a completion from Claude using an image input.
+
+        Args:
+            image_path: Path to the image file.
+            prompt: The user prompt to send with the image.
+            system_message: Optional system message to set context.
+            max_tokens: Maximum tokens in the response.
+            temperature: Sampling temperature (0-1).
+
+        Returns:
+            The generated text response.
+
+        Raises:
+            ClaudeAPIError: If the API call fails.
+        """
+        try:
+            image_path = Path(image_path)
+
+            # Read and encode image
+            image_data = image_path.read_bytes()
+            base64_image = base64.standard_b64encode(image_data).decode("utf-8")
+
+            # Determine media type from extension
+            ext = image_path.suffix.lower()
+            media_type_map = {
+                ".png": "image/png",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".gif": "image/gif",
+                ".webp": "image/webp",
+            }
+            media_type = media_type_map.get(ext, "image/png")
+
+            # Build message with image
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": base64_image,
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        },
+                    ],
+                }
+            ]
+
+            kwargs: dict[str, Any] = {
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "messages": messages,
+                "temperature": temperature,
+            }
+
+            if system_message:
+                kwargs["system"] = system_message
+
+            response = self.client.messages.create(**kwargs)
+
+            if response.content and len(response.content) > 0:
+                return response.content[0].text
+            return ""
+
+        except Exception as e:
+            logger.exception("Claude Vision API error: %s", str(e))
+            raise ClaudeAPIError(f"Failed to generate vision completion: {e}") from e
+
+    def generate_vision_json_completion(
+        self,
+        image_path: Path | str,
+        prompt: str,
+        system_message: str | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+    ) -> dict[str, Any]:
+        """
+        Generate a JSON completion from Claude using an image input.
+
+        Args:
+            image_path: Path to the image file.
+            prompt: The user prompt to send with the image.
+            system_message: Optional system message to set context.
+            max_tokens: Maximum tokens in the response.
+            temperature: Sampling temperature (0-1).
+
+        Returns:
+            The parsed JSON response as a dictionary.
+
+        Raises:
+            ClaudeAPIError: If the API call fails or JSON parsing fails.
+        """
+        import json
+
+        # Add JSON instruction to system message
+        json_system = (system_message or "") + (
+            "\n\nYou must respond with valid JSON only. "
+            "Do not include any text before or after the JSON."
+        )
+
+        response = self.generate_vision_completion(
+            image_path=image_path,
+            prompt=prompt,
+            system_message=json_system.strip(),
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+
+        # Strip markdown code fences if present
+        cleaned_response = response.strip()
+
+        if cleaned_response.startswith("```"):
+            first_newline = cleaned_response.find("\n")
+            if first_newline != -1:
+                cleaned_response = cleaned_response[first_newline + 1:]
+
+        if cleaned_response.endswith("```"):
+            cleaned_response = cleaned_response[:-3].rstrip()
+
+        try:
+            return json.loads(cleaned_response)
+        except json.JSONDecodeError as e:
+            logger.error("Failed to parse vision JSON response: %s", cleaned_response[:500])
+            raise ClaudeAPIError(f"Invalid JSON response from Claude vision: {e}") from e
 
     def stream_completion(
         self,

@@ -5,6 +5,7 @@ Provides a common interface for different LLM providers (Claude, OpenAI).
 """
 
 import logging
+from pathlib import Path
 from typing import Any, Iterator, Protocol
 
 from django.conf import settings
@@ -63,6 +64,28 @@ class LLMService(Protocol):
         self, response_data: dict[str, Any], model_class: type[BaseModel]
     ) -> BaseModel:
         """Validate a JSON response against a Pydantic model."""
+        ...
+
+    def generate_vision_completion(
+        self,
+        image_path: Path | str,
+        prompt: str,
+        system_message: str | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+    ) -> str:
+        """Generate a completion from an image input."""
+        ...
+
+    def generate_vision_json_completion(
+        self,
+        image_path: Path | str,
+        prompt: str,
+        system_message: str | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+    ) -> dict[str, Any]:
+        """Generate a JSON completion from an image input."""
         ...
 
 
