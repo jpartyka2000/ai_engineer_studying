@@ -53,22 +53,78 @@ class Command(BaseCommand):
             action="store_true",
             help="Show all important interview topics for the subject",
         )
+        parser.add_argument(
+            "--provider",
+            "-p",
+            choices=["claude", "openai"],
+            default=None,
+            help="LLM provider to use (default: claude)",
+        )
+        parser.add_argument(
+            "--fix-difficulty",
+            "-f",
+            action="store_true",
+            help="Find and fix questions with invalid difficulty values",
+        )
+        parser.add_argument(
+            "--role",
+            "-r",
+            type=str,
+            default="AI/ML engineer",
+            help="Target role for interview coverage (default: 'AI/ML engineer')",
+        )
+        parser.add_argument(
+            "--subtopic",
+            "-s",
+            type=str,
+            default=None,
+            help="Generate questions for a specific subtopic only",
+        )
 
     def handle(self, *args, **options):
         subject_slug = options["subject_slug"]
+        provider = options["provider"]
+        role = options["role"]
 
         try:
             subject = Subject.objects.get(slug=subject_slug, is_active=True)
         except Subject.DoesNotExist:
             raise CommandError(f"Subject '{subject_slug}' not found or not active")
 
-        service = get_interview_coverage_service()
+        service = get_interview_coverage_service(provider)
+
+        self.stdout.write(f"Target role: {role}")
+        if provider:
+            self.stdout.write(f"Using LLM provider: {provider}")
+
+        # Fix difficulty values if requested
+        if options["fix_difficulty"]:
+            self.stdout.write(
+                self.style.MIGRATE_HEADING(f"\nFixing difficulty values: {subject.name}")
+            )
+            try:
+                updated = service.fix_question_difficulties(subject)
+                if updated:
+                    self.stdout.write(
+                        self.style.SUCCESS(f"\nUpdated {len(updated)} questions:")
+                    )
+                    for q in updated:
+                        self.stdout.write(
+                            f"  [{q.difficulty}] {q.question_text[:60]}..."
+                        )
+                else:
+                    self.stdout.write(
+                        self.style.SUCCESS("\nNo questions needed difficulty fixes.")
+                    )
+            except Exception as e:
+                raise CommandError(f"Failed to fix difficulty values: {e}")
+            return
 
         # Show interview topics if requested
         if options["show_topics"]:
             self.stdout.write(self.style.MIGRATE_HEADING(f"\nInterview Topics: {subject.name}"))
             try:
-                topics = service.get_interview_topics(subject)
+                topics = service.get_interview_topics(subject, role=role)
                 self.stdout.write(
                     f"\nEstimated questions needed: {topics.total_estimated_questions}"
                 )
@@ -85,6 +141,34 @@ class Command(BaseCommand):
                 raise CommandError(f"Failed to get interview topics: {e}")
             return
 
+        # Generate questions for a specific subtopic
+        if options["subtopic"]:
+            subtopic = options["subtopic"]
+            num = options["num"] or 10
+            self.stdout.write(
+                self.style.MIGRATE_HEADING(
+                    f"\nGenerating {num} questions for subtopic: {subtopic}"
+                )
+            )
+            try:
+                saved = service.generate_subtopic_questions(
+                    subject=subject,
+                    subtopic=subtopic,
+                    num_questions=num,
+                    difficulty=options["difficulty"],
+                    role=role,
+                )
+                self.stdout.write(
+                    self.style.SUCCESS(f"\nGenerated and saved {len(saved)} questions:")
+                )
+                for q in saved:
+                    self.stdout.write(
+                        f"  [{q.difficulty}] {q.question_text[:60]}..."
+                    )
+            except Exception as e:
+                raise CommandError(f"Failed to generate subtopic questions: {e}")
+            return
+
         # Analyze coverage
         self.stdout.write(self.style.MIGRATE_HEADING(f"\nAnalyzing coverage: {subject.name}"))
 
@@ -97,7 +181,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Topics covered: {', '.join(existing['all_tags'][:20])}")
 
         try:
-            coverage = service.analyze_coverage(subject)
+            coverage = service.analyze_coverage(subject, role=role)
         except Exception as e:
             raise CommandError(f"Failed to analyze coverage: {e}")
 
@@ -107,7 +191,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(f"\nWell covered ({len(coverage.covered_topics)}):")
             )
-            self.stdout.write(f"  {', '.join(coverage.covered_topics)}")
+            self.stdout.write(f"  {', '.join(coverage.get_covered_topic_names())}")
 
         if coverage.partially_covered_topics:
             self.stdout.write(
@@ -115,16 +199,33 @@ class Command(BaseCommand):
                     f"\nNeeds more coverage ({len(coverage.partially_covered_topics)}):"
                 )
             )
-            self.stdout.write(f"  {', '.join(coverage.partially_covered_topics)}")
+            self.stdout.write(f"  {', '.join(coverage.get_partial_topic_names())}")
 
         if coverage.missing_topics:
             self.stdout.write(
                 self.style.ERROR(f"\nMissing ({len(coverage.missing_topics)}):")
             )
-            self.stdout.write(f"  {', '.join(coverage.missing_topics)}")
+            self.stdout.write(f"  {', '.join(coverage.get_missing_topic_names())}")
+
+        # Display sufficiency status (informational only)
+        if coverage.is_sufficient_for_role:
+            self.stdout.write(
+                self.style.SUCCESS(f"\n✓ Coverage is SUFFICIENT for {role} interviews")
+            )
+        else:
+            self.stdout.write(
+                self.style.WARNING(f"\n✗ Coverage is NOT YET sufficient for {role} interviews")
+            )
 
         # Stop here if analyze-only
         if options["analyze_only"]:
+            return
+
+        # Check if there are any topics to generate questions for
+        if not coverage.missing_topics and not coverage.partially_covered_topics:
+            self.stdout.write(
+                self.style.SUCCESS("\nNo gaps found - all topics are well covered!")
+            )
             return
 
         # Generate questions
@@ -137,6 +238,7 @@ class Command(BaseCommand):
                     subject=subject,
                     fill_until_complete=True,
                     difficulty=options["difficulty"],
+                    role=role,
                 )
             else:
                 num = options["num"] or 10
@@ -145,6 +247,7 @@ class Command(BaseCommand):
                     subject=subject,
                     num_questions=num,
                     difficulty=options["difficulty"],
+                    role=role,
                 )
 
             self.stdout.write(

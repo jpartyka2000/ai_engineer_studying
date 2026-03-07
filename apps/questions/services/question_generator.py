@@ -4,7 +4,7 @@ import hashlib
 import logging
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from apps.core.services.llm_service import (
     LLMAPIError,
@@ -40,6 +40,57 @@ class GeneratedQuestion(BaseModel):
     tags: list[str] = Field(
         default_factory=list, description="Topic tags for the question"
     )
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def normalize_options(cls, v):
+        """Normalize options to a list format."""
+        if v is None:
+            return []
+        # Handle dict format: {"A": "...", "B": "...", "C": "...", "D": "..."}
+        if isinstance(v, dict):
+            # Sort by key to ensure A, B, C, D order
+            return [v[k] for k in sorted(v.keys()) if k in ("A", "B", "C", "D")]
+        return v
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def convert_none_to_empty_list(cls, v):
+        """Convert None to empty list for tags."""
+        if v is None:
+            return []
+        return v
+
+    @field_validator("explanation", mode="before")
+    @classmethod
+    def convert_none_to_empty_string(cls, v):
+        """Convert None to empty string for explanation."""
+        if v is None:
+            return ""
+        return v
+
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def normalize_difficulty(cls, v):
+        """Normalize difficulty to valid values (beginner, intermediate, advanced)."""
+        if v is None:
+            return "intermediate"
+        v = str(v).lower().strip()
+        # Map common alternatives to valid values
+        difficulty_map = {
+            "easy": "beginner",
+            "simple": "beginner",
+            "basic": "beginner",
+            "beginner": "beginner",
+            "medium": "intermediate",
+            "moderate": "intermediate",
+            "intermediate": "intermediate",
+            "hard": "advanced",
+            "difficult": "advanced",
+            "expert": "advanced",
+            "advanced": "advanced",
+        }
+        return difficulty_map.get(v, "intermediate")
 
 
 class GeneratedQuestionSet(BaseModel):
