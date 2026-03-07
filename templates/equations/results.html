@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Can I Math? - Results - AI Interview Prep{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        transition: all 0.2s ease;
+    }
+    .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'subjects:detail' slug=session.subject.slug %}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+            &larr; Back to {{ session.subject.name }}
+        </a>
+    </div>
+
+    <!-- Results Summary Card -->
+    <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Session Complete!</h1>
+            <p class="text-gray-600">{{ session.subject.name }} - Can I Math?</p>
+        </div>
+
+        <!-- Score Display -->
+        <div class="flex justify-center items-center gap-8 mb-8">
+            <div class="text-center">
+                <div class="text-5xl font-bold {% if accuracy >= 80 %}text-green-600{% elif accuracy >= 60 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                    {{ accuracy|floatformat:0 }}%
+                </div>
+                <div class="text-sm text-gray-500 mt-1">Accuracy</div>
+            </div>
+
+            <div class="h-16 w-px bg-gray-200"></div>
+
+            <div class="text-center">
+                <div class="text-5xl font-bold text-indigo-600">
+                    {{ session.score }}/{{ session.total_problems }}
+                </div>
+                <div class="text-sm text-gray-500 mt-1">Correct</div>
+            </div>
+
+            <div class="h-16 w-px bg-gray-200"></div>
+
+            <div class="text-center">
+                <div class="text-5xl font-bold text-purple-600">
+                    {{ total_points|floatformat:1 }}
+                </div>
+                <div class="text-sm text-gray-500 mt-1">Total Points</div>
+            </div>
+        </div>
+
+        <!-- Performance Badge -->
+        <div class="text-center mb-6">
+            {% if accuracy >= 90 %}
+            <span class="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-full text-lg font-medium">
+                Excellent! You're a math master!
+            </span>
+            {% elif accuracy >= 80 %}
+            <span class="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-full text-lg font-medium">
+                Great job! Strong mathematical skills!
+            </span>
+            {% elif accuracy >= 60 %}
+            <span class="inline-block px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-lg font-medium">
+                Good effort! Keep practicing!
+            </span>
+            {% elif accuracy >= 40 %}
+            <span class="inline-block px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-lg font-medium">
+                Room for improvement. Review the equations below.
+            </span>
+            {% else %}
+            <span class="inline-block px-4 py-2 bg-red-100 text-red-800 rounded-full text-lg font-medium">
+                This topic needs more study. Don't give up!
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Session Info -->
+        <div class="flex justify-center gap-6 text-sm text-gray-500">
+            <span>Difficulty: {{ session.get_difficulty_display }}</span>
+            {% if session.topic_filter %}
+            <span>Topic: {{ session.topic_filter }}</span>
+            {% endif %}
+            <span>Started: {{ session.started_at|date:"M d, Y H:i" }}</span>
+        </div>
+    </div>
+
+    <!-- Problem-by-Problem Breakdown -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Problem Breakdown</h2>
+        </div>
+
+        <div class="divide-y divide-gray-200">
+            {% for answer in answers %}
+            <div class="result-card p-6 {% if answer.is_correct %}bg-green-50{% elif answer.partial_credit > 0 %}bg-yellow-50{% else %}bg-red-50{% endif %}">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="flex items-center justify-center w-8 h-8 rounded-full
+                            {% if answer.is_correct %}bg-green-500{% elif answer.partial_credit > 0 %}bg-yellow-500{% else %}bg-red-500{% endif %} text-white font-medium">
+                            {{ forloop.counter }}
+                        </span>
+                        <div>
+                            <span class="font-medium text-gray-900">{{ answer.problem.topic }}</span>
+                            <span class="ml-2 text-xs px-2 py-1 rounded-full
+                                {% if answer.problem.difficulty == 'beginner' %}bg-green-100 text-green-800
+                                {% elif answer.problem.difficulty == 'intermediate' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ answer.problem.get_difficulty_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        {% if answer.is_correct %}
+                        <span class="text-green-600 font-medium">Correct</span>
+                        {% elif answer.partial_credit > 0 %}
+                        <span class="text-yellow-600 font-medium">Partial ({{ answer.partial_credit|floatformat:0 }}%)</span>
+                        {% elif answer.user_answer_latex == '[SKIPPED]' %}
+                        <span class="text-gray-500 font-medium">Skipped</span>
+                        {% else %}
+                        <span class="text-red-600 font-medium">Incorrect</span>
+                        {% endif %}
+                        {% if answer.time_taken_seconds %}
+                        <span class="block text-xs text-gray-400 mt-1">{{ answer.time_taken_seconds }}s</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Problem -->
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">{{ answer.problem.problem_text }}</p>
+                    <div class="bg-white rounded p-3 text-center border border-gray-200">
+                        <span class="problem-latex">$${{ answer.problem.problem_latex|safe }}$$</span>
+                    </div>
+                </div>
+
+                <!-- Answers Comparison -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Your Answer</label>
+                        <div class="bg-white rounded p-3 text-center border border-gray-200 min-h-[50px] flex items-center justify-center">
+                            {% if answer.user_answer_latex == '[SKIPPED]' %}
+                            <span class="text-gray-400 italic">Skipped</span>
+                            {% elif answer.selected_option %}
+                            <span class="font-medium">{{ answer.selected_option }}</span>
+                            {% else %}
+                            <span class="answer-latex">$${{ answer.user_answer_latex|safe }}$$</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Correct Answer</label>
+                        <div class="bg-white rounded p-3 text-center border border-green-200 min-h-[50px] flex items-center justify-center">
+                            {% if answer.problem.problem_type == 'mc' %}
+                            <span class="font-medium">{{ answer.problem.correct_option }}</span>
+                            {% else %}
+                            <span class="correct-latex">$${{ answer.problem.correct_answer_latex|safe }}$$</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback -->
+                {% if answer.feedback %}
+                <div class="bg-white rounded p-4 border border-gray-200">
+                    <label class="block text-xs font-medium text-gray-500 uppercase mb-2">Feedback</label>
+                    <p class="text-gray-700 text-sm whitespace-pre-line">{{ answer.feedback }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Errors -->
+                {% if answer.mathematical_errors %}
+                <div class="mt-3 bg-red-50 rounded p-3 border border-red-200">
+                    <label class="block text-xs font-medium text-red-600 uppercase mb-1">Errors Found</label>
+                    <ul class="list-disc list-inside text-sm text-red-700">
+                        {% for error in answer.mathematical_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Hints Used -->
+                {% if answer.hints_used > 0 %}
+                <div class="mt-3 text-xs text-gray-500">
+                    Hints used: {{ answer.hints_used }}
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="p-6 text-center text-gray-500">
+                No answers recorded for this session.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-8 flex justify-center gap-4">
+        <a href="{% url 'equations:config' subject_slug=session.subject.slug %}"
+           class="px-6 py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors">
+            Practice Again
+        </a>
+        <a href="{% url 'subjects:detail' slug=session.subject.slug %}"
+           class="px-6 py-3 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 transition-colors">
+            Back to Subject
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- MathJax for LaTeX rendering -->
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        svg: {
+            fontCache: 'global'
+        }
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<script>
+    // Typeset all LaTeX when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise().catch(function(err) {
+                console.log('MathJax typeset error:', err);
+            });
+        }
+    });
+</script>
+{% endblock %}

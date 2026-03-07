@@ -21,10 +21,11 @@ class SubjectAdmin(admin.ModelAdmin):
         "question_count",
         "coding_language",
         "supports_visuals",
+        "supports_math",
         "is_active",
         "generate_questions_link",
     ]
-    list_filter = ["category", "is_active", "supports_visuals", "coding_language"]
+    list_filter = ["category", "is_active", "supports_visuals", "supports_math", "coding_language"]
     search_fields = ["name", "description", "category"]
     prepopulated_fields = {"slug": ("name",)}
     ordering = ["category", "name"]
@@ -267,6 +268,7 @@ class SubjectAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "supports_visuals",
+                    "supports_math",
                     "default_question_count",
                     "difficulty_levels",
                     "coding_language",

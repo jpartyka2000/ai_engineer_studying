@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Can I Math? - {{ subject.name }} - AI Interview Prep{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'subjects:detail' slug=subject.slug %}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+            &larr; Back to {{ subject.name }}
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Can I Math?</h1>
+            <p class="text-gray-600">Practice mathematical equations for {{ subject.name }}</p>
+        </div>
+
+        <form method="post" action="{% url 'equations:start' subject_slug=subject.slug %}">
+            {% csrf_token %}
+
+            <!-- Difficulty Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                <div class="grid grid-cols-3 gap-3">
+                    {% for value, label in difficulties %}
+                    <label class="relative flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 {% if value == 'intermediate' %}border-indigo-500 bg-indigo-50{% endif %}">
+                        <input type="radio" name="difficulty" value="{{ value }}"
+                               class="sr-only peer" {% if value == 'intermediate' %}checked{% endif %}>
+                        <span class="text-sm font-medium peer-checked:text-indigo-600">{{ label }}</span>
+                        <span class="absolute inset-0 rounded-lg border-2 border-transparent peer-checked:border-indigo-500 pointer-events-none"></span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Problem Types -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Problem Types</label>
+                <div class="space-y-2">
+                    {% for value, label in problem_types %}
+                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" name="problem_types" value="{{ value }}"
+                               class="h-4 w-4 text-indigo-600 rounded border-gray-300" checked>
+                        <span class="ml-3">
+                            <span class="text-sm font-medium text-gray-900">{{ label }}</span>
+                            {% if value == 'complete' %}
+                            <span class="block text-xs text-gray-500">Fill in the blank in an equation</span>
+                            {% elif value == 'solve' %}
+                            <span class="block text-xs text-gray-500">Write the complete equation</span>
+                            {% elif value == 'mc' %}
+                            <span class="block text-xs text-gray-500">Choose the correct equation</span>
+                            {% endif %}
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Number of Problems -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Problems</label>
+                <input type="range" name="num_problems" min="5" max="20" value="10"
+                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                       oninput="document.getElementById('num-display').textContent = this.value">
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>5</span>
+                    <span id="num-display" class="font-medium text-indigo-600">10</span>
+                    <span>20</span>
+                </div>
+            </div>
+
+            <!-- Topic Filter (Optional) -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Topic (Optional)
+                </label>
+                <input type="text" name="topic" placeholder="e.g., Bellman Equation, Policy Gradient"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <!-- AI Provider Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">AI Provider</label>
+                <div class="grid grid-cols-2 gap-3">
+                    {% for value, label in llm_providers %}
+                    <label class="relative flex items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 {% if value == 'openai' %}border-indigo-500 bg-indigo-50{% endif %}">
+                        <input type="radio" name="llm_provider" value="{{ value }}"
+                               class="sr-only peer" {% if value == 'openai' %}checked{% endif %}>
+                        <span class="text-sm font-medium peer-checked:text-indigo-600">{{ label }}</span>
+                        <span class="absolute inset-0 rounded-lg border-2 border-transparent peer-checked:border-indigo-500 pointer-events-none"></span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <p class="mt-2 text-xs text-gray-500">
+                    Used for evaluating your answers and generating new problems (if selected below).
+                </p>
+            </div>
+
+            <!-- Generate New Problems -->
+            <div class="mb-8">
+                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="checkbox" name="generate_new" id="generate_new"
+                           class="h-4 w-4 text-indigo-600 rounded border-gray-300">
+                    <span class="ml-3">
+                        <span class="text-sm font-medium text-gray-900">Generate new problems with AI</span>
+                        <span class="block text-xs text-gray-500">
+                            {% if existing_problem_count > 0 %}
+                            ({{ existing_problem_count }} existing problems available)
+                            {% else %}
+                            (No existing problems - generation recommended)
+                            {% endif %}
+                        </span>
+                    </span>
+                </label>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <svg class="h-5 w-5 text-blue-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="text-sm text-blue-700">
+                        <p class="font-medium mb-1">How it works</p>
+                        <ul class="list-disc list-inside space-y-1 text-blue-600">
+                            <li>Type equations using LaTeX notation</li>
+                            <li>Use the symbol palette for Greek letters</li>
+                            <li>See a live preview of your equation</li>
+                            <li>Claude evaluates mathematical correctness</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit"
+                    class="w-full bg-indigo-600 text-white py-3 px-4 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Start Practice
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

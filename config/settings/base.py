@@ -49,6 +49,7 @@ LOCAL_APPS = [
     "apps.coding",
     "apps.argument",
     "apps.readiness",
+    "apps.equations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
