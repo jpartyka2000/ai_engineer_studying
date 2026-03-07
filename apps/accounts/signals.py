@@ -41,10 +41,20 @@ def update_progress_on_exam_complete(sender, instance, created, **kwargs):
     Update UserProgress when an exam session is completed.
 
     Only triggers when status changes to COMPLETED.
+    Practice mode sessions are excluded from stats.
     """
     from apps.exam.models import ExamSession
 
     if instance.status != ExamSession.Status.COMPLETED:
+        return
+
+    # Skip practice mode sessions - they don't affect stats
+    if instance.is_practice:
+        logger.info(
+            "Practice mode exam completed for user %s, subject %s (not counted in stats)",
+            instance.user.username,
+            instance.subject.name,
+        )
         return
 
     # Check if this is the first time becoming completed
@@ -54,10 +64,12 @@ def update_progress_on_exam_complete(sender, instance, created, **kwargs):
     # We need to track which sessions we've already processed
     # to avoid double-counting on repeated saves.
     # Use a simple approach: check if exam_sessions count matches expected
+    # Exclude practice sessions from the count
     completed_count = ExamSession.objects.filter(
         user=instance.user,
         subject=instance.subject,
         status=ExamSession.Status.COMPLETED,
+        is_practice=False,
     ).count()
 
     if completed_count > progress.exam_sessions:
@@ -65,12 +77,14 @@ def update_progress_on_exam_complete(sender, instance, created, **kwargs):
         progress.exam_sessions = completed_count
 
         # Recalculate totals from all completed sessions for this subject
+        # Exclude practice sessions
         from django.db.models import Sum
 
         agg = ExamSession.objects.filter(
             user=instance.user,
             subject=instance.subject,
             status=ExamSession.Status.COMPLETED,
+            is_practice=False,
         ).aggregate(
             total_correct=Sum("score"),
             total_answered=Sum("total_answered"),

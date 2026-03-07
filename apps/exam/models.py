@@ -72,6 +72,12 @@ class ExamSession(models.Model):
         help_text=_("Number of questions answered"),
     )
 
+    # Practice mode - results not saved to stats
+    is_practice = models.BooleanField(
+        default=False,
+        help_text=_("Practice mode - results won't affect your statistics"),
+    )
+
     # Timestamps
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(

@@ -47,4 +47,9 @@ urlpatterns = [
         views.ExamResultsView.as_view(),
         name="results",
     ),
+    path(
+        "<slug:subject_slug>/session/<int:pk>/question/<int:question_id>/create-questions/",
+        views.create_llm_questions,
+        name="create_llm_questions",
+    ),
 ]
