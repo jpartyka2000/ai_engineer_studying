@@ -1,0 +1,2184 @@
+{
+  "metadata": {
+    "subject_slug": "gpu",
+    "subject_name": "GPU Computing",
+    "exported_at": "2026-03-07T22:49:44.540970",
+    "question_count": 108,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You are deploying a transformer model and considering **INT8** or **4-bit** quantization. Describe when quantization is likely to provide real speedups vs when it mostly reduces memory. Your answer should address:\n- kernel availability / whether ops are actually quantized end-to-end\n- dequantization overhead\n- compute-bound vs bandwidth-bound regimes\n- accuracy tradeoffs and calibration (PTQ vs QAT)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Quantization gives real speedups when the deployment stack has optimized low-bit kernels for the dominant ops (GEMM/attention) and can keep data in quantized form through most of the graph. If the runtime frequently dequantizes back to fp16/fp32 for unsupported ops, dequant overhead and extra memory traffic can erase gains.\n\nSpeedups are most likely when:\n- The workload is bandwidth-bound (memory traffic dominates), so smaller weights/KV reduce bandwidth pressure.\n- The hardware/runtime has fast INT8/INT4 matmul kernels and you hit those paths.\n- You can quantize not just weights but also activations (or use smoothquant-like techniques) where supported.\n\nQuantization may mostly reduce memory (and sometimes hurt latency) when:\n- Kernels are missing for key ops (attention, layernorm, residual adds), forcing frequent dequant/requant.\n- The model is compute-bound on Tensor Cores in fp16/bf16 already; low-bit may not be faster unless kernels are extremely optimized.\n\nAccuracy: INT8 PTQ often works with calibration; 4-bit typically needs better methods (GPTQ/AWQ) and may require careful calibration; QAT can recover accuracy but adds training cost/complexity. The decision should be driven by measured kernel coverage, profiling (where time is spent), and accuracy/SLO requirements.",
+      "explanation": "This tests applied judgment: quantization is not automatically faster. Real wins require kernel support and avoiding dequant churn, and benefits depend on whether the bottleneck is memory bandwidth or compute. Strong candidates mention PTQ vs QAT and the practical reality of partial quantization in real runtimes.",
+      "difficulty": "advanced",
+      "tags": [
+        "quantization",
+        "deployment",
+        "int8",
+        "int4",
+        "kernel-availability",
+        "performance",
+        "accuracy"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are debugging a distributed training job (8 GPUs, DDP + NCCL). Sometimes it **hangs** after a few hundred steps; other times it runs but is much slower due to one “straggler” GPU. Which approach is most effective and commonly used in practice to diagnose and mitigate these issues?",
+      "question_type": "mc",
+      "options": [
+        "A) Disable NCCL and use Gloo for GPU collectives; it is always faster and more stable",
+        "B) Turn on NCCL debug/env vars (e.g., `NCCL_DEBUG=INFO`, timeouts), add per-rank step timing + dataloader timing, and check for rank divergence (different control flow / different batch sizes) and data loader stalls",
+        "C) Call `torch.cuda.synchronize()` before every collective to prevent hangs",
+        "D) Set `torch.backends.cudnn.deterministic=True` to prevent deadlocks and stragglers"
+      ],
+      "correct_answer": "B",
+      "explanation": "DDP/NCCL hangs and stragglers are typically caused by:\n- One rank not reaching the same collective (control-flow divergence, uneven batches, exceptions)\n- DataLoader stalls on one rank (I/O, worker deadlock, CPU contention)\n- Network/IB issues, NCCL timeouts\n- GPU OOM on one rank causing it to crash while others wait\n\nPractical diagnosis includes enabling NCCL logs/timeouts, collecting per-rank timing (forward/backward/optimizer/data time), and verifying all ranks execute identical steps with consistent batch sizes (use `drop_last=True`, consistent sampler seeding). Mitigation often involves fixing dataloader bottlenecks, addressing imbalance, and setting appropriate NCCL timeout/async error handling.\n\n`torch.cuda.synchronize()` everywhere usually hurts performance and doesn’t fix root causes; determinism flags don’t prevent deadlocks; Gloo is typically slower for GPU training.",
+      "difficulty": "advanced",
+      "tags": [
+        "distributed-training",
+        "ddp",
+        "nccl",
+        "hangs",
+        "timeouts",
+        "stragglers",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are serving an LLM on a single GPU. Users complain about high **tail latency** (p95/p99) when you enable **dynamic batching**, even though throughput improves. Explain the tradeoffs and propose a request scheduling strategy. Your answer should mention:\n- tail latency vs throughput\n- max batch size / batching window\n- prefill vs decode phases\n- KV-cache memory budgeting and how it constrains batching",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Dynamic batching increases throughput by combining requests into larger matmuls, but it can increase tail latency because requests may wait in a batching window/queue and because long sequences in the batch can dominate decode time (stragglers). Tail latency worsens when you batch together requests with very different prompt lengths or generation lengths.\n\nStrategy:\n- Use a small batching window (e.g., a few ms) and cap max batch size to bound queueing delay.\n- Separate scheduling for prefill vs decode: prefill is compute-heavy and benefits from larger batches; decode is latency-sensitive and often benefits from smaller, more frequent batches.\n- Use length-aware batching (bucket by prompt length / remaining tokens) to reduce straggler effects.\n- KV-cache budgeting: each active sequence consumes KV memory proportional to layers * heads * head_dim * (prompt+generated tokens) * dtype. This limits concurrent sequences and batch size; when KV cache is near capacity, you must reduce concurrency, evict/stop requests, or use paged KV cache / quantized KV.\n- Consider priority scheduling: keep decode tokens flowing (to reduce user-visible latency) while opportunistically running prefill in gaps, or allocate separate “lanes”/quotas for prefill and decode.\n\nOverall: tune batching to meet SLOs by bounding queue delay, controlling batch composition, and respecting KV-cache memory constraints.",
+      "explanation": "This is a common applied systems question for ML engineers. The key is recognizing that dynamic batching trades latency for throughput, and that LLM serving has two distinct phases with different optimal batching. KV-cache is usually the hard memory limiter that constrains concurrency and drives scheduling decisions.",
+      "difficulty": "advanced",
+      "tags": [
+        "inference-serving",
+        "dynamic-batching",
+        "tail-latency",
+        "throughput",
+        "kv-cache",
+        "scheduling",
+        "llm"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want Tensor Core speedups in PyTorch for matmul/conv-heavy models. Which statement is most accurate at a high level (no deep CUDA required)?",
+      "question_type": "mc",
+      "options": [
+        "A) Tensor Cores are used automatically for any float32 matmul; no code changes needed",
+        "B) Using fp16/bf16 (often via autocast), supported shapes/alignment, and choosing kernels/paths that hit GEMM/conv fast paths are key to getting Tensor Core speedups",
+        "C) Tensor Cores only help elementwise ops like ReLU and layernorm; matmul is memory-bound",
+        "D) Tensor Cores require manually writing custom CUDA kernels; PyTorch cannot use them"
+      ],
+      "correct_answer": "B",
+      "explanation": "Tensor Cores accelerate matrix-multiply-like operations (GEMM/conv) when using supported low-precision dtypes (fp16/bf16/TF32 on Ampere+ for some ops) and when shapes/layouts allow efficient tiling. In PyTorch, you typically enable this via `torch.autocast` (fp16/bf16) and by using implementations that map to optimized GEMM/conv kernels. Some workloads also benefit from padding dimensions to multiples (e.g., 8/16) to improve kernel selection.\n\nThey are not for generic elementwise ops, and you don’t need to write custom CUDA to benefit—though custom kernels can help in niche cases.",
+      "difficulty": "beginner",
+      "tags": [
+        "tensor-cores",
+        "mixed-precision",
+        "autocast",
+        "matmul",
+        "convolution",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an inference loop, you see GPU utilization drop and latency spike. The code frequently calls `.item()` and `.cpu()` for logging:\n\n```python\nfor batch in loader:\n    y = model(batch)\n    metrics.update(y.cpu())\n    print(y.mean().item())\n```\n\nExplain why this can hurt performance, and show a better pattern that avoids unnecessary synchronization while still logging periodically.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Calling `.item()` and many `.cpu()` transfers can introduce implicit GPU->CPU synchronization: the CPU must wait for queued CUDA work to finish to produce the scalar / host tensor. Doing this every iteration prevents overlap and can serialize the pipeline.\n\nBetter pattern: keep metrics on GPU or defer transfers and log less frequently. Example:\n- Accumulate GPU tensors and only move to CPU every N steps.\n- For scalars, use `torch.mean(y).detach()` on GPU and only call `.item()` occasionally.\n\nE.g.:\n```python\nmodel.eval()\nwith torch.inference_mode(), torch.autocast('cuda', dtype=torch.bfloat16):\n    for step, batch in enumerate(loader):\n        y = model(batch)\n        metrics_gpu = update_metrics_gpu(y)  # stays on GPU\n        if step % 100 == 0:\n            val = y.float().mean().detach()\n            print(val.item())  # sync only every 100 steps\n```\nIf you must transfer tensors, batch transfers (e.g., concatenate) and do it infrequently.",
+      "explanation": "This probes knowledge of implicit sync points: many host reads force the CPU to wait for GPU completion. Candidates should know how to restructure logging/metrics to reduce sync frequency and keep work on GPU longer, especially in serving/inference pipelines.",
+      "difficulty": "intermediate",
+      "tags": [
+        "inference",
+        "implicit-sync",
+        "item",
+        "cpu-transfer",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are optimizing inference latency for a PyTorch model. Which combination is generally best practice for fast, correct inference (assuming no training), and why?\n\n```python\n# Option candidates\n# 1) model.eval()\n# 2) torch.no_grad()\n# 3) torch.inference_mode()\n# 4) torch.autocast(device_type='cuda', dtype=torch.float16)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A) Only `torch.no_grad()`; it automatically disables dropout and uses Tensor Cores",
+        "B) `model.eval()` + `torch.inference_mode()` + (optional) `autocast` for fp16/bf16",
+        "C) `model.train()` + `torch.no_grad()`; training mode is faster because it skips running stats",
+        "D) Only `model.eval()`; it disables autograd and prevents sync points"
+      ],
+      "correct_answer": "B",
+      "explanation": "`model.eval()` switches layers like dropout and batchnorm into inference behavior (dropout off; BN uses running stats). `torch.inference_mode()` is like `no_grad()` but can further reduce overhead by disabling autograd metadata/versioning, often improving performance and lowering memory use. `autocast` enables mixed precision inference (fp16/bf16) which can increase throughput and allow Tensor Core usage when kernels support it.\n\n`no_grad()` alone doesn’t change dropout/BN behavior; `eval()` alone doesn’t disable autograd; training mode is not appropriate for inference correctness.",
+      "difficulty": "beginner",
+      "tags": [
+        "inference",
+        "eval-mode",
+        "inference-mode",
+        "autocast",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does PyTorch DistributedDataParallel (DDP) typically use **one process per GPU** instead of multiple threads sharing a single process, and what commonly goes wrong if you `fork()` after CUDA is initialized?\n\nAnswer in terms of CUDA contexts, Python GIL, and DataLoader multiprocessing start methods.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "DDP uses one process per GPU because each process owns a single CUDA context and can drive the GPU independently; this avoids Python GIL contention and makes NCCL collective communication straightforward (one rank per GPU). Threads in one process share the same CUDA context and can contend on the GIL and CUDA stream synchronization, often leading to poor overlap and harder-to-debug concurrency issues.\n\nForking after CUDA init is problematic because the child process inherits a partially-initialized CUDA runtime/context state that is not fork-safe, leading to crashes, hangs, or silent corruption. In practice you should use `spawn` (or `forkserver`) start method for multiprocessing when CUDA is involved. For DataLoader workers, using `num_workers>0` with `fork` can also cause CUDA context issues if any CUDA work happens before worker creation; keep CUDA ops out of workers and prefer `spawn` when necessary.",
+      "explanation": "This tests whether the candidate understands the real execution model: CUDA contexts are process-scoped, NCCL expects a rank-per-process model, and `fork()` is unsafe with CUDA. Strong answers mention the practical fixes: `torchrun`/DDP with one GPU per process, `mp.set_start_method('spawn')`, keeping CUDA operations out of DataLoader workers, and avoiding initializing CUDA before forking.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ddp",
+        "multiprocessing",
+        "cuda-context",
+        "dataloader",
+        "spawn-vs-fork",
+        "nccl"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a PyTorch training loop with gradient accumulation, a candidate writes:\n\n```python\nfor i, batch in enumerate(loader):\n    out = model(**batch)\n    loss = out.loss / grad_accum\n    loss.backward()\n    if (i + 1) % grad_accum == 0:\n        optimizer.step()\n        optimizer.zero_grad()\n```\n\nThey still hit OOM at large `grad_accum`. Which explanation is most accurate, and what is a correct mitigation?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Gradient accumulation always increases activation memory linearly with `grad_accum`; the only fix is smaller model",
+        "B) If they also log/store `out` or `loss` tensors, they may retain graphs across microbatches; ensure no tensor retention and use `loss.item()` for logging",
+        "C) OOM is caused by not calling `torch.cuda.empty_cache()` after each microbatch; add it inside the loop",
+        "D) OOM is due to missing `model.train()`; set it to training mode"
+      ],
+      "correct_answer": "B",
+      "explanation": "Gradient accumulation does not require retaining past microbatch graphs—each backward frees that microbatch’s activations unless something in Python keeps references (e.g., storing `out`, `loss`, or intermediate tensors in a list for later). Another pitfall is doing multiple forwards before backward (not shown here), which would retain multiple graphs.\n\nMitigations:\n- Don’t store graph-attached tensors; log `loss.item()`.\n- Ensure you call backward each microbatch (as shown).\n- Use `optimizer.zero_grad(set_to_none=True)` to reduce gradient memory overhead.\n- If activation memory is still too high per microbatch, reduce microbatch size or use activation checkpointing.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytorch",
+        "oom",
+        "gradient-accumulation",
+        "tensor-retention",
+        "training-loop"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You see intermittent CUDA OOM in PyTorch even though `nvidia-smi` shows plenty of free memory right after the crash. Which of the following is the **most common practical cause** in ML training code (not allocator internals), and the best first fix?\n\n```python\nloss = model(x).loss\nloss.backward()\nlosses.append(loss)  # later used for logging\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A) CUDA kernels are non-deterministic; set `torch.use_deterministic_algorithms(True)`",
+        "B) `losses.append(loss)` retains the computation graph; store `loss.item()` or `loss.detach()` instead",
+        "C) PyTorch caching allocator is broken; call `torch.cuda.empty_cache()` every iteration",
+        "D) Gradients are too large; call `model.zero_grad(set_to_none=False)` more often"
+      ],
+      "correct_answer": "B",
+      "explanation": "Appending `loss` (a tensor requiring grad) retains the entire autograd graph for that iteration, preventing activation buffers from being freed. This is a very common real-world OOM cause. Fix by storing scalars or detached tensors:\n- `losses.append(loss.item())` for logging\n- or `losses.append(loss.detach())` (still on GPU unless moved)\n\nCalling `empty_cache()` may reduce cached memory but does not fix graph retention; determinism is unrelated; `zero_grad` matters for gradient buffers but not for retained graphs from Python references.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytorch",
+        "oom",
+        "autograd",
+        "tensor-retention",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a model that fits in GPU memory for forward pass, but you get OOM during backward. Give a **practical GPU memory optimization playbook** for making training fit, and for each step say **what component it primarily reduces** (activations vs gradients vs optimizer state vs parameters) and a typical tradeoff.\n\nInclude at least 5 concrete tactics (e.g., activation checkpointing, gradient accumulation changes, optimizer choice/sharding, offload, sequence length changes).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer lists multiple tactics, maps each to the memory component it targets, and notes tradeoffs. Example playbook:\n1) Reduce activation memory: (a) activation checkpointing / recompute; tradeoff: extra compute, slower step time. (b) reduce batch size or sequence length; tradeoff: throughput/quality/optimization dynamics. (c) use torch.autocast with bf16/fp16; tradeoff: potential numerical issues, but usually fine in bf16.\n2) Reduce optimizer state: switch Adam->SGD/Adafactor, use 8-bit optimizers, or ZeRO optimizer-state sharding; tradeoff: convergence/quality changes, more communication.\n3) Reduce gradient memory: gradient accumulation with smaller microbatch (but beware that accumulation can increase activation lifetime if implemented incorrectly); tradeoff: more steps per optimizer update, possible throughput loss.\n4) Reduce parameter memory: use FSDP/ZeRO-3 parameter sharding; tradeoff: communication overhead and complexity.\n5) Offload: CPU/NVMe offload of optimizer states/params (ZeRO-Offload); tradeoff: PCIe bottleneck, may hurt step time.\n6) Avoid fragmentation/peaks: use fused optimizers, fuse attention kernels (FlashAttention), and avoid large temporary tensors; tradeoff: kernel availability/compatibility.\n7) Use sequence-parallel / tensor-parallel for very large activations; tradeoff: engineering complexity and comm overhead.\nThe key is to identify whether OOM is dominated by activations (common), optimizer states (Adam), or temporary buffers, and apply the matching lever.",
+      "explanation": "Interviewers want to see that you can (1) identify the dominant memory component and (2) pick the right lever. Activation memory typically dominates for transformers at long sequence length and large batch size; Adam optimizer state dominates for very large parameter counts. Good candidates also mention tradeoffs (recompute vs speed, sharding vs comm/complexity, offload vs PCIe) and common practical wins like FlashAttention and activation checkpointing.",
+      "difficulty": "intermediate",
+      "tags": [
+        "gpu-memory-optimization",
+        "activations",
+        "optimizer-state",
+        "activation-checkpointing",
+        "fsdp",
+        "zero",
+        "offload"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training a transformer with **1B parameters** on a single GPU using PyTorch. Assume **FP16 weights**, and compare memory needs for **Adam** vs **SGD (momentum)**. Ignoring activations for the moment, which breakdown is the best rule-of-thumb for **training-time parameter-related** GPU memory (parameters + gradients + optimizer states) per parameter?\n\nAssume:\n- Gradients stored in FP16\n- Adam keeps **two** FP32 moment buffers (m, v)\n- SGD with momentum keeps **one** FP32 momentum buffer\n- (Optional) FP32 master weights may be kept for stability in mixed precision\n\nWhich option is closest to typical practice for mixed precision training?",
+      "question_type": "mc",
+      "options": [
+        "A) Adam: ~4 bytes/param total; SGD+mom: ~2 bytes/param total",
+        "B) Adam: ~16 bytes/param total; SGD+mom: ~8 bytes/param total",
+        "C) Adam: ~12–16 bytes/param total; SGD+mom: ~6–8 bytes/param total",
+        "D) Adam: ~32 bytes/param total; SGD+mom: ~16 bytes/param total"
+      ],
+      "correct_answer": "C",
+      "explanation": "Rule-of-thumb accounting (per parameter) for mixed precision training often includes:\n- FP16 parameter: 2 bytes\n- FP16 gradient: 2 bytes\n- FP32 optimizer states: Adam has 2 states (m,v) = 8 bytes; SGD+momentum has 1 state = 4 bytes\n- Many setups also keep FP32 master weights: +4 bytes\n\nSo:\n- Adam: 2 (w16) + 2 (g16) + 8 (m,v fp32) + 4 (master fp32) ≈ 16 bytes/param (sometimes ~12 if no master weights or some states are sharded).\n- SGD+momentum: 2 + 2 + 4 + 4 ≈ 12 bytes/param (or ~6–8 bytes/param if no master weights and/or gradients are reduced/partitioned).\n\nThe exact number varies with optimizer implementation (fused optimizers, ZeRO sharding, bf16 usage), but option C captures the common interview rule-of-thumb ranges.",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu-memory-accounting",
+        "mixed-precision",
+        "optimizers",
+        "adam",
+        "sgd",
+        "training"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a real PyTorch codebase, `torch.compile` sometimes gives no speedup or falls back to eager. Which pattern most commonly breaks graph capture, and what’s a typical refactor?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Using `nn.Linear` layers; refactor by rewriting them as manual matmuls.",
+        "B. Data-dependent Python control flow (e.g., `if x.sum() > 0: ...`) and tensor-to-Python conversions (`.item()`) inside the compiled region; refactor by keeping control flow in tensor ops or moving it outside the compiled function.",
+        "C. Using CUDA tensors; refactor by moving tensors to CPU before compiling.",
+        "D. Using AMP autocast; refactor by disabling mixed precision."
+      ],
+      "correct_answer": "B",
+      "explanation": "Graph compilers struggle when Python needs concrete values derived from tensors at runtime (e.g., `.item()`, `len(tensor)`, or branching on tensor values). This forces graph breaks or specialization explosions. A common refactor is to avoid tensor-to-Python conversions in the compiled region, express conditionals with tensor ops (`torch.where`, masking), and structure code so dynamic decisions happen outside the compiled function (or are made static via configuration).",
+      "difficulty": "advanced",
+      "tags": [
+        "torch-compile",
+        "graph-breaks",
+        "performance",
+        "pytorch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re deciding whether to enable FlashAttention (or a fused attention kernel) for an LLM. Which scenario is most likely to see little or no benefit from FlashAttention?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Long sequence lengths where attention would otherwise materialize large attention matrices; memory bandwidth/footprint is the bottleneck.",
+        "B. Causal self-attention with moderately large sequence length where standard attention is memory-bound.",
+        "C. Very short sequences (e.g., seq_len ~ 16–32) where overhead dominates and the baseline attention is already cheap.",
+        "D. Inference with large batch and long context where KV-cache reads dominate."
+      ],
+      "correct_answer": "C",
+      "explanation": "FlashAttention’s main win is reducing memory traffic by avoiding explicit materialization of the attention matrix and improving data locality; this matters most at longer sequence lengths where attention is memory-bound. For very short sequences, the baseline is already small and the fused kernel’s setup/launch overhead can dominate, so speedups may be minimal. (It can still help in some cases, but it’s the least likely scenario.)",
+      "difficulty": "intermediate",
+      "tags": [
+        "attention",
+        "flashattention",
+        "memory-bandwidth",
+        "inference",
+        "training"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You increase batch size to improve throughput, but eventually throughput stops improving and may even get worse. Explain (1) why batch/sequence length can improve GPU utilization, (2) what typically becomes the limiter (memory capacity vs bandwidth vs compute), and (3) when gradient accumulation helps vs hurts.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Larger batch/sequence increases the amount of parallel work per step, improving occupancy and amortizing fixed overheads (kernel launches, framework overhead). It often moves you toward more efficient GEMM/attention shapes.\n\n2) Limits:\n- Memory capacity: activations, optimizer states, and KV/attention intermediates scale with batch and/or sequence; you hit OOM.\n- Memory bandwidth: many ops (attention, layernorm, elementwise) become bandwidth-bound; bigger batch can increase bytes moved and saturate HBM.\n- Compute: for large matmuls, you may become compute-bound; throughput may plateau once SMs are saturated.\nAlso, very large batches can reduce per-step efficiency due to worse cache locality, more communication (in distributed), or less overlap.\n\n3) Gradient accumulation:\n- Helps when you want a larger effective global batch for optimization or to increase arithmetic intensity, but can’t fit the full batch in memory; it keeps per-microbatch memory lower.\n- Hurts when it increases the number of forward/backward passes (more launches, less kernel efficiency) and reduces overlap; it can also worsen scaling if it increases synchronization frequency or if microbatches become too small (more overhead, less efficient kernels).",
+      "explanation": "This tests practical intuition: batch/sequence scaling is a knob that trades utilization against memory and bandwidth. Gradient accumulation is a memory workaround, not a free speedup; it often improves feasibility and sometimes throughput, but can degrade performance if microbatches are too small or if it increases overhead/communication.",
+      "difficulty": "intermediate",
+      "tags": [
+        "batch-size",
+        "gradient-accumulation",
+        "utilization",
+        "memory-bandwidth",
+        "training"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re using a PyTorch DataLoader and see the GPU waiting on data. You already set num_workers>0. Which change is most likely to reduce host-to-device transfer overhead and improve overlap with GPU compute?\n\nCode:\n```python\nfor batch in loader:\n    x = batch[\"x\"].to(\"cuda\")\n    y = batch[\"y\"].to(\"cuda\")\n    loss = model(x, y)\n    loss.backward()\n    opt.step()\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Replace AdamW with SGD to reduce CPU overhead.",
+        "B. Enable pinned memory in the DataLoader and use non_blocking transfers: `DataLoader(..., pin_memory=True)` and `.to(\"cuda\", non_blocking=True)`.",
+        "C. Wrap the loop in `torch.no_grad()` to reduce transfer time.",
+        "D. Set `torch.backends.cudnn.deterministic=True` to make transfers more predictable."
+      ],
+      "correct_answer": "B",
+      "explanation": "Pinned (page-locked) host memory enables faster DMA transfers and better async overlap with GPU work. Using `non_blocking=True` lets the copy enqueue asynchronously (when the source is pinned), which can hide transfer time behind compute if your pipeline is structured to overlap. This is a common, practical fix ML engineers apply when the input pipeline is the bottleneck.",
+      "difficulty": "beginner",
+      "tags": [
+        "input-pipeline",
+        "pinned-memory",
+        "prefetching",
+        "pytorch",
+        "throughput"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Describe a repeatable end-to-end performance triage workflow for a slow training step. Your checklist should help you localize whether the bottleneck is (a) input pipeline, (b) CPU-side overhead / Python, (c) GPU compute/memory, or (d) multi-GPU communication. Mention what you’d look for first in a profiler trace.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A practical workflow:\n1) Measure baseline: step time (wall-clock), throughput (samples/tokens per second), and GPU utilization/memory.\n2) Localize quickly with coarse signals:\n   - If GPU is frequently idle with gaps between kernels, suspect input pipeline or CPU/Python overhead.\n   - If GPU is busy but kernels are memory-bound/low FLOPs, suspect memory bandwidth/poor fusion.\n   - If time is dominated by NCCL/collectives, suspect communication.\n3) Profile:\n   - Start with Nsight Systems / PyTorch Profiler timeline to see CPU vs GPU overlap, kernel gaps, and NCCL regions.\n   - Look first for: long CPU regions on the critical path, dataloader stalls, frequent device synchronizations, many tiny kernels, and large/serialized NCCL calls.\n4) Input pipeline checks:\n   - Measure dataloader time separately; verify prefetching; check worker utilization; ensure pinned memory + non_blocking H2D copies; move heavy augmentation off the main process.\n5) CPU/Python checks:\n   - Reduce Python in the step (vectorize, avoid per-example loops), remove .item()/logging syncs, ensure asynchronous GPU launches aren’t forced to sync.\n6) GPU compute/memory checks:\n   - Inspect kernel mix: matmuls/attention vs many elementwise ops; check if you’re using fused/optimized kernels; consider torch.compile; tune batch/sequence; enable AMP/TF32 where appropriate.\n7) Communication checks:\n   - Compare single-GPU vs multi-GPU; check overlap of comm with compute; ensure correct bucket sizes; watch for small all-reduces; verify topology (NVLink vs PCIe vs multi-node).\n8) Iterate with one change at a time and re-measure.\n",
+      "explanation": "Interviewers look for a disciplined approach: (1) measure, (2) localize using a timeline, (3) attack the dominant term. The “first look” in traces is typically GPU idle gaps (pipeline/CPU) and NCCL blocks (comm). This prevents random tuning and focuses effort where it matters.",
+      "difficulty": "advanced",
+      "tags": [
+        "profiling",
+        "performance-triage",
+        "input-pipeline",
+        "cpu-overhead",
+        "communication"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You scale training from 1 GPU to 8 GPUs and expect ~8× throughput, but you only get ~3×. GPU utilization on each device is decent, but step time has a large “communication” component. Which statement best matches strong vs weak scaling intuition and what often limits multi-node scaling?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Strong scaling keeps per-GPU batch constant; weak scaling keeps global batch constant; networks rarely matter because gradients are small.",
+        "B. Strong scaling keeps global batch constant; weak scaling keeps per-GPU batch constant; multi-node often becomes limited by interconnect bandwidth/latency for all-reduce/all-gather and by smaller per-GPU workload reducing compute/comm ratio.",
+        "C. Strong scaling means adding GPUs always improves throughput linearly; weak scaling means throughput decreases with more GPUs.",
+        "D. Weak scaling is only relevant for inference; strong scaling is only relevant for training."
+      ],
+      "correct_answer": "B",
+      "explanation": "Strong scaling: fixed global batch, more GPUs → less work per GPU, so communication and overhead become a larger fraction. Weak scaling: fixed per-GPU batch, global batch grows with GPU count, often maintaining a better compute/comm ratio (though optimization dynamics may change). In multi-node setups, the network (bandwidth + latency) can dominate collective ops (e.g., gradient all-reduce, tensor-parallel collectives), limiting scaling and sometimes even reducing throughput if per-GPU work becomes too small.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scaling",
+        "multi-gpu",
+        "collectives",
+        "strong-scaling",
+        "weak-scaling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "At a high level, what is KV-cache “paging/eviction” in LLM inference, and when would you use it? Mention one tradeoff.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "KV-cache paging/eviction is managing attention key/value tensors so they don’t all have to reside in fast GPU memory at once. The system stores KV blocks in GPU memory for active tokens/requests and can move less-used blocks to slower storage (e.g., host memory) or evict/recompute them, often in fixed-size blocks to reduce fragmentation.\n\nYou use it when serving many concurrent requests, supporting long contexts, or handling bursty traffic where keeping all KV on GPU would exceed VRAM.\n\nTradeoff: increased latency/throughput cost due to transfers (PCIe/NVLink) and bookkeeping; worst-case tail latency can rise if pages are frequently swapped.",
+      "explanation": "For ML engineers, the key is recognizing KV-cache as the dominant inference memory term for long context and concurrency. Paging makes memory usage more elastic but introduces a bandwidth/latency tax and can create tail-latency spikes if the working set exceeds GPU memory.",
+      "difficulty": "advanced",
+      "tags": [
+        "inference",
+        "kv-cache",
+        "paging",
+        "latency",
+        "memory-management"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run a long-lived LLM inference server. After a few hours, you start seeing occasional CUDA OOMs even though average request sizes haven’t changed. Restarting the process “fixes” it. Which explanation is most plausible, and what’s a practical mitigation?\n",
+      "question_type": "mc",
+      "options": [
+        "A. The GPU is overheating and reducing available VRAM; mitigate by increasing fan speed.",
+        "B. Memory fragmentation and allocator churn (plus varying KV-cache sizes) reduce the ability to find contiguous blocks; mitigate by using a caching allocator with pooling, preallocating KV-cache blocks, or periodic defragmentation via restart/worker recycling.",
+        "C. Kernel launch overhead accumulates and consumes memory; mitigate by reducing the number of CUDA streams.",
+        "D. BF16 causes memory leaks; mitigate by switching to FP32."
+      ],
+      "correct_answer": "B",
+      "explanation": "Long-running inference services often allocate/free variable-sized buffers (especially KV-cache for different sequence lengths). Even if total free memory is sufficient, fragmentation can prevent large contiguous allocations, triggering OOM. Common mitigations include using a robust caching allocator, block-based KV-cache paging, preallocation, limiting max sequence length, and operationally recycling workers (graceful restarts) to reset fragmentation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "inference",
+        "memory-management",
+        "kv-cache",
+        "fragmentation",
+        "serving"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Compare tensor parallelism vs pipeline parallelism vs sequence parallelism for LLMs at a high level. For each, describe:\n1) what is being split,\n2) when you’d choose it (vs data parallel),\n3) one common failure mode or performance pitfall.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Tensor parallelism (TP):\n1) Split within layers (e.g., shard linear/attention projections across GPUs).\n2) Choose when a single layer’s weights/activations don’t fit on one GPU, or to increase compute throughput per layer.\n3) Pitfall: communication-heavy collectives (all-reduce/all-gather) on every layer; scaling can collapse if interconnect is slow or if micro-batches are small.\n\nPipeline parallelism (PP):\n1) Split layers/stages across GPUs (GPU0 runs early layers, GPU7 runs later layers).\n2) Choose when the whole model doesn’t fit but individual layer shards do, or when you want to scale to many GPUs with less per-layer collective traffic.\n3) Pitfall: pipeline bubbles (idle time) if micro-batching is insufficient; also stage imbalance (one stage slower) throttles throughput; increased latency.\n\nSequence parallelism (SP):\n1) Split sequence dimension work/activations across GPUs (often used with TP to reduce activation memory and/or distribute attention/MLP activation computation).\n2) Choose when activation memory (especially for long context) dominates, or to reduce per-GPU activation footprint and sometimes improve efficiency for long sequences.\n3) Pitfall: extra communication for gathering/scattering sequence shards; can be sensitive to sequence length variability and can increase latency.\n\nVs data parallel (DP): DP replicates the full model on each GPU and splits batch. DP is best when the model fits on one GPU and you want simple scaling; it fails when the model/activations don’t fit or when per-GPU batch becomes too small to be efficient.",
+      "explanation": "LLM training often needs a combination: DP for scaling batch, TP to shard huge matmuls/weights, PP to shard layers when the model is too big, and SP to handle long-context activation memory. The main practical interview signal is recognizing what each splits and the real-world bottlenecks: collectives for TP/SP and bubbles/imbalance for PP.",
+      "difficulty": "advanced",
+      "tags": [
+        "model-parallelism",
+        "tensor-parallel",
+        "pipeline-parallel",
+        "sequence-parallel",
+        "llm-training"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to train a 70B-parameter LLM. On a single GPU, it OOMs even with small batch size. You have 8 GPUs on one node. Which parallelism approach is most directly aimed at fitting the model weights/activations when data parallel alone cannot, and what is the key tradeoff?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Data parallel; tradeoff is increased compute per GPU due to redundant forward passes.",
+        "B. Tensor parallel; tradeoff is increased communication (e.g., all-reduce/all-gather) on activations/partials, which can limit scaling.",
+        "C. Gradient checkpointing; tradeoff is increased communication across nodes.",
+        "D. CPU offload; tradeoff is reduced numerical stability due to PCIe."
+      ],
+      "correct_answer": "B",
+      "explanation": "Tensor parallel splits large matrix multiplications (and sometimes attention projections) across GPUs so each GPU holds only a shard of the weights (and corresponding activations). It directly addresses the “model doesn’t fit” problem when data parallel (replicating the full model on each GPU) cannot. The tradeoff is extra communication on intermediate results (e.g., all-reduce of partial outputs or all-gather of shards), which can become the bottleneck and reduce scaling efficiency.",
+      "difficulty": "beginner",
+      "tags": [
+        "model-parallelism",
+        "tensor-parallel",
+        "llm-training",
+        "scaling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re training a model and notice the GPU is only ~20–30% utilized, but the step time is dominated by many tiny kernels (layernorm, bias add, small elementwise ops). CPU utilization is low and dataloader isn’t the bottleneck. Explain why this can happen on GPUs (in terms of GPU execution/memory hierarchy) and name 2–3 practical fixes an ML engineer would try.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "This is a classic “latency-bound / launch-overhead / memory-bound small-op” regime. Many tiny kernels do very little work per launch, so the fixed costs (kernel launch overhead, scheduling, synchronization points) and memory traffic dominate. Elementwise ops often read/write HBM (global memory) with low arithmetic intensity; they may not reuse data enough to benefit from caches (L2) and spend most time waiting on memory. Because each kernel is small, you also don’t fill the GPU with enough concurrent work to hide latency.\n\nPractical fixes:\n1) Fuse ops: use fused kernels (e.g., fused layernorm, fused bias+GELU, FlashAttention) or compiler fusion (torch.compile / XLA) to reduce launches and avoid intermediate HBM round-trips.\n2) Increase work per kernel: larger batch/sequence length (within memory limits), or combine small ops into larger ones.\n3) Reduce synchronization: avoid unnecessary .item(), printing tensors, frequent cuda synchronize, or per-iteration host-device transfers.\n4) Use optimized libraries/kernels: ensure you’re using cuDNN/cuBLAS-backed paths, enable TF32 where appropriate, and prefer implementations that use shared memory/register reuse instead of repeated global loads.",
+      "explanation": "GPUs are throughput machines: they need enough parallel work to hide memory latency. Small kernels often become dominated by overhead and global memory bandwidth/latency (HBM). Fusion helps because it (a) reduces kernel launches and (b) keeps intermediate values in registers/shared memory or at least reduces extra HBM reads/writes, improving arithmetic intensity. This is why “many tiny ops” often show low utilization even though the GPU is the limiting device.",
+      "difficulty": "intermediate",
+      "tags": [
+        "memory-hierarchy",
+        "kernel-launch",
+        "fusion",
+        "latency-bound",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe a GPU kernel in an Nsight Systems trace taking much longer than expected, and the profiler shows low warp execution efficiency with many “branch” instructions. In an ML context, which situation is the most likely cause of warp divergence, and what is a practical mitigation?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Using mixed precision (FP16/BF16) causes different threads to take different branches; mitigate by switching to FP32.",
+        "B. Data-dependent control flow inside a kernel (e.g., variable-length sequences with per-token conditionals) causes threads in a warp to follow different paths; mitigate by padding/bucketing to reduce variability or using kernels designed for ragged inputs.",
+        "C. Having too large a batch size causes divergence; mitigate by reducing batch size until occupancy increases.",
+        "D. Using more CUDA streams causes divergence; mitigate by using a single default stream."
+      ],
+      "correct_answer": "B",
+      "explanation": "Warp divergence happens when threads in the same warp take different control-flow paths (SIMT). In ML workloads this commonly appears with variable-length sequences, masking logic, sparsity/conditional computation, or ragged batches where some tokens/elements do “extra work” and others don’t. Padding/bucketing makes work per thread more uniform; alternatively, use kernels/ops specifically built for variable-length inputs (e.g., fused attention kernels that accept sequence lengths) so the divergence is handled efficiently.",
+      "difficulty": "intermediate",
+      "tags": [
+        "cuda-model",
+        "warps",
+        "simt",
+        "warp-divergence",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Quantization in practice: You quantize a transformer from FP16 to INT8 (or 4-bit weights) but see little to no speedup in real inference. Which explanation is most plausible?\n\nA. Quantization always improves speed; the benchmark must be wrong\nB. The workload is memory-bound or lacks optimized quantized kernels, and dequant/packing overhead dominates at your batch size\nC. INT8 can’t run on GPUs; only CPUs support it\nD. Quantization reduces accuracy so the GPU runs extra compute to compensate",
+      "question_type": "mc",
+      "options": [
+        "A. Quantization always improves speed; the benchmark must be wrong",
+        "B. The workload is memory-bound or lacks optimized quantized kernels, and dequant/packing overhead dominates at your batch size",
+        "C. INT8 can’t run on GPUs; only CPUs support it",
+        "D. Quantization reduces accuracy so the GPU runs extra compute to compensate"
+      ],
+      "correct_answer": "B",
+      "explanation": "Speedups depend on having fast kernels (e.g., TensorRT/optimized GEMMs) and on whether the bottleneck is compute or memory. In decode-heavy LLM inference, memory bandwidth/KV-cache traffic can dominate, so reducing weight precision may not help much. Also, some libraries dequantize to FP16 internally or pay packing/unpacking overhead that can erase gains at small batch sizes. Activation quantization and end-to-end kernel support matter.",
+      "difficulty": "intermediate",
+      "tags": [
+        "quantization",
+        "int8",
+        "4bit",
+        "kernel_availability",
+        "memory_bound",
+        "dequant_overhead",
+        "inference_performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "PyTorch GPU performance footguns: What’s wrong with the timing code below, and how would you fix it to measure GPU kernel time correctly?\n\n```python\nimport time\nimport torch\n\nx = torch.randn(4096, 4096, device='cuda')\nW = torch.randn(4096, 4096, device='cuda')\n\nt0 = time.time()\nfor _ in range(10):\n    y = x @ W\nprint('ms:', (time.time() - t0) * 1000)\n```\n\nA. Nothing; time.time() is accurate for GPU kernels\nB. CUDA launches are asynchronous; add torch.cuda.synchronize() around timing or use CUDA events\nC. The matmul is too large; reduce it to avoid caching effects\nD. The print statement should be removed because it changes math results",
+      "question_type": "mc",
+      "options": [
+        "A. Nothing; time.time() is accurate for GPU kernels",
+        "B. CUDA launches are asynchronous; add torch.cuda.synchronize() around timing or use CUDA events",
+        "C. The matmul is too large; reduce it to avoid caching effects",
+        "D. The print statement should be removed because it changes math results"
+      ],
+      "correct_answer": "B",
+      "explanation": "GPU ops are enqueued asynchronously, so the CPU timer mostly measures launch overhead unless you synchronize. Correct approaches: (1) call torch.cuda.synchronize() before starting and after the loop, or (2) use torch.cuda.Event(enable_timing=True) to time on-GPU. Also typically add warmup iterations to avoid one-time setup effects (cudnn/cublas heuristics, caching).",
+      "difficulty": "beginner",
+      "tags": [
+        "pytorch",
+        "performance_footguns",
+        "async_cuda",
+        "synchronization",
+        "timing",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Hardware selection: You need to choose a GPU for (1) training a 7B parameter model with reasonably large batch/sequence, and (2) cost-efficient low-latency LLM inference. Which factor is typically the *primary* constraint for each?\n\nA. (1) PCIe bandwidth, (2) FP64 throughput\nB. (1) VRAM capacity (and often bandwidth), (2) memory bandwidth and kernel efficiency at small batch\nC. (1) Display outputs, (2) number of CPU cores\nD. (1) Tensor core peak TFLOPs only, (2) NVLink only",
+      "question_type": "mc",
+      "options": [
+        "A. (1) PCIe bandwidth, (2) FP64 throughput",
+        "B. (1) VRAM capacity (and often bandwidth), (2) memory bandwidth and kernel efficiency at small batch",
+        "C. (1) Display outputs, (2) number of CPU cores",
+        "D. (1) Tensor core peak TFLOPs only, (2) NVLink only"
+      ],
+      "correct_answer": "B",
+      "explanation": "For training large models, VRAM capacity is often the first limiter (params+grads+optimizer+activations), with bandwidth also important for throughput. For low-latency inference, batch sizes may be small and decode can be bandwidth/latency dominated (KV-cache reads), so memory bandwidth and efficient kernels matter more than just peak TFLOPs. NVLink helps multi-GPU scaling but isn’t always the primary constraint for a single-GPU inference target.",
+      "difficulty": "beginner",
+      "tags": [
+        "hardware_selection",
+        "vram",
+        "bandwidth",
+        "training_vs_inference",
+        "a100_h100_l4_t4",
+        "constraints"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "LLM inference performance model: Explain the difference between prefill and decode. How do batching/continuous batching affect throughput vs (tail) latency, and why does KV-cache growth change the bottleneck as sequence length increases?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Prefill is the initial forward pass over the prompt tokens; it has more parallelism (process many tokens at once) and is often compute-heavy (large matmuls). Decode generates one (or a few) new tokens iteratively; it is sequential over time and often becomes memory-bandwidth/latency dominated because each step reads the growing KV cache.\nBatching increases throughput by amortizing overhead and increasing GPU work per launch, but it can increase latency because requests wait to be batched. Continuous batching (a.k.a. dynamic batching) forms batches on the fly each decode step, improving utilization while controlling latency.\nKV cache grows linearly with generated tokens and prompt length. As it grows, attention reads more KV data each decode step, increasing memory traffic; decode can shift from compute-bound to memory-bound and tail latency can worsen, especially with long contexts or many concurrent sequences.",
+      "explanation": "This is the core mental model behind why LLM serving stacks focus on continuous batching, KV-cache management, and separating prefill vs decode scheduling. It also explains why long-context workloads may be bandwidth- or memory-capacity constrained even on very fast GPUs.",
+      "difficulty": "advanced",
+      "tags": [
+        "llm_inference",
+        "prefill",
+        "decode",
+        "kv_cache",
+        "continuous_batching",
+        "throughput_latency",
+        "tail_latency"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Training VRAM accounting: For a transformer trained with AdamW in mixed precision, list the main contributors to VRAM usage during a training step (parameters, gradients, optimizer state, activations, etc.). How does this differ if you switch to SGD, enable activation checkpointing, or use gradient accumulation (microbatching)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Main VRAM contributors:\n- Parameters (often stored in FP16/BF16 for compute; sometimes an FP32 master copy is kept depending on setup).\n- Gradients (typically same dtype as params or FP32 depending on scaler/optimizer).\n- Optimizer state: AdamW keeps first and second moment estimates (m and v), commonly FP32, plus sometimes FP32 master params—this can be ~2–4x parameter size overhead depending on implementation.\n- Activations saved for backward (often the largest term at large batch/sequence), including attention intermediates unless using memory-efficient kernels.\n- Temporary buffers/workspace for kernels (GEMM, attention), and allocator fragmentation.\nDifferences:\n- Switching AdamW -> SGD: optimizer state drops dramatically (SGD with momentum keeps ~1 extra buffer; plain SGD keeps none), reducing VRAM.\n- Activation checkpointing: reduces activation memory by recomputing parts of forward during backward; increases compute/time.\n- Gradient accumulation (microbatching): reduces peak activation memory per microbatch (since activations scale with microbatch size), but parameters/optimizer state remain; total work increases and you may store gradients across microbatches (usually not extra beyond existing grad buffers).",
+      "explanation": "A strong ML engineer can reason about what scales with model size (params/optimizer) vs what scales with batch/sequence (activations) and can predict why Adam is often the memory limiter for large models, while checkpointing and microbatching mainly target activation peaks.",
+      "difficulty": "intermediate",
+      "tags": [
+        "training",
+        "vram_accounting",
+        "adamw",
+        "sgd",
+        "activations",
+        "checkpointing",
+        "gradient_accumulation",
+        "mixed_precision"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Serving-time GPU utilization: You have a single GPU serving 3 models (A, B, C) with bursty traffic. GPU utilization is low (~30%) but CPU usage is high and latency is spiky. Which change is most likely to improve GPU utilization without increasing tail latency too much?\n\nA. Increase max batch size dramatically and wait longer to form batches\nB. Use asynchronous request handling with multiple CUDA streams and pre/post-processing off the critical path\nC. Pin the server to a single CPU core to reduce context switching\nD. Disable concurrent model execution so only one model runs at a time",
+      "question_type": "mc",
+      "options": [
+        "A. Increase max batch size dramatically and wait longer to form batches",
+        "B. Use asynchronous request handling with multiple CUDA streams and pre/post-processing off the critical path",
+        "C. Pin the server to a single CPU core to reduce context switching",
+        "D. Disable concurrent model execution so only one model runs at a time"
+      ],
+      "correct_answer": "B",
+      "explanation": "Low GPU utilization with high CPU usage often indicates a CPU bottleneck (tokenization, Python overhead, request routing, memcpy, synchronization) and poor overlap between CPU work and GPU work. Using async handling, multiple streams (when safe), and moving CPU pre/post-processing off the synchronous path can increase concurrency and keep the GPU fed. Waiting longer for huge batches may increase tail latency, and disabling concurrency usually reduces utilization further.",
+      "difficulty": "intermediate",
+      "tags": [
+        "serving",
+        "gpu_utilization",
+        "concurrency",
+        "cuda_streams",
+        "cpu_bottlenecks",
+        "inference_systems"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You enable torch.compile on a training workload and it gets slower. Give 3 practical reasons this can happen, and for each, one mitigation you would try.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Possible reasons and mitigations:\n1) Frequent graph breaks (dynamic Python control flow, .item(), data-dependent shapes) cause repeated recompiles or fallback to eager, adding overhead. Mitigation: remove Python-side branching, avoid .item() in forward, use tensor ops for control flow, or isolate non-compilable parts.\n2) Highly dynamic shapes (variable sequence lengths, ragged batches) trigger many specialized graphs or guard failures. Mitigation: bucket/pad to a small set of shapes, use dynamic shapes support where appropriate, or disable compile for the most dynamic modules.\n3) Compilation overhead dominates (short runs, small models, many small steps, interactive experimentation). Mitigation: warm up and reuse compiled graphs, increase iteration count before timing, or only compile the stable hot path.\nOther valid reasons: worse kernel choices vs vendor libraries, missed fusions due to unsupported ops, increased memory use leading to more allocator pressure. Mitigations include adjusting compile mode/backends, enabling/trying fused kernels (e.g., SDPA/FlashAttention), or selectively compiling submodules.",
+      "explanation": "torch.compile is not a free speedup: it trades upfront compile time and constraints on dynamism for potential kernel fusion and reduced Python overhead. The best answers connect symptoms (recompiles/guards/overhead) to concrete mitigations (bucketing shapes, removing sync points, selective compilation).",
+      "difficulty": "advanced",
+      "tags": [
+        "pytorch2",
+        "torch_compile",
+        "dynamic_shapes",
+        "graph_breaks",
+        "performance_debugging",
+        "kernel_fusion"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In PyTorch 2.x (torch.compile), which of the following is most likely to cause a graph break and reduce the benefit of compilation?\n\nA. Using torch.nn.functional.gelu\nB. Calling tensor.item() inside the forward pass to control Python logic\nC. Using torch.matmul on CUDA tensors\nD. Using autocast for mixed precision",
+      "question_type": "mc",
+      "options": [
+        "A. Using torch.nn.functional.gelu",
+        "B. Calling tensor.item() inside the forward pass to control Python logic",
+        "C. Using torch.matmul on CUDA tensors",
+        "D. Using autocast for mixed precision"
+      ],
+      "correct_answer": "B",
+      "explanation": "tensor.item() pulls a value from the GPU to the CPU as a Python scalar, which forces synchronization and typically introduces Python-side control flow that the compiler can’t keep in a single captured graph. Most standard tensor ops (gelu/matmul) are compilable, and autocast is generally compatible (though it can affect kernel selection).",
+      "difficulty": "intermediate",
+      "tags": [
+        "pytorch2",
+        "torch_compile",
+        "graph_breaks",
+        "cpu_sync",
+        "item",
+        "eager_vs_compile"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Conceptually describe the GPU memory hierarchy (HBM, L2, shared memory, registers). For a typical ML op (e.g., attention or a convolution), what kinds of access patterns benefit from each level, and why does it matter for performance?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "HBM (device DRAM) is large but high-latency; it’s the backing store for model weights, activations, and KV cache. L2 is a chip-wide cache that can capture reuse across SMs or within an SM over time; it helps when data is reused or when access has locality (e.g., re-reading weights/activations, KV cache reads). Shared memory is a small, programmer-managed on-SM scratchpad with much lower latency than HBM; kernels use it to stage tiles (e.g., GEMM/attention tiling) to increase data reuse and reduce HBM traffic. Registers are the fastest per-thread storage; they hold frequently used scalars/fragments (e.g., accumulators) but are limited—too many registers can reduce occupancy. Performance depends on minimizing HBM traffic, maximizing reuse in L2/shared, and keeping hot values in registers, because many ML ops are bandwidth-bound rather than compute-bound.",
+      "explanation": "This mental model helps interpret why fused kernels, tiling (FlashAttention), and layout choices matter: they reduce expensive HBM reads/writes and improve reuse in faster memory levels. It also explains why “same FLOPs” can have very different speed depending on memory traffic.",
+      "difficulty": "beginner",
+      "tags": [
+        "memory_hierarchy",
+        "hbm",
+        "l2_cache",
+        "shared_memory",
+        "registers",
+        "attention",
+        "convolution",
+        "bandwidth"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You profile a model and see a custom CUDA extension has low SM occupancy (few active warps per SM) and is memory-latency bound. Which change is most likely to increase throughput by improving latency hiding?\n\nA. Increase per-thread register usage to reduce recomputation\nB. Reduce register or shared-memory usage so more warps can be resident\nC. Add more synchronization barriers within the kernel\nD. Force the kernel to use FP64 for higher arithmetic intensity",
+      "question_type": "mc",
+      "options": [
+        "A. Increase per-thread register usage to reduce recomputation",
+        "B. Reduce register or shared-memory usage so more warps can be resident",
+        "C. Add more synchronization barriers within the kernel",
+        "D. Force the kernel to use FP64 for higher arithmetic intensity"
+      ],
+      "correct_answer": "B",
+      "explanation": "If a kernel is memory-latency bound, the SM benefits from having more ready warps to schedule while others wait on memory. High register/shared-memory usage can cap the number of resident warps (lower occupancy). Reducing those resources often increases occupancy and improves latency hiding. Barriers usually reduce parallel efficiency, and FP64 typically slows ML workloads and doesn’t address latency hiding directly.",
+      "difficulty": "intermediate",
+      "tags": [
+        "gpu_architecture",
+        "occupancy",
+        "registers",
+        "shared_memory",
+        "latency_hiding",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In plain terms, what do SMs and warps do on an NVIDIA GPU, and why does “occupancy” matter for many ML kernels (e.g., layernorm, attention, small GEMMs)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "An SM (Streaming Multiprocessor) is the GPU’s main execution unit that schedules and runs many threads. Threads are executed in groups called warps (typically 32 threads) that share an instruction stream (SIMT). Occupancy describes how many warps are resident/active on an SM relative to the maximum. Higher occupancy can help hide memory and instruction latency: while one warp waits on memory, the SM can run another ready warp. Many ML kernels are latency- or memory-bound and benefit from having enough active warps to keep the SM busy, but occupancy isn’t always the goal—too many registers/shared memory per thread can reduce occupancy, and sometimes fewer, more efficient warps with better data reuse wins.",
+      "explanation": "ML engineers don’t need to write CUDA to benefit from this: understanding that GPUs hide latency by switching between warps explains why kernels with lots of memory access (normalization, softmax, attention) can slow down if resource usage (registers/shared memory) reduces the number of concurrent warps. It also explains why fusing ops or using better kernels can outperform “more parallelism” that increases overhead.",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu_architecture",
+        "sms",
+        "warps",
+        "occupancy",
+        "latency_hiding",
+        "ml_kernels"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Quantization decision-making for inference:\n\nYou quantize an LLM from FP16 to INT8 and see only a small latency improvement on your GPU, despite lower memory footprint. Which explanation is most plausible, and what would you check next?",
+      "question_type": "mc",
+      "options": [
+        "A. INT8 always reduces accuracy to zero; the GPU refuses to accelerate it",
+        "B. The workload may be memory-bound elsewhere (e.g., KV cache bandwidth) or the kernels aren’t using INT8 Tensor Cores due to unsupported ops/layouts; check profiler for INT8 TC usage and whether time is dominated by attention/KV cache or dequant overhead",
+        "C. Quantization only helps on CPUs; on GPUs it always slows down",
+        "D. The model is too small; quantization only helps if the model has more than 1B parameters"
+      ],
+      "correct_answer": "B",
+      "explanation": "Quantization helps most when you either (1) become bandwidth-limited on weight reads and can reduce bytes moved, and/or (2) can use fast INT8 Tensor Core kernels. If runtime is dominated by attention/KV cache reads/writes, softmax, or dequantization overhead, weight quantization may not move the needle much. Practical next checks: ensure kernels are actually INT8 (Tensor Core) via profiler, confirm calibration scheme (per-channel vs per-tensor) and packing, and identify whether the bottleneck is weight GEMMs or memory traffic elsewhere (e.g., KV cache, activations, logits).",
+      "difficulty": "advanced",
+      "tags": [
+        "quantization",
+        "inference",
+        "tensor-cores",
+        "roofline",
+        "profiling",
+        "kv-cache"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Production optimization: `torch.compile` and CUDA Graphs.\n\nExplain:\n1) What performance benefits you typically expect from `torch.compile` and/or CUDA Graphs in training vs inference.\n2) Two common reasons CUDA Graph capture breaks or provides little benefit for a model.\n3) One scenario where these techniques can hurt performance or usability.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Benefits: fewer Python overheads and fewer kernel launches via fusion/scheduling; more stable execution; for CUDA Graphs specifically, lower CPU launch overhead and more deterministic iteration times. In inference, benefits can be large for small/medium batch sizes where launch overhead matters; in training, benefits vary—often from fusion and reduced overhead, sometimes modest if dominated by large GEMMs.\n\n2) Reasons capture breaks / low benefit: (i) dynamic shapes/control flow (variable sequence lengths, data-dependent branching) causing graph invalidation or preventing compilation/capture; (ii) ops not supported by the compiler/capture path, or allocations occurring during capture (graph requires static memory addresses unless using graph-friendly allocators). Also: frequent CPU-GPU sync points, random number generation/stateful ops, or changing tensor sizes.\n\n3) When it hurts: if shapes vary frequently, you may recompile often (compile overhead) or need multiple graphs, increasing memory and complexity. Aggressive fusion can increase register pressure, reduce occupancy, or make debugging harder. Graphs can complicate error handling and can increase peak memory due to static buffers.",
+      "explanation": "`torch.compile` targets graph-level optimization (fusion, scheduling, reduced Python overhead). CUDA Graphs target launch overhead by replaying a captured sequence with fixed shapes and memory. Both work best with stable shapes and minimal dynamism; otherwise, overhead and complexity can outweigh gains.",
+      "difficulty": "advanced",
+      "tags": [
+        "torch-compile",
+        "cuda-graphs",
+        "production",
+        "performance",
+        "dynamic-shapes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "CUDA streams & overlap:\n\nYou want to overlap host-to-device (H2D) transfers with GPU compute in a training loop. Which pattern is most correct in PyTorch to enable overlap (assuming your DataLoader can provide pinned memory)?",
+      "question_type": "mc",
+      "options": [
+        "A. Use `CUDA_LAUNCH_BLOCKING=1` so transfers and compute run concurrently",
+        "B. Move tensors to GPU with `.to('cuda')` in the default stream; overlap happens automatically without pinned memory",
+        "C. Use pinned host memory + `non_blocking=True` for H2D copies, and schedule copies on a separate stream (or rely on async copy) with proper synchronization before use",
+        "D. Call `torch.cuda.synchronize()` after every copy to ensure the next compute kernel starts sooner"
+      ],
+      "correct_answer": "C",
+      "explanation": "Overlap requires asynchronous copies, which typically need pinned (page-locked) host memory, and careful stream semantics. In PyTorch, `tensor.to(device, non_blocking=True)` can issue an async H2D when the source is pinned. To actually overlap with compute, you often enqueue copies earlier (possibly on a dedicated prefetch stream) and synchronize (e.g., events or `wait_stream`) only when the data is needed. Forcing synchronization after each copy prevents overlap.",
+      "difficulty": "intermediate",
+      "tags": [
+        "cuda-streams",
+        "overlap",
+        "h2d",
+        "pytorch",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "PyTorch memory layout scenario:\n\n```python\nimport torch\nx = torch.randn(32, 128, 64, device='cuda')   # (B, T, C)\ny = x.transpose(1, 2)                          # (B, C, T)\nz = y.view(32, -1)                             # flatten\n```\n\n(a) What happens at runtime and why?\n(b) Show a correct way to flatten without unexpected errors, and explain the performance tradeoff between `contiguous()` and `reshape()` here.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) `transpose` returns a view with changed strides (non-contiguous). Calling `view` on a non-contiguous tensor will error (or produce incorrect interpretation in older contexts) because `view` requires the underlying storage to match the requested shape via simple stride arithmetic. \n\n(b) Correct options:\n- `z = y.contiguous().view(32, -1)` (forces a copy to make memory contiguous, then views)\n- `z = y.reshape(32, -1)` (will return a view if possible, otherwise makes a contiguous copy under the hood)\n\nTradeoff: `contiguous()` makes the copy explicit (you pay an extra kernel/memcpy and extra memory). `reshape()` is more flexible and can avoid a copy when the tensor is already compatible, but it may still allocate/copy implicitly. In performance-critical code, you want to minimize unexpected copies and keep tensors in layouts that downstream kernels prefer (e.g., contiguous or channels-last when appropriate).",
+      "explanation": "Strides matter: many GPU kernels assume contiguous memory for efficient coalesced loads. Transpose changes strides without moving data, which is cheap, but it can force later operations to either run with strided access (slower) or materialize a contiguous copy. Understanding `view` vs `reshape` vs `contiguous()` helps avoid silent performance cliffs and runtime errors.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytorch",
+        "memory-layout",
+        "contiguity",
+        "strides",
+        "views-vs-copies"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You expect Tensor Cores to accelerate your matmuls, but performance is poor. Which of the following is the most common practical reason in PyTorch, and how would you verify it?",
+      "question_type": "mc",
+      "options": [
+        "A. Using BF16/FP16 automatically disables Tensor Cores; verify by printing model parameters",
+        "B. Shapes/dtypes/layout aren’t hitting TC-friendly kernels (e.g., FP32, misaligned dimensions, non-optimal strides); verify in Nsight Compute or PyTorch profiler by checking Tensor Core HMMA usage / kernel names and math mode",
+        "C. Tensor Cores only work for convolution, not GEMM; verify by switching to conv layers",
+        "D. Tensor Cores require setting CUDA_LAUNCH_BLOCKING=1; verify by enabling it"
+      ],
+      "correct_answer": "B",
+      "explanation": "Tensor Cores require supported dtypes (FP16/BF16/TF32/INT8 depending on GPU), and kernels often prefer certain alignments and layouts (e.g., dimensions multiples of 8/16, contiguous/expected strides, using cuBLASLt paths). You verify by profiling: Nsight Compute can show HMMA instructions (Tensor Core ops), and PyTorch profiler/Nsight Systems can reveal whether matmul kernels are TC-enabled (and whether you’re using TF32 on Ampere+). Poor performance often comes from falling back to non-TC kernels due to dtype, shape, or layout.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tensor-cores",
+        "mixed-precision",
+        "profiling",
+        "shape-alignment",
+        "pytorch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to choose a GPU instance for (1) LLM fine-tuning with Adam, and (2) high-throughput LLM inference. Which resource tends to be the most constraining in each case, and how do PCIe vs NVLink considerations typically show up?\n\nPick the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Fine-tuning: mostly compute (TFLOPs) only; Inference: mostly CPU speed; NVLink rarely matters",
+        "B. Fine-tuning: VRAM capacity and interconnect bandwidth (for multi-GPU) often dominate; Inference: memory bandwidth and/or VRAM (KV cache) dominate; NVLink matters when sharding model/activations across GPUs or doing heavy all-reduce",
+        "C. Fine-tuning: disk I/O dominates; Inference: L2 cache size dominates; NVLink only helps graphics workloads",
+        "D. Fine-tuning: always memory bandwidth only; Inference: always Tensor Core compute only; PCIe/NVLink are irrelevant"
+      ],
+      "correct_answer": "B",
+      "explanation": "Fine-tuning with Adam is often constrained by VRAM (model weights + gradients + optimizer states) and, when scaling out, by communication (all-reduce, parameter sharding). Inference is frequently constrained by memory bandwidth and by KV-cache capacity for long-context/large batches; compute can be underutilized if the workload is memory-bound or shapes are small. NVLink vs PCIe matters when GPUs must exchange large tensors frequently (data parallel all-reduce, tensor/pipeline parallel, KV cache/model sharding). For single-GPU inference, NVLink is irrelevant; for multi-GPU inference/training, it can be decisive.",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu-selection",
+        "vram",
+        "memory-bandwidth",
+        "pcie-vs-nvlink",
+        "training",
+        "inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re choosing a batch size under a fixed VRAM budget.\n\n(a) For training, why can increasing batch size sometimes *decrease* throughput after a point even if you still fit in memory?\n(b) For inference with variable-length sequences, explain how padding changes the batch-size decision, and give one technique to reduce wasted compute.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) Training memory/compute includes activations, optimizer state, and gradient buffers; larger batches can shift the step to be memory-bandwidth bound, increase activation/communication overhead, reduce kernel efficiency due to shape choices, or increase pipeline bubbles (e.g., data loader, all-reduce). Also, very large batches may reduce per-step variance requiring LR changes; but purely performance-wise, you can hit diminishing returns when you saturate compute/memory or when kernels become less efficient due to non-ideal shapes.\n\n(b) With variable-length sequences, padding makes effective work scale with the max length in the batch, so larger batches can waste compute on padded tokens and increase attention’s O(L^2) cost for the padded length. A common technique is length bucketing (group similar lengths), dynamic batching/token-based batching, or using packed sequences/attention masks with implementations that skip padded work (where supported).",
+      "explanation": "Batch size is not just “fit in VRAM.” Training throughput depends on whether you are compute-bound, memory-bound, or overhead/communication-bound. For inference, padding can dominate runtime because many kernels operate on full dense tensors; grouping by length or batching by tokens reduces wasted FLOPs and memory traffic.",
+      "difficulty": "intermediate",
+      "tags": [
+        "batch-size",
+        "training-vs-inference",
+        "memory-limits",
+        "padding",
+        "variable-length"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In transformer models, layer norm and softmax often show up as bottlenecks even though they have far fewer FLOPs than attention/MLP GEMMs. Explain why this happens on GPUs and name two practical mitigation strategies used in modern training/inference stacks.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "They are typically memory-bandwidth/latency bound and involve reductions and multiple passes over activations (mean/var for layer norm; max/sum-exp for softmax), plus synchronization and poor opportunity for large Tensor Core GEMMs. Their arithmetic intensity is low, so they hit the memory/launch overhead ceiling rather than compute peak. Mitigations include (1) kernel fusion (e.g., fused layernorm, fused bias+dropout+residual, fused attention/softmax) to reduce reads/writes and launches, and (2) using optimized implementations like FlashAttention (tiling to SRAM/shared memory, fewer HBM passes) or vendor libraries (cuDNN/cuBLASLt/Triton kernels) that improve locality and reduce intermediate tensors. Other valid answers: using RMSNorm, reducing precision (FP16/BF16), or reordering to increase fusion opportunities.",
+      "explanation": "On GPUs, performance is often limited by memory traffic and kernel overhead rather than FLOPs. Layer norm and softmax require reading the same tensor multiple times and doing reductions that force synchronization; they also don’t map to big matrix multiplies that hit Tensor Cores efficiently. Fusion and attention variants that tile and reuse data in on-chip memory (shared/L2) reduce HBM traffic and improve throughput.",
+      "difficulty": "intermediate",
+      "tags": [
+        "model-architecture-efficiency",
+        "layernorm",
+        "softmax",
+        "bandwidth-bound-ops",
+        "kernel-fusion",
+        "flashattention"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run Nsight Systems/Compute on a transformer training step and observe:\n- SM occupancy: 85%\n- Achieved occupancy: 35%\n- Memory throughput: 40% of peak\n- Tensor Core utilization: low\n\nWhich interpretation is most accurate, and what is a reasonable next investigation step?",
+      "question_type": "mc",
+      "options": [
+        "A. The kernel is perfectly optimized; high SM occupancy guarantees high achieved occupancy",
+        "B. The kernel is likely stalled (e.g., memory latency, dependencies, or instruction mix); inspect warp stall reasons / roofline to see if it’s latency-bound or not using Tensor Cores",
+        "C. The GPU is thermal throttling; reduce learning rate to lower temperature",
+        "D. The GPU is saturated on PCIe; switch to CPU execution for better overlap"
+      ],
+      "correct_answer": "B",
+      "explanation": "SM occupancy is a theoretical limit based on resources (registers/shared memory). Achieved occupancy reflects what actually runs and can be lower due to stalls, synchronization, instruction-level dependencies, or insufficient parallelism. With modest memory throughput and low Tensor Core utilization, the step may be dominated by non-TensorCore kernels (layer norm/softmax, small GEMMs, pointwise ops) or latency-bound behavior. A good next step is to inspect warp stall breakdown, kernel list, and a roofline-style view (arithmetic intensity vs achieved FLOPs/bytes) to decide whether to target memory access patterns, fusion, or enabling Tensor Core paths.",
+      "difficulty": "intermediate",
+      "tags": [
+        "performance-counters",
+        "occupancy",
+        "roofline",
+        "tensor-cores",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You profile a PyTorch model and see that a large embedding lookup + gather-heavy preprocessing step on GPU is much slower than expected, while FLOPs are low. In ML terms, what is the most likely GPU-side reason, and what change most directly targets it?\n\n(Assume the kernel is mostly reading scattered indices and writing an output tensor.)",
+      "question_type": "mc",
+      "options": [
+        "A. It is compute-bound on Tensor Cores; switch to FP32 to increase precision and speed",
+        "B. It is bandwidth/latency-bound due to uncoalesced global memory (HBM) accesses; improve access locality/coalescing (e.g., sort/group indices, use fused/contiguous layouts)",
+        "C. It is limited by L2 cache capacity; reduce batch size so everything fits in registers",
+        "D. It is limited by shared memory bank conflicts; increase dropout to randomize accesses"
+      ],
+      "correct_answer": "B",
+      "explanation": "Gather/embedding-style ops often do little arithmetic per byte moved, so they are typically memory-latency/bandwidth bound. If threads in a warp read scattered addresses, memory transactions can’t be coalesced efficiently, leading to many separate HBM requests and poor effective throughput. Practical fixes aim to increase locality and coalescing: reorder/group indices, use more contiguous layouts, fuse operations to reduce intermediate reads/writes, or move work to representations with more sequential access.",
+      "difficulty": "beginner",
+      "tags": [
+        "memory-hierarchy",
+        "coalescing",
+        "bandwidth-bound-ops",
+        "embeddings",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need reproducible training runs for debugging. However, enabling determinism slows training significantly.\n\nWhich choice best describes common sources of nondeterminism on GPU and a practical approach to balance determinism vs performance in PyTorch?",
+      "question_type": "mc",
+      "options": [
+        "A. Nondeterminism only comes from Python’s random module; setting `random.seed()` is sufficient and has no performance cost.",
+        "B. Nondeterminism commonly comes from atomic operations and certain cuDNN/cuBLAS algorithms; you can enable deterministic algorithms (`torch.use_deterministic_algorithms(True)`, `cudnn.deterministic=True`, disable `cudnn.benchmark`) for debugging, then relax constraints for production runs.",
+        "C. GPUs are inherently deterministic; any differences must be due to data order on disk.",
+        "D. The only way to get determinism is to run everything on CPU."
+      ],
+      "correct_answer": "B",
+      "explanation": "On GPUs, nondeterminism often arises from parallel reductions/atomics (different accumulation orders), and from selecting faster but nondeterministic kernels (common in cuDNN). In PyTorch, deterministic settings can force deterministic kernels or error out if none exist, but this can reduce performance. A practical workflow is: enable determinism while debugging/regression testing, and use performance settings (benchmarking, faster algorithms, TF32/AMP as appropriate) for production once correctness is established.",
+      "difficulty": "intermediate",
+      "tags": [
+        "determinism",
+        "reproducibility",
+        "cudnn",
+        "cublas",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to increase throughput on a single GPU. You can either (1) increase batch size, (2) use microbatching + gradient accumulation, or (3) keep batch size small.\n\nDiscuss the GPU-efficiency tradeoffs (occupancy, launch overhead, bandwidth) and the ML/convergence tradeoffs. Also mention one way to overlap communication or transfers with compute using streams in a multi-GPU or input-pipeline setting.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "GPU-efficiency tradeoffs:\n- Larger batch sizes usually increase arithmetic intensity and create larger GEMMs/convs, improving SM utilization/occupancy and amortizing kernel launch overhead. They can also improve throughput by making operations more compute-bound rather than launch/bandwidth dominated.\n- Microbatching + gradient accumulation keeps the effective global batch size large while fitting memory. However, each microbatch repeats some overhead (more kernel launches, more framework overhead) and may reduce efficiency vs a single large batch. It can still be a net win if it avoids OOM and keeps kernels reasonably sized.\n- Very small batches often underutilize the GPU: kernels are small, overhead dominates, and the workload may become bandwidth/latency bound.\n\nML/convergence tradeoffs:\n- Increasing (effective) batch size can change optimization dynamics (often needs LR scaling, warmup, or different regularization). Too-large batches can hurt generalization or require tuning.\n- Gradient accumulation preserves the effective batch size but changes update frequency (fewer optimizer steps per sample), which can affect schedules and regularization.\n\nStreams/overlap example:\n- Input pipeline: use pinned memory and asynchronous H2D copies on a separate CUDA stream to overlap data transfer with compute on the default stream.\n- Multi-GPU: overlap DDP communication with backprop by ensuring gradients are bucketed and letting NCCL all-reduce run asynchronously while later layers backpropagate (PyTorch DDP does this by design when configured appropriately), effectively overlapping comm and compute.",
+      "explanation": "This question ties together multiple practical GPU concepts: why bigger batches often run faster (more parallel work, less overhead), why accumulation is a compromise, and how performance interacts with convergence. It also checks applied knowledge of overlap (streams and/or DDP comm/compute overlap), which is a common real-world throughput lever.",
+      "difficulty": "advanced",
+      "tags": [
+        "batch-size",
+        "gradient-accumulation",
+        "occupancy",
+        "launch-overhead",
+        "bandwidth",
+        "streams",
+        "overlap",
+        "ddp"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a training job with low GPU utilization (~30%) and high CPU utilization. Data is loaded from disk and augmented on CPU. Without using a profiler, describe an end-to-end diagnosis plan to separate CPU bottleneck vs GPU bottleneck, and list 3 actionable fixes you would try (beyond “profile it”).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Diagnosis plan:\n1) Check whether the GPU is waiting for input: monitor step-time breakdown by adding simple timers around data loading, H2D transfer, forward, backward, optimizer step. If data loading time dominates or varies a lot, it’s likely input-bound.\n2) Look for GPU starvation signals: GPU utilization low, but GPU memory usage stable; CPU pegged; dataloader queue frequently empty.\n3) Sanity-check I/O: measure data read throughput; test with a synthetic dataset (random tensors) to see if GPU utilization jumps—if it does, the bottleneck is upstream (I/O/CPU).\n\nActionable fixes:\n- Increase DataLoader parallelism and efficiency: raise `num_workers`, enable `persistent_workers=True`, `prefetch_factor`, use faster transforms or move augmentations to GPU (e.g., Kornia, DALI).\n- Improve transfer pipeline: set `pin_memory=True`, use non-blocking copies (`to(device, non_blocking=True)`), and ensure batches are contiguous/efficiently packed.\n- Reduce CPU work and I/O: cache decoded data, use memory-mapped formats (e.g., WebDataset/TFRecords), precompute expensive augmentations, or store resized/normalized data.\n\nIf after switching to synthetic data the GPU is still low, then investigate GPU-side issues (too small batch, many tiny kernels, synchronization).",
+      "explanation": "This tests practical systems thinking: many “GPU problems” are actually input pipeline problems. Simple timing + synthetic-data substitution is a common real-world technique to isolate CPU/I/O bottlenecks. The fixes listed are the typical high-impact levers ML engineers use without needing deep CUDA knowledge.",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu-utilization",
+        "data-pipeline",
+        "cpu-bottleneck",
+        "h2d",
+        "diagnosis"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re deploying an LLM inference service on an NVIDIA GPU. You consider quantizing to INT8 or FP8.\n\nWhich statement is most accurate for an ML engineer deciding whether quantization will help?",
+      "question_type": "mc",
+      "options": [
+        "A. Quantization always speeds up inference because lower precision always means fewer FLOPs and no other overhead.",
+        "B. Quantization helps mainly when the model is compute-bound and the GPU has fast low-precision Tensor Core paths; it may not help much if you are memory-bandwidth-bound, batch size is tiny, or you add significant dequant/quant overhead.",
+        "C. INT8 and FP8 are only useful for training, not inference.",
+        "D. Quantization only changes model size on disk; runtime math remains FP32 on GPU."
+      ],
+      "correct_answer": "B",
+      "explanation": "Quantization can improve throughput/latency by using faster Tensor Core modes (INT8/FP8) and/or reducing memory traffic, but real gains depend on bottlenecks. If you’re dominated by memory bandwidth (e.g., small batch, KV-cache traffic, or low arithmetic intensity), you may see limited speedup. Also, some pipelines pay overhead for scaling, (de)quantization, or format conversions. ML engineers should evaluate: kernel support (TensorRT/cublasLt), batch/sequence shape, and whether accuracy/calibration constraints are acceptable.",
+      "difficulty": "intermediate",
+      "tags": [
+        "quantization",
+        "int8",
+        "fp8",
+        "inference",
+        "tensor-cores",
+        "bottlenecks"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "At a high level, what is the intuition behind NCCL ring vs tree all-reduce, and when might one perform better than the other for ML training?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Ring all-reduce passes chunks of the tensor around GPUs in a ring, overlapping reduce and scatter/gather phases; it tends to use bandwidth efficiently and scales well when bandwidth is the limiting factor, especially for large message sizes.\n\nTree all-reduce (or hierarchical algorithms) reduces data up a tree and broadcasts back down; it can reduce latency (fewer hops) and can be better for smaller message sizes or when latency dominates. In practice, libraries may choose variants based on topology (NVLink vs PCIe vs Ethernet/InfiniBand), message size, and number of GPUs.\n\nFor ML training: large gradient buckets often favor ring-like bandwidth-optimal behavior; smaller buckets or high-latency interconnects may benefit from tree/hierarchical approaches. Many frameworks bucket gradients to increase message size and improve all-reduce efficiency regardless of the underlying algorithm.",
+      "explanation": "The interview goal is not exact NCCL internals but a correct mental model: ring is bandwidth-oriented and good for large payloads; tree can be latency-friendly. This also connects to practical ML knobs like gradient bucketing and overlap of comm/compute.",
+      "difficulty": "advanced",
+      "tags": [
+        "nccl",
+        "collectives",
+        "ring",
+        "tree",
+        "distributed-training",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re training with DistributedDataParallel (DDP) across 8 GPUs and see periodic stalls/hangs during `all_reduce`. You suspect NCCL.\n\nWhich set of actions is most appropriate for an ML engineer to sanity-check and debug without becoming an NCCL specialist?",
+      "question_type": "mc",
+      "options": [
+        "A. Rewrite the collective communication in custom CUDA kernels to avoid NCCL entirely.",
+        "B. Enable NCCL debug logs (e.g., `NCCL_DEBUG=INFO`), verify network/GPU topology visibility, test with a minimal all-reduce script, and check for common misconfigs (wrong interface, firewall, mismatched ranks) that cause hangs/timeouts.",
+        "C. Disable gradient synchronization; DDP will still converge the same and avoids NCCL.",
+        "D. Set `CUDA_LAUNCH_BLOCKING=1` permanently in production to prevent hangs."
+      ],
+      "correct_answer": "B",
+      "explanation": "NCCL is the standard library for multi-GPU collectives (all-reduce, all-gather, broadcast) in PyTorch DDP. Practical debugging usually involves: turning on NCCL logs, validating that all ranks can see the correct GPUs and network interfaces, reproducing with a minimal script, and checking common causes of hangs (rank mismatch, dead process, wrong NIC selection, firewall/MTU issues, oversubscription, or a single slow/hung rank). Rewriting collectives is not expected for ML engineers; disabling sync breaks correctness; `CUDA_LAUNCH_BLOCKING=1` is a heavy debugging tool that can drastically slow execution and doesn’t fix NCCL root causes.",
+      "difficulty": "intermediate",
+      "tags": [
+        "nccl",
+        "ddp",
+        "distributed-training",
+        "debugging",
+        "hangs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Give a simplified mental model of why a GPU can show low utilization for an ML workload even when the model is “on GPU.” Specifically explain what SMs, warps, and occupancy mean at a high level, and why small kernels or small batch sizes often underutilize the GPU.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "SMs (Streaming Multiprocessors) are the GPU’s main compute units; many SMs run in parallel. Work is scheduled in groups of threads called warps (typically 32 threads). A kernel launch creates many thread blocks, which are assigned to SMs; each SM can keep multiple warps “resident” to hide memory latency.\n\nOccupancy is a rough measure of how many warps/threads are resident on an SM relative to its maximum, constrained by registers, shared memory, and block size. Higher occupancy can help hide latency, but it’s not the only determinant of performance.\n\nSmall kernels (e.g., tiny matrix multiplies, small convolutions, elementwise ops on small tensors) and small batch sizes often don’t create enough parallel work (not enough blocks/warps) to fill all SMs. Additionally, kernel launch overhead and synchronization become a larger fraction of time. The result is low reported GPU utilization even though the work is on GPU—because the GPU is frequently idle or not fully populated with active warps.",
+      "explanation": "ML engineers don’t need CUDA programming details, but they do need the core intuition: GPUs need lots of parallel work to saturate SMs; warps are the scheduling granularity; occupancy and launch overhead explain why ‘small’ workloads look inefficient. This understanding directly informs batching, fusion, and kernel selection decisions.",
+      "difficulty": "beginner",
+      "tags": [
+        "hardware-mental-model",
+        "sms",
+        "warps",
+        "occupancy",
+        "underutilization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "cuDNN provides multiple convolution algorithms (e.g., implicit GEMM, FFT, Winograd) and PyTorch can benchmark/select among them.\n\nIn an ML training job, you see step time fluctuate between runs even with the same seed. One suspect is cuDNN algorithm selection.\n\nWhat is a practical explanation and mitigation?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Explanation: cuDNN can choose among multiple convolution algorithms, and with `torch.backends.cudnn.benchmark = True`, PyTorch may time several algorithms on the first iteration (or when shapes change) and pick the fastest for those shapes. Small timing noise, different workspace availability, or slightly different execution conditions can lead to different chosen algorithms across runs, causing step-time variability (and sometimes nondeterminism if the chosen algorithm is nondeterministic).\n\nMitigations: (1) For stable performance, keep input shapes static and optionally keep `cudnn.benchmark=True` so it picks once and stays stable for a fixed shape; avoid dynamic shapes that trigger re-benchmarking. (2) For reproducibility, set `torch.backends.cudnn.benchmark = False` and enable deterministic behavior (`torch.backends.cudnn.deterministic = True` and/or `torch.use_deterministic_algorithms(True)`), understanding this may reduce performance. (3) Ensure sufficient workspace/memory; lack of workspace can force slower algorithms.",
+      "explanation": "This tests practical understanding: cuDNN isn’t a single kernel. Algorithm choice depends on shapes, dtype, workspace, and flags. `benchmark` can improve speed but can introduce run-to-run variability and can select nondeterministic algorithms unless constrained. The mitigation is choosing appropriate flags and stabilizing shapes/workspace.",
+      "difficulty": "intermediate",
+      "tags": [
+        "convolution",
+        "cudnn",
+        "benchmarking",
+        "determinism",
+        "performance-debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re optimizing a CNN training loop. You switch input tensors and model weights to channels-last and see a big speedup on an A100.\n\nWhich explanation best matches what’s happening in practice for many conv workloads?",
+      "question_type": "mc",
+      "options": [
+        "A. Channels-last always reduces FLOPs in convolution, so it is always faster regardless of hardware.",
+        "B. Channels-last changes memory layout to improve coalescing and enable more efficient Tensor Core / cuDNN kernels for NHWC, often increasing effective bandwidth and compute utilization.",
+        "C. Channels-last forces cuDNN to use deterministic algorithms, which are faster.",
+        "D. Channels-last only helps on CPUs; on GPUs it usually slows down because of extra transposes."
+      ],
+      "correct_answer": "B",
+      "explanation": "Many cuDNN convolution kernels are highly tuned for specific layouts. On modern NVIDIA GPUs, NHWC (channels-last) can map better to vectorized loads/stores and Tensor Core-friendly data access patterns, improving memory coalescing and enabling faster kernels. The speedup is not from fewer FLOPs but from better kernel selection and higher hardware utilization. It’s not universally faster (depends on shapes, dtype, and surrounding ops), but it’s a common practical knob for CV workloads.",
+      "difficulty": "intermediate",
+      "tags": [
+        "convolution",
+        "cudnn",
+        "channels-last",
+        "tensor-cores",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You notice a small but consistent accuracy regression (e.g., validation metric drops slightly) after moving training from a V100 to an A100, even though you kept the same code and still use FP32 training (no AMP). You suspect TF32.\n\nWhat are practical steps in PyTorch to (1) test whether TF32 is the cause, and (2) decide when to enable/disable TF32? Include the expected speed vs accuracy tradeoff and at least one concrete setting change.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "To test TF32 as the cause: run an A/B experiment with TF32 explicitly disabled and compare metrics and loss curves. In PyTorch, set `torch.backends.cuda.matmul.allow_tf32 = False` and `torch.backends.cudnn.allow_tf32 = False` (and optionally `torch.set_float32_matmul_precision('highest')` in newer versions) and rerun. If the regression disappears, TF32 is likely contributing.\n\nWhen to enable TF32: enable when you want faster FP32 matmul/conv on Ampere+ and the model is tolerant to small numeric changes (many CV and large transformer workloads are). Expect noticeable speedups on GEMM/conv-heavy workloads because Tensor Cores can be used for FP32-ish math.\n\nWhen to disable TF32: disable for workloads sensitive to small numeric differences (some scientific/physics models, certain normalization-heavy or ill-conditioned problems), for strict reproducibility comparisons across hardware, or when debugging numeric issues. Disabling TF32 can reduce throughput (sometimes substantially) but improves numerical fidelity closer to true FP32.\n\nDecision approach: quantify the speed gain (throughput, step time) vs the metric impact; keep TF32 on if the metric impact is negligible and performance wins matter, otherwise turn it off for the sensitive parts (or globally).",
+      "explanation": "The key is that TF32 can change results even in “FP32 training” because it changes the math used in certain kernels (matmul/conv) on Ampere+. The most common, interview-relevant practice is to toggle the backend flags and compare. The tradeoff is typically faster training/inference for FP32 GEMM/conv at the cost of slightly reduced precision; many models tolerate it, but some don’t. A disciplined A/B run is the practical way to decide.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tf32",
+        "pytorch",
+        "reproducibility",
+        "accuracy-vs-speed",
+        "tensor-cores"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In PyTorch on an NVIDIA Ampere (or newer) GPU, you train a model with FP32 weights/activations and use `torch.cuda.amp.autocast()` (mixed precision). What is TF32 and what is PyTorch’s default behavior regarding TF32 for matmul/conv on Ampere+?\n\nChoose the most accurate statement.",
+      "question_type": "mc",
+      "options": [
+        "A. TF32 is a storage format that halves FP32 memory bandwidth; PyTorch always enables it for all FP32 ops on all GPUs.",
+        "B. TF32 is a Tensor Core math mode that uses FP32 range with ~10-bit mantissa; on Ampere+ PyTorch may use TF32 for FP32 matmul/conv (Tensor Core paths) depending on backend flags, even when your tensors are FP32.",
+        "C. TF32 is identical to FP16 compute but accumulates in FP32; PyTorch enables it only inside `autocast()`.",
+        "D. TF32 is an INT8 quantization mode; PyTorch enables it only when you call `torch.quantization` APIs."
+      ],
+      "correct_answer": "B",
+      "explanation": "TF32 (TensorFloat-32) is a Tensor Core math mode introduced with NVIDIA Ampere: it keeps FP32 exponent range but reduces mantissa precision (roughly 10-bit) for the multiply, typically accumulating in FP32. This can significantly speed up FP32 GEMMs and many convolutions by using Tensor Cores while keeping FP32-like dynamic range. In PyTorch, TF32 usage is controlled by backend flags (commonly `torch.backends.cuda.matmul.allow_tf32` and `torch.backends.cudnn.allow_tf32`) and can be used even when tensors are FP32 because it’s a compute mode, not a tensor dtype. `autocast()` is about choosing lower-precision dtypes (FP16/BF16) for some ops; TF32 is separate and targets FP32 ops.",
+      "difficulty": "beginner",
+      "tags": [
+        "tf32",
+        "ampere",
+        "pytorch",
+        "tensor-cores",
+        "matmul",
+        "convolution"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You enable `torch.compile(model)` and see performance regress or become unstable (frequent recompiles). Which is the MOST likely cause in real training code, and what is a practical fix?",
+      "question_type": "mc",
+      "options": [
+        "A. Graph breaks or shape polymorphism issues (changing tensor shapes/control flow) causing recompilation; fix by making shapes more static, reducing Python-side data-dependent control flow, or using dynamic shape support carefully",
+        "B. torch.compile disables GPU execution and runs on CPU; fix by moving model to CUDA",
+        "C. torch.compile forces determinism and therefore must be slower; fix by disabling determinism",
+        "D. torch.compile always uses float64 internally; fix by casting back to float16"
+      ],
+      "correct_answer": "A",
+      "explanation": "In practice, `torch.compile` can suffer when the program has data-dependent Python control flow, varying shapes (e.g., variable sequence lengths), or ops that cause graph breaks. That can trigger recompilation and overhead that outweighs fusion benefits. Fixes include padding/bucketing to stabilize shapes, avoiding Python-side branching on tensor values, and configuring compilation/dynamic shapes appropriately.",
+      "difficulty": "advanced",
+      "tags": [
+        "torch-compile",
+        "operator-fusion",
+        "graph-breaks",
+        "recompilation",
+        "shape-polymorphism",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training a transformer and want higher throughput without running out of GPU memory. Compare these options: (1) increase batch size, (2) use gradient accumulation (microbatching), (3) reduce sequence length. When does each help most, and what trade-offs should you expect (throughput vs latency vs memory)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Increasing batch size often improves throughput by increasing GPU utilization and amortizing overhead, but increases activation memory roughly proportional to batch and can increase end-to-end latency per step.\n\n2) Gradient accumulation (microbatching) increases the effective batch size while keeping per-microbatch memory smaller, often improving throughput compared to tiny batches, but it increases step latency (multiple forward/backward passes before an optimizer step) and adds some overhead; it can also change optimizer dynamics if not handled carefully (e.g., scaling LR, handling dropout/BN).\n\n3) Reducing sequence length reduces both compute and memory significantly for transformers (attention is often O(L^2) in compute/memory for full attention), frequently the most powerful lever when sequence length is the bottleneck. Trade-off: potentially worse model quality or task fit, and it changes the problem.\n\nRule of thumb: if you’re underutilizing the GPU and memory allows, increase batch; if memory is the limit, use accumulation; if sequence length dominates memory/compute, reducing L (or using more efficient attention) yields the biggest gains.",
+      "explanation": "These are the common ML-engineer levers for GPU efficiency. Batch size affects parallelism and launch amortization; accumulation trades latency for memory; sequence length is a dominant term in transformer cost and is often the real bottleneck.",
+      "difficulty": "advanced",
+      "tags": [
+        "batching",
+        "microbatching",
+        "gradient-accumulation",
+        "sequence-length",
+        "throughput-vs-latency",
+        "memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this timing code:\n\n```python\nimport time, torch\nx = torch.randn(4096, 4096, device='cuda', dtype=torch.float16)\nw = torch.randn(4096, 4096, device='cuda', dtype=torch.float16)\n\nt0 = time.time()\ny = x @ w\nprint('ms:', (time.time() - t0) * 1000)\n```\n\nWhy is this timing likely wrong, and how would you fix it (show corrected code)? Mention at least one common implicit synchronization footgun.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "GPU ops are asynchronous w.r.t. the host, so `time.time()` measures only CPU enqueue time unless you synchronize. Fix by synchronizing (or using CUDA events) around the region. Also note that `print(y)`, `y.item()`, and transferring tensors to CPU (`y.cpu()`, `.numpy()`) can implicitly synchronize and distort measurements.\n\nCorrected example using CUDA events:\n```python\nimport torch\nx = torch.randn(4096, 4096, device='cuda', dtype=torch.float16)\nw = torch.randn(4096, 4096, device='cuda', dtype=torch.float16)\n\nstart = torch.cuda.Event(enable_timing=True)\nend = torch.cuda.Event(enable_timing=True)\n\n# warmup\nfor _ in range(10):\n    _ = x @ w\n\ntorch.cuda.synchronize()\nstart.record()\ny = x @ w\nend.record()\ntorch.cuda.synchronize()\nprint('ms:', start.elapsed_time(end))\n```\n",
+      "explanation": "Asynchrony is a major GPU footgun: the CPU can continue while the GPU runs. Proper benchmarking either synchronizes explicitly or uses CUDA events (which measure on-GPU time). Avoid accidental sync points inside the timed region.",
+      "difficulty": "beginner",
+      "tags": [
+        "cuda-asynchrony",
+        "synchronization",
+        "timing",
+        "footguns",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to check whether your matmuls are using Tensor Cores on an NVIDIA GPU. Which condition is generally required to reliably hit Tensor Core-accelerated kernels in deep learning frameworks?",
+      "question_type": "mc",
+      "options": [
+        "A. Use supported dtypes (fp16/bf16/TF32 depending on GPU and settings) and Tensor Core-friendly shapes/alignments; otherwise you may fall back to SIMT cores",
+        "B. Tensor Cores are always used for any matmul on GPU regardless of dtype and shape",
+        "C. Tensor Cores only work when you disable cuDNN and use custom kernels",
+        "D. Tensor Cores require float64 inputs for accuracy"
+      ],
+      "correct_answer": "A",
+      "explanation": "Tensor Core usage depends on dtype and kernel selection, and often benefits from dimensions that are multiples of certain tile sizes (framework-dependent). If dtype/shape/layout don’t match, libraries may choose non–Tensor Core kernels. Tensor Cores are not universal; cuDNN/cuBLAS are typically the path to Tensor Cores; float64 is not a Tensor Core fast path on most GPUs.",
+      "difficulty": "beginner",
+      "tags": [
+        "tensor-cores",
+        "matmul",
+        "dtype",
+        "shapes",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You profile a training step and see the GPU has frequent idle gaps between kernels, while CPU time shows many small ops and Python overhead. What is the most actionable next step for an ML engineer to reduce the gaps?",
+      "question_type": "mc",
+      "options": [
+        "A. Increase GPU clock speed; idle gaps are always due to slow GPU hardware",
+        "B. Use operator fusion / torch.compile (or reduce Python-level overhead) to cut the number of launches and CPU dispatch time",
+        "C. Convert parameters to float64 so each kernel does more work",
+        "D. Disable asynchronous execution so the GPU waits less"
+      ],
+      "correct_answer": "B",
+      "explanation": "Idle gaps often mean the GPU is waiting for CPU to launch the next kernel or for sync points. Reducing Python overhead and fusing ops (e.g., torch.compile) can reduce kernel launch count and CPU dispatch latency, increasing GPU utilization. Float64 generally slows compute; disabling async makes things worse; clock speed doesn’t fix CPU-side launch bottlenecks.",
+      "difficulty": "intermediate",
+      "tags": [
+        "profiling",
+        "torch-profiler",
+        "cpu-vs-gpu-bottleneck",
+        "operator-fusion",
+        "torch-compile"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In mixed precision training, when is bf16 often safer than fp16 on GPUs, and why? Provide a practical rule of thumb and one example operation/pattern where it matters.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "bf16 is often safer when overflow/underflow risk is high because it has the same exponent range as fp32 (but fewer mantissa bits). Rule of thumb: prefer bf16 when activations/gradients can have large dynamic range (e.g., large logits, long reductions, some normalization/attention patterns) and you want fewer inf/NaN issues without heavy loss-scaling tuning. Example: attention logits/softmax or large-magnitude activations in transformers—fp16 can overflow in exp or intermediate products more easily; bf16 reduces overflow risk while still accelerating on modern GPUs.",
+      "explanation": "fp16’s narrower exponent range is the common failure mode (overflow to inf, underflow to zero). bf16 trades precision (mantissa) for range (exponent), which often makes training more stable in practice on supported hardware.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numerical-issues",
+        "bf16-vs-fp16",
+        "dynamic-range",
+        "mixed-precision"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You see NaNs during mixed-precision training, and you already use loss scaling. Which explanation and fix is most appropriate specifically for GPU mixed-precision behavior (beyond just \"increase loss scale\")?",
+      "question_type": "mc",
+      "options": [
+        "A. Softmax can overflow in fp16; use a numerically stable softmax (subtract max) and/or compute softmax/logsumexp in fp32",
+        "B. The GPU cannot represent NaNs in fp16; switch to CPU",
+        "C. NaNs only come from bad data; GPUs do not introduce numerical issues",
+        "D. Set torch.backends.cuda.matmul.allow_tf32 = False; TF32 always creates NaNs"
+      ],
+      "correct_answer": "A",
+      "explanation": "fp16 has a limited exponent range; exponentials in softmax/logsumexp can overflow easily, creating inf then NaNs. A stable softmax subtracts the max before exp, and many frameworks upcast critical reductions to fp32. NaNs are representable in fp16; GPU math/parallel reductions can expose numerical instability; TF32 typically affects precision, not usually NaN generation by itself.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numerical-stability",
+        "mixed-precision",
+        "softmax",
+        "fp16"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need bitwise-identical training runs on a single GPU (same seed, same code). In PyTorch, which combination is MOST likely to be required (even if it slows training)?",
+      "question_type": "mc",
+      "options": [
+        "A. Set seeds only (torch.manual_seed, numpy seed) and leave everything else default",
+        "B. Enable deterministic algorithms (torch.use_deterministic_algorithms(True)), set CUDNN deterministic/benchmark flags appropriately, and avoid/replace known nondeterministic ops",
+        "C. Switch to float64 everywhere; determinism is guaranteed in float64",
+        "D. Use DataLoader with more workers to stabilize input order"
+      ],
+      "correct_answer": "B",
+      "explanation": "GPU nondeterminism often comes from algorithm choices (e.g., cuDNN selecting different kernels), atomic reductions, and parallel reduction order. PyTorch’s deterministic mode plus cuDNN settings can force deterministic kernels or error on nondeterministic ops, but may reduce performance. Float64 does not guarantee determinism; more DataLoader workers can make ordering less deterministic unless carefully controlled.",
+      "difficulty": "intermediate",
+      "tags": [
+        "determinism",
+        "reproducibility",
+        "cudnn",
+        "nondeterminism"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Many deep learning ops (e.g., layernorm, softmax, embedding lookups) are often described as \"memory-bandwidth bound\" on GPUs. Which statement best explains why?\n\nAssume the kernels are reasonably optimized.",
+      "question_type": "mc",
+      "options": [
+        "A. These ops have low arithmetic intensity (few FLOPs per byte), so performance is limited by moving data from HBM/cache rather than compute throughput",
+        "B. These ops always run on Tensor Cores, which saturate compute and therefore become bandwidth bound",
+        "C. These ops are slow because GPUs cannot do floating point division efficiently",
+        "D. These ops are slow because the GPU cannot overlap memory accesses with computation"
+      ],
+      "correct_answer": "A",
+      "explanation": "Bandwidth-bound kernels do relatively little computation per element loaded/stored. Even if the GPU has enormous compute throughput, it can’t exceed the rate at which it can read/write data from HBM (and through caches). Tensor Cores are not always used for these ops; division isn’t the dominant factor; and GPUs can overlap memory and compute, but low arithmetic intensity still caps throughput.",
+      "difficulty": "beginner",
+      "tags": [
+        "memory-hierarchy",
+        "bandwidth",
+        "arithmetic-intensity",
+        "ml-ops"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain (at an ML-engineer level) why branchy or irregular control flow can make a GPU kernel slower even if the total number of operations is the same. Use the concepts of warps/SIMT and divergence; no CUDA coding required.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "GPUs execute threads in groups (warps) using SIMT: threads in a warp share an instruction stream. If threads take different branches (divergence), the warp must serialize the different paths (masking off threads not taking that path), reducing effective parallelism and wasting cycles. Irregular control flow also harms memory coalescing and makes it harder to keep many warps ready to run, which can lower occupancy/latency hiding. Net effect: same nominal ops, but fewer threads doing useful work per cycle and more stalls.",
+      "explanation": "The key intuition is that a warp is the scheduling unit. Divergence turns parallel execution into partial serialization. Occupancy matters because GPUs hide memory/pipe latency by switching between ready warps; divergence and irregularity can reduce how many warps are ready and how efficiently they execute.",
+      "difficulty": "intermediate",
+      "tags": [
+        "execution-model",
+        "warps",
+        "divergence",
+        "occupancy"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You move a small PyTorch model from CPU to GPU and see it get slower for batch_size=1 inference. Which change is usually the FIRST thing to try to improve throughput without changing the model?\n\n(Assume the GPU is otherwise idle.)",
+      "question_type": "mc",
+      "options": [
+        "A. Increase batch size (or use micro-batching) to amortize launch and transfer overheads",
+        "B. Convert all weights to float64 to reduce numerical error",
+        "C. Disable cuDNN and force deterministic algorithms",
+        "D. Add more Python threads around the forward pass"
+      ],
+      "correct_answer": "A",
+      "explanation": "For tiny batches, GPU kernel launch overhead, CPU↔GPU synchronization, and memory-transfer overhead can dominate, making GPU slower than CPU. The most practical first lever is to increase effective batch size (batching or micro-batching) so each launch does more work. Float64 typically slows GPU compute; deterministic modes often reduce performance; Python threading rarely helps GPU-bound work and can add overhead.",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu-vs-cpu",
+        "batching",
+        "overheads",
+        "inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Distributed performance debugging (DDP/FSDP): You see per-iteration time spike and `nvidia-smi` shows GPUs periodically dropping to low utilization. Profiling shows long NCCL all-reduce times. Give a practical debugging approach to distinguish compute vs communication bottlenecks and list 3 concrete mitigations (including one about overlap and one about bucket sizing).\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Approach:\n- Measure iteration breakdown: forward, backward, optimizer, and comm. Use `torch.profiler` with NCCL events (and/or Nsight Systems) to see whether all-reduce overlaps with backward compute or appears as a tail (non-overlapped).\n- Check scaling efficiency: compare single-GPU step time vs multi-GPU; if compute stays similar but total grows with world size and comm dominates, it’s comm-bound.\n- Inspect NCCL/links: verify interconnect (NVLink/IB) and topology; check that you’re not accidentally using PCIe-only paths; verify correct NCCL env and that GPUs are on the expected fabric.\n- Look for symptoms of poor overlap: all-reduce occurring after backward finishes (a big tail), or frequent sync points (e.g., `.item()`, CPU logging) preventing overlap.\nMitigations:\n1) Improve overlap: ensure gradient bucketing/overlap is enabled (DDP default), avoid sync points in the training step, and consider `no_sync()` only when appropriate. For FSDP, tune prefetching/overlap knobs.\n2) Bucket sizing: tune `ddp_bucket_cap_mb` (or equivalent) so buckets are large enough to amortize latency but not so large that they delay the start of all-reduce (hurting overlap). Too small → many all-reduces (latency/launch overhead); too large → late start and big tail.\n3) Reduce communicated bytes: use gradient compression/low precision (where acceptable), use ZeRO/FSDP sharding to reduce per-rank state, or reduce model size / use activation checkpointing to allow larger microbatches (sometimes improving compute/comm ratio).\nAdditional mitigations:\n- Increase batch size/microbatch to raise compute/comm ratio (if memory allows).\n- Ensure fused optimizers/kernels to shorten backward and improve overlap window.\n- For NCCL, set correct env for IB/NVLink, and ensure process affinity/NUMA pinning to avoid host bottlenecks.\n",
+      "explanation": "Distributed slowdowns often come from (a) communication volume, (b) poor overlap (comm becomes a tail), or (c) topology/config issues. The key is to observe whether NCCL runs concurrently with backward compute. Bucket sizing is a classic lever: it trades off early-start overlap vs latency overhead from many small collectives. Avoiding sync points is crucial because they can serialize the pipeline and eliminate overlap.",
+      "difficulty": "advanced",
+      "tags": [
+        "distributed_debugging",
+        "ddp",
+        "all_reduce",
+        "communication_bottleneck",
+        "overlap",
+        "bucket_sizing",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Training vs inference: For a transformer, which statement best explains why training memory is often much higher than inference, and when gradient accumulation helps vs hurts?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Training uses fp32 but inference uses fp16; gradient accumulation always reduces total memory and always speeds up training.",
+        "B) Training stores activations for backward and also holds gradients + optimizer state; inference can often stream with minimal saved activations and may use KV cache. Gradient accumulation reduces per-step activation memory (smaller microbatches) but can increase total wall time and may increase optimizer/gradient residency time or reduce overlap depending on implementation.",
+        "C) Training memory is higher only due to dataloader prefetch; gradient accumulation mainly affects CPU RAM.",
+        "D) Inference always uses more memory because of KV cache; gradient accumulation is irrelevant."
+      ],
+      "correct_answer": "B",
+      "explanation": "During training you typically need: parameters, gradients, optimizer state (often 2–4× parameter size for Adam-like optimizers), and saved activations for backprop (often the largest term, scaling with batch/seq). Inference usually doesn’t store backward activations, and can run with lower memory (though KV cache can matter for autoregressive decoding). Gradient accumulation helps when you want a large effective batch but need smaller per-step activations; it can hurt throughput due to extra forward/backward passes, and may change communication overlap patterns in distributed training.",
+      "difficulty": "beginner",
+      "tags": [
+        "training_vs_inference",
+        "optimizer_state",
+        "activations",
+        "gradient_accumulation",
+        "memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Memory layout “spot the bug”: The following code gets much slower after a refactor. What happened and how do you fix it?\n\n```python\n# x: [B, T, H] on CUDA\nx = x.transpose(0, 1)          # now [T, B, H]\nx = x.view(-1, x.size(-1))     # flatten to [T*B, H]\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Problem: `transpose` returns a non-contiguous view with different strides. Calling `.view(...)` requires contiguous memory; in recent PyTorch this will either error or (in some contexts) trigger an implicit contiguous copy via `.reshape`-like behavior if changed, causing extra memory traffic and slowdown.\nFix:\n- Use `reshape` with awareness it may copy, or make it explicit:\n  - `x = x.transpose(0, 1).contiguous().view(-1, x.size(-1))`\n- Or avoid the transpose/flatten pattern by using `x = x.permute(...).reshape(...)` and ensure downstream ops accept non-contiguous tensors, or keep original layout.\n- In performance-sensitive paths, minimize unnecessary transposes and prefer layouts expected by kernels.\n",
+      "explanation": "ML performance is often limited by memory movement. Non-contiguous tensors can force hidden copies when you request a different shape with `view` or when kernels require contiguous inputs. The fix is either to keep tensors contiguous in the expected layout or to make the copy explicit and amortize it (or avoid it entirely).",
+      "difficulty": "intermediate",
+      "tags": [
+        "memory_layout",
+        "contiguity",
+        "strides",
+        "views_vs_copies",
+        "pytorch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run `torch.profiler`/Nsight and see thousands of tiny elementwise ops (adds, muls, layernorm pieces) dominating CPU time and showing many short GPU kernels with gaps between them. What is the most likely bottleneck and best high-level fix?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Memory-bound; fix by increasing dataloader workers.",
+        "B) Kernel launch overhead / Python dispatch; fix by operator fusion (e.g., `torch.compile`, fused kernels like fused attention/MLP, or using higher-level fused ops).",
+        "C) Compute-bound; fix by switching from bf16 to fp32.",
+        "D) Communication-bound; fix by increasing DDP bucket size."
+      ],
+      "correct_answer": "B",
+      "explanation": "Many tiny kernels with gaps often indicate launch-bound behavior: the overhead of launching kernels and Python/framework dispatch dominates. Fusion reduces the number of launches and improves locality (fewer reads/writes to global memory). In practice, `torch.compile`, using fused optimizers, fused layernorm, FlashAttention/SDPA, or rewriting code to use fewer pointwise ops are common fixes.",
+      "difficulty": "intermediate",
+      "tags": [
+        "kernel_launch_overhead",
+        "operator_fusion",
+        "torch_compile",
+        "profiling",
+        "performance_triage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Batch size / sequence length scaling: You increase batch size and see throughput (tokens/s or samples/s) improve at first, then saturate, and eventually iteration time increases a lot while GPU util becomes noisy. Which explanation is most accurate?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Larger batches always reduce kernel launch overhead, so throughput must monotonically increase until OOM.",
+        "B) Throughput improves while you amortize fixed overheads and increase math per launch, then saturates when you hit compute or memory bandwidth limits; very large batches can worsen due to memory pressure (activation/optimizer), poorer cache behavior, or reduced overlap, and can increase latency even if throughput is similar.",
+        "C) Saturation only happens because the dataloader becomes slower at higher batch sizes; GPU limits are irrelevant.",
+        "D) If throughput saturates, it means you need to disable mixed precision."
+      ],
+      "correct_answer": "B",
+      "explanation": "Batch/sequence scaling typically shows: (1) better utilization and amortized overhead initially, (2) saturation at a hardware limit (compute-bound or memory-bound), and (3) degradation when memory pressure increases (more activations, larger attention matrices, more spills/fragmentation), or when kernels become less efficient. Also, larger batches often hurt latency (time-to-first-token / per-request latency) even if throughput is high. Microbatching/gradient accumulation can preserve global batch while keeping per-step memory manageable.",
+      "difficulty": "intermediate",
+      "tags": [
+        "batch_size_scaling",
+        "sequence_length",
+        "throughput_vs_latency",
+        "memory_pressure",
+        "microbatching"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Spot the PyTorch GPU “footgun” in the code below and explain the performance impact. Provide a fix.\n\n```python\nlosses = []\nfor batch in loader:\n    x, y = batch\n    x = x.cuda(non_blocking=True)\n    y = y.cuda(non_blocking=True)\n    out = model(x)\n    loss = criterion(out, y)\n    losses.append(loss.item())\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Footgun: `loss.item()` forces a synchronous GPU→CPU transfer and a device synchronization because it needs the scalar value on CPU immediately. This can introduce a sync point every iteration, preventing overlap and reducing throughput.\nFixes:\n- Accumulate losses on GPU and only transfer occasionally:\n  - `losses.append(loss.detach())` and at the end `torch.stack(losses).mean().item()`.\n- Or log less frequently:\n  - `if step % k == 0: log(loss.detach().float().mean().cpu())`.\n- If using distributed, reduce asynchronously or use `torchmetrics` patterns that avoid per-step sync.\n",
+      "explanation": "Many seemingly harmless CPU-side actions (like `.item()`, `.cpu()`, printing tensors) create implicit synchronization, turning an otherwise asynchronous pipeline into a step-by-step barrier. The fix is to reduce the frequency of device-to-host transfers and keep intermediate values on GPU until needed.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytorch_footguns",
+        "synchronization",
+        "item",
+        "gpu_to_cpu_copy",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In PyTorch, when can H2D (CPU→GPU) copies overlap with GPU compute in a typical training loop, and what pattern enables it?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Always; all `.to('cuda')` calls overlap automatically regardless of memory type and stream usage.",
+        "B) Only when the source CPU tensors are in pinned (page-locked) memory and the copy is enqueued asynchronously (e.g., `non_blocking=True`) so it can run on the copy engine while compute runs on another stream.",
+        "C) Only on NVLink systems; PCIe can never overlap.",
+        "D) Only if you call `torch.cuda.synchronize()` after the copy to “start it earlier”."
+      ],
+      "correct_answer": "B",
+      "explanation": "For overlap you need (1) pinned host memory (so DMA can proceed without paging), (2) an async copy (`non_blocking=True` when moving from pinned CPU tensors), and (3) a scheduling pattern that enqueues the copy ahead of compute (often via prefetching the next batch). Overlap can happen on PCIe too, depending on hardware copy engines and stream usage. Calling `synchronize()` forces a wait and reduces overlap.",
+      "difficulty": "intermediate",
+      "tags": [
+        "multistream",
+        "overlap",
+        "h2d",
+        "pinned_memory",
+        "non_blocking"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re asked to do a quick GPU performance triage for a training job that “only uses 30–40% GPU”. Which checklist best matches a practical ML engineer workflow to determine whether you’re compute-bound, memory-bound, launch-bound, or input-bound?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Only look at `nvidia-smi` utilization; if it’s low, it’s always input-bound.",
+        "B) Start with GPU util and iteration time; then check dataloader time, H2D copy time, kernel time breakdown (profiler), and memory throughput vs SM activity; map each bottleneck to actions (increase batch, fuse ops, pin memory, prefetch, use AMP, etc.).",
+        "C) Immediately rewrite kernels in CUDA; profiling is optional.",
+        "D) Increase batch size until OOM; if it OOMs, it was compute-bound."
+      ],
+      "correct_answer": "B",
+      "explanation": "A practical triage starts coarse (iteration time, GPU util) and then uses targeted measurements to classify the bottleneck:\n- Input-bound: dataloader/CPU preprocessing dominates; GPU idle gaps; fix with more workers, caching, vectorized transforms, pinned memory, prefetch.\n- H2D/copy-bound: large memcpy time; fix with pinned memory, `non_blocking=True`, better batching, avoiding extra copies.\n- Launch-bound: many tiny kernels/ops; low SM occupancy; fix with operator fusion, larger batch, `torch.compile`, fused attention/MLP.\n- Memory-bound: high memory throughput, low compute; fix with better layout, fusion, reduced precision, kernel choices.\n- Compute-bound: high SM activity; fix by using tensor cores (AMP), better kernels, scaling across GPUs.\nThis is the typical workflow for ML engineers.",
+      "difficulty": "beginner",
+      "tags": [
+        "performance_triage",
+        "profiling",
+        "compute_bound",
+        "memory_bound",
+        "input_bound",
+        "launch_overhead"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect a GPU OOM happens only at a specific step (e.g., first forward after enabling gradient checkpointing, or after a certain batch). Give a practical playbook to (1) reliably reproduce the peak, (2) measure peak allocated vs reserved, and (3) apply 3–5 common fixes. Mention at least one allocator-related mitigation.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Playbook example:\n1) Reproduce peak deterministically:\n- Fix seeds and data order (disable shuffling or log/replay the exact batch indices).\n- Run the exact code path that triggers peak (e.g., first iteration includes compilation/cudnn autotune; warm up separately if needed).\n- Use `torch.cuda.synchronize()` around suspected regions to attribute peaks to phases.\n- Use `torch.cuda.reset_peak_memory_stats()` right before the region and then read `max_memory_allocated()` / `max_memory_reserved()` after.\n2) Measure/attribute:\n- Record `torch.cuda.memory_allocated()`, `torch.cuda.memory_reserved()`, and peaks (`max_memory_allocated`, `max_memory_reserved`) per step.\n- Use `torch.cuda.memory_summary()` to inspect inactive split blocks (fragmentation) and large allocations.\n- Optionally profile with Nsight Systems/torch.profiler to find the op that triggers the peak.\n3) Common fixes:\n- Reduce batch size and/or sequence length (often the largest lever for activations/attention).\n- Use gradient accumulation (microbatching) to keep global batch while reducing per-step activation memory.\n- Enable activation checkpointing (trade compute for memory; ensure it’s applied to the right blocks).\n- Use mixed precision (fp16/bf16) and/or gradient scaling.\n- Offload: optimizer state offload (e.g., ZeRO, CPU offload), activation offload, or use parameter sharding.\n- Use fused/efficient attention kernels (FlashAttention / SDPA) to reduce activation memory.\nAllocator-related:\n- Set `PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:<N>` to reduce fragmentation; consider `garbage_collection_threshold`.\n- Avoid many varying-size allocations; reuse buffers where possible.\n- As a last resort, call `torch.cuda.empty_cache()` between phases (doesn’t reduce allocated tensors, but can drop reserved blocks back to CUDA).\n",
+      "explanation": "A good OOM workflow separates (a) true tensor peak (allocated) from (b) allocator reservation/fragmentation (reserved). Reproduction matters because peaks can be data-dependent (sequence length), path-dependent (first step autotune/compile), or phase-dependent (optimizer step). Fixes map to the dominant contributor: activations (batch/seq, checkpointing, efficient attention), optimizer state (ZeRO/offload), or fragmentation (allocator settings, reducing allocation churn).",
+      "difficulty": "advanced",
+      "tags": [
+        "oom_debugging",
+        "allocated_vs_reserved",
+        "peak_memory",
+        "gradient_accumulation",
+        "activation_checkpointing",
+        "offload",
+        "allocator_settings"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You hit a CUDA OOM in PyTorch. `torch.cuda.memory_summary()` shows something like:\n- allocated: 10.2 GiB\n- reserved: 23.5 GiB\n- free (from CUDA): small\nbut your model + batch “should” only need ~11–12 GiB. What is the most likely interpretation and the best next step to confirm?\n",
+      "question_type": "mc",
+      "options": [
+        "A) True memory leak in model parameters; confirm by checking `model.parameters()` size and restarting fixes it permanently.",
+        "B) CUDNN workspace is permanently pinned; confirm by disabling cuDNN.",
+        "C) Caching allocator reservation/fragmentation: reserved >> allocated; confirm by reproducing with identical peak and inspecting peak stats (`max_memory_allocated`, `max_memory_reserved`) and allocator behavior.",
+        "D) PCIe bandwidth issue; confirm by running `nvidia-smi dmon` and looking for low RX/TX."
+      ],
+      "correct_answer": "C",
+      "explanation": "In PyTorch, the CUDA caching allocator often reserves more memory than is currently allocated to tensors. If reserved is much larger than allocated, you may be seeing allocator fragmentation or a previous peak that caused the allocator to grab (reserve) large blocks that it keeps for reuse. A good next step is to reproduce the same peak (same batch/seq, same graph path) and compare `torch.cuda.max_memory_allocated()` and `torch.cuda.max_memory_reserved()`; also use `torch.cuda.memory_summary()` after the failing step to see inactive split blocks. This distinguishes “true need” (allocated peak) from allocator behavior (reserved/fragmentation).",
+      "difficulty": "intermediate",
+      "tags": [
+        "oom_debugging",
+        "pytorch",
+        "allocator",
+        "fragmentation",
+        "peak_memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In LLM inference serving, why do throughput/latency characteristics differ between the prefill phase and the decode phase, and what is one GPU optimization beyond simple batching that targets decode efficiency?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Prefill processes the full prompt in parallel, so it has large matrix multiplies and better GPU utilization; decode generates tokens step-by-step, often with small per-step compute and growing KV cache, making it more memory/bandwidth bound and sensitive to kernel launch overhead. An optimization beyond batching is continuous batching (dynamically forming batches each decode step) and/or using paged attention (managing KV cache in blocks to reduce fragmentation and improve memory locality), which helps keep the GPU busy while controlling KV cache growth and latency.",
+      "explanation": "Prefill resembles standard dense training/inference: big GEMMs with high arithmetic intensity. Decode is iterative and dominated by attention over cached keys/values plus smaller GEMMs, so scheduling and memory management matter more. Techniques like continuous batching, speculative decoding, and paged KV cache aim to improve utilization and reduce tail latency under multi-tenant workloads.",
+      "difficulty": "advanced",
+      "tags": [
+        "inference-serving",
+        "prefill-vs-decode",
+        "kv-cache",
+        "continuous-batching",
+        "paged-attention",
+        "throughput-latency"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are measuring GPU time for a forward pass and write:\n\n```python\nstart = time.time()\nout = model(x)\nend = time.time()\nprint(end - start)\n```\n\nWhy can this be misleading on GPU, and what is the correct way to time it in PyTorch?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "GPU ops are asynchronous: `model(x)` enqueues work and returns before the GPU finishes, so `time.time()` measures mostly CPU enqueue time. Correct timing uses synchronization or CUDA events, e.g. `torch.cuda.synchronize()` before/after, or better: create `torch.cuda.Event(enable_timing=True)` start/end, record them around the region, then `torch.cuda.synchronize()` and read `start.elapsed_time(end)` for accurate GPU milliseconds.",
+      "explanation": "Asynchrony is a feature: it allows CPU and GPU to overlap. But it breaks naive wall-clock timing. CUDA events measure time on the GPU timeline and avoid over-synchronizing. Also watch for accidental syncs (e.g., `.item()`, `.cpu()`, printing tensors) that can distort measurements and performance.",
+      "difficulty": "beginner",
+      "tags": [
+        "async-execution",
+        "timing",
+        "cuda-events",
+        "synchronization",
+        "pytorch-performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You profile a model and see thousands of tiny elementwise ops (adds, muls, reshapes) around layernorm/activation, and GPU utilization is low despite high theoretical FLOPs. Explain why this happens and name two practical fixes an AI/ML engineer might try.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Many tiny ops lead to high kernel launch overhead and poor memory efficiency: each op launches a separate kernel, does little work, and often reads/writes intermediates to global memory. This prevents the GPU from staying busy. Practical fixes: (1) enable/try operator fusion via `torch.compile`, fused kernels (e.g., fused layernorm, fused MLP), or using libraries like Apex/xFormers; (2) increase arithmetic intensity by increasing batch size/sequence length where feasible, or restructure code to reduce intermediate tensors (in-place where safe). Also reduce Python-side overhead by avoiding per-token loops and using vectorized ops.",
+      "explanation": "Modern GPUs need large, well-structured kernels to amortize launch overhead and maximize memory coalescing and cache reuse. Elementwise chains often become bandwidth-bound and suffer from extra reads/writes. Fusion combines multiple ops into one kernel, reducing launches and intermediate traffic. Increasing batch/sequence can also make each kernel do more work, improving occupancy—though it can increase memory usage.",
+      "difficulty": "advanced",
+      "tags": [
+        "kernel-launch-overhead",
+        "operator-fusion",
+        "torch-compile",
+        "pytorch-performance",
+        "utilization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to maximize Tensor Core utilization for GEMMs in a Transformer. Which configuration is most likely to hit fast paths on modern NVIDIA GPUs?",
+      "question_type": "mc",
+      "options": [
+        "A. Use fp32 everywhere and choose hidden sizes that are prime numbers to avoid alignment artifacts",
+        "B. Use bf16/fp16 (or TF32 where applicable) and choose matmul dimensions that are multiples of 8 or 16 (hardware-dependent), avoiding odd head dimensions",
+        "C. Use int64 weights to reduce rounding error, and any shape will use Tensor Cores",
+        "D. Use fp16 but ensure batch size is 1 to reduce memory pressure"
+      ],
+      "correct_answer": "B",
+      "explanation": "Tensor Cores accelerate matrix operations for certain dtypes (fp16/bf16, and TF32 on Ampere+ for fp32 inputs) and prefer aligned dimensions (often multiples of 8/16). In real models, this shows up as choosing head dimensions and hidden sizes that align well (e.g., 64/128) and ensuring the kernel can use the intended fast path. Misaligned shapes can fall back to slower kernels or achieve lower occupancy/efficiency.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tensor-cores",
+        "matmul",
+        "shapes",
+        "dtype",
+        "transformers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You notice `torch.cuda.memory_reserved()` is high and grows over time, but `torch.cuda.memory_allocated()` is relatively stable, and you hit OOM on a later allocation. What is the most likely explanation in PyTorch?",
+      "question_type": "mc",
+      "options": [
+        "A. CUDA kernels are leaking registers into global memory",
+        "B. The caching allocator reserves blocks and can suffer from fragmentation, so reserved memory stays high and large contiguous blocks may be unavailable",
+        "C. `memory_allocated()` includes CPU RAM, not VRAM",
+        "D. `memory_reserved()` only counts model parameters, not activations"
+      ],
+      "correct_answer": "B",
+      "explanation": "PyTorch uses a caching allocator: it reserves GPU memory in blocks to speed up future allocations. Over time, allocation patterns can fragment the reserved pool, making it hard to satisfy a large allocation even if total allocated bytes look fine. Practical mitigations include reducing allocation churn (fewer shape changes), using `torch.cuda.empty_cache()` sparingly (it returns cached blocks to CUDA but doesn’t fix all issues), bucketing shapes, or setting allocator configuration (e.g., max split size) depending on the workload.",
+      "difficulty": "intermediate",
+      "tags": [
+        "gpu-memory",
+        "allocator",
+        "fragmentation",
+        "pytorch-performance",
+        "monitoring"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A model fits in VRAM for forward-only inference but OOMs during training. Explain what additional GPU memory consumers appear in training and give one practical way to reduce peak memory without changing model architecture.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Training adds (a) gradients for parameters, (b) optimizer state (e.g., Adam keeps momentum and variance buffers—often ~2x parameter size), and (c) saved activations needed for backward (can be large, especially with long sequences). A practical way to reduce peak memory is activation checkpointing (recompute activations during backward), or using a memory-efficient optimizer (e.g., AdamW with fused/8-bit states), reducing batch/sequence length, or using mixed precision (bf16/fp16) to cut activation/gradient memory.",
+      "explanation": "Inference mainly needs parameters + intermediate activations for the current forward. Training must retain information to compute gradients and often stores multiple extra buffers. Understanding this breakdown helps diagnose why a model that “fits” for inference can still OOM in training. Techniques like checkpointing trade compute for memory and are commonly used in large-model training.",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu-memory",
+        "training-vs-inference",
+        "optimizer-state",
+        "activations",
+        "checkpointing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have variable-length sequences and observe low GPU utilization due to padding. Which dataset-side strategy most directly reduces wasted attention compute while keeping implementation simple?",
+      "question_type": "mc",
+      "options": [
+        "A. Randomly shuffle sequences each epoch with no length awareness",
+        "B. Bucket examples by similar lengths (or sort within a window) and batch within buckets to minimize padding",
+        "C. Always pad every sequence to the maximum length in the entire dataset",
+        "D. Convert all sequences to Python lists to avoid tensor padding"
+      ],
+      "correct_answer": "B",
+      "explanation": "Attention compute (and memory) typically scales with sequence length (often O(T^2) for standard attention). Excess padding makes T larger than necessary, wasting FLOPs and VRAM. Bucketing by length is a common, low-friction approach: it reduces padding while preserving vectorized batching. More advanced approaches include packing, ragged tensors, or specialized kernels, but bucketing is often the first practical win.",
+      "difficulty": "beginner",
+      "tags": [
+        "batching",
+        "padding",
+        "variable-length",
+        "attention-efficiency",
+        "data-pipeline"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re training a Transformer and see occasional NaNs in attention/softmax under fp16. Describe two practical changes an AI/ML engineer might make to improve numerical stability without reverting the entire model to fp32.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two common fixes are: (1) compute softmax (and sometimes attention score accumulation) in higher precision (fp32 accumulation) while keeping inputs/outputs in fp16/bf16, e.g., cast logits to fp32 for softmax then cast back; (2) use scaling and stable formulations: subtract max before softmax (often already done), apply attention scaling (1/sqrt(d)), use fused attention kernels (e.g., FlashAttention) that implement numerically stable softmax and better accumulation. Additional practical knobs include using bf16 instead of fp16, enabling GradScaler (for fp16), and clamping logits or using dropout carefully.",
+      "explanation": "Softmax is sensitive because exponentials amplify magnitude; fp16’s limited exponent range can overflow, and limited mantissa can lose small differences. Many production kernels keep the bulk of compute in fp16/bf16 but do reductions/exp/sum in fp32 to stabilize. Fused attention implementations also reduce intermediate materialization and use stable reductions, improving both stability and performance.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numerics",
+        "softmax",
+        "attention",
+        "fp16",
+        "bf16",
+        "accumulation-precision"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In mixed-precision training on recent NVIDIA GPUs, when is `bfloat16` typically preferred over `float16`?",
+      "question_type": "mc",
+      "options": [
+        "A. When you need more exponent range to reduce overflow/underflow risk while still getting Tensor Core speedups",
+        "B. When you need exact integer arithmetic for embedding lookups",
+        "C. When you want smaller memory than fp16",
+        "D. When you want higher mantissa precision than fp32"
+      ],
+      "correct_answer": "A",
+      "explanation": "`bf16` has the same 8-bit exponent as fp32 (larger dynamic range) but fewer mantissa bits than fp16. This makes it more stable for training (less overflow in activations/gradients) while still enabling fast Tensor Core paths on supported hardware. It does not use less memory than fp16 (both are 16-bit) and it does not have more precision than fp32.",
+      "difficulty": "beginner",
+      "tags": [
+        "numerics",
+        "bf16",
+        "fp16",
+        "mixed-precision",
+        "tensor-cores"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A team adopts `torch.compile(model)` and sees speedups on fixed-shape batches, but performance collapses when sequence lengths vary per batch. What is the most likely reason?",
+      "question_type": "mc",
+      "options": [
+        "A. `torch.compile` disables Tensor Cores automatically when sequence lengths vary",
+        "B. Variable shapes can trigger frequent graph breaks or recompilations, adding overhead and preventing stable optimized graphs",
+        "C. Variable shapes always cause CUDA OOM due to larger temporary buffers",
+        "D. `torch.compile` forces all tensors to be contiguous, increasing copies"
+      ],
+      "correct_answer": "B",
+      "explanation": "Modern compilers/graph capture rely on stable shapes and control flow to build reusable optimized graphs. If sequence length changes often, the compiler may recompile many variants or break the graph, adding Python overhead and preventing kernel fusion. Mitigations include bucketing by length, padding to a small set of sizes, using dynamic-shape support where available, or constraining shapes in the input pipeline.",
+      "difficulty": "intermediate",
+      "tags": [
+        "torch-compile",
+        "graph-capture",
+        "shape-polymorphism",
+        "recompile",
+        "pytorch-performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Which PyTorch snippet is most likely to introduce a GPU synchronization point and reduce throughput in a training loop?",
+      "question_type": "mc",
+      "options": [
+        "A. `loss = loss_fn(out, y); loss.backward()`",
+        "B. `running_loss += loss.item()`",
+        "C. `out = model(x)`",
+        "D. `optimizer.step()`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Calling `.item()` transfers a scalar from GPU to CPU and forces the host to wait for all preceding GPU work to finish (a sync). Doing this every iteration can severely reduce overlap and throughput. The other operations are typically enqueued asynchronously on the GPU (though they may include internal syncs in some cases). A common mitigation is to log less frequently, accumulate on GPU, or use CUDA events for timing instead of host reads.",
+      "difficulty": "beginner",
+      "tags": [
+        "pytorch-performance",
+        "sync",
+        "async-execution",
+        "logging-footguns",
+        "device-host-transfer"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You see a model slow down after adding a transpose before a linear layer:\n\n```python\nx = x.transpose(1, 2)          # [B, T, C] -> [B, C, T]\ny = torch.nn.functional.linear(x, W)  # W: [out, in]\n```\n\nIn PyTorch, when does calling `x = x.contiguous()` most likely improve GPU performance, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`x.contiguous()` helps when `x` is a non-contiguous view (e.g., from transpose/permute) and the subsequent ops (like GEMM/linear, conv, or fused kernels) either require contiguous memory or perform much better with contiguous/expected stride layouts. Making it contiguous triggers a copy into a contiguous buffer so the following kernel can use coalesced memory accesses and/or fast-path implementations. It can hurt if it adds an extra copy that wasn’t needed (some ops handle strided inputs efficiently), so you use it when profiling shows the downstream op is bottlenecked by the strided layout or falling back to a slower kernel.",
+      "explanation": "Many tensor transformations in PyTorch (transpose/permute/slice) return *views* with different strides, not copies. A non-contiguous tensor can force kernels to do strided loads (worse memory coalescing) or select a slower implementation. `contiguous()` materializes a compact layout (a copy) so the next kernel can read linearly and hit optimized paths. The tradeoff is that the copy itself costs time and memory bandwidth, so it should be guided by profiling and knowledge of which ops are sensitive to layout.",
+      "difficulty": "intermediate",
+      "tags": [
+        "memory-layout",
+        "contiguity",
+        "strides",
+        "views-vs-copies",
+        "pytorch-performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Transformer attention has well-known GPU implications. Explain how sequence length affects compute and memory for attention during training, and describe (at a high level) what FlashAttention/memory-efficient attention changes. Include why this can reduce OOM risk and/or improve speed.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Expected points:\n- Standard full attention forms an attention matrix of size (seq_len × seq_len) per head (and per batch). Compute scales roughly O(B * H * S^2 * d_head) and memory for attention weights/softmax intermediates scales O(B * H * S^2). This quadratic scaling makes long sequences expensive and often memory-limited.\n- During training, additional memory is needed to store intermediates for backward (softmax outputs, dropout masks, etc.), increasing activation memory and OOM risk at large S.\n- FlashAttention/memory-efficient attention avoids materializing the full S×S attention matrix in GPU memory by tiling/blocking, fusing operations (QK^T, softmax, dropout, V projection) and recomputing or streaming partial results. This reduces memory traffic and peak memory, often turning a memory-bound kernel into a more compute-efficient one.\n- Practical outcome: lower peak VRAM (enables longer sequences or larger batch), higher throughput due to fewer reads/writes and better kernel fusion; tradeoffs can include constraints on dtype/hardware and different numerical behavior (usually acceptable).",
+      "explanation": "Attention’s quadratic scaling is often the first thing that breaks when increasing context length. Memory-efficient attention techniques primarily reduce peak activation/workspace memory and memory bandwidth, which are common bottlenecks on GPUs for transformers.",
+      "difficulty": "advanced",
+      "tags": [
+        "transformers",
+        "attention",
+        "sequence_length",
+        "flash_attention",
+        "memory_bound",
+        "vram_management"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your dataloader uses pinned memory, but the GPU still shows periodic idle gaps. Which set of changes is most likely to improve the input pipeline throughput and reduce stalls in a typical image/text training job?\n\nAssume you use PyTorch `DataLoader` and the dataset does CPU decode/augment.",
+      "question_type": "mc",
+      "options": [
+        "A. Increase `num_workers`, enable `persistent_workers=True`, tune `prefetch_factor`, and profile CPU decode/augment; consider caching or moving heavy augmentations off the main thread",
+        "B. Disable pinned memory because it can slow down transfers",
+        "C. Call `torch.cuda.synchronize()` each iteration to make timing accurate and reduce stalls",
+        "D. Set `shuffle=False` so the GPU can predict the next batch"
+      ],
+      "correct_answer": "A",
+      "explanation": "Pinned memory helps H2D transfer speed and enables overlap, but it doesn’t fix CPU-side bottlenecks like decode/augment, Python overhead, or insufficient prefetching. Increasing workers, keeping workers alive (persistent), tuning prefetch, and profiling CPU stages address the common root causes of GPU idle gaps. Adding synchronizations typically makes things worse; disabling shuffle rarely addresses throughput.",
+      "difficulty": "intermediate",
+      "tags": [
+        "input_pipeline",
+        "dataloader",
+        "num_workers",
+        "prefetching",
+        "pinned_memory",
+        "sync_async"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to reason about end-to-end training performance. Given a training job that is slow, outline how you would determine whether the bottleneck is (a) GPU compute, (b) GPU memory bandwidth / memory-bound kernels, (c) CPU/input pipeline, or (d) distributed communication. Include at least one concrete measurement/tool or symptom for each and the “lever” you would try first.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good answer includes a structured approach:\n\n(a) GPU compute-bound\n- Measure: high sustained SM utilization; kernels dominated by GEMMs/conv; Nsight Systems/Compute or PyTorch profiler shows large matmul time.\n- Symptom: speed improves with faster GPU or higher clocks; increasing batch size improves throughput until memory limits.\n- Lever: increase arithmetic intensity (larger batch/microbatch), fuse ops (fused optimizers), use TF32/bf16/fp16, ensure cuDNN/cuBLAS tuned, use `torch.compile` where appropriate.\n\n(b) GPU memory-bandwidth / memory-bound\n- Measure: low SM utilization but high memory throughput; profiler shows many elementwise ops, layernorm, softmax, attention memory traffic.\n- Symptom: increasing batch doesn’t help much; kernels have low occupancy/low FLOPs/byte.\n- Lever: kernel fusion (fused LN/MLP), FlashAttention/memory-efficient attention, reduce activation size (seq/batch), use better layouts, avoid redundant casts/copies.\n\n(c) CPU/input pipeline-bound\n- Measure: GPU utilization has gaps; dataloader time high; `torch.profiler` shows `DataLoader`/CPU ops dominating; CPU cores pegged; disk/network IO waits.\n- Lever: increase `num_workers`, enable `persistent_workers`, tune `prefetch_factor`, move decode/augment to GPU or faster libs, cache/preprocess, use pinned memory + non_blocking H2D, avoid per-iter sync (e.g., `.item()` spam).\n\n(d) Distributed communication-bound\n- Measure: NCCL/all-reduce time high; scaling efficiency drops with more GPUs; poor overlap of comm with backward.\n- Lever: increase per-GPU batch (reduce comm/compute ratio), gradient bucketing tuning, overlap improvements, reduce gradient size (fp16/bf16 grads), use ZeRO/FSDP sharding, optimize network/topology.\n\nThe best answers tie each bottleneck to an observable metric and a first-line mitigation.",
+      "explanation": "End-to-end performance is a balance of compute, memory, input, and communication. The key skill is to identify the dominant term with measurements and then choose the lever that reduces that term (not a generic ‘optimize everything’).",
+      "difficulty": "advanced",
+      "tags": [
+        "performance_model",
+        "profiling",
+        "compute_bound",
+        "memory_bound",
+        "communication",
+        "input_pipeline"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You scale from 1 GPU to 8 GPUs with PyTorch DDP and see only ~3.5x speedup. Which observation most strongly suggests gradient communication (all-reduce) is the bottleneck rather than dataloader or pure compute?\n\nAssume you already verified the input pipeline is not obviously stuck.",
+      "question_type": "mc",
+      "options": [
+        "A. GPU utilization is high, but step time increases significantly when enabling DDP even with the same global batch size; profiler shows time in NCCL/all-reduce and poor overlap with backward",
+        "B. GPU utilization is low and CPU usage is pegged at 100% in `top`",
+        "C. VRAM usage is close to full and occasional OOM happens",
+        "D. Loss becomes NaN after scaling to 8 GPUs"
+      ],
+      "correct_answer": "A",
+      "explanation": "DDP adds gradient synchronization (all-reduce). If the profiler attributes a large fraction of step time to NCCL/all-reduce and it doesn’t overlap well with backward compute, scaling efficiency drops. Low GPU utilization with high CPU usage points more to input pipeline/CPU bottlenecks; OOM is memory; NaNs are numerical/stability issues.",
+      "difficulty": "advanced",
+      "tags": [
+        "ddp",
+        "all_reduce",
+        "communication",
+        "scaling",
+        "overlap"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to train a model that no longer fits on a single GPU, and later scale to multiple nodes. At a conceptual level, when would you choose data parallelism vs model parallelism (tensor) vs pipeline parallelism? Pick the best statement.",
+      "question_type": "mc",
+      "options": [
+        "A. Data parallel when the model fits per GPU; model/tensor parallel when parameters/activations don’t fit; pipeline parallel when layers can be split into stages but you can tolerate pipeline bubbles and want to scale very large models",
+        "B. Model parallel is always better than data parallel because it avoids gradient synchronization",
+        "C. Pipeline parallel is only useful on a single node; it cannot work across nodes",
+        "D. Data parallel is only for inference; training requires model parallel"
+      ],
+      "correct_answer": "A",
+      "explanation": "Data parallel replicates the model on each GPU and synchronizes gradients; it’s simplest and efficient when the model fits in one GPU’s memory. Tensor/model parallel splits individual layers/tensors across GPUs to fit larger models but adds communication in the forward/backward. Pipeline parallel splits the model by layer blocks into stages; it can scale to very large models but introduces pipeline bubbles and scheduling complexity. In practice, large-scale training often combines these (e.g., DP × TP × PP).",
+      "difficulty": "intermediate",
+      "tags": [
+        "distributed_training",
+        "data_parallel",
+        "model_parallel",
+        "pipeline_parallel",
+        "multi_node"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are optimizing inference for an LLM service. Compare training vs inference GPU considerations in terms of throughput vs latency and memory. Your answer must mention batching, latency constraints, and KV-cache memory at a high level, and explain why optimal settings differ between training and inference.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Key points:\n- Training optimizes tokens/sec and typically uses large batches/sequence lengths; it must store activations for backward, plus gradients and optimizer state. Memory is dominated by activations (and optimizer state for large models).\n- Inference often has latency constraints (time-to-first-token, per-token latency) and variable request sizes. Large batches improve throughput but can hurt latency; dynamic batching trades latency for higher GPU utilization.\n- Autoregressive decoding uses a KV cache: for each layer, keys/values for past tokens are stored to avoid recomputing attention. KV cache memory scales with batch_size * sequence_length * num_layers * hidden_size (times bytes per element). This can dominate inference memory even though there are no gradients/optimizer states.\n- Optimal settings differ: training can accept higher latency per step and aims for stable large batches; inference must balance batch size and scheduling for SLA, and may prefer smaller micro-batches, quantization, paged KV cache, or tensor parallelism depending on latency/throughput targets.\n- In inference you often use `torch.no_grad()`/`inference_mode()` and possibly lower precision/quantization; in training you use AMP but keep some states in fp32 for stability.",
+      "explanation": "The core difference is what must be stored and what metric matters. Training stores backward information and cares about steady-state throughput; inference stores KV cache for fast decoding and often cares about tail latency. These differences drive different batching, precision, and memory strategies.",
+      "difficulty": "intermediate",
+      "tags": [
+        "inference",
+        "training",
+        "batching",
+        "latency",
+        "kv_cache",
+        "llm"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the code below:\n\n```python\n# inside training loop\nfor batch in loader:\n    x = batch['x']          # CPU tensor\n    x = x.to('cuda')\n    x = x.float()\n    y = model(x)\n```\n\nWhich change best minimizes unnecessary data movement/copies and avoids repeated casts, assuming the model expects `float16` on GPU and you use AMP?",
+      "question_type": "mc",
+      "options": [
+        "A. Move and cast once: `x = batch['x'].to(device='cuda', dtype=torch.float16, non_blocking=True)` (and ensure loader uses pinned memory); avoid extra `.float()`",
+        "B. Keep `x` on CPU and set `model = model.cpu()` to avoid transfers",
+        "C. Call `x = x.cuda()` twice to make sure it is on GPU before forward",
+        "D. Convert to NumPy first (`x.numpy()`) and then back to torch on GPU to ensure contiguous memory"
+      ],
+      "correct_answer": "A",
+      "explanation": "Every `.to(...)`/dtype conversion can trigger a new allocation and copy. Combining device + dtype in one `.to(...)` reduces extra copies. With pinned host memory and `non_blocking=True`, H2D transfers can overlap with compute. Under AMP, you often keep inputs in fp16/bf16 (as appropriate) and let autocast handle internal casting; an explicit `.float()` is both unnecessary and can increase bandwidth and memory.",
+      "difficulty": "beginner",
+      "tags": [
+        "data_movement",
+        "cpu_gpu_transfer",
+        "dtype_cast",
+        "input_pipeline",
+        "amp"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You hit CUDA OOM during training a transformer. Give a practical, ordered playbook to (1) identify what is consuming VRAM and (2) mitigate it. Your answer should explicitly mention at least: activations, gradients, optimizer state, and 4+ concrete mitigation techniques (e.g., checkpointing, accumulation, offload, mixed precision, smaller seq/batch).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer should include: \n\n1) Identify consumers\n- Recognize main VRAM buckets: model parameters, activations (saved for backward), gradients, optimizer states (e.g., Adam has momentum/variance ~2x params), temporary buffers (attention, layernorm, matmul workspaces), and cached allocator fragmentation.\n- Use tools: `torch.cuda.memory_summary()`, `torch.cuda.max_memory_allocated()`, `torch.cuda.memory_allocated()/reserved()`, PyTorch profiler memory view, and step-wise measurement around forward/backward/step.\n- Compare training vs eval: in eval (`torch.no_grad()`), activations aren’t stored, so memory drops.\n- Check sequence length and batch size effects (activations/attention scale strongly with them).\n\n2) Mitigate (typical order)\n- Reduce batch size and/or sequence length (fastest lever; often activation-dominated).\n- Mixed precision (AMP/bfloat16/fp16) to reduce activation/grad/optimizer memory; consider keeping some states in fp32.\n- Gradient accumulation to keep effective batch size while lowering per-step activation memory (trade: more steps, more time).\n- Activation/gradient checkpointing to recompute activations during backward (trade: extra compute).\n- Use memory-efficient attention / FlashAttention to reduce attention activation and workspace.\n- Optimizer changes: switch Adam -> AdamW with fused implementations, 8-bit optimizers, or reduce optimizer state (trade: convergence/quality considerations).\n- Offload: optimizer state/parameters to CPU (ZeRO-Offload) or NVMe (trade: PCIe latency).\n- Distributed strategies: ZeRO/FSDP to shard parameters/gradients/optimizer states across GPUs.\n- Ensure `optimizer.zero_grad(set_to_none=True)` and avoid retaining graphs (`retain_graph=True` only if needed).\n- Fix leaks: don’t store tensors from forward in Python lists without `.detach()`; avoid holding onto computation graphs.\n\nA good answer is explicit about which technique targets which bucket (activations vs optimizer state vs params) and notes tradeoffs.",
+      "explanation": "OOM debugging is about mapping memory to buckets and then choosing the lever that reduces the dominant bucket. For many transformer trainings, activations and attention buffers dominate; for very large models, optimizer state and parameters can dominate. The best candidates connect mitigations to root cause and mention tradeoffs (compute vs memory, throughput vs latency, convergence).",
+      "difficulty": "intermediate",
+      "tags": [
+        "oom",
+        "vram_management",
+        "activations",
+        "optimizer_state",
+        "mixed_precision",
+        "checkpointing",
+        "gradient_accumulation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a PyTorch training loop, which of the following operations is most likely to introduce an implicit GPU synchronization (making the CPU wait for the GPU), potentially hurting throughput?\n\nAssume `loss` is a CUDA tensor scalar and `pred` is a CUDA tensor.",
+      "question_type": "mc",
+      "options": [
+        "A. `loss.item()` used every iteration for logging",
+        "B. `loss.backward()`",
+        "C. `optimizer.step()`",
+        "D. `pred = pred + 1`"
+      ],
+      "correct_answer": "A",
+      "explanation": "Calling `.item()` transfers a scalar value from GPU to CPU, which requires the GPU to finish all prior work that produces that value—an implicit synchronization point. Backward/step do GPU work but do not inherently force CPU-GPU sync unless you read results on the host. Simple tensor ops like `pred + 1` are also typically asynchronous launches.",
+      "difficulty": "beginner",
+      "tags": [
+        "sync_async",
+        "implicit_sync",
+        "logging",
+        "pytorch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following PyTorch code and see surprisingly low GPU utilization in `nvidia-smi` while the script is running:\n\n```python\nimport torch, time\nx = torch.randn(4096, 4096, device='cuda')\nW = torch.randn(4096, 4096, device='cuda')\n\nstart = time.time()\nfor _ in range(200):\n    y = x @ W\nend = time.time()\nprint('elapsed', end - start)\n```\n\nWhat is the most likely reason the timing is misleading, and what is the simplest fix to get an accurate elapsed time for GPU work?",
+      "question_type": "mc",
+      "options": [
+        "A. GPU kernels execute asynchronously; use `torch.cuda.synchronize()` (or CUDA events) before reading the end time",
+        "B. PyTorch uses CPU fallback for `@`; set `torch.set_default_device('cuda')` to force GPU",
+        "C. `nvidia-smi` cannot show utilization for matrix multiply; use `torch.profiler` only",
+        "D. The GPU is underclocked; set persistence mode to true to get correct timing"
+      ],
+      "correct_answer": "A",
+      "explanation": "Most CUDA launches in PyTorch are asynchronous with respect to the host: the loop enqueues work quickly, and `time.time()` measures mostly enqueue time, not execution time. Insert `torch.cuda.synchronize()` before stopping the timer (or use CUDA events) to ensure all queued kernels finish before reading the end timestamp. Low/erratic utilization can also happen if the workload is too small or there are sync points elsewhere, but the immediate issue here is host-side timing without synchronization.",
+      "difficulty": "beginner",
+      "tags": [
+        "sync_async",
+        "timing",
+        "gpu_utilization",
+        "pytorch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have variable-length sequences and currently pad all samples to the maximum length in the batch. Which approach most directly reduces wasted GPU compute from padding while keeping training semantics correct?",
+      "question_type": "mc",
+      "options": [
+        "A. Always pad to a global maximum length for the entire dataset to make shapes static.",
+        "B. Use sequence packing/bucketing (group similar lengths) so batches have less padding, and/or pack multiple sequences into one long sequence with proper attention masks.",
+        "C. Convert the model to FP64 so padded tokens are cheaper to compute.",
+        "D. Disable attention masks so the model ignores padding automatically."
+      ],
+      "correct_answer": "B",
+      "explanation": "Padding increases token count processed, which increases both compute and memory traffic (especially in attention). Bucketing by length reduces padding within each batch; packing can further increase utilization by concatenating sequences and using masks/segment IDs to preserve correctness. These techniques often yield meaningful speedups without changing the model’s mathematical intent.",
+      "difficulty": "intermediate",
+      "tags": [
+        "batching",
+        "padding",
+        "packing",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In transformer training, you keep batch size fixed but increase sequence length (e.g., 512 → 2048). Training slows down dramatically and may OOM. Give two concrete reasons (one compute-related and one memory-related) why this happens.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Compute-related: self-attention has O(L^2) operations in sequence length L (attention score and weighted sum), so quadrupling L can increase attention compute by ~16×. Memory-related: attention often materializes or streams large intermediate tensors (e.g., Q/K/V, attention logits/probabilities, activations for backprop), many of which scale as O(L^2) or O(L·d); longer sequences increase activation memory and can trigger OOM, especially during backprop when storing activations.",
+      "explanation": "Sequence length changes the shape in a way that affects both arithmetic complexity and activation footprint. This is why techniques like FlashAttention, activation checkpointing, and sequence packing are common: they reduce memory traffic/materialization and improve locality while addressing L^2 scaling pain points.",
+      "difficulty": "advanced",
+      "tags": [
+        "batching",
+        "shapes",
+        "attention",
+        "memory-hierarchy"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You increase batch size from 16 to 128 and see GPU utilization improve and step time per batch increase less than 8× (good scaling). Which explanation best matches what’s happening?",
+      "question_type": "mc",
+      "options": [
+        "A. Larger batches always reduce total FLOPs, so training becomes cheaper.",
+        "B. Larger batches can increase kernel sizes/parallelism and amortize fixed overheads, improving throughput until you hit memory limits or different bottlenecks.",
+        "C. Larger batches make the GPU run at a higher clock because it detects more work.",
+        "D. Larger batches improve accuracy, which makes computation faster."
+      ],
+      "correct_answer": "B",
+      "explanation": "Batch size is a key performance lever: many GPU kernels become more efficient with larger matrices/tensors because there’s more parallel work, better occupancy, and less overhead per example (launch overhead, input pipeline overhead, etc.). Eventually performance plateaus or degrades due to VRAM limits, worse memory locality, or hitting a bandwidth/compute ceiling.",
+      "difficulty": "beginner",
+      "tags": [
+        "batching",
+        "throughput",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain dynamic loss scaling in mixed-precision training: what problem does it solve, and how does it work at a high level?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Loss scaling addresses gradient underflow when using low-precision (especially FP16) where small gradient values may round to zero. The idea is to multiply the loss by a scale factor before backprop, which scales up gradients into a representable range; then, before the optimizer step, gradients are unscaled back down. Dynamic loss scaling adjusts the scale automatically: if overflow/NaNs are detected, it reduces the scale; if training is stable for a while, it may increase the scale to maximize precision without overflow.",
+      "explanation": "FP16 has limited exponent range compared to FP32, so gradients can underflow or overflow more easily. Scaling shifts values into a safer range during backprop. Dynamic schemes make this robust without manual tuning and are commonly implemented in AMP frameworks.",
+      "difficulty": "intermediate",
+      "tags": [
+        "mixed-precision",
+        "loss-scaling",
+        "numerical-stability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You switch training from FP32 to mixed precision and observe a large speedup on an NVIDIA GPU with tensor cores. Which statement is most accurate?",
+      "question_type": "mc",
+      "options": [
+        "A. Mixed precision is faster mainly because FP16 uses fewer CPU cycles in Python.",
+        "B. Mixed precision can be faster because tensor cores accelerate matrix multiplications at lower precision, and reduced memory traffic can also help.",
+        "C. Mixed precision is always slower because it adds extra casting operations.",
+        "D. Mixed precision only helps inference, not training."
+      ],
+      "correct_answer": "B",
+      "explanation": "Tensor cores provide very high throughput for certain matrix/tensor operations at reduced precision (FP16/BF16/TF32 depending on GPU and settings). Additionally, smaller data types reduce memory bandwidth pressure. There is overhead from casts and maintaining FP32 master weights in many setups, but the net effect is often a speedup for GEMM/conv/attention-heavy models.",
+      "difficulty": "beginner",
+      "tags": [
+        "tensor-cores",
+        "mixed-precision",
+        "throughput"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a multi-GPU server, you see much faster GPU↔GPU communication on some GPU pairs than others. What hardware factor most commonly explains this difference for deep learning training?",
+      "question_type": "mc",
+      "options": [
+        "A. Some GPUs have more VRAM, which directly increases inter-GPU bandwidth.",
+        "B. The PCIe generation alone fully determines GPU↔GPU bandwidth; topology never matters.",
+        "C. NVLink/NVSwitch connectivity and PCIe topology (same root complex vs across CPU sockets) affect peer-to-peer bandwidth/latency.",
+        "D. CUDA version is the main determinant of GPU↔GPU bandwidth."
+      ],
+      "correct_answer": "C",
+      "explanation": "Inter-GPU performance depends heavily on the connectivity: NVLink/NVSwitch can provide much higher bandwidth than PCIe, and even within PCIe, topology matters (e.g., GPUs behind the same PCIe switch vs crossing CPU sockets/NUMA boundaries). This directly impacts DDP/all-reduce, pipeline parallelism, and activation/parameter sharding performance.",
+      "difficulty": "intermediate",
+      "tags": [
+        "host-device-transfer",
+        "nvlink",
+        "pcie",
+        "multi-gpu"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training in PyTorch and see frequent Host→Device copies in the profiler. Which change most directly reduces input pipeline transfer overhead for typical DataLoader-based training?",
+      "question_type": "mc",
+      "options": [
+        "A. Set DataLoader(num_workers=0) to avoid multiprocessing overhead.",
+        "B. Use pinned (page-locked) host memory and asynchronous copies (e.g., DataLoader(pin_memory=True) and non_blocking=True on .to(device)).",
+        "C. Convert all tensors to float64 so fewer conversions happen on GPU.",
+        "D. Call torch.cuda.synchronize() after every batch to keep transfers consistent."
+      ],
+      "correct_answer": "B",
+      "explanation": "Pinned (page-locked) host memory enables faster and more predictable DMA transfers to the GPU and allows async H→D copies that can overlap with GPU compute when used correctly. In PyTorch, pin_memory=True plus non_blocking=True commonly reduces input stalls. Synchronizing every batch typically hurts overlap and throughput.",
+      "difficulty": "beginner",
+      "tags": [
+        "host-device-transfer",
+        "pcie",
+        "pinned-memory",
+        "pytorch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Conceptually, what is GPU “shared memory” (or “scratchpad” memory) and how does an ML kernel benefit from it?\n\nAnswer in 3–6 sentences; no need for CUDA code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Shared memory is a small, fast on-chip memory region shared by threads within a block (or threadgroup). It’s explicitly managed by the kernel and is much lower latency/higher bandwidth than VRAM (HBM/GDDR). ML kernels use it to stage tiles of activations/weights so multiple threads can reuse the same data without repeatedly fetching from global memory. This increases data reuse and arithmetic intensity, often turning a memory-bound operation into a more compute-efficient one (e.g., tiled GEMM/conv, attention tiling).",
+      "explanation": "The key idea is locality and reuse: global memory is large but relatively slow; shared memory is tiny but fast. By loading a tile once and reusing it across many multiply-adds, you reduce global memory traffic and improve throughput. Many high-performance tensor kernels are essentially careful tiling + shared-memory reuse + register blocking.",
+      "difficulty": "intermediate",
+      "tags": [
+        "memory-hierarchy",
+        "shared-memory",
+        "kernel-optimization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You notice a model is slower on GPU than expected. Nsight/Profiler shows low SM (compute) utilization but very high memory throughput utilization (close to peak). Which interpretation is most likely?",
+      "question_type": "mc",
+      "options": [
+        "A. The workload is compute-bound; increasing FLOPs will make it faster.",
+        "B. The workload is memory-bandwidth-bound; optimizing memory access patterns or reducing memory traffic may help more than adding compute.",
+        "C. The workload is PCIe-bound; moving the model to CPU will fix it.",
+        "D. The workload is limited by Python overhead; using a faster CPU will always solve it."
+      ],
+      "correct_answer": "B",
+      "explanation": "If memory bandwidth is near peak while compute units are underutilized, the kernel is likely memory-bound: it spends time moving data rather than doing math. Common remedies include fusing ops (reduce reads/writes), using more efficient kernels, improving locality/coalescing, reducing precision (less bytes moved), or restructuring to increase arithmetic intensity (more compute per byte).",
+      "difficulty": "intermediate",
+      "tags": [
+        "memory-hierarchy",
+        "bandwidth-vs-compute",
+        "profiling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In training deep neural networks, GPUs often outperform CPUs. Which explanation best captures the core reason for this on typical ML workloads?",
+      "question_type": "mc",
+      "options": [
+        "A. GPUs have much higher clock speeds, so each core runs faster than CPU cores.",
+        "B. GPUs are optimized for high-throughput parallel math (SIMT) and have very high memory bandwidth, which matches tensor/matrix operation patterns.",
+        "C. GPUs have larger L1/L2 caches than CPUs, so they avoid most memory accesses.",
+        "D. GPUs are better because they run Python code faster than CPUs."
+      ],
+      "correct_answer": "B",
+      "explanation": "Most training/inference kernels are dominated by dense linear algebra (GEMM/conv/attention) that can be expressed as many independent, similar operations. GPUs execute these efficiently using SIMT-style parallelism (many threads doing similar work) and provide high memory bandwidth to feed those arithmetic units. CPU strengths (low-latency control flow, large caches, fewer powerful cores) often matter less for these highly parallel tensor ops.",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu-vs-cpu",
+        "throughput-vs-latency",
+        "simt",
+        "tensor-ops"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    }
+  ]
+}

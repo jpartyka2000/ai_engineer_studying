@@ -1,0 +1,2615 @@
+{
+  "metadata": {
+    "subject_slug": "visualizations",
+    "subject_name": "Data Visualization",
+    "exported_at": "2026-03-07T22:49:44.607704",
+    "question_count": 126,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You are given a **wide** summary table `df_wide` where each column is a group (e.g., 'A', 'B', 'C') and each row is an observation. You need to produce:\n\n1) A **pairwise relationship** visualization across all numeric columns.\n2) A **faceted** categorical plot (e.g., a box/violin/bar plot) that splits by an additional variable `condition` (stored separately in a Series aligned to rows).\n\nWrite a solution outline (in words and/or code) that uses seaborn appropriately, addressing when wide form is acceptable and when you should convert to long form.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A correct outline should include: (1) using sns.pairplot(df_wide) (or PairGrid) directly on the wide DataFrame for pairwise plots; (2) creating a long/tidy DataFrame for the faceted categorical plot by adding the condition column and melting, then using a high-level/faceted seaborn function (e.g., catplot with col/row, or violinplot/boxplot with hue) with x/y/hue/col mapped by column names. Example:\n\n```python\nimport seaborn as sns\nimport pandas as pd\n\n# 1) Wide-form is fine for pairplot\nsns.pairplot(df_wide)\n\n# 2) For faceting/hue, build long form\n# condition is a Series aligned with df_wide rows\n_df = df_wide.copy()\n_df['condition'] = condition\n\ndf_long = _df.melt(id_vars='condition', var_name='group', value_name='value')\n\n# Faceted categorical plot\nsns.catplot(data=df_long, x='group', y='value', col='condition', kind='box')\n# or: sns.catplot(data=df_long, x='group', y='value', hue='condition', kind='violin')\n```\n\nThe key reasoning: pairplot/pairgrid accept wide data, but faceting/hue grouping across a grouping variable is easiest and most idiomatic in long form.",
+      "explanation": "This tests understanding of *which seaborn functions accept wide form* versus *when long form is the practical default*. Pairwise plotting functions (pairplot/pairgrid) are designed around wide DataFrames (each column a variable). But once you need to bind measurements with a grouping variable (like `condition`) and use hue/facets, long/tidy form is the cleanest: you can map `group` to x, `value` to y, and `condition` to hue/col/row by name. This mirrors seaborn’s internal splitting/aggregation behavior and avoids awkward wide-form signatures.",
+      "difficulty": "advanced",
+      "tags": [
+        "seaborn",
+        "pairplot",
+        "pairgrid",
+        "wide-format",
+        "long-format",
+        "melt",
+        "faceting",
+        "categorical-plots"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a DataFrame in **wide** form:\n\n```python\n# columns are groups; values are measurements\n# e.g., df_wide columns: ['A', 'B', 'C']\n```\n\nYou want a bar plot where each column becomes a category on the x-axis, and you also want to later add `hue` or faceting. Which approach best prepares the data for seaborn’s high-level API?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Pass `df_wide` directly to `sns.heatmap(df_wide)` because bar plots require matrices",
+        "B. Convert to long form with `melt`, then call `sns.barplot(data=..., x=..., y=...)`",
+        "C. Use `sns.pairplot(df_wide)` because it automatically creates a bar plot per column",
+        "D. Call `sns.relplot(data=df_wide, x='A', y='B')` because relplot expects wide form"
+      ],
+      "correct_answer": "B",
+      "explanation": "Melting wide data into long/tidy form (one observation per row, with columns like 'category' and 'value') is the most flexible setup for seaborn’s grammar-of-graphics-style interface. It enables mapping variables by name and makes it straightforward to add `hue`, `row`, `col`, and other semantic mappings. The other options either use the wrong plot type (heatmap, pairplot) or misuse relplot with wide data in a way that doesn’t solve the grouping/faceting goal.",
+      "difficulty": "intermediate",
+      "tags": [
+        "seaborn",
+        "melt",
+        "long-format",
+        "barplot",
+        "faceting",
+        "hue"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which seaborn function(s) most naturally expect **wide-form** data (e.g., a matrix or pivoted DataFrame) rather than long/tidy data?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. sns.relplot",
+        "B. sns.catplot",
+        "C. sns.heatmap",
+        "D. sns.violinplot"
+      ],
+      "correct_answer": "C",
+      "explanation": "sns.heatmap is designed to visualize a 2D matrix-like object (NumPy array or pivoted DataFrame), which is a classic wide-form representation. In contrast, high-level functions like relplot/catplot and categorical plots like violinplot are most naturally used with long/tidy DataFrames where you map columns to x/y/hue/row/col.",
+      "difficulty": "beginner",
+      "tags": [
+        "seaborn",
+        "wide-format",
+        "heatmap",
+        "data-shapes",
+        "tidy-data"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to store a reusable Vega-Lite *template* spec with placeholders and then generate multiple concrete visualizations by substituting fields.\n\nConsider this code:\n\n```python\ntemplate_spec = {\n    \"mark\": \"bar\",\n    \"encoding\": {\n        \"x\": {\"field\": \"__X_FIELD__\", \"type\": \"nominal\"},\n        \"y\": {\"field\": \"__Y_FIELD__\", \"type\": \"quantitative\"}\n    }\n}\n\ndef create_bar_viz(x_field: str, y_field: str) -> dict:\n    spec = template_spec.copy()\n    spec[\"encoding\"][\"x\"][\"field\"] = x_field\n    spec[\"encoding\"][\"y\"][\"field\"] = y_field\n    return spec\n```\n\nExplain a subtle bug or risk in this approach when generating multiple visualizations, and provide a corrected implementation that avoids the issue.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The bug is that `template_spec.copy()` performs a shallow copy, so nested dictionaries under `encoding` are shared between `spec` and `template_spec`. Mutating `spec[\"encoding\"][\"x\"][\"field\"]` and `spec[\"encoding\"][\"y\"][\"field\"]` will also mutate the original template, causing later generated specs to unintentionally reuse or overwrite fields from earlier calls.\n\nA corrected approach is to deep copy the template (or reconstruct nested dicts) so each generated spec is independent:\n\n```python\nimport copy\n\ndef create_bar_viz(x_field: str, y_field: str) -> dict:\n    spec = copy.deepcopy(template_spec)\n    spec[\"encoding\"][\"x\"][\"field\"] = x_field\n    spec[\"encoding\"][\"y\"][\"field\"] = y_field\n    return spec\n```\n\n(Alternatively, build a new dict from scratch for `encoding` to avoid shared nested state.)",
+      "explanation": "Understanding shallow vs deep copies is crucial when storing Vega-Lite specs as nested JSON-like objects. Vega-Lite specs are hierarchical; if you reuse a template and only shallow-copy it, changes to nested parts (like `encoding`) leak into the template and into other generated specs. Deep copying (or reconstructing nested structures) ensures each visualization spec remains reproducible and isolated—an important property when storing specs for later rendering.",
+      "difficulty": "advanced",
+      "tags": [
+        "vega-lite",
+        "spec-templates",
+        "python-dicts",
+        "deepcopy",
+        "immutability",
+        "reproducibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have stored a visualization configuration with a SQL query and a Vega-Lite spec string. Complete the missing step so the spec uses the query result data.\n\n```python\ndef render_visualization(viz_data):\n    data = execute_query(viz_data[\"sql\"])  # returns a DataFrame\n    spec = json.loads(viz_data[\"vegalite_spec\"])\n\n    # TODO: inject the query results into the Vega-Lite spec\n\n    import altair as alt\n    return alt.Chart.from_dict(spec)\n```\n\nWhich option correctly fills in the TODO so that Vega-Lite can render using inline values?",
+      "question_type": "mc",
+      "options": [
+        "A. spec[\"data\"] = {\"values\": data.to_dict(\"records\")}",
+        "B. spec[\"sql\"] = viz_data[\"sql\"]",
+        "C. spec[\"encoding\"] = {\"values\": data.to_dict(\"records\")}",
+        "D. spec[\"mark\"] = {\"values\": data.to_dict(\"records\")}"
+      ],
+      "correct_answer": "A",
+      "explanation": "Vega-Lite expects data under the top-level `data` property. Using `{\"values\": ...}` embeds inline rows, and `data.to_dict(\"records\")` produces a list of row dictionaries that matches Vega-Lite’s expected format. The other options place data in incorrect properties (`sql`, `encoding`, `mark`) that are not meant to hold raw datasets.",
+      "difficulty": "intermediate",
+      "tags": [
+        "vega-lite",
+        "altair",
+        "data-injection",
+        "json-parsing",
+        "rendering-pipeline"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the context of Vega-Lite, what is a `vegalite_spec`?\n\n```python\nvegalite_spec = \"\"\"{\n  \"$schema\": \"https://vega.github.io/schema/vega-lite/v5.json\",\n  \"mark\": \"bar\",\n  \"encoding\": {\n    \"x\": {\"field\": \"category\", \"type\": \"nominal\"},\n    \"y\": {\"field\": \"value\", \"type\": \"quantitative\"}\n  }\n}\"\"\"\n```",
+      "question_type": "mc",
+      "options": [
+        "A. A Python function that draws the chart pixel-by-pixel using imperative commands",
+        "B. A JSON specification that declaratively describes how to render a visualization",
+        "C. A SQL query that computes the aggregated values to be plotted",
+        "D. A binary-encoded image of the chart that can be embedded in HTML"
+      ],
+      "correct_answer": "B",
+      "explanation": "`vegalite_spec` refers to a Vega-Lite specification, which is JSON describing the visualization declaratively (the \"what\": marks, encodings, scales, etc.). It is not drawing code (imperative), not the SQL query (data retrieval), and not a pre-rendered image.",
+      "difficulty": "beginner",
+      "tags": [
+        "vega-lite",
+        "vegalite_spec",
+        "json",
+        "declarative-visualization-grammar"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate claims: “This flamegraph shows that the wide boxes on the right happened later in the program run, because the x-axis is time.”\n\nWrite a short response correcting them. Your answer must explicitly address:\n1) what the x-axis does (and does not) represent,\n2) what the y-axis represents,\n3) what *width* actually encodes, and\n4) a practical implication for performance tuning (how you would use the graph).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A correct response should explain that the x-axis is not a timeline and is typically arbitrary/alphabetical layout to fit boxes; the y-axis is call stack depth (root at bottom, deeper calls above); width represents total sampled time attributed to a function (often inclusive of its callees), so wide regions are hotspots; implication: you optimize the widest boxes/paths (hot code paths) rather than assuming left-to-right is execution order.",
+      "explanation": "Flamegraphs aggregate many stack samples into a single picture of where time accumulates, not when it happens. Misreading the x-axis as time leads to incorrect conclusions about program phases. Correct interpretation focuses on stack depth (y-axis) and time accumulation (width) to prioritize optimization on the dominant code paths.",
+      "difficulty": "advanced",
+      "tags": [
+        "flamegraph",
+        "axis-meaning",
+        "profiling-misconceptions",
+        "inclusive-time",
+        "optimization-strategy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You open a flamegraph and see a very wide box labeled `regex_match` near the top of a tall stack:\n\n```\nmain\n └── load_data\n       └── parse_file\n             └── regex_match\n```\n\nWhich interpretation best matches what the flamegraph is telling you?",
+      "question_type": "mc",
+      "options": [
+        "A. `regex_match` executed earliest in time and therefore appears to the right",
+        "B. `regex_match` is deep in the call stack, and a lot of total time is associated with it (as a hotspot)",
+        "C. `regex_match` uses the most memory, and width encodes allocations",
+        "D. The color of `regex_match` indicates it is system code and therefore slow"
+      ],
+      "correct_answer": "B",
+      "explanation": "Vertical position indicates stack depth (higher = deeper call stack). Width indicates where time accumulates (hotspots). The x-axis is not time-ordered, and color is usually decorative unless a specific tool documents a mapping.",
+      "difficulty": "intermediate",
+      "tags": [
+        "flamegraph-interpretation",
+        "stack-traces",
+        "hotspots",
+        "call-stack",
+        "performance-tuning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a typical CPU flamegraph, what does the width of a function’s box represent?",
+      "question_type": "mc",
+      "options": [
+        "A. The time order in which the function was executed",
+        "B. The total time accumulated in that function and its callees (across samples)",
+        "C. The recursion depth of that function",
+        "D. The amount of memory allocated by that function"
+      ],
+      "correct_answer": "B",
+      "explanation": "Flamegraphs aggregate sampled stack traces. A wider box means more samples included that function on the stack, which corresponds to more total time spent in that function and/or the functions it called. The x-axis is not a timeline, so width is not execution order.",
+      "difficulty": "beginner",
+      "tags": [
+        "flamegraph",
+        "profiling",
+        "cpu-profiling",
+        "visual-encoding",
+        "performance-analysis"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a bar chart with 4 bars centered at x = 0, 1, 2, 3. You want to show **extra** x-axis ticks between the bars (at x = 0.5, 1.5, 2.5) labeled \"mid\" while keeping the original category labels at x = 0,1,2,3.\n\nIn Matplotlib, explain (in words and/or a short code snippet) how you would accomplish this, and explicitly clarify the difference between the **bars/bins** and the **ticks** in your explanation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use additional tick positions and labels on the x-axis without changing bar positions. For example, set ticks at both the bar centers and midpoints, then provide matching labels (blank labels can be used where you don’t want text), or use a secondary x-axis for the midpoints. Example:\n\n```python\ncenters = [0,1,2,3]\nmidpoints = [0.5,1.5,2.5]\nax.bar(centers, values)\n\nxticks = centers + midpoints\nxlabels = ['A','B','C','D'] + ['mid','mid','mid']\nax.set_xticks(xticks)\nax.set_xticklabels(xlabels)\n```\n\nBars/bins are the rectangles drawn by `ax.bar(...)` centered at specified x-coordinates; ticks are axis markers/labels placed at chosen x-coordinates and can be located anywhere (including between bars) independently of the bars.",
+      "explanation": "The key idea is that ticks are independent axis annotations: you can place tick marks at any x-coordinate (including 0.5, 1.5, 2.5) by passing those positions to `set_xticks`, and you can assign any text via `set_xticklabels`. This does not create or move bars; bars are created and positioned by the `bar` call. A strong answer distinguishes the visual encoding (bars/bins) from axis annotation (ticks/labels) and provides a concrete approach (single combined tick list or a secondary axis).",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "xticks",
+        "axis-annotation",
+        "custom-ticks",
+        "bar-plot",
+        "tick-labeling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport matplotlib.pyplot as plt\n\ncategories = ['A','B','C','D']\nvalues     = [0.1,0.3,0.5,0.7]\n\nfig, ax = plt.subplots()\nax.bar(range(len(categories)), values)\n\nax.set_xticks([0, 1, 2, 3])\nax.set_xticklabels(['0.0–0.2','0.2–0.5','0.5–0.8','0.8–1.0'])\nplt.show()\n```\n\nWhich statement best describes what `set_xticks` and `set_xticklabels` do here?\n\nA. They change the bar heights to match the bin ranges.\nB. They move the bars to new x-positions and automatically resize bar widths.\nC. They place tick marks at x = 0,1,2,3 and display the provided strings as labels at those tick positions.\nD. They create four new bars (bins) corresponding to the four label strings.",
+      "question_type": "mc",
+      "options": [
+        "They change the bar heights to match the bin ranges.",
+        "They move the bars to new x-positions and automatically resize bar widths.",
+        "They place tick marks at x = 0,1,2,3 and display the provided strings as labels at those tick positions.",
+        "They create four new bars (bins) corresponding to the four label strings."
+      ],
+      "correct_answer": "C",
+      "explanation": "`ax.set_xticks([...])` specifies where the x-axis tick marks are drawn (their x-coordinates). `ax.set_xticklabels([...])` specifies the text shown at those tick positions. This affects axis annotation, not the underlying bars; the bars are created by `ax.bar(...)` and remain whatever that call defined.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "set_xticks",
+        "set_xticklabels",
+        "bar-plot",
+        "axis-labels"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Matplotlib bar plot, what is an **xtick**?\n\nA. The rectangular bar (bin) whose height represents a value\nB. A marker on the x-axis at a specific x-coordinate (optionally with a text label)\nC. The width of each bar in data units\nD. The grid line drawn behind the bars at each category",
+      "question_type": "mc",
+      "options": [
+        "The rectangular bar (bin) whose height represents a value",
+        "A marker on the x-axis at a specific x-coordinate (optionally with a text label)",
+        "The width of each bar in data units",
+        "The grid line drawn behind the bars at each category"
+      ],
+      "correct_answer": "B",
+      "explanation": "An xtick is the axis tick mark placed at a particular x-coordinate, often accompanied by a label. Bars/bins are the rectangles that encode the data values; they are distinct from ticks even if they are aligned (e.g., tick at the center of a bar).",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "xticks",
+        "axis-ticks",
+        "bar-plot",
+        "terminology"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Advanced scenario: Your data has many repeated `probability` values, so `pd.qcut(..., q=4, duplicates='drop')` sometimes returns fewer than 4 bins (e.g., only 3). You still want a robust plot with correct x-axis range labels.\n\nWrite a function snippet (or pseudocode) that:\n1) Computes `quartile_code` and `bins` with `qcut` using `labels=False` and `retbins=True`.\n2) Aggregates mean predicted and observed rate by `quartile_code`.\n3) Plots with Seaborn using `quartile_code` as x.\n4) Sets x-ticks and x-tick labels so they always match the *actual* number of bins returned (not hard-coded to 4).\n\nYour answer must explicitly show how you derive the tick positions and labels from `bins` (or from the aggregated codes) so the plot does not break when bins are dropped.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct approach:\n\n```python\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\ndef plot_by_qcut_bins(df):\n    df = df.copy()\n\n    codes, bins = pd.qcut(\n        df['probability'], q=4,\n        labels=False, retbins=True,\n        duplicates='drop', precision=3\n    )\n    df['quartile_code'] = codes\n\n    agg = (df.groupby('quartile_code', dropna=False)\n             .agg(mean_prob=('probability','mean'),\n                  obs_rate=('is_closed_won','mean'))\n             .reset_index())\n\n    plot_df = agg.melt('quartile_code', ['mean_prob','obs_rate'],\n                       var_name='type', value_name='rate')\n\n    # number of bins actually returned\n    n_bins = len(bins) - 1\n    labels = [f\"{bins[i]:.3f}–{bins[i+1]:.3f}\" for i in range(n_bins)]\n\n    fig, ax = plt.subplots(figsize=(8, 5))\n    sns.barplot(\n        data=plot_df, x='quartile_code', y='rate', hue='type',\n        order=sorted(agg['quartile_code'].tolist()), ax=ax\n    )\n\n    # Ensure tick positions align with integer category positions\n    ax.set_xticks(range(n_bins))\n    ax.set_xticklabels(labels, rotation=45, ha='right')\n    return ax\n```\n\nKey points: use `n_bins = len(bins)-1` so labels match dropped bins; keep integer `quartile_code` for plotting positions; set ticks to `range(n_bins)` (or `sorted(unique_codes)` if needed) and labels built from `bins`.",
+      "explanation": "With `duplicates='drop'`, `qcut` may return fewer bins than requested. A robust solution derives the number of bins from `bins` (`len(bins)-1`) and generates exactly that many labels. Because the bar plot uses integer category positions for `quartile_code`, tick locations must be those integer positions (commonly `0..n_bins-1`). This avoids mismatches where the plot has 3 categories but code tries to label 4, or where numeric bin edges are mistakenly used as tick positions.",
+      "difficulty": "advanced",
+      "tags": [
+        "pandas",
+        "qcut",
+        "duplicates-drop",
+        "robust-plotting",
+        "matplotlib-ticks",
+        "seaborn"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want the x-axis to show the numeric quartile ranges (e.g., `0.120–0.340`) rather than `0, 1, 2, 3`, but you do NOT want to re-bin with `pd.cut()`.\n\nGiven:\n\n```python\nplot_df = agg.melt(\n    id_vars='quartile_code',\n    value_vars=['mean_prob','obs_rate'],\n    var_name='type',\n    value_name='rate'\n)\n\nax = sns.barplot(\n    x='quartile_code', y='rate', hue='type',\n    data=plot_df,\n    order=agg['quartile_code']\n)\n```\n\nWhich additional code best replaces the tick labels with formatted bin ranges computed from `bins`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `ax.set_xticklabels(bins)`",
+        "B. `ax.set_xticks(bins); ax.set_xticklabels(bins)`",
+        "C. `labels = [f\"{bins[i]:.3f}–{bins[i+1]:.3f}\" for i in range(len(bins)-1)]; ax.set_xticks(range(len(labels))); ax.set_xticklabels(labels, rotation=45, ha='right')`",
+        "D. `sns.set_xticklabels(labels)`"
+      ],
+      "correct_answer": "C",
+      "explanation": "The bars are positioned at integer category locations (0..k-1), so you must set tick locations to those integer positions (`range(len(labels))`) and then apply the formatted strings. Passing `bins` directly as ticks/labels is incorrect because `bins` are numeric edges in data space, not the categorical x positions used by the bar plot. Seaborn also does not provide a `sns.set_xticklabels` function.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "seaborn",
+        "axis-ticks",
+        "qcut",
+        "data-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the provided approach, why is `labels=False` used in `pd.qcut(..., labels=False, retbins=True)` when preparing a Seaborn bar plot?\n\n```python\ndf['quartile_code'], bins = pd.qcut(\n    df['probability'], q=4,\n    retbins=True,\n    labels=False,\n    precision=3,\n    duplicates='drop'\n)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. It forces `qcut` to return bin edge strings that can be used directly as x-axis labels.",
+        "B. It returns integer bin codes (0..k-1) that are stable categorical positions for plotting, while bin edges are obtained separately via `retbins=True`.",
+        "C. It prevents `qcut` from dropping duplicate edges, ensuring exactly 4 bins even with many tied values.",
+        "D. It makes `qcut` compute equal-width bins instead of equal-frequency bins."
+      ],
+      "correct_answer": "B",
+      "explanation": "`labels=False` makes `qcut` return integer codes for each bin rather than interval objects or custom labels. Those integer codes are convenient for grouping (`groupby('quartile_code')`) and for Seaborn to position bars consistently on the x-axis. Separately, `retbins=True` returns the numeric bin edges, which can be formatted into human-readable strings and applied later via `ax.set_xticklabels(...)`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pandas",
+        "qcut",
+        "seaborn",
+        "tick-labels",
+        "binning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building a state-level choropleth with **Folium** using a GeoJSON file of U.S. states. Your DataFrame `df` has columns `state_code` (two-letter abbreviations) and `value`.\n\nWrite a code snippet (or describe precisely) how you would configure `folium.Choropleth` so that the values in `df.state_code` correctly match the GeoJSON state identifier. Your answer must:\n- Use `columns=[\"state_code\", \"value\"]`\n- Provide a correct `key_on` value that matches a GeoJSON property containing the two-letter code (as in the source)\n- Briefly explain what `key_on` does and what goes wrong if it doesn’t match\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```python\nimport folium, json\n\nm = folium.Map(location=[48, -102], zoom_start=3)\nwith open(\"us-states.json\") as f:\n    states_geo = json.load(f)\n\nfolium.Choropleth(\n    geo_data=states_geo,\n    data=df,\n    columns=[\"state_code\", \"value\"],\n    key_on=\"feature.properties.STUSPS\",\n    fill_color=\"PuBu\"\n).add_to(m)\n```\n\n`key_on` tells Folium which GeoJSON field (per feature) should be used as the join key to match the first column in `columns` (here, `state_code`). If `key_on` points to the wrong property name/path, the join fails and states will not be colored correctly (often resulting in missing/blank fills or all regions using a default style).",
+      "explanation": "Folium’s `Choropleth` performs a data join between the tabular DataFrame and the GeoJSON features. The source example uses `key_on=\"feature.properties.STUSPS\"`, where `STUSPS` is a common property for two-letter state abbreviations. Correctly specifying `key_on` is essential because Folium needs to know which GeoJSON attribute to match against your `state_code` values.",
+      "difficulty": "advanced",
+      "tags": [
+        "folium",
+        "geojson",
+        "choropleth",
+        "key_on",
+        "data-join",
+        "us-states"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the Plotly Express choropleth snippet below:\n\n```python\nimport plotly.express as px\n\ndf = px.data.election()\nfig = px.choropleth(\n    df,\n    locations=\"state\",\n    locationmode=\"USA-states\",\n    color=\"Maine\",\n    scope=\"usa\",\n    color_continuous_scale=\"Blues\",\n)\nfig.show()\n```\n\nWhich change is most directly required if your `locations` column contains **state FIPS codes** instead of **two-letter state abbreviations**?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Replace `scope=\"usa\"` with `scope=\"world\"`",
+        "B. Change `locationmode` to a mode that matches FIPS (e.g., use a FIPS-compatible location mode) and ensure `locations` contains those codes",
+        "C. Remove `color_continuous_scale` because FIPS codes are categorical",
+        "D. Replace `px.choropleth` with `px.scatter` because choropleths cannot use FIPS"
+      ],
+      "correct_answer": "B",
+      "explanation": "Plotly choropleths need the `locations` values to match the chosen `locationmode`. The source notes you can pass **state abbreviations or FIPS codes**, which implies you must use a **location mode compatible with the identifier type**. Changing `scope` affects geographic extent, not identifier matching; color scale is independent of whether locations are FIPS; and choropleths can use FIPS identifiers.",
+      "difficulty": "intermediate",
+      "tags": [
+        "plotly-express",
+        "choropleth",
+        "fips",
+        "locationmode",
+        "us-map"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a **quick, interactive** U.S. state-level choropleth for a dashboard where users can hover and zoom. Which library choice best matches this requirement based on the source content?",
+      "question_type": "mc",
+      "options": [
+        "A. GeoPandas + Matplotlib",
+        "B. Plotly",
+        "C. Seaborn",
+        "D. Pillow (PIL)"
+      ],
+      "correct_answer": "B",
+      "explanation": "The source content explicitly recommends **Plotly** (and Folium) for quick, interactive dashboards. GeoPandas + Matplotlib is positioned as better for publication-quality static maps, while Seaborn and PIL are not map/choropleth-focused geospatial visualization tools.",
+      "difficulty": "beginner",
+      "tags": [
+        "plotly",
+        "choropleth",
+        "interactive-maps",
+        "library-selection",
+        "us-states"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are repeatedly re-drawing the same multi-category boxplot during exploratory analysis, and performance is poor. You decide to pre-aggregate quartiles/whiskers once in Pandas and then render using Matplotlib's `ax.bxp`.\n\nGiven a `grouped` DataFrame with columns: `category`, `q1`, `med`, `q3`, `lo`, `hi`, fill in the missing parts to construct the stats dicts correctly for `ax.bxp`, and explain why this can be faster than `sns.boxplot`.\n\n```python\nimport matplotlib.pyplot as plt\n\nstats = []\nfor _, row in grouped.iterrows():\n    stats.append({\n        'label': row['category'],\n        'whislo': row['____'],\n        'q1': row['____'],\n        'med': row['____'],\n        'q3': row['____'],\n        'whishi': row['____'],\n        'fliers': []\n    })\n\nfig, ax = plt.subplots()\nax.bxp(stats, showfliers=False)\nplt.show()\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Fill-ins:\n- `whislo`: `lo`\n- `q1`: `q1`\n- `med`: `med`\n- `q3`: `q3`\n- `whishi`: `hi`\n\nCompleted snippet:\n```python\nstats = []\nfor _, row in grouped.iterrows():\n    stats.append({\n        'label': row['category'],\n        'whislo': row['lo'],\n        'q1': row['q1'],\n        'med': row['med'],\n        'q3': row['q3'],\n        'whishi': row['hi'],\n        'fliers': []\n    })\n```\n\nWhy faster: Seaborn's `boxplot` computes quartiles/whiskers (and potentially outliers) by scanning the raw data per category each time you plot. Pre-aggregating moves that heavy computation to a one-time Pandas step (which you can also cache), and `ax.bxp` draws directly from the precomputed summary stats without re-processing all raw points on every redraw.",
+      "explanation": "`ax.bxp` expects a list of dictionaries with specific keys (`label`, `q1`, `med`, `q3`, `whislo`, `whishi`, `fliers`). Providing these lets Matplotlib skip the expensive per-category quantile/outlier computation. This is especially beneficial when the dataset is large and the plot is regenerated frequently (e.g., interactive tweaking), because the expensive part is amortized or cached.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "ax.bxp",
+        "preaggregation",
+        "quantiles",
+        "caching",
+        "seaborn",
+        "boxplot",
+        "performance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a DataFrame `df` with columns `category` and `value`, and Seaborn boxplots are slow because each category has hundreds of thousands of rows. Write code to down-sample ~10% of the data *within each category* in a reproducible way, then plot a Seaborn boxplot from the sampled data.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport seaborn as sns\n\nsampled = df.groupby('category', group_keys=False).sample(frac=0.1, random_state=42)\nsns.boxplot(x='category', y='value', data=sampled)\n```",
+      "explanation": "Down-sampling reduces the number of rows Seaborn must scan to compute quartiles/whiskers and reduces the amount of work needed for any additional elements. Grouped sampling ensures each category remains represented (rather than a global sample that might under-sample small groups). `random_state` makes the sample reproducible.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pandas",
+        "groupby",
+        "sample",
+        "seaborn",
+        "boxplot",
+        "downsampling",
+        "performance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When rendering a Seaborn boxplot is slow, which change most directly reduces the cost of drawing many outlier points (\"fliers\")?\n\n```python\nimport seaborn as sns\nsns.boxplot(x='category', y='value', data=df, ____)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. showfliers=False",
+        "B. dodge=False",
+        "C. ci=None",
+        "D. estimator='median'"
+      ],
+      "correct_answer": "A",
+      "explanation": "Outliers (fliers) are drawn as individual marker artists; when there are many points, creating and rendering those markers can dominate draw time. Setting `showfliers=False` skips drawing them, reducing rendering overhead. The other options are not relevant to boxplot outlier rendering (`ci`/`estimator` apply to other plot types; `dodge` is for grouped categorical plots).",
+      "difficulty": "beginner",
+      "tags": [
+        "seaborn",
+        "boxplot",
+        "outliers",
+        "performance",
+        "showfliers"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to plot win rate by `product_type` but with two requirements:\n1) Bars must be sorted by win rate descending.\n2) If two product types have the same win rate, break ties by sorting the product type label alphabetically (A→Z).\n\nWhich option best satisfies both requirements?\n\nAssume `df` has columns `product_type` and `closed_won` (0/1).",
+      "question_type": "mc",
+      "options": [
+        "A. `win_rates = df.groupby('product_type')['closed_won'].mean().sort_values(ascending=False)`",
+        "B. `win_rates = (df.groupby('product_type')['closed_won'].mean().reset_index().sort_values(['closed_won','product_type'], ascending=[False, True]).set_index('product_type')['closed_won'])`",
+        "C. `win_rates = df.sort_values('closed_won', ascending=False).groupby('product_type')['closed_won'].mean()`",
+        "D. `win_rates = df.groupby('product_type')['closed_won'].mean().sort_index()`"
+      ],
+      "correct_answer": "B",
+      "explanation": "A sorts only by win rate; it does not guarantee alphabetical ordering for ties because the relative order of equal values is not explicitly defined by a secondary key. B computes win rates, converts to a DataFrame, and sorts by two keys: win rate descending and product_type ascending, then restores the Series for plotting. C sorts individual rows before grouping, which does not enforce a tie-break order on the aggregated results. D sorts alphabetically only, ignoring win rate ordering.",
+      "difficulty": "advanced",
+      "tags": [
+        "pandas",
+        "multi-key-sort",
+        "tie-breaking",
+        "groupby",
+        "win-rate",
+        "bar-chart-ordering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a bar chart of win rate by `region`, sorted from highest to lowest win rate. Fill in the missing line(s) to compute `win_rates` correctly.\n\n```python\nwin_rates = (\n    df.groupby('region')['closed_won']\n      .____\n)\n\nwin_rates.plot(kind='bar')\n```\n\nAssume `closed_won` is coded as 1 for won and 0 for lost.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use mean to compute win rate and then sort descending, e.g.\n\n```python\nwin_rates = (\n    df.groupby('region')['closed_won']\n      .mean()\n      .sort_values(ascending=False)\n)\n```",
+      "explanation": "With 1/0 outcomes, the mean of `closed_won` within each group equals the proportion of wins (win rate). Sorting the resulting Series by value in descending order ensures the plotted bars appear from highest to lowest win rate.",
+      "difficulty": "intermediate",
+      "tags": [
+        "win-rate",
+        "binary-data",
+        "pandas",
+        "groupby",
+        "mean",
+        "sort_values",
+        "bar-chart"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the code below, which change ensures the bars in the chart are ordered from highest win rate (left) to lowest win rate (right)?\n\n```python\nwin_rates = df.groupby(variable)['closed_won'].mean()\nwin_rates.plot(kind='bar')\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Add `.sort_values(ascending=False)` before plotting",
+        "B. Replace `.mean()` with `.sum()`",
+        "C. Add `plt.ylim(0, 1)` before plotting",
+        "D. Call `plt.xticks(rotation=45)` to reorder categories"
+      ],
+      "correct_answer": "A",
+      "explanation": "Pandas plots bars in the order of the Series index. To order bars by the win-rate values, you must sort the computed win rates by value before plotting. `.sort_values(ascending=False)` sorts from largest to smallest, producing a left-to-right decreasing bar chart. The other options affect aggregation, axis limits, or label appearance—not the ordering of categories.",
+      "difficulty": "beginner",
+      "tags": [
+        "pandas",
+        "bar-chart",
+        "sorting",
+        "groupby",
+        "sort_values"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You see two features in a SHAP violin summary:\n\n- Feature A (`compensation_group`): a narrow, tight violin slightly left of zero.\n- Feature B (`recent_job_rank`): a very thin violin concentrated around zero.\n\n1) What does each shape imply about *impact magnitude* and *variance across samples*?\n2) If you want a feature that provides a consistent directional effect across most samples, which feature is the better candidate and why?\n\nAnswer in 4–8 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Feature A’s narrow/tight violin slightly left of zero implies a consistent, moderate negative impact (most SHAP values are below 0) with low variance across samples. Feature B’s very thin violin centered near zero implies the feature’s impact is generally small (near-zero SHAP) and also low variance (consistent but weak effect). 2) Feature A is the better candidate for a consistent directional effect because its distribution is consistently negative (left of zero), meaning it reliably pushes predictions down, whereas Feature B is consistently near zero and therefore does not meaningfully push predictions in either direction.",
+      "explanation": "The position of the violin relative to zero indicates direction (negative vs positive contribution), while the spread/width indicates how much the effect varies and where samples concentrate. A tight distribution left of zero suggests a stable negative contribution across many samples; a thin distribution around zero suggests minimal contribution even if consistent.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "violin-plot",
+        "variance",
+        "effect-size",
+        "feature-importance",
+        "interpretation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A SHAP violin for `job_PortalState` shows a large, wide blob on the left (around SHAP -4 to -2) and a smaller blob on the right (around SHAP +2 to +4). Which interpretation best matches this shape?\n\nAssume negative SHAP values push the prediction down and positive SHAP values push it up.",
+      "question_type": "mc",
+      "options": [
+        "A. The feature has no effect because the distribution is symmetric around zero",
+        "B. Most samples have a negative impact from this feature, but a smaller subset has a positive impact",
+        "C. The model is biased because any bimodal violin shape indicates data leakage",
+        "D. The feature values are constant across samples, causing two separate SHAP peaks"
+      ],
+      "correct_answer": "B",
+      "explanation": "A wide region on the negative side indicates many samples where `job_PortalState` contributes negatively (pushes predictions down). A smaller positive-side blob indicates fewer samples where it contributes positively. Bimodality can occur naturally when different groups of samples experience different effects; it does not automatically imply leakage (C), and constant feature values would not typically create two distinct SHAP modes (D).",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "violin-plot",
+        "bimodal-distribution",
+        "feature-impact",
+        "model-interpretability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a SHAP violin plot, what does the *width* of a violin at a particular SHAP value indicate?",
+      "question_type": "mc",
+      "options": [
+        "A. The number of features in the model that have non-zero SHAP values",
+        "B. The density (how many samples) whose SHAP values fall near that value",
+        "C. The model's overall accuracy for samples in that SHAP range",
+        "D. The average feature value (high vs low) at that SHAP value"
+      ],
+      "correct_answer": "B",
+      "explanation": "In a SHAP violin plot, the violin is a density plot of SHAP values for a feature. Where the violin is widest, more samples have SHAP values in that region. Option D confuses width with the color gradient, which indicates whether high/low feature values are associated with those SHAP values.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "violin-plot",
+        "density",
+        "interpretation",
+        "shap-values"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A dataset has hundreds of thousands of rows, and your SHAP beeswarm (`plot_type=\"dot\"`) becomes visually cluttered. You still want to compare the *distribution* (spread, density) of SHAP impacts per feature rather than only a single aggregated importance score.\n\n1) Which `plot_type` would you choose in `shap.summary_plot`?\n2) Briefly justify why it is a better fit than both `plot_type=\"dot\"` and `plot_type=\"bar\"` for this scenario.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Use `plot_type=\"violin\"`.\n2) Violin plots summarize the distribution of SHAP values per feature using a smoothed density (KDE), which stays readable with very large sample sizes. It preserves distributional information (unlike `bar`, which collapses to mean(|SHAP|) and loses direction/spread) while avoiding the overplotting/clutter of individual dots in the beeswarm (`dot`) for massive datasets.",
+      "explanation": "The violin summary plot is specifically described as similar to the dot plot but using violin distributions instead of individual points, making it smoother and easier to read for large datasets. It retains the key goal—understanding how SHAP values are distributed per feature—without the clutter of plotting every sample, and without reducing everything to a single global scalar as the bar plot does.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "violin-plot",
+        "distribution-visualization",
+        "large-datasets",
+        "overplotting",
+        "data-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a *global* feature importance ranking that aggregates per-sample effects into a single importance value per feature, and you do **not** need per-sample dots or color encoding. Which code best matches this requirement?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `shap.summary_plot(shap_values, X, plot_type=\"dot\")`",
+        "B. `shap.summary_plot(shap_values, X, plot_type=\"bar\")`",
+        "C. `shap.summary_plot(shap_values, X, plot_type=\"violin\")`",
+        "D. `shap.dependence_plot(\"age\", shap_values, X)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "The bar-type summary plot aggregates absolute SHAP values across all rows and displays mean(|SHAP|) per feature as bars, producing a simple global ranking. Dot and violin retain per-sample/distributional detail, while dependence_plot is a different function used to show a feature’s value vs its SHAP value (often for interaction inspection).",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "bar-plot",
+        "global-importance",
+        "mean-absolute-shap",
+        "data-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In SHAP, what does the default `shap.summary_plot(shap_values, X)` (i.e., `plot_type=\"dot\"`) primarily show?\n\n```python\nshap.summary_plot(shap_values, X)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. A beeswarm of per-sample SHAP values, with color indicating the feature value (low to high)",
+        "B. A bar chart of mean feature values, ordered by correlation with the target",
+        "C. A single-row explanation of one prediction using cumulative contributions",
+        "D. A heatmap matrix of SHAP values across samples and features"
+      ],
+      "correct_answer": "A",
+      "explanation": "The default summary plot is the dot/beeswarm plot: each dot is an observation, the x-axis is the SHAP value (impact on model output), and color encodes the original feature value (low→high). It simultaneously conveys global importance (feature ordering) and directionality/relationship via the color gradient and spread.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "beeswarm",
+        "dot-plot",
+        "feature-importance",
+        "data-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the **fundamental difference** between a SHAP summary dot plot and a SHAP violin plot. Your answer must address:\n1) what is being shown (individual samples vs. density),\n2) how to interpret the “width” in a violin plot,\n3) what the color typically represents in both plots,\n4) one situation where the dot plot is preferable and one where the violin plot is preferable.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Dot plot shows individual samples: each dot is one sample’s SHAP value for a feature; violin plot shows a smoothed density distribution of SHAP values per feature (KDE-like summary of where dots would be).\n2) In a violin plot, width at a given SHAP value indicates how common (high density) that SHAP value is for the feature.\n3) In both, color typically encodes the original feature value (e.g., low to high), helping relate feature value to SHAP impact.\n4) Dot plot is preferable when you want to see per-sample patterns/outliers and how feature values correlate with SHAP across samples; violin plot is preferable when there are many samples and you want the overall distribution shape/range (and possibly multi-modality) without overplotting.",
+      "explanation": "The key conceptual distinction is sample-level vs. distribution-level representation. Dot plots preserve individual points (good for granular relationships and outliers) while violin plots aggregate into a density shape (good for understanding the overall distribution when the number of samples makes dots unreadable). Width in a violin plot is a density cue, and color in both commonly maps feature value to connect feature magnitude with SHAP impact direction/magnitude.",
+      "difficulty": "advanced",
+      "tags": [
+        "shap",
+        "dot_plot",
+        "violin_plot",
+        "density",
+        "kde",
+        "feature_value_color",
+        "model_explainability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a dataset with hundreds of thousands of samples, and your SHAP summary dot plot looks like a dense cloud where it’s hard to see the overall shape of the distribution per feature. Which plot type is most appropriate to better reveal the **overall distribution pattern** of SHAP values for each feature, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Dot plot, because it shows the KDE-smoothed distribution directly",
+        "B. Violin plot, because it visualizes a smoothed density (KDE-like) distribution of SHAP values per feature",
+        "C. Bar plot, because it shows the full range of SHAP values without overlap",
+        "D. Heatmap, because it replaces SHAP values with feature importance ranks"
+      ],
+      "correct_answer": "B",
+      "explanation": "A violin plot summarizes the distribution of SHAP values within each feature using a smoothed density shape (often described as KDE-like). This makes it easier to see the overall distribution (e.g., multi-modality, spread) when individual dots would heavily overlap in a dot plot.",
+      "difficulty": "intermediate",
+      "tags": [
+        "shap",
+        "violin_plot",
+        "kde",
+        "overplotting",
+        "distribution",
+        "data_visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a SHAP summary **dot plot** (default), what does each dot represent?",
+      "question_type": "mc",
+      "options": [
+        "A single sample’s SHAP value for that feature",
+        "The kernel density estimate (KDE) of SHAP values for that feature",
+        "The mean SHAP value for that feature across all samples",
+        "The feature’s importance rank computed from model gain"
+      ],
+      "correct_answer": "A",
+      "explanation": "In the SHAP summary dot plot, each dot corresponds to one sample (one row) and shows that sample’s SHAP value for the given feature. Density is implied by stacking/jittering many dots, not by a KDE curve.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "dot_plot",
+        "interpretability",
+        "data_visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response: You are annotating bars in a Seaborn `countplot` for the “top 6” categories. Your code computes the top categories with `dropna=False`, and you pass the resulting index as `order`. The plot shows an empty slot (no bar) and your annotations become misaligned.\n\nWrite a corrected code snippet that ensures:\n1) `order` contains only categories that will actually be plotted (no `NaN`-only/zero-count categories), and\n2) missing values are either excluded from `order` OR explicitly shown as a labeled category.\n\nUse one of the fixes described in the source content, and briefly explain why it works.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid solution is to fill missing values with a placeholder before counting and plotting:\n\n```python\nimport seaborn as sns\n\ncol = \"category\"\n\n# Make missing explicit\ns = df[col].fillna(\"Missing\")\n\n# Compute top 6 from the same data that will be plotted\ncounts = s.value_counts().head(6)\norder = counts.index\n\nax = sns.countplot(x=s, order=order)\n```\n\nExplanation: `countplot` drops NaNs, so an `order` derived from counts that include NaNs can contain categories that won’t be plotted, producing an empty slot and misaligned annotations. Filling NaNs first ensures every category in `order` exists in the plotted data and has a visible tick label.\n\n(Alternative acceptable solution: compute counts with default `value_counts()` (which drops NaNs), or filter `counts = counts[counts > 0]` before taking `head(6)` to avoid zero-count categories.)",
+      "explanation": "A correct answer must align the data used to compute `order` with the data actually being plotted. If `order` includes `NaN` (or any category not present in the plotted series), Seaborn will not draw a bar for it, leaving an empty position and causing annotation logic (often based on bar patches) to mismatch. Filling NaNs with a placeholder (or excluding NaNs by using default `value_counts()` / filtering to `counts > 0`) guarantees each entry in `order` corresponds to a real bar and label.",
+      "difficulty": "advanced",
+      "tags": [
+        "seaborn",
+        "countplot",
+        "annotations",
+        "missing-values",
+        "order-parameter",
+        "pandas",
+        "debugging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a `countplot` of the top 6 categories in `df[col]`, but your current plot shows a blank tick label / missing bar because `order` contains a category that isn't actually plotted (e.g., `NaN`). Which approach best fixes the issue while also making missing values explicitly visible as a category?\n\n```python\n# Current (problematic) approach\ncounts = df[col].value_counts(dropna=False)\norder = counts.head(6).index\nsns.countplot(x=col, data=df, order=order)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Keep `dropna=False`, but set `sns.set_theme(style=\"white\")` so NaNs render correctly",
+        "B. Convert the column to numeric using `pd.to_numeric(df[col], errors=\"coerce\")` before plotting",
+        "C. Fill missing values with a placeholder string (e.g., \"Missing\"), then compute counts/order from the filled series and plot that series",
+        "D. Add `dropna=False` to `sns.countplot(...)` so Seaborn will include NaNs in the bars"
+      ],
+      "correct_answer": "C",
+      "explanation": "Seaborn’s `countplot` does not have a `dropna` parameter to force inclusion of NaNs, and it will silently drop missing values during plotting. If you want missing values to appear as their own bar with a visible label, you must transform the data first (e.g., `df_plot = df[col].fillna(\"Missing\")`), then compute `value_counts()` and `order` from `df_plot`, and plot `x=df_plot`. This ensures every entry in `order` corresponds to actual plotted data.",
+      "difficulty": "intermediate",
+      "tags": [
+        "seaborn",
+        "countplot",
+        "fillna",
+        "missing-values",
+        "categorical-data",
+        "top-n"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Seaborn, you compute an `order` list for `sns.countplot` that includes a `NaN` category (e.g., from `value_counts(dropna=False)`). What is the most likely visible symptom in the plot?\n\n```python\ncounts = df[\"category\"].value_counts(dropna=False)\norder = counts.head(6).index\nsns.countplot(x=\"category\", data=df, order=order)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Seaborn raises a ValueError because `order` contains `NaN`",
+        "B. The `NaN` category is silently dropped, leaving an empty slot (no bar) for that position in `order`",
+        "C. Seaborn automatically converts `NaN` to the string \"NaN\" and draws a bar labeled \"NaN\"",
+        "D. Seaborn imputes missing values using the mode and draws the bar for the imputed category"
+      ],
+      "correct_answer": "B",
+      "explanation": "Seaborn’s `countplot` drops missing values by default when it counts/plots. If your `order` includes a category that doesn’t appear in the plotted (non-missing) data—commonly `NaN`—Seaborn won’t draw a bar for it. The axis may still reserve a tick position because you requested it via `order`, producing an apparent “empty slot” and potentially missing/blank labeling.",
+      "difficulty": "beginner",
+      "tags": [
+        "seaborn",
+        "countplot",
+        "missing-values",
+        "order-parameter",
+        "pandas-value_counts"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Seaborn, what is the relationship between `sns.set()` and `sns.set_theme()`? Briefly explain which one you should prefer in new code and why.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`sns.set_theme()` is the newer API for setting Seaborn's global plotting aesthetics; `sns.set()` still works as an alias for backward compatibility. In new code, prefer `sns.set_theme()` because it is the explicit, current function name and better reflects the intent of setting the overall theme.",
+      "explanation": "`sns.set_theme()` replaced the older `sns.set()` naming, but Seaborn keeps `sns.set()` as an alias so older notebooks/scripts continue to run. Using `sns.set_theme()` in new code improves clarity and aligns with the modern Seaborn API while producing the same kind of global aesthetic configuration.",
+      "difficulty": "advanced",
+      "tags": [
+        "seaborn",
+        "set_theme",
+        "set",
+        "backward-compatibility",
+        "api-evolution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want all subsequent Seaborn plots to use a dark grid background and the \"husl\" color palette. Which code best accomplishes this?\n\n```python\nimport seaborn as sns\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A) sns.set_palette(\"husl\", style=\"darkgrid\")",
+        "B) sns.set_theme(style=\"darkgrid\", palette=\"husl\")",
+        "C) sns.set_theme(palette=\"darkgrid\", style=\"husl\")",
+        "D) sns.set_style(\"darkgrid\"); sns.set_palette(\"husl\"); sns.configure()"
+      ],
+      "correct_answer": "B",
+      "explanation": "sns.set_theme(style=..., palette=...) is the intended API to set the overall theme (style + palette) for subsequent plots. Option A is incorrect because sns.set_palette() does not accept a style argument and does not set grid/background. Option C swaps arguments incorrectly (style expects values like \"darkgrid\"; palette expects palette names like \"husl\"). Option D includes sns.configure(), which does not exist in Seaborn (though using set_style + set_palette can work, the presence of sns.configure() makes the option incorrect as written).",
+      "difficulty": "intermediate",
+      "tags": [
+        "seaborn",
+        "set_theme",
+        "style",
+        "palette",
+        "darkgrid",
+        "husl"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which Seaborn function is used to set the overall visual theme/style (background, grid, fonts, and default palette) for all subsequent plots in a notebook/session?",
+      "question_type": "mc",
+      "options": [
+        "A) sns.set_palette()",
+        "B) sns.set_theme()",
+        "C) sns.configure()",
+        "D) sns.style()"
+      ],
+      "correct_answer": "B",
+      "explanation": "sns.set_theme() configures Seaborn's global aesthetics in one call, including style elements (e.g., background and grid), context/font scaling, and the default color palette. sns.set_palette() only changes the palette, and sns.configure()/sns.style() are not Seaborn functions.",
+      "difficulty": "beginner",
+      "tags": [
+        "seaborn",
+        "set_theme",
+        "plot-aesthetics",
+        "styling",
+        "basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport matplotlib.pyplot as plt\n\nplt.plot([1, 2, 3], [4, 5, 6])\nplt.title(\n    \"Sample Plot\",\n    fontsize=14,\n    color='darkblue',\n    loc='left',\n    pad=20,\n    fontdict={'weight': 'bold', 'style': 'italic'}\n)\nplt.show()\n```\n\nExplain what each of the following parameters changes in the title’s appearance/placement: `fontsize`, `color`, `loc`, `pad`, and `fontdict` (including what `weight` and `style` do).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`fontsize` sets the size of the title text; `color` sets the text color; `loc` sets the horizontal alignment/placement of the title within the axes (e.g., left/center/right); `pad` adds extra spacing (padding) between the title and the axes, moving it farther away as the value increases; `fontdict` provides a dictionary of font properties—here `weight: 'bold'` makes the title bold and `style: 'italic'` makes it italic.",
+      "explanation": "These parameters control common title customizations: typography (`fontsize`, `color`, and `fontdict`) and placement (`loc` and `pad`). `fontdict` is specifically used to pass multiple font properties at once, such as bold weight and italic style.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "plt.title",
+        "pad",
+        "fontdict",
+        "text-properties"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want the title to appear on the left side of the axes, be dark blue, and have a larger font size. Which `plt.title()` call correctly applies these customizations?\n\nAssume a plot has already been created.\n",
+      "question_type": "mc",
+      "options": [
+        "plt.title(\"Sample Plot\", fontsize=14, color=\"darkblue\", loc=\"left\")",
+        "plt.title(\"Sample Plot\", size=14, textcolor=\"darkblue\", align=\"left\")",
+        "plt.title(\"Sample Plot\", fontsize=14, fontcolor=\"darkblue\", position=\"left\")",
+        "plt.title(\"Sample Plot\", fontsize=14, color=\"darkblue\", location=\"left\")"
+      ],
+      "correct_answer": "A",
+      "explanation": "Matplotlib’s `plt.title()` supports parameters such as `fontsize`, `color`, and `loc`. The other options use non-existent or incorrect parameter names (e.g., `textcolor`, `align`, `position`, `location`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "plt.title",
+        "fontsize",
+        "color",
+        "loc"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, what does `plt.title()` do?\n\n```python\nimport matplotlib.pyplot as plt\nplt.plot([1, 2, 3], [4, 5, 6])\nplt.title(\"My Plot Title\")\nplt.show()\n```",
+      "question_type": "mc",
+      "options": [
+        "Adds a title to the current axes (the current plot area)",
+        "Adds a title to the entire figure, independent of axes",
+        "Adds labels to both the x-axis and y-axis",
+        "Creates a legend entry with the given text"
+      ],
+      "correct_answer": "A",
+      "explanation": "`plt.title()` sets the title of the current axes (the active plot). Figure-level titles are typically handled with `fig.suptitle(...)`, and axis labels use `plt.xlabel()`/`plt.ylabel()`.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "plt.title",
+        "axes",
+        "plot-annotation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a desktop GUI backend, a teammate writes a batch plotting script that sometimes saves blank images and sometimes hangs indefinitely. They propose these changes:\n\n1) Replace `plt.show()` with `plt.show(block=False)`\n2) Call `plt.savefig(...)` after `plt.show(block=False)`\n3) Add `plt.close()` at the end of each iteration\n\nWhich statement best evaluates this proposal?",
+      "question_type": "mc",
+      "options": [
+        "A. This fully fixes both problems; saving after `show(block=False)` is always safe because non-blocking show never clears figures.",
+        "B. This fixes the hanging but may still risk blank images; safest is to call `fig.savefig(...)` before any `show(...)`, then close the figure explicitly.",
+        "C. This cannot fix the hanging because `block=False` is ignored by all GUI backends.",
+        "D. This fixes blank images but makes hanging worse because `plt.close()` blocks until the window is closed."
+      ],
+      "correct_answer": "B",
+      "explanation": "`plt.show(block=False)` addresses the blocking/hanging behavior in GUI backends, but it does not guarantee that figures will never be cleared/closed in a way that affects subsequent stateful calls. The robust pattern is: create a `Figure`, save via `fig.savefig(...)` before showing (if showing is needed), and then `plt.close(fig)` to release resources. Saving after show can still be fragile depending on backend and state.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "gui-backends",
+        "blocking",
+        "figure-lifecycle",
+        "stateful-vs-oo"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to generate and save many plots in a loop without the script pausing for GUI windows, but you still want the option to briefly display each figure. Rewrite the following code to avoid blocking and avoid saving empty images:\n\n```python\nimport matplotlib.pyplot as plt\n\nfor i in range(3):\n    plt.plot([0, 1, 2], [i, i+1, i+2])\n    plt.show()\n    plt.savefig(f\"plot_{i}.png\")\n```\n\nProvide corrected code using the object-oriented API and include any needed `show`/`close` calls.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution:\n\n```python\nimport matplotlib.pyplot as plt\n\nfor i in range(3):\n    fig, ax = plt.subplots()\n    ax.plot([0, 1, 2], [i, i+1, i+2])\n    fig.savefig(f\"plot_{i}.png\")   # save before show\n    plt.show(block=False)           # optional non-blocking display\n    plt.close(fig)                  # free memory / avoid figure accumulation\n```\n",
+      "explanation": "Using `fig, ax = plt.subplots()` avoids relying on the global state. Saving with `fig.savefig(...)` before any `show()` prevents the figure from being cleared before saving. `plt.show(block=False)` avoids blocking the loop in GUI backends, and `plt.close(fig)` prevents memory/figure handle accumulation across iterations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "object-oriented-api",
+        "non-blocking-show",
+        "plt.close",
+        "batch-plotting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following code and the saved PNG is blank:\n\n```python\nimport matplotlib.pyplot as plt\n\nplt.plot([1, 2, 3], [1, 4, 9])\nplt.show()\nplt.savefig(\"figure1.png\")\n```\n\nWhat is the most likely reason?",
+      "question_type": "mc",
+      "options": [
+        "A. `plt.savefig()` only works if you call `plt.grid(True)` first.",
+        "B. `plt.show()` can flush/close the current figure in many backends, so `savefig()` runs after the figure is cleared.",
+        "C. `plt.plot()` returns data that must be assigned to a variable before saving.",
+        "D. PNG format cannot be written after any GUI window has been opened."
+      ],
+      "correct_answer": "B",
+      "explanation": "With Matplotlib’s stateful API, `plt.show()` renders the current figure and, in many backends, will clear/close it afterward. If you call `plt.savefig()` after `plt.show()`, there may be no active figure left to save, resulting in a blank image. The fix is to save before showing (or save via a `Figure` object).",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "plt.show",
+        "plt.savefig",
+        "stateful-api",
+        "backends"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write an `ax.legend(...)` call that (1) removes the legend title, (2) shrinks legend text, (3) shrinks the legend swatches/markers, and (4) places the legend outside the plot area to the right so it won’t overlap annotations. Use values consistent with the source content.\n\nAssume you already have:\n```python\nax = sns.barplot(...)\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid answer is:\n```python\nax.legend(\n    title='',\n    fontsize='small',\n    title_fontsize='small',\n    markerscale=0.7,\n    loc='upper left',\n    bbox_to_anchor=(1.05, 1),\n    borderaxespad=0\n)\n```",
+      "explanation": "This satisfies all four requirements: `title=''` removes the title, `fontsize` (and optionally `title_fontsize`) shrinks text, `markerscale=0.7` shrinks the legend handles, and `bbox_to_anchor` combined with `loc='upper left'` places the legend outside the axes to the right; `borderaxespad=0` helps tuck it tightly against the axes boundary.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "seaborn",
+        "legend",
+        "bbox_to_anchor",
+        "markerscale",
+        "annotations",
+        "overlap-avoidance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a Seaborn barplot where the legend overlaps the right side of the plot and covers bar annotations. Which snippet best moves the legend outside the axes on the right while also shrinking its text?\n\n```python\nax = sns.barplot(...)\n# choose the best legend call\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `ax.legend(loc='upper left', fontsize='small')`",
+        "B. `ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0, fontsize='small')`",
+        "C. `ax.legend(bbox_to_anchor=(0, 0), loc='lower right', fontsize='small')`",
+        "D. `ax.legend(markerscale=1.5, title_fontsize='small', loc='upper left')`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`bbox_to_anchor=(1.05, 1)` with `loc='upper left'` anchors the legend just outside the right edge of the axes, and `borderaxespad=0` removes extra padding. `fontsize='small'` shrinks the legend text. Option A doesn’t move it outside; C anchors to the lower area and is not the typical “outside right” placement; D changes marker size and title font but doesn’t move it out of the axes.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "seaborn",
+        "legend",
+        "bbox_to_anchor",
+        "loc",
+        "layout"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib/Seaborn, which `legend()` parameter is specifically used to shrink the size of the legend’s color swatches/markers (not the text)?",
+      "question_type": "mc",
+      "options": [
+        "A. markerscale",
+        "B. fontsize",
+        "C. loc",
+        "D. bbox_to_anchor"
+      ],
+      "correct_answer": "A",
+      "explanation": "`markerscale` scales the size of the legend handles (markers, patch sizes) relative to their default. `fontsize` affects legend text size, while `loc` and `bbox_to_anchor` control placement.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "seaborn",
+        "legend",
+        "markerscale",
+        "fontsize"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to quantify \"kinks\" (changes in slope) in a quartile-by-quartile win-rate curve, while being relatively insensitive to the overall linear trend. You compute the roughness metric based on second differences:\n\n\\[\n\\text{Roughness} = \\sum_{i=1}^{n-2} (obs_{i+2} - 2\\,obs_{i+1} + obs_i)^2\n\\]\n\nFor the following two sequences, which one will have *roughness = 0*, and what does that imply about the shape?\n\n- Sequence 1: `obs1 = [0.10, 0.30, 0.50, 0.70]`\n- Sequence 2: `obs2 = [0.10, 0.25, 0.55, 0.70]`",
+      "question_type": "mc",
+      "options": [
+        "Sequence 1; it implies the points lie exactly on a straight line (constant slope, no curvature).",
+        "Sequence 1; it implies the sequence is strictly increasing but may still be curved.",
+        "Sequence 2; it implies the points lie exactly on a straight line (constant slope, no curvature).",
+        "Sequence 2; it implies there is a single kink but no overall trend."
+      ],
+      "correct_answer": "A",
+      "explanation": "Second differences measure changes in the first differences (slope). Sequence 1 has constant first differences (0.20, 0.20, 0.20), so its second differences are all zero, making roughness = 0. That indicates a perfectly linear trend with no curvature or kinks. Sequence 2 has uneven first differences (0.15, 0.30, 0.15), producing nonzero second differences and thus roughness > 0, reflecting curvature/kinks.",
+      "difficulty": "advanced",
+      "tags": [
+        "data-visualization",
+        "quartiles",
+        "roughness",
+        "second-differences",
+        "curvature",
+        "time-series-style-metrics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider two sets of observed rates across four quartiles:\n\n- Set A: `obsA = [0.10, 0.30, 0.50, 0.70]`\n- Set B: `obsB = [0.10, 0.20, 0.50, 0.70]`\n\nUsing the step-size consistency idea (standard deviation of first differences), which set should be judged as having the more \"even\" slope (i.e., smoother step sizes), and why?\n\nYou may reference the computation:\n```python\ndiffs = np.diff(obs)\nstd = np.std(diffs)\n# lower std => more even step sizes\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Set A. For A, the first differences are [0.20, 0.20, 0.20], whose standard deviation is 0, indicating perfectly consistent step sizes. For B, the first differences are [0.10, 0.30, 0.20], which have nonzero standard deviation, indicating uneven step sizes (a steeper jump in the middle).",
+      "explanation": "Step-size consistency focuses on how uniform the increases are from one quartile to the next. Identical first differences imply a constant slope across quartiles and thus minimal variability (std = 0). When one step is much larger or smaller than others, the standard deviation increases, signaling a less even rise.",
+      "difficulty": "intermediate",
+      "tags": [
+        "data-visualization",
+        "quartiles",
+        "smoothness",
+        "first-differences",
+        "standard-deviation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have observed win-rates across quartiles: `obs = [0.10, 0.30, 0.25, 0.80]`. Which metric from the list is most directly designed to detect that the sequence is not strictly increasing (i.e., it has a dip)?",
+      "question_type": "mc",
+      "options": [
+        "Spearman’s rank correlation (ρ) between quartile index and obs",
+        "R² of a linear regression fit of obs vs quartile index",
+        "Sum of squared second differences (roughness)",
+        "Mean of first differences (average step size)"
+      ],
+      "correct_answer": "A",
+      "explanation": "Spearman’s ρ is a monotonicity check: it measures whether obs increases with quartile rank without reversals. A dip (0.30 → 0.25) violates monotonic increase, so ρ will be < 1. R² and roughness can be affected by curvature/linearity but are not specifically targeted at detecting monotonicity violations, and the mean of first differences can be positive even when there is a dip.",
+      "difficulty": "beginner",
+      "tags": [
+        "data-visualization",
+        "quartiles",
+        "monotonicity",
+        "spearman-correlation",
+        "model-evaluation-metrics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to quickly render a Mermaid diagram from a `.mermaid` file and export it as an image for a report. Describe a step-by-step workflow using the easiest option mentioned in the source content, including what you do with the default content and what export formats are available.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use the online editor at https://mermaid.live: (1) Open mermaid.live in a browser. (2) Delete the default sample diagram content. (3) Paste the contents of the `.mermaid` file into the editor. (4) Verify the rendered diagram appears in the preview pane (typically on the right). (5) Click “Export” to download the rendered diagram as PNG or SVG.",
+      "explanation": "The source content identifies mermaid.live as the easiest option and explicitly outlines deleting the default content, pasting the file contents, viewing the rendered diagram immediately, and exporting as PNG or SVG.",
+      "difficulty": "advanced",
+      "tags": [
+        "mermaid.live",
+        "export",
+        "png",
+        "svg",
+        "diagram-rendering",
+        "workflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a file named `flow.mmd` containing Mermaid code. You want GitHub to render it when viewing the file in a repository. Which approach matches the recommended method?\n\n```text\nflow.mmd\n```\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Convert `flow.mmd` to PNG locally and commit only the PNG; GitHub cannot render Mermaid.",
+        "B. Rename the file to `.md` and wrap the Mermaid text in a fenced code block labeled `mermaid`.",
+        "C. Keep the `.mmd` extension and add HTML `<script>` tags at the top of the file so GitHub executes Mermaid.",
+        "D. Rename the file to `.svg`; GitHub will interpret Mermaid syntax as SVG paths automatically."
+      ],
+      "correct_answer": "B",
+      "explanation": "GitHub renders Mermaid when it appears inside a Mermaid code fence in a Markdown file. Renaming to `.md` and wrapping the content like:\n\n```markdown\n```mermaid\n...diagram...\n```\n```\n\nenables GitHub’s built-in Mermaid rendering on view.",
+      "difficulty": "intermediate",
+      "tags": [
+        "github",
+        "markdown",
+        "mermaid-code-blocks",
+        "rendering-workflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes a Mermaid file (e.g., `.mermaid` or `.mmd`) and what is needed to turn it into a visual diagram?",
+      "question_type": "mc",
+      "options": [
+        "A Mermaid file is a binary diagram format and can be rendered by any image viewer.",
+        "A Mermaid file is plain text, but rendering it into a diagram requires a Mermaid-capable tool.",
+        "A Mermaid file is a Markdown file by default and GitHub will always render it automatically without changes.",
+        "A Mermaid file is a JSON-based format that must be compiled into HTML before viewing."
+      ],
+      "correct_answer": "B",
+      "explanation": "Mermaid source files are plain text containing Mermaid syntax. You can open them in any text editor, but to see the diagram you need a tool that understands Mermaid (e.g., mermaid.live, VS Code extensions, GitHub Markdown rendering, Obsidian/Notion Mermaid blocks).",
+      "difficulty": "beginner",
+      "tags": [
+        "mermaid",
+        "file-formats",
+        "rendering",
+        "data-visualization-basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write Matplotlib code that adds a semi-transparent, rotated annotation inside an axes with these requirements:\n\n- Text: `\"Peak\\nValue\"` (two lines)\n- Position: top-right corner of the axes with a small inset (use axes-fraction coordinates)\n- Alignment: the text’s top-right corner should be anchored at the position\n- Rotation: 45 degrees\n- Transparency: alpha = 0.5\n- Bounding box: rounded box with white facecolor and alpha = 0.5\n\nAssume `fig, ax = plt.subplots()` already exists.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nax.text(\n    0.98, 0.98, \"Peak\\nValue\",\n    transform=ax.transAxes,\n    ha=\"right\", va=\"top\",\n    rotation=45,\n    alpha=0.5,\n    bbox=dict(boxstyle=\"round\", facecolor=\"white\", alpha=0.5)\n)\n```",
+      "explanation": "Using `transform=ax.transAxes` makes (0.98, 0.98) an axes-fraction position near the top-right regardless of data limits. `ha='right'` and `va='top'` ensure the text’s top-right corner is anchored at that point. The newline `\\n` creates two lines. `rotation=45` rotates the text, `alpha=0.5` applies transparency to the text itself, and `bbox=...` adds a rounded, semi-transparent white background box.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "axes.text",
+        "alignment",
+        "rotation",
+        "bbox",
+        "alpha",
+        "transAxes",
+        "multiline-text"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to place the label \"Hello!\" so it stays at **80% of the axes width** and **20% of the axes height**, regardless of the data range. Which code correctly accomplishes this?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `ax.text(0.8, 0.2, \"Hello!\", transform=ax.transAxes)`",
+        "B. `ax.text(0.8, 0.2, \"Hello!\", transform=ax.transData)`",
+        "C. `ax.text(0.8, 0.2, \"Hello!\", transform=fig.transFigure)`",
+        "D. `ax.text(80, 20, \"Hello!\", transform=ax.transAxes)`"
+      ],
+      "correct_answer": "A",
+      "explanation": "Axes fraction coordinates are specified in the range 0–1 relative to the axes, and you enable that coordinate system via `transform=ax.transAxes`. Option B uses data coordinates, which depend on the data range. Option C uses figure coordinates (relative to the whole figure, not the axes). Option D mixes axes-fraction transform with values that are not fractions (80, 20).",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "axes.text",
+        "transAxes",
+        "annotation",
+        "coordinate-systems"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, you want to place text at a position specified in **data coordinates** (so it moves when axis limits change). What coordinate system does `Axes.text()` use by default for `x` and `y`?\n\n```python\nax.text(x, y, \"Label\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Axes fraction coordinates (`ax.transAxes`)",
+        "B. Figure fraction coordinates (`fig.transFigure`)",
+        "C. Data coordinates (`ax.transData`)",
+        "D. Pixel/screen coordinates (display coordinates)"
+      ],
+      "correct_answer": "C",
+      "explanation": "`ax.text()` uses data coordinates by default, which corresponds to `transform=ax.transData`. This means the text position is tied to the plotted data and will shift if the data limits or scaling change. Using axes fraction coordinates requires explicitly setting `transform=ax.transAxes`.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "axes.text",
+        "coordinates",
+        "transforms",
+        "transData"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A researcher compares two groups with the same mean but very different distributions:\n- Group A: tightly clustered values with no outliers\n- Group B: highly skewed with a long tail and several extreme outliers\n\nThey plot only a summary dot plot with mean ± 95% CI and conclude the groups are similar.\n\n(a) Explain why this conclusion can be misleading.\n(b) Name a more appropriate plot to reveal the issue and what pattern you would expect to see.\n(c) Give one mitigation if they must keep a summary-style plot.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) It can be misleading because a mean ± CI dot plot hides distributional shape; two groups can share the same mean (and even similar CIs) while differing in skewness, outliers, spread, or multimodality. The outliers/long tail in Group B may be invisible, and the mean can be unrepresentative for skewed data.\n(b) A violin plot (optionally with an overlaid boxplot) would reveal the density/spread; you would expect Group A’s violin to be narrow and concentrated, while Group B’s violin would be wider with asymmetric density (skew) and potentially visible outlier indications if layered.\n(c) Mitigations include: add distribution-revealing layers (e.g., jittered raw points/strip plot), switch the summary statistic to median and IQR (or show both mean and median), or explicitly annotate sample size and use robust intervals (e.g., bootstrap CI) to reduce misinterpretation.",
+      "explanation": "Summary dot plots are excellent for comparing means but can obscure critical distribution features. When data are non-normal, skewed, or contain outliers, the mean may not represent a ‘typical’ value, and the CI may not communicate distributional differences. Violin plots are designed to show density and thus expose skew/spread/outliers. If a summary plot must be used, adding raw points or robust summaries helps prevent overconfidence in a potentially misleading mean-only story.",
+      "difficulty": "advanced",
+      "tags": [
+        "misleading-summaries",
+        "skewness",
+        "outliers",
+        "robust-statistics",
+        "violin-plot",
+        "dot-and-whisker",
+        "data-distribution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are presenting results to a non-technical audience comparing 6 treatment groups. The goal is to communicate which groups likely differ in average outcome, and you have computed group means and 95% confidence intervals. Which visualization is most appropriate, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A summary dot plot (dot-and-whisker / mean + 95% CI) is most appropriate because it provides a clean, at-a-glance comparison of central tendency (means) and uncertainty (confidence intervals) across groups. It is minimalist and easier for non-technical audiences than a violin plot, which emphasizes distributional details that can be harder to interpret quickly.",
+      "explanation": "The question emphasizes communicating differences in *average outcome* and *uncertainty* to a non-technical audience. Summary dot plots are designed for exactly this: each dot is an aggregated metric (often mean) and whiskers show uncertainty (CI). Violin plots are richer but can be visually busy and may distract from the main message if the audience is not focused on distribution shape.",
+      "difficulty": "intermediate",
+      "tags": [
+        "audience-driven-visualization",
+        "mean",
+        "confidence-intervals",
+        "dot-and-whisker",
+        "communication"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes the primary difference between a violin plot and a summary dot plot (mean + CI) when comparing categories?",
+      "question_type": "mc",
+      "options": [
+        "A. A violin plot summarizes the mean and 95% CI, while a summary dot plot shows the full distribution via density.",
+        "B. A violin plot shows the full distribution (density), while a summary dot plot emphasizes a central tendency estimate (often mean) and uncertainty (e.g., CI).",
+        "C. Both plots show the same information; the difference is only aesthetic (shape vs dots).",
+        "D. A summary dot plot is better for detecting multimodality and skew than a violin plot."
+      ],
+      "correct_answer": "B",
+      "explanation": "Violin plots visualize the *distribution* by showing a mirrored density shape (often with optional median/quartiles). Summary dot plots (dot-and-whisker/mean+CI) compress the data into an aggregated statistic (commonly the mean) plus uncertainty (e.g., 95% confidence intervals). The other options invert or misstate what each plot reveals.",
+      "difficulty": "beginner",
+      "tags": [
+        "violin-plot",
+        "dot-plot",
+        "confidence-intervals",
+        "distribution-vs-summary",
+        "categorical-comparison"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Bubble charts can become difficult to interpret when many bubbles overlap. Describe TWO concrete strategies to improve interpretability in an overlapping bubble chart. For each strategy, briefly explain how it helps and mention one trade-off or limitation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two valid strategies (any two with correct reasoning):\n1) Add transparency (alpha) to bubbles so overlaps are visible; trade-off: colors/areas can become harder to distinguish and perceived magnitude may be less clear.\n2) Reduce bubble size range / rescale size encoding (e.g., use area-proportional scaling with a capped max size) to reduce occlusion; trade-off: may compress differences and hide important magnitude variation.\n3) Use jittering or slight position offsets to separate overlapping points; trade-off: introduces small positional distortion, reducing accuracy for precise x/y reading.\n4) Use faceting/small multiples by category (or filter/interactive selection) to reduce points per panel; trade-off: harder to compare across panels and requires more space or interaction.\n5) Add interactive tooltips/hover and zoom; trade-off: requires an interactive medium and can reduce readability in static outputs.\n6) Use color to separate categories and/or draw outlines/strokes around bubbles; trade-off: too many categories can overwhelm and color perception varies across viewers.",
+      "explanation": "Overplotting is a key limitation of bubble charts. Good answers propose practical methods that either (a) make overlaps readable (e.g., transparency/outlines), (b) reduce overlaps (e.g., rescaling sizes, jittering, faceting/filtering), or (c) provide alternative access to exact values (e.g., interaction). Each method has a cost: reduced precision, reduced comparability, or added complexity.",
+      "difficulty": "advanced",
+      "tags": [
+        "bubble-charts",
+        "overplotting",
+        "occlusion",
+        "interpretability",
+        "visual-encoding",
+        "chart-design"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are visualizing product performance with three metrics: units sold, profit margin, and total revenue. You want viewers to quickly see relationships between units sold and profit margin while also noticing which products generate the most revenue. Which bubble chart design best fits this goal?",
+      "question_type": "mc",
+      "options": [
+        "A. x = total revenue, y = units sold, bubble size = profit margin",
+        "B. x = units sold, y = profit margin, bubble size = total revenue",
+        "C. x = profit margin, y = total revenue, bubble size = units sold",
+        "D. x = units sold, y = total revenue, bubble size = profit margin"
+      ],
+      "correct_answer": "B",
+      "explanation": "The goal is to analyze the relationship between units sold and profit margin, so those belong on the x- and y-axes. Total revenue should be encoded as bubble size so larger bubbles immediately indicate higher revenue while preserving the 2D relationship on the axes.",
+      "difficulty": "intermediate",
+      "tags": [
+        "bubble-charts",
+        "design",
+        "variable-mapping",
+        "business-analytics",
+        "multivariate-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a bubble chart, which mapping correctly represents how multiple dimensions of data are encoded?",
+      "question_type": "mc",
+      "options": [
+        "A. x- and y-position encode two variables, and bubble size encodes a third variable",
+        "B. x-position encodes one variable, bubble color encodes a second, and y-position is decorative",
+        "C. Bubble size encodes the x-variable, and x-position encodes the third variable",
+        "D. Bubble size and bubble color both encode the same variable to improve accuracy"
+      ],
+      "correct_answer": "A",
+      "explanation": "A bubble chart extends a scatter plot: the x-axis and y-axis positions encode two variables, while the bubble size encodes a third. Color can optionally encode an additional (often categorical) variable, but it is not required for the basic definition.",
+      "difficulty": "beginner",
+      "tags": [
+        "bubble-charts",
+        "encodings",
+        "x-axis",
+        "y-axis",
+        "bubble-size"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a robust conversion step before `shap.summary_plot` that converts *only* pandas nullable integer columns (`Int8/Int16/Int32/Int64`) to `float64` while leaving:\n- NumPy integer columns (e.g., `int64`) unchanged, and\n- non-integer columns (floats, categories, objects) unchanged.\n\nWhich code snippet best matches this requirement?",
+      "question_type": "mc",
+      "options": [
+        "A. ```python\nX2 = X.copy()\nX2 = X2.astype('float64')\n```",
+        "B. ```python\nX2 = X.copy()\nfor c in X2.columns:\n    if pd.api.types.is_integer_dtype(X2[c]) and X2[c].dtype.name.startswith('Int'):\n        X2[c] = X2[c].astype('float64')\n```",
+        "C. ```python\nX2 = X.copy()\nfor c in X2.columns:\n    if X2[c].dtype == 'int64':\n        X2[c] = X2[c].astype('float64')\n```",
+        "D. ```python\nX2 = X.copy()\nfor c in X2.columns:\n    if pd.api.types.is_numeric_dtype(X2[c]):\n        X2[c] = X2[c].astype('float64')\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "Option B checks two conditions: (1) the column is an integer dtype, and (2) the dtype name starts with capital `'Int'`, which is characteristic of pandas *nullable* integer extension types (`Int8`, `Int16`, `Int32`, `Int64`). This avoids converting NumPy `int64` (dtype name typically `'int64'`) and avoids converting floats or other numeric types. A and D convert too broadly; C targets NumPy `int64` rather than pandas nullable ints.",
+      "difficulty": "advanced",
+      "tags": [
+        "pandas-extension-dtypes",
+        "nullable-integers",
+        "pd.api.types",
+        "dtype-name",
+        "robust-preprocessing",
+        "shap-plotting",
+        "numpy-compatibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given a feature DataFrame `X_shap` that may contain pandas nullable integer columns (`Int8/Int16/Int32/Int64`), write code to:\n1) identify the nullable integer columns, and\n2) convert only those columns to `float64` in a copy of the DataFrame,\nso that `shap.summary_plot(...)` will not fail.\n\nYour answer should include a short code snippet.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport pandas as pd\n\nX_shap_fixed = X_shap.copy()\n\n# identify nullable integer columns (capital 'Int' dtypes)\nnullable_int_cols = [c for c in X_shap_fixed.columns\n                     if X_shap_fixed[c].dtype.name.startswith('Int')]\n\n# convert only those columns to float64\nfor c in nullable_int_cols:\n    X_shap_fixed[c] = X_shap_fixed[c].astype('float64')\n\n# now safe to plot\nshap.summary_plot(shap_values, X_shap_fixed, feature_names=X_shap_fixed.columns)\n```",
+      "explanation": "The key is to target pandas *nullable* integer dtypes whose `dtype.name` starts with `'Int'` (e.g., `Int64`). Converting them to `float64` preserves numeric meaning while allowing NumPy’s `isnan()` (used inside SHAP plotting) to operate correctly, avoiding the TypeError.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pandas-dtypes",
+        "Int64",
+        "astype",
+        "float64",
+        "shap",
+        "feature-matrix",
+        "data-preprocessing",
+        "data-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You attempt to run `shap.summary_plot(shap_values, X)` and get the error:\n\n```text\nTypeError: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced...\n```\n\nWhich situation is the most likely cause based on the provided source content?",
+      "question_type": "mc",
+      "options": [
+        "A. `X` contains pandas nullable integer columns (e.g., dtype `Int64`) with possible `pd.NA` values, which NumPy `isnan()` cannot handle",
+        "B. `shap_values` must always be a pandas DataFrame rather than a NumPy array",
+        "C. The error occurs because `plot_type=\"violin\"` is incompatible with SHAP summary plots",
+        "D. The error is caused by having too many columns in `X`, exceeding NumPy’s maximum array width"
+      ],
+      "correct_answer": "A",
+      "explanation": "SHAP plotting utilities use NumPy’s `isnan()` internally to detect missing values. Pandas nullable integer dtypes (capital-I, e.g., `Int64`, `Int32`) can hold `pd.NA` and use an internal representation that NumPy `isnan()` does not support, triggering the shown TypeError. The fix is to convert those columns to a NumPy-friendly dtype such as `float64` before plotting.",
+      "difficulty": "beginner",
+      "tags": [
+        "shap",
+        "summary_plot",
+        "pandas",
+        "nullable-integers",
+        "numpy-isnan",
+        "missing-values",
+        "data-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A colleague claims: “All scatter plots are bubble charts.”\n\nExplain whether this statement is correct. In your answer, clearly state the defining feature that makes a scatter plot a bubble chart, and describe a case where a scatter plot is NOT a bubble chart.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The statement is incorrect. A bubble chart is a specific kind of scatter plot where marker size varies to encode an additional (third) variable. A standard scatter plot is not a bubble chart when all markers have a fixed size and only x and y position encode data (i.e., it shows only two variables).",
+      "explanation": "Bubble charts are an extension of scatter plots: they retain x and y axes but add size as a visual encoding for another variable (and sometimes color for yet another). Therefore, all bubble charts are scatter plots, but not all scatter plots qualify as bubble charts because many do not use variable marker size.",
+      "difficulty": "advanced",
+      "tags": [
+        "conceptual-understanding",
+        "bubble-chart",
+        "scatter-plot",
+        "dimensions",
+        "visual-variables"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a dataset with three variables: (1) advertising spend, (2) sales revenue, and (3) market size. You want to show all three variables in a single 2D chart. Which mapping best uses a bubble chart correctly?",
+      "question_type": "mc",
+      "options": [
+        "Use advertising spend on x, sales revenue on y, and market size as bubble size.",
+        "Use advertising spend on x, sales revenue on y, and market size as the chart title.",
+        "Use advertising spend on x, market size on y, and sales revenue as the chart background color only (no size encoding).",
+        "Use advertising spend on x, sales revenue on y, and market size by adding a second y-axis."
+      ],
+      "correct_answer": "A",
+      "explanation": "A bubble chart extends a scatter plot by encoding a third variable using marker size, while x and y encode the first two variables. The other options do not correctly use bubble size to represent the third variable.",
+      "difficulty": "intermediate",
+      "tags": [
+        "bubble-chart",
+        "scatter-plot",
+        "encoding",
+        "multivariate-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes the relationship between a scatter plot and a bubble chart?",
+      "question_type": "mc",
+      "options": [
+        "A bubble chart is a scatter plot where marker size encodes an additional variable.",
+        "A bubble chart is a scatter plot where the x-axis is replaced by color.",
+        "A scatter plot is a bubble chart where all bubbles are forced to be the same size.",
+        "Bubble charts and scatter plots are unrelated chart types used for different data structures."
+      ],
+      "correct_answer": "A",
+      "explanation": "A bubble chart is an enhanced scatter plot: points still have (x, y) positions, but bubble size varies to encode a third variable. Color can optionally encode a fourth variable, but it does not replace an axis.",
+      "difficulty": "beginner",
+      "tags": [
+        "data-visualization",
+        "scatter-plot",
+        "bubble-chart",
+        "visual-encoding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A dashboard displays a bar chart with numeric-interval bins for customer spend:\n\n[0–50], [50–100], [100–200], [200–500]\n\nThe product manager wants to sort the bins by frequency descending to highlight the most common spend range. Which response best balances best practices and the stated goal?\n",
+      "question_type": "mc",
+      "options": [
+        "Keep bins in ascending numeric order; if highlighting is needed, use color/annotation to emphasize the most frequent bin without reordering.",
+        "Sort bins by frequency descending; numeric bins should be treated the same as categories in bar charts.",
+        "Alphabetize the bin labels; this provides a neutral ordering and avoids bias.",
+        "Reverse the numeric order (high to low) because it draws attention to high spenders."
+      ],
+      "correct_answer": "A",
+      "explanation": "Numeric intervals should generally remain in ascending numeric order to preserve the quantitative progression and make the distribution easy to interpret. If the goal is to highlight the modal bin, use visual emphasis (e.g., contrasting color, callout, tooltip) rather than reordering by frequency, which would obscure the underlying numeric structure.",
+      "difficulty": "advanced",
+      "tags": [
+        "data-visualization",
+        "dashboard-design",
+        "binning",
+        "ordering",
+        "highlighting",
+        "tradeoffs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given a histogram-like bar chart built from numeric intervals with counts:\n\n- [0–1]: 12\n- [1–2]: 30\n- [2–3]: 18\n- [3–4]: 25\n\nA teammate suggests sorting the bars by count (30, 25, 18, 12) to \"make the biggest bars stand out.\" What should you do and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Keep the bins ordered by numeric interval from low to high (i.e., [0–1], [1–2], [2–3], [3–4]) because these are numeric intervals and the natural order communicates the distribution along a quantitative scale. Sorting by count may emphasize magnitude but breaks the numeric progression and makes it harder to interpret where values fall along the variable.",
+      "explanation": "Numeric bins represent contiguous ranges on a quantitative axis. Preserving ascending interval order maintains the meaning of position and supports interpreting shape (e.g., skew, peaks). Sorting by frequency is more appropriate for purely categorical bars where there is no inherent numeric order.",
+      "difficulty": "intermediate",
+      "tags": [
+        "data-visualization",
+        "distribution",
+        "histogram-vs-bar",
+        "bin-ordering",
+        "interpretability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a bar chart where the x-axis represents numeric bins (e.g., [0–10], [10–20], [20–30]), what is the best-practice ordering of the bars to help viewers interpret the distribution?",
+      "question_type": "mc",
+      "options": [
+        "Order bins by their numeric interval in ascending order (low to high).",
+        "Order bins by frequency in descending order (largest to smallest).",
+        "Order bins alphabetically by the bin label text.",
+        "Randomize the order to avoid implying trends."
+      ],
+      "correct_answer": "A",
+      "explanation": "For numeric intervals, the standard best practice is to preserve the natural numeric order (ascending). This supports accurate reading of the distribution along the underlying quantitative scale. Ordering by frequency can be useful for categorical comparisons, but it disrupts the natural progression for numeric bins.",
+      "difficulty": "beginner",
+      "tags": [
+        "data-visualization",
+        "bar-charts",
+        "binning",
+        "axis-ordering",
+        "quantitative-variables"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A colleague wrote code to prevent bar annotations from overlapping the top spine by hard-coding an upper y-limit:\n\n```python\nax = sns.countplot(x=col, data=df)\nax.set_ylim(0, 100)  # hard-coded\nfor p in ax.patches:\n    h = p.get_height()\n    ax.text(p.get_x()+p.get_width()/2, h+1, str(int(h)), ha='center', va='bottom')\n```\n\nThis sometimes leaves too much empty space (when counts are small) and sometimes still clips labels (when counts exceed 100). Propose a more robust approach using the existing axes limits (or data-driven max) so the padding scales appropriately across datasets. Provide a short code snippet.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example robust solutions include:\n\nOption 1 (data-driven):\n```python\nax = sns.countplot(x=col, data=df)\nmax_h = max(p.get_height() for p in ax.patches) if ax.patches else 0\nax.set_ylim(0, max_h * 1.1)\nfor p in ax.patches:\n    h = p.get_height()\n    ax.text(p.get_x()+p.get_width()/2, h + max_h*0.01, f\"{int(h)}\", ha='center', va='bottom')\n```\n\nOption 2 (use current limits):\n```python\nax = sns.countplot(x=col, data=df)\ny0, y1 = ax.get_ylim()\nax.set_ylim(y0, y1 * 1.1)\n```\n\nOption 3 (simplest):\n```python\nax = sns.countplot(x=col, data=df)\nax.margins(y=0.1)\n```\n",
+      "explanation": "Hard-coding `set_ylim(0, 100)` is brittle because it doesn’t adapt to different data ranges. A robust approach computes padding relative to the tallest bar (or relative to the current y-limits) so the headroom scales with the plot. `ax.margins(y=0.1)` is a concise Matplotlib way to add proportional y-padding automatically, while `set_ylim(0, max_h*1.1)` makes the scaling explicit and predictable.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "seaborn",
+        "dynamic-scaling",
+        "axis-limits",
+        "robust-visualization",
+        "annotations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a countplot and want to annotate each bar with its count. The labels overlap the top spine. Fill in the missing line to increase the y-axis limit by 10% based on the maximum count.\n\n```python\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\nax = sns.countplot(x=col, data=df, order=order)\nmax_count = counts.max()\n\n# TODO: add one line here to create headroom above bars\n\nfor p in ax.patches:\n    h = p.get_height()\n    ax.text(p.get_x() + p.get_width()/2, h + max_count*0.01, int(h),\n            ha='center', va='bottom')\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "ax.set_ylim(0, max_count * 1.1)",
+      "explanation": "Setting `ax.set_ylim(0, max_count * 1.1)` expands the y-axis upper bound to 110% of the tallest bar. This creates vertical space so the text placed slightly above each bar (e.g., `h + max_count*0.01`) doesn’t collide with the top spine.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "seaborn",
+        "countplot",
+        "set_ylim",
+        "bar-annotations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a seaborn `countplot`, bar value annotations are overlapping the top spine (top border) of the axes. Which change most directly adds breathing room above the tallest bar so the annotations don’t overlap?\n\n```python\nax = sns.countplot(x='category', data=df)\n# ... annotate bars ...\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Call `ax.margins(y=0.1)` after creating the plot",
+        "B. Call `ax.grid(True)` to separate labels from the top spine",
+        "C. Call `plt.tight_layout()` to increase the y-axis maximum based on bar heights",
+        "D. Set `ax.set_xlim(0, 1.1)` to expand the plot area"
+      ],
+      "correct_answer": "A",
+      "explanation": "`ax.margins(y=0.1)` adds 10% padding in the y-direction, expanding the y-limits so there is extra space above (and below) the data. This prevents text annotations placed above bars from colliding with the top spine. Grid lines and `tight_layout()` don’t reliably increase the y-axis max to accommodate text, and `set_xlim()` affects the x-axis, not vertical space.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "seaborn",
+        "countplot",
+        "annotations",
+        "axis-margins"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to \"auto-generate win rate bar charts\" for a list of independent variables, but the dataset has two complications:\n\n1) Some rows have missing values in the independent variable (e.g., `region` is NaN).\n2) Some rows have missing values in `closed_won`.\n\nWrite a function `plot_win_rate_bars(df, independent_variables)` that:\n- For each variable, computes win rate as wins / total where `closed_won` is not missing.\n- Treats missing categories in the independent variable as an explicit category label \"Unknown\" (so they appear as a bar).\n- Plots a bar chart with y-limits [0, 1] and rotated x labels.\n\nYou may use Pandas and Matplotlib. Provide the code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport matplotlib.pyplot as plt\n\n\ndef plot_win_rate_bars(df, independent_variables):\n    # Work on a copy to avoid mutating caller data\n    d = df.copy()\n\n    # Ensure closed_won is numeric (optional safety); keep NaN as NaN\n    # If closed_won might be boolean, this still works.\n    # d['closed_won'] = pd.to_numeric(d['closed_won'], errors='coerce')\n\n    for variable in independent_variables:\n        # Make missing categories explicit\n        d[variable] = d[variable].fillna('Unknown')\n\n        # Exclude rows where closed_won is missing from both numerator and denominator\n        valid = d[d['closed_won'].notna()]\n\n        # Win rate: mean works when closed_won is 0/1; equivalent to wins/total\n        win_rates = valid.groupby(variable)['closed_won'].mean()\n\n        plt.figure(figsize=(8, 6))\n        win_rates.plot(kind='bar', color='skyblue')\n        plt.title(f'Win Rate by {variable.capitalize()}')\n        plt.xlabel(variable.capitalize())\n        plt.ylabel('Win Rate')\n        plt.xticks(rotation=45, ha='right')\n        plt.ylim(0, 1)\n        plt.grid(axis='y', linestyle='--', alpha=0.5)\n        plt.tight_layout()\n        plt.show()\n```",
+      "explanation": "Key points tested are handling missing data correctly and preserving the meaning of win rate. Filling missing independent-variable values with an explicit label (e.g., \"Unknown\") ensures those rows are grouped and shown as a bar. Filtering out rows where `closed_won` is missing prevents NaNs from affecting the denominator; then `groupby(variable)['closed_won'].mean()` yields wins/total for each category when `closed_won` is 0/1. Plot settings (`ylim(0,1)`, rotated ticks) match the intended win-rate visualization conventions.",
+      "difficulty": "advanced",
+      "tags": [
+        "pandas",
+        "missing-values",
+        "groupby",
+        "win-rate",
+        "matplotlib",
+        "bar-chart",
+        "data-cleaning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to generate separate win-rate bar charts for each variable in `independent_variables` using Matplotlib/Pandas plotting. In the loop below, what is the main purpose of calling `plt.figure(figsize=(8, 6))` inside the loop?\n\n```python\nfor variable in independent_variables:\n    win_rates = df.groupby(variable)['closed_won'].mean()\n    plt.figure(figsize=(8, 6))\n    win_rates.plot(kind='bar')\n    plt.show()\n```",
+      "question_type": "mc",
+      "options": [
+        "It creates a new figure per variable so plots don't draw on top of each other.",
+        "It sorts `win_rates` by win rate descending before plotting.",
+        "It converts the variable to a categorical dtype automatically.",
+        "It forces the y-axis to be between 0 and 1."
+      ],
+      "correct_answer": "A",
+      "explanation": "Without creating a new figure in each iteration, multiple plots can be drawn onto the same figure/axes (depending on the environment and state), causing overlap or unexpected results. `plt.figure(...)` ensures a fresh figure for each variable. Sorting, dtype conversion, and y-limits are separate steps (`sort_values`, `astype('category')`/`pd.Categorical`, and `plt.ylim(0, 1)` respectively).",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "stateful-api",
+        "figure",
+        "looping",
+        "bar-chart"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the provided approach, which Pandas expression correctly computes the win rate for each distinct category of an independent variable (where `closed_won` is 1 for win and 0 for loss)?",
+      "question_type": "mc",
+      "options": [
+        "df.groupby(variable)[\"closed_won\"].mean()",
+        "df.groupby(variable)[\"closed_won\"].sum()",
+        "df[\"closed_won\"].mean(variable)",
+        "df.groupby(\"closed_won\")[variable].mean()"
+      ],
+      "correct_answer": "A",
+      "explanation": "When `closed_won` is encoded as 1 (win) and 0 (loss), the mean of `closed_won` within each group equals the proportion of wins in that group (i.e., win rate). `sum()` would give counts of wins, not a rate; the other options are not valid ways to compute per-category win rates.",
+      "difficulty": "beginner",
+      "tags": [
+        "pandas",
+        "groupby",
+        "mean",
+        "win-rate",
+        "categorical-aggregation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a legend-like framed text box anchored outside the axes that contains a title line and multiple lines of text. You also want rounded corners and padding. Which code best accomplishes this using Matplotlib’s offsetbox tools?\n\nA.\n```python\nax.text(1.02, 0.5, counts_text, title='Bin Counts', transform=ax.transAxes)\n```\n\nB.\n```python\nfrom matplotlib.offsetbox import AnchoredText\nat = AnchoredText(counts_text, loc='upper left', bbox_to_anchor=(1.02, 0.5),\n                  bbox_transform=ax.transAxes, frameon=True, prop=dict(size=10))\nat.patch.set_boxstyle(\"round,pad=0.3\")\nax.add_artist(at)\n```\n\nC.\n```python\nax.legend([counts_text], title='Bin Counts', loc='upper left', bbox_to_anchor=(1.02, 0.5))\n```\n\nD.\n```python\nax.annotate(counts_text, xy=(1.02, 0.5), xycoords='data', frameon=True)\n```",
+      "question_type": "mc",
+      "options": [
+        "A.\n```python\nax.text(1.02, 0.5, counts_text, title='Bin Counts', transform=ax.transAxes)\n```",
+        "B.\n```python\nfrom matplotlib.offsetbox import AnchoredText\nat = AnchoredText(counts_text, loc='upper left', bbox_to_anchor=(1.02, 0.5),\n                  bbox_transform=ax.transAxes, frameon=True, prop=dict(size=10))\nat.patch.set_boxstyle(\"round,pad=0.3\")\nax.add_artist(at)\n```",
+        "C.\n```python\nax.legend([counts_text], title='Bin Counts', loc='upper left', bbox_to_anchor=(1.02, 0.5))\n```",
+        "D.\n```python\nax.annotate(counts_text, xy=(1.02, 0.5), xycoords='data', frameon=True)\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "`AnchoredText` is designed for framed, legend-like text boxes and supports anchoring via `loc`, `bbox_to_anchor`, and `bbox_transform`. Option B correctly anchors the box using axes coordinates (`ax.transAxes`), turns the frame on, and then styles the patch with a rounded box and padding. A is invalid because `ax.text()` has no `title=` argument. C misuses legend semantics (it expects handles/labels; you can force it, but it’s not the intended tool for a multi-line text block). D uses `xycoords='data'` (not axes-relative) and `frameon` is not a valid argument for `annotate` in that form; framing is typically done via `bbox` in `annotate`.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "AnchoredText",
+        "offsetbox",
+        "bbox_to_anchor",
+        "text-annotation",
+        "styling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to place a titled multi-line text box just outside the axes on the right side, vertically centered, using axes-relative coordinates. Complete the code by filling in the missing pieces so it behaves as described.\n\n```python\ncounts_str = \"Bin Counts\\n\" + \"\\n\".join([f\"Q{int(q)+1}: {cnt}\" for q, cnt in counts.items()])\n\nax.text(\n    __X__, __Y__, counts_str,\n    transform=__TRANSFORM__,\n    ha='left', va='center',\n    bbox=dict(boxstyle='round', facecolor='white', alpha=0.5)\n)\n```\n\nWrite the values for `__X__`, `__Y__`, and `__TRANSFORM__`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "__X__ = 1.02, __Y__ = 0.5, __TRANSFORM__ = ax.transAxes",
+      "explanation": "Using `transform=ax.transAxes` makes the coordinates relative to the axes (0–1 in both directions). Setting x to `1.02` places the box slightly to the right of the axes, and y to `0.5` centers it vertically. `ha='left'` and `va='center'` align the text box relative to that anchor point.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "axes-coordinates",
+        "transforms",
+        "ax.transAxes",
+        "text-box"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, you want a framed text box to the right of a plot with a heading (e.g., \"Bin Counts\") and several lines below it. Which statement is correct about adding a separate `title=` argument to `ax.text()`?\n\nA. `ax.text()` supports `title=` but only when `bbox` is provided\nB. `ax.text()` supports `title=` only when using `transform=ax.transAxes`\nC. `ax.text()` does not accept a separate `title=` argument; you must include the title in the text (e.g., with a newline) or use another approach\nD. `ax.text()` supports `title=` but it must be passed inside the `bbox` dictionary",
+      "question_type": "mc",
+      "options": [
+        "A. `ax.text()` supports `title=` but only when `bbox` is provided",
+        "B. `ax.text()` supports `title=` only when using `transform=ax.transAxes`",
+        "C. `ax.text()` does not accept a separate `title=` argument; you must include the title in the text (e.g., with a newline) or use another approach",
+        "D. `ax.text()` supports `title=` but it must be passed inside the `bbox` dictionary"
+      ],
+      "correct_answer": "C",
+      "explanation": "`ax.text()` draws a single text artist and does not provide a dedicated `title=` parameter. To create a “titled box,” you either (1) prepend a title line to the same string using `\\n`, (2) use two separate `ax.text()` calls (one styled as a title), or (3) use a helper like `AnchoredText` which provides a framed, legend-like text box.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "ax.text",
+        "text-annotation",
+        "bbox",
+        "titles"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A plot uses Matplotlib's default title padding. Which statement is correct about the default spacing and its units?\n\n```python\nimport matplotlib.pyplot as plt\nfig, ax = plt.subplots()\nax.plot([0, 1], [0, 1])\nax.set_title(\"Default Padding\")\nplt.show()\n```",
+      "question_type": "mc",
+      "options": [
+        "The default title padding is 6 points, where 1 point = 1/72 inch.",
+        "The default title padding is 6 inches, and it is controlled by `labelpad`.",
+        "The default title padding is 20 points, and it is controlled by `spacing`.",
+        "The default title padding is 6 pixels, where 1 pixel = 1/72 inch."
+      ],
+      "correct_answer": "A",
+      "explanation": "Matplotlib's default title `pad` is 6 points. The unit is points (1 point = 1/72 inch). Options mentioning inches, pixels, or non-existent parameters are incorrect for Matplotlib title padding.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "defaults",
+        "title",
+        "pad",
+        "typography-units"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to increase the space between the title and the plot box in the following code. Fill in the missing argument so the title has 20 points of padding.\n\n```python\nimport matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nax.plot([1, 2, 3, 4], [10, 20, 25, 30])\n\nax.set_title(\"My Plot Title\", ____ )\nplt.show()\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "pad=20",
+      "explanation": "The title spacing is controlled by the `pad` keyword argument. Setting `pad=20` increases the distance between the title and the axes to 20 points (where 1 point = 1/72 inch).",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "titles",
+        "pad",
+        "units",
+        "points"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, which parameter is used to add space between the plot title and the plot area (axes) when setting a title?",
+      "question_type": "mc",
+      "options": [
+        "`fontsize`",
+        "`pad`",
+        "`labelpad`",
+        "`spacing`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Matplotlib provides the `pad` parameter in `ax.set_title()` (and `plt.title()`) to control the distance between the title text and the axes in points. `labelpad` is used for axis labels (e.g., x/y labels), not the title.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "titles",
+        "padding",
+        "ax.set_title"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport matplotlib.pyplot as plt\n\nx = [0, 1, 2, 3]\ny = [1, 5, 12, 8]\n\nplt.plot(x, y, marker='o')\nplt.ylim(0, 10)\nplt.show()\n```\n\nWhich statement best describes what you should expect to see and why?",
+      "question_type": "mc",
+      "options": [
+        "A. All four points will be shown because Matplotlib automatically rescales the y-axis to include all data after `plt.ylim(0, 10)`.",
+        "B. The point at y=12 will not appear within the visible axes region because it lies above the maximum y-limit of 10.",
+        "C. The point at y=12 will be shown, but the y-axis tick labels will stop at 10 while the point floats above the plot.",
+        "D. The y-values greater than 10 will be modified to 10 before plotting, so the point at y=12 will be plotted at y=10."
+      ],
+      "correct_answer": "B",
+      "explanation": "Setting `plt.ylim(0, 10)` constrains the visible y-range. The data point with y=12 lies outside this range, so it will be clipped (not visible within the axes). Matplotlib does not automatically override user-set limits (so A is wrong), it cannot display a point outside the axes region while keeping the axes capped (C is wrong), and it does not mutate the data values to fit the limits (D is wrong).",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "ylim",
+        "clipping",
+        "axis-limits",
+        "plot-rendering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You plot a line with y-values that range from -5 to 20, and then you call `plt.ylim(0, 10)`. Describe what will be visible on the plot and what happens to points outside the range.\n\nYou may answer in 2–4 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Only the portion of the line where y is between 0 and 10 will be visible. Any parts of the line with y < 0 or y > 10 will be outside the y-axis limits and therefore not shown (they appear cut off at the plot boundaries). The underlying data is unchanged; only the view is restricted.",
+      "explanation": "`plt.ylim(0, 10)` changes the displayed y-axis range, effectively zooming the view. Values outside that interval are not drawn within the axes area, but the data itself is not altered—only the plotting window is constrained.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "ylim",
+        "clipping",
+        "plot-visibility",
+        "data-vs-view"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, what does the following line of code do?\n\n```python\nplt.ylim(0, 10)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Sets the x-axis limits to range from 0 to 10",
+        "B. Sets the y-axis limits to range from 0 to 10",
+        "C. Clips the x-values of the dataset to be between 0 and 10",
+        "D. Changes the scale of the y-axis to logarithmic between 0 and 10"
+      ],
+      "correct_answer": "B",
+      "explanation": "`plt.ylim(min, max)` specifies the visible range of the y-axis. With `(0, 10)`, the plot will display y-values from 0 to 10. It does not change x-axis limits, does not modify the underlying data, and does not change the axis scale to logarithmic.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "pyplot",
+        "ylim",
+        "axis-limits",
+        "y-axis"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a 2x2 grid of subplots created with `plt.subplots(2, 2)`. You want to add a long block of explanatory text in the right margin of the figure (outside all axes) without overlapping any subplot. Which `subplots_adjust` parameter(s) most directly create that right-side margin, and why?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Decrease `wspace` because it reduces the width of each subplot and creates a right margin automatically",
+        "B. Decrease `right` because it moves the subplots' right edge leftward, reserving figure space on the right",
+        "C. Increase `top` because it pushes subplots downward, freeing space on the right",
+        "D. Increase `hspace` because it increases vertical spacing and prevents right-side overlap"
+      ],
+      "correct_answer": "B",
+      "explanation": "`right` controls the position of the subplots' right edge as a fraction of the figure width. Lowering `right` (e.g., from the default ~0.9 to 0.75) shrinks the horizontal span of all subplots and explicitly reserves a right-side margin for text/legends. `wspace` and `hspace` change spacing between subplots, not the outer right margin; `top` affects the upper boundary, not the right side.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "subplots_adjust",
+        "right",
+        "wspace",
+        "hspace",
+        "multi-axes",
+        "figure-margins"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a plot where the legend is placed outside the axes on the right and it overlaps the data. You did not store the figure handle (you used plain `plt.plot(...)`). Write code that adjusts the layout to reserve 25% of the figure width on the right for the legend.\n\nAssume the legend is already created with something like `plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "fig = plt.gcf()\nfig.subplots_adjust(right=0.75)",
+      "explanation": "Because you did not capture `fig` via `fig, ax = plt.subplots()`, you can retrieve the active figure with `plt.gcf()`. Setting `right=0.75` makes the subplots end at 75% of the figure width, leaving the rightmost 25% as free space so an outside legend is less likely to overlap the plotted data.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "legend",
+        "layout",
+        "bbox_to_anchor",
+        "subplots_adjust",
+        "gcf"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, what does the following line do?\n\n```python\nplt.gcf().subplots_adjust(right=0.75)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It retrieves the current Axes and sets its x-limits to end at 0.75",
+        "B. It retrieves the current Figure and reduces the subplot area so the right edge of the subplots is at 75% of the figure width",
+        "C. It creates a new Figure that is 75% of the original width",
+        "D. It moves the entire Figure canvas 25% to the left to make room on the right"
+      ],
+      "correct_answer": "B",
+      "explanation": "`plt.gcf()` returns the current (active) Figure. Calling `subplots_adjust(right=0.75)` updates the subplot parameters so the subplots' right edge is placed at 0.75 of the figure width (a fraction of the figure), shrinking the axes region and leaving space on the right for legends/annotations.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "gcf",
+        "figure",
+        "subplots_adjust",
+        "margins"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write code that meets **all** requirements below:\n\n1) Set the **session-wide** default palette to a vivid categorical palette.\n2) Use **8 colors** from that palette.\n3) Apply a **desaturation factor of 0.7**.\n4) Briefly explain what effect this will have on subsequent plots.\n\n(Assume `import seaborn as sns` has already been run.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nsns.set_palette(\"bright\", n_colors=8, desat=0.7)\n```\nThis sets the default color cycle for all subsequent plots in the session to an 8-color version of the \"bright\" palette, with colors desaturated to 70% intensity; it affects colors only (not grid/style/fonts/background).",
+      "explanation": "A correct solution must use `sns.set_palette(...)` (session-wide), choose a vivid categorical palette name such as \"bright\", specify `n_colors=8` to control the number of colors in the cycle, and use `desat=0.7` to reduce saturation. The key conceptual point is that this change persists for subsequent plots and only changes colors.",
+      "difficulty": "advanced",
+      "tags": [
+        "seaborn",
+        "set_palette",
+        "n_colors",
+        "desat",
+        "categorical-palettes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to create a bar plot where colors are different **only inside a specific block**, and then automatically revert to the previous palette afterward.\n\nWhich code best accomplishes this?\n\nA.\n```python\nsns.set_palette(\"husl\")\nsns.barplot(data=df, x=\"category\", y=\"value\")\n```\n\nB.\n```python\nwith sns.color_palette(\"husl\"):\n    sns.barplot(data=df, x=\"category\", y=\"value\")\n```\n\nC.\n```python\nsns.color_palette(\"husl\")\nsns.barplot(data=df, x=\"category\", y=\"value\")\n```\n\nD.\n```python\nsns.palplot(sns.color_palette(\"husl\"))\nsns.barplot(data=df, x=\"category\", y=\"value\")\n```",
+      "question_type": "mc",
+      "options": [
+        "A.\n```python\nsns.set_palette(\"husl\")\nsns.barplot(data=df, x=\"category\", y=\"value\")\n```",
+        "B.\n```python\nwith sns.color_palette(\"husl\"):\n    sns.barplot(data=df, x=\"category\", y=\"value\")\n```",
+        "C.\n```python\nsns.color_palette(\"husl\")\nsns.barplot(data=df, x=\"category\", y=\"value\")\n```",
+        "D.\n```python\nsns.palplot(sns.color_palette(\"husl\"))\nsns.barplot(data=df, x=\"category\", y=\"value\")\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "Using `with sns.color_palette(\"husl\"):` applies the palette temporarily within the context manager block and then restores the previous palette afterward. `sns.set_palette()` (A) changes the default for all subsequent plots until changed again. `sns.color_palette()` alone (C) returns a palette object but does not set it globally unless used in a context manager or passed to a plotting call. `sns.palplot(...)` (D) only visualizes the palette swatches.",
+      "difficulty": "intermediate",
+      "tags": [
+        "seaborn",
+        "color_palette",
+        "context-manager",
+        "temporary-settings",
+        "set_palette"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Seaborn, what does `sns.set_palette()` change in your plotting session?\n\nA. Only the default color palette for subsequent plots\nB. The color palette plus grid style, fonts, and background\nC. Only the style/grid (e.g., whitegrid) but not colors\nD. Only the figure size and DPI for subsequent plots",
+      "question_type": "mc",
+      "options": [
+        "A. Only the default color palette for subsequent plots",
+        "B. The color palette plus grid style, fonts, and background",
+        "C. Only the style/grid (e.g., whitegrid) but not colors",
+        "D. Only the figure size and DPI for subsequent plots"
+      ],
+      "correct_answer": "A",
+      "explanation": "`sns.set_palette()` sets the default color cycle used by Seaborn/Matplotlib for plots created after the call. It affects colors only, not style, grid, fonts, or background (those are handled by theming functions like `sns.set_theme()`).",
+      "difficulty": "beginner",
+      "tags": [
+        "seaborn",
+        "set_palette",
+        "color-palette",
+        "session-defaults"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write code to create a `PairGrid` for a DataFrame `df` that:\n1) Uses only the columns `\"col1\"`, `\"col2\"`, and `\"col3\"`\n2) Colors points by the categorical column `\"category\"`\n3) Places scatter plots on the upper triangle, filled KDE plots on the lower triangle, and histograms on the diagonal\n4) Ensures a legend is shown for the hue groups\n\nProvide the Python code (assume Seaborn is imported as `sns`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\ng = sns.PairGrid(df, vars=[\"col1\", \"col2\", \"col3\"], hue=\"category\")\ng.map_upper(sns.scatterplot)\ng.map_lower(sns.kdeplot, fill=True)\ng.map_diag(sns.histplot)\ng.add_legend()\n```",
+      "explanation": "A correct solution must (1) initialize `PairGrid` with `vars` to restrict the plotted columns, (2) set `hue` to enable color grouping, (3) map plot functions to the correct grid regions using `map_upper`, `map_lower`, and `map_diag`, and (4) call `add_legend()` so the hue encoding is explained in the figure. This demonstrates understanding that `PairGrid` is a customizable grid that you fill after initialization.",
+      "difficulty": "advanced",
+      "tags": [
+        "seaborn",
+        "pairgrid",
+        "hue",
+        "legend",
+        "customization",
+        "pairwise-relationships"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want the following layout using `sns.PairGrid`:\n- Upper triangle: scatter plots\n- Lower triangle: KDE plots with filled areas\n- Diagonal: histograms\n\nWhich code snippet correctly maps these plots?\n",
+      "question_type": "mc",
+      "options": [
+        "A. ```python\ng = sns.PairGrid(df, vars=[\"col1\",\"col2\",\"col3\"], hue=\"category\")\ng.map_upper(sns.scatterplot)\ng.map_lower(sns.kdeplot, fill=True)\ng.map_diag(sns.histplot)\n```",
+        "B. ```python\ng = sns.PairGrid(df, vars=[\"col1\",\"col2\",\"col3\"], hue=\"category\")\ng.map_diag(sns.scatterplot)\ng.map_upper(sns.histplot)\ng.map_lower(sns.kdeplot, fill=True)\n```",
+        "C. ```python\ng = sns.PairGrid(df, vars=[\"col1\",\"col2\",\"col3\"], hue=\"category\")\ng.map_upper(sns.kdeplot, fill=True)\ng.map_lower(sns.scatterplot)\ng.map_diag(sns.histplot)\n```",
+        "D. ```python\ng = sns.PairGrid(df, vars=[\"col1\",\"col2\",\"col3\"], hue=\"category\")\ng.map(sns.scatterplot)\ng.map(sns.kdeplot, fill=True)\ng.map(sns.histplot)\n```"
+      ],
+      "correct_answer": "A",
+      "explanation": "`map_upper`, `map_lower`, and `map_diag` target specific regions of the grid: upper triangle, lower triangle, and diagonal respectively. Option A matches the requested mapping exactly. Options B and C swap which plot goes where. Option D incorrectly suggests repeatedly mapping different functions to the entire grid (and does not target specific regions).",
+      "difficulty": "intermediate",
+      "tags": [
+        "seaborn",
+        "pairgrid",
+        "map_upper",
+        "map_lower",
+        "map_diag",
+        "kdeplot",
+        "scatterplot",
+        "histplot"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Seaborn, what is the primary purpose of `sns.PairGrid`?\n\n```python\nimport seaborn as sns\ng = sns.PairGrid(df, vars=[\"col1\", \"col2\", \"col3\"], hue=\"category\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. It creates a grid of subplots for pairwise relationships that you fill by mapping plot functions to different parts of the grid.",
+        "B. It automatically produces a fully-styled pairwise plot matrix with fixed plot types and no further customization.",
+        "C. It computes correlation coefficients for all pairs of variables and plots them as a heatmap.",
+        "D. It reshapes the DataFrame into long format to make it compatible with Seaborn plotting functions."
+      ],
+      "correct_answer": "A",
+      "explanation": "`PairGrid` is a class that initializes a matrix (grid) of axes for pairwise comparisons and then requires you to map plotting functions (e.g., scatter, KDE, histogram) onto the upper triangle, lower triangle, and diagonal. It is not a correlation heatmap tool, not a reshaping utility, and unlike a one-shot function it is designed for granular customization.",
+      "difficulty": "beginner",
+      "tags": [
+        "seaborn",
+        "pairgrid",
+        "pairwise-relationships",
+        "data-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are exploring a dataset with two categorical columns: `target` (the class label) and `gender`. You need a visualization that (1) quickly reveals class imbalance in `target`, and (2) shows how each class count breaks down by `gender` in the same plot.\n\nWrite the Seaborn code to create this plot using a count plot. Also explain what the `hue` parameter does in this context.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example solution:\n\n```python\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\nsns.countplot(x='target', data=df, hue='gender')\nplt.ylabel('Number of Records')\nplt.title('Target Counts by Gender')\nplt.show()\n```\n\n`hue='gender'` adds a second categorical variable that splits each `target` bar into colored segments (or side-by-side bars depending on Seaborn settings), allowing you to compare gender composition within each target class while still seeing overall class counts.",
+      "explanation": "A count plot is designed to show frequencies of categories, making it appropriate for checking class imbalance. Adding `hue` introduces a second categorical grouping so each class’s count is subdivided by `gender`, enabling comparison of subgroup sizes within each class without needing separate plots.",
+      "difficulty": "advanced",
+      "tags": [
+        "seaborn",
+        "countplot",
+        "hue-parameter",
+        "class-imbalance",
+        "categorical-comparison",
+        "eda"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want the bars in a Seaborn count plot to appear from most frequent category to least frequent. Which code accomplishes this?\n\n```python\nimport seaborn as sns\n\n# df has a categorical column named 'fruit'\n# Choose the option that sorts bars by descending frequency\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `sns.countplot(x='fruit', data=df, order=df['fruit'].value_counts().index)`",
+        "B. `sns.countplot(x='fruit', data=df, palette=df['fruit'].value_counts())`",
+        "C. `sns.countplot(x='fruit', data=df, hue=df['fruit'].value_counts().index)`",
+        "D. `sns.countplot(x='fruit', data=df, orient=df['fruit'].value_counts().index)`"
+      ],
+      "correct_answer": "A",
+      "explanation": "The `order=` parameter controls the category order on the axis. Passing `df['fruit'].value_counts().index` supplies categories sorted by count (descending by default), so bars appear from most frequent to least frequent. `palette` controls colors (not ordering), `hue` splits bars by a second categorical variable, and `orient` controls horizontal vs vertical orientation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "seaborn",
+        "countplot",
+        "order-parameter",
+        "value_counts",
+        "sorting",
+        "eda"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Seaborn, what does a count plot created with `sns.countplot(x='col', data=df)` primarily display?",
+      "question_type": "mc",
+      "options": [
+        "A. The mean of a numeric column for each category in `col`",
+        "B. The number of observations (rows) in each category of `col`",
+        "C. The distribution of a numeric variable using bins",
+        "D. The correlation between `col` and all other columns in `df`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`sns.countplot()` is a categorical analogue of a histogram: it counts how many times each distinct category appears in the specified categorical variable and draws a bar with height equal to that count. It does not compute means (A), does not bin numeric data (C), and does not compute correlations (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "seaborn",
+        "countplot",
+        "categorical-data",
+        "eda",
+        "frequency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team builds a Sankey diagram for an energy system: sources (left) → power plants (middle) → end uses (right). They notice that the total width of bands entering some nodes does not match the total width leaving those nodes, even though the underlying data should conserve energy.\n\nExplain at least TWO plausible causes of this mismatch related to how Sankey diagrams represent data, and describe ONE concrete step you would take to diagnose or fix the issue.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Plausible causes include: (1) incomplete or inconsistent flow data (e.g., missing links such as losses/waste/heat rejection so outflow is smaller than inflow, or double-counted links so outflow is larger); (2) unit inconsistencies or scaling differences across links (e.g., some flows recorded in kWh and others in MJ, or mixing annual totals with hourly rates); (3) node definition mismatches (e.g., aggregating sources differently than end uses so some flow is implicitly redirected or omitted); (4) visualization/library behavior such as link values being normalized, rounded, or filtered (e.g., small flows dropped), causing apparent imbalance.\n\nOne concrete diagnostic/fix: compute and display a per-node balance check (sum_in - sum_out) from the raw data before plotting, then add explicit 'losses/waste' links (or correct units/duplicates) so each node’s inflow equals outflow (within acceptable rounding tolerance).",
+      "explanation": "A Sankey diagram’s visual conservation depends on the underlying flow table being consistent: the diagram encodes quantities as widths, so any missing, duplicated, unit-mismatched, or filtered flows will produce visible imbalances at nodes. Diagnosing by checking per-node inflow/outflow totals directly on the data isolates whether the problem is data integrity (missing/duplicate/unit issues) or rendering (rounding/filtering/normalization), and the fix typically involves correcting units, deduplicating, or adding explicit sink/source links like waste/losses.",
+      "difficulty": "advanced",
+      "tags": [
+        "sankey-diagram",
+        "flow-conservation",
+        "data-quality",
+        "units",
+        "losses-waste",
+        "debugging-visualization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are visualizing how question categories change across stages: Seed Question → Generation 1 → Generation 2 → Generation 3. What insight is a Sankey diagram especially well-suited to reveal in this scenario?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "The exact wording differences between individual questions across generations",
+        "How the distribution of questions moves between categories/strategies from one generation to the next (e.g., shifts in proportions)",
+        "The statistical significance (p-values) of category changes across generations",
+        "The runtime performance of the generation pipeline at each stage"
+      ],
+      "correct_answer": "B",
+      "explanation": "Sankey diagrams are designed to show flows between categories/stages, with link width representing quantity. This makes them ideal for seeing how items transition (and how proportions shift) across stages such as Seed → Gen1 → Gen2 → Gen3. They do not directly show text diffs, statistical tests, or runtime metrics unless those are separately encoded.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sankey-diagram",
+        "category-transition",
+        "pipeline-stages",
+        "distribution-shift"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Sankey diagram, what does the width (thickness) of a link/band represent?",
+      "question_type": "mc",
+      "options": [
+        "A larger width indicates a larger quantity of flow along that path",
+        "A larger width indicates a longer time spent in the destination node",
+        "A larger width indicates a higher number of nodes connected in the diagram",
+        "A larger width indicates a higher uncertainty (error) in the data"
+      ],
+      "correct_answer": "A",
+      "explanation": "A Sankey diagram encodes magnitude using link width: thicker bands represent larger quantities flowing between nodes. Time, number of connected nodes, and uncertainty are not what width is intended to represent in a standard Sankey diagram.",
+      "difficulty": "beginner",
+      "tags": [
+        "sankey-diagram",
+        "flow-visualization",
+        "visual-encoding",
+        "link-width"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is choosing between Mermaid and a drag-and-drop diagram tool for technical documentation.\n\nDescribe **two benefits** and **two limitations** of Mermaid for this use case, and for each limitation propose **one practical mitigation** (how the team could reduce the impact).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Benefits (any two): (1) Version-control friendly because diagrams are plain text and diffs are readable. (2) Lives with the code in the same repo, reducing drift and improving maintainability. (3) Easy to update by editing text rather than rearranging shapes. (4) Consistent styling via themes; no special tools needed beyond a text editor.\n\nLimitations (any two) + mitigations: (1) Less precise control over positioning than visual tools → Mitigation: choose simpler diagram structures, break large diagrams into smaller ones, or accept auto-layout and focus on clarity over pixel perfection. (2) Complex diagrams can become hard to read in text form → Mitigation: modularize (multiple diagrams), use clear naming, comments, and consistent conventions; keep diagrams scoped to a single purpose. (3) Advanced styling can be verbose → Mitigation: standardize on a theme/config template and reuse it across the repo. (4) Not ideal for pixel-perfect/marketing visuals → Mitigation: use Mermaid for engineering docs but export/hand-design marketing diagrams in a dedicated design tool when needed.",
+      "explanation": "This answer demonstrates understanding of Mermaid's core trade-offs: it optimizes for maintainable, code-adjacent documentation (text, diffs, collaboration), but sacrifices fine-grained layout control and can become unwieldy for very complex or highly styled visuals. Mitigations show practical application: scoping, modularization, templates/themes, and choosing the right tool for the right audience.",
+      "difficulty": "advanced",
+      "tags": [
+        "mermaid",
+        "trade-offs",
+        "documentation",
+        "collaboration",
+        "maintainability",
+        "limitations",
+        "best-practices"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to document a simple architecture flow that reads left-to-right: User → Frontend → API → Database.\n\nWhich Mermaid snippet correctly produces that left-to-right flowchart?\n\nA.\n```mermaid\nsequenceDiagram\n    User->>Frontend: request\n    Frontend->>API: call\n    API->>Database: query\n```\n\nB.\n```mermaid\nflowchart LR\n    A[User] --> B[Frontend]\n    B --> C[API]\n    C --> D[Database]\n```\n\nC.\n```mermaid\nclassDiagram\n    User <|-- Frontend\n    Frontend <|-- API\n    API <|-- Database\n```\n\nD.\n```mermaid\ngantt\n    title Architecture\n    User :done, 2024-01-01, 1d\n    Frontend :done, 1d\n    API :done, 1d\n    Database :done, 1d\n```",
+      "question_type": "mc",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correct_answer": "B",
+      "explanation": "A flowchart is the appropriate diagram type for an architecture/process flow. The directive `flowchart LR` sets the layout direction to left-to-right, and the arrows (`-->`) connect the nodes in the required sequence.",
+      "difficulty": "intermediate",
+      "tags": [
+        "mermaid",
+        "flowchart",
+        "syntax",
+        "layout-direction",
+        "architecture-diagrams"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best explains why Mermaid diagrams are considered \"version control friendly\" compared to traditional visual diagram tools?\n\nA. Mermaid stores diagrams as binary files that Git can compress efficiently.\nB. Mermaid diagrams are written as plain text, so diffs show line-by-line changes.\nC. Mermaid automatically locks diagrams to prevent merge conflicts.\nD. Mermaid embeds diagrams as images that never change once rendered.",
+      "question_type": "mc",
+      "options": [
+        "Mermaid stores diagrams as binary files that Git can compress efficiently.",
+        "Mermaid diagrams are written as plain text, so diffs show line-by-line changes.",
+        "Mermaid automatically locks diagrams to prevent merge conflicts.",
+        "Mermaid embeds diagrams as images that never change once rendered."
+      ],
+      "correct_answer": "B",
+      "explanation": "Mermaid diagrams are defined using text (markdown-like syntax). Because the source is plain text, Git can show meaningful diffs (what lines changed), making reviews and collaboration easier than with drag-and-drop tools that often produce binary or layout-heavy artifacts.",
+      "difficulty": "beginner",
+      "tags": [
+        "mermaid",
+        "version-control",
+        "documentation-as-code",
+        "text-based-diagrams"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are creating a plot where the x/y data limits will change interactively (e.g., zooming or updating data). You need to add an information box (a text label) that stays fixed at the lower-left inside the axes, with a small padding from the corner.\n\nWrite a Matplotlib code snippet that places the text \"Info\" at 2% from the left and 2% from the bottom of the axes plotting area, and explain why this approach is robust to changes in axis limits.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n```python\nax.text(0.02, 0.02, \"Info\",\n        transform=ax.transAxes,\n        ha=\"left\", va=\"bottom\")\n```\nUsing `ax.transAxes` makes (x, y) fractions of the axes width/height, so the text stays anchored near the axes corner regardless of data limits.",
+      "explanation": "The requirement is for a UI-like element whose position should not move when data limits change. Data coordinates (`ax.transData`) would cause the text position to shift when you zoom/pan or when limits update. Using axes-fraction coordinates via `transform=ax.transAxes` anchors the text relative to the axes box: (0.02, 0.02) is always 2% from the left and bottom edges of the plotting area, making it stable under interactive limit changes.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "transforms",
+        "transAxes",
+        "interactive-plots",
+        "annotations",
+        "robust-layout"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nax.plot([0, 10], [0, 10])\n\nax.text(0.5, 1.05, \"Title-like label\", transform=ax.transAxes,\n        ha='center', va='bottom')\n\nplt.show()\n```\n\nWhich statement best describes where the text will appear and why?",
+      "question_type": "mc",
+      "options": [
+        "At data coordinate (0.5, 1.05), near the lower-left; because coordinates are always interpreted as data values",
+        "Centered horizontally and slightly above the top spine; because `ax.transAxes` interprets x/y as fractions of the axes and values > 1 can be outside the axes region",
+        "Centered in the entire figure window; because `ax.text` always uses figure-fraction coordinates",
+        "At the top-right of the axes; because x=0.5 and y=1.05 are rounded to (1,1) in axes-fraction coordinates"
+      ],
+      "correct_answer": "B",
+      "explanation": "With `transform=ax.transAxes`, x=0.5 means halfway across the axes, and y=1.05 means 5% above the top of the axes plotting area. Axes-fraction coordinates allow values outside [0,1] to place elements just outside the axes, which is useful for title-like labels or legends.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "ax.text",
+        "transAxes",
+        "axes-fraction",
+        "layout",
+        "annotations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, you want to place a label so that it is always at the top-right corner of the *axes plotting area* (inside the spines), regardless of the data limits. Which coordinate system and transform should you use?\n\nAssume `ax` is a Matplotlib Axes.",
+      "question_type": "mc",
+      "options": [
+        "Use data coordinates with `transform=ax.transData` and position at `(max(x), max(y))`",
+        "Use axes-fraction coordinates with `transform=ax.transAxes` and position at `(1, 1)`",
+        "Use figure-fraction coordinates with `transform=fig.transFigure` and position at `(1, 1)`",
+        "Use display (pixel) coordinates by passing raw pixel values as `(x, y)` without a transform"
+      ],
+      "correct_answer": "B",
+      "explanation": "Axes-fraction coordinates interpret (x, y) as fractions of the axes width/height: (0,0) is bottom-left of the plotting area and (1,1) is top-right. Using `transform=ax.transAxes` makes the placement independent of the data limits. `fig.transFigure` refers to the entire figure, not just the axes, and `ax.transData` depends on data ranges.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "coordinate-systems",
+        "axes-fraction",
+        "transforms",
+        "annotations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to build a funnel chart for an onboarding process, but one stage occasionally has *more* users than the previous stage (e.g., due to backfilled events or users re-entering the flow). Explain (1) how this would appear in a funnel chart that uses proportional widths, (2) why it can be misleading for identifying bottlenecks, and (3) one concrete way to address or communicate this issue in an executive dashboard.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A proportional-width funnel would widen at the stage where the count increases (creating a bulge or an inverted narrowing), because segment width encodes the stage value. This can mislead bottleneck analysis because funnels are typically interpreted as a monotonic decrease; a widening segment can hide true drop-offs elsewhere or cause viewers to question data quality/flow logic (e.g., it may look like “negative drop-off”). One way to address it is to (a) fix the metric definition to enforce a true stepwise cohort (e.g., count unique users who reached each stage in order within a window), or (b) annotate the chart explicitly (notes/tooltips) and/or pair it with a supporting view such as a stage-to-stage conversion table that shows both absolute counts and conversion rates, making the non-monotonicity and its cause clear.",
+      "explanation": "Because funnel segment width is proportional to the metric at each stage, any increase breaks the expected funnel shape and interpretation. Funnels are most effective when stages represent a linear, sequential process with attrition; non-monotonic data often indicates measurement/definition issues (e.g., reactivations, late events, duplicates) or a process that is not strictly linear. Addressing it requires either redefining the data to match the funnel assumption (ordered cohort) or clearly communicating the exception so the visualization does not imply an incorrect narrative about drop-offs.",
+      "difficulty": "advanced",
+      "tags": [
+        "funnel-charts",
+        "data-quality",
+        "metric-definition",
+        "non-monotonic-funnels",
+        "dashboard-communication"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Using the table below, which stage has the *largest absolute drop* in count from the previous stage?\n\n| Stage             | Count   |\n| ----------------- | ------- |\n| Website Visits    | 100,000 |\n| Sign-ups          | 25,000  |\n| Email Confirmed   | 20,000  |\n| Activated Account | 10,000  |\n| First Purchase    | 2,500   |",
+      "question_type": "mc",
+      "options": [
+        "Website Visits → Sign-ups",
+        "Sign-ups → Email Confirmed",
+        "Email Confirmed → Activated Account",
+        "Activated Account → First Purchase"
+      ],
+      "correct_answer": "A",
+      "explanation": "Compute absolute drops between consecutive stages: 100,000→25,000 drops by 75,000; 25,000→20,000 drops by 5,000; 20,000→10,000 drops by 10,000; 10,000→2,500 drops by 7,500. The largest absolute drop is 75,000 from Website Visits to Sign-ups, which a funnel chart would visually emphasize via the biggest narrowing between those bands.",
+      "difficulty": "intermediate",
+      "tags": [
+        "funnel-charts",
+        "drop-off-analysis",
+        "bottlenecks",
+        "conversion-funnel"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what a funnel chart is designed to show?",
+      "question_type": "mc",
+      "options": [
+        "A funnel chart shows how a quantity changes over time using a continuous line.",
+        "A funnel chart shows how a quantity progressively shrinks through sequential stages of a linear process.",
+        "A funnel chart compares unrelated categories by ranking them from largest to smallest.",
+        "A funnel chart displays the distribution of a variable by binning values into intervals."
+      ],
+      "correct_answer": "B",
+      "explanation": "Funnel charts are specifically used for stage-based, linear processes (e.g., visits → sign-ups → purchases) where the quantity typically decreases at each step. The visual narrowing highlights drop-off between sequential stages, which is not the primary purpose of line charts (time series), ranked bar charts (category comparison), or histograms (distributions).",
+      "difficulty": "beginner",
+      "tags": [
+        "funnel-charts",
+        "definitions",
+        "sequential-stages",
+        "drop-off"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a frequency polygon, why is it important that the x-values correspond to bin centers rather than bin edges when plotting `counts` from `np.histogram`? Explain what would go wrong (conceptually and/or visually) if you plotted `counts` against `bin_edges[:-1]` instead.\n\nYou may refer to the typical construction:\n\n```python\ncounts, bin_edges = np.histogram(data, bins=bins)\nbin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2\nplt.plot(bin_centers, counts)\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Counts represent the frequency within each interval between two consecutive bin edges, so each count should be positioned at the midpoint of that interval. Plotting counts against `bin_edges[:-1]` places each frequency at the left boundary of the bin instead of the bin’s representative x-location, shifting the polygon horizontally by half a bin width. This misalignment can distort the perceived location of peaks, skewness, and comparisons with other distributions or overlays (e.g., a histogram), because the line no longer summarizes each bin around its central value.",
+      "explanation": "A frequency polygon is meant to summarize each bin as a single point located at the bin’s representative value—its center. Using left edges anchors frequencies at boundaries, producing a systematic horizontal offset and potentially misleading interpretation of where the distribution is concentrated (e.g., the mode appears shifted). The plot may also fail to visually match an accompanying histogram, reducing its usefulness for comparison.",
+      "difficulty": "advanced",
+      "tags": [
+        "frequency-polygon",
+        "histogram",
+        "bin-centers-vs-edges",
+        "visual-interpretation",
+        "distribution-analysis"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You compute a histogram and get the following bin edges:\n\n```python\nbin_edges = np.array([0, 5, 10, 15])\n```\n\nWhat are the bin centers (midpoints) you should use on the x-axis for a frequency polygon?",
+      "question_type": "mc",
+      "options": [
+        "[0, 5, 10]",
+        "[2.5, 7.5, 12.5]",
+        "[5, 10, 15]",
+        "[1.25, 6.25, 11.25]"
+      ],
+      "correct_answer": "B",
+      "explanation": "Bin centers are computed as the average of each pair of adjacent edges: (0+5)/2 = 2.5, (5+10)/2 = 7.5, (10+15)/2 = 12.5. These centers align each frequency value with the midpoint of its interval.",
+      "difficulty": "intermediate",
+      "tags": [
+        "binning",
+        "bin-edges",
+        "bin-centers",
+        "numpy",
+        "frequency-polygon"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes a frequency polygon?",
+      "question_type": "mc",
+      "options": [
+        "A line plot connecting the midpoints of histogram bins to show the distribution shape",
+        "A bar chart where each bar height is the cumulative frequency up to that bin",
+        "A scatter plot of each raw data point against its index to show time trends",
+        "A pie chart showing the proportion of observations in each bin"
+      ],
+      "correct_answer": "A",
+      "explanation": "A frequency polygon is constructed by computing histogram bin counts and then plotting those counts at the bin midpoints (centers), connecting the points with line segments. The other options describe different chart types (cumulative frequency plot/ogive, time-series-like index plot, and pie chart).",
+      "difficulty": "beginner",
+      "tags": [
+        "frequency-polygon",
+        "histogram",
+        "distribution-shape",
+        "data-visualization-basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to draw an annotation box behind text such that:\n1) the box has a visible border,\n2) the interior fill is NOT visible (so the plot behind is unobstructed), and\n3) you still want the border to stand out.\n\nWrite a `props` dictionary (bbox properties) that accomplishes this, and briefly explain how it works. You may use any valid Matplotlib color specifiers.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n```python\nprops = dict(\n    boxstyle='round,pad=0.3',\n    facecolor='none',      # or (1, 1, 1, 0)\n    edgecolor='gray',\n    linewidth=1.5\n)\n```\nExplanation: setting `facecolor` to `'none'` (or an RGBA with alpha 0) removes the fill so the plot remains unobstructed, while `edgecolor` (and optionally `linewidth`) keeps a visible border around the text.",
+      "explanation": "To meet the requirements, the key is to make the patch interior transparent/absent while keeping the outline visible. `facecolor='none'` removes the fill, and `edgecolor` controls the border color. Increasing `linewidth` can make the border stand out without adding a fill.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "annotations",
+        "bbox",
+        "facecolor",
+        "edgecolor",
+        "patches",
+        "transparency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following annotation:\n\n```python\nprops = dict(\n    boxstyle='round,pad=0.3',\n    facecolor='lightyellow',\n    edgecolor='gray',\n    alpha=0.8\n)\nax.text(1.02, 0.5, counts_str, transform=ax.transAxes, bbox=props)\n```\n\nWhich statement best describes the visual effect of these settings?",
+      "question_type": "mc",
+      "options": [
+        "A. A rounded box with a pale yellow fill, a gray border, and a slightly transparent background so the plot can show through",
+        "B. A rounded box with a pale yellow border, a gray fill, and fully opaque background",
+        "C. No box is drawn because `alpha=0.8` disables the bbox patch",
+        "D. Only the text becomes 80% opaque; the box remains fully opaque"
+      ],
+      "correct_answer": "A",
+      "explanation": "`facecolor='lightyellow'` sets the box fill to pale yellow, `edgecolor='gray'` sets the border line color, and `alpha=0.8` makes the box patch translucent (not invisible), allowing grid/plot elements beneath to show through.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "bbox",
+        "facecolor",
+        "edgecolor",
+        "alpha",
+        "transparency",
+        "annotations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, when you pass a `bbox` dictionary to `ax.text(...)`, what does the `facecolor` parameter control?",
+      "question_type": "mc",
+      "options": [
+        "A. The fill (background) color of the box behind the text",
+        "B. The color of the text glyphs themselves",
+        "C. The border (outline) color of the box behind the text",
+        "D. The transparency of the entire Axes"
+      ],
+      "correct_answer": "A",
+      "explanation": "`facecolor` sets the fill color of the patch (the background of the bounding box) drawn behind the text. The border color is controlled by `edgecolor`, while transparency is controlled by `alpha` (typically within the bbox properties).",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "data-visualization",
+        "annotations",
+        "bbox",
+        "facecolor"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team member proposes using a diverging bar chart for survey results with three response groups per question: %Disagree, %Neutral, %Agree.\n\nThey plan to place %Disagree as negative bars, %Agree as positive bars, and %Neutral also as a positive bar segment stacked on top of %Agree.\n\nExplain what is potentially misleading about this approach and propose a better way to visualize these survey results while still leveraging the idea of divergence around a central baseline.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "It is potentially misleading because stacking %Neutral on the positive side makes the positive direction represent more than just agreement, inflating the apparent magnitude of “positive” responses and breaking the intended polarity (agree vs disagree) around the zero baseline. In a diverging setup, the two directions should map cleanly to opposing concepts (e.g., agree vs disagree). A better approach is to center the chart on a meaningful midpoint: place %Disagree to the left (negative), %Agree to the right (positive), and either (a) show %Neutral as a separate centered segment straddling zero or anchored at zero with a distinct neutral color, or (b) omit neutral from the diverging axis and show it as a separate indicator (e.g., a thin bar/marker) so that the divergence continues to encode only polarity. This preserves interpretability of direction and magnitude relative to the baseline.",
+      "explanation": "Diverging charts work best when each side of the baseline corresponds to opposite meanings. Mixing a neutral category into one side changes what that side semantically represents, making comparisons of “agreement vs disagreement” unreliable. Centering neutral at/around zero (or separating it) maintains the baseline as the dividing line between opposing responses and keeps the visual encoding consistent.",
+      "difficulty": "advanced",
+      "tags": [
+        "diverging-bar-chart",
+        "survey-visualization",
+        "neutral-category",
+        "stacked-bars",
+        "misleading-encodings",
+        "polarity"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to visualize net change by category, defined as `(predicted - actual)`, where some categories are positive and others negative.\n\nWhich design choice best supports the goal of emphasizing direction (positive vs. negative) and magnitude in a single view?",
+      "question_type": "mc",
+      "options": [
+        "Use a diverging bar chart centered at a zero baseline, with different colors for positive and negative bars",
+        "Use a pie chart showing each category's share of the total absolute change",
+        "Use a histogram of net changes aggregated across all categories",
+        "Use a stacked bar chart that stacks positive and negative values on the same side of the axis"
+      ],
+      "correct_answer": "A",
+      "explanation": "A diverging bar chart with a zero baseline makes polarity immediately visible (above vs. below zero) and preserves magnitude by bar length. Color can reinforce direction (e.g., green for positive, red for negative). A pie chart obscures sign and comparisons; a histogram loses category identity; stacking positive and negative on the same side reduces clarity about direction from the baseline.",
+      "difficulty": "intermediate",
+      "tags": [
+        "diverging-bar-chart",
+        "net-change",
+        "color-encoding",
+        "baseline-zero",
+        "design-choice"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A bar chart where some bars extend above a central baseline (e.g., zero) and others extend below it is best described as which chart type?",
+      "question_type": "mc",
+      "options": [
+        "Stacked bar chart",
+        "Diverging bar chart",
+        "Histogram",
+        "Pie chart"
+      ],
+      "correct_answer": "B",
+      "explanation": "A diverging bar chart is defined by bars extending in two directions from a central baseline (typically zero), allowing positive values to go one way and negative values the other. Stacked bars show composition, histograms show distributions of continuous variables, and pie charts show parts of a whole.",
+      "difficulty": "beginner",
+      "tags": [
+        "diverging-bar-chart",
+        "baseline",
+        "positive-negative-values",
+        "chart-identification"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are creating a bubble chart where the third numeric variable is encoded by bubble size. Explain why mapping the variable to *circle area* (rather than radius) is recommended for perceptual accuracy. Then, if you mistakenly map a value `v` to radius `r=v`, what should the corrected radius formula be (in terms of `v`) to make circle area proportional to `v`?\n\n(Assume `v` is non-negative and you can ignore constant scaling factors.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Humans perceive circle size primarily by area; if you map data to radius directly, the perceived area grows with the square of the value, exaggerating differences. To make area proportional to v, set radius r proportional to sqrt(v), e.g., r = sqrt(v) (up to a constant scale factor).",
+      "explanation": "Circle area is A = πr^2. If you set r = v, then A = πv^2, so doubling v quadruples the area, overstating differences. To make A ∝ v, you need r^2 ∝ v, hence r ∝ √v (and any constant multiplier just scales all bubbles equally).",
+      "difficulty": "advanced",
+      "tags": [
+        "perceptual-accuracy",
+        "area-vs-radius",
+        "encoding",
+        "scaling",
+        "bubble-size"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following Matplotlib code for a bubble chart:\n\n```python\nimport matplotlib.pyplot as plt\n\ncompanies = ['Company A', 'Company B', 'Company C', 'Company D']\nrevenue = [100, 150, 80, 200]      # X-axis\nprofit = [30, 45, 20, 50]          # Y-axis\nmarket_cap = [1000, 1600, 600, 2200]  # Bubble size\n\nplt.scatter(revenue, profit, s=market_cap, alpha=0.5)\nplt.show()\n```\n\nWhich statement is most accurate?\n\nA. `s=market_cap` sets the bubble radius in data units.\nB. `alpha=0.5` makes bubbles semi-transparent, helping with overlap.\nC. `s=market_cap` maps values to bubble diameter, so area is not proportional to data.\nD. This chart cannot represent three numeric variables because only x and y are numeric.",
+      "question_type": "mc",
+      "options": [
+        "A. `s=market_cap` sets the bubble radius in data units.",
+        "B. `alpha=0.5` makes bubbles semi-transparent, helping with overlap.",
+        "C. `s=market_cap` maps values to bubble diameter, so area is not proportional to data.",
+        "D. This chart cannot represent three numeric variables because only x and y are numeric."
+      ],
+      "correct_answer": "B",
+      "explanation": "In Matplotlib, `alpha` controls transparency; `alpha=0.5` makes points semi-transparent and improves readability when bubbles overlap. The `s` parameter controls marker area in points^2 (i.e., bubble area), not radius or diameter in data units, so A and C are incorrect. Bubble charts represent three numeric variables via x, y, and size, so D is incorrect.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "plt.scatter",
+        "alpha",
+        "overplotting",
+        "marker-area",
+        "bubble-chart"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a bubble chart, which mapping best represents the *typical* way to show three dimensions of numeric data?\n\nA. X-axis = numeric variable, Y-axis = numeric variable, bubble *radius* = third numeric variable\nB. X-axis = numeric variable, Y-axis = numeric variable, bubble *area/size* = third numeric variable\nC. X-axis = categorical variable, Y-axis = numeric variable, bubble color = third numeric variable\nD. X-axis = numeric variable, Y-axis = numeric variable, bubble color = third numeric variable",
+      "question_type": "mc",
+      "options": [
+        "A. X-axis = numeric variable, Y-axis = numeric variable, bubble radius = third numeric variable",
+        "B. X-axis = numeric variable, Y-axis = numeric variable, bubble area/size = third numeric variable",
+        "C. X-axis = categorical variable, Y-axis = numeric variable, bubble color = third numeric variable",
+        "D. X-axis = numeric variable, Y-axis = numeric variable, bubble color = third numeric variable"
+      ],
+      "correct_answer": "B",
+      "explanation": "A bubble chart encodes two numeric variables on the x and y axes and uses bubble size to encode a third numeric variable. For perceptual accuracy, the *area* of the circle (what Matplotlib’s `s` parameter represents) should correspond to the data values, not the radius. Color is commonly used only as an optional fourth (often categorical) dimension.",
+      "difficulty": "beginner",
+      "tags": [
+        "bubble-chart",
+        "visual-encoding",
+        "x-axis",
+        "y-axis",
+        "bubble-size",
+        "area-vs-radius"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nax.plot([0, 1, 2], [10, 20, 30], marker='o')\nax.set_ylim(0, 40)\nax.margins(y=0.5)\n```\n\n1) What y-limits will actually be used when the figure is drawn?\n2) Explain why.\n\nAnswer in 2–4 sentences.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The y-limits will be (0, 40). 2) Because explicit limits set via `ax.set_ylim()` override autoscaling; when limits are manually set, `ax.margins()` is ignored since margins are applied during autoscaling of data limits.",
+      "explanation": "Margins are applied as part of autoscaling the axis limits based on the data range. Once `ax.set_ylim(0, 40)` is called, the y-limits are fixed explicitly, so there is no autoscaled data-limit expansion to apply; therefore `ax.margins(y=0.5)` has no effect on the final y-limits.",
+      "difficulty": "advanced",
+      "tags": [
+        "matplotlib",
+        "ax.margins",
+        "ax.set_ylim",
+        "autoscale",
+        "axis-limits",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are plotting a bar chart and want extra vertical space so the tallest bar and its value label are not touching the top edge. You write:\n\n```python\nax.bar(['A','B','C'], [10, 12, 9])\nax.margins(y=0.2)\n```\n\nWhich statement best describes the effect of `ax.margins(y=0.2)`?",
+      "question_type": "mc",
+      "options": [
+        "It adds 0.2 units above the tallest bar and 0.2 units below the shortest bar.",
+        "It adds 20% of the vertical data range as space both above and below the data limits.",
+        "It sets the y-axis limits to (0, 1.2 * max_value) and leaves the bottom unchanged.",
+        "It only adds space above the tallest bar; the bottom margin is unchanged."
+      ],
+      "correct_answer": "B",
+      "explanation": "The `y` margin is relative to the y data range, not fixed units. A value of `0.2` adds padding equal to 20% of the vertical data range to both the bottom and top of the data limits, helping prevent bars/labels from touching the axes boundaries.",
+      "difficulty": "intermediate",
+      "tags": [
+        "matplotlib",
+        "bar-chart",
+        "ax.margins",
+        "label-clipping",
+        "axis-padding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Matplotlib, what does `ax.margins(x=0.05, y=0.1)` do?",
+      "question_type": "mc",
+      "options": [
+        "Adds fixed padding of 0.05 units on the x-axis and 0.1 units on the y-axis.",
+        "Adds 5% padding of the x data range left/right and 10% padding of the y data range bottom/top.",
+        "Sets the axis limits to exactly 0.05 and 0.1 beyond the min/max values.",
+        "Reduces the visible data range by 5% on x and 10% on y to zoom in."
+      ],
+      "correct_answer": "B",
+      "explanation": "`ax.margins()` adds padding as a fraction of the current data range. `x=0.05` expands the x-limits by 5% of the x data range on both left and right, and `y=0.1` expands the y-limits by 10% of the y data range on both bottom and top. It is not a fixed-unit padding and does not zoom in.",
+      "difficulty": "beginner",
+      "tags": [
+        "matplotlib",
+        "axes",
+        "ax.margins",
+        "plot-padding",
+        "data-limits"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

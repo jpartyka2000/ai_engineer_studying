@@ -1,0 +1,1431 @@
+{
+  "metadata": {
+    "subject_slug": "async_programming",
+    "subject_name": "Async Programming",
+    "exported_at": "2026-03-07T22:49:44.606673",
+    "question_count": 69,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Explain what Jupyter/IPython is doing “behind the scenes” to allow top-level `await` in a notebook cell. Your answer should mention (1) the event loop situation, (2) how the cell code is executed, and (3) why you typically don’t need `asyncio.run()` in notebooks. Also briefly note one potential pitfall when mixing notebook-managed loops with code that tries to manage the loop itself.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Jupyter’s IPython kernel starts and manages an asyncio event loop for you (a loop is already running when the notebook session starts). When you write `await` at the top level of a cell, IPython enables “top-level await” by wrapping the cell’s code into a coroutine and scheduling/awaiting it on that existing loop, so the cell behaves as if it were inside an `async def` function. Because the loop is already running and IPython is scheduling the coroutine, you usually don’t need to call `asyncio.run()` in a notebook. A common pitfall is running code that tries to start or control the loop itself (e.g., calling `asyncio.run()` or `loop.run_until_complete()`), which can fail or raise errors like “event loop is already running” or cause confusing nested-loop behavior; IPython often uses patches/custom loop management (e.g., nest_asyncio-style behavior) to mitigate this, but it can still lead to subtle issues.",
+      "explanation": "A correct explanation ties together: (1) an already-running event loop in the IPython kernel, (2) the cell being executed in a coroutine context (top-level await support), and (3) the absence of a need for `asyncio.run()` because the loop is managed externally. Mentioning the pitfall demonstrates deeper understanding of why notebook code sometimes breaks when moved to scripts or when libraries attempt to manage the event loop directly.",
+      "difficulty": "advanced",
+      "tags": [
+        "ipython",
+        "jupyter",
+        "asyncio",
+        "event-loop",
+        "nest_asyncio",
+        "loop-management",
+        "top-level-await"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are migrating code from a Jupyter notebook to a normal Python script. The notebook code worked:\n\n```python\nimport aiohttp\n\nasync def fetch(url):\n    async with aiohttp.ClientSession() as session:\n        async with session.get(url) as resp:\n            return await resp.text()\n\ntext = await fetch(\"https://example.com\")\nprint(len(text))\n```\n\nWhich change is the most appropriate to make this work in a standard Python script (without relying on notebook-specific behavior)?",
+      "question_type": "mc",
+      "options": [
+        "A. Add `import nest_asyncio; nest_asyncio.apply()` at the top, then keep the code unchanged.",
+        "B. Replace `await fetch(...)` with `fetch(...)` (remove `await`).",
+        "C. Wrap the top-level `await` in an async `main()` and call it using `asyncio.run(main())`.",
+        "D. Call `loop = asyncio.get_event_loop(); loop.run_until_complete(fetch(...))` without defining any async function."
+      ],
+      "correct_answer": "C",
+      "explanation": "In a normal Python script, top-level `await` is not allowed. The idiomatic approach is to create an async entry point (e.g., `async def main(): ...`) and start an event loop with `asyncio.run(main())`. Option D can work in some contexts but is less recommended and can behave differently depending on environment; option A is notebook-oriented and doesn’t address that top-level `await` is invalid syntax in a script; option B changes semantics (it returns a coroutine object rather than running it).",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "top-level-await",
+        "scripts-vs-notebooks",
+        "aiohttp",
+        "asyncio-run"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Jupyter notebook, you can often write `await some_async_call()` directly at the top level of a cell without wrapping it in `async def` or calling `asyncio.run()`. What is the primary reason this works?\n\n```python\nresult = await some_async_call()\nprint(result)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Jupyter automatically converts all functions in the notebook into async functions at import time.",
+        "B. IPython’s kernel runs (and manages) an asyncio event loop and enables top-level `await` by wrapping the cell in a coroutine.",
+        "C. Python allows top-level `await` in any `.py` file as long as `asyncio` is imported.",
+        "D. `await` is executed synchronously in notebooks, so no event loop is needed."
+      ],
+      "correct_answer": "B",
+      "explanation": "Jupyter/IPython runs its own asyncio event loop under the hood and supports top-level `await` by effectively wrapping the cell’s contents in a coroutine and scheduling it on that running loop. This is why you don’t need an explicit `async def main()` wrapper or `asyncio.run(main())` in a notebook cell.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "jupyter",
+        "ipython",
+        "top-level-await",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a service that runs a strictly sequential workflow (A then B then C), but it must also:\n- remain responsive to shutdown signals,\n- enforce timeouts so it doesn’t hang indefinitely,\n- and potentially add a background heartbeat in the future.\n\nExplain (in 4–8 sentences) why implementing the workflow as an `async` coroutine can be preferable to synchronous code, even if A/B/C are awaited one after another. In your answer, mention at least two of: non-blocking I/O, graceful shutdown/cancellation, uniform API, future concurrency.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Implementing the sequential workflow as an async coroutine enables non-blocking waits: while awaiting I/O in A/B/C, the event loop can continue running other coroutines so the service stays responsive. Async also enables graceful shutdown and cancellation: you can cancel the running task, apply timeouts (e.g., `asyncio.wait_for`), and ensure cleanup runs rather than hanging in a blocking call. Keeping the workflow in the async world provides a uniform API, so introducing an async dependency later (like an async DB or HTTP client) doesn’t require rewriting the orchestration. Finally, it is future-proof for concurrency: you can add a heartbeat with `create_task()` or run multiple operations with `gather()` without restructuring the entire program.",
+      "explanation": "A strong answer ties the benefits of async to operational needs: responsiveness during waits (non-blocking I/O), control over stopping and timing out work (cancellation/timeouts), and reduced refactoring when async dependencies or concurrent tasks are introduced (uniform API and future concurrency). The key insight is that sequential awaits can still coexist with concurrent *other* tasks managed by the event loop.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "cancellation",
+        "timeouts",
+        "graceful-shutdown",
+        "future-concurrency",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You currently have a sequential workflow that uses blocking calls:\n\n```python\nimport time\n\ndef run():\n    step1()\n    time.sleep(2)  # simulate I/O wait\n    step2()\n    time.sleep(2)\n    step3()\n```\n\nYou expect that in the near future, `step2()` will need to call an async database client (`await db.fetch(...)`). Which rationale best explains why converting the orchestration to `async`/`await` *now* can reduce future refactoring work?",
+      "question_type": "mc",
+      "options": [
+        "A. Async code uses less memory than synchronous code, so it is always a better default.",
+        "B. By adopting a uniform async API, you can later swap in `await db.fetch(...)` inside the same async flow without rewriting the control structure.",
+        "C. Async code forces all functions to become pure (no side effects), making future changes safer.",
+        "D. Async code automatically retries failed I/O operations, so database calls will be more reliable without extra code."
+      ],
+      "correct_answer": "B",
+      "explanation": "A key advantage is a uniform API: if your orchestration is already async, introducing an async dependency later (like an async DB client) is straightforward—replace a step with an awaited call without redesigning the whole flow. Async does not inherently reduce memory usage (A), does not enforce purity (C), and does not add automatic retries (D).",
+      "difficulty": "intermediate",
+      "tags": [
+        "async-await",
+        "api-design",
+        "refactoring",
+        "async-libraries",
+        "asyncio"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Python application, you have a sequence of steps that must run in order (step 1 → step 2 → step 3). Why might you still implement it using `async`/`await` rather than purely synchronous blocking calls?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. `async`/`await` makes sequential code run faster by executing each step in parallel automatically.",
+        "B. While awaiting I/O, the event loop can run other coroutines, keeping the application responsive even if this particular flow is sequential.",
+        "C. `async`/`await` guarantees deterministic ordering across multiple threads, eliminating race conditions.",
+        "D. `async`/`await` prevents exceptions from propagating, so error handling is simpler than synchronous code."
+      ],
+      "correct_answer": "B",
+      "explanation": "Even if your coroutine awaits each step sequentially, the key benefit is non-blocking I/O: while one step is waiting (e.g., on network, disk, timers), the event loop can run other coroutines. This keeps the process responsive and able to service other tasks. `async`/`await` does not automatically parallelize sequential awaits (so A is incorrect), it is not primarily about thread ordering (C), and it does not suppress exceptions (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "async-await",
+        "event-loop",
+        "non-blocking-io",
+        "asyncio-basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Rewrite the following script to follow best practice for multiple phases of async work by using a single `asyncio.run(main())` entry point. Your rewrite should:\n\n1) Use exactly one `asyncio.run(...)` call.\n2) Run `first()` and then `second()` sequentially.\n3) Avoid creating and tearing down multiple loops.\n\n```python\nimport asyncio\n\nasync def first():\n    print(\"First\")\n    await asyncio.sleep(0.1)\n\nasync def second():\n    print(\"Second\")\n    await asyncio.sleep(0.1)\n\nif __name__ == \"__main__\":\n    asyncio.run(first())\n    asyncio.run(second())\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct rewrite is:\n\n```python\nimport asyncio\n\nasync def first():\n    print(\"First\")\n    await asyncio.sleep(0.1)\n\nasync def second():\n    print(\"Second\")\n    await asyncio.sleep(0.1)\n\nasync def main():\n    await first()\n    await second()\n\nif __name__ == \"__main__\":\n    asyncio.run(main())\n```\n",
+      "explanation": "Best practice for multi-step async workflows is to create one event loop (via a single `asyncio.run(main())`) and then `await` all phases inside `main()`. This avoids repeatedly creating/closing event loops and makes it easier to manage shared resources, long-running tasks, and application structure.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "application-structure",
+        "best-practices",
+        "event-loop-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are inside an async function and want to run another coroutine to completion.\n\nWhat happens if you try to call `asyncio.run()` from inside an already-running event loop?\n\n```python\nimport asyncio\n\nasync def inner():\n    await asyncio.sleep(0.1)\n\nasync def outer():\n    asyncio.run(inner())\n\nasyncio.run(outer())\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It raises `RuntimeError: asyncio.run() cannot be called from a running event loop` because it would nest event loops.",
+        "B. It works: `asyncio.run()` detects the existing loop and reuses it automatically.",
+        "C. It works only if `inner()` contains at least one `await` statement.",
+        "D. It deadlocks because `inner()` waits for the outer loop to finish."
+      ],
+      "correct_answer": "A",
+      "explanation": "When `outer()` is running, there is already an active event loop. `asyncio.run()` refuses to be called from within a running loop because it would require nesting/creating a second loop in the same thread, so it raises `RuntimeError: asyncio.run() cannot be called from a running event loop`. The correct approach is to `await inner()` from within `outer()`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "nested-event-loops",
+        "runtimeerror"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a normal Python script (not inside Jupyter and not inside an existing event loop), what happens when you call `asyncio.run()` multiple times sequentially?\n\n```python\nimport asyncio\n\nasync def first():\n    print(\"First\")\n    await asyncio.sleep(0.1)\n\nasync def second():\n    print(\"Second\")\n    await asyncio.sleep(0.1)\n\nif __name__ == \"__main__\":\n    asyncio.run(first())\n    asyncio.run(second())\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It fails because `asyncio.run()` can only be called once per process.",
+        "B. It works: each call creates a new event loop, runs the coroutine to completion, then closes the loop.",
+        "C. It works but both coroutines run concurrently in the same event loop created by the first call.",
+        "D. It works only if you manually call `asyncio.get_event_loop().close()` between calls."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.run(coro)` is designed as a high-level entry point: it creates a fresh event loop, runs the provided coroutine until it completes, and then closes the loop. In a normal script where no loop is already running, calling it multiple times sequentially is valid; each call uses its own loop lifecycle.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "event-loop-lifecycle"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing an async function that calls three independent services concurrently. Requirements:\n\n1) The whole group must time out after 10 seconds.\n2) If one service fails quickly, you still want to collect results from the others (i.e., do not cancel the rest just because one failed).\n3) You want to return a structure that separates successful results from exceptions.\n\nWrite a Python snippet using `asyncio.gather()` (and any standard asyncio utilities) that meets these requirements, and briefly explain why your approach satisfies (1)–(3).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One valid approach:\n\n```python\nimport asyncio\n\nasync def call_all():\n    try:\n        results = await asyncio.wait_for(\n            asyncio.gather(\n                service1(),\n                service2(),\n                service3(),\n                return_exceptions=True,\n            ),\n            timeout=10,\n        )\n    except asyncio.TimeoutError:\n        # The whole group exceeded 10s\n        raise\n\n    successes = []\n    failures = []\n    for r in results:\n        if isinstance(r, Exception):\n            failures.append(r)\n        else:\n            successes.append(r)\n\n    return {\"successes\": successes, \"failures\": failures}\n```\n\nExplanation (brief): `asyncio.wait_for(..., timeout=10)` enforces a single 10s deadline for the entire batch. `return_exceptions=True` prevents `gather()` from raising on the first failure and therefore avoids canceling the remaining coroutines due to one exception; instead it returns exception objects in the results list. Post-processing separates successful values from exceptions.",
+      "explanation": "This solution uses two key behaviors: (1) `asyncio.wait_for()` bounds the *entire* gather operation, producing a single `TimeoutError` if the group exceeds 10 seconds. (2) `return_exceptions=True` changes `gather()` from “fail fast and cancel the rest” to “collect outcomes,” so one failing task doesn’t prevent collecting other results. (3) Because exceptions are returned as values in the results list, you can partition them into successes vs failures deterministically.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "gather",
+        "return_exceptions",
+        "wait_for",
+        "timeouts",
+        "robust-error-handling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\n\nasync def fetch(name, delay, fail=False):\n    await asyncio.sleep(delay)\n    if fail:\n        raise RuntimeError(f\"{name} failed\")\n    return f\"{name} ok\"\n\nasync def main():\n    results = await asyncio.gather(\n        fetch(\"A\", 1),\n        fetch(\"B\", 2, fail=True),\n        fetch(\"C\", 3),\n    )\n    print(results)\n\nasyncio.run(main())\n```\n\nWhat happens by default when `fetch(\"B\", ...)` raises an exception?\n\nA. `gather()` returns a list where the second element is the exception object, and the other tasks continue.\nB. `gather()` raises the exception from `B` and cancels the remaining unfinished coroutines.\nC. `gather()` waits for all tasks to finish and then raises an aggregated exception containing all failures.\nD. `gather()` ignores the exception and returns only successful results.",
+      "question_type": "mc",
+      "options": [
+        "A. `gather()` returns a list where the second element is the exception object, and the other tasks continue.",
+        "B. `gather()` raises the exception from `B` and cancels the remaining unfinished coroutines.",
+        "C. `gather()` waits for all tasks to finish and then raises an aggregated exception containing all failures.",
+        "D. `gather()` ignores the exception and returns only successful results."
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, `asyncio.gather()` propagates the first exception it encounters and cancels the other awaitables that have not finished yet. This behavior treats the group as a single logical unit (all succeed or the group fails). Option (A) would require `return_exceptions=True`. Options (C) and (D) do not match the default semantics described.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "gather",
+        "exceptions",
+        "cancellation",
+        "error-handling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which scenario is the best fit for using `asyncio.gather()`?\n\nA. You need to start a background task and you never care about its result.\nB. Task B requires the output of Task A before it can begin.\nC. You have multiple independent I/O-bound coroutines and you want to run them concurrently and wait for all results.\nD. You want to handle each task’s completion one-by-one as soon as it finishes, in completion order.",
+      "question_type": "mc",
+      "options": [
+        "A. You need to start a background task and you never care about its result.",
+        "B. Task B requires the output of Task A before it can begin.",
+        "C. You have multiple independent I/O-bound coroutines and you want to run them concurrently and wait for all results.",
+        "D. You want to handle each task’s completion one-by-one as soon as it finishes, in completion order."
+      ],
+      "correct_answer": "C",
+      "explanation": "`asyncio.gather()` is designed for running multiple independent coroutines concurrently and then waiting until *all* of them complete, returning results in the same order as the input coroutines. (A) is better served by `asyncio.create_task()` without awaiting. (B) is a sequential dependency and should be handled with sequential `await`s. (D) describes a pattern better matched by `asyncio.as_completed()` when you want results as tasks finish.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "gather",
+        "concurrency",
+        "io-bound",
+        "task-orchestration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Advanced scenario: chaining work safely from a done-callback.\n\nYou want to start a follow-up coroutine `process(data)` only if `fetch_data()` succeeds. You also want to avoid blocking the event loop and avoid \"Task exception was never retrieved\" warnings.\n\nGiven:\n```python\nimport asyncio\n\nasync def fetch_data():\n    await asyncio.sleep(0.01)\n    return {\"k\": \"v\"}\n\nasync def process(data):\n    await asyncio.sleep(0.01)\n    return len(data)\n\nasync def main():\n    t = asyncio.create_task(fetch_data())\n\n    def on_done(task: asyncio.Task):\n        # TODO\n        pass\n\n    t.add_done_callback(on_done)\n    await asyncio.sleep(0.1)\n\nasyncio.run(main())\n```\n\nWhich `on_done` implementation best meets the requirements?",
+      "question_type": "mc",
+      "options": [
+        "A. \n```python\ndef on_done(task):\n    data = task.result()\n    asyncio.run(process(data))\n```\n",
+        "B. \n```python\ndef on_done(task):\n    data = task.result()\n    asyncio.create_task(process(data))\n```\n",
+        "C. \n```python\ndef on_done(task):\n    try:\n        data = task.result()\n    except Exception:\n        return\n    asyncio.get_running_loop().create_task(process(data))\n```\n",
+        "D. \n```python\ndef on_done(task):\n    while not task.done():\n        pass\n    asyncio.create_task(process(task.result()))\n```\n"
+      ],
+      "correct_answer": "C",
+      "explanation": "Option C retrieves the result inside a try/except, so exceptions from `fetch_data()` are observed (preventing un-retrieved exception warnings) and the follow-up is only scheduled on success. It schedules `process(data)` as a new task on the running loop without blocking. \n\nA is incorrect because `asyncio.run()` cannot be called from within an already-running event loop. B is incomplete/unsafe because `task.result()` can raise and would propagate out of the callback, and it would also schedule `process` even if `fetch_data` failed (since it never checks success). D is incorrect because busy-waiting blocks the event loop.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "asyncio",
+        "add_done_callback",
+        "task-chaining",
+        "event-loop",
+        "exception-handling",
+        "create_task"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to run a coroutine in the background and log its outcome without awaiting it immediately.\n\nFill in the missing parts so that:\n1) the callback prints the result on success,\n2) prints the exception on failure,\n3) works even if the task is cancelled.\n\n```python\nimport asyncio\n\nasync def fetch(n: int):\n    await asyncio.sleep(0.05)\n    if n < 0:\n        raise ValueError(\"n must be >= 0\")\n    return n * 2\n\ndef on_done(task: asyncio.Task):\n    # TODO: implement robustly\n    ...\n\nasync def main():\n    t1 = asyncio.create_task(fetch(2))\n    t2 = asyncio.create_task(fetch(-1))\n\n    t1.add_done_callback(on_done)\n    t2.add_done_callback(on_done)\n\n    await asyncio.sleep(0.2)\n\nasyncio.run(main())\n```\n\nWrite the body of `on_done`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct implementation:\n```python\ndef on_done(task: asyncio.Task):\n    try:\n        result = task.result()  # returns value or re-raises exception/cancellation\n        print(\"success:\", result)\n    except asyncio.CancelledError:\n        print(\"cancelled\")\n    except Exception as e:\n        print(\"failed:\", repr(e))\n```",
+      "explanation": "Inside a done-callback, you typically call `task.result()` to retrieve the return value. If the coroutine raised, `task.result()` re-raises that exception; if the task was cancelled, it raises `asyncio.CancelledError`. Catching these cases allows the callback to log success/failure/cancellation without crashing the event loop or silently losing errors.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "asyncio",
+        "task",
+        "add_done_callback",
+        "task.result",
+        "exception-handling",
+        "cancellederror"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `asyncio`, what does `Task.add_done_callback()` do?\n\nConsider the snippet:\n```python\nimport asyncio\n\nasync def work():\n    return 42\n\ndef cb(task: asyncio.Task):\n    print(task.result())\n\nasync def main():\n    t = asyncio.create_task(work())\n    t.add_done_callback(cb)\n    await asyncio.sleep(0.1)\n\nasyncio.run(main())\n```\nWhich statement is correct?",
+      "question_type": "mc",
+      "options": [
+        "A. It registers a function that will be called exactly once when the task finishes (success, exception, or cancellation), receiving the task as its only argument.",
+        "B. It pauses the event loop until the task finishes, then calls the callback with the task result value (not the task).",
+        "C. It schedules the callback to run immediately in the current call stack before the task starts executing.",
+        "D. It converts the coroutine into a synchronous function and runs it in a background thread."
+      ],
+      "correct_answer": "A",
+      "explanation": "`add_done_callback(fn)` attaches a callback that is invoked when the task transitions to the done state, regardless of whether it returned normally, raised, or was cancelled. The callback is passed the `Task` object, not the raw result. It does not block the event loop and does not run work in a thread.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "task",
+        "add_done_callback",
+        "callbacks"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are writing a library that offers a synchronous API but internally uses asyncio. The library may be called from:\n- normal scripts (no running loop)\n- async applications (a loop already running)\n- other threads\n\nDesign a safe pattern for a sync wrapper `def get_user(id): ...` around `async def get_user_async(id): ...` that avoids nested `asyncio.run()` and handles calls from different threads. Provide a short code sketch and explain the key decisions (when to use `asyncio.run`, when to raise, and when to use `run_coroutine_threadsafe`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good answer describes a dual-interface design and avoids calling asyncio.run() when a loop is already running. One acceptable pattern:\n\n```python\nimport asyncio\nimport threading\n\nclass UserClient:\n    def __init__(self):\n        self._loop = asyncio.new_event_loop()\n        self._thread = threading.Thread(target=self._run_loop, daemon=True)\n        self._thread.start()\n\n    def _run_loop(self):\n        asyncio.set_event_loop(self._loop)\n        self._loop.run_forever()\n\n    async def get_user_async(self, user_id: int):\n        await asyncio.sleep(0.01)\n        return {\"id\": user_id}\n\n    def get_user(self, user_id: int):\n        # If caller is in an async context (running loop in this thread),\n        # do NOT try to block it with asyncio.run(); force async usage.\n        try:\n            asyncio.get_running_loop()\n        except RuntimeError:\n            # No running loop in this thread. Submit to the background loop.\n            fut = asyncio.run_coroutine_threadsafe(\n                self.get_user_async(user_id), self._loop\n            )\n            return fut.result()\n        else:\n            raise RuntimeError(\n                \"get_user() cannot be called from an async context; \"\n                \"use `await get_user_async()` instead.\"\n            )\n\n    def close(self):\n        self._loop.call_soon_threadsafe(self._loop.stop)\n        self._thread.join()\n        self._loop.close()\n```\n\nKey points:\n- Use asyncio.run() only at a true program entry point / one-off sync call when no loop is running; never from inside an already running loop.\n- In a library, prefer providing both sync and async APIs; if a running loop is detected in the same thread, raise an error (or require the async method) to avoid deadlocks / nested loops.\n- For sync callers from any thread, run an event loop in a dedicated thread and use asyncio.run_coroutine_threadsafe() to submit coroutines safely; block with future.result() in the sync API.\n- Ensure lifecycle management: stop the loop and close it to avoid resource leaks.",
+      "explanation": "This tests understanding of event-loop ownership and lifecycle. A sync wrapper must not call `asyncio.run()` when a loop is already running (common in async apps and notebooks) because it attempts to manage the loop recursively and can raise `RuntimeError` or cause design issues. For thread-crossing scenarios, `asyncio.run_coroutine_threadsafe(coro, loop)` is the correct primitive, but it requires that `loop` is already running—typically in a dedicated background thread via `run_forever()`. Raising when called from an async context prevents blocking the running loop (a common deadlock/anti-pattern) and nudges users to the async API. Proper stop/close prevents leaked loops and warnings.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "asyncio",
+        "library-design",
+        "sync-wrapper",
+        "async-api",
+        "run_coroutine_threadsafe",
+        "threading",
+        "event-loop-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a synchronous function that needs to call an async function many times in a loop. Which approach is generally most appropriate to reduce overhead?\n\n```python\nimport asyncio\n\nasync def async_operation(i: int) -> int:\n    await asyncio.sleep(0.001)\n    return i * 2\n\ndef do_many(n: int) -> int:\n    total = 0\n    for i in range(n):\n        # choose an approach here\n        ...\n    return total\n```",
+      "question_type": "mc",
+      "options": [
+        "Call `asyncio.run(async_operation(i))` on every iteration because it is the simplest and always the fastest.",
+        "Create one event loop once (e.g., `loop = asyncio.new_event_loop()`), reuse `loop.run_until_complete(async_operation(i))` for each iteration, and close the loop at the end.",
+        "Inside the loop, call `await async_operation(i)` directly from `do_many` without changing its signature.",
+        "Use `asyncio.run_coroutine_threadsafe(async_operation(i), loop)` from the same thread where the loop is not running, without starting the loop."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.run()` creates and tears down an event loop each time, which adds significant overhead when repeated. Reusing a single loop and calling `run_until_complete` repeatedly avoids repeated loop creation. Option C is invalid because `await` requires `do_many` to be `async def`. Option D is intended for submitting work to a loop running in another thread; it also requires the loop to be running (e.g., via `run_forever`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "asyncio",
+        "performance",
+        "event-loop-lifecycle",
+        "run_until_complete",
+        "asyncio.run"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\n\nasync def fetch_data():\n    await asyncio.sleep(0.1)\n    return \"data\"\n\ndef sync_function():\n    result = fetch_data()\n    print(type(result))\n    return result\n\nsync_function()\n```\n\nWhat is the most accurate description of what happens when `sync_function()` is called?",
+      "question_type": "mc",
+      "options": [
+        "The async function executes and returns the string \"data\" to `sync_function()`.",
+        "`fetch_data()` returns a coroutine object; it does not run, and you may get a \"coroutine was never awaited\" warning.",
+        "`fetch_data()` automatically creates an event loop and runs to completion because it is called from synchronous code.",
+        "`asyncio.sleep(0.1)` blocks the current thread for 0.1 seconds, then `fetch_data()` returns \"data\"."
+      ],
+      "correct_answer": "B",
+      "explanation": "Calling an `async def` function does not execute it; it produces a coroutine object. Without an event loop running it (e.g., via `await`, `asyncio.run`, or `loop.run_until_complete`), the coroutine never executes, and Python commonly emits a warning that the coroutine was never awaited.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "coroutine",
+        "sync-to-async",
+        "event-loop-basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the two programs below.\n\n**Program 1**\n```python\nimport asyncio\n\nasync def step(name, delay):\n    await asyncio.sleep(delay)\n    print(name)\n\nasync def main():\n    await step(\"A\", 0.2)\n    await step(\"B\", 0.1)\n    await step(\"C\", 0.0)\n\nasyncio.run(main())\n```\n\n**Program 2**\n```python\nimport asyncio\n\nasync def step(name, delay):\n    await asyncio.sleep(delay)\n    print(name)\n\nasync def main():\n    asyncio.create_task(step(\"A\", 0.2))\n    asyncio.create_task(step(\"B\", 0.1))\n    asyncio.create_task(step(\"C\", 0.0))\n\nasyncio.run(main())\n```\n\nWhich statement best describes the expected output behavior?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Program 1 always prints A, then B, then C; Program 2 may print in a different order and may even print nothing before exiting.",
+        "B. Both programs always print A, then B, then C because `asyncio` preserves creation order.",
+        "C. Program 1 may print in any order because `await` yields to the event loop; Program 2 always prints A, then B, then C.",
+        "D. Both programs may print nothing because `asyncio.sleep` prevents printing until the loop is closed."
+      ],
+      "correct_answer": "A",
+      "explanation": "In Program 1, the sequential `await` pattern enforces strict ordering: `main` waits for A to finish before starting B, and so on, so the print order is deterministically A → B → C.\n\nIn Program 2, tasks are scheduled concurrently. Since `main` does not `await` the tasks (e.g., via `await asyncio.gather(...)`), `main` can finish immediately, causing `asyncio.run` to close the event loop. Depending on timing, tasks may run partially, fully, or not at all before shutdown; if they do run, the print order is not guaranteed (often C then B then A due to delays).",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "asyncio",
+        "sequential-await",
+        "create_task",
+        "event-loop-lifecycle",
+        "concurrency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to add centralized error handling to a sequential async pipeline. Complete the code so that any exception raised by `fetch_data`, `process_data`, or `save_results` is caught in one place and logged, while preserving the sequential behavior.\n\n```python\nimport asyncio\n\nasync def fetch_data():\n    await asyncio.sleep(0.1)\n    return {\"data\": 123}\n\nasync def process_data(x):\n    await asyncio.sleep(0.1)\n    return x * 2\n\nasync def save_results(result):\n    await asyncio.sleep(0.1)\n    print(\"Saved\", result)\n\nasync def main():\n    # TODO: add centralized error handling here\n    raw = await fetch_data()\n    processed = await process_data(raw[\"data\"])\n    await save_results(processed)\n\nif __name__ == \"__main__\":\n    asyncio.run(main())\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Wrap the sequential awaits in a try/except inside main (or around the call to main if you re-raise). For example:\n\n```python\nasync def main():\n    try:\n        raw = await fetch_data()\n        processed = await process_data(raw[\"data\"])\n        await save_results(processed)\n    except Exception as e:\n        # log or handle centrally\n        print(\"Pipeline failed:\", e)\n        # optionally: raise\n```\n",
+      "explanation": "In a sequential await pipeline, exceptions naturally propagate upward from the deepest coroutine to the caller. Placing a `try/except` around the chained `await` calls in `main` catches failures from any step in one centralized location without changing the sequential ordering of operations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "asyncio",
+        "error-handling",
+        "exception-propagation",
+        "sequential-await"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the sequential `await` pattern shown below, what is the primary effect of writing `raw = await fetch_data()` followed later by `processed = await process_data(raw[\"data\"])`?\n\n```python\nasync def main():\n    raw = await fetch_data()\n    processed = await process_data(raw[\"data\"])\n    await save_results(processed)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Each coroutine starts immediately and runs in parallel; `await` only collects results at the end.",
+        "B. Each coroutine runs to completion before the next line executes, enforcing a clear step-by-step order.",
+        "C. `await` blocks the entire Python interpreter, preventing any other tasks from running.",
+        "D. `await` implicitly creates a new event loop for each coroutine call."
+      ],
+      "correct_answer": "B",
+      "explanation": "`await` suspends the *current coroutine* (`main`) until the awaited coroutine completes, then resumes execution on the next line. With chained awaits like this, the operations are performed sequentially (fetch, then process, then save). It does not create new event loops (that’s `asyncio.run`’s job) and it does not block the whole interpreter; it yields control back to the event loop so other tasks (if any) may run.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "await",
+        "sequential-await",
+        "control-flow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\n\nasync def inner():\n    loop = asyncio.get_running_loop()\n    return loop\n\ndef outer():\n    loop = asyncio.new_event_loop()\n    # Intentionally NOT calling asyncio.set_event_loop(loop)\n    try:\n        return loop.run_until_complete(inner())\n    finally:\n        loop.close()\n\nprint(outer())\n```\n\nWhich option best describes what happens and why?\n\nA. It raises `RuntimeError` in `inner()` because `asyncio.set_event_loop(loop)` was not called.\nB. It prints a loop object successfully because `run_until_complete` makes `loop` the running loop during execution of `inner()`.\nC. It prints `None` because `get_running_loop()` returns `None` when no loop was set with `set_event_loop`.\nD. It emits a `DeprecationWarning` because `new_event_loop()` is deprecated in Python 3.10+.",
+      "question_type": "mc",
+      "options": [
+        "A. It raises `RuntimeError` in `inner()` because `asyncio.set_event_loop(loop)` was not called.",
+        "B. It prints a loop object successfully because `run_until_complete` makes `loop` the running loop during execution of `inner()`.",
+        "C. It prints `None` because `get_running_loop()` returns `None` when no loop was set with `set_event_loop`.",
+        "D. It emits a `DeprecationWarning` because `new_event_loop()` is deprecated in Python 3.10+."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.get_running_loop()` returns the loop that is currently running in the current thread. When you call `loop.run_until_complete(inner())`, that specific `loop` becomes the running loop for the duration of executing `inner()`, so `get_running_loop()` succeeds and returns it. `asyncio.set_event_loop(loop)` is mainly for APIs that look up the thread’s “current” loop (e.g., `get_event_loop()`), but `get_running_loop()` is tied to what is actively running, not what is registered as the default for the thread.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "new_event_loop",
+        "set_event_loop",
+        "get_running_loop",
+        "thread-local-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to run a coroutine from synchronous code and ensure the event loop is always closed, even if the coroutine raises an exception.\n\nFill in the missing lines in the following code using appropriate asyncio APIs:\n\n```python\nimport asyncio\n\nasync def worker():\n    loop = asyncio.get_running_loop()\n    return loop.is_running()\n\ndef main():\n    # TODO: get a loop\n    try:\n        result = # TODO: run worker to completion\n        print(result)\n    finally:\n        # TODO: close the loop\n        pass\n\nif __name__ == \"__main__\":\n    main()\n```\n\nWrite the completed `main()` function (only).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\ndef main():\n    loop = asyncio.get_event_loop()\n    try:\n        result = loop.run_until_complete(worker())\n        print(result)\n    finally:\n        loop.close()\n```",
+      "explanation": "From synchronous code, you typically obtain the loop with `asyncio.get_event_loop()` (thread-associated loop) and then execute a coroutine to completion via `loop.run_until_complete(coro)`. Wrapping the run in a `try/finally` ensures `loop.close()` executes regardless of errors, preventing resource leaks and leaving the program in a clean state.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "run_until_complete",
+        "event-loop-lifecycle",
+        "resource-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python asyncio, which statement about obtaining the event loop is correct?\n\nA. `asyncio.get_running_loop()` can be called from synchronous code and will create a loop if none exists.\nB. `asyncio.get_event_loop()` always raises `RuntimeError` if no loop is currently running.\nC. `asyncio.get_running_loop()` returns the active loop inside a coroutine and raises `RuntimeError` if no loop is running.\nD. `asyncio.new_event_loop()` returns the currently running loop for the thread and never creates a new one.",
+      "question_type": "mc",
+      "options": [
+        "A. `asyncio.get_running_loop()` can be called from synchronous code and will create a loop if none exists.",
+        "B. `asyncio.get_event_loop()` always raises `RuntimeError` if no loop is currently running.",
+        "C. `asyncio.get_running_loop()` returns the active loop inside a coroutine and raises `RuntimeError` if no loop is running.",
+        "D. `asyncio.new_event_loop()` returns the currently running loop for the thread and never creates a new one."
+      ],
+      "correct_answer": "C",
+      "explanation": "`asyncio.get_running_loop()` is intended for use when you are already inside an active event loop (typically inside `async def`). If you call it when no loop is running (e.g., from normal synchronous code), it raises `RuntimeError`. By contrast, `get_event_loop()` is a synchronous-friendly API that returns or creates a loop for the current thread (with evolving deprecation behavior in newer Python versions), and `new_event_loop()` explicitly creates a brand-new loop object.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "event-loop",
+        "get_running_loop",
+        "get_event_loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following two notebook cells executed in order.\n\nCell 1:\n```python\nimport asyncio\n\nasync def worker():\n    await asyncio.sleep(0.1)\n    return \"done\"\n```\n\nCell 2:\n```python\nimport asyncio\n\nasync def wrapper():\n    return asyncio.run(worker())\n\nresult = await wrapper()\nprint(result)\n```\n\nWhat is the most accurate outcome and explanation?",
+      "question_type": "mc",
+      "options": [
+        "It prints `done` because `asyncio.run()` can safely be nested inside an async function as long as the outer function is awaited.",
+        "It raises `RuntimeError: asyncio.run() cannot be called from a running event loop` because the notebook’s event loop is already running when `wrapper()` executes.",
+        "It hangs indefinitely because `asyncio.run()` pauses the notebook kernel event loop until `worker()` completes.",
+        "It prints `done` but leaks tasks because `asyncio.run()` does not close the event loop in Jupyter."
+      ],
+      "correct_answer": "B",
+      "explanation": "In a Jupyter notebook, the IPython-managed event loop is already running when you execute `await wrapper()`. Even though `asyncio.run()` is called inside an `async def`, it still attempts to create and run a new event loop in the current thread. `asyncio.run()` explicitly refuses to run when an event loop is already running, so it raises the `RuntimeError`.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "jupyter",
+        "nested-event-loop",
+        "asyncio.run",
+        "ipython-event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following cell in a Jupyter notebook and get an error:\n\n```python\nimport asyncio\n\nasync def fetch():\n    await asyncio.sleep(0.1)\n    return \"ok\"\n\nresult = asyncio.run(fetch())\nprint(result)\n```\n\n1) What error message (or key part of it) should you expect?\n2) Rewrite the code in a notebook-friendly way that produces the same output.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) You should expect a RuntimeError indicating `asyncio.run()` cannot be called from a running event loop (e.g., `RuntimeError: asyncio.run() cannot be called from a running event loop`).\n\n2) In a notebook, use top-level `await` instead of `asyncio.run()`:\n\n```python\nimport asyncio\n\nasync def fetch():\n    await asyncio.sleep(0.1)\n    return \"ok\"\n\nresult = await fetch()\nprint(result)\n```",
+      "explanation": "Jupyter/IPython keeps an asyncio event loop running to support async features, including top-level `await`. Since `asyncio.run()` tries to create and run a new loop, it conflicts with the already-running loop and raises a `RuntimeError`. The idiomatic notebook approach is to directly `await` the coroutine at the top level.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "jupyter",
+        "top-level-await",
+        "runtimeerror",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a Jupyter notebook, why is calling `asyncio.run()` typically unnecessary and likely to fail?\n\n```python\nimport asyncio\n\nasync def main():\n    await asyncio.sleep(0.1)\n\nasyncio.run(main())\n```",
+      "question_type": "mc",
+      "options": [
+        "Because Jupyter automatically converts all async functions into synchronous functions.",
+        "Because Jupyter already has a running asyncio event loop in the kernel thread, and `asyncio.run()` refuses to start a new loop when one is running.",
+        "Because `asyncio.run()` is deprecated in Python when used with IPython.",
+        "Because `asyncio.run()` can only be used on Windows, not in browsers."
+      ],
+      "correct_answer": "B",
+      "explanation": "IPython/Jupyter starts and manages an asyncio event loop behind the scenes to support async operations and top-level `await`. `asyncio.run()` is designed to create and manage a brand-new event loop for the duration of a coroutine, and it raises a `RuntimeError` if it detects an event loop is already running in the same thread (which is the case in notebooks).",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "jupyter",
+        "event-loop",
+        "asyncio.run",
+        "ipython"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\nimport aiohttp\n\nasync def fetch(url):\n    async with aiohttp.ClientSession() as session:\n        async with session.get(url) as resp:\n            return await resp.text()\n\nasync def main():\n    urls = [\"https://example.com\"] * 100\n    results = await asyncio.gather(*(fetch(u) for u in urls))\n    print(len(results))\n\nasyncio.run(main())\n```\n\nIdentify the main performance/design issue in this code and propose a fix. Your answer must explain why the fix works in terms of the roles of `asyncio` vs `aiohttp`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Issue: `fetch()` creates a new `aiohttp.ClientSession()` for every request, causing unnecessary connection setup/teardown and preventing efficient connection pooling/keep-alive. Fix: create one `ClientSession` in `main()` and reuse it across all fetches (pass it into `fetch(session, url)`), then use `asyncio.gather` to schedule many fetch coroutines concurrently. This works because `asyncio` is responsible for scheduling concurrent coroutines (via `gather`/Tasks on the event loop), while `aiohttp` is responsible for HTTP behavior and benefits from a shared session that manages connection pooling and non-blocking sockets under the same `asyncio` event loop.",
+      "explanation": "The code uses `asyncio` correctly to run many coroutines concurrently, but misuses `aiohttp` by creating a session per request. `aiohttp.ClientSession` is designed to be long-lived and reused; it maintains connectors and pools connections. Reusing a single session improves throughput and reduces overhead, while `asyncio` continues to provide the concurrency model (event loop + task scheduling).",
+      "difficulty": "advanced",
+      "tags": [
+        "aiohttp",
+        "ClientSession",
+        "connection-pooling",
+        "asyncio.gather",
+        "performance",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to fetch 50 URLs concurrently and also run a periodic background task (e.g., logging a heartbeat every second) while the downloads are in progress. Explain how `asyncio` and `aiohttp` would be used together to implement this, and what each library is responsible for.\n\nYour answer should mention (1) what provides concurrency/scheduling, (2) what provides HTTP functionality, and (3) at least one `asyncio` mechanism you would use (e.g., tasks, `gather`, `create_task`, sleep).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `asyncio` as the concurrency/scheduling layer: create coroutines for the heartbeat (using `asyncio.sleep(1)` in a loop) and for each fetch, schedule them as Tasks (e.g., via `asyncio.create_task`) and await them together (e.g., `await asyncio.gather(*tasks)`). Use `aiohttp` for the HTTP layer inside the fetch coroutines: create an `aiohttp.ClientSession`, perform `session.get(url)` requests, and await response bodies (e.g., `await resp.text()` or `await resp.read()`). `asyncio` runs the event loop and interleaves the tasks; `aiohttp` uses that event loop and non-blocking sockets to implement HTTP client/server operations.",
+      "explanation": "This tests the relationship between the libraries: `asyncio` is the general-purpose engine that schedules and runs concurrent coroutines (Tasks) on an event loop, while `aiohttp` is the HTTP-specific toolkit that relies on `asyncio` to perform non-blocking network I/O. A correct solution uses `asyncio` primitives (Tasks/`gather`/`sleep`) to orchestrate concurrency and `aiohttp` APIs (`ClientSession`, `session.get`) to perform HTTP requests.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "aiohttp",
+        "concurrency",
+        "tasks",
+        "gather",
+        "ClientSession",
+        "scheduling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes the difference between `asyncio` and `aiohttp` in Python async programming?",
+      "question_type": "mc",
+      "options": [
+        "`asyncio` is a third-party HTTP framework; `aiohttp` is the standard-library event loop implementation.",
+        "`asyncio` provides the core async primitives (event loop, tasks, futures); `aiohttp` is a third-party library built on `asyncio` for async HTTP client/server functionality.",
+        "`asyncio` is only for CPU-bound parallelism; `aiohttp` is only for running timers and scheduling sleeps.",
+        "`aiohttp` replaces the need for an event loop, so `asyncio` is not used when making HTTP requests with `aiohttp`."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio` is the standard-library foundation for asynchronous programming in Python: it provides the event loop, coroutines, Tasks/Futures, and synchronization primitives. `aiohttp` is a third-party library built on top of `asyncio` that provides high-level APIs specifically for asynchronous HTTP clients and servers.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "aiohttp",
+        "event-loop",
+        "http",
+        "standard-library-vs-third-party"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to run an async entry point that takes configuration parameters. Write a small, correct program that:\n\n1) Defines an `async def main(host: str, port: int)` coroutine.\n2) Calls `asyncio.run(...)` correctly so that `host=\"127.0.0.1\"` and `port=8080` are passed into `main`.\n3) Briefly explain (1–2 sentences) why you cannot pass `host` and `port` as extra arguments to `asyncio.run()` itself.\n\nYour answer should include code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport asyncio\n\nasync def main(host: str, port: int):\n    # example async work\n    await asyncio.sleep(0.1)\n    print(f\"Connecting to {host}:{port}\")\n\nif __name__ == \"__main__\":\n    asyncio.run(main(\"127.0.0.1\", 8080))\n```\n\n`asyncio.run()` takes exactly one positional argument: a coroutine object. Therefore you must embed arguments by calling the coroutine function (`main(\"127.0.0.1\", 8080)`) to create that coroutine object, rather than trying to pass extra parameters to `asyncio.run()`.",
+      "explanation": "A correct solution defines a coroutine that accepts parameters and then *calls it* to produce a coroutine object. The key understanding is the separation between (a) the coroutine function (`main`) and (b) the coroutine object returned by calling it (`main(...)`). `asyncio.run()` runs the coroutine object and does not accept arbitrary extra positional arguments for the coroutine’s parameters.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "entry-point",
+        "coroutines",
+        "argument-binding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the code below. Which line correctly runs the coroutine with arguments?\n\n```python\nimport asyncio\n\nasync def greet(name: str, delay: float):\n    await asyncio.sleep(delay)\n    return f\"Hello, {name}!\"\n\n# Choose one line to replace ???\n???\n```",
+      "question_type": "mc",
+      "options": [
+        "asyncio.run(greet, \"Alice\", 1.0)",
+        "asyncio.run(greet(\"Alice\", 1.0))",
+        "asyncio.run(greet)(\"Alice\", 1.0)",
+        "asyncio.run(\"Alice\", 1.0, greet)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`greet(\"Alice\", 1.0)` constructs a coroutine object with the arguments bound. `asyncio.run(...)` then runs that coroutine. The other options incorrectly attempt to pass arguments to `asyncio.run()` or treat its return value as a callable.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "coroutine-object",
+        "calling-conventions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's asyncio, how do you pass arguments to a coroutine that you want to run with `asyncio.run()`?",
+      "question_type": "mc",
+      "options": [
+        "Pass them as additional positional arguments to `asyncio.run()`, e.g., `asyncio.run(greet, \"Alice\", 1.0)`",
+        "Call the coroutine with its arguments and pass the resulting coroutine object to `asyncio.run()`, e.g., `asyncio.run(greet(\"Alice\", 1.0))`",
+        "Use `await` at top level: `await greet(\"Alice\", 1.0)` (no `asyncio.run()` needed)",
+        "Set global variables `name` and `delay` before calling `asyncio.run(greet())`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.run()` accepts a single positional argument: a coroutine object. You create that coroutine object by calling the `async def` function with its parameters (e.g., `greet(\"Alice\", 1.0)`), which binds the arguments and returns a coroutine object that `asyncio.run()` can execute to completion.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "coroutines",
+        "function-arguments"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following two environments:\n\n1) A normal Python script executed with `python file.py`\n2) A Jupyter notebook cell executed in IPython\n\nBoth contain this code:\n\n```python\nresult = await some_coroutine()\nprint(result)\n```\n\nExplain why this code fails in (1) but can work in (2). Your answer should mention what Jupyter/IPython does differently regarding event loops and top-level `await`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "In a normal script, top-level `await` is invalid syntax because `await` can only appear inside an `async def` coroutine body, so Python raises `SyntaxError: 'await' outside async function` during parsing.\n\nIn Jupyter/IPython, the kernel pre-starts an asyncio event loop and effectively wraps the cell body in a coroutine when it detects top-level `await`. That notebook-specific integration makes `await` at the top level of a cell work without explicitly writing `async def main()` or calling `asyncio.run()`.",
+      "explanation": "The key difference is not the coroutine itself but the execution environment: standard Python requires you to explicitly create a coroutine context (`async def`) and drive it with an event loop runner (`asyncio.run`). IPython provides a convenience layer that supplies both a running loop and a coroutine wrapper for the cell, enabling top-level `await`.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "asyncio",
+        "jupyter",
+        "ipython",
+        "top-level-await",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a coroutine function `some_coroutine()` and want to call it from a normal Python script (not Jupyter). Fill in the missing parts so the code runs correctly and prints the result.\n\n```python\nimport asyncio\n\nasync def main():\n    result = ____ some_coroutine()\n    print(result)\n\n____(main())\n```\n\nWrite the two missing pieces.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `await` inside `main`, and call `asyncio.run(main())`:\n\n```python\nimport asyncio\n\nasync def main():\n    result = await some_coroutine()\n    print(result)\n\nasyncio.run(main())\n```",
+      "explanation": "`await` must be used inside an `async def` coroutine. To execute that coroutine from synchronous top-level code in a script, you start and manage the event loop with `asyncio.run(...)`, which runs `main()` to completion.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "asyncio",
+        "async-def",
+        "await",
+        "asyncio.run",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a standard Python script (e.g., running `python myscript.py`), what happens if you write the following at top level?\n\n```python\nresult = await some_coroutine()\nprint(result)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It runs successfully because Python automatically creates an event loop at module import time.",
+        "It raises `SyntaxError: 'await' outside async function` because `await` must be inside an `async def` coroutine in normal Python code.",
+        "It raises `RuntimeError: no running event loop` because `await` requires `asyncio.run()` but the syntax is still valid.",
+        "It runs, but `result` becomes an unresolved coroutine object until you call `asyncio.run()` later."
+      ],
+      "correct_answer": "B",
+      "explanation": "In standard Python (outside notebook environments that add special handling), `await` is only legal inside an `async def` function body. Using it at the top level of a normal `.py` file is a syntax error, so the code fails to parse before it can run.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "await",
+        "syntaxerror",
+        "coroutines"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an asyncio program that launches many coroutines. Each coroutine does:\n\n1) some CPU-heavy computation for ~200ms (pure Python loop, no `await`), then\n2) an `await` to perform an I/O call.\n\nExplain why the CPU-heavy part can cause the whole program to appear \"stuck\" even though there are many coroutines, and provide two concrete fixes. At least one fix must keep asyncio as the orchestration mechanism.\n\nYour answer should reference the fact that asyncio uses a single thread for coroutines and that switching happens at `await` points.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Because asyncio runs coroutines on a single OS thread by default, only one coroutine can execute Python bytecode at a time. The event loop can only switch to other coroutines when the current coroutine yields control—typically at an `await`. If a coroutine spends ~200ms in CPU-bound work with no `await`, it monopolizes the event loop thread, preventing other coroutines from running and delaying I/O handling.\n\nTwo fixes:\n1) Offload CPU-bound work to an executor while keeping asyncio for orchestration, e.g. `await asyncio.to_thread(cpu_func, ...)` (thread pool) or `loop.run_in_executor(...)`. This allows the event loop to remain responsive.\n2) Use multiprocessing (e.g., `ProcessPoolExecutor` or `multiprocessing`) for true parallelism on multiple cores, again invoked from asyncio via `run_in_executor` / `ProcessPoolExecutor`.\n\nAlternative/extra: restructure the CPU work to periodically yield (e.g., chunk the computation and `await asyncio.sleep(0)` between chunks), though this improves responsiveness but does not provide real parallelism for CPU-bound tasks.",
+      "explanation": "The key insight is cooperative multitasking: coroutines do not get preempted automatically; they must yield at `await`. CPU-bound code without `await` blocks the single-threaded event loop, starving other coroutines and delaying I/O callbacks. Offloading CPU work to threads/processes or inserting yield points addresses the starvation; processes (or native extensions releasing the GIL) are needed for real CPU parallelism.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "cpu-bound",
+        "event-loop-starvation",
+        "await",
+        "asyncio.to_thread",
+        "executors",
+        "processpool",
+        "concurrency-vs-parallelism"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following asyncio code:\n\n```python\nimport asyncio\n\nsem = asyncio.Semaphore(2)\n\nasync def worker(i):\n    async with sem:\n        await asyncio.sleep(1)\n        return i\n\nasync def main():\n    tasks = [asyncio.create_task(worker(i)) for i in range(5)]\n    results = await asyncio.gather(*tasks)\n    print(results)\n\nasyncio.run(main())\n```\n\nWhich statement best describes what the semaphore is doing here?\n\nA. It limits the number of OS threads that can execute `worker` at once\nB. It limits the number of coroutines that can be inside the `async with sem:` block at once, even though everything runs on one thread\nC. It forces the five coroutines to run strictly one after another (no overlap at all)\nD. It makes `asyncio.sleep(1)` run in parallel on multiple CPU cores",
+      "question_type": "mc",
+      "options": [
+        "It limits the number of OS threads that can execute `worker` at once",
+        "It limits the number of coroutines that can be inside the `async with sem:` block at once, even though everything runs on one thread",
+        "It forces the five coroutines to run strictly one after another (no overlap at all)",
+        "It makes `asyncio.sleep(1)` run in parallel on multiple CPU cores"
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.Semaphore` coordinates access among coroutines, not OS threads. With an initial value of 2, at most two coroutines can hold the semaphore and be inside the critical section at the same time. Others will await the semaphore. This still occurs within a single-threaded event loop; concurrency comes from coroutines yielding at `await` points (here, `await asyncio.sleep(1)`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "semaphore",
+        "coroutines",
+        "critical-section",
+        "scheduling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's asyncio, how are multiple coroutines executed by default?\n\nA. Each coroutine runs in its own OS thread, scheduled preemptively by the OS\nB. All coroutines run on a single OS thread using an event loop and cooperative multitasking\nC. Coroutines run in separate processes managed by the asyncio event loop\nD. Coroutines run in parallel on multiple CPU cores as long as they use `await`",
+      "question_type": "mc",
+      "options": [
+        "Each coroutine runs in its own OS thread, scheduled preemptively by the OS",
+        "All coroutines run on a single OS thread using an event loop and cooperative multitasking",
+        "Coroutines run in separate processes managed by the asyncio event loop",
+        "Coroutines run in parallel on multiple CPU cores as long as they use `await`"
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, asyncio uses a single OS thread running an event loop. Coroutines are scheduled cooperatively: they run until they hit an `await`, at which point they yield control back to the event loop so another ready coroutine can run. This provides concurrency (interleaving progress) but not parallelism (simultaneous execution on multiple cores).",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "event-loop",
+        "coroutines",
+        "cooperative-multitasking",
+        "concurrency-vs-parallelism"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following program:\n\n```python\nimport asyncio\n\nasync def main():\n    await asyncio.sleep(0.01)\n    return \"ok\"\n\ndef wrapper():\n    return main  # note: returns the function object, not a coroutine object\n\nresult = asyncio.run(wrapper())\nprint(result)\n```\n\nWhat happens when you run it, and what is the minimal change to make it work while keeping `wrapper()` as a synchronous function?",
+      "question_type": "mc",
+      "options": [
+        "It prints `ok`. No change needed because `asyncio.run()` accepts coroutine functions.",
+        "It raises `TypeError: a coroutine was expected, got function`. Change `wrapper` to `return main()`.",
+        "It raises `RuntimeError: no running event loop`. Change `asyncio.run(wrapper())` to `asyncio.get_event_loop().run_until_complete(wrapper())`.",
+        "It deadlocks because `asyncio.run()` creates a nested loop. Change `main` to a normal `def`."
+      ],
+      "correct_answer": "B",
+      "explanation": "`wrapper()` returns `main` (a coroutine function), so `asyncio.run(wrapper())` is effectively `asyncio.run(main)`, which raises `TypeError: a coroutine was expected, got function`. The minimal fix is to have `wrapper` return a coroutine object by calling the coroutine function: `return main()`.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "coroutine",
+        "awaitable",
+        "event-loop-lifecycle"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run the following code and get `TypeError: a coroutine was expected, got function`.\n\n```python\nimport asyncio\n\nasync def main():\n    await asyncio.sleep(1)\n    print(\"Done\")\n\nasyncio.run(main)\n```\n\n1) Identify the exact mistake.\n2) Provide the corrected line of code.\n3) Briefly explain why the corrected version works.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The mistake is passing the function object `main` instead of a coroutine object.\n2) Corrected line: `asyncio.run(main())`\n3) `main()` calls the `async def` function and returns a coroutine object (an awaitable). `asyncio.run()` can create an event loop, run that coroutine to completion, and then close the loop.",
+      "explanation": "An `async def` defines a coroutine function; it does not run until called, and calling it returns a coroutine object. `asyncio.run()` requires that coroutine object so it can schedule and execute it on a new event loop. Passing the function itself provides no awaitable to run, triggering the TypeError.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "TypeError",
+        "coroutine-function-vs-coroutine-object"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's asyncio, which of the following correctly uses `asyncio.run()` to execute an async entry point?\n\n```python\nimport asyncio\n\nasync def main():\n    await asyncio.sleep(0.1)\n    print(\"Done\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "`asyncio.run(main)`",
+        "`asyncio.run(main())`",
+        "`await asyncio.run(main())`",
+        "`asyncio.run(await main())`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.run()` expects an awaitable (specifically a coroutine object). Calling `main()` produces a coroutine object, so `asyncio.run(main())` is correct. Passing `main` without calling it passes a function object and raises `TypeError: a coroutine was expected, got function`. The other options misuse `await` at top level or attempt to `await` before an event loop is running.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "asyncio.run",
+        "coroutine",
+        "awaitable"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are orchestrating three heterogeneous async operations and want to ensure each result is matched to the correct variable, even if they complete in different orders.\n\nWrite a short `async def main()` that concurrently runs `fetch_data()`, `write_log()`, and `check_status()` using `asyncio.gather()`, assigns their results to variables in a way that is robust to completion order, and briefly explain why the variable-to-result mapping is reliable.\n\n(You may assume the three coroutines exist and are awaitable.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport asyncio\n\nasync def main():\n    data, log_ack, status = await asyncio.gather(\n        fetch_data(),\n        write_log(),\n        check_status(),\n    )\n    return data, log_ack, status\n```\n\nBecause `asyncio.gather()` returns results in the same positional order as the awaitables passed to it, `data` will always correspond to `fetch_data()`, `log_ack` to `write_log()`, and `status` to `check_status()`, regardless of which coroutine finishes first.",
+      "explanation": "This uses tuple unpacking to bind each slot of the `gather()` result to a specific variable. The mapping is reliable because `gather()` preserves input-aligned ordering of results, so downstream code can safely destructure results without being affected by timing differences between concurrent tasks.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "gather",
+        "orchestration",
+        "tuple-unpacking",
+        "positional-integrity"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\n\nasync def task(name, delay):\n    await asyncio.sleep(delay)\n    return name\n\nasync def main():\n    results = await asyncio.gather(\n        task(\"A\", 0.3),\n        task(\"B\", 0.1),\n        task(\"C\", 0.2),\n    )\n    print(results)\n\nasyncio.run(main())\n```\n\nWhat will be printed?",
+      "question_type": "mc",
+      "options": [
+        "['B', 'C', 'A']",
+        "['A', 'B', 'C']",
+        "['C', 'B', 'A']",
+        "It raises an error because tasks finish out of order."
+      ],
+      "correct_answer": "B",
+      "explanation": "Although \"B\" finishes first (0.1s), `asyncio.gather()` preserves input order in its returned results. Since the awaitables are passed as A, then B, then C, the printed list is `['A', 'B', 'C']`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "gather",
+        "sleep",
+        "result-alignment",
+        "ordering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's `asyncio`, what ordering guarantee does `asyncio.gather()` provide for its returned results when multiple coroutines complete at different times?",
+      "question_type": "mc",
+      "options": [
+        "Results are returned in the order the coroutines finish (fastest first).",
+        "Results are returned in the same order as the coroutines were passed to `gather()`, regardless of completion order.",
+        "Results are returned in random order because scheduling is nondeterministic.",
+        "Results are returned sorted lexicographically by the string representation of each coroutine."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.gather()` returns a sequence (typically a list) whose elements are aligned to the input order of the awaitables passed in. This is true even if some coroutines finish earlier than others; completion order does not affect the positions in the returned results.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "gather",
+        "concurrency",
+        "result-ordering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an async API method `score()` that calls `_calculate_readability()`. Currently `_calculate_readability()` is declared async but performs only CPU-bound calculations (no I/O, no awaits).\n\n1) Explain two valid design options to fix the \"coroutine returned instead of dict\" bug.\n2) For each option, state one trade-off or consequence (e.g., correctness, performance, call-site complexity).\n\nYour answer should reference what changes are needed in code at the call site and/or in the function definition.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Option 1 (keep it async): Add `await` at the call site: `result = await self._calculate_readability(answer)`. Trade-off: callers must be in an async context (or otherwise schedule/await), and forgetting `await` is an easy source of bugs.\n\nOption 2 (make it sync): Remove `async` from `_calculate_readability` (change it to `def _calculate_readability(...) -> dict`) since it does not await anything, and call it normally: `result = self._calculate_readability(answer)`. Trade-off: simpler call sites and avoids coroutine misuse, but if later you add I/O inside `_calculate_readability`, you must refactor it back to async (and update all call sites) or introduce an async wrapper.\n\n(An additional acceptable discussion for advanced nuance: if the computation is heavy CPU-bound and you want to avoid blocking the event loop, you may keep `score` async but offload the sync computation via `asyncio.to_thread(...)` or an executor; trade-off is threading/process overhead and complexity.)",
+      "explanation": "The core issue is that an `async def` function returns a coroutine when called; you only get the dict result after awaiting it (or running it as a Task). Therefore, either (1) await it everywhere it’s called, or (2) make it a normal synchronous function if it does not perform asynchronous work, which prevents accidental coroutine handling bugs. Mentioning CPU-bound offloading demonstrates deeper understanding of event-loop blocking concerns.",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "async-design",
+        "refactoring",
+        "event-loop",
+        "cpu-bound",
+        "asyncio.to_thread"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are debugging the following async method. It crashes at runtime.\n\n```python\nasync def score(self, output: dict) -> dict:\n    answer = output.get(\"final_answer\", \"\")\n    result = self._calculate_readability(answer)  # bug\n\n    if \"error\" in result:\n        return {\"readability_score\": 0.0, \"error\": result[\"error\"]}\n\n    return {\"readability_score\": result[\"normalized_score\"]}\n```\n\nAssume `_calculate_readability` is defined as `async def _calculate_readability(...) -> dict` and returns a dict when executed. What is the best fix to prevent the crash while keeping `_calculate_readability` async?",
+      "question_type": "mc",
+      "options": [
+        "A. Replace `if \"error\" in result:` with `if result.get(\"error\"):`",
+        "B. Change `result = self._calculate_readability(answer)` to `result = await self._calculate_readability(answer)`",
+        "C. Wrap the call in `list(...)`: `result = list(self._calculate_readability(answer))`",
+        "D. Convert to string: `result = str(self._calculate_readability(answer))`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Without `await`, `self._calculate_readability(answer)` returns a coroutine object, not a dict. The membership test `\"error\" in result` then fails because a coroutine is not the expected mapping/iterable. Using `await` runs the coroutine and yields the actual dict result, so the subsequent dict logic works.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "async-await",
+        "coroutine-object",
+        "debugging",
+        "membership-test"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python async programming, what happens when you call an async function without using `await`?\n\n```python\nasync def f():\n    return 42\n\nresult = f()  # no await\n```\n\nWhat is `result`?",
+      "question_type": "mc",
+      "options": [
+        "A. The integer 42",
+        "B. A coroutine object that must be awaited to get 42",
+        "C. A Task that is already scheduled on the event loop",
+        "D. `None`, because async functions return nothing until awaited"
+      ],
+      "correct_answer": "B",
+      "explanation": "Calling an `async def` function does not execute it to completion immediately; it creates and returns a coroutine object. The coroutine must be awaited (or scheduled as a Task) to actually run and produce the return value (42).",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "asyncio",
+        "coroutine",
+        "await"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are reviewing a teammate’s asyncio code and notice they wrote the following:\n\n```python\nimport asyncio\n\nasync def fetch():\n    await asyncio.sleep(0.01)\n    return \"ok\"\n\nasync def main():\n    # teammate wrote this:\n    result = await asyncio.create_task(fetch())\n    return result\n```\n\n1) Is `await asyncio.create_task(fetch())` *incorrect*? Explain precisely what is synchronous vs. awaited here.\n2) Rewrite `main()` in two different correct styles:\n   - Style A: schedule `fetch()` first, do some other awaitable work, then await the task later.\n   - Style B: do not create a task at all.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) It is not incorrect, but it is usually unnecessary. `asyncio.create_task(...)` is a synchronous function that schedules the coroutine and returns a `Task` immediately (no `await` needed to call it). The `await` in `await asyncio.create_task(fetch())` is awaiting the returned Task to get its result; it is not awaiting the scheduling call itself.\n\n2) Example rewrites:\n\nStyle A (schedule, do other work, await later):\n```python\nasync def main():\n    task = asyncio.create_task(fetch())  # synchronous scheduling call\n    await asyncio.sleep(0)               # placeholder for other awaitable work\n    result = await task                  # await the Task to get the return value\n    return result\n```\n\nStyle B (no task, just await the coroutine):\n```python\nasync def main():\n    result = await fetch()               # directly await the coroutine\n    return result\n```\n",
+      "explanation": "This tests the key distinction: coroutine functions (like `fetch()` and `asyncio.sleep`) produce coroutine objects that must be awaited or scheduled, while scheduling/loop APIs (like `asyncio.create_task`) are synchronous. Awaiting the Task is valid when you need its result; creating a task and immediately awaiting it often adds no benefit compared to `await fetch()` unless you intend concurrency with other work.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "tasks",
+        "create_task",
+        "await",
+        "concurrency",
+        "synchronous-vs-async"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\n\nasync def work():\n    await asyncio.sleep(0.1)\n    return 42\n\nasync def main():\n    loop = asyncio.get_running_loop()\n\n    a = work()\n    b = asyncio.create_task(work())\n    c = loop.create_task(work())\n\n    await asyncio.sleep(0.2)\n    return a, b, c\n\nresult = asyncio.run(main())\nprint(result)\n```\n\nWhich line is the primary bug, and what is the most accurate consequence?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `loop = asyncio.get_running_loop()` is a coroutine and must be awaited; otherwise the loop is not available.",
+        "B. `a = work()` is a coroutine object that is never awaited or scheduled; it will not run and typically triggers an \"un-awaited coroutine\" warning.",
+        "C. `b = asyncio.create_task(work())` must be awaited immediately or the task will never start.",
+        "D. `c = loop.create_task(work())` returns a coroutine, so it must be awaited to schedule it."
+      ],
+      "correct_answer": "B",
+      "explanation": "`work()` is an `async def` coroutine function, so `a = work()` creates a coroutine object. If it is neither awaited nor scheduled, it never executes and Python commonly emits a RuntimeWarning about an un-awaited coroutine when it is garbage-collected. By contrast, `asyncio.create_task(...)` and `loop.create_task(...)` are synchronous scheduling calls: they return a Task immediately and the task begins running on the event loop without needing to await the scheduling call.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "create_task",
+        "coroutine-object",
+        "runtimewarning",
+        "scheduling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes how asyncio APIs are used with respect to `await`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Every asyncio function must be awaited, including `asyncio.get_running_loop()` and `loop.create_task()`.",
+        "B. Only coroutine functions (e.g., defined with `async def` or `asyncio.sleep`) must be awaited or scheduled; many event-loop/helper methods are synchronous and are called without `await`.",
+        "C. Coroutine functions start running immediately when called, so awaiting is optional unless you need the return value.",
+        "D. `await` is only required for functions that return a `Task`; functions returning coroutine objects can be ignored safely."
+      ],
+      "correct_answer": "B",
+      "explanation": "Calling an `async def` function returns a coroutine object that does nothing until it is either awaited or scheduled (e.g., via `asyncio.create_task`). In contrast, many asyncio APIs like `asyncio.get_running_loop()`, `asyncio.get_event_loop()`, and `loop.create_task()` are synchronous calls that return immediately and should not be awaited.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "coroutines",
+        "await",
+        "event-loop",
+        "synchronous-vs-async"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing a fire-and-forget background task. Write an `async def main()` that:\n\n1) Creates a task to run a coroutine `worker()` that may raise an exception.\n2) Adds a done-callback that logs the outcome without crashing the program:\n   - If the task was cancelled, log that it was cancelled.\n   - If it raised an exception, log the exception.\n   - If it succeeded, log the result.\n3) Ensures the program keeps running long enough for the task to finish (you may `await` the task or otherwise wait).\n\nUse `task.add_done_callback(fn)` and show the callback implementation. You may use `print()` for logging.\n\n(Assume Python 3.8+ and `import asyncio` is available.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct solution is:\n\n```python\nimport asyncio\n\nasync def worker():\n    await asyncio.sleep(0.1)\n    # could also: return 123\n    raise RuntimeError(\"boom\")\n\nasync def main():\n    t = asyncio.create_task(worker())\n\n    def on_done(task: asyncio.Task):\n        # Called exactly once when the task finishes (success/exception/cancel)\n        if task.cancelled():\n            print(\"worker cancelled\")\n            return\n        exc = task.exception()  # safe here because task is done\n        if exc is not None:\n            print(\"worker failed:\", repr(exc))\n        else:\n            print(\"worker result:\", task.result())\n\n    t.add_done_callback(on_done)\n\n    # Keep program alive long enough; awaiting also propagates exceptions,\n    # so we can suppress them here if we truly want fire-and-forget.\n    try:\n        await t\n    except Exception:\n        pass\n\nasyncio.run(main())\n```",
+      "explanation": "`add_done_callback` registers a function that receives the finished task and is invoked exactly once regardless of how the task completed. In the callback, you must handle three cases: cancellation (`task.cancelled()`), failure (`task.exception()` returns an exception instance), or success (`task.result()` returns the value). `task.exception()`/`task.result()` are only safe once the task is done; the callback runs at that time, so it’s an appropriate place to retrieve and log outcomes for fire-and-forget tasks. Finally, the program must remain alive long enough for the task to complete; awaiting the task is one straightforward way (optionally catching exceptions to avoid crashing).",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "task",
+        "add_done_callback",
+        "fire-and-forget",
+        "exceptions",
+        "cancellation",
+        "result",
+        "exception-handling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\n\nasync def boom():\n    await asyncio.sleep(0)\n    raise ValueError(\"bad\")\n\nasync def main():\n    t = asyncio.create_task(boom())\n    await asyncio.sleep(0)  # allow boom() to run\n\n    # Choose the ONE option that correctly describes what happens here.\n    return (t.done(), t.cancelled(), t.exception())\n\nprint(asyncio.run(main()))\n```\n\nWhat is the correct behavior of the program?",
+      "question_type": "mc",
+      "options": [
+        "A. It prints `(False, False, None)` because the task has not finished yet.",
+        "B. It prints `(True, True, CancelledError())` because an exception automatically cancels the task.",
+        "C. It prints `(True, False, ValueError('bad'))` because the task finished with an exception and `exception()` returns the exception instance when done.",
+        "D. It raises `InvalidStateError` at `t.exception()` because you must `await t` before calling `exception()`."
+      ],
+      "correct_answer": "C",
+      "explanation": "After `await asyncio.sleep(0)`, the event loop gets a chance to run `boom()`, which raises `ValueError`. The task is therefore done (`t.done() == True`) and not cancelled (`t.cancelled() == False`). Since the task finished by raising, `t.exception()` returns the exception instance (`ValueError('bad')`) rather than raising `InvalidStateError` (which only happens if the task is not done).",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "task",
+        "done",
+        "cancelled",
+        "exception",
+        "InvalidStateError",
+        "exceptions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement about `asyncio.create_task(coro)` is correct?",
+      "question_type": "mc",
+      "options": [
+        "A. It runs the coroutine immediately to completion before returning.",
+        "B. It wraps the coroutine in a Task and schedules it to run soon on the current event loop, returning the Task.",
+        "C. It blocks the current thread until the coroutine finishes and returns the coroutine’s result.",
+        "D. It can only be used if you manually create and pass an event loop instance."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.create_task(coro)` creates an `asyncio.Task` that wraps the coroutine and schedules it to run “soon” on the current event loop, returning the Task object immediately. It does not block (so C is wrong), does not run to completion before returning (A is wrong), and does not require an explicit loop reference (D is wrong; `loop.create_task(coro)` is the explicit-loop equivalent).",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "task",
+        "create_task",
+        "event-loop",
+        "scheduling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider coroutine lifecycle and reuse. What happens when the same coroutine object is awaited twice?\n\n```python\nimport asyncio\n\nasync def one_shot():\n    return \"done\"\n\nasync def main():\n    c = one_shot()\n    r1 = await c\n    r2 = await c\n    return r1, r2\n\nprint(asyncio.run(main()))\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It prints ('done', 'done') because coroutines can be awaited multiple times like regular functions can be called multiple times.",
+        "It raises RuntimeError on the second await because a coroutine object cannot be reused after it has completed.",
+        "It silently returns (None, None) because the coroutine is closed after the first await.",
+        "It deadlocks because awaiting a completed coroutine blocks forever."
+      ],
+      "correct_answer": "B",
+      "explanation": "A coroutine object represents a single execution. After it has been awaited to completion, it is closed and cannot be awaited again. Attempting to await the same coroutine object a second time raises a RuntimeError (commonly: \"cannot reuse already awaited coroutine\"). To run the logic twice, you must create two separate coroutine objects by calling the async function twice (e.g., `await one_shot()` twice).",
+      "difficulty": "advanced",
+      "tags": [
+        "python",
+        "async-await",
+        "coroutine-lifecycle",
+        "coroutine-reuse",
+        "runtimeerror"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The following code is intended to compute an insurance quote. It currently fails at runtime.\n\n1) Identify the bug.\n2) Provide a corrected version that returns the computed insurance value.\n\n```python\nimport asyncio\n\nasync def get_user_age():\n    await asyncio.sleep(0)\n    return 25\n\ndef calculate_insurance(age):\n    return age * 100\n\nasync def quote():\n    age = get_user_age()          # bug here\n    insurance = calculate_insurance(age)\n    return insurance\n\nprint(asyncio.run(quote()))\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Bug: get_user_age() is an async function; calling it returns a coroutine object. The code passes that coroutine object into calculate_insurance, which expects an int, causing a TypeError.\n\nCorrected version:\n```python\nimport asyncio\n\nasync def get_user_age():\n    await asyncio.sleep(0)\n    return 25\n\ndef calculate_insurance(age):\n    return age * 100\n\nasync def quote():\n    age = await get_user_age()      # await to get the int value\n    insurance = calculate_insurance(age)\n    return insurance\n\nprint(asyncio.run(quote()))\n```\n",
+      "explanation": "An async function call does not execute the function body; it creates a coroutine object. To obtain the actual result (25), the coroutine must be awaited within an async context. Once awaited, age becomes an integer and calculate_insurance(age) works as intended.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python",
+        "async-await",
+        "coroutine-object",
+        "typeerror",
+        "asyncio-run"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python, what happens when you \"call\" an async function from synchronous code (without awaiting or scheduling it)?\n\n```python\nimport asyncio\n\nasync def f():\n    print(\"running\")\n    await asyncio.sleep(0)\n    return 1\n\nx = f()\nprint(type(x))\n```\n",
+      "question_type": "mc",
+      "options": [
+        "The function body executes immediately and prints \"running\".",
+        "A coroutine object is created; the function body does not execute yet.",
+        "A Task is automatically created and scheduled on the event loop.",
+        "The code raises a SyntaxError because async functions cannot be called from sync code."
+      ],
+      "correct_answer": "B",
+      "explanation": "Calling an async function produces a coroutine object (a suspended computation). No code inside the async function runs until the coroutine is driven by an event loop—typically by awaiting it inside another coroutine or by passing it to something like asyncio.run(). Simply creating the coroutine does not print anything and does not schedule it automatically.",
+      "difficulty": "beginner",
+      "tags": [
+        "python",
+        "async-await",
+        "coroutine-object",
+        "lazy-execution",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are reviewing an async I/O-bound service and find this code:\n\n```python\nimport asyncio\nimport time\n\nasync def handle_request():\n    # ... some async I/O ...\n    time.sleep(0.5)\n    # ... more async I/O ...\n```\n\n1) Explain precisely what problem this introduces in an asyncio-based program.\n2) Rewrite the function to preserve concurrency while still introducing an approximately 0.5s pause.\n\nYour answer should mention what happens to the event loop and other coroutines during the pause.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) The `time.sleep(0.5)` call blocks the entire thread running the asyncio event loop. During that 0.5s, the event loop cannot run, so *all* coroutines/tasks in that loop are paused (no scheduling/progress), harming responsiveness and concurrency.\n\n2) Replace it with a non-blocking sleep that yields control back to the event loop:\n\n```python\nimport asyncio\n\nasync def handle_request():\n    # ... some async I/O ...\n    await asyncio.sleep(0.5)\n    # ... more async I/O ...\n```\n\nWith `await asyncio.sleep(0.5)`, only the current coroutine is suspended while the event loop continues running other coroutines during the delay.",
+      "explanation": "In asyncio, cooperative multitasking depends on coroutines frequently awaiting non-blocking operations. `time.sleep` is a synchronous, thread-blocking call; using it inside a coroutine prevents the loop from scheduling other tasks. `asyncio.sleep` instead awaits an internal future that completes after the timeout, yielding control so other coroutines can run.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "event-loop",
+        "asyncio.sleep",
+        "time.sleep",
+        "responsiveness",
+        "i/o-bound"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following program:\n\n```python\nimport asyncio\nimport time\n\nasync def ticker():\n    for i in range(3):\n        print(\"tick\", i)\n        await asyncio.sleep(0.1)\n\nasync def blocker():\n    print(\"block start\")\n    time.sleep(0.25)\n    print(\"block end\")\n\nasync def main():\n    t1 = asyncio.create_task(ticker())\n    t2 = asyncio.create_task(blocker())\n    await t1\n    await t2\n\nasyncio.run(main())\n```\n\nWhat is the most accurate description of the output timing/ordering?",
+      "question_type": "mc",
+      "options": [
+        "A. `tick 0`, `tick 1`, `tick 2` will print at ~0.0s, ~0.1s, ~0.2s regardless of `time.sleep`, because tasks run in parallel threads.",
+        "B. `block start` prints, then the program pauses for ~0.25s with no `tick` output during that time; after that, `block end` prints and the remaining ticks resume.",
+        "C. `tick` prints continue during the `time.sleep(0.25)` because `time.sleep` only blocks the `blocker()` coroutine, not the whole event loop.",
+        "D. The program raises an exception because `time.sleep` cannot be called inside an `async def` function."
+      ],
+      "correct_answer": "B",
+      "explanation": "`time.sleep()` blocks the *entire thread*, which in this case is the thread running the asyncio event loop. While the thread is blocked, the event loop cannot schedule `ticker()` or any other tasks, so ticks are delayed until after `time.sleep` returns. Calling `time.sleep` in an async function is allowed syntactically, but it breaks concurrency by freezing the loop.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "time.sleep",
+        "blocking",
+        "task-scheduling",
+        "concurrency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what `await asyncio.sleep(1)` does inside an `async def` coroutine?",
+      "question_type": "mc",
+      "options": [
+        "A. It blocks the entire Python thread for 1 second, preventing any other coroutines from running.",
+        "B. It suspends only the current coroutine for at least 1 second and yields control so the event loop can run other coroutines.",
+        "C. It schedules the coroutine to run immediately again without any delay, but still yields control once.",
+        "D. It terminates the current coroutine and restarts it after 1 second."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.sleep(delay)` suspends the *current coroutine* and returns control to the event loop (internally via an awaited future that completes after the timeout). This allows other tasks/coroutines to run during the sleep. It does not block the whole thread like `time.sleep()`.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "asyncio.sleep",
+        "event-loop",
+        "non-blocking"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Rewrite the following function so that it uses explicit `acquire()` / `release()` instead of `async with`, while still guaranteeing the semaphore is released even if the coroutine is cancelled or an exception occurs.\n\n```python\nimport asyncio\n\nasync def fetch(url, sem):\n    async with sem:\n        return await do_request(url)\n```\n\nProvide the corrected code and briefly explain why it is safe.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport asyncio\n\nasync def fetch(url, sem):\n    await sem.acquire()\n    try:\n        return await do_request(url)\n    finally:\n        sem.release()\n```\n\nThis is safe because the `finally` block runs whether `do_request` returns normally, raises an exception, or the task is cancelled, ensuring the semaphore counter is restored and preventing leaked permits (which could otherwise deadlock waiting coroutines).",
+      "explanation": "The `async with sem:` pattern is shorthand for `acquire()` followed by a `try/finally` that always calls `release()`. Using `finally` is crucial in advanced/real-world async code because cancellations and exceptions are common; failing to release would keep the semaphore permanently decremented and can stall other tasks indefinitely.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "semaphore",
+        "acquire",
+        "release",
+        "cancellation",
+        "exception-safety",
+        "try-finally"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the code below:\n\n```python\nimport asyncio\n\nasync def worker(i, sem):\n    async with sem:\n        await asyncio.sleep(1)\n\nasync def main():\n    sem = asyncio.Semaphore(2)\n    tasks = [asyncio.create_task(worker(i, sem)) for i in range(5)]\n    await asyncio.gather(*tasks)\n\nasyncio.run(main())\n```\n\nWhich statement best describes what the semaphore changes about the execution of `worker` coroutines?",
+      "question_type": "mc",
+      "options": [
+        "A. Only two `worker` coroutines can be created; the rest are never scheduled",
+        "B. At most two `worker` coroutines can be inside the `async with sem:` block at the same time",
+        "C. Exactly two `worker` coroutines will finish; the others will block forever",
+        "D. The semaphore makes the code run in parallel on multiple CPU cores"
+      ],
+      "correct_answer": "B",
+      "explanation": "All 5 tasks are created and scheduled, but the semaphore gates entry to the protected region. With an initial value of 2, only two coroutines can acquire it and enter the `async with sem:` block concurrently; the rest await until a release occurs. Semaphores do not provide CPU parallelism.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "semaphore",
+        "async-with",
+        "gather",
+        "task-scheduling",
+        "rate-limiting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In `asyncio`, what is the primary purpose of an `asyncio.Semaphore`?\n\n```python\nsem = asyncio.Semaphore(3)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. To ensure only one coroutine can enter a critical section at a time (mutual exclusion)",
+        "B. To limit how many coroutines may access a shared resource concurrently",
+        "C. To cancel all running coroutines when a limit is exceeded",
+        "D. To prioritize older tasks over newer tasks when scheduling"
+      ],
+      "correct_answer": "B",
+      "explanation": "A semaphore is a concurrency-limiting primitive: it allows up to N concurrent holders (here, 3). It is not mutual exclusion (that would be a lock with capacity 1), it does not cancel tasks, and it does not implement task prioritization.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "semaphore",
+        "concurrency-limiting",
+        "synchronization-primitives"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following program:\n\n```python\nimport asyncio\n\nbg_task = None\n\nasync def create_background_task():\n    global bg_task\n    bg_task = asyncio.create_task(asyncio.sleep(5))\n    return \"created\"\n\nasync def check_background_task():\n    return bg_task is not None and not bg_task.done()\n\nprint(asyncio.run(create_background_task()))\nprint(asyncio.run(check_background_task()))\n```\n\nWhat will the second `print(...)` most likely output, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. `True`, because the background task continues running after the first `asyncio.run()` returns.",
+        "B. `False`, because `asyncio.run()` closes the event loop and cancels remaining tasks, so the created task cannot keep running across separate `asyncio.run()` calls.",
+        "C. It raises a `NameError` because `bg_task` cannot be global in async code.",
+        "D. It prints a `Task` object, because `check_background_task()` returns the task itself."
+      ],
+      "correct_answer": "B",
+      "explanation": "Each call to `asyncio.run()` creates a brand-new event loop and closes it at the end. During shutdown it cancels any pending tasks. The task created in `create_background_task()` belongs to the first event loop; once that loop is closed, the task cannot continue running. On the second call, `check_background_task()` runs in a different loop, and the stored `bg_task` refers to a task associated with the previous (now closed) loop, so it won't represent an actively running background operation. Therefore the check most likely evaluates to `False`.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "asyncio.run",
+        "event-loop-isolation",
+        "task-lifecycle",
+        "cleanup-cancellation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are refactoring code and accidentally nest `asyncio.run()` inside an async function:\n\n```python\nimport asyncio\n\nasync def inner():\n    await asyncio.sleep(0.1)\n    return \"ok\"\n\nasync def outer():\n    # Intended to call inner and get its result\n    return asyncio.run(inner())\n\nprint(asyncio.run(outer()))\n```\n\n1) What will happen when you run this program?\n2) Rewrite `outer()` correctly so it returns the result of `inner()`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) It raises a RuntimeError because `asyncio.run()` cannot be called when an event loop is already running (here, `outer()` is already executing inside the loop created by the outer `asyncio.run`).\n\n2) Correct version:\n```python\nasync def outer():\n    return await inner()\n```",
+      "explanation": "`asyncio.run()` is designed as a single top-level entry point from synchronous code. When `outer()` is running, an event loop is already active; attempting to create and run another loop via `asyncio.run()` triggers a `RuntimeError` (commonly: \"asyncio.run() cannot be called from a running event loop\"). The correct approach within async code is to `await` the coroutine directly (or create tasks/gather as needed).",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "asyncio.run",
+        "runtimeerror",
+        "nested-event-loop",
+        "await"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what `asyncio.run(main())` does?\n\n```python\nimport asyncio\n\nasync def main():\n    await asyncio.sleep(0.1)\n    return 42\n\nresult = asyncio.run(main())\nprint(result)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It schedules `main()` on the current event loop (if any) without blocking, and returns immediately.",
+        "B. It creates a new event loop, runs `main()` to completion (blocking the caller), closes the loop, and returns `main()`'s return value.",
+        "C. It reuses the global default event loop, runs `main()` in the background, and returns an `asyncio.Task` object.",
+        "D. It starts a new OS thread, runs `main()` there, and joins the thread when `main()` completes."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.run()` is a high-level entry point intended to be called from synchronous top-level code. It creates a fresh event loop, runs the given coroutine until it finishes (so the call blocks), performs cleanup (cancels pending tasks, closes async generators), closes the loop, and returns whatever the coroutine returned (here, `42`).",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "asyncio.run",
+        "event-loop-lifecycle",
+        "entry-point"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing a background polling loop that should run concurrently with other logic. You start it with `asyncio.create_task()`. Write a minimal example (a few functions) that:\n\n1) Starts a background task with `asyncio.create_task()`.\n2) Cancels it later using `task.cancel()`.\n3) Ensures cancellation is handled cleanly inside the coroutine by catching `asyncio.CancelledError`.\n4) Awaits the task at shutdown so the program does not leave a pending task.\n\nYour answer should include code and a brief explanation of why awaiting at shutdown matters.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport asyncio\n\nasync def poller():\n    try:\n        while True:\n            # simulate periodic work\n            await asyncio.sleep(0.2)\n            # do polling / I/O here\n    except asyncio.CancelledError:\n        # cleanup logic (close connections, flush buffers, etc.)\n        # then re-raise so the Task is marked cancelled\n        raise\n\nasync def main():\n    task = asyncio.create_task(poller())\n\n    # main continues doing other work\n    await asyncio.sleep(1.0)\n\n    # request cancellation\n    task.cancel()\n\n    # await at shutdown to let cancellation propagate and cleanup run\n    try:\n        await task\n    except asyncio.CancelledError:\n        pass\n\nasyncio.run(main())\n```\n\nAwaiting the task at shutdown ensures the cancellation request is delivered, the coroutine runs its `CancelledError` handling/cleanup, and the event loop does not exit with a pending task (which can cause warnings and resource leaks).",
+      "explanation": "A correct solution must demonstrate: creating a background task, later calling `task.cancel()`, handling `asyncio.CancelledError` inside the coroutine (typically to perform cleanup), and awaiting the task to allow cancellation to complete. Re-raising `CancelledError` is the standard pattern so the task is marked as cancelled. Awaiting at shutdown is important to avoid leaving tasks pending and to ensure exceptions/cancellation are properly retrieved and cleanup runs.",
+      "difficulty": "advanced",
+      "tags": [
+        "asyncio",
+        "create_task",
+        "cancellation",
+        "CancelledError",
+        "task-lifecycle",
+        "graceful-shutdown"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport asyncio\n\nasync def boom():\n    await asyncio.sleep(0)\n    raise ValueError(\"bad\")\n\nasync def main():\n    asyncio.create_task(boom())\n    await asyncio.sleep(0.1)\n\nasyncio.run(main())\n```\n\nWhich change best prevents the warning \"Task exception was never retrieved\" while still letting `boom()` run in the background (i.e., without awaiting it in-line)?",
+      "question_type": "mc",
+      "options": [
+        "A. Replace `asyncio.create_task(boom())` with `await boom()`.",
+        "B. Wrap the call in `try/except` around `asyncio.create_task(boom())` in `main()`.",
+        "C. Store the Task and attach a done callback that retrieves the exception (e.g., `task.add_done_callback(lambda t: t.exception())`).",
+        "D. Call `asyncio.sleep(0)` before creating the task so it starts earlier."
+      ],
+      "correct_answer": "C",
+      "explanation": "If a task raises and nobody ever awaits it (or otherwise retrieves its exception), asyncio logs a warning. Attaching a done callback that calls `t.exception()` (or awaiting the task later) ensures the exception is retrieved. Simply wrapping `create_task(...)` in `try/except` does not catch exceptions raised asynchronously inside the task.",
+      "difficulty": "intermediate",
+      "tags": [
+        "asyncio",
+        "create_task",
+        "exceptions",
+        "task-exception-was-never-retrieved",
+        "add_done_callback"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Python's asyncio, what does `asyncio.create_task(coro())` primarily do?\n\n```python\nimport asyncio\n\nasync def do_work():\n    await asyncio.sleep(1)\n    return 42\n\nasync def main():\n    task = asyncio.create_task(do_work())\n    # main continues here\n    result = await task\n    print(result)\n\nasyncio.run(main())\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It runs the coroutine to completion immediately and returns its result.",
+        "B. It schedules the coroutine to run concurrently and returns a Task object immediately.",
+        "C. It blocks the event loop until the coroutine finishes, then returns a Task.",
+        "D. It creates a new OS thread to run the coroutine in parallel."
+      ],
+      "correct_answer": "B",
+      "explanation": "`asyncio.create_task()` takes a coroutine object, schedules it on the current event loop to run concurrently, and returns an `asyncio.Task` immediately. The caller can continue execution and optionally `await` the task later to retrieve the result.",
+      "difficulty": "beginner",
+      "tags": [
+        "asyncio",
+        "create_task",
+        "task",
+        "concurrency",
+        "event-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

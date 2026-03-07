@@ -1,0 +1,2060 @@
+{
+  "metadata": {
+    "subject_slug": "reinforcement_learning",
+    "subject_name": "Reinforcement Learning",
+    "exported_at": "2026-03-07T22:48:26.834357",
+    "question_count": 100,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Free response: Using the screenshot’s setup, explain (i) why you generally cannot compute \\(\\nabla_\\theta J(\\theta)\\) by naively differentiating \\(\\mathbb{E}_{\\tau\\sim \\pi_\\theta}[R(\\tau)]\\) “in closed form,” and (ii) how the log-prob trick rewrites the gradient into a form that can be estimated from rollouts. Your answer must explicitly mention **both** obstacles listed in the screenshot and the rewritten gradient form involving \\(\\nabla_\\theta \\log \\pi_\\theta(\\cdot)\\).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "You cannot naively do closed-form differentiation because (1) trajectories depend on the environment transition kernel P(s'|s,a), which is typically treated as a black-box simulator with no analytic dependence on θ, so you cannot push ∇θ through the dynamics; and (2) actions are often sampled stochastically from a discrete policy πθ(a|s), and the sampling (“draw an action”) step is not differentiable in the usual backprop sense. The log-prob/score-function trick rewrites the gradient as an expectation over samples: ∇θ E[R] = E[ R ∇θ log πθ(a) ] (and in trajectory form, sums over timesteps of ∇θ log πθ(at|st)), which only requires evaluating log πθ of the sampled actions (differentiable) and Monte Carlo rollouts, without differentiating through P or the sampling operation.",
+      "explanation": "A complete answer must mirror the screenshot: it cites black-box dynamics (unknown P dependence on θ) and discrete stochastic action sampling as the two blockers, then states the score-function identity that moves the gradient onto \\(\\log \\pi_\\theta\\), enabling Monte Carlo estimation from rollouts while avoiding differentiation through the environment and the sampling step.",
+      "difficulty": "advanced",
+      "tags": [
+        "policy-gradient-theorem",
+        "trajectory-expectation",
+        "score-function-identity",
+        "stochastic-policies",
+        "black-box-dynamics",
+        "gradient-estimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot proposes the **log-prob trick (score-function estimator)**:\n\\[\n\\nabla_\\theta\\,\\mathbb{E}_{a\\sim \\pi_\\theta}[R] = \\mathbb{E}_{a\\sim \\pi_\\theta}\\big[R\\,\\nabla_\\theta \\log \\pi_\\theta(a)\\big].\n\\]\nWhich statement best explains **why** this helps in the two issues mentioned (black-box dynamics and discrete actions)?",
+      "question_type": "mc",
+      "options": [
+        "A. It replaces sampling with a differentiable reparameterization for discrete actions, so you can backprop through the sampled action directly.",
+        "B. It expresses the gradient using \\(\\nabla_\\theta \\log \\pi_\\theta(a)\\), which is differentiable, and only requires sampling rollouts—no need to differentiate through \\(P(s'\\mid s,a)\\) or the action sampling operation.",
+        "C. It makes the gradient exact in closed form by analytically integrating over all trajectories and actions.",
+        "D. It eliminates variance entirely by turning the estimator into a deterministic gradient computation."
+      ],
+      "correct_answer": "B",
+      "explanation": "The screenshot states the trick “only requires evaluating \\(\\log \\pi_\\theta(a)\\) (a differentiable quantity) and sampling from the policy, not knowing or differentiating through the environment.” This addresses (i) black-box dynamics by avoiding \\(\\nabla_\\theta P\\), and (ii) discrete sampling by using the score-function identity rather than differentiating through the draw operation. Options A, C, and D contradict the screenshot: reparameterization is not what’s described; it’s not closed-form integration; and variance is not eliminated.",
+      "difficulty": "intermediate",
+      "tags": [
+        "score-function-estimator",
+        "log-prob-trick",
+        "REINFORCE",
+        "black-box-environment",
+        "discrete-actions",
+        "Monte-Carlo-rollouts"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot lists **two** reasons you can’t “carry out the differentiation in closed form” for \\(\\nabla_\\theta J(\\theta)=\\nabla_\\theta\\,\\mathbb{E}_{\\tau\\sim \\pi_\\theta}[R(\\tau)]\\). Which pair matches the screenshot?\n\n(Refer to the bullets labeled 1 and 2 in the image.)",
+      "question_type": "mc",
+      "options": [
+        "A. Black-box environment dynamics (unknown dependence of \\(P(s'\\mid s,a)\\) on \\(\\theta\\)) and stochastic, discrete action sampling (non-differentiable draw-an-action step)",
+        "B. Reward function is always non-differentiable and the discount factor \\(\\gamma\\) depends on \\(\\theta\\)",
+        "C. Value functions cannot be estimated with Monte Carlo and policies must be deterministic to differentiate \\(J\\)",
+        "D. The policy gradient theorem requires knowing \\(\\nabla_\\theta P(s'\\mid s,a)\\) and requires continuous actions only"
+      ],
+      "correct_answer": "A",
+      "explanation": "The image explicitly cites (1) **black-box environment dynamics**: trajectories depend on the MDP transition kernel \\(P(s'\\mid s,a)\\), treated as a simulator/black box, so you can’t push \\(\\nabla_\\theta\\) through unknown dynamics; and (2) **stochastic, discrete actions**: sampling \\(a\\sim \\pi_\\theta(a\\mid s)\\) is not differentiable in the usual sense, so naive backprop through the action draw is not possible.",
+      "difficulty": "beginner",
+      "tags": [
+        "policy-gradient",
+        "MDP-transition-kernel",
+        "black-box-dynamics",
+        "discrete-action-sampling",
+        "differentiability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training PPO with multiple epochs over the same collected rollout. You suspect that shuffling is interacting with other design choices.\n\nAnswer the following:\n1) Explain why shuffling can be viewed as a mild regularizer that may improve generalization.\n2) In a recurrent policy/value network (e.g., LSTM) trained with truncated BPTT, what is a key caveat when shuffling, and what modification would you make to preserve learning signal while still getting some benefits of shuffling?\n\nBe specific about what should be shuffled (and what should not).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Shuffling changes the sequence of stochastic updates each epoch, preventing the optimizer from repeatedly seeing the exact same mini-batch composition/order. This reduces the chance the network overfits to a fixed update trajectory (\"memorizing\" an order of gradients) and encourages learning features that work across the overall data distribution, similar to how randomization in SGD acts as implicit regularization.\n\n2) Caveat: For recurrent models, randomly shuffling individual time steps breaks temporal continuity needed for hidden-state propagation and for truncated BPTT, which can destroy the training signal (the LSTM state no longer matches the sequence). Modification: shuffle at the level of sequence chunks/segments (e.g., fixed-length subsequences) or at the level of whole episodes/trajectories, but keep time order within each chunk. Practically, build mini-batches from (episode_id, start_t, length) segments; randomize the order of segments across epochs and across mini-batches, while preserving contiguous timesteps inside each segment and resetting/handling hidden states appropriately at segment boundaries.",
+      "explanation": "Shuffling acts like implicit regularization by injecting randomness into the optimization path, which can reduce overfitting to idiosyncrasies of the training order. However, recurrent networks rely on consistent temporal ordering for correct hidden-state evolution; shuffling individual transitions breaks the Markovian sequence structure the RNN is modeling. The standard fix is to shuffle higher-level units (episodes or contiguous subsequences) while keeping within-segment order intact, so SGD still benefits from randomized mini-batch composition without corrupting temporal dependencies required for BPTT.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "ppo",
+        "generalization",
+        "implicit-regularization",
+        "recurrent-policies",
+        "lstm",
+        "truncated-bptt",
+        "sequence-batching",
+        "shuffling-strategies"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following PPO-style training loop:\n\n```python\n# data is a list of (s, a, r, logp_old, adv) tuples collected on-policy\nfor epoch in range(E):\n    # random.shuffle(data)  # <- currently commented out\n    for start in range(0, len(data), mb):\n        batch = data[start:start+mb]\n        loss = compute_loss(batch)\n        loss.backward(); optimizer.step()\n```\n\nSuppose `data` is stored in strict time order from the rollout (earliest to latest). Describe two concrete failure modes or training pathologies that can arise from *not* shuffling across epochs, and briefly explain the mechanism behind each.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two likely pathologies are: (1) Ordering bias / non-representative mini-batches: time-adjacent samples are highly correlated, so each mini-batch can overrepresent particular states/advantages (e.g., early-episode vs late-episode regimes). This makes the mini-batch gradient a biased/poor proxy for the full-batch gradient, slowing learning or pushing updates in systematically wrong directions. (2) Cyclic/sawtooth updates and higher gradient variance: processing the same correlated sequence in the same order each epoch can induce repeating gradient directions (e.g., one region of state space dominates early updates, another dominates later), creating oscillatory loss/parameter trajectories and unstable convergence. Shuffling breaks these correlations at the mini-batch level, smoothing updates and reducing variance.",
+      "explanation": "In on-policy rollouts, consecutive transitions are correlated and often exhibit nonstationary structure within an episode (e.g., different phases of a task). Without shuffling, mini-batches inherit these correlations and systematic patterns, violating the approximate IID assumption behind minibatch SGD. This can bias gradients and create repeating update cycles across epochs because every epoch replays the same correlated ordering, leading to oscillations and less stable optimization.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "ppo",
+        "on-policy",
+        "temporal-correlation",
+        "minibatch-composition",
+        "gradient-variance",
+        "optimization-dynamics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In on-policy RL algorithms like PPO/A2C that reuse the same rollout for multiple epochs, why is it important to shuffle the rollout data before forming mini-batches each epoch?",
+      "question_type": "mc",
+      "options": [
+        "To ensure the policy collects more diverse trajectories during the next rollout",
+        "To break ordering biases so each mini-batch is closer to an IID sample and provides a less biased/less noisy gradient estimate",
+        "To make the value function targets unbiased even when rewards are clipped",
+        "To guarantee the KL-divergence constraint is satisfied in PPO"
+      ],
+      "correct_answer": "B",
+      "explanation": "Shuffling between epochs changes which samples co-occur in each mini-batch, reducing ordering bias (e.g., time- or label-sorted data) and making each mini-batch a better approximation to an IID draw from the collected batch. This improves the quality of stochastic gradient estimates, reduces cyclic/sawtooth update patterns, and typically stabilizes and speeds learning. It does not directly increase trajectory diversity (that comes from data collection), does not specifically fix reward clipping bias, and does not guarantee PPO’s KL constraint.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "ppo",
+        "a2c",
+        "minibatch-sgd",
+        "shuffling",
+        "iid-assumption",
+        "training-stability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider an alternative discounting scheme that is not exponential, e.g. hyperbolic discounting:\n\\[\nG_t^{(hyp)} = \\sum_{k=0}^{\\infty} \\frac{1}{1+\\beta k}\\, r_{t+1+k}\n\\]\n\n(a) Explain why such non-geometric discounting can break time-consistent (“memoryless”) preferences in an MDP.\n\n(b) Explain how this impacts the existence of a simple stationary Bellman recursion of the form \\(V(s)=\\mathbb{E}[r+\\text{(discount)}\\cdot V(s')]\\) that does not depend explicitly on time.\n\nYour answer should connect the issue to stationarity/Markovian structure and to why geometric discounting yields contraction-style convergence guarantees.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) With geometric discounting, the relative weight between rewards k and k+1 steps ahead is constant (a fixed factor \\(\\gamma\\)) regardless of absolute time, making preferences time-consistent: delaying the entire reward sequence by one step does not change relative tradeoffs. With hyperbolic weights \\(w(k)=1/(1+\\beta k)\\), the ratio w(k+1)/w(k) is not constant; it depends on k. As time passes, the effective tradeoff between “soon” and “later” changes, which can cause preference reversals (time inconsistency).\n\n(b) Because the discounting does not have the memoryless property, you generally cannot write a time-homogeneous one-step recursion using a single scalar discount factor multiplying the same value function at the next state. Instead, the value would need to depend on additional information like the current time index or remaining horizon (augmenting the state), making the Bellman equation non-stationary or higher-dimensional. This also disrupts the standard contraction mapping property of the Bellman operator that relies on a fixed \\(\\gamma<1\\) scaling, weakening or removing classic convergence guarantees for value iteration/TD/Q-learning in the usual stationary formulation.",
+      "explanation": "Geometric discounting is special because it is multiplicatively separable across time: shifting the start time preserves the same functional form and introduces only a constant factor \\(\\gamma\\). That property underpins stationary, Markovian Bellman recursions and the \\(\\gamma\\)-contraction in the sup norm used in many convergence proofs. Non-geometric schemes typically require time- or history-dependent value functions (or state augmentation), complicating both modeling and algorithmic guarantees.",
+      "difficulty": "advanced",
+      "tags": [
+        "time-consistency",
+        "stationarity",
+        "markov-property",
+        "hyperbolic-discounting",
+        "contraction-mapping",
+        "bellman-operator"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Show how geometric discounting leads to a one-step recursive relationship for the return, and explain why this recursion is important for Bellman-style updates.\n\nStart from:\n\\[\nG_t = \\sum_{k=0}^{\\infty} \\gamma^k r_{t+1+k}\n\\]\nDerive an expression of the form \\(G_t = r_{t+1} + \\gamma G_{t+1}\\), then briefly state what algorithmic benefit this provides.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Derivation: Split off the k=0 term: G_t = r_{t+1} + \\sum_{k=1}^{\\infty} \\gamma^k r_{t+1+k}. Re-index with j=k-1: \\sum_{k=1}^{\\infty} \\gamma^k r_{t+1+k} = \\gamma \\sum_{j=0}^{\\infty} \\gamma^j r_{t+2+j} = \\gamma G_{t+1}. Thus G_t = r_{t+1} + \\gamma G_{t+1}. Benefit: This yields the Bellman recursion V(s)=E[r+\\gamma V(s')], enabling one-step bootstrapping updates (DP/TD/Q-learning) and efficient online computation rather than summing over the whole future.",
+      "explanation": "Geometric weights factor cleanly: pulling out one reward leaves the same discounted-sum structure starting at the next time step, scaled by \\(\\gamma\\). This “self-similarity” is exactly what makes Bellman equations simple and supports bootstrapping (updating values from successor values) and streaming computation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "bellman-equation",
+        "bootstrapping",
+        "recursive-return",
+        "temporal-difference",
+        "discounting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In infinite-horizon reinforcement learning, why is a geometric discount factor (multiplying rewards by \\(\\gamma^k\\)) commonly used?\n\n\\[\nG_t = \\sum_{k=0}^{\\infty} \\gamma^k r_{t+1+k}\n\\]\n",
+      "question_type": "mc",
+      "options": [
+        "A. It guarantees the return converges (is finite) for bounded rewards when \\(0 \\le \\gamma < 1\\).",
+        "B. It makes the optimal policy independent of the reward function.",
+        "C. It ensures the Markov property holds even when the environment is partially observable.",
+        "D. It removes the need to estimate transition probabilities in model-free RL."
+      ],
+      "correct_answer": "A",
+      "explanation": "For bounded rewards, using \\(0 \\le \\gamma < 1\\) makes \\(\\sum_{k=0}^{\\infty} \\gamma^k r_{t+1+k}\\) a geometrically weighted series, which converges because \\(\\sum_{k=0}^{\\infty} \\gamma^k\\) is finite. This prevents infinite returns in infinite-horizon settings and is one of the core mathematical reasons geometric discounting is used.",
+      "difficulty": "beginner",
+      "tags": [
+        "discount-factor",
+        "infinite-horizon",
+        "return",
+        "geometric-series",
+        "convergence"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Using the screenshot’s “ensuring finite sums” argument, explain why choosing \\(\\gamma<1\\) helps the infinite-horizon return\n\\[\nG_t = \\sum_{k=0}^{\\infty} \\gamma^k r_{t+1+k}\n\\]\nconverge. Give a concrete example (e.g., constant reward \\(r_{t}=1\\)) showing what happens when \\(\\gamma<1\\) versus \\(\\gamma=1\\), and connect your explanation to the image’s statement that without \\(\\gamma^k\\) factors you can’t neatly handle non-terminating or very long episodes.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "For an infinite-horizon task, discounting makes the reward sequence geometrically decreasing in weight. If rewards are bounded (e.g., |r_t| ≤ R_max), then |G_t| ≤ \\sum_{k=0}^\\infty \\gamma^k R_max = R_max/(1-\\gamma), which is finite when 0≤\\gamma<1. Example: if r_{t}=1 for all t, then with \\gamma<1 we have G_t = \\sum_{k=0}^\\infty \\gamma^k = 1/(1-\\gamma), a finite geometric series; but with \\gamma=1 the return becomes \\sum_{k=0}^\\infty 1, which diverges to infinity. This matches the screenshot’s point (2): the \\gamma^k factors ensure convergence and make returns well-defined for non-terminating or very long episodes.",
+      "explanation": "The image explicitly notes that when \\(\\gamma<1\\), the infinite-horizon discounted sum converges, whereas without discount factors the sum can diverge in continuing tasks. The constant-reward example demonstrates geometric-series convergence and the divergence at \\(\\gamma=1\\).",
+      "difficulty": "advanced",
+      "tags": [
+        "geometric-series",
+        "convergence",
+        "infinite-horizon",
+        "discounted-return"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot gives the \\(T\\)-step bootstrapped return:\n\\[\nR_t = \\sum_{k=0}^{T-1} \\gamma^k r_{t+1+k} + \\gamma^T V(s_{t+T}).\n\\]\nSuppose an implementation mistakenly uses\n\\[\n\\tilde R_t = \\sum_{k=0}^{T-1} r_{t+1+k} + \\gamma^T V(s_{t+T})\n\\]\n(i.e., it does not discount the observed rewards but still discounts the bootstrap term). According to the screenshot, what is the key problem with this target?\n",
+      "question_type": "mc",
+      "options": [
+        "A. It makes \\(\\tilde R_t\\) an unbiased estimate of the undiscounted return, which is incompatible with any \\(\\gamma<1\\).",
+        "B. It puts \\(V(s_{t+T})\\) and the reward-sum on mismatched scales because \\(V\\) is defined as an expected discounted sum, so the target no longer matches the definition of \\(V\\).",
+        "C. It only fails when episodes terminate; in continuing tasks it is always correct.",
+        "D. It increases exploration because earlier rewards dominate, which is required for on-policy methods."
+      ],
+      "correct_answer": "B",
+      "explanation": "The screenshot’s point (3) states that \\(V(s_t)\\) is defined as the expected discounted sum of future rewards, so any bootstrapped target must apply the same discounting to observed rewards; otherwise \\(V\\) and the target are on different scales (“mismatched scales”).",
+      "difficulty": "intermediate",
+      "tags": [
+        "bootstrapping",
+        "n-step-return",
+        "value-function",
+        "target-consistency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the screenshot, three motivations are given for multiplying each future reward term by \\(\\gamma^k\\) when computing returns. Which option lists those motivations most accurately?\n\n(Refer to the numbered list in the image: 1) time-preference/present value, 2) ensuring finite sums, 3) consistency of the value function.)",
+      "question_type": "mc",
+      "options": [
+        "A. Time-preference/present value; ensuring finite sums in infinite-horizon tasks; consistency between bootstrapped targets and the definition of \\(V(s)\\).",
+        "B. Reducing reward variance; making the MDP deterministic; ensuring exploration; preventing overfitting of the policy network.",
+        "C. Handling partial observability; enforcing the Markov property; improving off-policy correction; stabilizing importance sampling.",
+        "D. Making rewards non-negative; normalizing rewards to sum to 1; removing the need for a baseline; guaranteeing optimality of greedy policies."
+      ],
+      "correct_answer": "A",
+      "explanation": "The image explicitly enumerates: (1) time-preference/present value (“sooner rather than later”), (2) ensuring finite sums (convergence of \\(\\sum_{k=0}^\\infty \\gamma^k r_{t+1+k}\\) when \\(\\gamma<1\\)), and (3) consistency of the value function when bootstrapping (the target must use the same discounting convention as \\(V(s_t)\\)).",
+      "difficulty": "beginner",
+      "tags": [
+        "discount-factor",
+        "returns",
+        "infinite-horizon",
+        "value-function-definition"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a custom environment that omits `super().reset(...)`:\n\n```python\nimport random\nimport gymnasium as gym\n\nclass QuizEnv(gym.Env):\n    def __init__(self, n_questions):\n        self.n_questions = n_questions\n\n    def reset(self, *, seed=None, options=None):\n        # no super().reset(seed=seed)\n        self.current = random.randrange(self.n_questions)\n        return self.current, {}\n```\n\nNow the environment is wrapped:\n\n```python\nenv = gym.wrappers.TimeLimit(QuizEnv(10), max_episode_steps=5)\nobs, info = env.reset(seed=123)\n```\n\nWhich failure mode is most plausible if `super().reset(seed=seed)` is omitted in the base environment?\n",
+      "question_type": "mc",
+      "options": [
+        "The environment may be non-deterministic under `seed=...`, and wrapper chains may not get the reset hooks they expect, potentially causing wrapped behavior to mis-function.",
+        "The wrapper will silently convert the action space to continuous, changing the learning problem.",
+        "The wrapper will automatically fix seeding by reseeding Python’s global `random` module, so behavior becomes deterministic anyway.",
+        "The call to `env.reset(seed=123)` will always raise a `TypeError` because wrappers forbid passing seeds."
+      ],
+      "correct_answer": "A",
+      "explanation": "Omitting `super().reset(seed=seed)` commonly breaks two important properties: (1) reproducibility—because the environment’s RNG initialization tied to `seed` is skipped, and (2) wrapper compatibility—because wrappers often rely on the standard reset chain and may do work before/after reset. The other options are incorrect: wrappers do not change action spaces in that way, they do not generally reseed Python’s global `random` for you, and Gymnasium wrappers do accept `seed` in `reset()`.",
+      "difficulty": "advanced",
+      "tags": [
+        "gymnasium",
+        "wrappers",
+        "TimeLimit",
+        "reset-chain",
+        "seeding",
+        "determinism",
+        "api-integration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You implement a Gymnasium environment that uses Python's `random` module to choose an initial state:\n\n```python\nimport random\nimport gymnasium as gym\n\nclass MyEnv(gym.Env):\n    def __init__(self, n):\n        self.n = n\n\n    def reset(self, *, seed=None, options=None):\n        # BUG: no call to super().reset(seed=seed)\n        self.current = random.randrange(self.n)\n        obs = self.current\n        return obs, {}\n```\n\nA user reports that running `obs, info = env.reset(seed=42)` multiple times does not yield deterministic initial observations. What is the best fix (minimal change) and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Call `super().reset(seed=seed)` at the start of `reset()` (and then use the environment’s seeded RNG, typically via `self.np_random`, or at least ensure RNG is seeded through the base reset). This initializes the environment’s RNG state for the given seed and allows wrapper chains to hook into `reset()`, making `reset(seed=42)` reproducible and wrapper-compatible.",
+      "explanation": "Without `super().reset(seed=seed)`, Gymnasium’s seeding mechanism is skipped, so calls like `reset(seed=42)` may not actually control the RNG used to choose `self.current`. Adding `super().reset(seed=seed)` is the standard pattern to connect the provided seed to the environment’s RNG and to keep wrapper behavior correct. For full determinism, the environment should draw randomness from the seeded generator Gymnasium provides (commonly `self.np_random`) rather than an unseeded global RNG.",
+      "difficulty": "intermediate",
+      "tags": [
+        "gymnasium",
+        "custom-env",
+        "reset",
+        "seeding",
+        "determinism",
+        "rng",
+        "reproducibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a custom Gymnasium environment, why is calling `super().reset(seed=seed)` inside your overridden `reset()` method recommended?\n\n```python\ndef reset(self, *, seed=None, options=None):\n    super().reset(seed=seed)\n    ...\n    return obs, info\n```\n",
+      "question_type": "mc",
+      "options": [
+        "It ensures the environment's RNG is seeded for reproducibility, supports wrapper reset behavior, and helps conform to the `(obs, info)` reset API.",
+        "It automatically performs one environment step so that `obs` is never an initial state.",
+        "It is required only to prevent memory leaks when using `RecordVideo` and has no effect otherwise.",
+        "It makes `reset()` return only `obs` (not `info`) to match the classic Gym API."
+      ],
+      "correct_answer": "A",
+      "explanation": "`super().reset(seed=seed)` in Gymnasium is the recommended pattern because it wires up seeding (so RNG-driven behavior is reproducible under a given seed), maintains compatibility with wrapper chains that may hook into `reset()`, and aligns with Gymnasium’s reset API that returns `(obs, info)` (the base class can help with boilerplate like empty `info`). The other options describe behaviors that are not what `super().reset` is for.",
+      "difficulty": "beginner",
+      "tags": [
+        "gymnasium",
+        "reset",
+        "seeding",
+        "reproducibility",
+        "wrappers",
+        "api-conformance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot answers a question about whether A2C performs an optimizer step at each timestep. Explain, using the rollout/batch description shown, (1) how A2C typically aggregates per-timestep losses before updating, and (2) give two reasons (from the screenshot) why updating every timestep would be undesirable.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A2C typically collects a rollout of length T (often across K parallel workers), computes per-step terms (actor: −log π(a_t|s_t)·Â_t, critic/value loss like (R_t−V(s_t))^2, plus an entropy bonus), then aggregates/averages these losses over the whole batch (K×T samples) into a single scalar loss and performs one backward pass and one optimizer.step() per rollout/batch. Updating every timestep is undesirable because (i) variance/noise would be very high with tiny per-step samples (just one log-prob × one advantage), making learning unstable, and (ii) it is less efficient: it’s cheaper and more stable to do one batched backprop over K×T than many tiny separate updates; additionally, batching helps synchronization across parallel workers and keeps the policy closer to on-policy during collection.",
+      "explanation": "The screenshot explicitly outlines: (1) rollout collection for T steps on K workers, (2) compute per-step losses (actor/critic/entropy), (3) aggregate over K×T into policy_loss/value_loss/total_loss, and (4) do a single gradient step per update. It then lists reasons under “Why not update every step?” including variance (extremely noisy) and efficiency (batched matrix-multiply/backprop is cheaper and more stable), plus synchronization/on-policy considerations with parallel workers.",
+      "difficulty": "advanced",
+      "tags": [
+        "A2C",
+        "rollout_batching",
+        "actor_critic_loss",
+        "optimization_step_frequency",
+        "variance_reduction",
+        "parallel_workers"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot gives a *positive advantage* numeric illustration: \\(\\pi_{old}=0.20\\), \\(A_t=+1.0\\), \\(\\epsilon=0.2\\). Suppose the new policy increases the action probability to \\(\\pi_\\theta=0.30\\). Using PPO’s clipping logic, what is the effective multiplier applied to \\(A_t\\) inside the surrogate (i.e., the value of \\(\\min(r_t,\\text{clip}(r_t,1-\\epsilon,1+\\epsilon))\\))?\n",
+      "question_type": "mc",
+      "options": [
+        "A. 0.6",
+        "B. 1.2",
+        "C. 1.5",
+        "D. 2.0"
+      ],
+      "correct_answer": "B",
+      "explanation": "Compute \\(r_t=\\pi_\\theta/\\pi_{old}=0.30/0.20=1.5\\). With \\(\\epsilon=0.2\\), the clipping range is \\([0.8,1.2]\\), so \\(\\text{clip}(r_t,0.8,1.2)=1.2\\). For positive \\(A_t\\), PPO uses \\(\\min(r_t A_t,\\text{clip}(r_t)A_t)\\), which selects the smaller multiplier: \\(\\min(1.5,1.2)=1.2\\). This matches the screenshot’s example showing only a 20% benefit rather than 50%.",
+      "difficulty": "beginner",
+      "tags": [
+        "PPO",
+        "ratio_clipping",
+        "numerical_example",
+        "advantages",
+        "policy_update_bounds"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the screenshot, A2C’s actor objective is written as \\(\\mathcal{L}_{A2C} = -\\mathbb{E}_t\\big[ A_t\\, \\log \\pi_\\theta(a_t\\mid s_t)\\big]\\), while PPO uses the ratio \\(r_t(\\theta)=\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{old}}(a_t\\mid s_t)}\\) and the clipped surrogate \\(\\mathcal{L}(\\theta)=\\mathbb{E}_t\\big[\\min(r_t A_t,\\, \\text{clip}(r_t,1-\\epsilon,1+\\epsilon)A_t)\\big]\\). Which statement best captures *why* the ratio + clipping yields smaller, more stable policy updates as described?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Clipping explicitly bounds how much the objective can improve from increasing/decreasing \\(r_t\\) beyond \\([1-\\epsilon,1+\\epsilon]\\), so the gradient stops pushing for larger probability changes once outside the trust region.",
+        "B. The ratio \\(r_t\\) removes the need for an advantage estimate \\(A_t\\), eliminating variance and making updates stable.",
+        "C. PPO is stable because it updates the policy at every timestep \\(t\\), so gradients are always small.",
+        "D. Clipping forces \\(r_t\\) to equal exactly 1, so the policy never changes too much."
+      ],
+      "correct_answer": "A",
+      "explanation": "The screenshot emphasizes that A2C’s raw policy-gradient step has “no check” on how far probabilities move, while PPO’s \\(\\min(\\cdot)\\) with \\(\\text{clip}(r_t,1-\\epsilon,1+\\epsilon)\\) creates an implicit trust region: once \\(r_t\\) goes outside the band, further pushing probability changes no longer improves the objective, reducing overshoot and instability. B is wrong because PPO still uses \\(A_t\\). C is wrong because the image explicitly notes you typically do *one* optimizer step per rollout/batch, not per timestep. D is wrong because clipping does not fix \\(r_t\\) to 1; it bounds it.",
+      "difficulty": "intermediate",
+      "tags": [
+        "PPO",
+        "clipped_surrogate_objective",
+        "importance_sampling_ratio",
+        "policy_gradient_stability",
+        "trust_region"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response.\n\nConsider the A2C objective written as\n\n\\[\n\\mathcal{L}=\\alpha\\,\\mathcal{L}_{\\text{actor}} + c\\,\\mathcal{L}_{\\text{critic}}.\n\\]\n\n1) Explain why setting \\(\\alpha=1\\) and tuning \\(c\\) is largely a convention rather than a mathematical necessity.\n\n2) Suppose you multiply all rewards by a constant factor \\(k>0\\). Qualitatively describe how this can change the relative scale of \\(\\mathcal{L}_{\\text{actor}}\\) and \\(\\mathcal{L}_{\\text{critic}}\\), and what you might do to keep training stable.\n\nYour answer should explicitly reference (i) scale/units of the two losses and (ii) the trade-off between variance reduction and bias/overfitting from a too-strong critic.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Because only the relative weighting between actor and critic matters for the combined optimization; multiplying the whole loss by a constant does not change the optimizer’s minimizer in exact arithmetic, and introducing both α and c is redundant up to a global scale. Thus one can fix α=1 as a reference and tune c to balance the critic relative to the actor.\n\n2) Scaling rewards by k typically scales returns R (and advantages A) by ~k. The actor loss involves −A log π, so its magnitude tends to scale roughly linearly with k, while the critic MSE (R−V)^2 tends to scale roughly with k^2 if V must match the scaled returns. This can dramatically change the relative sizes of the two losses and their gradient magnitudes, causing one term to dominate. To keep training stable you can retune c (often reduce it when critic MSE blows up under larger k), normalize/standardize advantages or returns, or rescale rewards/clip returns. A larger effective critic weight (too-large c) can reduce variance by improving the baseline quickly, but can also introduce bias/mis-shaping of policy gradients or overfitting to noisy targets; too-small c can leave high-variance policy gradients due to a weak baseline.",
+      "explanation": "1) The combined loss is a weighted sum of two objectives with different units/scales. Only their relative influence matters in practice; setting α=1 simply chooses a reference scale and makes c the knob that controls critic influence.\n\n2) Reward scaling changes the numerical scale of both the advantage (affecting actor loss) and the return/value targets (affecting critic loss). Because the critic uses a squared error, its magnitude can grow faster under scaling (often ~k^2), so without retuning c the critic can dominate updates. Adjusting c (and/or normalizing advantages/returns) restores balance and manages the variance-reduction vs. bias/overfitting trade-off from an overly strong critic.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "reward-scaling",
+        "loss-coefficients",
+        "advantage-normalization",
+        "bias-variance-tradeoff"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training A2C with the combined loss\n\n\\[\n\\mathcal{L}=\\mathcal{L}_{\\text{actor}}+c\\,\\mathcal{L}_{\\text{critic}}.\n\\]\n\nDuring training you observe that the critic MSE is numerically much larger than the actor loss (e.g., critic loss ~ 200, actor loss ~ 0.2), and policy improvement stalls.\n\nWhich change is the most direct way to address the imbalance described above (assuming the implementation is otherwise correct)?",
+      "question_type": "mc",
+      "options": [
+        "A. Increase c substantially so the critic dominates even more, forcing the policy to improve.",
+        "B. Decrease c so the critic gradients are down-weighted relative to the actor, allowing policy-gradient updates to have effect.",
+        "C. Remove the advantage term A from the actor loss so its scale matches the critic MSE.",
+        "D. Replace the critic MSE with cross-entropy loss so its magnitude is always smaller than the actor loss."
+      ],
+      "correct_answer": "B",
+      "explanation": "If the critic loss is orders of magnitude larger, its gradients can dominate shared optimization dynamics (or dominate the overall update signal if parameters/optimizer interactions couple them), effectively drowning out the actor’s learning signal. Decreasing c directly reduces the critic’s contribution to the total loss and its gradient magnitude, restoring balance. Increasing c worsens the problem; removing advantage breaks the policy-gradient formulation; switching to cross-entropy is not principled for value regression and does not guarantee appropriate scaling.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "gradient-dominance",
+        "loss-balancing",
+        "critic-weight"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the combined A2C loss\n\n\\[\n\\mathcal{L}(\\theta,w)=\\mathcal{L}_{\\text{actor}}(\\theta)+c\\,\\mathcal{L}_{\\text{critic}}(w),\n\\]\n\nwhy is it common to include a tunable coefficient \\(c\\) on the critic loss but not on the actor loss?",
+      "question_type": "mc",
+      "options": [
+        "A. Because the actor loss is always convex, so it does not need scaling, while the critic loss is non-convex.",
+        "B. Because the actor and critic losses can have very different numerical scales, and without a coefficient one term may dominate the gradients; conventionally the actor is kept at weight 1 and the critic is tuned relative to it.",
+        "C. Because the critic loss does not contribute gradients to the actor parameters, so it must be scaled to have any effect.",
+        "D. Because the coefficient c is required to make the combined loss an unbiased estimator of the true return."
+      ],
+      "correct_answer": "B",
+      "explanation": "The actor term (e.g., an expectation of −A log π) and the critic term (often an MSE like (R−V(s))^2) can differ by orders of magnitude depending on reward scale and value range. If unbalanced, one term’s gradients can overwhelm the other, destabilizing learning. By convention the actor is given an implicit weight of 1 (policy optimization is the primary objective) and the critic is weighted by a tunable c to balance learning and control the variance-reduction vs. overfitting/bias trade-off.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "actor-critic",
+        "loss-scaling",
+        "hyperparameters"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot claims: “GAE at \\(\\lambda=0\\) doesn’t vanish—it reduces to the standard one-step bootstrapped advantage,” and notes the TD error is “generally not zero unless your value function perfectly matches the true expected return.”\n\nAssume \\(V\\) is the true state-value function \\(V^{\\pi}\\) for policy \\(\\pi\\). Under what condition(s) is \\(\\delta_t^{(0)} = r_{t+1}+\\gamma V(s_{t+1})-V(s_t)\\) exactly zero, and under what condition(s) is it zero only in expectation? Choose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. It is exactly zero for every transition whenever \\(V=V^{\\pi}\\); there is no randomness left.",
+        "B. It is exactly zero only when the environment is deterministic and \\(V=V^{\\pi}\\); with stochastic transitions/rewards it is generally nonzero per sample but has zero expectation given \\(s_t\\) when \\(V=V^{\\pi}\\).",
+        "C. It is zero only when \\(\\lambda=1\\) (Monte Carlo), regardless of whether \\(V\\) is correct.",
+        "D. It is exactly zero whenever \\(\\gamma=0\\), even if \\(V\\) is incorrect."
+      ],
+      "correct_answer": "B",
+      "explanation": "Even with the true value function, the one-step TD error is a sample-based quantity: \\(\\delta_t^{(0)} = r_{t+1}+\\gamma V^{\\pi}(s_{t+1})-V^{\\pi}(s_t)\\) is generally not identically zero when rewards/transitions are stochastic. However, it satisfies the Bellman expectation equation, implying \\(\\mathbb{E}[\\delta_t^{(0)}\\mid s_t]=0\\) when \\(V=V^{\\pi}\\). It becomes exactly zero for every realized transition only in the deterministic case where \\(r_{t+1}\\) and \\(s_{t+1}\\) are fixed given \\(s_t,a_t\\) and the Bellman equation holds pointwise.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "TD-error",
+        "Bellman-equation",
+        "stochastic-vs-deterministic",
+        "GAE"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot defines\n\\[\\delta_t^{(n)} = \\sum_{k=0}^{n-1} \\gamma^k r_{t+1+k} + \\gamma^n V(s_{t+n}) - V(s_t).\\]\nUsing the screenshot’s reasoning, derive the explicit expression for \\(\\hat A_t^{\\mathrm{GAE}}\\) when \\(\\lambda=0\\), and name the resulting quantity.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "When \\(\\lambda=0\\), \\(\\hat A_t^{\\mathrm{GAE}}=\\delta_t^{(0)}\\) because only the \\(n=0\\) term remains. From the screenshot, \\(\\delta_t^{(0)} = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t)\\). This is the one-step TD error (bootstrapped advantage).",
+      "explanation": "The key step is recognizing that \\((\\gamma\\lambda)^n\\) is zero for \\(n\\ge 1\\) when \\(\\lambda=0\\), but \\((\\gamma\\lambda)^0=1\\). The image explicitly states \\(\\delta_t^{(0)}=r_{t+1}+\\gamma V(s_{t+1})-V(s_t)\\), which is the standard one-step TD error used as an advantage estimate.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "GAE",
+        "one-step-TD",
+        "bootstrapping",
+        "value-function"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the screenshot, GAE is written as\n\\[\\hat A_t^{\\mathrm{GAE}} = \\sum_{n=0}^{\\infty} (\\gamma\\lambda)^n\\,\\delta_t^{(n)}.\\]\nIf \\(\\lambda=0\\), which statement best describes what happens to the series and why?",
+      "question_type": "mc",
+      "options": [
+        "A. All terms vanish because \\((\\gamma\\lambda)^n=0\\) for every \\(n\\), so \\(\\hat A_t^{\\mathrm{GAE}}=0\\).",
+        "B. Only the \\(n=0\\) term remains because \\((\\gamma\\lambda)^0=1\\) while \\((\\gamma\\lambda)^n=0\\) for all \\(n\\ge 1\\).",
+        "C. Only the \\(n=1\\) term remains because \\((\\gamma\\lambda)^1=\\gamma\\) even when \\(\\lambda=0\\).",
+        "D. The series becomes the Monte Carlo return because setting \\(\\lambda=0\\) removes bootstrapping."
+      ],
+      "correct_answer": "B",
+      "explanation": "The image emphasizes that setting \\(\\lambda=0\\) does not zero the whole advantage estimate. For \\(n\\ge 1\\), \\((\\gamma\\cdot 0)^n=0\\), so all higher-order (multi-step) TD-error terms drop out. But the zeroth term survives because \\((\\gamma\\lambda)^0=1\\). Therefore \\(\\hat A_t^{\\mathrm{GAE}}=\\delta_t^{(0)}\\), not zero.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "GAE",
+        "lambda",
+        "TD-error",
+        "advantage-estimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot lists “Stable multiple epochs” as a benefit of PPO over A2C, claiming that because each mini-batch update is “safe,” PPO can reuse on-policy data for multiple epochs, improving sample efficiency.\n\nProvide a technical explanation connecting the clipped ratio objective to this claim. Specifically:\n- Why can multiple gradient steps on the same batch be problematic for vanilla A2C (as described in the screenshot)?\n- How does the clipped surrogate reduce the risk when reusing the same data for multiple epochs?\n\nYour answer should reference the screenshot’s notions of the policy becoming “very different from the one that generated the data” and the implicit trust-region idea (roughly controlling KL without second-order methods).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "In vanilla A2C, the update is essentially a straight policy-gradient step \\(\\Delta\\theta \\propto \\mathbb{E}[\\nabla_\\theta\\log\\pi_\\theta(a_t\\mid s_t)A_t]\\). If you take multiple epochs of updates on the same on-policy batch, \\(\\pi_\\theta\\) can drift far from \\(\\pi_{\\theta_{old}}\\) that generated the trajectories; then the advantages/returns used in the gradient are effectively off-policy relative to the updated policy, which can make the gradient direction unreliable and lead to unstable or “destructive” large probability shifts.\n\nPPO’s clipped surrogate uses the ratio \\(r_t=\\pi_\\theta(a_t\\mid s_t)/\\pi_{\\theta_{old}}(a_t\\mid s_t)\\) and caps the per-sample objective improvement once \\(r_t\\) leaves \\([1-\\epsilon,1+\\epsilon]\\). After some updates, if further changing \\(\\pi_\\theta\\) would push \\(r_t\\) farther outside the clip range in a way that would increase the objective, the clipped term stops increasing, so the optimizer has little incentive to keep moving probabilities further. This acts like an implicit trust region (roughly limiting how much action probabilities—and thus KL divergence—can change per sample) without second-order constraints, making repeated epochs on the same data less likely to produce runaway policy drift.",
+      "explanation": "The screenshot’s core argument is that large steps can invalidate advantage estimates because the updated policy differs too much from the data-collecting policy. Multiple epochs amplify this issue for A2C because nothing in the objective discourages continued drift if it keeps improving the sampled objective. PPO’s clipping changes the optimization landscape so that beyond \\(1\\pm\\epsilon\\), additional drift in the “helpful” direction no longer improves the objective, which stabilizes training and makes reusing the same on-policy batch across multiple epochs more feasible.",
+      "difficulty": "advanced",
+      "tags": [
+        "PPO vs A2C",
+        "on-policy data reuse",
+        "implicit trust region",
+        "KL control intuition",
+        "training stability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the PPO clipped objective from the screenshot:\n\\[\nL^{\\text{CLIP}}(\\theta)=\\mathbb{E}_t\\left[\\min\\left(r_tA_t,\\; \\text{clip}(r_t,1-\\epsilon,1+\\epsilon)A_t\\right)\\right].\n\\]\nFor a single timestep (ignore the expectation), let \\(\\epsilon=0.2\\).\n\n1) If \\(A_t>0\\) and \\(r_t=1.5\\), which term does the \\(\\min\\) select and what is the resulting surrogate value (in multiples of \\(A_t\\))?\n\n2) If \\(A_t<0\\) and \\(r_t=1.5\\), which term does the \\(\\min\\) select and what is the resulting surrogate value (in multiples of \\(A_t\\))?\n\nExplain briefly how this matches the screenshot’s claim that clipping prevents overly strong updates beyond \\((1\\pm\\epsilon)A_t\\).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "With \\(\\epsilon=0.2\\), the clip range is \\([0.8,1.2]\\) so \\(\\text{clip}(1.5)=1.2\\).\n1) If \\(A_t>0\\): compare \\(r_tA_t=1.5A_t\\) vs \\(1.2A_t\\). The \\(\\min\\) selects \\(1.2A_t\\), so the surrogate is \\(1.2A_t\\).\n2) If \\(A_t<0\\): \\(1.5A_t\\) is *more negative* than \\(1.2A_t\\). The \\(\\min\\) selects the smaller value, i.e., \\(1.5A_t\\), so the surrogate is \\(1.5A_t\\).\nThis aligns with the screenshot: when \\(A_t>0\\), pushing \\(r_t\\) above \\(1+\\epsilon\\) would keep increasing the objective, so clipping removes that incentive by capping it at \\((1+\\epsilon)A_t\\). When \\(A_t<0\\), increasing \\(r_t\\) makes the objective worse (more negative), so clipping does not protect that direction; instead, it primarily prevents the optimizer from improving the objective by moving \\(r_t\\) too far in the beneficial direction.",
+      "explanation": "The key is that the selected term depends on the sign of \\(A_t\\). The screenshot states: if \\(r_tA_t\\) would increase the objective but \\(r_t\\) is outside \\([1-\\epsilon,1+\\epsilon]\\), PPO clips so the effective improvement is no stronger than \\((1\\pm\\epsilon)A_t\\). For \\(A_t>0\\), large \\(r_t\\) increases the objective, so clipping activates and caps it. For \\(A_t<0\\), large \\(r_t\\) decreases the objective, so the \\(\\min\\) naturally chooses the more negative (worse) term, and clipping is not the limiting factor in that direction.",
+      "difficulty": "intermediate",
+      "tags": [
+        "PPO",
+        "clipping",
+        "advantage sign",
+        "surrogate objective",
+        "importance sampling ratio"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the screenshot, PPO defines the probability ratio \\(r_t(\\theta)=\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{old}}(a_t\\mid s_t)}\\) and optimizes the clipped surrogate\n\\[\nL^{\\text{CLIP}}(\\theta)=\\mathbb{E}_t\\left[\\min\\left(r_t(\\theta)A_t,\\; \\text{clip}(r_t(\\theta),1-\\epsilon,1+\\epsilon)\\,A_t\\right)\\right].\n\\]\nWhich statement best captures *why* the \\(\\min(\\cdot)\\) with clipping helps prevent “destructive” updates compared to a vanilla actor–critic (A2C) policy-gradient step \\(\\Delta\\theta \\propto \\mathbb{E}_t[\\nabla_\\theta\\log\\pi_\\theta(a_t\\mid s_t)A_t]\\)?",
+      "question_type": "mc",
+      "options": [
+        "A. It forces \\(r_t(\\theta)=1\\) for all samples, making PPO equivalent to behavior cloning on \\(\\pi_{\\theta_{old}}\\).",
+        "B. It caps the per-sample improvement term so that once \\(r_t\\) moves outside \\([1-\\epsilon,1+\\epsilon]\\), further pushing it outward no longer increases the objective, discouraging overly large probability shifts.",
+        "C. It replaces the advantage \\(A_t\\) with a constant baseline, which reduces variance and guarantees monotonic improvement.",
+        "D. It directly constrains the KL divergence to be exactly below a fixed threshold using a second-order trust-region method."
+      ],
+      "correct_answer": "B",
+      "explanation": "The screenshot explains that PPO’s clipped surrogate encourages improvement in the advantage direction but “never lets the update push the policy too far in a single step.” The \\(\\min\\) between the unclipped term \\(r_tA_t\\) and the clipped term \\(\\text{clip}(r_t,1\\!\\pm\\!\\epsilon)A_t\\) means that if changing \\(r_t\\) beyond \\([1-\\epsilon,1+\\epsilon]\\) would further increase the objective, PPO instead uses the clipped value—so the optimizer has no incentive to keep increasing/decreasing action probability ratios past the clip range. This mitigates destructive steps where \\(\\pi_{\\theta+\\Delta\\theta}\\) becomes very different from \\(\\pi_{\\theta_{old}}\\), invalidating advantage estimates.",
+      "difficulty": "beginner",
+      "tags": [
+        "PPO",
+        "clipped surrogate objective",
+        "probability ratio",
+        "policy gradient stability",
+        "A2C comparison"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Suppose you define an alternative return with a misaligned exponent:\n\n$$\\tilde G_t = \\sum_{k=0}^{\\infty} \\gamma^{k+1} r_{t+1+k}.$$\n\nAssume \\(\\gamma\\in(0,1)\\).\n\n1) Express \\(\\tilde G_t\\) in terms of the standard return \\(G_t = \\sum_{k=0}^{\\infty} \\gamma^k r_{t+1+k}\\).\n2) Give a concrete consequence of this shift for how immediate rewards are weighted compared to the standard definition.\n\nAnswer in a few sentences and/or equations.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) \\tilde G_t = \\gamma G_t. 2) All rewards, including the immediate reward r_{t+1}, are discounted by an extra factor of \\gamma; in particular r_{t+1} is weighted by \\gamma instead of 1, so immediate rewards are undervalued relative to the standard return.",
+      "explanation": "Factor out \\(\\gamma\\): \\(\\tilde G_t = \\sum_{k=0}^\\infty \\gamma^{k+1} r_{t+1+k} = \\gamma \\sum_{k=0}^\\infty \\gamma^k r_{t+1+k} = \\gamma G_t\\). The exponent shift effectively treats every reward as if it occurred one step later, reducing the weight on near-term outcomes (especially \\(r_{t+1}\\), which normally has weight 1). This highlights that the exponent’s role is to count temporal distance from \\(t\\).",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "return",
+        "discount-factor",
+        "indexing",
+        "reward-weighting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a trajectory with rewards \\(r_{t+1}=5\\), \\(r_{t+2}=2\\), \\(r_{t+3}=4\\), and discount factor \\(\\gamma=0.9\\).\n\n1) Write the discounted return \\(G_t\\) up to \\(r_{t+3}\\) (ignore rewards after \\(t+3\\)).\n2) Compute its numeric value.\n\nYour expression must clearly show why the exponent increases by one for successive terms.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) G_t = 5 + 0.9^1\\cdot 2 + 0.9^2\\cdot 4. 2) Numerically: 5 + 1.8 + 3.24 = 10.04.",
+      "explanation": "The reward at \\(t+1\\) is immediate relative to time \\(t\\) so it has \\(\\gamma^0=1\\). The reward at \\(t+2\\) is one step further, so it gets one factor of \\(\\gamma\\). The reward at \\(t+3\\) is two steps further, so it gets \\(\\gamma^2\\). This “step count” is exactly why the exponent increments by one each term.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "return-calculation",
+        "discount-factor",
+        "time-steps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the discounted return\n\n$$G_t = \\sum_{k=0}^{\\infty} \\gamma^k r_{t+1+k},$$\n\nwhy does the exponent on \\(\\gamma\\) increase by 1 for each successive reward term?",
+      "question_type": "mc",
+      "options": [
+        "Because \\(\\gamma\\) must be squared to keep the return bounded for any \\(\\gamma\\in[0,1]\\).",
+        "Because the exponent \\(k\\) counts how many time-steps into the future the reward \\(r_{t+1+k}\\) occurs, applying one extra discount per additional step.",
+        "Because rewards are assumed to be polynomial in time, so the discount must match the polynomial degree.",
+        "Because the Markov property requires multiplying by \\(\\gamma\\) once per visited state, regardless of time index."
+      ],
+      "correct_answer": "B",
+      "explanation": "The term \\(r_{t+1+k}\\) arrives \\(k\\) steps after \\(r_{t+1}\\). Discounting is applied per time step, so a reward that is one step further out gets multiplied by one additional factor of \\(\\gamma\\). Thus \\(\\gamma^k\\) encodes “how far into the future” the reward occurs.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "return",
+        "discount-factor",
+        "geometric-discounting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a continuing MDP with deterministic transitions. From state $s_t$, the agent always transitions to $s_{t+1}$ and then remains in $s_{t+1}$ forever. Rewards are:\n- $r_{t+1}=0$ on the transition $s_t\\to s_{t+1}$\n- From then on, the agent receives reward $1$ at every subsequent time step: $r_{t+2}=r_{t+3}=\\cdots=1$\n\nAssume the value function is defined as the expected discounted sum with discount $\\gamma\\in(0,1)$.\n\n1) Compute the true value $V(s_t)$.\n2) Suppose someone incorrectly uses the TD target $r_{t+1}+V(s_{t+1})$ (missing $\\gamma$). Compute what value they would implicitly be targeting for $V(s_t)$ if their estimate of $V(s_{t+1})$ were correct.\n3) Briefly explain the mismatch in terms of “overvaluing future rewards.”",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) True value:\nFrom s_t, rewards are 0 at t+1, then 1 forever starting at t+2.\nV(s_t)=0 + \\gamma\\cdot 1 + \\gamma^2\\cdot 1 + \\gamma^3\\cdot 1 + \\cdots = \\gamma\\sum_{k=0}^\\infty \\gamma^k = \\gamma/(1-\\gamma).\n\nAlso, V(s_{t+1}) = 1 + \\gamma + \\gamma^2 + \\cdots = 1/(1-\\gamma).\n\n2) Incorrect target without \\gamma:\nTarget would be r_{t+1}+V(s_{t+1}) = 0 + 1/(1-\\gamma) = 1/(1-\\gamma).\nSo they would push V(s_t) toward 1/(1-\\gamma), which is larger than the correct \\gamma/(1-\\gamma).\n\n3) Explanation:\nV(s_{t+1}) represents rewards starting at time t+2, which are one step further in the future relative to s_t’s perspective. Omitting the factor \\gamma treats those future rewards as if they occur one step earlier (i.e., with no additional discount), inflating the value by a factor of 1/\\gamma and thus overvaluing future rewards.",
+      "explanation": "This scenario isolates the role of the outer $\\gamma$: all rewards represented by $V(s_{t+1})$ occur after one additional time step relative to $s_t$. The correct Bellman relationship is $V(s_t)=\\mathbb{E}[r_{t+1}+\\gamma V(s_{t+1})]$. Dropping $\\gamma$ makes the target too large, because it removes one step of discounting from the entire future tail.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "discounted-return",
+        "td-target",
+        "bellman-consistency",
+        "value-overestimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Show algebraically how the one-step TD target $r_{t+1}+\\gamma V^\\pi(s_{t+1})$ follows from the definition\n\n$$V^\\pi(s_t)=\\mathbb{E}[r_{t+1}+\\gamma r_{t+2}+\\gamma^2 r_{t+3}+\\cdots\\mid s_t].$$\n\nYour answer should explicitly identify which part of the infinite sum corresponds to $V^\\pi(s_{t+1})$ and why a factor of $\\gamma$ remains outside it.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Start from the definition:\n\nV^\\pi(s_t)=E[r_{t+1}+\\gamma r_{t+2}+\\gamma^2 r_{t+3}+\\cdots | s_t].\n\nGroup terms into the immediate reward plus the remaining tail:\n\n=E[r_{t+1} + \\gamma( r_{t+2}+\\gamma r_{t+3}+\\gamma^2 r_{t+4}+\\cdots ) | s_t].\n\nConditioned on being in s_{t+1} after one step, the parenthesized tail is exactly the discounted return starting at time t+1, i.e. V^\\pi(s_{t+1})=E[r_{t+2}+\\gamma r_{t+3}+\\gamma^2 r_{t+4}+\\cdots | s_{t+1}].\n\nTherefore V^\\pi(s_t)=E[r_{t+1}+\\gamma V^\\pi(s_{t+1}) | s_t], which motivates the one-step TD target r_{t+1}+\\gamma V^\\pi(s_{t+1}).",
+      "explanation": "The key step is factoring out the single $\\gamma$ that applies to all rewards strictly after $t+1$. The remaining series inside parentheses matches the definition of the value from the next state (starting at $s_{t+1}$), so the full tail must still be multiplied by that outer $\\gamma$ to stay consistent with the original discounted-sum definition.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "bellman-equation",
+        "bootstrapping",
+        "td-target",
+        "discount-factor"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In one-step TD learning, why does the TD target include a discount factor on the next-state value estimate?\n\nThe TD error is often written as:\n\n$$\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t).$$",
+      "question_type": "mc",
+      "options": [
+        "Because $V(s_{t+1})$ is an estimate and must be shrunk to reduce variance, regardless of how $V$ is defined",
+        "Because rewards after time $t+1$ are discounted in the definition of $V(s_t)$, and $V(s_{t+1})$ represents those later rewards starting at $t+1$",
+        "Because $\\gamma$ corrects for the fact that $r_{t+1}$ is random but $V(s_t)$ is deterministic",
+        "Because $\\gamma$ is only needed in continuing tasks; in episodic tasks it should be omitted from TD error"
+      ],
+      "correct_answer": "B",
+      "explanation": "By definition, the value function is an expected discounted sum: $V(s_t)=\\mathbb{E}[r_{t+1}+\\gamma r_{t+2}+\\gamma^2 r_{t+3}+\\cdots\\mid s_t]$. When bootstrapping, we treat the “later rewards” part as $V(s_{t+1})$, but in the original sum that entire tail is multiplied by $\\gamma$. Therefore the consistent one-step target is $r_{t+1}+\\gamma V(s_{t+1})$.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "temporal-difference-learning",
+        "td-error",
+        "discount-factor",
+        "value-function-definition"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In actor-critic methods, bootstrapping reduces variance but can introduce bias. Consider the 1-step TD target:\n\n\\(\\hat{G}^{\\text{TD}}_t = r_{t+1} + \\gamma V_\\phi(s_{t+1})\\)\n\nand the MC return \\(G_t\\).\n\n(a) Explain precisely where the bias in the TD target comes from.  \n(b) Give a concrete scenario where the TD target could have *higher* mean-squared error (MSE) than MC, even though it has lower variance. Your scenario should explicitly connect approximation error in \\(V_\\phi\\) to the bias–variance tradeoff.  \n(c) In the context of policy gradients, explain how using a lower-variance but biased advantage estimate can still lead to faster and more stable learning in practice.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) The TD target is biased because it uses V_φ(s_{t+1}) as a substitute for the true expected tail return E[G_{t+1}|s_{t+1}]. If V_φ ≠ V^π (due to function approximation error, limited data, nonstationarity, or optimization error), then E[r_{t+1}+γ V_φ(s_{t+1}) | s_t,a_t] ≠ Q^π(s_t,a_t), yielding bias. (b) Example: γ≈1 with sparse delayed rewards and an underfit critic that systematically underestimates values in states leading to the delayed reward (e.g., V_φ(s)≈0 for most states while true V^π(s) is large). Then TD targets are consistently too small (large bias). MC returns, while noisy, are unbiased and occasionally capture the delayed reward correctly. If the critic’s squared bias dominates the variance reduction (MSE = bias^2 + variance), TD can have higher MSE than MC. (c) Policy gradient updates weight ∇ log π(a|s) by an advantage estimate. High-variance weights (MC) cause noisy, unstable updates and can require tiny step sizes. A biased but much lower-variance advantage (TD/GAE) can reduce gradient estimator variance enough that learning is more stable and sample-efficient; the small bias is often acceptable and can be reduced over training as the critic improves, yielding faster practical convergence.",
+      "explanation": "This question targets deep understanding of the bias–variance tradeoff. Bootstrapping reduces variance by replacing a random tail with a point estimate, but that point estimate can be wrong, creating bias. MSE depends on both bias and variance, so a sufficiently inaccurate critic can make TD worse than MC in MSE despite lower variance. In policy gradients, variance reduction often dominates practical performance because it stabilizes optimization and allows larger, more reliable updates.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "actor-critic",
+        "bootstrapping",
+        "bias-variance-tradeoff",
+        "mean-squared-error",
+        "value-function-approximation",
+        "policy-gradient",
+        "advantage-estimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider using policy gradients with either the Monte Carlo return \\(G_t\\) or the 1-step TD target \\(r_{t+1}+\\gamma V(s_{t+1})\\) to form an advantage-like weight.\n\nAssume:\\n- Rewards \\(r_{t+k}\\) are independent random variables with mean 0 and variance \\(\\sigma^2\\).\\n- \\(V(s_{t+1})\\) is treated as deterministic (fixed network parameters) for the purpose of variance calculation.\\n- Discount factor \\(0<\\gamma<1\\).\n\n(1) Compute \\(\\mathrm{Var}(G_t)\\).  \n(2) Compute \\(\\mathrm{Var}(r_{t+1}+\\gamma V(s_{t+1}))\\).  \n(3) Explain, using your results, why bootstrapping reduces variance.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(1) Since rewards are independent with Var(r)=σ^2 and mean 0, Var(G_t)=Var(∑_{k=1}^∞ γ^{k-1} r_{t+k})=∑_{k=1}^∞ γ^{2(k-1)} Var(r_{t+k})=σ^2 ∑_{k=0}^∞ γ^{2k}=σ^2/(1-γ^2). (2) Var(r_{t+1}+γ V(s_{t+1}))=Var(r_{t+1})+Var(γ V)=σ^2+0=σ^2 because V is deterministic here. (3) The MC variance includes all future reward noise scaled by γ^{k-1}, yielding σ^2/(1-γ^2), which can be much larger than σ^2 when γ is close to 1. Bootstrapping truncates the random sum after one reward and replaces the noisy tail with a point estimate, eliminating the accumulated variance from later rewards.",
+      "explanation": "With independence, the variance of a sum is the sum of variances. MC includes infinitely many stochastic terms (discounted), so its variance is a geometric series in γ^2. The TD target keeps only the first stochastic term and replaces the rest with a deterministic value estimate, so its variance is just σ^2 under the stated assumption. This directly formalizes the intuition that bootstrapping removes variability from the long, random tail of future rewards.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "variance",
+        "monte-carlo",
+        "td-learning",
+        "bootstrapping",
+        "discount-factor",
+        "policy-gradient"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best explains why a 1-step TD bootstrap target typically has lower variance than a Monte Carlo (MC) return in policy gradient methods?\n\nMC return:  \n\\(G_t = r_{t+1} + \\gamma r_{t+2} + \\gamma^2 r_{t+3} + \\cdots\\)\n\nTD target:  \n\\(r_{t+1} + \\gamma V(s_{t+1})\\)",
+      "question_type": "mc",
+      "options": [
+        "A. The TD target replaces the entire random sum of future rewards with a deterministic estimate V(s_{t+1}), so only r_{t+1} is sampled, reducing randomness from later time steps.",
+        "B. The TD target is always unbiased, while the MC return is biased, so TD must have lower variance.",
+        "C. The TD target uses a discount factor \\(\\gamma\\) while MC does not, so discounted sums have lower variance by definition.",
+        "D. The TD target averages over multiple sampled trajectories, while MC uses only one trajectory, so TD has lower variance."
+      ],
+      "correct_answer": "A",
+      "explanation": "The MC return depends on the full sequence of stochastic future rewards, so variance accumulates across many random terms. A 1-step bootstrap samples only the immediate reward and then uses the critic’s (deterministic, given parameters) value estimate for the remaining tail, removing the additional randomness from later rewards. This lowers variance, typically at the cost of introducing bias if V is imperfect.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "monte-carlo-return",
+        "temporal-difference",
+        "bootstrapping",
+        "variance-reduction",
+        "critic"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Let \\(T^*\\) be the Bellman optimality operator:\n\\[\n(T^*V)(s) = \\max_a \\mathbb{E}[r(s,a) + \\gamma V(s')].\n\\]\nAssume a discounted MDP with \\(0 \\le \\gamma < 1\\).\n\n(a) Give a fixed-point statement that captures Bellman **self-consistency** for the optimal value function \\(V^*\\).\n\n(b) Suppose a function \\(V\\) satisfies \\(V = T^*V\\). Explain why this implies \\(V = V^*\\) (i.e., why self-consistency plus contraction leads to the optimal value), and briefly connect this to why value iteration converges.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) The self-consistency (fixed-point) statement is: V^* = T^*V^*, i.e., for all states s, V^*(s) = max_a E[r(s,a) + \\gamma V^*(s')].\n\n(b) For \\gamma < 1, T^* is a contraction mapping in the sup norm, so it has a unique fixed point. Since V satisfies V = T^*V, V is a fixed point of T^*. By uniqueness of the fixed point, V must equal V^*. Value iteration applies repeated optimality backups V_{k+1} = T^*V_k; repeated application of a contraction converges to the unique fixed point, hence V_k -> V^*.",
+      "explanation": "Part (a) directly expresses self-consistency as a fixed-point equation: the value must agree with its own one-step optimal look-ahead computed using itself at successor states. Part (b) uses the contraction + unique fixed-point argument: if an operator is a contraction, it cannot have two different fixed points. Therefore any function that is self-consistent under \\(T^*\\) must be the optimal value function. Value iteration is precisely repeated application of \\(T^*\\), so contraction implies convergence to \\(V^*\\).",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "bellman-optimality-equation",
+        "optimality-operator",
+        "fixed-point",
+        "value-iteration",
+        "contraction-mapping",
+        "uniqueness"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the Bellman expectation operator for a fixed policy \\(\\pi\\):\n\\[\n(TV)(s) = \\mathbb{E}[r + \\gamma V(s')].\n\\]\nSuppose you are given a candidate value function \\(\\tilde V\\). You compute \\(T\\tilde V\\) and find that \\(T\\tilde V \\neq \\tilde V\\) for some states.\n\nExplain what this implies about \\(\\tilde V\\) and why repeated Bellman backups \\(V_{k+1} \\leftarrow TV_k\\) are expected to move the estimate toward the true \\(V^\\pi\\).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "If T\\tilde V \\neq \\tilde V, then \\tilde V is not self-consistent under the Bellman expectation equation for policy \\pi, so it cannot equal the true value function V^\\pi (which must satisfy the fixed-point condition V^\\pi = TV^\\pi). Repeated backups apply the Bellman operator again and again; because the Bellman expectation operator is a contraction (for \\gamma < 1 under standard assumptions), it shrinks differences between value functions each iteration, so V_k converges to the unique fixed point V^\\pi. Intuitively, each backup reduces the Bellman error (the inconsistency) by replacing the current estimate with its one-step look-ahead implied by that same estimate.",
+      "explanation": "The key ideas are (1) fixed point: the correct value function is the one that makes the Bellman equation hold everywhere, i.e., \\(V^\\pi = TV^\\pi\\); and (2) contraction/convergence: applying a contraction mapping repeatedly converges to its unique fixed point. Finding \\(T\\tilde V \\neq \\tilde V\\) means \\(\\tilde V\\) violates the self-consistency condition (has nonzero Bellman error). Backups are “principled” because they explicitly enforce the equation locally by updating toward \\(TV\\), which drives the function toward the fixed point.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "bellman-operator",
+        "fixed-point",
+        "policy-evaluation",
+        "contraction-mapping",
+        "bellman-backup"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best explains why the Bellman expectation equation is described as **self-consistent**?\n\nBellman expectation equation (for a fixed policy \\(\\pi\\)):\n\\[\nV^\\pi(s) = \\mathbb{E}_{a\\sim\\pi}\\bigl[r(s,a) + \\gamma V^\\pi(s')\\bigr].\n\\]",
+      "question_type": "mc",
+      "options": [
+        "It is self-consistent because it defines \\(V^\\pi(s)\\) using \\(V^\\pi(s')\\) from the same value function, so the function must satisfy the same recursion everywhere.",
+        "It is self-consistent because it does not depend on future states \\(s'\\), only on immediate rewards.",
+        "It is self-consistent because it always chooses the action that maximizes reward, making the equation optimal by definition.",
+        "It is self-consistent because the expectation removes all randomness, so the value becomes a constant independent of \\(s\\)."
+      ],
+      "correct_answer": "A",
+      "explanation": "The equation is self-consistent because the unknown function \\(V^\\pi\\) appears on both sides: \\(V^\\pi(s)\\) is defined in terms of the immediate reward plus the discounted value of the successor state computed using the same \\(V^\\pi\\). The true value function must satisfy this recursive relationship for every state. (B) is false because \\(s'\\) is explicitly involved; (C) confuses expectation with optimality (that’s the Bellman optimality equation); (D) is false because values remain state-dependent even under expectation.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "bellman-expectation-equation",
+        "self-consistency",
+        "state-value-function"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A student writes the following to distinguish “true state” vs “observed state” in a POMDP:\n\n- \\(\\mu_t\\): the observed state at time \\(t\\)\n- \\(\\pi_t\\): the true (latent) state at time \\(t\\)\n\n1) Explain why this is nonstandard and potentially confusing.\n2) Rewrite the notation using standard symbols for (i) true state, (ii) observation, (iii) belief state, and also state what \\(\\pi\\) and \\(\\mu\\) should represent in RL.\n\nYour answer should be explicit (e.g., use \\(s_t, o_t, b_t\\)) and include one sentence on what \\(\\mu\\) might denote besides the initial distribution.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) It is nonstandard because \\(\\pi\\) is conventionally reserved for a policy (mapping states/beliefs to action probabilities), not for a state variable, and \\(\\mu\\) is used for a probability distribution over states (e.g., initial or stationary), not for a concrete observed value. Using \\(\\mu_t\\) and \\(\\pi_t\\) as state/observation symbols conflicts with widely used RL notation and obscures whether the symbol is a random variable, a distribution, or a decision rule.\n\n2) Standard POMDP notation: true latent Markov state \\(s_t\\), observation \\(o_t\\), belief state \\(b_t\\) (a distribution over \\(s_t\\) given history). Use \\(\\pi(a\\mid s)\\) or \\(\\pi(a\\mid b)\\) for the policy. Use \\(\\mu_0(s)\\) for the initial-state distribution (probability the episode starts in state \\(s\\)). Besides the initial distribution, \\(\\mu\\) may also denote the (stationary or occupancy) state distribution induced by following a policy \\(\\pi\\), sometimes written \\(\\mu^\\pi\\).",
+      "explanation": "The key idea is that \\(\\pi\\) and \\(\\mu\\) carry specific semantic roles in RL: \\(\\pi\\) for action-selection (policy) and \\(\\mu\\) for distributions over states. POMDPs already have standard symbols for partial observability: \\(s_t\\) (latent state), \\(o_t\\) (observation), and \\(b_t\\) (belief). Reusing \\(\\pi\\) and \\(\\mu\\) for observed/true states creates ambiguity (policy vs state; distribution vs value) and makes equations and expectations harder to interpret correctly.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "pomdp",
+        "notation",
+        "policy",
+        "belief-state",
+        "stationary-distribution"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the objective\n\n\\[\nJ(\\theta)=\\mathbb{E}_{s_0\\sim \\mu_0,\\; a_t\\sim \\pi_\\theta(\\cdot\\mid s_t)}\\left[\\sum_{t=0}^{\\infty}\\gamma^t r(s_t,a_t)\\right].\n\\]\n\nWhich statement best explains the roles of \\(\\pi_\\theta\\) and \\(\\mu_0\\) in this expression?",
+      "question_type": "mc",
+      "options": [
+        "A. \\(\\pi_\\theta\\) is the initial-state distribution; \\(\\mu_0\\) is the action-selection rule.",
+        "B. \\(\\pi_\\theta\\) determines how actions are chosen given states; \\(\\mu_0\\) determines how episodes start (distribution over \\(s_0\\)).",
+        "C. \\(\\pi_\\theta\\) is the observation model \\(p(o\\mid s)\\); \\(\\mu_0\\) is the belief update distribution.",
+        "D. \\(\\pi_\\theta\\) and \\(\\mu_0\\) are both policies; one is deterministic and the other stochastic."
+      ],
+      "correct_answer": "B",
+      "explanation": "The expectation explicitly samples \\(s_0\\) from \\(\\mu_0\\), so \\(\\mu_0\\) is the initial-state distribution. Actions are sampled from \\(\\pi_\\theta(\\cdot\\mid s_t)\\), so \\(\\pi_\\theta\\) is the (parameterized) policy controlling decision-making. The other choices confuse policies with distributions or with POMDP observation/belief components.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "objective-function",
+        "policy-gradient",
+        "initial-state-distribution",
+        "expected-return"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In reinforcement learning notation, which pairing is most standard?\n\nA. \\(\\pi(a\\mid s)\\) is the probability the process starts in state \\(s\\); \\(\\mu(s)\\) is the probability of taking action \\(a\\) in state \\(s\\)\nB. \\(\\pi(a\\mid s)\\) is the probability of taking action \\(a\\) given state \\(s\\); \\(\\mu_0(s)\\) is the probability the process starts in state \\(s\\)\nC. \\(\\pi(s)\\) denotes an observation function; \\(\\mu(s)\\) denotes the belief state in a POMDP\nD. \\(\\pi\\) denotes the stationary distribution over states; \\(\\mu\\) denotes the optimal policy",
+      "question_type": "mc",
+      "options": [
+        "A. \\(\\pi(a\\mid s)\\) is the probability the process starts in state \\(s\\); \\(\\mu(s)\\) is the probability of taking action \\(a\\) in state \\(s\\)",
+        "B. \\(\\pi(a\\mid s)\\) is the probability of taking action \\(a\\) given state \\(s\\); \\(\\mu_0(s)\\) is the probability the process starts in state \\(s\\)",
+        "C. \\(\\pi(s)\\) denotes an observation function; \\(\\mu(s)\\) denotes the belief state in a POMDP",
+        "D. \\(\\pi\\) denotes the stationary distribution over states; \\(\\mu\\) denotes the optimal policy"
+      ],
+      "correct_answer": "B",
+      "explanation": "\\(\\pi\\) is reserved for policies: it maps states (or beliefs) to actions, often written \\(\\pi(a\\mid s)\\). \\(\\mu\\) denotes a distribution over states, commonly the initial-state distribution \\(\\mu_0(s)\\). The other options swap meanings or misuse \\(\\pi\\) and \\(\\mu\\) for observations/beliefs.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "notation",
+        "policy",
+        "state-distribution",
+        "mdp"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider one-step TD methods for action values. Which statement correctly contrasts **SARSA** and **Q-learning** in terms of what they bootstrap from at the next state?",
+      "question_type": "mc",
+      "options": [
+        "Both SARSA and Q-learning bootstrap from the action actually taken at $s_{t+1}$, so they are both on-policy.",
+        "SARSA bootstraps from the greedy action at $s_{t+1}$, while Q-learning bootstraps from the action actually taken at $s_{t+1}$.",
+        "SARSA bootstraps from the action actually taken at $s_{t+1}$, while Q-learning bootstraps from the greedy action (max over actions) at $s_{t+1}$.",
+        "Neither method bootstraps; both require waiting until episode termination to compute a Monte Carlo return."
+      ],
+      "correct_answer": "C",
+      "explanation": "SARSA is on-policy: its TD target uses the next action actually selected by the current behavior policy, e.g., $r_{t+1} + \\gamma Q(s_{t+1}, a_{t+1})$. Q-learning is off-policy: it bootstraps from the greedy action at the next state, e.g., $r_{t+1} + \\gamma \\max_{a'} Q(s_{t+1}, a')$. Options A and B swap or conflate these roles, and D incorrectly describes both as Monte Carlo methods (they are TD and bootstrap).",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "temporal-difference",
+        "sarsa",
+        "q-learning",
+        "on-policy",
+        "off-policy",
+        "bootstrapping"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are doing TD(0) state-value learning. Suppose at time $t$ you observe $r_{t+1}=2$, $\\gamma=0.9$, $V(s_t)=5$, and $V(s_{t+1})=6$. The learning rate is $\\alpha=0.1$.\n\n1) Compute the TD error $\\delta_t$.\n2) Compute the updated value $V(s_t)$ after one TD(0) update.\n\nShow your work.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) TD target = r_{t+1} + \\gamma V(s_{t+1}) = 2 + 0.9\\cdot 6 = 7.4. So \\delta_t = 7.4 - V(s_t) = 7.4 - 5 = 2.4.\n2) Update: V(s_t) \\leftarrow V(s_t) + \\alpha \\delta_t = 5 + 0.1\\cdot 2.4 = 5.24.",
+      "explanation": "The TD error is defined as $\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t)$. TD(0) then moves the current estimate toward the TD target by a fraction $\\alpha$ of that error: $V(s_t) \\leftarrow V(s_t) + \\alpha\\delta_t$.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "temporal-difference",
+        "td-error",
+        "bootstrapping",
+        "value-update"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In TD(0) prediction, which expression is the one-step **TD target** used to update the value of the current state $s_t$?",
+      "question_type": "mc",
+      "options": [
+        "$G_t = r_{t+1} + \\gamma r_{t+2} + \\gamma^2 r_{t+3} + \\cdots$",
+        "$r_{t+1} + \\gamma V(s_{t+1})$",
+        "$r_{t+1} + \\gamma V(s_t)$",
+        "$\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t)$"
+      ],
+      "correct_answer": "B",
+      "explanation": "TD(0) bootstraps: it uses the immediate reward plus the discounted estimate of the next state's value, i.e., $r_{t+1} + \\gamma V(s_{t+1})$. Option A is the full Monte Carlo return (waits for future rewards), option C incorrectly uses $V(s_t)$ rather than $V(s_{t+1})$, and option D is the TD error (difference between target and current estimate), not the target itself.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "temporal-difference",
+        "td0",
+        "td-target",
+        "value-function"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a shared-trunk actor–critic, both the policy loss and value loss backpropagate through the shared trunk.\n\n(a) Explain one benefit and one potential drawback of sharing the trunk between actor and critic.\n\n(b) Give one concrete mitigation strategy for the drawback you identified (e.g., an architectural or optimization change) and briefly justify how it helps.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "(a) Benefit: parameter and sample efficiency—early layers learn a single feature representation (“world model”) used by both actor and critic, so you avoid duplicating feature extractors and get richer gradient signal into the trunk from two objectives. Potential drawback: gradient interference/negative transfer—policy and value objectives can push shared features in different directions, destabilizing training or causing one head to dominate and harm the other.\n\n(b) Mitigation (one example): reduce interference by partially unsharing the network (e.g., shared lower layers but separate higher layers for actor and critic) so task-specific features can diverge while still keeping some shared representation. Alternatives include loss weighting/normalization (tuning value-loss coefficient), gradient surgery methods (e.g., projecting conflicting gradients), or using separate optimizers/learning rates for trunk vs heads; each aims to prevent one objective’s gradients from overwhelming or conflicting with the other’s updates.",
+      "explanation": "A correct answer should connect the shared trunk to efficiency/consistency/faster learning (more training signal) and also recognize that multi-objective learning can cause conflicting gradients and instability. The mitigation must directly address that mechanism (e.g., reducing shared capacity at higher layers, balancing losses, or controlling gradients) and explain why it would reduce interference while preserving benefits of sharing.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "actor-critic",
+        "multi-task-learning",
+        "shared-backbone",
+        "gradient-interference",
+        "loss-weighting",
+        "network-architecture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following PyTorch module:\n\n```python\nclass ActorCritic(nn.Module):\n    def __init__(self, n_actions):\n        super().__init__()\n        self.trunk = nn.Sequential(\n            nn.Flatten(),\n            nn.Linear(210*160*3, 256), nn.ReLU(),\n        )\n        self.policy = nn.Linear(256, n_actions)\n        self.value  = nn.Linear(256, 1)\n\n    def forward(self, obs):\n        features = self.trunk(obs)          #→ [batch, 256]\n        logits   = self.policy(features)    #→ [batch, n_actions]\n        value    = self.value(features)     #→ [batch, 1]\n        return logits, value.squeeze(-1)\n```\n\nIf `obs` has shape `[32, 210, 160, 3]` and `n_actions = 6`, what are the shapes of the returned tensors `(logits, value)`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `logits`: `[32, 256]`, `value`: `[32, 1]`",
+        "B. `logits`: `[32, 6]`, `value`: `[32]`",
+        "C. `logits`: `[32]`, `value`: `[32, 6]`",
+        "D. `logits`: `[32, 6, 1]`, `value`: `[32, 1]`"
+      ],
+      "correct_answer": "B",
+      "explanation": "The trunk flattens each observation and maps it to a 256-d feature vector per batch element, so `features` is `[32, 256]`. The policy head is `Linear(256, 6)`, producing `logits` of shape `[32, 6]`. The value head is `Linear(256, 1)`, producing `[32, 1]`, and `squeeze(-1)` removes the last dimension, yielding `value` of shape `[32]`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "pytorch",
+        "tensor-shapes",
+        "actor-critic",
+        "shared-trunk",
+        "policy-logits",
+        "value-function"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In an actor–critic network with a shared trunk and two heads, what do the two heads typically output?\n",
+      "question_type": "mc",
+      "options": [
+        "A. The policy head outputs action logits/parameters, and the value head outputs a scalar V(s).",
+        "B. The policy head outputs V(s), and the value head outputs action logits/parameters.",
+        "C. Both heads output action logits/parameters, but with different initializations.",
+        "D. Both heads output scalars: V(s) and Q(s,a), computed from the same features without extra layers."
+      ],
+      "correct_answer": "A",
+      "explanation": "In the shared-trunk/two-head actor–critic setup, the trunk produces a shared feature representation. The policy (actor) head maps features to an action distribution (logits for discrete actions or parameters for continuous actions). The value (critic) head maps the same features to a single scalar value estimate V(s).",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "actor-critic",
+        "shared-backbone",
+        "policy-head",
+        "value-head",
+        "V(s)"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider evaluating a policy with:\n\n```python\nevaluate_policy(model, env, n_eval_episodes=30)\n```\n\nWhich statement is **most accurate** about what this function does according to the provided description?",
+      "question_type": "mc",
+      "options": [
+        "It runs 30 training episodes, updating the model after each episode, and returns the best episode return",
+        "It runs 30 complete rollouts without learning, records total return per rollout, and returns the mean and standard deviation of those returns",
+        "It runs one long rollout of 30×(max episode length) steps and returns the cumulative reward and variance across steps",
+        "It runs 30 rollouts but ignores episodes that end via truncation, using only terminated episodes to compute the mean"
+      ],
+      "correct_answer": "B",
+      "explanation": "The description states that evaluate_policy runs n_eval_episodes full rollouts (evaluation episodes) without learning, stores the total reward (return) for each rollout, and then returns the mean and standard deviation across those episode returns. It is not a training routine, not a single concatenated rollout, and it does not exclude truncated episodes—both termination modes end an episode.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "policy-evaluation",
+        "evaluate_policy",
+        "statistics",
+        "mean",
+        "standard-deviation",
+        "truncation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You run an evaluation loop like the one below. How many **evaluation episodes** are completed, and what determines when each episode ends?\n\n```python\nreturns = []\nfor ep in range(3):\n    obs, _ = env.reset()\n    done = False\n    total = 0.0\n    while not done:\n        action, _ = model.predict(obs, deterministic=True)\n        obs, reward, terminated, truncated, info = env.step(action)\n        total += reward\n        done = terminated or truncated\n    returns.append(total)\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Three evaluation episodes are completed (one per outer-loop iteration). Each episode ends as soon as either terminated=True or truncated=True, i.e., done = terminated or truncated becomes True.",
+      "explanation": "The outer loop runs env.reset() exactly three times, and each reset→step→...→done sequence is one complete rollout, i.e., one evaluation episode. The stopping condition uses done = terminated or truncated, so the episode ends at the first step where the environment signals either natural termination (terminated) or a time/length limit (truncated).",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "evaluation-loop",
+        "env.reset",
+        "env.step",
+        "terminated",
+        "truncated",
+        "return"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In reinforcement learning, what best describes an **evaluation episode**?",
+      "question_type": "mc",
+      "options": [
+        "A single environment step used to measure immediate reward",
+        "A complete rollout from environment reset until the episode ends (terminated or truncated), with rewards accumulated",
+        "A training phase where the policy updates its parameters after each action",
+        "A fixed number of steps (e.g., 1000) regardless of whether the environment ends earlier"
+      ],
+      "correct_answer": "B",
+      "explanation": "An evaluation episode is one full rollout: reset the environment, repeatedly select actions and step the environment, accumulate rewards, and stop when the environment signals done via either terminated=True (natural terminal condition) or truncated=True (time/length limit). It is not a single step, not training, and not necessarily a fixed step count.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "evaluation",
+        "episode",
+        "rollout",
+        "terminated",
+        "truncated"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Advanced (free response): You are given a dataset of preference triples $(x, y^+, y^-)$ and want to implement DPO training for a language model $\\pi_\\theta$.\n\n1) Explain why DPO can be trained with standard supervised learning infrastructure (minibatches, backprop) without an on-policy RL loop.\n2) Discuss the role of the temperature/hyperparameter $\\alpha$ in the DPO objective, including what might happen if $\\alpha$ is set too large or too small.\n\nYour answer should connect directly to the form of the DPO loss and its optimization behavior.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) DPO’s objective is a differentiable supervised loss computed directly from fixed preference data and the model’s own log-probabilities: for each triple it uses the scalar difference \\(\\log \\pi_\\theta(y^+|x) - \\log \\pi_\\theta(y^-|x)\\) inside a sigmoid/log. Because the training signal is fully determined by the dataset and the current model outputs (no rollouts, no environment interaction, no reward model inference), gradients can be computed by backprop through \\(\\log \\pi_\\theta\\) exactly like cross-entropy training. Thus it fits standard minibatch SGD/Adam training.\n\n2) \\(\\alpha\\) scales the log-probability difference, acting like an inverse temperature / margin control. If \\(\\alpha\\) is too small, the sigmoid input stays near 0 for many examples, making the preference signal weak (low effective margin), which can slow learning and yield under-alignment because the model is not strongly pushed to separate \\(y^+\\) from \\(y^-\\). If \\(\\alpha\\) is too large, the sigmoid saturates quickly: examples can produce near-0 or near-1 sigmoid outputs, which can lead to very large gradients for misranked pairs early on and near-zero gradients once pairs are correctly ranked, potentially causing instability, overshooting, or overly aggressive updates that harm generalization. Proper \\(\\alpha\\) balances strength of the preference constraint with stable, informative gradients across the dataset.",
+      "explanation": "A strong answer ties DPO’s practicality to the fact that the loss is computed from static preference pairs (no sampling on-policy) and is fully differentiable in \\(\\theta\\). It also correctly interprets \\(\\alpha\\) as controlling how sharply the logistic ranking loss responds to log-probability differences, noting saturation/vanishing-gradient issues at extremes and weak learning signal when too small.",
+      "difficulty": "advanced",
+      "tags": [
+        "dpo",
+        "temperature",
+        "gradient-behavior",
+        "supervised-finetuning",
+        "rlhf-alternatives"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the DPO objective\n\n$$\n\\mathcal{L}(\\theta) = -\\mathbb{E}_{(x, y^+, y^-)}\\Big[\\log \\sigma\\big(\\alpha(\\log \\pi_\\theta(y^+\\mid x) - \\log \\pi_\\theta(y^-\\mid x))\\big)\\Big].\n$$\n\nSuppose for a given training example the model currently assigns:\n- $\\log \\pi_\\theta(y^+\\mid x) = -2.0$\n- $\\log \\pi_\\theta(y^-\\mid x) = -1.0$\n\nwith $\\alpha = 1$. Which change to the model outputs would most directly reduce the loss for this example (holding everything else fixed)?",
+      "question_type": "mc",
+      "options": [
+        "Decrease $\\log \\pi_\\theta(y^+\\mid x)$ further (make it more negative) while keeping $\\log \\pi_\\theta(y^-\\mid x)$ unchanged.",
+        "Increase $\\log \\pi_\\theta(y^+\\mid x)$ (make it less negative) while keeping $\\log \\pi_\\theta(y^-\\mid x)$ unchanged.",
+        "Increase both $\\log \\pi_\\theta(y^+\\mid x)$ and $\\log \\pi_\\theta(y^-\\mid x)$ by the same constant.",
+        "Decrease $\\alpha$ to 0 so that the sigmoid becomes constant."
+      ],
+      "correct_answer": "B",
+      "explanation": "The loss decreases when the argument of the sigmoid increases, i.e., when $\\Delta = \\alpha(\\log \\pi(y^+|x) - \\log \\pi(y^-|x))$ becomes larger. Here $\\Delta = (-2) - (-1) = -1$, meaning the model currently prefers $y^-$ (higher log-probability). To reduce the loss, we need to increase $\\log \\pi(y^+|x)$ relative to $\\log \\pi(y^-|x)$ (or decrease $\\log \\pi(y^-|x)$). Option B increases the preferred completion’s log-probability, increasing $\\Delta$ and thus increasing $\\sigma(\\Delta)$, which reduces $-\\log \\sigma(\\Delta)$.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dpo",
+        "logistic-loss",
+        "pairwise-ranking",
+        "log-probabilities",
+        "optimization-intuition"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes Direct Preference Optimization (DPO) compared to a traditional RLHF pipeline?",
+      "question_type": "mc",
+      "options": [
+        "DPO trains a separate reward model from preference data and then uses PPO to optimize the policy against that reward.",
+        "DPO fine-tunes the policy directly on preference pairs using a supervised logistic objective, without training a separate reward model or running an on-policy RL loop.",
+        "DPO requires an environment simulator to generate on-policy rollouts so that preferences can be converted into scalar rewards.",
+        "DPO replaces preference data with demonstrations and performs behavior cloning on the preferred completion only."
+      ],
+      "correct_answer": "B",
+      "explanation": "DPO uses the same kind of pairwise preference data as RLHF (preferred vs. dispreferred completions) but avoids two major RLHF components: (1) training a separate reward model and (2) running an on-policy policy-optimization loop such as PPO. Instead, it directly optimizes a supervised logistic ranking loss on the model’s own log-probabilities.",
+      "difficulty": "beginner",
+      "tags": [
+        "dpo",
+        "rlhf",
+        "preference-learning",
+        "ppo",
+        "reward-model"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain how rollouts are used differently in **on-policy** vs **off-policy** reinforcement learning. In your answer, mention (1) what kind of data is gathered, (2) how it is used for learning, and (3) give one example algorithm for each case.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "On-policy: rollouts are generated by running the *current* policy in the environment to collect fresh trajectories (states, actions sampled from the current policy, rewards, next states). Learning updates (e.g., policy gradients or on-policy value estimates) use this newly collected data and typically assume it matches the policy being optimized; examples include REINFORCE, SARSA, PPO.\n\nOff-policy: rollouts (experience) can be generated by a behavior policy that may differ from the target policy (e.g., older versions of the policy, exploratory policies). The collected transitions are stored (often in a replay buffer) and reused to update a different target policy/value function; examples include DQN and SAC.",
+      "explanation": "The key distinction is whether the learning algorithm requires data drawn from the same policy it is improving (on-policy) or can learn from data generated by other policies (off-policy). Rollouts provide the raw experience in both cases, but on-policy methods usually need fresh, current-policy trajectories for unbiased updates, while off-policy methods commonly store rollouts in a replay buffer and reuse them for sample efficiency even when the policy changes.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "rollout",
+        "on-policy",
+        "off-policy",
+        "replay-buffer",
+        "policy-gradient",
+        "dqn",
+        "sac",
+        "ppo",
+        "sarsa"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You collected the following interaction log from an environment:\n\n```\nstate0, action0, reward1, state1, action1, reward2, state2\n```\n\nWhich statement best explains the indexing/ordering of rewards in a rollout sequence like this?",
+      "question_type": "mc",
+      "options": [
+        "Rewards are observed before actions, so reward1 is produced by taking action1 in state1",
+        "Rewards are produced by the environment transition after an action, so reward1 results from (state0, action0) leading to state1",
+        "Rewards are properties of states only, so reward1 is determined solely by state1 regardless of action0",
+        "Rewards must be recorded as reward0 at the start state, so this log is invalid"
+      ],
+      "correct_answer": "B",
+      "explanation": "In the standard RL interaction loop, the agent is in state_t, samples action_t ~ π(·|state_t), then the environment steps using (state_t, action_t) and returns (reward_{t+1}, state_{t+1}). Therefore reward1 corresponds to the consequence of taking action0 in state0 and transitioning to state1.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "rollout",
+        "trajectory-format",
+        "mdp",
+        "state-action-reward"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In reinforcement learning, what is a **rollout** (also called a trajectory/episode)?",
+      "question_type": "mc",
+      "options": [
+        "A dataset of (state, action) pairs collected from an optimal expert policy only",
+        "A procedure where the agent acts in the environment under its current policy from a start state until termination (or a fixed horizon), recording the sequence of interactions",
+        "A single update step of a neural network using backpropagation on a minibatch",
+        "A value function table that maps each state to its expected return"
+      ],
+      "correct_answer": "B",
+      "explanation": "A rollout is the act of running the current policy in the environment, producing a recorded sequence of states, actions, and rewards until the episode ends (terminal state) or a time limit is reached. It is not restricted to expert data (A), not a gradient update step (C), and not a value table (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "rollout",
+        "trajectory",
+        "episode",
+        "policy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In RLHF, the reward model is often *frozen* during policy optimization (e.g., PPO). Explain:\n\n1) Why freezing the reward model can stabilize training, and\n2) What failure mode can occur if you keep updating the reward model at the same time as the policy.\n\nYour answer should reference the idea of a fixed surrogate objective and the fact that the reward model generalizes from comparison data.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Freezing the reward model stabilizes training because it provides a fixed surrogate objective: the policy is optimized against a stationary scalar reward function r(x,y) rather than a moving target. This reduces non-stationarity and prevents the policy-gradient updates (e.g., PPO) from chasing a reward signal that changes as the reward model changes. Since human labels are expensive/noisy, the frozen reward model also avoids repeatedly injecting label noise during the RL phase.\n\n2) If the reward model is updated concurrently with the policy, you can get an unstable feedback loop: the policy changes its output distribution, the reward model is then trained on (or influenced by) this shifting distribution, and the policy adapts again to exploit the updated reward model. This can lead to reward hacking/over-optimization of model quirks, drifting reward scales, and collapse where the reward model no longer reflects the original human preference data. The reward model is meant to generalize from comparison data; if it is continually re-fit on-policy without careful controls, it may stop representing the intended human judgments consistently.",
+      "explanation": "A frozen reward model makes the RL stage closer to standard RL with a stationary reward function, which is a key assumption behind stable policy optimization methods. Updating both simultaneously introduces strong non-stationarity (both the policy and the learned reward change), making it easier for the policy to exploit idiosyncrasies of the evolving reward model and harder to ensure the reward remains aligned with the original human preference signal.",
+      "difficulty": "advanced",
+      "tags": [
+        "rlhf",
+        "ppo",
+        "training-stability",
+        "non-stationarity",
+        "reward-hacking",
+        "surrogate-objective",
+        "reward-model-freezing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the pairwise reward-model loss:\n\n$$\n\\mathcal{L}_{\\text{RM}} = -\\log \\sigma\\bigl(r(x,y^+) - r(x,y^-)\\bigr)\n$$\n\nWhich statement best describes what minimizing this loss encourages?",
+      "question_type": "mc",
+      "options": [
+        "A. It encourages r(x,y^+) to be greater than r(x,y^-) by making the difference r(x,y^+) - r(x,y^-) large and positive",
+        "B. It encourages r(x,y^+) and r(x,y^-) to be equal so the model is calibrated and unbiased",
+        "C. It encourages the policy to maximize r(x,y) directly by updating the policy parameters during reward-model training",
+        "D. It encourages r(x,y^-) to be greater than r(x,y^+) so the model learns to penalize preferred answers"
+      ],
+      "correct_answer": "A",
+      "explanation": "Because σ(z) increases as z increases, minimizing −log σ(r(x,y^+)−r(x,y^-)) pushes the argument (r(x,y^+)−r(x,y^-)) to be large and positive. This makes the preferred completion y^+ score higher than the less-preferred y^- for the same prompt x. The reward model is trained here (not the policy), so (C) is incorrect.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reward-model",
+        "pairwise-ranking-loss",
+        "bradley-terry",
+        "logistic-loss",
+        "preference-learning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the standard RLHF pipeline, what is the primary role of the reward model?",
+      "question_type": "mc",
+      "options": [
+        "A. To generate candidate completions for a prompt using beam search",
+        "B. To convert human preference comparisons into a scalar reward signal r(x,y) used for policy optimization",
+        "C. To compute the value function V(s) for temporal-difference learning directly from environment transitions",
+        "D. To replace the policy model at serving time because it is more aligned with human preferences"
+      ],
+      "correct_answer": "B",
+      "explanation": "In RLHF, humans provide ordinal feedback (which completion is preferred). The reward model is trained on these comparisons and outputs a continuous scalar score r(x,y) for any (prompt, completion) pair, which can then be used as the reward signal for RL-style policy optimization (e.g., PPO). It does not generate candidates (A), is not a standard TD value function learned from environment transitions (C), and is not typically the served model (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "rlhf",
+        "reward-model",
+        "human-feedback",
+        "scalar-reward",
+        "policy-optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In SMILE/DAgger-style data collection, you roll out a policy and obtain a trajectory τ that includes states and the actions actually taken. You then query an expert to obtain expert-recommended actions a*.\n\nExplain:\n1) What information is contained in the trajectory τ.\n2) What information is typically stored in the supervised learning dataset built from τ for imitation learning.\n3) Why the dataset may discard the actions actually taken and the transition structure.\n\nYour answer should clearly distinguish between τ and the dataset.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) A trajectory τ is the full execution history of a rollout, typically written as (s0, a0, s1, a1, ..., sT). It contains the visited states, the actions actually taken by the behavior policy at those states, and (implicitly/explicitly) the resulting transitions s_t → s_{t+1} caused by taking a_t.\n\n2) The imitation-learning dataset built from τ typically stores the visited states paired with expert-recommended actions: {(s0, a0*), (s1, a1*), ..., (s_{T-1}, a_{T-1}*)}. The a* labels come from the expert, not from the behavior policy that generated the trajectory.\n\n3) The dataset may discard the actions actually taken and the transition structure because the supervised objective is to learn a policy mapping from state to expert action (behavior cloning / DAgger classification/regression). The behavior policy’s actions can be suboptimal/noisy and are not the target labels, and the transition structure is not required for plain supervised policy learning (though it could be useful for other RL/model-based objectives).",
+      "explanation": "This distinction is central in imitation learning: trajectories record what happened during rollout (including the behavior actions and resulting next states), while the supervised dataset is constructed by taking the states encountered and relabeling them with expert actions. The purpose is to train a policy that imitates the expert’s decision rule, so the expert actions become the labels and the transition graph is not necessary for the standard supervised learning formulation.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "imitation-learning",
+        "dagger",
+        "smile",
+        "trajectory-vs-dataset",
+        "expert-relabeling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given a trajectory:\n```text\nτ = (s0, a0, s1, a1, s2, a2, s3)\n```\nWhich set corresponds to the **full transitions** extracted from τ, i.e., tuples of the form (state, action, next_state)?",
+      "question_type": "mc",
+      "options": [
+        "{(s0, s1), (s1, s2), (s2, s3)}",
+        "{(s0, a0), (s1, a1), (s2, a2), (s3, a3)}",
+        "{(s0, a0, s1), (s1, a1, s2), (s2, a2, s3)}",
+        "{(s0, a0, s1), (s1, a1, s2), (s2, a2, s3), (s3, a3, s4)}"
+      ],
+      "correct_answer": "C",
+      "explanation": "Full transitions pair each state and the action taken there with the resulting next state. For τ = (s0, a0, s1, a1, s2, a2, s3), there are 3 transitions: (s0,a0,s1), (s1,a1,s2), (s2,a2,s3). A contains only state-to-state pairs, B is state-action pairs (and incorrectly includes (s3,a3) which is not in the trajectory), and D invents extra elements not present in τ.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "trajectory",
+        "transition-tuples",
+        "rollout",
+        "state-action-next_state"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In reinforcement learning, which of the following best describes what a trajectory τ contains?\n\nA typical notation is:\n```text\nτ = (s0, a0, s1, a1, ..., sT)\n```",
+      "question_type": "mc",
+      "options": [
+        "Only the sequence of visited states (s0, s1, ..., sT)",
+        "Only the sequence of actions taken (a0, a1, ..., aT-1)",
+        "The full execution history: states, actions taken, and the resulting state transitions",
+        "A dataset of (state, expert_action) pairs collected by relabeling states with expert actions"
+      ],
+      "correct_answer": "C",
+      "explanation": "A trajectory is the complete rollout/execution sequence. It includes states and the actions actually taken, which implicitly define the transitions (e.g., taking a_t in s_t leads to s_{t+1}). Option D describes an imitation-learning dataset constructed from trajectories (states relabeled with expert actions), not the trajectory itself.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "trajectory",
+        "states",
+        "actions",
+        "transitions"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot says: “Large learning rates + no clipping → you can easily swing \\(r_t\\) way past \\(1\\pm\\varepsilon\\) in one step, causing instability,” and also: “the actual size of the parameter update each step is still \\(\\alpha\\times \\nabla_\\theta L(\\theta)\\).”\n\nWhich scenario best explains how learning rate \\(\\alpha\\) and clipping \\(\\varepsilon\\) interact in PPO?\n",
+      "question_type": "mc",
+      "options": [
+        "A. With clipping enabled, the gradient is always zero whenever \\(r_t\\in[1-\\varepsilon,1+\\varepsilon]\\), so \\(\\alpha\\) no longer matters.",
+        "B. A very large \\(\\alpha\\) can still cause large parameter changes, but clipping reduces the objective’s incentive to keep pushing \\(r_t\\) beyond \\([1-\\varepsilon,1+\\varepsilon]\\), making updates effectively more conservative than without clipping.",
+        "C. Choosing a smaller \\(\\varepsilon\\) automatically reduces the optimizer step size \\(\\alpha\\) because PPO sets \\(\\alpha=\\varepsilon\\).",
+        "D. If \\(\\varepsilon\\) is set to 0.2, then \\(r_t\\) is mathematically guaranteed to stay within \\([0.8,1.2]\\) after each gradient step regardless of \\(\\alpha\\)."
+      ],
+      "correct_answer": "B",
+      "explanation": "The screenshot distinguishes between (1) the optimizer’s step size, which is still controlled by \\(\\alpha\\), and (2) the surrogate objective’s incentive to move the policy, which is limited by clipping. Clipping does not guarantee \\(r_t\\) stays in-range for any \\(\\alpha\\), but it does remove additional gain in the surrogate once \\(r_t\\) crosses the boundary, which tends to make learned updates more conservative compared to the unclipped objective.",
+      "difficulty": "advanced",
+      "tags": [
+        "PPO",
+        "learning rate",
+        "stability",
+        "clipping epsilon",
+        "policy ratio dynamics",
+        "optimization vs objective shaping"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot notes: “no matter how large your gradient wants to make \\(r_t\\) bigger than \\(1+\\varepsilon\\) (for positive \\(A_t\\)) or smaller than \\(1-\\varepsilon\\) (for negative \\(A_t\\)), the loss function stops encouraging you beyond that threshold.”\n\nExplain (in words) why the direction of the relevant clipping boundary depends on the sign of the advantage \\(A_t\\), referencing the \\(\\min\\) between the unclipped and clipped terms in\n\\(\\min(r_tA_t,\\;\\text{clip}(r_t,1-\\varepsilon,1+\\varepsilon)A_t)\\).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Because the objective uses a minimum of two products, the term that is smaller (more conservative) is selected. If A_t > 0, increasing r_t increases r_t A_t, so once r_t exceeds 1+ε the clipped product (1+ε)A_t becomes smaller than r_tA_t and the min selects the clipped term, removing further incentive to increase r_t. If A_t < 0, decreasing r_t makes r_tA_t larger in magnitude negative/less favorable, and the conservative bound occurs when r_t goes below 1−ε: the clipped product (1−ε)A_t becomes the smaller term under the min, so the objective stops encouraging further decreases in r_t beyond 1−ε.",
+      "explanation": "The key is how the \\(\\min\\) interacts with multiplying by \\(A_t\\). For positive advantages, pushing \\(r_t\\) upward is beneficial, so clipping at \\(1+\\varepsilon\\) limits that benefit. For negative advantages, pushing \\(r_t\\) downward is beneficial (reducing probability of a bad action), so clipping at \\(1-\\varepsilon\\) limits that benefit. This matches the screenshot’s statement about the loss “stopping encouragement” beyond the corresponding boundary depending on the sign of \\(A_t\\).",
+      "difficulty": "intermediate",
+      "tags": [
+        "PPO",
+        "advantage sign",
+        "clipping behavior",
+        "min operator",
+        "policy update constraint"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the screenshot, the PPO clipped objective for a single sample is shown as\n\\[\nL_t(\\theta)=\\min\\big(r_t(\\theta)A_t,\\; \\text{clip}(r_t(\\theta),1-\\varepsilon,1+\\varepsilon)A_t\\big),\\quad r_t(\\theta)=\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{old}}(a_t\\mid s_t)}.\n\\]\nWhich statement best matches the screenshot’s explanation of what the clipping parameter \\(\\varepsilon\\) does?\n",
+      "question_type": "mc",
+      "options": [
+        "A. It directly caps the optimizer’s parameter update size \\(\\alpha\\|\\nabla_\\theta L(\\theta)\\|\\), independent of the learning rate.",
+        "B. It caps the incentive in the surrogate loss to push \\(r_t\\) beyond \\([1-\\varepsilon,1+\\varepsilon]\\), but the actual step size is still governed by the learning rate.",
+        "C. It forces \\(r_t(\\theta)\\) to be exactly 1 for all samples, preventing any policy change.",
+        "D. It replaces the learning rate \\(\\alpha\\) by \\(\\varepsilon\\) so that smaller \\(\\varepsilon\\) always means smaller gradient steps."
+      ],
+      "correct_answer": "B",
+      "explanation": "The screenshot explicitly states that \\(\\varepsilon\\) does not directly cap the gradient step size (that’s governed by the learning rate \\(\\alpha\\)), but it does cap the surrogate objective’s encouragement to move the policy too far in one update by clipping the probability ratio \\(r_t\\) to \\([1-\\varepsilon,1+\\varepsilon]\\).",
+      "difficulty": "beginner",
+      "tags": [
+        "PPO",
+        "clipped surrogate objective",
+        "epsilon clipping",
+        "policy ratio",
+        "learning rate vs clipping"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Free response: Explain how the actor parameters \\(\\theta\\) and critic parameters \\(w\\) interact during A2C training.\n\nYour answer should:\n1) State what \\(\\theta\\) and \\(w\\) parameterize (i.e., what each network outputs), and\n2) Describe how the critic’s output is used to update the actor (e.g., via an advantage), and\n3) Describe how \\(w\\) is updated (what target it tries to match).\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "In A2C, the actor parameters \\(\\theta\\) parameterize the policy \\(\\pi_\\theta(a\\mid s)\\), producing action probabilities/logits used to sample actions. The critic parameters \\(w\\) parameterize the value function \\(V_w(s)\\), producing a scalar estimate of expected discounted return from state \\(s\\). During training, the critic’s value estimate is used to compute an advantage signal (e.g., \\(A_t = R_t - V_w(s_t)\\) or a TD-based advantage), which weights the policy-gradient update so \\(\\theta\\) is updated to increase the probability of actions with positive advantage and decrease it for negative advantage. Separately, \\(w\\) is updated by minimizing a regression loss such as squared TD error or MSE between \\(V_w(s_t)\\) and a target return (Monte Carlo return or bootstrapped TD target), improving the critic’s value predictions over time.",
+      "explanation": "A correct answer must connect roles and learning signals: \\(\\theta\\) controls action selection (policy), \\(w\\) predicts state value (critic). The critic’s prediction enables advantage estimation, which reduces variance in the policy gradient and provides a baseline for updating \\(\\theta\\). The critic itself is trained via a supervised-style regression objective toward returns/TD targets, which is why its parameters \\(w\\) are updated by minimizing squared error rather than maximizing log-probability.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "actor-critic",
+        "advantage-estimation",
+        "policy-gradient",
+        "value-function-learning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a combined actor-critic network:\n\n```python\nlogits, value = actor_critic_net(obs)\n```\n\nWhich training objective is most directly associated with updating the critic parameters \\(w\\), and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Maximize \\(\\log \\pi_\\theta(a\\mid s)\\) because the critic chooses actions",
+        "B. Minimize mean-squared error between \\(V_w(s)\\) and a return/bootstrapped target (e.g., TD target), because the critic predicts state value",
+        "C. Maximize entropy of the policy because the critic controls exploration",
+        "D. Minimize KL divergence between successive policies because the critic constrains policy updates"
+      ],
+      "correct_answer": "B",
+      "explanation": "The critic’s role is to approximate the value function \\(V_w(s)\\). Therefore, \\(w\\) is typically updated by minimizing a regression loss such as squared TD error or MSE between \\(V_w(s)\\) and a target return (Monte Carlo return or bootstrapped TD target). Policy-gradient terms (e.g., \\(\\log \\pi_\\theta\\)) primarily update \\(\\theta\\), the actor parameters.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "critic-update",
+        "td-error",
+        "mse-loss",
+        "value-head"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Advantage Actor-Critic (A2C), what do the critic parameters \\(w\\) represent?\n\nGiven:\n- Actor: \\(\\pi_\\theta(a\\mid s)\\)\n- Critic: \\(V_w(s)\\)\n",
+      "question_type": "mc",
+      "options": [
+        "A. The weights of the policy network that output action probabilities (or logits)",
+        "B. The weights of the value-function approximator that outputs a scalar estimate of expected return from a state",
+        "C. The discount factor \\(\\gamma\\) and entropy coefficient used to regularize exploration",
+        "D. The replay buffer contents used to compute Monte Carlo returns"
+      ],
+      "correct_answer": "B",
+      "explanation": "In A2C, \\(w\\) denotes the critic’s learnable parameters: the weights of the value function approximator \\(V_w(s)\\), which maps a state to a scalar estimate of expected (discounted) return. The actor’s parameters are \\(\\theta\\), not \\(w\\).",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "actor-critic",
+        "critic",
+        "value-function",
+        "parameters"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider estimating V^π(s) using Monte Carlo returns. Suppose you have N i.i.d. episode rollouts starting from state s under policy π, producing returns G^{(1)}, ..., G^{(N)}.\n\n1) Write the Monte Carlo estimator \\hat{V}^π(s).\n2) Explain (briefly) why this estimator is unbiased under the i.i.d. assumption.\n3) Contrast this with a Temporal-Difference (TD) target, stating one key way TD differs conceptually from Monte Carlo in how it forms its target.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) \\hat{V}^π(s) = (1/N) \\sum_{i=1}^N G^{(i)}.\n2) Unbiased because E[\\hat{V}^π(s)] = (1/N) \\sum_i E[G^{(i)}] = E[G] = V^π(s) when each G^{(i)} is a return from an independent trajectory generated by π starting at s.\n3) TD forms a bootstrapped target such as r_{t+1} + γ V(s_{t+1}) (or r_{t+1} + γ \\hat{V}(s_{t+1})), mixing sampled reward with an existing value estimate, rather than waiting for the full episode return to be observed.",
+      "explanation": "Monte Carlo value estimation is an empirical average of complete sampled returns; with i.i.d. samples, linearity of expectation gives unbiasedness. TD differs by bootstrapping: it uses an estimate of the future value in its target instead of sampling all the way to terminal, which changes bias/variance properties and enables learning from partial episodes.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "monte-carlo",
+        "unbiased-estimator",
+        "i.i.d.",
+        "temporal-difference",
+        "bootstrapping",
+        "value-function-estimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe one episode starting at time t with rewards: r_{t+1}=1, r_{t+2}=2, r_{t+3}=3, and then termination. With discount factor γ = 0.5, what is the Monte Carlo return G_t?\n\n(Use the definition: G_t = r_{t+1} + γ r_{t+2} + γ^2 r_{t+3} + ... until terminal.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "G_t = 1 + 0.5·2 + 0.5^2·3 = 1 + 1 + 0.75 = 2.75.",
+      "explanation": "Monte Carlo return sums the observed rewards from the sampled trajectory until termination, discounting each step by increasing powers of γ. Here: 1 + 0.5·2 + 0.25·3 = 2.75.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "monte-carlo",
+        "discounting",
+        "return",
+        "episode-termination"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best explains why they are called **Monte Carlo returns** in reinforcement learning?",
+      "question_type": "mc",
+      "options": [
+        "They approximate expected returns by averaging returns from randomly sampled complete episodes (trajectories).",
+        "They compute returns using a deterministic dynamic programming backup over all states.",
+        "They estimate returns by bootstrapping from the current value function at the next state.",
+        "They require enumerating all possible trajectories to compute the exact expected return."
+      ],
+      "correct_answer": "A",
+      "explanation": "Monte Carlo methods estimate expectations via random sampling. In RL, Monte Carlo returns are computed from full-episode rollouts (complete trajectories) and then averaged across many sampled episodes to estimate an expected return like V^π(s). The other options describe dynamic programming (B), temporal-difference bootstrapping (C), or an intractable exact enumeration (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "monte-carlo",
+        "returns",
+        "trajectory-sampling",
+        "expected-return"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A student proposes the following (incorrect) update for optimal control:\n\n\\[\n\\tilde V(s) = \\mathbb{E}_{a \\sim \\pi(\\cdot|s)}\\left[ \\max_{s' \\in \\mathcal{S}} \\left( R(s,a,s') + \\gamma \\tilde V(s') \\right) \\right]\n\\]\n\nThey argue: “Since we want the best outcome, we should maximize over next states too.”\n\nProvide a concrete counterexample MDP (specify states, actions, transition probabilities, rewards, and γ) where this update yields a value that is not achievable by any policy. Explain precisely what assumption about control is being violated, and contrast it with the correct Bellman optimality form.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One counterexample:\n\n- States: s (start), g (good terminal), b (bad terminal)\n- Actions at s: only one action a (or two actions that are identical; action choice doesn’t matter)\n- Transitions: P(g|s,a)=0.5, P(b|s,a)=0.5\n- Rewards: R(s,a,g)=+1, R(s,a,b)=-1\n- Terminal values: V*(g)=V*(b)=0 (episode ends)\n- Discount: γ=1 (or any γ, since terminals end)\n\nCorrect Bellman optimality (since only one action):\nV*(s) = E_{s'~P(·|s,a)}[R(s,a,s')] = 0.5*(+1) + 0.5*(-1) = 0.\n\nStudent’s incorrect maximization over next states gives:\n\\tilde V(s) = max_{s' in {g,b}} R(s,a,s') = max(+1, -1) = +1.\n\nBut +1 is not achievable: the agent cannot force the environment to transition to g; it happens only with probability 0.5. The violated assumption is treating the next-state outcome as if it were a decision under the agent’s control (a decision node), when it is actually a chance node governed by P(s'|s,a). The correct Bellman optimality equation is:\nV*(s) = max_a E_{s'~P(·|s,a)}[R(s,a,s') + γ V*(s')],\nwhich maximizes only over actions (agent-controlled) and takes expectation over next states (environment-controlled stochasticity).",
+      "explanation": "Maximizing over next states implicitly assumes the agent can choose the transition outcome, which is false in standard MDPs. The counterexample shows the proposed update produces an optimistic value (+1) that no policy can realize because the environment’s stochastic transition cannot be “optimized away”; it must be averaged according to its probabilities.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "bellman-optimality",
+        "mdp",
+        "stochastic-transitions",
+        "counterexample",
+        "control-vs-randomness",
+        "chance-nodes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider an MDP with discount factor γ = 0.9. In state s, there are two actions:\n\n- Action a1: reward r=0, transitions to s1 with probability 0.5 and to s2 with probability 0.5.\n- Action a2: reward r=0, transitions to s1 with probability 1.0.\n\nAssume V*(s1)=10 and V*(s2)=0.\n\nUsing the Bellman optimality principle (max over actions, expectation over next states), compute V*(s). Show your work.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Compute action values via expectation over next states, then take max.\n\nQ*(s,a1) = 0 + 0.9 * [0.5*V*(s1) + 0.5*V*(s2)] = 0.9 * [0.5*10 + 0.5*0] = 0.9 * 5 = 4.5.\n\nQ*(s,a2) = 0 + 0.9 * [1.0*V*(s1)] = 0.9 * 10 = 9.\n\nTherefore V*(s) = max(Q*(s,a1), Q*(s,a2)) = max(4.5, 9) = 9.",
+      "explanation": "This applies the key alternation: for each action, you must average over environment outcomes (the transition probabilities) to get Q*(s,a). Only after computing those expected returns do you take the max over actions, reflecting the agent’s control over the action choice but not over the stochastic transition.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "bellman-equation",
+        "value-function",
+        "q-function",
+        "expectation-over-transitions",
+        "dynamic-programming"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the Bellman optimality equation for an MDP, why do we take a max over actions but an expectation over next states?\n\nChoose the best explanation.",
+      "question_type": "mc",
+      "options": [
+        "Because the agent controls the action choice, but the next state is generated stochastically by the environment dynamics.",
+        "Because actions are always deterministic, while next states are always random in every MDP.",
+        "Because taking an expectation over actions would be too computationally expensive, so we use max as an approximation.",
+        "Because the environment chooses the action that maximizes the agent’s reward, while the agent averages over next states."
+      ],
+      "correct_answer": "A",
+      "explanation": "In the Bellman optimality equation, the agent has control over which action to take in state s, so it can choose the action that maximizes expected return (a decision node). After selecting an action, the environment transitions to a next state s' according to P(s'|s,a), which the agent cannot control; thus we compute the expected value over possible s' (a chance node).",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "bellman-optimality",
+        "mdp",
+        "expectation",
+        "max-operator",
+        "decision-vs-chance-nodes"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider an A2C implementation that updates the critic by minimizing squared TD error and updates the actor using an advantage estimate:\n\n\\(\\delta_t = r_t + \\gamma V_\\theta(s_{t+1}) - V_\\theta(s_t)\\)\n\n\\(\\nabla_\\phi J \\approx \\mathbb{E}[\\nabla_\\phi \\log \\pi_\\phi(a_t|s_t) \\; A_t]\\), with \\(A_t\\) estimated using the critic (e.g., \\(A_t \\approx \\delta_t\\) or an n-step/GAE estimate).\n\nExplain why A2C can still learn useful policies even when the value network is initially poor, and describe one practical modification (from the source content) that can mitigate early critic inaccuracy. Your answer should reference (i) iterative bootstrapping and (ii) the role of advantage estimates in actor updates.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A2C can start learning without pre-training the critic because TD bootstrapping is iterative/self-correcting: even if Vθ is inaccurate at first, the critic is updated toward returns observed in trajectories, which gradually improves Vθ; as Vθ improves, the bootstrap targets become less noisy and more accurate, enabling convergence toward the value function under the evolving policy. The actor can still improve because using an advantage estimate based on the critic (even a rough one) provides a learning signal that reduces variance compared to vanilla policy gradients; it helps the actor distinguish better-than-expected from worse-than-expected actions. A practical mitigation for early critic inaccuracy is to use multi-step/Monte Carlo-style targets (e.g., n-step returns or TD(λ)/GAE), which rely more on sampled rewards initially and less on the unreliable bootstrap term, reducing early bootstrap-induced bias (often at the cost of higher variance).",
+      "explanation": "A complete answer must connect the iterative nature of TD learning (bootstrapping improves as the critic improves) with why the actor update remains meaningful (advantages reduce variance and provide direction even if imperfect). It should also name a concrete strategy from the prompt—e.g., mixing in Monte Carlo returns, using n-step returns, or TD(λ)—and explain that it reduces reliance on inaccurate value estimates early in training.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "actor-critic",
+        "advantage-function",
+        "bootstrapping",
+        "td-lambda",
+        "gae",
+        "critic-training"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training A2C from scratch and observe unstable critic updates early in training. You consider switching from 1-step TD targets to an n-step return:\n\n\\(y_t = r_t + \\gamma r_{t+1} + \\dots + \\gamma^{n-1} r_{t+n-1} + \\gamma^n V_\\theta(s_{t+n})\\)\n\nWhich statement best explains *why* this can help early training?",
+      "question_type": "mc",
+      "options": [
+        "A. n-step returns eliminate variance completely because they remove sampling noise from trajectories.",
+        "B. n-step returns reduce reliance on an inaccurate \\(V_\\theta\\) early on, typically lowering bias from poor bootstrapping (at the cost of higher variance).",
+        "C. n-step returns make the critic update off-policy, which is required for A2C to converge.",
+        "D. n-step returns guarantee faster convergence because they always have lower bias and lower variance than 1-step TD."
+      ],
+      "correct_answer": "B",
+      "explanation": "Early in training, the bootstrap term \\(V_\\theta(s_{t+n})\\) can be unreliable. Using more real rewards before bootstrapping reduces the amount of error injected by a poor value estimate (reducing bootstrap-induced bias). However, longer returns typically increase variance because they depend on more sampled rewards. This is the classic bias–variance trade-off between short TD and longer (more Monte Carlo-like) returns.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "n-step-returns",
+        "monte-carlo",
+        "td-targets",
+        "bias-variance-tradeoff"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In A2C (Advantage Actor-Critic), do you need to pre-train the value network (critic) before using TD bootstrap targets like\n\n\\(y_t = r_t + \\gamma V_\\theta(s_{t+1})\\)?",
+      "question_type": "mc",
+      "options": [
+        "A. Yes; otherwise TD targets cannot be computed because \\(V_\\theta\\) is undefined.",
+        "B. Yes; otherwise the critic will never converge because early targets are too noisy.",
+        "C. No; A2C typically trains actor and critic online from the start, and bootstrapping improves as \\(V_\\theta\\) improves.",
+        "D. No; because A2C does not use bootstrapping and relies only on Monte Carlo returns."
+      ],
+      "correct_answer": "C",
+      "explanation": "A2C commonly starts with randomly initialized actor and critic and trains both immediately. The TD target uses the current (possibly inaccurate) value estimate, but TD learning is iterative/self-correcting: as the critic updates from experience, future bootstrap targets become more accurate. Pre-training can be a warm-start but is not required.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "a2c",
+        "actor-critic",
+        "critic",
+        "td-learning",
+        "bootstrapping"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A common RL implementation uses a numerically stable softmax via the log-sum-exp trick:\n\n```python\nimport numpy as np\n\ndef stable_softmax(z):\n    m = np.max(z)\n    ex = np.exp(z - m)\n    return ex / np.sum(ex)\n```\n\nWhich statement best explains, in the context of the power-series/Taylor viewpoint of \\(e^x\\), why this implementation is preferred over directly computing `np.exp(z)` when some logits are large in magnitude?",
+      "question_type": "mc",
+      "options": [
+        "A. Subtracting \\(m\\) makes all terms negative so the Taylor series terminates after finitely many terms, eliminating approximation error",
+        "B. Subtracting \\(m\\) shifts inputs so exponentials are computed in a safer numerical range, reducing overflow/underflow; the ratio is unchanged because softmax is invariant to adding a constant to all logits",
+        "C. The power series for \\(e^x\\) diverges for large negative \\(x\\), so subtracting \\(m\\) ensures convergence",
+        "D. It increases exploration in policy gradients by making the policy more uniform regardless of logits"
+      ],
+      "correct_answer": "B",
+      "explanation": "Softmax is invariant to adding/subtracting the same constant from every logit: \\(\\mathrm{softmax}(z) = \\mathrm{softmax}(z - m)\\). Numerically, computing \\(\\exp(z)\\) for large positive logits can overflow, and for large negative logits can underflow to 0, harming gradients and probability calculations. Shifting by \\(m = \\max z\\) ensures the largest exponent is \\(\\exp(0)=1\\) and others are \\(\\exp(\\le 0)\\), keeping computations in a stable range. The Taylor/power-series perspective motivates why libraries use polynomial/rational approximations that are accurate only on controlled input ranges. Options A, C, and D are incorrect: the Taylor series does not terminate; it converges for all real x; and the shift does not inherently increase exploration—it preserves the exact distribution in exact arithmetic.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "numerical-stability",
+        "softmax",
+        "log-sum-exp",
+        "exponential",
+        "taylor-series",
+        "overflow-underflow"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a softmax policy with logits \\(z_i(\\theta)\\):\n\n\\[\n\\pi_\\theta(i) = \\frac{e^{z_i(\\theta)}}{\\sum_j e^{z_j(\\theta)}}.\n\\]\n\nUsing the fact that \\(\\frac{d}{dx} e^x = e^x\\) (which follows immediately from the power-series definition), derive an expression for \\(\\nabla_\\theta \\log \\pi_\\theta(a)\\) in terms of \\(\\nabla_\\theta z_i(\\theta)\\).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Let Z = \\sum_j e^{z_j(\\theta)}. Then \\log \\pi_\\theta(a) = z_a(\\theta) - \\log Z. Differentiate: \\nabla_\\theta \\log \\pi_\\theta(a) = \\nabla_\\theta z_a(\\theta) - \\frac{1}{Z} \\nabla_\\theta Z. Since \\nabla_\\theta Z = \\sum_j e^{z_j(\\theta)} \\nabla_\\theta z_j(\\theta) (using d/dx e^x = e^x and chain rule), we get \\nabla_\\theta \\log \\pi_\\theta(a) = \\nabla_\\theta z_a(\\theta) - \\sum_j \\frac{e^{z_j(\\theta)}}{\\sum_k e^{z_k(\\theta)}} \\nabla_\\theta z_j(\\theta) = \\nabla_\\theta z_a(\\theta) - \\sum_j \\pi_\\theta(j) \\nabla_\\theta z_j(\\theta).",
+      "explanation": "The key step is differentiating the log-normalizer \\(\\log \\sum_j e^{z_j(\\theta)}\\). The derivative of \\(e^{z_j}\\) with respect to \\(\\theta\\) is \\(e^{z_j}\\nabla_\\theta z_j\\), which is exactly the property made transparent by the power-series definition. Rearranging yields the standard softmax log-gradient: 'chosen logit gradient minus expected logit gradient under the policy.'",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "softmax",
+        "policy-gradients",
+        "log-softmax",
+        "gradient-derivation",
+        "chain-rule"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In reinforcement learning, why is the power-series definition of the exponential function\n\n\\[\n e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!}\n\\]\n\nparticularly useful when deriving gradients for softmax policies?",
+      "question_type": "mc",
+      "options": [
+        "A. Because it shows \\(e^x\\) is always positive and is easy to differentiate term-by-term, which simplifies softmax/policy-gradient derivations",
+        "B. Because it is the only definition of \\(e^x\\) that converges for \\(x \\in [0,1]\\)",
+        "C. Because it avoids normalization in softmax, so probabilities sum to 1 automatically without a denominator",
+        "D. Because it guarantees \\(e^x\\) is linear in \\(x\\), making gradients constant"
+      ],
+      "correct_answer": "A",
+      "explanation": "The power series converges for all real x and makes analytic manipulation straightforward: differentiating term-by-term yields d/dx e^x = e^x. In softmax and policy gradients, you repeatedly differentiate expressions containing exp(·) and log-softmax; the series viewpoint highlights differentiability and the positivity of exp(z), which is essential for valid probabilities. The other options are incorrect: the series converges for all real x (not just [0,1]); softmax still requires normalization; and exp is not linear.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "softmax",
+        "policy-gradients",
+        "exponential",
+        "power-series",
+        "differentiation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider a softmax policy \\(\\pi_\\theta(a\\mid s)=\\frac{\\exp(z_a)}{\\sum_b \\exp(z_b)}\\), where \\(z = f_\\theta(s)\\) are logits.\n\n1) Derive \\(\\frac{\\partial}{\\partial z_k}\\log \\pi_\\theta(a\\mid s)\\).\n2) Explain briefly (1–3 sentences) how the smoothness (infinite differentiability) of \\(\\exp\\) supports stable gradient-based learning in RL, even when implementations use numerically stable tricks (e.g., subtracting \\(\\max(z)\\)).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Let \\(\\pi_i = \\frac{e^{z_i}}{\\sum_j e^{z_j}}\\). Then \\(\\log \\pi_a = z_a - \\log\\sum_j e^{z_j}\\). Differentiate: \\(\\frac{\\partial}{\\partial z_k}\\log \\pi_a = \\mathbf{1}[k=a] - \\frac{1}{\\sum_j e^{z_j}}\\cdot e^{z_k} = \\mathbf{1}[k=a] - \\pi_k\\).\n\n2) Because \\(\\exp\\) is \\(C^\\infty\\), compositions like softmax and log-softmax are smooth wherever defined, so gradients exist and behave predictably for backpropagation in policy gradients/actor–critic. Numerically stable transformations such as \\(z\\mapsto z-\\max(z)\\) preserve the mathematical function (softmax is shift-invariant) and thus preserve differentiability while avoiding overflow/underflow.",
+      "explanation": "Part (1) uses the standard log-softmax form \\(\\log \\pi_a = z_a - \\log\\sum_j e^{z_j}\\) and the chain rule; the derivative of \\(\\log\\sum_j e^{z_j}\\) w.r.t. \\(z_k\\) is exactly the softmax probability \\(\\pi_k\\), which relies on \\(\\frac{d}{dz}e^z=e^z\\). Part (2) connects the calculus property (smoothness of \\(\\exp\\) and its compositions) to RL practice: stable implementations change the computation but not the underlying smooth function, enabling reliable gradient-based updates.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "softmax",
+        "log-softmax",
+        "policy-gradient",
+        "backpropagation",
+        "numerical-stability",
+        "differentiability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Using the power-series definition \\(e^x = \\sum_{n=0}^\\infty \\frac{x^n}{n!}\\), show by term-wise differentiation that \\(\\frac{d}{dx} e^x = e^x\\). Your answer should explicitly show the index shift step.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Differentiate term-wise: \\(\\frac{d}{dx}\\sum_{n=0}^\\infty \\frac{x^n}{n!} = \\sum_{n=1}^\\infty \\frac{d}{dx}\\frac{x^n}{n!} = \\sum_{n=1}^\\infty \\frac{n x^{n-1}}{n!} = \\sum_{n=1}^\\infty \\frac{x^{n-1}}{(n-1)!}\\). Now shift index with \\(k=n-1\\): \\(\\sum_{n=1}^\\infty \\frac{x^{n-1}}{(n-1)!} = \\sum_{k=0}^\\infty \\frac{x^k}{k!} = e^x\\).",
+      "explanation": "The key idea is that each term \\(x^n/n!\\) differentiates to \\(x^{n-1}/(n-1)!\\), producing the same series after reindexing. This is exactly the “infinite differentiability made transparent” argument: repeated differentiation keeps reproducing a convergent power series, which supports smooth gradient-based optimization in RL when \\(\\exp\\) appears (e.g., in softmax policies).",
+      "difficulty": "intermediate",
+      "tags": [
+        "power-series",
+        "termwise-differentiation",
+        "exp",
+        "policy-gradient",
+        "analysis-for-ml"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In reinforcement learning implementations, why is the function \\(\\exp(x)\\) considered especially “gradient-friendly” for backpropagation through softmax/log-softmax?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "Because \\(\\exp(x)\\) is continuous but not differentiable at \\(x=0\\), which prevents exploding gradients.",
+        "Because \\(\\exp(x)\\) is \\(C^\\infty\\) (infinitely differentiable), so gradients exist at all orders everywhere.",
+        "Because \\(\\exp(x)\\) is a polynomial, so it has finitely many derivatives and is computationally exact.",
+        "Because \\(\\exp(x)\\) has derivative \\(\\exp(x) + 1\\), which guarantees a nonzero gradient."
+      ],
+      "correct_answer": "B",
+      "explanation": "Policy-gradient methods and actor–critic updates rely on taking derivatives through \\(\\exp\\), softmax, or log-softmax. The key property is that \\(\\exp(x)\\) is infinitely differentiable (\\(C^\\infty\\)), so gradients are well-defined everywhere (and higher-order derivatives exist if needed). A is false because \\(\\exp\\) is differentiable at 0 (and everywhere). C is false because \\(\\exp\\) is not a polynomial. D is false because \\(\\frac{d}{dx}\\exp(x)=\\exp(x)\\), not \\(\\exp(x)+1\\).",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "backpropagation",
+        "exp",
+        "softmax",
+        "differentiability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "During iterative RLHF training, you notice the policy starts producing odd outputs that exploit quirks of the reward model (high reward but poor human quality). You suspect reward hacking / over-optimization of r_φ.\n\nDescribe TWO concrete, RLHF-specific mitigation strategies you would apply in this OpenAI-style pipeline, and explain why each helps. Your answer should reference components from the recipe (preference data, reward model, PPO loop, iteration).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example correct answer:\n1) Iteratively collect new human preference data on the *current* policy’s outputs (especially high-reward, suspicious samples), then retrain/refresh the reward model. This reduces distribution shift between the reward model’s training data and the policy’s evolving outputs, making r_φ harder to exploit and better aligned with actual human judgments.\n2) Add an explicit KL penalty (or constraint) in PPO to keep the updated policy close to a reference policy (e.g., the warm-start SFT model). This limits extreme policy updates that chase reward-model loopholes, stabilizes training, and reduces the chance of the policy moving into regions where the reward model is unreliable.\n(Other acceptable strategies: maintain a holdout set for reward-model validation and stop/rollback when overfitting is detected; use ensemble/regularized reward models to reduce exploitation; cap rewards or use reward shaping; periodically run human eval and early stop; diversify prompts during rollouts to avoid narrow exploitation.)",
+      "explanation": "Reward hacking arises because the policy optimizes the learned proxy reward r_φ rather than true human utility. Mitigations therefore either (a) improve the reward model’s fidelity on the policy’s current output distribution (more targeted preference data + retraining, validation/ensembles), or (b) constrain the policy optimization so it cannot move too far into poorly-modeled regions (KL regularization/early stopping). Both approaches directly connect to the pipeline steps: data collection → reward model training → PPO updates → iteration.",
+      "difficulty": "advanced",
+      "tags": [
+        "reward-hacking",
+        "rlhf",
+        "kl-regularization",
+        "ppo",
+        "distribution-shift",
+        "iterative-training"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing the PPO loop for RL fine-tuning an LLM using a reward model. Which additional information must you capture during rollouts (beyond prompts and generated text) to correctly form the PPO objective?\n\nConsider the following sketch:\n\n```python\nresponses = client.chat.completions.create(\n  model=policy_name,\n  messages=[{\"role\":\"user\",\"content\":p} for p in prompts],\n  temperature=0.8,\n  max_tokens=64\n)\n\n# later: compute PPO loss and send rls fine-tune request\n```\n\nWhat is the most important missing piece to request/record from the policy call for PPO updates?",
+      "question_type": "mc",
+      "options": [
+        "The reward model’s internal hidden states for each token",
+        "The per-token log-probabilities (under the current policy) of the sampled actions/tokens",
+        "The human annotator IDs for each preference label to debias the reward model",
+        "A higher temperature (e.g., 1.5) so PPO has a stronger learning signal"
+      ],
+      "correct_answer": "B",
+      "explanation": "PPO’s clipped surrogate objective relies on the probability ratio r_t(θ) = π_θ(a_t|s_t) / π_θ_old(a_t|s_t). To compute this ratio, you must know (or be able to reconstruct) the log-probabilities of the sampled tokens under the behavior policy (the policy used to generate the rollout). In practice, you request logprobs from the generation API and store them with the trajectory. Reward model hidden states (A) are not needed for PPO; annotator IDs (C) may be useful for analysis but are not required to compute PPO; increasing temperature (D) changes exploration but does not replace the need for log-probabilities.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ppo",
+        "logprob",
+        "policy-rollouts",
+        "rl-finetuning",
+        "advantage-estimation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In an OpenAI-style RLHF pipeline, what is the primary role of the reward model (trained from human preference data)?",
+      "question_type": "mc",
+      "options": [
+        "To generate higher-diversity responses by increasing sampling temperature during rollouts",
+        "To map (prompt, completion) pairs to a scalar score used as the reward signal for RL (e.g., PPO)",
+        "To directly update the policy model weights using supervised learning on the chosen completions",
+        "To store trajectories and compute advantages so PPO can run without log-probabilities"
+      ],
+      "correct_answer": "B",
+      "explanation": "RLHF typically separates (1) learning a reward function from human comparisons/scores and (2) optimizing the policy against that reward. The reward model r_φ is trained to take a prompt and a completion and output a scalar reward (often normalized), which is then used during PPO to compute returns/advantages and shape policy updates. Temperature affects exploration (A), supervised learning on chosen completions is SFT rather than the reward model’s job (C), and advantage computation requires log-probs/value estimates and is not the reward model’s purpose (D).",
+      "difficulty": "beginner",
+      "tags": [
+        "rlhf",
+        "reward-model",
+        "preference-data",
+        "policy-optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a training strategy for an **LLM-based agent** that will be deployed in a changing production environment where **train–production distribution mismatch** is a major concern.\n\nYour answer must:\n1) Propose a concrete pipeline using at least **three** of the following: RLHF, DPO, Constitutional AI/self-critique, rejection sampling/best-of-N, online/continual learning, distillation from a larger model, in-context learning/few-shot prompting.\n2) Explain how each chosen component specifically helps with distribution mismatch and/or safety.\n3) Identify one key failure mode (e.g., reward hacking, unsafe exploration, feedback drift) and a mitigation for it.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer proposes a coherent multi-stage pipeline such as: (i) start with supervised fine-tuning on demonstrations to establish baseline behavior; (ii) use RLHF or DPO on preference data to align the agent’s outputs toward human-preferred behavior; (iii) add Constitutional AI/self-critique to reduce reliance on constant human labeling and improve robustness via self-generated critiques; (iv) deploy with rejection sampling/best-of-N using a reward model (if RLHF) or a preference-based scorer to select safer/higher-quality responses; (v) incorporate online/continual learning with human oversight to adapt to production distribution shifts; optionally (vi) distill from a larger model that is queried on production-like prompts to better match the deployment distribution. The explanation should link each component to mismatch/safety (e.g., online learning adapts to new states; best-of-N reduces tail-risk by selecting better candidates; constitutional self-critique catches unsafe outputs; distillation collects data from target distribution). A valid failure mode could be reward hacking or feedback drift; mitigations include periodic human audits, conservative updates, uncertainty-aware gating for online learning, safety constraints, and maintaining a held-out evaluation set from production to detect regression.",
+      "explanation": "This question tests whether the student can synthesize modern alternatives to SMILE/DAgger into an end-to-end agentic training plan. A correct response must (a) choose appropriate methods from the list, (b) justify them in terms of distribution shift and safety, and (c) demonstrate awareness of realistic failure modes (e.g., optimizing a learned reward leading to reward hacking, or online updates causing unsafe drift) along with concrete mitigations (human oversight, conservative fine-tuning, gating, audits, evaluation).",
+      "difficulty": "advanced",
+      "tags": [
+        "agentic-ai",
+        "distribution-shift",
+        "rlhf",
+        "dpo",
+        "constitutional-ai",
+        "best-of-n",
+        "online-learning",
+        "distillation",
+        "safety"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training a robotics manipulation policy from demonstrations, but the expert behavior is **multi-modal** (e.g., multiple valid grasps) and you want a method that can represent complex multi-peaked action distributions well.\n\nWhich approach is the best match?\n\nA) Decision Transformer\nB) Diffusion Policy\nC) BCO (Behavioral Cloning from Observation)\nD) SafeDAgger",
+      "question_type": "mc",
+      "options": [
+        "Decision Transformer",
+        "Diffusion Policy",
+        "BCO (Behavioral Cloning from Observation)",
+        "SafeDAgger"
+      ],
+      "correct_answer": "B",
+      "explanation": "Diffusion Policy is highlighted as state-of-the-art for robotics manipulation and is particularly strong at modeling multi-modal action distributions via diffusion-based generation. Decision Transformers can work well but are not specifically emphasized as the best choice for multi-modal continuous control in robotics compared to diffusion policies. BCO focuses on learning without action labels, not primarily on multi-modality. SafeDAgger is an online DAgger variant focused on safety during expert querying, not on expressive multi-modal action generation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "robotics",
+        "diffusion-policy",
+        "multimodal-actions",
+        "imitation-learning",
+        "behavioral-cloning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which imitation/alignment method **directly optimizes a policy from preference data without training a separate reward model**, and is often described as simpler/more stable than RLHF?",
+      "question_type": "mc",
+      "options": [
+        "Generative Adversarial Imitation Learning (GAIL)",
+        "Direct Preference Optimization (DPO)",
+        "Adversarial Inverse Reinforcement Learning (AIRL)",
+        "Behavioral Cloning from Observation (BCO)"
+      ],
+      "correct_answer": "B",
+      "explanation": "DPO is explicitly designed to skip the reward-modeling step used in RLHF. Instead of learning a reward model from preferences and then running RL (e.g., PPO), DPO directly adjusts the policy using preference comparisons, which is why it’s commonly framed as simpler and often more stable in practice than RLHF.",
+      "difficulty": "beginner",
+      "tags": [
+        "imitation-learning",
+        "alignment",
+        "dpo",
+        "rlhf",
+        "preference-learning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider an episodic MDP with deterministic dynamics and rewards. Suppose a critic network \\(V_\\theta\\) is used to form TD(0) targets \\(y_t^{TD} = r_t + \\gamma V_\\theta(s_{t+1})\\).\n\nWhich statement best characterizes the bias/variance behavior of TD targets vs Monte Carlo targets, and how this changes over training?",
+      "question_type": "mc",
+      "options": [
+        "TD targets typically have lower variance but can be biased due to bootstrapping; as \\(V_\\theta\\) improves, this bias can shrink and targets approach the true expected return under ideal conditions",
+        "TD targets are unbiased because they use the Bellman equation directly; Monte Carlo targets are biased because they depend on sampled trajectories",
+        "TD targets always have higher variance than Monte Carlo because they depend on an additional random variable \\(V_\\theta(s_{t+1})\\)",
+        "Both TD and Monte Carlo targets are equally biased and equally variant; the only difference is computational cost"
+      ],
+      "correct_answer": "A",
+      "explanation": "Monte Carlo returns use the full sampled return to episode end, which is (in expectation) unbiased for \\(V^\\pi\\) but can have high variance, especially for long horizons. TD(0) bootstraps from \\(V_\\theta(s_{t+1})\\), reducing reliance on distant stochastic rewards (lower variance) but introducing bias when \\(V_\\theta\\) is inaccurate (bootstrapping bias). As training progresses and \\(V_\\theta\\) becomes a better approximation, the TD target becomes closer to the true expectation (fixed-point behavior under standard assumptions).",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "bias-variance-tradeoff",
+        "temporal-difference-learning",
+        "monte-carlo",
+        "bootstrapping",
+        "convergence"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe the following transition and critic predictions in a value-based actor-critic setting:\n\n- \\(r_t = 1.5\\)\n- \\(\\gamma = 0.9\\)\n- \\(V_\\theta(s_t)=2.0\\)\n- \\(V_\\theta(s_{t+1})=3.0\\)\n\n1) Compute the TD target \\(y_t^{TD}\\).\n2) Compute the TD error \\(\\delta_t\\).\n3) State whether the critic update should (locally) push \\(V_\\theta(s_t)\\) up or down, and why.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) y_t^{TD} = r_t + γ Vθ(s_{t+1}) = 1.5 + 0.9·3.0 = 4.2. 2) δ_t = y_t^{TD} − Vθ(s_t) = 4.2 − 2.0 = 2.2. 3) Since δ_t > 0, the current estimate Vθ(s_t) is too low relative to the bootstrapped target, so gradient descent on (δ_t)^2 will increase (push up) Vθ(s_t) to reduce the error.",
+      "explanation": "The TD target uses immediate reward plus a discounted bootstrap from the next-state value estimate. The TD error measures the discrepancy between that target and the current value estimate at \\(s_t\\). A positive TD error indicates underestimation at \\(s_t\\), so the critic update aims to increase \\(V_\\theta(s_t)\\) to better match the target (and reduce squared error).",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "td-error",
+        "td-target",
+        "critic-update",
+        "actor-critic",
+        "value-function-approximation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In temporal-difference (TD) learning with a critic network \\(V_\\theta\\), what is the main reason the TD target is considered an approximation rather than the true expected return?",
+      "question_type": "mc",
+      "options": [
+        "Because it uses a bootstrapped estimate \\(V_\\theta(s_{t+1})\\) instead of waiting for the full Monte Carlo return",
+        "Because it ignores the immediate reward \\(r_t\\) and only uses \\(V_\\theta(s_t)\\)",
+        "Because it requires episodes to terminate before it can compute the target",
+        "Because it always has higher variance than Monte Carlo targets"
+      ],
+      "correct_answer": "A",
+      "explanation": "The TD target \\(y_t^{TD} = r_t + \\gamma V_\\theta(s_{t+1})\\) replaces the unknown expected future return with the critic’s current estimate at the next state (bootstrapping). Since \\(V_\\theta\\) is learned and imperfect (especially early in training), the target is an approximation and can be biased. The other options contradict TD’s use of immediate reward, its ability to learn online without waiting for termination, and the fact that TD typically reduces variance relative to Monte Carlo.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "temporal-difference-learning",
+        "td-target",
+        "bootstrapping",
+        "critic-network",
+        "bias-variance-tradeoff"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot states that PPO typically performs “multiple epochs / mini-batches,” i.e., shuffling the collected batch and “recomputing the clipped losses under the current \\(\\theta\\)” for several epochs, taking small SGD steps on different mini-batches.\n\nWhich option best explains why the clipped surrogate \\(L_t(\\theta)\\) must be recomputed each epoch/mini-batch under the current \\(\\theta\\), rather than reusing the previously computed per-sample values from the start of training on that batch?",
+      "question_type": "mc",
+      "options": [
+        "A. Because \\(L_t(\\theta)\\) depends on \\(r_t = \\pi_\\theta(a_t|s_t)/\\pi_{\\theta_{\\text{old}}}(a_t|s_t)\\), which changes as \\(\\theta\\) is updated during SGD; reusing old \\(L_t\\) values would use stale ratios and produce incorrect gradients.",
+        "B. Because advantages \\(A_t\\) must be resampled from the environment each epoch; otherwise the policy gradient is undefined.",
+        "C. Because clipping requires computing second-order derivatives, and recomputation avoids storing Hessians across epochs.",
+        "D. Because the critic loss term forces the policy loss to be recomputed even if the policy parameters \\(\\theta\\) do not change."
+      ],
+      "correct_answer": "A",
+      "explanation": "The screenshot emphasizes recomputing clipped losses under the current \\(\\theta\\) across multiple epochs. In PPO, the surrogate uses the probability ratio \\(r_t\\), which is a function of the current policy parameters \\(\\theta\\). After each SGD step, \\(\\pi_\\theta\\) changes, so \\(r_t\\) and therefore \\(L_t(\\theta)\\) change. Reusing old per-sample surrogate values would decouple the loss from the current parameters and yield incorrect (stale) gradients.",
+      "difficulty": "advanced",
+      "tags": [
+        "PPO",
+        "importance sampling ratio",
+        "multiple epochs",
+        "on-policy updates",
+        "stale gradients"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "The screenshot defines the aggregated clipped objective as\n\\[\\mathcal{L}^{\\text{clip}}(\\theta) = -\\frac{1}{N}\\sum_{t=1}^{N} L_t(\\theta),\\]\nand notes: “The minus-sign turns it into a minimization.” Explain why the negative sign is used here, and how it relates to the code pattern shown (computing `loss = crit_loss + policy_loss + entropy_loss` and then calling `loss.backward()` followed by `optimizer.step()`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "In PPO, the clipped surrogate term is typically formulated as something to maximize (an estimate of expected advantage-weighted improvement). Most deep learning optimizers are written to minimize an objective. By defining the policy loss as the negative of the surrogate (e.g., \\(\\mathcal{L}^{\\text{clip}}(\\theta) = -\\frac{1}{N}\\sum_t L_t(\\theta)\\)), minimizing this loss via gradient descent is equivalent to maximizing the original surrogate via gradient ascent. In the code, `policy_loss` corresponds to this averaged (negative) surrogate term and is added to other terms (critic/value loss and entropy regularization) into a single scalar `loss` so that one backward pass computes gradients for the whole mini-batch objective and `optimizer.step()` performs the parameter update.",
+      "explanation": "The screenshot explicitly mentions converting a maximization to minimization with a minus sign and shows a standard PyTorch training step that assumes minimization. The key understanding is the sign convention: gradient descent on a negative objective implements gradient ascent on the original objective.",
+      "difficulty": "intermediate",
+      "tags": [
+        "PPO",
+        "objective sign",
+        "gradient descent vs ascent",
+        "policy loss",
+        "PyTorch training loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the screenshot, PPO’s per-sample clipped surrogate is defined as\n\\[L_t(\\theta)=\\min\\big(r_tA_t,\\; \\mathrm{clip}(r_t,1-\\varepsilon,1+\\varepsilon)A_t\\big).\\]\nWhich statement best matches the workflow described (\"one clipped-surrogate value per sample\" but \"one gradient step on the average loss\")?",
+      "question_type": "mc",
+      "options": [
+        "A. Compute one scalar loss per timestep/sample, average (or sum) these over a mini-batch to form \\(\\mathcal{L}^{\\text{clip}}(\\theta)\\), then take a gradient step on that aggregated loss.",
+        "B. Compute \\(L_t(\\theta)\\) for a sample and immediately call backprop/optimizer.step() for that single sample before moving to the next sample.",
+        "C. Skip per-sample losses and instead compute a single \\(r\\) and \\(A\\) for the whole batch, then clip once and update once.",
+        "D. Use the critic loss only for gradient updates; the clipped surrogate is computed only for logging and does not affect gradients."
+      ],
+      "correct_answer": "A",
+      "explanation": "The screenshot explicitly separates (1) per-sample computation of \\(L_t(\\theta)\\) from (2) batching & averaging to form an aggregated objective \\(\\mathcal{L}^{\\text{clip}}(\\theta) = -\\frac{1}{N}\\sum_{t=1}^N L_t(\\theta)\\), followed by (3) a single gradient step on that average loss (as shown by the code snippet calling loss.backward() once per mini-batch).",
+      "difficulty": "beginner",
+      "tags": [
+        "PPO",
+        "clipped surrogate objective",
+        "mini-batch SGD",
+        "policy gradient",
+        "loss aggregation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following rollout loop:\n\n```python\nobs, info = env.reset()\nfor t in range(10_000):\n    action = policy(obs)\n    next_obs, reward, terminated, truncated, info = env.step(action)\n    # store transition\n    buffer.add(obs, action, reward, next_obs, terminated, truncated)\n\n    if terminated:\n        obs, info = env.reset()\n    else:\n        obs = next_obs\n```\n\nIdentify the bug related to episode endings and explain a correct fix. Your answer should reference how `env.step(action)` signals different kinds of episode ends.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Bug: the loop resets only when `terminated` is True, but it ignores `truncated`. If an episode ends due to a time limit (`truncated=True`), the code will incorrectly continue stepping from an already-ended episode state. Fix: reset when `terminated or truncated` is True (often called `done`). For example:\n\n```python\nif terminated or truncated:\n    obs, info = env.reset()\nelse:\n    obs = next_obs\n```\n\nOptionally store `done = terminated or truncated` in the buffer (and keep both flags if your algorithm needs to distinguish them for bootstrapping).",
+      "explanation": "`env.step(action)` returns two separate booleans: `terminated` (true terminal state) and `truncated` (external cutoff like time limit). Both indicate the current episode has ended and the next step should not be taken without a reset. Ignoring `truncated` causes invalid transitions and can corrupt training data because the agent is effectively acting beyond the defined episode boundary.",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "gymnasium",
+        "env-step",
+        "rollout-bugs",
+        "time-limit-truncation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are collecting experience tuples for an RL replay buffer. Given the outputs of `env.step(action)`:\n\n- `obs`\n- `reward`\n- `terminated`\n- `truncated`\n- `info`\n\nExplain how you would compute a boolean `done` flag for the transition, and briefly describe the conceptual difference between `terminated` and `truncated`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Compute `done = terminated or truncated`. `terminated` means the episode ended because a terminal state was reached under the task’s dynamics (e.g., success/failure condition). `truncated` means the episode ended due to an external cutoff such as a time limit or other constraint, not because the task’s terminal condition was reached.",
+      "explanation": "Many algorithms store a single end-of-episode indicator; in modern Gym/Gymnasium-style APIs, end-of-episode can occur for two reasons. `terminated` corresponds to the MDP’s terminal condition, while `truncated` corresponds to stopping the rollout for reasons outside the MDP (commonly time limits). Treating either as `done` is typical for controlling episode loops and buffer storage, while the distinction can matter for bootstrapping and evaluation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reinforcement-learning",
+        "episode-termination",
+        "terminated-vs-truncated",
+        "replay-buffer"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a typical reinforcement learning loop, what does calling `env.step(action)` represent?\n\n```python\nobs, reward, terminated, truncated, info = env.step(action)\n```",
+      "question_type": "mc",
+      "options": [
+        "A) Executing the chosen action in the environment and receiving the resulting transition feedback",
+        "B) Resetting the environment to an initial state and returning the initial observation",
+        "C) Updating the agent’s policy parameters using the received reward",
+        "D) Rendering the current environment state to the screen"
+      ],
+      "correct_answer": "A",
+      "explanation": "`env.step(action)` is the interface for applying (executing) an action in the environment. The environment updates its internal state accordingly and returns what happened: the next observation, reward, termination/truncation flags, and optional diagnostic info. Resetting is done via `env.reset()`, learning updates are done by the agent, and rendering is typically via `env.render()`.",
+      "difficulty": "beginner",
+      "tags": [
+        "reinforcement-learning",
+        "gymnasium",
+        "env-step",
+        "agent-environment-interface"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following policy definitions in a finite-horizon environment (time steps t = 1, 2, …, T). Let s be the current state.\n\nPolicy A:\n```text\nπ(s) = argmax_a Q(s, a)\n```\n\nPolicy B:\n```text\nπ_t(s) = argmax_a Q_t(s, a)\n```\n\nPolicy C:\n```text\nAugment the state to s' = (s, t), then define π(s') = argmax_a Q(s', a)\n```\n\nWhich of the following statements is correct?\n\n(Assume Q and Q_t are well-defined functions; ignore exploration noise.)",
+      "question_type": "mc",
+      "options": [
+        "A) Policy B is stationary because it is deterministic (argmax).",
+        "B) Policy A is stationary; Policy B is non-stationary; Policy C can be viewed as stationary with respect to the augmented state even though it is time-dependent in the original state space.",
+        "C) Policy A is non-stationary because Q-values change during training, so the policy must be non-stationary.",
+        "D) Policy C is non-stationary because including time in the state violates the definition of a stationary policy."
+      ],
+      "correct_answer": "B",
+      "explanation": "Policy A has no explicit time index, so it is stationary with respect to the original state space: the same s maps to the same action. Policy B explicitly depends on t via π_t and/or Q_t, so it is non-stationary in the original state space. Policy C shows a common subtlety: if you include time as part of the state representation, you can express a time-varying decision rule as a stationary mapping from the augmented state s' = (s, t) to actions. Determinism does not imply stationarity (A is wrong). Training-time changes to Q are not what stationarity refers to; stationarity is about the deployed mapping at decision time (C is wrong). Including time in the state does not violate stationarity; it changes what “state” means (D is wrong).",
+      "difficulty": "advanced",
+      "tags": [
+        "reinforcement-learning",
+        "stationary-policy",
+        "non-stationary-policy",
+        "finite-horizon",
+        "state-augmentation",
+        "policy-representation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

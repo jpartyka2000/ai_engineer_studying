@@ -1,0 +1,2208 @@
+{
+  "metadata": {
+    "subject_slug": "xgboost",
+    "subject_name": "XGBoost",
+    "exported_at": "2026-03-07T22:49:44.578703",
+    "question_count": 110,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Reproducibility: You train XGBoost models on GPU and notice that results differ slightly across runs even with the same seed.\n\nWhich statement is most accurate for production ML?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Setting `random_state` guarantees bitwise-identical results across CPU/GPU, threads, and hardware.",
+        "B) Some nondeterminism is expected on GPU (and sometimes with multithreading); you can reduce variance by fixing seeds, controlling threads, fixing data ordering, and standardizing software/hardware, but bitwise determinism may not be fully achievable.",
+        "C) The variability means early stopping is broken; the only fix is to disable early stopping.",
+        "D) Determinism is only affected by the evaluation metric; changing the metric to AUC makes training deterministic."
+      ],
+      "correct_answer": "B",
+      "explanation": "In practice, GPU training can be nondeterministic due to parallel reductions and atomic operations; multithreading can also introduce small differences. You can often make results more stable by fixing seeds, setting thread counts, keeping data ordering consistent, pinning library versions, and sometimes using CPU for strict reproducibility. But production typically aims for *repeatable performance* (tight variance bounds), not necessarily bitwise identical models.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reproducibility",
+        "determinism",
+        "gpu",
+        "seeds",
+        "early_stopping"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have several categorical variables and are deciding between one-hot encoding, target encoding, and XGBoost’s native categorical handling (if available in your stack).\n\nAnswer the following:\n- When would you prefer one-hot vs target encoding?\n- How do you do target encoding in a leakage-safe way?\n- What are the memory/sparsity implications?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "When to prefer:\n- One-hot: low-to-moderate cardinality categories where sparsity is manageable and you want a simple, leakage-resistant encoding.\n- Target encoding: high-cardinality categories where one-hot explodes dimensionality; useful when categories have meaningful average target differences.\n- Native categorical: when supported end-to-end (training + serving) and validated; can avoid massive one-hot matrices, but still requires careful evaluation.\n\nLeakage-safe target encoding:\n- Use out-of-fold (OOF) encoding: for each CV fold, compute category statistics (e.g., mean target with smoothing) using only the training portion of that fold, then apply to the fold’s validation portion.\n- For the final model, compute encodings using the full training data only (excluding the final test). Apply smoothing/regularization and handle unseen categories with a global prior.\n\nMemory/sparsity:\n- One-hot creates a high-dimensional sparse matrix; memory/time can blow up with high cardinality.\n- Target encoding keeps the feature space dense and low-dimensional (usually one numeric column per categorical), often improving memory/performance, but increases leakage risk if done incorrectly.\n- Native categorical can reduce feature explosion but may have constraints (versions, GPU/CPU behavior, serving parity) and still needs careful split strategy.",
+      "explanation": "This tests practical engineering judgment: one-hot is robust but can be infeasible at scale; target encoding is powerful but must be done with OOF logic to prevent leaking label information. Candidates should connect encoding choice to memory/performance and to deployment constraints.",
+      "difficulty": "advanced",
+      "tags": [
+        "categorical_handling",
+        "one_hot",
+        "target_encoding",
+        "leakage",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A stakeholder asks for “top 10 features” from an XGBoost model. You compute feature importance by gain and notice it changes a lot across random seeds/folds, and correlated features swap ranks.\n\nHow would you explain the pitfalls and report feature importance responsibly? Include at least two concrete practices.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Pitfalls:\n- Different importance types (weight/cover/gain) measure different things; gain is split-improvement, not causal effect.\n- Correlated/redundant features can split importance arbitrarily: the model may pick one of several correlated features, so ranks are unstable.\n- Leakage can inflate importance: a leaky feature will dominate importance but won’t generalize.\n- Importance can be unstable across folds/seeds, especially with small data or many similar predictors.\n\nResponsible reporting practices:\n- Report importance stability: compute importances across CV folds/seeds and show mean + variability (e.g., top features that are consistently high).\n- Use permutation importance (on a held-out set) or SHAP summaries to assess impact on predictions; still interpret as associational.\n- Validate no leakage and ensure the evaluation split matches deployment (time/group splits).\n- Group correlated features (or report them together) and avoid over-interpreting small rank differences.\n\nThis frames feature importance as a diagnostic tool, not a definitive explanation of causality.",
+      "explanation": "Interviewers look for maturity: importance is model- and data-dependent, not a universal truth. Stability checks across folds and using holdout-based methods (permutation/SHAP) help ensure the reported “top features” are robust and not artifacts of correlation or leakage.",
+      "difficulty": "intermediate",
+      "tags": [
+        "feature_importance",
+        "gain_cover_weight",
+        "correlated_features",
+        "stability",
+        "leakage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Objective functions and outputs: Match the objective to the expected prediction output and a common metric.\n\nWhich pairing is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `binary:logistic` → outputs raw margins; metric: RMSE",
+        "B) `multi:softprob` → outputs per-class probabilities; metric: mlogloss",
+        "C) `multi:softmax` → outputs per-class probabilities; metric: AUC",
+        "D) `reg:squarederror` → outputs class labels; metric: logloss"
+      ],
+      "correct_answer": "B",
+      "explanation": "`multi:softprob` outputs a probability distribution over classes (K probabilities per row), and a common metric is multiclass log loss (`mlogloss`). `multi:softmax` outputs the predicted class index (not probabilities). `binary:logistic` outputs probabilities by default (raw margins only if requested). Regression objectives output continuous values, not class labels.",
+      "difficulty": "beginner",
+      "tags": [
+        "objectives",
+        "multiclass",
+        "outputs",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re asked for an end-to-end XGBoost tuning playbook for tabular data that you could execute in a day. Which sequence is the most sensible and what should you look for in train vs validation curves?\n",
+      "question_type": "mc",
+      "options": [
+        "A) First tune `n_estimators` on the full dataset, then tune `max_depth` on the test set, then tune `learning_rate` until the train score is perfect.",
+        "B) Start with a simple baseline; choose objective/metric; set a large `n_estimators` with early stopping; tune tree complexity (`max_depth`, `min_child_weight`, `gamma`); then tune sampling (`subsample`, `colsample_bytree`); then regularization (`reg_lambda`, `reg_alpha`); finally adjust `learning_rate`/`n_estimators` tradeoff; watch for widening train-valid gaps (overfit) vs both poor (underfit).",
+        "C) Only tune `learning_rate`; XGBoost will automatically choose all other hyperparameters.",
+        "D) Increase `max_depth` until validation stops improving; early stopping is unnecessary if you have enough trees."
+      ],
+      "correct_answer": "B",
+      "explanation": "A practical playbook is structured and minimizes leakage: lock objective/metric, use early stopping to avoid guessing boosting rounds, then tune complexity parameters (depth/min_child_weight/gamma) to manage bias/variance, then sampling to reduce variance and speed up, then regularization, and finally the learning-rate/trees tradeoff. Train vs validation curves help diagnose: large gap → overfit; both bad → underfit; noisy/unstable validation → too much variance or too small validation set.",
+      "difficulty": "beginner",
+      "tags": [
+        "tuning_playbook",
+        "early_stopping",
+        "hyperparameters",
+        "train_valid_curves",
+        "regularization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to compare an XGBoost model against a baseline and show that improvements are real (not noise). Describe a practical baselining and comparison strategy you would use, including:\n- What baselines you’d pick\n- How you’d run a fair evaluation\n- How you’d account for variance (without doing heavy statistics)\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Baselines:\n- A trivial baseline (majority class / constant predictor) to sanity-check metrics.\n- A simple strong baseline like regularized logistic regression (with sensible preprocessing) for classification, or ridge/elastic net for regression; optionally a simple tree-based baseline (single decision tree) if appropriate.\n\nFair evaluation:\n- Use the same splits and preprocessing for all models (pipeline), and metrics aligned to the business goal (e.g., PR-AUC for imbalance, logloss for probability quality).\n- Prefer cross-validation; for time-dependent data use time-based CV; for grouped entities use GroupKFold.\n- Use early stopping correctly inside each fold (train fold has its own internal eval split) to avoid leaking the fold’s validation labels.\n\nVariance awareness:\n- Repeat CV with different seeds or use repeated K-fold to get a distribution of scores.\n- Report mean ± std (or percentile range) across folds/repeats; check if improvements are consistent across folds rather than driven by one split.\n- Optionally use paired comparisons across folds (difference per fold) and inspect confidence intervals via bootstrap over folds/predictions.\n\nThis demonstrates that XGBoost beats baselines reliably, not just on a lucky split.",
+      "explanation": "Interviewers want to see engineering realism: strong but simple baselines, identical data splits/pipelines, and an understanding that CV scores have variance. Repeated CV and fold-wise deltas are practical ways to avoid over-claiming improvements without requiring deep statistical tests.",
+      "difficulty": "intermediate",
+      "tags": [
+        "baselining",
+        "model_comparison",
+        "cross_validation",
+        "variance",
+        "evaluation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You one-hot encode a categorical feature with ~2 million unique values, producing a very wide sparse matrix. Training XGBoost becomes slow and memory-heavy.\n\nWhich approach is generally most appropriate and why?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Increase `max_depth` so the model can find better splits with the huge one-hot matrix.",
+        "B) Switch to feature hashing or prune rare categories (e.g., keep top-K + 'other') to control dimensionality; consider native categorical support if available and validated.",
+        "C) Convert the sparse matrix to a dense array so XGBoost can use contiguous memory.",
+        "D) Standardize the one-hot features to zero mean and unit variance."
+      ],
+      "correct_answer": "B",
+      "explanation": "Extremely wide one-hot encoding creates huge sparse matrices that increase memory and training time. Practical fixes are to reduce dimensionality (top-K + other, pruning rare categories), use feature hashing (accepting controlled collisions), or use native categorical handling where appropriate. Densifying is usually catastrophic for memory. Depth and standardization don’t address the core issue: feature space explosion.",
+      "difficulty": "intermediate",
+      "tags": [
+        "one_hot",
+        "large_feature_space",
+        "feature_hashing",
+        "categorical_handling",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a dataset with an `account_id` column. XGBoost gains a big lift when you include it (one-hot encoded), but the model generalizes poorly to new accounts.\n\nName two concrete reasons this happens with boosted trees, and give two mitigations.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Reasons:\n- ID-like features with high cardinality enable memorization: boosted trees can create splits that isolate specific IDs (or small groups of IDs), effectively learning per-entity averages rather than general patterns.\n- Distribution shift / cold-start: new accounts at inference time were never seen during training, so the learned ID-specific patterns don’t transfer; one-hot also creates unseen categories.\n\nMitigations:\n- Remove or heavily constrain ID-like features; if entity effects are needed, use leakage-safe aggregated historical features (computed strictly from past data) or hierarchical/embedding approaches.\n- Use proper splits that reflect deployment (e.g., group split by account, or time-based split) so memorization is exposed during validation.\n- If keeping categorical entity features, consider target encoding with out-of-fold scheme and strong regularization/smoothing, and/or limit categories (rare bucket) to reduce memorization.",
+      "explanation": "Boosted trees can overfit by carving out tiny regions of feature space. High-cardinality identifiers are especially dangerous because they provide near-unique keys. The right mitigation is usually to prevent the shortcut (drop the feature), validate in a way that reveals it (group/time splits), and replace it with stable, leakage-safe historical aggregates if entity information is genuinely predictive.",
+      "difficulty": "advanced",
+      "tags": [
+        "failure_modes",
+        "high_cardinality",
+        "memorization",
+        "categorical_handling",
+        "data_splitting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re modeling churn on tabular data and XGBoost shows extremely high validation AUC, but performance collapses in production. Which of the following is the most likely *boosted-tree-specific* failure mode and the best mitigation?\n",
+      "question_type": "mc",
+      "options": [
+        "A) The model is underfitting due to too much regularization; mitigation is to increase `lambda` and decrease `max_depth` further.",
+        "B) Target leakage via time (e.g., features computed using information after the prediction cutoff); mitigation is to enforce time-based splits and compute features strictly using past data only.",
+        "C) The sigmoid function is unstable; mitigation is to switch to `binary:hinge`.",
+        "D) XGBoost cannot handle missing values; mitigation is to impute all missing values with the mean."
+      ],
+      "correct_answer": "B",
+      "explanation": "Boosted trees are very good at exploiting subtle leakage and spurious shortcuts (e.g., features that encode future information). In churn and other time-dependent problems, leakage often comes from aggregations computed over windows that include post-cutoff events. Using time-based splits (train on earlier time, validate on later time) and building features with strict cutoff logic are core mitigations. This is a common real-world failure mode that produces “too good to be true” offline metrics.",
+      "difficulty": "intermediate",
+      "tags": [
+        "failure_modes",
+        "target_leakage",
+        "time_series_split",
+        "tabular_data"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an imbalanced binary classification problem. The business wants a decision rule tuned to a specific precision/recall tradeoff, and you also plan to calibrate probabilities.\n\nExplain:\n1) Whether you should tune the decision threshold using raw margins or probabilities\n2) Where calibration fits in the pipeline\n3) One common mistake candidates make with XGBoost outputs\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Tune thresholds in probability space (i.e., using `predict_proba` or sigmoid(raw_margin)), because business tradeoffs are naturally defined on predicted probabilities and metrics like precision/recall are computed from class decisions derived from probabilities. If you tune on raw margins, you must remember that the equivalent threshold is different (e.g., probability 0.5 corresponds to margin 0).\n\n2) Calibration should be applied to model outputs before threshold selection if the goal is well-calibrated probabilities. Typical pipeline: fit XGBoost on training; generate out-of-fold predictions on a calibration set (or via CV); fit calibrator (Platt/isotonic) on those predictions; then choose threshold on calibrated probabilities using a validation set or nested CV; finally evaluate once on an untouched test set.\n\n3) Common mistake: treating the raw margin as a probability (or thresholding raw margins at 0.5). Another frequent error is calibrating on the same validation set used for early stopping/model selection, which leaks information and overstates calibration quality.",
+      "explanation": "XGBoost’s raw margin is the additive score before the link function; for logistic objectives it is log-odds. Business thresholds and calibration are about probabilities. Calibration must be trained on predictions produced without training on those same labels (OOF or held-out) to avoid optimistic calibration. Many interview mistakes come from mixing up margin vs probability and from leaking validation data into calibration/threshold selection.",
+      "difficulty": "advanced",
+      "tags": [
+        "raw_margin",
+        "predict_proba",
+        "calibration",
+        "thresholding",
+        "early_stopping",
+        "data_leakage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In XGBoost binary classification, what is the most accurate interpretation of `predict_proba` vs `predict(..., output_margin=True)` (raw margin), and why does it matter for thresholding and calibration?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `predict_proba` returns raw leaf scores; `output_margin=True` returns calibrated probabilities. Thresholding should always be done on raw margins.",
+        "B) `predict_proba` returns probabilities after applying the logistic link to the raw margin; `output_margin=True` returns the raw margin (log-odds). Calibration and thresholding decisions depend on whether you are operating in probability space or margin space.",
+        "C) Both return the same values; `output_margin=True` is only faster.",
+        "D) `output_margin=True` returns class labels, while `predict_proba` returns margins."
+      ],
+      "correct_answer": "B",
+      "explanation": "For objective `binary:logistic`, XGBoost learns an additive score (raw margin). `output_margin=True` returns that score (often interpretable as log-odds). `predict_proba` applies the sigmoid to convert margin → probability. Thresholding for decisions is typically done on probabilities (e.g., 0.5 or cost-sensitive thresholds), while some post-processing (e.g., Platt scaling / isotonic) also expects probabilities. Confusion here leads to incorrect thresholds (e.g., thresholding log-odds at 0.5 instead of 0) and miscalibration.",
+      "difficulty": "beginner",
+      "tags": [
+        "raw_margin",
+        "predict_proba",
+        "calibration",
+        "thresholding",
+        "objectives"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained an XGBoost binary classifier with early stopping using a validation set and got `best_iteration = 420`. What is the best-practice way to produce the final model for production without leaking validation information?\n\nAssume you want to use *all* available labeled data except a final untouched test set.\n",
+      "question_type": "mc",
+      "options": [
+        "A) Keep the model trained with early stopping as-is, because it already found the best number of trees and using the validation set during training is fine.",
+        "B) Retrain a new model on train+validation with `n_estimators=best_iteration` (or `best_iteration+1` depending on API) and do NOT pass the validation set to early stopping; keep the test set untouched.",
+        "C) Retrain a new model on train only with `n_estimators=best_iteration`, because including validation would always be leakage.",
+        "D) Retrain on train+validation with early stopping using the same validation set again; this is equivalent and uses more data."
+      ],
+      "correct_answer": "B",
+      "explanation": "Early stopping uses the validation set to choose how many boosting rounds to run; that makes the validation set part of the model-selection procedure. Best practice is: (1) train with an `eval_set` to find `best_iteration` (model selection), then (2) refit a fresh model on the full training data available for fitting (often train+validation) with `n_estimators` set to the chosen number of trees, and without using early stopping on that same validation data. This avoids reusing the validation signal to further tune training dynamics, while still letting you benefit from more data for the final fit. The test set remains untouched for final evaluation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "early_stopping",
+        "final_training",
+        "data_leakage",
+        "model_selection"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re training an XGBoost model for fraud detection with 0.3% positives. The team suggests setting `scale_pos_weight` and calling it done.\n\nWhat else should you do to handle imbalance in a real system? Provide at least 4 concrete actions/choices (training + evaluation + decisioning).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Examples of strong actions:\n- Use appropriate metrics: PR-AUC, precision@k/recall@k, cost-weighted metrics, logloss; avoid relying only on ROC-AUC.\n- Thresholding/decisioning: choose thresholds based on business costs and capacity constraints; possibly optimize expected cost, not accuracy.\n- Calibration: calibrate probabilities (often needed under imbalance) and monitor calibration drift.\n- Sampling strategies: consider stratified sampling for training speed, but correct for it (weights) and validate on the true base rate.\n- Cost-sensitive learning: use instance weights reflecting asymmetric costs; tune `max_delta_step` sometimes for stability.\n- Slice analysis: evaluate performance on key segments (new users, countries) where base rates differ.\n- Drift monitoring: monitor base rate and score distribution shifts; re-tune thresholds or recalibrate when the prevalence changes.\n",
+      "explanation": "Imbalance is not just a training hyperparameter problem. In production you must align evaluation metrics with the rare-event objective, choose thresholds using costs, ensure probabilities are usable (calibrated), and monitor prevalence/drift. `scale_pos_weight` can help optimization but doesn’t solve decision-making or calibration by itself.",
+      "difficulty": "intermediate",
+      "tags": [
+        "imbalance",
+        "metrics",
+        "thresholding",
+        "calibration",
+        "production-ml"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a high-cardinality categorical feature `merchant_id` (hundreds of thousands of values). You want to use target encoding with XGBoost.\n\nWhich encoding approach is safest to avoid leakage and keep train/serve consistency?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Compute target mean per merchant on the full dataset (train+val+test) and map it everywhere",
+        "B. Compute target mean per merchant on the training set, then for each training row use an out-of-fold (OOF) target encoding; for validation/test/serving, use the training-fitted mapping with smoothing and a fallback for unseen merchants",
+        "C. One-hot encode all merchants; it will be sparse so it’s always fine at this scale",
+        "D. Ordinal-encode merchants as integers in arbitrary order; trees will handle it"
+      ],
+      "correct_answer": "B",
+      "explanation": "Target encoding can leak label information if you compute encodings using the same row’s target (or include validation/test). The safe pattern is OOF encoding for training rows (fit encoding on K-1 folds, apply to the held-out fold), and then a single mapping fit on all training data for validation/test/production with smoothing and a default value for unseen categories. One-hot at hundreds of thousands of categories can be too large and brittle. Arbitrary ordinal integers can introduce meaningless order and spurious splits.",
+      "difficulty": "advanced",
+      "tags": [
+        "categorical-variables",
+        "target-encoding",
+        "leakage",
+        "train-serve-skew"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect important feature interactions (e.g., `country` interacts with `device_type`) and want to validate whether modeling interactions materially improves outcomes.\n\nDescribe a concrete validation plan using XGBoost and analysis tools. Include at least 3 steps and how you would avoid fooling yourself.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A solid plan includes:\n1) Establish baselines: compare a simpler model (logistic/linear or shallow trees) vs XGBoost with controlled tuning, using the same time-based or group-aware CV split.\n2) Interaction-focused ablations: add/remove candidate interaction features (e.g., explicit crosses for top categories) or constrain model capacity (e.g., limit depth/interaction constraints) and measure delta on primary metrics (PR-AUC/logloss/cost) and key slices.\n3) Use interaction diagnostics: compute SHAP interaction values for top pairs, or use grouped PDP/ICE (e.g., PDP of `device_type` stratified by `country`) to see consistent interaction patterns.\n4) Confirm robustness: repeat across folds/seeds/time windows; check that interaction gains persist and don’t come from leakage or rare-category noise.\n5) Production check: verify the interacting features are available and stable at serving time; monitor drift and re-evaluate calibration/thresholds.\n",
+      "explanation": "The goal is not just to ‘find interactions’ but to prove they improve generalization and decision quality. The strongest answers combine (a) controlled experiments (ablations / constraints), (b) interpretability tools (SHAP interaction, PDP/ICE), and (c) robustness checks (CV/time splits, leakage checks, rare-category handling).",
+      "difficulty": "advanced",
+      "tags": [
+        "feature-interactions",
+        "validation-workflow",
+        "shap",
+        "pdp-ice"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re shipping an XGBoost binary classifier that outputs probabilities used for downstream decisions. After deployment, you observe that predicted probabilities are systematically overconfident (e.g., many 0.9 predictions only achieve ~0.7 empirical accuracy).\n\nWhat is the best next step?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Switch to `predict(output_margin=True)` and treat raw margins as calibrated probabilities",
+        "B. Apply probability calibration (e.g., isotonic regression or Platt scaling) using a properly held-out calibration set; monitor calibration over time",
+        "C. Increase `max_depth` so the model can fit probabilities more precisely",
+        "D. Use accuracy as the training metric; it guarantees calibrated probabilities"
+      ],
+      "correct_answer": "B",
+      "explanation": "XGBoost scores are not guaranteed to be calibrated probabilities. Calibration methods (Platt scaling/logistic calibration, isotonic regression, or temperature scaling variants) applied on a held-out set can correct systematic over/under-confidence. Raw margins are uncalibrated logits, not probabilities. Increasing depth may worsen overfitting and calibration. Accuracy is not a proper scoring rule and does not ensure calibrated probabilities.",
+      "difficulty": "intermediate",
+      "tags": [
+        "probability",
+        "calibration",
+        "production-ml",
+        "monitoring"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re using the XGBoost sklearn API and want proper early stopping and then a final model for production.\n\nWhich workflow is most correct?\n\n```python\nfrom xgboost import XGBClassifier\n\nmodel = XGBClassifier(\n    n_estimators=5000,\n    learning_rate=0.05,\n    max_depth=6,\n    subsample=0.8,\n    colsample_bytree=0.8,\n)\n\n# You have X_train, y_train, X_val, y_val\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Fit on (X_train, y_train) only; early stopping will work without an eval set",
+        "B. Fit with `eval_set=[(X_val, y_val)]` and `early_stopping_rounds=...`, then retrain a new model on train+val using `n_estimators=model.best_iteration` (or best_iteration+1) as the final number of trees",
+        "C. Fit with `eval_set=[(X_train, y_train)]` so early stopping uses training loss; then deploy that model directly",
+        "D. Fit twice with different random seeds and average their `best_iteration` to pick `n_estimators`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Early stopping requires an evaluation set that reflects generalization (typically a validation split or CV). After selecting the best iteration, a common production approach is to refit on more data (train+val) using the chosen number of trees, so you keep the selected complexity but leverage all available labeled data. Using the training set for early stopping defeats the purpose. Averaging best_iteration across seeds is not a standard substitute for a proper validation protocol.",
+      "difficulty": "intermediate",
+      "tags": [
+        "xgboost-api",
+        "early-stopping",
+        "model-selection",
+        "training-workflow"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained an XGBoost model twice with the same code and data, but got slightly different metrics and feature importances. Provide a reproducibility checklist (at least 5 items) specific to XGBoost training in production.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Checklist items (any 5+ of the following):\n- Set `random_state`/`seed` consistently (and for CV splitters too).\n- Control multithreading nondeterminism: fix `nthread`/`n_jobs`; note some parallel reductions can be nondeterministic.\n- If using GPU (`tree_method='gpu_hist'`), expect more nondeterminism; pin GPU settings and consider CPU hist for determinism.\n- Pin exact library versions (xgboost, numpy, scipy, compiler/CUDA) and record them with the model artifact.\n- Ensure deterministic data ordering and preprocessing: stable row ordering, stable categorical mapping, stable hashing seeds.\n- Ensure identical train/valid split (time-based split boundaries, shuffle seeds).\n- Fix early stopping behavior: same eval set, same `early_stopping_rounds`, same metric; log `best_iteration`.\n- Avoid nondeterministic input pipelines (distributed data loaders, unordered file reads).\n- Save and load the model consistently (e.g., JSON/UBJ) and validate predictions match after reload.\n",
+      "explanation": "In practice, small differences often come from parallelism, GPU training, unstable data ordering, or unpinned versions—not just forgetting a seed. A strong answer shows you know reproducibility is an end-to-end property: data pipeline + training config + environment + evaluation protocol.",
+      "difficulty": "advanced",
+      "tags": [
+        "reproducibility",
+        "production-ml",
+        "nondeterminism",
+        "versioning"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In XGBoost, what is the recommended way to represent missing values so the model can learn default directions in splits?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Replace missing values with 0 and add no additional indicators",
+        "B. Replace missing values with the mean of the column",
+        "C. Keep missing values as NaN (or use the `missing` parameter consistently) so XGBoost can handle them natively",
+        "D. Drop rows with missing values to avoid bias"
+      ],
+      "correct_answer": "C",
+      "explanation": "XGBoost can handle missing values by learning a default direction for missing at each split. The key is to represent missing consistently (commonly NaN) and ensure the same convention is used at serving time. Mean/zero imputation can work but may remove informative missingness patterns and can create train/serve mismatches. Dropping rows is often wasteful and can bias the dataset.",
+      "difficulty": "beginner",
+      "tags": [
+        "missing-values",
+        "data-prep",
+        "train-serve-skew"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to train XGBoost on ~50 million rows and ~500 features. The dataset is mostly sparse (many zeros) after one-hot encoding. You’re hitting memory limits.\n\nWhich action is most appropriate for an ML engineer to try first?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Convert the sparse matrix to dense so XGBoost can train faster",
+        "B. Use XGBoost’s histogram-based tree method and keep data in a sparse format (e.g., CSR) via DMatrix/QuantileDMatrix",
+        "C. Increase max_depth to reduce the number of trees needed",
+        "D. Apply standard scaling to compress values into a smaller range"
+      ],
+      "correct_answer": "B",
+      "explanation": "For large datasets, the practical first step is to use memory-efficient training: histogram methods and sparse matrix representations (CSR/CSC) reduce memory footprint and can speed training. Densifying sparse data often explodes memory. Increasing max_depth usually increases memory/compute and overfitting risk. Scaling doesn’t meaningfully address memory constraints.",
+      "difficulty": "intermediate",
+      "tags": [
+        "large-scale-training",
+        "sparse-matrices",
+        "tree_method",
+        "d્મatrix"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an ordinal feature `education_level` encoded as {\"high_school\": 0, \"bachelor\": 1, \"master\": 2, \"phd\": 3}. For XGBoost, which approach is generally safest if you are NOT sure the ordering is truly monotonic with the target?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Keep the ordinal integers; trees will always interpret them correctly regardless of meaning",
+        "B. One-hot encode it (or use native categorical support if available) to avoid imposing a potentially wrong ordering",
+        "C. Standardize the integers to mean 0 and variance 1 to remove ordering effects",
+        "D. Hash the integers into a fixed number of bins to reduce cardinality"
+      ],
+      "correct_answer": "B",
+      "explanation": "If the ordering is uncertain, integer encoding can impose an artificial order that may lead to splits like `education_level < 1.5` that assume meaningful distances. One-hot encoding (or native categorical handling) avoids injecting an incorrect ordinal structure. Scaling does not remove ordering; it preserves it. Hashing is more common for very high-cardinality strings and still doesn’t guarantee semantic safety for ordinality assumptions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "data-prep",
+        "categorical-encoding",
+        "tree-boosting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Which preprocessing step is most likely unnecessary (and sometimes harmful) for XGBoost on numeric features?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Standardizing/normalizing numeric features (e.g., z-score scaling)",
+        "B. Ensuring missing values are consistently represented (e.g., NaN) in train and serve",
+        "C. Verifying that train/serve feature definitions match (same transforms, same categories mapping)",
+        "D. Removing leakage features discovered after error analysis"
+      ],
+      "correct_answer": "A",
+      "explanation": "Tree-based methods (including boosted trees) are generally invariant to monotonic transformations and do not require feature scaling like linear models, k-NN, or many neural nets. Scaling can be unnecessary work and can even introduce train/serve skew if done inconsistently. In contrast, consistent missing-value representation and consistent feature pipelines are critical for avoiding training/serving skew, and leakage removal is always important.",
+      "difficulty": "beginner",
+      "tags": [
+        "data-prep",
+        "train-serve-skew",
+        "tree-boosting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained XGBoost and logistic regression on the same tabular dataset. Logistic regression is only slightly worse in AUC but is far simpler to deploy and explain.\n\nGive 3 concrete signals/criteria you would use to justify choosing XGBoost over logistic regression (or switching back to logistic regression).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Good criteria include:\n1) Evidence of non-linearity/interactions: XGBoost gains meaningfully on validation metrics (e.g., PR-AUC, logloss) or improves key slices, suggesting interactions/non-linear effects logistic can’t capture without feature engineering.\n2) Calibration + decision quality: After calibration/thresholding, XGBoost yields better business KPIs (cost-weighted loss, precision at fixed recall, etc.), not just AUC.\n3) Robustness/stability: XGBoost performance is stable across time splits/folds and doesn’t degrade under distribution shift compared to logistic (or vice versa). If XGBoost is unstable or overfits, prefer logistic.\nOther acceptable points: latency/throughput constraints, interpretability requirements, monitoring complexity, feature availability consistency, and ease of retraining.",
+      "explanation": "In interviews, the key is showing you can balance metric gains with operational constraints. A small AUC gain may not justify more complex training/serving unless it improves the metric that matters (e.g., PR-AUC under imbalance, logloss, cost). Also, showing awareness of stability under time splits, calibration, and slice performance demonstrates practical model selection maturity.",
+      "difficulty": "intermediate",
+      "tags": [
+        "gdbt-vs-linear/rf",
+        "model-selection",
+        "calibration",
+        "production-ml"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a first-pass model for a tabular classification problem (mix of numeric + categorical, ~200k rows, moderate missingness). You need a strong baseline quickly.\n\nWhich choice is the best default starting point and why?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Start with XGBoost (GBDT) because it’s typically strong on tabular data with minimal preprocessing and handles non-linearities/interactions well",
+        "B. Start with a deep neural network because it will always outperform trees given enough tuning",
+        "C. Start with k-NN because it’s non-parametric and therefore robust",
+        "D. Start with Naive Bayes because it is fast and provides calibrated probabilities by default"
+      ],
+      "correct_answer": "A",
+      "explanation": "For many real-world tabular problems, gradient-boosted trees (including XGBoost) are a strong default baseline: they handle non-linear relationships, missing values, and feature interactions well with relatively little preprocessing. Neural nets can win in some settings (very large data, strong representation learning needs, embeddings for high-cardinality categories), but are not the most reliable first-pass baseline for typical tabular data. k-NN scales poorly and is sensitive to feature scaling. Naive Bayes has strong independence assumptions and often underperforms on complex tabular signals.",
+      "difficulty": "beginner",
+      "tags": [
+        "gdbt-vs-linear/rf",
+        "model-selection",
+        "tabular-ml"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Model persistence & reproducible inference: You train an XGBoost model on GPU and save it. Later, another service loads it on CPU and predictions differ slightly. What are the most practical causes and mitigation steps an ML engineer should take?",
+      "question_type": "mc",
+      "options": [
+        "A. This is impossible if you use the same random seed; GPU and CPU are bit-identical for XGBoost.",
+        "B. Differences can come from non-determinism/float precision and algorithmic differences between GPU/CPU; mitigate by pinning XGBoost version, using the same predictor/device where possible, setting deterministic options when available, and validating tolerances. Also ensure feature ordering/column mapping is identical at inference.",
+        "C. The only cause is that `base_score` resets to 0 when loading; fix by re-training without `base_score`.",
+        "D. Predictions differ because saving a model discards tree structure; fix by exporting to CSV instead of JSON/UBJ."
+      ],
+      "correct_answer": "B",
+      "explanation": "Small numeric differences can occur between GPU and CPU due to floating-point behavior, parallelism, and different histogram/approximation implementations. Reproducible inference is mostly an engineering problem: pin versions, keep consistent device/predictor, document acceptable numeric tolerances, and add regression tests. A very common real-world issue is feature ordering mismatch (e.g., training with one column order and serving with another), which can cause large differences—so you should persist feature names/order and enforce them at inference.",
+      "difficulty": "intermediate",
+      "tags": [
+        "model-persistence",
+        "reproducibility",
+        "gpu-vs-cpu",
+        "versioning",
+        "feature-ordering",
+        "inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Categorical variables in production: You have a high-cardinality categorical feature (e.g., `merchant_id`) and want to use target encoding with XGBoost. Describe a leakage-safe encoding scheme and how you would handle unseen categories at inference.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use out-of-fold (OOF) target encoding: split training data into K folds; for each fold, compute category-to-mean(target) (optionally with smoothing toward the global mean) using only the other K-1 folds, then encode the held-out fold with those statistics. Fit final category statistics on the full training set for inference. To handle unseen categories, map them to the global mean (or a dedicated \"unknown\" prior) and optionally include a frequency/rare-category bucket. Ensure the encoding is done within any time-based split (use past-only statistics for future data) and that the encoder is fit only on training data within each CV split.",
+      "explanation": "Target encoding can leak label information if you compute category means using the same rows you are encoding. OOF encoding prevents each row from “seeing” its own target. Smoothing reduces variance for rare categories. For inference, you must define behavior for unseen categories; defaulting to the global prior (and tracking missing/unseen rate) is common and stable.",
+      "difficulty": "advanced",
+      "tags": [
+        "categorical-variables",
+        "target-encoding",
+        "leakage",
+        "cross-validation",
+        "unseen-categories",
+        "production-ml"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Feature preprocessing expectations for XGBoost trees: Which statement is most accurate for real-world pipelines?",
+      "question_type": "mc",
+      "options": [
+        "A. You must standardize all numeric features; otherwise trees cannot find correct splits.",
+        "B. Scaling/normalization usually doesn’t change split decisions for trees, but transformations can still help (e.g., log-transform heavy-tailed features, handle extreme outliers, monotonic transforms) and can improve stability/generalization.",
+        "C. One-hot encoding is required for all categorical variables; XGBoost cannot handle missing values.",
+        "D. Outliers never matter for trees because they are ignored during split finding."
+      ],
+      "correct_answer": "B",
+      "explanation": "Tree splits are based on feature ordering and thresholds, so monotonic scaling (standardization) typically doesn’t change which splits are possible. However, transformations can help when distributions are highly skewed, when you want to compress extreme values, or when you want more stable thresholds across time. Outliers can matter because they can create misleading split points or interact with missing-value routing; handling them (capping/winsorizing, log transforms) can improve robustness.",
+      "difficulty": "beginner",
+      "tags": [
+        "preprocessing",
+        "scaling",
+        "outliers",
+        "feature-transformations",
+        "missing-values"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Debugging pathology: You see this during training on a validation set:\n- Validation AUC steadily improves\n- Validation logloss steadily worsens\n\nWhat are the most likely explanations and what would you check next (pick the best answer)?",
+      "question_type": "mc",
+      "options": [
+        "A. This cannot happen: AUC and logloss always move in the same direction for a fixed dataset.",
+        "B. The model is improving ranking but getting probability calibration worse; check class-weighting/`scale_pos_weight`, label noise, whether you’re evaluating weighted vs unweighted metrics, and consider calibration (Platt/isotonic) or different early-stopping metric.",
+        "C. This only happens when there is a bug in XGBoost; reinstall the package and rerun.",
+        "D. This means the features are not scaled; apply standardization to fix logloss."
+      ],
+      "correct_answer": "B",
+      "explanation": "AUC measures ranking; logloss measures the quality of predicted probabilities. It’s possible to improve ranking while becoming more overconfident/worse calibrated, especially with class weighting, label noise, distribution shift, or overfitting in later rounds. Practical next checks: confirm consistent weighting between training and evaluation, inspect calibration curves, look at predicted probability histograms, verify no leakage/target shift, and consider early stopping on logloss (or calibrating probabilities post hoc). Feature scaling rarely fixes this for tree models.",
+      "difficulty": "advanced",
+      "tags": [
+        "debugging",
+        "auc",
+        "logloss",
+        "calibration",
+        "sample-weights",
+        "label-noise",
+        "early-stopping"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Objective functions and outputs: You train XGBoost for binary classification.\n\nWhich combination is correct regarding objective choice and what `predict()` returns vs using `output_margin=True` (or `pred_margin`) / `predict_proba()`?",
+      "question_type": "mc",
+      "options": [
+        "A. With `binary:logistic`, `predict()` returns logits (raw margins) and `output_margin=True` returns probabilities.",
+        "B. With `binary:logistic`, `predict()` returns probabilities; with `output_margin=True` it returns raw margins (logits).",
+        "C. With `binary:hinge`, `predict()` returns calibrated probabilities by default.",
+        "D. With `binary:logitraw`, `predict()` returns class labels {0,1} by default."
+      ],
+      "correct_answer": "B",
+      "explanation": "For `binary:logistic`, the model is trained on logistic loss; standard predictions are probabilities in [0,1]. If you request margins (`output_margin=True` / raw margin), you get the untransformed score (logit) before the sigmoid. `binary:hinge` is a classification objective that produces hard labels (not probabilities), and `binary:logitraw` outputs raw margins rather than labels.",
+      "difficulty": "beginner",
+      "tags": [
+        "objectives",
+        "binary-logistic",
+        "raw-margin",
+        "predict_proba",
+        "calibration"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Feature interactions: Trees can model interactions without explicit feature crosses. When would you still engineer interaction features (e.g., x1*x2, bucketed crosses), and how could you validate that an interaction is real/important?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "You might engineer interactions when: (1) you need a simpler/shallower model (low `max_depth`) but still want a specific interaction captured; (2) the interaction is smooth/multiplicative and trees would need many splits to approximate it; (3) you have strong domain knowledge and want to bias the model toward a known interaction; (4) you want interpretability/stability across retrains. To validate, you can use SHAP interaction values (to quantify pairwise interaction strength), 2D partial dependence/ICE plots (to visualize joint effects), compare CV performance with/without the engineered feature, and check that the effect persists across folds/time splits to avoid leakage artifacts.",
+      "explanation": "Trees capture interactions by splitting on different features along the same path (depth > 1). But some interactions are inefficient for axis-aligned splits or require deep trees, which can increase variance. Interaction diagnostics (SHAP interaction, PDP/ICE) help distinguish true interactions from noise and confirm that engineered crosses improve generalization rather than just training fit.",
+      "difficulty": "intermediate",
+      "tags": [
+        "feature-interactions",
+        "shap-interaction",
+        "partial-dependence",
+        "feature-engineering",
+        "tree-models"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "XGBoost “multi-output” reality check: You have a dataset with features X and two continuous targets (y1, y2). What can you do with standard XGBoost today, and what is a typical ML-engineering workaround?",
+      "question_type": "mc",
+      "options": [
+        "A. Train a single XGBoost regressor that outputs a 2D vector directly; XGBoost natively supports multi-target regression in one model with shared trees.",
+        "B. Use `objective='multi:softprob'` because it supports any number of outputs, including continuous targets.",
+        "C. Train one model per target (two regressors) and manage shared preprocessing/feature ordering; optionally use multi-task strategies outside XGBoost (e.g., stacking/shared features) if correlation matters.",
+        "D. Convert the two continuous targets into a single target by summing them; XGBoost requires a scalar target."
+      ],
+      "correct_answer": "C",
+      "explanation": "Standard XGBoost is primarily single-target for regression; multiclass objectives handle class probabilities, not multiple continuous outputs. In practice, ML engineers train separate models per target and keep the pipeline consistent (same feature generation and ordering). If you need to exploit target correlation, you typically handle it outside XGBoost (e.g., chaining/stacking, predicting one target and feeding it as a feature, or using a model that natively supports multi-output).",
+      "difficulty": "beginner",
+      "tags": [
+        "multi-output",
+        "multi-target",
+        "workarounds",
+        "pipelines"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Free text: You suspect label noise (some labels are wrong) in a regression problem and your XGBoost model starts to overfit after ~200 trees. Describe 3–5 practical tactics you would try in XGBoost to improve robustness, and explain why each helps.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Tactics could include: (1) early stopping with a clean validation set to stop before fitting noise; (2) stronger regularization (increase `reg_lambda`, `reg_alpha`, `min_child_weight`, `gamma`) to reduce overly specific splits/leaves; (3) reduce tree complexity (`max_depth`/`max_leaves`) and/or increase `min_child_weight` to prevent learning tiny noisy regions; (4) subsampling (`subsample`, `colsample_bytree`) to reduce variance and reliance on spurious patterns; (5) consider more robust objectives/losses when applicable (e.g., `reg:absoluteerror` or Huber-like approaches depending on version/support) or transform the target; (6) reduce `eta` and increase trees with early stopping to make learning smoother. Each reduces variance or limits the model’s ability to chase noise, improving generalization.",
+      "explanation": "Boosting can fit noise because it keeps adding trees to reduce training loss, including on mislabeled points. The most effective levers are: stopping earlier (prevents later trees from specializing on noisy residuals), reducing model capacity (shallower trees, larger `min_child_weight`), and increasing regularization/subsampling (reduces variance and sensitivity to individual examples). Robust losses/target transforms can reduce the influence of outliers/noisy targets by changing gradient behavior.",
+      "difficulty": "intermediate",
+      "tags": [
+        "label-noise",
+        "overfitting",
+        "regularization",
+        "early-stopping",
+        "max_depth",
+        "min_child_weight"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are training a binary classifier with heavy class imbalance. You set `scale_pos_weight=20` and also pass per-row `sample_weight` to `fit()`. In an end-to-end pipeline, which statement best describes how weights should be handled and what common mistake to avoid?",
+      "question_type": "mc",
+      "options": [
+        "A. `sample_weight` affects only training; evaluation metrics always ignore weights, so you must manually weight metrics after training.",
+        "B. `sample_weight` and `scale_pos_weight` both influence the training objective; you should ensure evaluation uses the same weighting scheme (e.g., pass weights to eval) and avoid double-counting positives by applying both without intent.",
+        "C. `scale_pos_weight` affects only evaluation; `sample_weight` affects only prediction probabilities.",
+        "D. Weights in XGBoost are applied only to leaf values after trees are built, so they do not affect split decisions."
+      ],
+      "correct_answer": "B",
+      "explanation": "In XGBoost, weights influence the training objective via weighted gradients/hessians, which affects split finding and leaf values. `scale_pos_weight` is a built-in way to upweight the positive class; per-row `sample_weight` also weights the objective. A common mistake is unintentionally double-weighting (e.g., using both in a way that multiplies the effect). Another common mistake is training with weights but evaluating/early-stopping on an unweighted metric (or vice versa), leading to misleading early stopping and model selection.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sample-weights",
+        "scale_pos_weight",
+        "evaluation",
+        "early-stopping",
+        "class-imbalance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In XGBoost, what does `base_score` represent, and what practical effect does it have on the first few boosting iterations?\n\nAssume binary classification with `objective='binary:logistic'`.",
+      "question_type": "mc",
+      "options": [
+        "A. It is the learning rate; larger values make early trees have smaller impact.",
+        "B. It is the initial prediction (global bias) before any trees; it affects the starting margin/probability and can change early gradients and convergence behavior.",
+        "C. It is the L2 regularization term on leaf weights; higher values shrink the initial prediction toward 0.",
+        "D. It is a threshold used to convert probabilities to labels; it only affects evaluation, not training."
+      ],
+      "correct_answer": "B",
+      "explanation": "`base_score` is the model’s initial constant prediction before any trees are added (a global bias). For `binary:logistic`, it corresponds to an initial probability (internally a margin/logit). Because gradients/hessians are computed from current predictions, the starting point influences the magnitude/direction of the first updates and can affect how quickly training improves in early rounds (especially with class imbalance). It’s not the learning rate or a classification threshold.",
+      "difficulty": "beginner",
+      "tags": [
+        "base_score",
+        "bias-term",
+        "binary-classification",
+        "convergence",
+        "gradients"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have many correlated and redundant features (e.g., multiple similar counts, overlapping one-hot groups). In XGBoost, you notice feature importance is unstable across retrains, though metrics are similar. What is the best explanation and practical mitigation?",
+      "question_type": "mc",
+      "options": [
+        "A. XGBoost is randomly broken; importance should be identical across runs if the metric is stable",
+        "B. Correlated features create multiple near-equivalent split choices; small data/seed differences change which one gets used, making importance unstable—mitigate with grouping/feature selection, stronger regularization, and reporting SHAP with care (including grouped/clustered features)",
+        "C. Importance instability always means severe overfitting; the only fix is to reduce `n_estimators` to a very small value",
+        "D. The fix is to standardize all features so the model prefers the correct correlated feature"
+      ],
+      "correct_answer": "B",
+      "explanation": "With correlated predictors, many splits provide similar gain. Boosted trees may pick different representatives across runs/folds, so “importance” can jump around even when predictive performance is stable. Practical mitigations include: removing redundant features, clustering/grouping correlated features and reporting grouped importance, increasing regularization/subsampling to reduce variance, fixing seeds for reproducibility (while still assessing stability across folds), and using SHAP cautiously (correlation affects attribution). Scaling does not resolve correlation effects for tree split selection.",
+      "difficulty": "intermediate",
+      "tags": [
+        "correlated-features",
+        "feature-importance",
+        "shap",
+        "stability",
+        "regularization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Feature engineering for XGBoost: Give two examples of feature transformations that often help boosted trees on tabular data, and two that usually don’t. Then explain how you would validate that engineered features are actually improving generalization (not just the validation split).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Often helpful: (1) domain aggregations and counts (e.g., rolling counts, frequency encoding, group-level stats computed with leakage-safe windows), (2) interaction-like features that reflect known business logic (ratios, differences, time-since-event), and (3) missingness indicators when missingness is informative. Often not helpful: (1) standard scaling/normalization purely for magnitude, (2) generic polynomial expansions of all numerics (trees can learn many threshold interactions already; can add noise/overfit), and (3) PCA for the sole purpose of decorrelation (can hurt interpretability and sometimes performance). Validation: use proper CV (time-based/GroupKFold), compare against a strong baseline with early stopping, check stability across folds/time slices, run ablation studies, and ensure engineered features are computed identically online with no target leakage; confirm lift persists on a truly held-out or later time window.",
+      "explanation": "Trees can learn nonlinearities without scaling, but they benefit from informative, leakage-safe signals that reduce the burden of learning complex relationships from raw fields. Robust validation requires the right split strategy and ablations to ensure improvements aren’t artifacts of leakage or a lucky split.",
+      "difficulty": "intermediate",
+      "tags": [
+        "feature-engineering",
+        "validation",
+        "leakage",
+        "train-inference-consistency",
+        "tabular"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your XGBoost model outputs probabilities used to trigger an action at threshold 0.7. After a few weeks, you notice the same threshold yields too many false positives, but AUC is roughly unchanged. What is the best next step?",
+      "question_type": "mc",
+      "options": [
+        "A. Retrain the model immediately; AUC staying the same proves the model is stale",
+        "B. Recalibrate probabilities on recent labeled data and/or re-optimize the decision threshold for the current cost/base rate, then monitor calibration metrics",
+        "C. Increase `max_depth` so the model separates classes more strongly and probabilities become more extreme",
+        "D. Switch the training objective from `binary:logistic` to `reg:squarederror` to improve probability quality"
+      ],
+      "correct_answer": "B",
+      "explanation": "If AUC is stable, ranking is likely still good, but the mapping from score to probability (calibration) or the optimal operating point (threshold) may have drifted due to base rate/cost changes. Recalibration (Platt/isotonic) can fix probability drift without changing the ranker, and threshold re-optimization aligns decisions with current business tradeoffs. Retraining might be needed later if ranking degrades, but it’s not the first move given stable AUC.",
+      "difficulty": "intermediate",
+      "tags": [
+        "probability-calibration",
+        "thresholding",
+        "monitoring",
+        "failure-modes",
+        "deployment"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe the following during training an XGBoost model:\n- Training loss keeps improving.\n- Validation loss improves early, then steadily worsens.\n- Feature importance shows a few surprising features dominating.\n\nList the top diagnostics you would run to distinguish (a) data leakage, (b) overfitting, and (c) distribution shift between train and validation. Include at least one plot/check per category and the likely remediation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Key diagnostics: (a) Leakage: check feature generation timestamps vs label time; look for post-outcome features; run a \"leakage ablation\" by training without suspicious features and see if performance collapses; inspect extremely high single-feature predictive power; permutation test with time-shifted labels; verify train/valid split correctness (no entity overlap when it shouldn’t). Remediation: remove/lag features, fix split, rebuild labels. (b) Overfitting: compare train vs valid curves; increase regularization (`min_child_weight`, `gamma`, `reg_lambda`, `reg_alpha`), reduce model capacity (`max_depth`, `max_leaves`), use subsampling (`subsample`, `colsample_bytree`), early stopping, and more data. Plot learning curves and check variance across CV folds. (c) Distribution shift: compare feature distributions train vs valid (PSI/KS, missingness rates), check segment/time slices, and evaluate performance by slice; plot predicted probability distributions per split. Remediation: use time-based split, add more recent data, feature robustness, retrain or recalibrate depending on whether ranking or calibration is affected.",
+      "explanation": "The same symptom (train improves while validation degrades) can come from classic overfitting, but leakage often produces unrealistically strong validation early (or odd dominant features), and distribution shift can make validation systematically harder. Targeted diagnostics prevent applying the wrong fix (e.g., regularizing a leaky model).",
+      "difficulty": "advanced",
+      "tags": [
+        "debugging",
+        "diagnostics",
+        "leakage",
+        "overfitting",
+        "distribution-shift",
+        "train-vs-valid"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a baseline XGBoost model for a new tabular classification problem. Which workflow is most appropriate for an AI/ML engineer before heavy hyperparameter tuning?",
+      "question_type": "mc",
+      "options": [
+        "A. Immediately run a large Bayesian hyperparameter search over depth, learning rate, subsampling, and regularization using the full dataset",
+        "B. Start with a simple baseline (reasonable params), strong train/valid split strategy (time-based if needed), early stopping, and a metric aligned to the business objective; then iterate on data/labels/features before extensive tuning",
+        "C. Tune only `max_depth` because it dominates performance; keep everything else default",
+        "D. Increase `n_estimators` to a very large number and disable early stopping to avoid underfitting"
+      ],
+      "correct_answer": "B",
+      "explanation": "A strong baseline includes: correct evaluation protocol (avoid leakage; use time/GroupKFold when appropriate), early stopping on a validation set, and metrics that reflect the business objective (possibly with threshold selection). Many gains come from data quality, label definition, and feature pipeline correctness. Heavy tuning too early can overfit the validation scheme and waste time; disabling early stopping often worsens generalization and training cost.",
+      "difficulty": "beginner",
+      "tags": [
+        "training-workflow",
+        "baseline",
+        "early-stopping",
+        "evaluation",
+        "leakage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a credit-risk model where business rules require: (1) higher income should not increase predicted risk, and (2) higher debt should not decrease predicted risk. How would you enforce this in XGBoost, and how would you test/validate that the constraints are actually respected in deployment?\n\nProvide a concrete plan (training settings + validation checks).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use monotonic constraints: set `monotone_constraints` with +1/-1 per feature (e.g., income: -1 if predicting risk; debt: +1). Ensure feature ordering and sign conventions are correct. Train with these constraints and compare performance vs unconstrained baseline. Validate constraints by: (1) unit tests on a grid/perturbation set where you vary only income or debt while holding others fixed and assert monotonicity of predicted risk; (2) partial dependence / ICE curves per constrained feature to visually verify monotonic behavior; (3) regression tests in the inference service to catch feature mapping changes; (4) monitor constraint violations via sampled counterfactual checks in production logs. Also confirm constrained features aren’t transformed in a way that flips monotonic direction (e.g., log, negation) without updating constraint signs.",
+      "explanation": "Monotonic constraints are a practical safety/business-rule tool for boosted trees. But they only apply to the feature as presented to the model, so consistent preprocessing and robust tests are essential. Validation should include both visual diagnostics (PDP/ICE) and automated monotonicity assertions to prevent silent violations from feature pipeline changes.",
+      "difficulty": "advanced",
+      "tags": [
+        "constraints",
+        "monotonic-constraints",
+        "safety",
+        "business-rules",
+        "validation",
+        "production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to provide explanations for an XGBoost model in production. A stakeholder requests “top 10 features” globally, and customer support requests per-user explanations. Which approach is most responsible?\n\nAssume you can compute SHAP values.",
+      "question_type": "mc",
+      "options": [
+        "A. Use built-in XGBoost gain-based feature importance for both global and per-user explanations",
+        "B. Use global SHAP summary plots for global behavior and local SHAP explanations per prediction, while documenting limitations and checking for leakage/sensitive features exposure",
+        "C. Use local SHAP values and average them to get global importance; no further checks are needed because SHAP is model-agnostic",
+        "D. Avoid SHAP entirely; explanations are always misleading for boosted trees"
+      ],
+      "correct_answer": "B",
+      "explanation": "Gain-based importances can be unstable with correlated features and don’t provide faithful local explanations. SHAP provides additive attributions: global summaries (e.g., mean |SHAP|, beeswarm) help describe overall drivers; local SHAP helps explain a specific decision. In production, you must communicate limitations (correlation/interaction effects, baseline choice), avoid leaking sensitive attributes via explanations, and validate that explanations are consistent and not exposing proxies. Averaging local SHAP can be used for global, but it still requires careful interpretation and governance.",
+      "difficulty": "intermediate",
+      "tags": [
+        "explainability",
+        "shap",
+        "production",
+        "feature-importance",
+        "privacy-leakage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Scenario: Your XGBoost model has stable offline performance, but online performance drops over a week. You suspect distribution shift. Describe a monitoring and response plan specific to tabular boosted trees that distinguishes:\n- feature drift vs label drift\n- calibration drift vs threshold drift\n\nFor each, state what you would do first (retrain, recalibrate, change threshold, investigate data pipeline, etc.) and what signals/plots you’d look at.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer covers: (1) Feature drift monitoring: compare feature distributions train vs recent (PSI, KS, Wasserstein, population histograms), plus drift in important features and in SHAP value distributions; check for upstream pipeline changes. Response: if drift is real and impacts performance, retrain with recent data or add robust features; if due to pipeline bug, fix pipeline. (2) Label drift: monitor base rate/label prevalence and delayed labels; use backfilled labels to compute metrics by time slice; if label definition changed, update labeling and retrain. (3) Calibration drift: monitor reliability curves over time, Brier/ECE, predicted-probability distribution vs observed event rate per decile; if ranking is OK but probabilities off, recalibrate (Platt/isotonic) using recent labeled data; consider temperature/Platt on a holdout window. (4) Threshold drift: if business costs or base rate changed, re-optimize threshold against current KPI constraints; monitor KPI vs threshold curves and operating point stability. Also include: segment-level monitoring, drift in missingness rates, and time-based validation. Emphasize choosing between retraining (model parameters) vs recalibration (probability mapping) vs threshold update (decision rule).",
+      "explanation": "Boosted trees often remain strong rankers under moderate shift but can suffer from probability miscalibration when base rates change. Separating drift types prevents overreacting (e.g., retraining when a threshold update suffices) and helps identify pipeline issues (sudden feature distribution shifts, missingness spikes). Using both distributional drift metrics and performance metrics over time (with delayed labels) is key in production.",
+      "difficulty": "advanced",
+      "tags": [
+        "distribution-shift",
+        "monitoring",
+        "feature-drift",
+        "label-drift",
+        "calibration-drift",
+        "threshold-drift",
+        "production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In your production pipeline, you use XGBoost with a mix of numeric and one-hot encoded categorical features. Which preprocessing statement is most accurate for XGBoost tree models?\n\nAssume you are using the standard `xgboost`/`XGBClassifier` tree booster (not linear).",
+      "question_type": "mc",
+      "options": [
+        "A. You must standardize/normalize all numeric features, otherwise splits are biased",
+        "B. Scaling is generally unnecessary for tree boosters; focus on consistent encoding and handling missing values/sparsity across train and inference",
+        "C. You should apply PCA to decorrelate features before training, otherwise XGBoost cannot handle correlated inputs",
+        "D. You must densify sparse one-hot matrices because XGBoost cannot train on sparse input"
+      ],
+      "correct_answer": "B",
+      "explanation": "Tree-based boosters split on feature thresholds and are largely invariant to monotonic scaling, so standardization is usually not required (unlike linear models/NNs). Practical pipeline concerns are: consistent preprocessing between train and inference (same one-hot mapping, same missing-value handling), and efficient sparse handling (XGBoost supports sparse matrices and can exploit sparsity). PCA is rarely a default for tabular tree boosters and can harm interpretability and performance.",
+      "difficulty": "beginner",
+      "tags": [
+        "data-preprocessing",
+        "sparse-matrices",
+        "train-inference-consistency",
+        "feature-encoding"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained an XGBoost binary classifier and got AUC=0.92 offline, but the business KPI (e.g., profit or approval-rate at a fixed loss constraint) is poor after deployment. What is the most likely root cause and first fix to try?\n\nAssume the KPI depends on a decision threshold and asymmetric costs.",
+      "question_type": "mc",
+      "options": [
+        "A. AUC is too low; increase tree depth and number of estimators until AUC improves",
+        "B. The model is uncalibrated or the threshold is mis-set for the cost function; validate calibration and re-optimize threshold on a cost-based metric",
+        "C. XGBoost cannot optimize AUC well on tabular data; switch to a neural network",
+        "D. The model is over-regularized; remove L1/L2 regularization to increase score variance"
+      ],
+      "correct_answer": "B",
+      "explanation": "AUC measures ranking quality, not whether predicted probabilities are well-calibrated or whether a particular operating point (threshold) is optimal for a cost-sensitive KPI. A common failure mode is: good ranking (high AUC) but poor probability calibration or an incorrect threshold relative to business costs/constraints. First steps: (1) evaluate calibration (reliability curve, Brier score, ECE), (2) choose threshold by optimizing the business objective on a validation set (or via constrained optimization), and (3) consider post-hoc calibration (Platt/isotonic) if probabilities are miscalibrated. Increasing depth/estimators may improve AUC but often worsens calibration and overfitting, and it doesn’t directly fix KPI misalignment.",
+      "difficulty": "intermediate",
+      "tags": [
+        "failure-modes",
+        "business-metrics",
+        "thresholding",
+        "probability-calibration",
+        "deployment"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Binary classification with heavy class imbalance: beyond setting `scale_pos_weight`, what is a strong practical approach to choosing the decision threshold?\n\nA) Always use 0.5; XGBoost optimizes logloss so 0.5 is optimal\nB) Choose the threshold that maximizes accuracy on the training set\nC) Calibrate probabilities on a validation set (if needed) and choose a threshold that minimizes expected business cost (or meets a precision/recall constraint)\nD) Use the threshold that maximizes AUC since AUC is threshold-dependent",
+      "question_type": "mc",
+      "options": [
+        "A) Always use 0.5; XGBoost optimizes logloss so 0.5 is optimal",
+        "B) Choose the threshold that maximizes accuracy on the training set",
+        "C) Calibrate probabilities on a validation set (if needed) and choose a threshold that minimizes expected business cost (or meets a precision/recall constraint)",
+        "D) Use the threshold that maximizes AUC since AUC is threshold-dependent"
+      ],
+      "correct_answer": "C",
+      "explanation": "With imbalance and asymmetric costs, the best threshold is rarely 0.5. A strong workflow is: train the model, check probability calibration (and calibrate if necessary), then select a threshold on validation data based on business costs or constraints (e.g., precision at fixed recall). AUC is threshold-independent and doesn’t directly give an operating point; accuracy on training is usually optimistic and misaligned with business goals.",
+      "difficulty": "intermediate",
+      "tags": [
+        "class-imbalance",
+        "thresholding",
+        "calibration",
+        "precision-recall",
+        "business-metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to tune an XGBoost model efficiently under time constraints (limited budget for experiments). What hyperparameters would you tune first, what ranges are sensible, and how would you avoid over-search/leakage?\n\nProvide a practical strategy using either CV or a holdout, and mention at least one stopping criterion for the search.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Practical strategy: start with a strong baseline and tune the highest-impact knobs first: (1) `learning_rate` with `n_estimators` + early stopping (e.g., learning_rate 0.02–0.2 and large n_estimators like 2000–10000, letting early stopping pick the effective rounds); (2) tree complexity: `max_depth` (e.g., 3–10) and/or `min_child_weight` (e.g., 1–20) to control overfitting; (3) sampling: `subsample` and `colsample_bytree` (e.g., 0.5–1.0) for variance reduction; (4) regularization: `reg_lambda` (e.g., 1–50), `reg_alpha` (0–10), and `gamma` (0–10) if needed. Use a fixed validation protocol: either K-fold CV (preferably for smaller data / noisy metrics) or a time-based/group-based holdout when leakage is a risk. Avoid leakage by fitting encoders/target transforms within folds and not peeking at the test set. Stopping criteria: stop when validation metric improvements are within noise across several trials, or when early stopping consistently selects similar iterations and further tuning yields <X% gain; also cap search iterations and use Bayesian optimization/random search rather than exhaustive grids.",
+      "explanation": "The key is prioritization: learning rate + rounds (with early stopping) and complexity/sampling typically dominate. A good answer ties tuning to a leakage-safe evaluation design and uses pragmatic stopping rules rather than “search everything.”",
+      "difficulty": "advanced",
+      "tags": [
+        "hyperparameter-tuning",
+        "model-selection",
+        "cv",
+        "early-stopping",
+        "leakage",
+        "search-strategy"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A stakeholder asks: “Feature X is the most important feature according to XGBoost, so we should base decisions on it.” How would you respond?\n\nInclude: (1) at least two pitfalls of built-in feature importance (gain/weight/cover), (2) how correlated features affect importance, and (3) when you’d use permutation importance vs SHAP and why they might disagree.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "I’d caution that built-in importance is not a causal statement and can be unstable. Pitfalls: (a) split-based importances can be biased toward features with many possible split points (continuous/high-cardinality) and toward features that appear early in trees; (b) importance can be unstable across folds/seeds and can inflate leaked/proxy features; (c) with correlated features, the model may split on one feature and “ignore” the other, so importance is arbitrarily assigned among correlated predictors (or split across them), making rankings misleading. I’d validate importance across CV folds and check for leakage. For deeper interpretation, I’d use permutation importance to measure performance drop when a feature is shuffled (more directly tied to the metric but can underestimate importance when features are correlated because the model can rely on correlated substitutes). I’d use SHAP for local explanations and to see directionality/interaction patterns; SHAP can attribute credit differently under correlation assumptions, so SHAP and permutation can disagree. I’d present global summaries plus local examples, and emphasize decision policies should be validated with stress tests/ablation, not a single importance chart.",
+      "explanation": "Interviewers want to see skepticism about naive “top feature” claims, awareness of correlation and leakage, and knowledge of complementary tools (permutation vs SHAP) and why they can produce different stories. The best answers connect interpretability to validation (stability across folds, ablations, and sanity checks).",
+      "difficulty": "advanced",
+      "tags": [
+        "feature-importance",
+        "shap",
+        "permutation-importance",
+        "correlation",
+        "leakage",
+        "interpretability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a dataset with numeric features plus two categorical columns:\n- `country` (≈ 200 unique values)\n- `user_id` (≈ 2 million unique values)\n\nYou want to train XGBoost for a supervised task. Which preprocessing strategy is most reasonable in practice?\n\nA) One-hot encode both `country` and `user_id` and train; XGBoost handles sparse matrices perfectly at any cardinality\nB) Drop all categorical features; XGBoost can’t use them\nC) Use one-hot or native categorical handling for `country`, but avoid naive one-hot for `user_id`; consider target encoding / hashing / learned embeddings upstream, or exclude `user_id` unless you can prevent leakage and handle cold-start\nD) Label-encode both and treat them as ordinal integers; tree splits will correctly learn category membership without risk",
+      "question_type": "mc",
+      "options": [
+        "A) One-hot encode both `country` and `user_id` and train; XGBoost handles sparse matrices perfectly at any cardinality",
+        "B) Drop all categorical features; XGBoost can’t use them",
+        "C) Use one-hot or native categorical handling for `country`, but avoid naive one-hot for `user_id`; consider target encoding / hashing / learned embeddings upstream, or exclude `user_id` unless you can prevent leakage and handle cold-start",
+        "D) Label-encode both and treat them as ordinal integers; tree splits will correctly learn category membership without risk"
+      ],
+      "correct_answer": "C",
+      "explanation": "Moderate-cardinality categoricals (like `country`) are often fine with one-hot or native categorical support (depending on your XGBoost version and settings). Extremely high-cardinality IDs are risky: one-hot explodes dimensionality; label encoding introduces arbitrary order and can create spurious splits; target encoding can leak if not done within folds/time; and IDs can cause memorization that fails on new users. Practical handling depends on the product constraints (cold-start, leakage controls, and whether the ID is a proxy for the label).",
+      "difficulty": "intermediate",
+      "tags": [
+        "preprocessing",
+        "categorical",
+        "high-cardinality",
+        "native-categorical",
+        "target-encoding",
+        "leakage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this sklearn-style training snippet:\n\n```python\nfrom xgboost import XGBClassifier\n\nmodel = XGBClassifier(\n    n_estimators=5000,\n    learning_rate=0.05,\n    max_depth=4,\n    subsample=0.8,\n    colsample_bytree=0.8,\n    eval_metric=\"logloss\",\n    random_state=0,\n)\n\nmodel.fit(\n    X_train, y_train,\n    eval_set=[(X_val, y_val)],\n    verbose=False,\n    early_stopping_rounds=50,\n)\n```\n\nAfter you select hyperparameters, you want to train a final model for production. What is the best practice?\n\nA) Keep the model as-is; it already saw validation data so it’s more accurate\nB) Refit on `X_train` only using `n_estimators=best_iteration` and no early stopping\nC) Refit on the combined train+val data, using the chosen hyperparameters and `n_estimators` set to the best number of boosting rounds found during model selection\nD) Refit on combined data and keep early stopping using the test set as `eval_set`",
+      "question_type": "mc",
+      "options": [
+        "A) Keep the model as-is; it already saw validation data so it’s more accurate",
+        "B) Refit on `X_train` only using `n_estimators=best_iteration` and no early stopping",
+        "C) Refit on the combined train+val data, using the chosen hyperparameters and `n_estimators` set to the best number of boosting rounds found during model selection",
+        "D) Refit on combined data and keep early stopping using the test set as `eval_set`"
+      ],
+      "correct_answer": "C",
+      "explanation": "During model selection, early stopping uses validation data to choose the number of boosting rounds. For the final model, you typically retrain on all available labeled training data (train+val) with the selected hyperparameters, setting `n_estimators` (or `num_boost_round`) to the chosen best iteration (often averaged/selected from CV). You should not use the test set for early stopping; that leaks test information into training decisions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sklearn-api",
+        "eval_set",
+        "early-stopping",
+        "refit",
+        "workflow",
+        "leakage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to use XGBoost in a stacking ensemble. What is the correct way to generate out-of-fold (OOF) predictions for the meta-model while using early stopping?\n\nA) Fit XGBoost once on all training data with early stopping on the test set, then use those predictions as OOF\nB) For each fold: train on K-1 folds, early-stop using that fold’s validation split, predict on the held-out fold; concatenate predictions across folds\nC) Train K models on the full data with different seeds and average their predictions to form OOF\nD) Use `cross_val_predict` with `method='predict'` and ignore early stopping because it causes leakage",
+      "question_type": "mc",
+      "options": [
+        "A) Fit XGBoost once on all training data with early stopping on the test set, then use those predictions as OOF",
+        "B) For each fold: train on K-1 folds, early-stop using that fold’s validation split, predict on the held-out fold; concatenate predictions across folds",
+        "C) Train K models on the full data with different seeds and average their predictions to form OOF",
+        "D) Use `cross_val_predict` with `method='predict'` and ignore early stopping because it causes leakage"
+      ],
+      "correct_answer": "B",
+      "explanation": "OOF predictions must be produced by models that did not train on the rows they predict. With early stopping, each fold’s validation set can be the held-out fold (or a split inside the training fold, but then you must still predict the held-out fold with that model). Using the test set for early stopping is direct leakage; training on full data and averaging seeds is not OOF; and early stopping itself isn’t leakage if the validation data is properly separated per fold.",
+      "difficulty": "advanced",
+      "tags": [
+        "stacking",
+        "oof",
+        "early-stopping",
+        "leakage",
+        "cv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a model for learning-to-rank or any problem where examples belong to groups (e.g., queries with multiple documents). How would you ensure evaluation and validation are group-aware when using XGBoost?\n\nDescribe: (1) how you would split data, (2) how you would pass group information (conceptually), and (3) what can go wrong if you ignore grouping.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Split by group (e.g., GroupKFold / hold out entire queries) so the same group never appears in both train and validation. 2) Provide group boundaries to the ranking learner (e.g., group sizes per query) so the objective/metric is computed within each group; use ranking objectives (e.g., pairwise/listwise) and ranking metrics like NDCG@k/MAP computed per group and aggregated. 3) If you ignore grouping, you get leakage (documents from the same query in train and val), inflated metrics, and the model may learn group-specific artifacts; also ranking losses/metrics are ill-defined if you treat rows as independent classification/regression without respecting query structure.",
+      "explanation": "Group awareness is a common real-world pitfall. Correct splitting is as important as the objective: without group splits, validation is optimistic. For ranking, the model must know which items are compared together; otherwise the learning signal and evaluation do not match deployment.",
+      "difficulty": "advanced",
+      "tags": [
+        "groups",
+        "ranking",
+        "group-aware-cv",
+        "leakage",
+        "evaluation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "When using sample weights with XGBoost (classification or regression), which statement is most accurate?\n\nA) Weights only affect the final evaluation metric; training gradients are unchanged\nB) Weights scale each example’s contribution to the loss/gradients, changing split decisions and leaf values\nC) Weights are only used for row subsampling (like `subsample`) and do not affect the objective\nD) Weights automatically rebalance classes the same way as `scale_pos_weight`",
+      "question_type": "mc",
+      "options": [
+        "A) Weights only affect the final evaluation metric; training gradients are unchanged",
+        "B) Weights scale each example’s contribution to the loss/gradients, changing split decisions and leaf values",
+        "C) Weights are only used for row subsampling (like `subsample`) and do not affect the objective",
+        "D) Weights automatically rebalance classes the same way as `scale_pos_weight`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Sample weights multiply each row’s contribution to the objective, so they affect gradients/Hessians, split gains, and leaf outputs. This is different from just changing the metric after the fact. `scale_pos_weight` is a specific convenience for binary imbalance; general weights can encode many schemes (cost sensitivity, exposure time, inverse propensity, etc.).",
+      "difficulty": "intermediate",
+      "tags": [
+        "sample-weights",
+        "training-mechanics",
+        "loss",
+        "imbalance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re evaluating a multiclass XGBoost model for a highly imbalanced 5-class problem. Which evaluation approach is most appropriate, and what are common pitfalls?\n\nProvide a practical answer: metrics you’d choose (at least two), how you’d average them, and one pitfall related to using accuracy or logloss.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use metrics that reflect imbalance and probability quality. Common choices: macro-averaged F1 (or per-class F1) to ensure minority classes matter; macro recall / balanced accuracy; and multiclass logloss (or cross-entropy) to assess probability quality. If business costs differ, consider cost-weighted metrics or per-class thresholds/decision rules. Pitfalls: plain accuracy can look good by predicting majority classes; logloss can be dominated by frequent classes and doesn’t directly reflect decision performance unless paired with a decision rule; also comparing metrics across different label encodings or ignoring class order/meaning can mislead. Always inspect per-class confusion matrix and per-class PR/recall.",
+      "explanation": "Imbalanced multiclass needs per-class visibility. Macro averaging prevents majority classes from dominating. Logloss is useful for probability ranking/quality but can hide poor minority recall; accuracy can be misleading. Interviewers often want to see confusion-matrix thinking and metric selection tied to decision use.",
+      "difficulty": "intermediate",
+      "tags": [
+        "multiclass",
+        "metrics",
+        "imbalance",
+        "macro-averaging",
+        "pitfalls"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In XGBoost multiclass classification, what’s the practical difference between using an objective that returns class probabilities vs class labels, and how should you interpret `predict_proba`?\n\nA) `multi:softmax` returns probabilities; `multi:softprob` returns class labels\nB) `multi:softmax` returns class labels; `multi:softprob` returns per-class probabilities that sum to 1\nC) Both return the same output; only evaluation metrics differ\nD) `predict_proba` returns calibrated probabilities by default in XGBoost",
+      "question_type": "mc",
+      "options": [
+        "A) `multi:softmax` returns probabilities; `multi:softprob` returns class labels",
+        "B) `multi:softmax` returns class labels; `multi:softprob` returns per-class probabilities that sum to 1",
+        "C) Both return the same output; only evaluation metrics differ",
+        "D) `predict_proba` returns calibrated probabilities by default in XGBoost"
+      ],
+      "correct_answer": "B",
+      "explanation": "`multi:softmax` outputs the argmax class index (hard label). `multi:softprob` outputs a probability distribution over classes (typically shape `[n_samples, n_classes]`) that sums to 1 per row. `predict_proba` is meaningful when the model is trained to produce probabilities (e.g., softprob). Probabilities are not guaranteed to be well-calibrated; if you need calibrated probabilities, you often add calibration (Platt/isotonic) on a validation set.",
+      "difficulty": "beginner",
+      "tags": [
+        "multiclass",
+        "softmax-vs-softprob",
+        "predict_proba",
+        "calibration"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You fit an XGBoost regressor and see that residual variance grows with the predicted value (heteroskedasticity). In practice, what would you do next?\n\nGive 2–3 concrete actions (modeling and/or evaluation) you would take, and how you would verify improvement using RMSE/MAE and residual plots.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Possible actions: (1) Transform the target (e.g., log1p for positive targets) and evaluate errors on the original scale and transformed scale appropriately; (2) Use a different objective aligned to business error (e.g., MAE/quantile regression if you care about median/intervals) or train separate models/segments if variance differs by regime; (3) Introduce sample weights to emphasize relative error (e.g., weight inversely to expected variance or use weights proportional to business value) if justified; (4) Add features that explain the variance (e.g., interaction proxies) and check if residual patterns flatten. Verify by comparing RMSE vs MAE (RMSE is more sensitive to large errors), plotting residuals vs prediction/feature buckets, and checking calibration of prediction intervals if using quantiles.",
+      "explanation": "Heteroskedasticity is often diagnosed via residual plots (fan shape). Practical responses include transforming the target, choosing objectives that match robust/median behavior, weighting schemes tied to error costs, feature engineering/segmentation, and verifying via both metrics and residual diagnostics (not only a single score).",
+      "difficulty": "intermediate",
+      "tags": [
+        "regression",
+        "heteroskedasticity",
+        "evaluation",
+        "rmse",
+        "mae",
+        "residual-analysis",
+        "sample-weights"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re training an XGBoost regressor and the target has occasional extreme outliers. Which choice is most appropriate if you want a model more robust to outliers, and why?\n\nA) Use squared error (L2) objective because it penalizes outliers more, improving robustness\nB) Use MAE (L1) objective because it reduces the influence of large errors\nC) Increase max_depth because deeper trees can “explain away” outliers\nD) Turn off regularization so the model can fit outliers exactly",
+      "question_type": "mc",
+      "options": [
+        "A) Use squared error (L2) objective because it penalizes outliers more, improving robustness",
+        "B) Use MAE (L1) objective because it reduces the influence of large errors",
+        "C) Increase max_depth because deeper trees can “explain away” outliers",
+        "D) Turn off regularization so the model can fit outliers exactly"
+      ],
+      "correct_answer": "B",
+      "explanation": "MAE/L1 is typically more robust because large residuals don’t dominate the loss the way they do under squared error (where errors are squared). Deeper trees or removing regularization can overfit outliers rather than handle them robustly. Note: in practice, you may also consider Huber/pseudo-Huber (if available), target transforms, or explicit outlier handling, but the core interview point is L1 vs L2 sensitivity.",
+      "difficulty": "beginner",
+      "tags": [
+        "regression",
+        "objectives",
+        "outliers",
+        "mae-vs-mse"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In XGBoost’s gradient boosting, what does each boosting round add to the model, and what signal is used to choose splits?\n\nExplain at an interview level (no math derivation required) how gradients/residuals drive tree construction and what regularization is doing conceptually.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Each boosting round adds a new decision tree (a weak learner) that is trained to reduce the current model’s errors. Instead of fitting the original target directly, the new tree is fit to the negative gradient of the loss with respect to the current predictions (often described as residuals for squared error). During split finding, XGBoost evaluates candidate splits by how much they improve the objective: they create left/right leaves whose predicted values move predictions in the direction that reduces loss (using aggregated gradients and Hessians for the data in each node). Regularization conceptually discourages overly complex trees and overly large leaf weights: penalties on number of leaves/splits (e.g., gamma) and L2/L1 penalties on leaf weights (lambda/alpha) shrink updates, reducing variance and helping generalization, especially when many splits look similarly good.",
+      "explanation": "A good interview answer distinguishes (1) what is added each round (a tree that updates predictions), (2) what training signal is used (gradients/“residual-like” errors of the current model), and (3) what regularization does (controls complexity and shrinks leaf values so the model doesn’t chase noise). Mentioning gradients + Hessians shows awareness that XGBoost optimizes a second-order approximation of the loss for efficient split scoring.",
+      "difficulty": "beginner",
+      "tags": [
+        "core-mechanics",
+        "gradients-residuals",
+        "regularization",
+        "boosting-rounds"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building an imbalanced fraud detection system (1:500 positives). You train XGBoost and get AUC=0.98 but precision at your operating point is poor in production.\n\nDescribe an end-to-end approach (training + evaluation + thresholding/calibration + splitting) you would use to make this robust. Mention at least: metric choice, class weights/scale_pos_weight, threshold selection, calibration, and split strategy (stratified vs time/group).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Metrics: Use metrics aligned to the business operating point: PR-AUC, precision/recall at fixed alert volume, cost-weighted metrics, and confusion matrix at candidate thresholds. AUC can look great while precision is poor under extreme imbalance.\n\nTraining: Use scale_pos_weight (≈ #neg/#pos as a starting point) or sample weights reflecting costs; consider max_delta_step for stability in rare-event logistic setups. Keep early stopping on a validation set using an appropriate metric (e.g., aucpr or custom metric tied to precision/recall).\n\nThresholding: Pick a threshold based on expected alert budget or cost trade-off using validation (or a nested CV). Don’t default to 0.5. Re-evaluate threshold periodically as base rates drift.\n\nCalibration: Calibrate probabilities (Platt/sigmoid or isotonic) on a holdout set that matches production prevalence (or adjust for prior shift carefully). Verify calibration with reliability curves/Brier score.\n\nSplitting: Use stratified splits for IID problems, but for fraud you often need time-based splits to avoid leakage and reflect drift; also consider group splits (e.g., by user/account/merchant) to prevent near-duplicate leakage. Ensure the calibration set follows the same split logic.\n\nProduction monitoring: Track base rate, precision/recall at the chosen threshold, and calibration drift; retrain or recalibrate as needed.",
+      "explanation": "This tests practical ML engineering: imbalanced classification is rarely solved by a single knob. You need correct metrics, correct splits (to avoid leakage and reflect drift), weighting to make learning stable, and a deliberate decision rule (threshold) plus calibration if probabilities are consumed downstream. AUC alone is insufficient under heavy imbalance.",
+      "difficulty": "advanced",
+      "tags": [
+        "imbalanced_classification",
+        "metrics",
+        "thresholding",
+        "calibration",
+        "scale_pos_weight",
+        "data_splitting",
+        "production_monitoring"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Missing values: XGBoost can handle missing values without explicit imputation.\n\nWhich statement best describes how XGBoost routes missing values during tree building and what that implies for preprocessing?",
+      "question_type": "mc",
+      "options": [
+        "A) XGBoost always sends missing values to the left child; therefore you must impute before training",
+        "B) XGBoost learns a default direction for missing values at each split (left or right) based on loss reduction; you should still ensure missingness is represented consistently (e.g., NaN) between training and inference",
+        "C) XGBoost replaces missing values with the mean of the feature automatically; imputation is redundant",
+        "D) XGBoost drops rows with missing values; use dropna() to match behavior"
+      ],
+      "correct_answer": "B",
+      "explanation": "XGBoost’s split finding can assign a learned default direction for missing values per node, effectively treating missingness as informative. This often reduces the need for imputation, but ML engineers must ensure that the serving pipeline represents missing values the same way as training (NaN vs sentinel values) and that any categorical encoding doesn’t accidentally turn missing into a new category unless intended.",
+      "difficulty": "beginner",
+      "tags": [
+        "missing_values",
+        "tree_splits",
+        "preprocessing_parity",
+        "production_inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Objective functions and outputs: In XGBoost,\n1) What does the model output represent for objective='binary:logistic' vs objective='binary:logitraw'?\n2) For multi-class classification, what objective is commonly used and what does predict_proba return?\n3) When might you want the raw margin instead of probability?\n\nAnswer concisely.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) binary:logistic outputs probabilities (sigmoid applied to the raw margin). binary:logitraw outputs the raw margin (log-odds) without the sigmoid.\n2) Commonly objective='multi:softprob' (or 'multi:softmax' if you only need the argmax class). predict_proba returns a K-dimensional probability distribution per example for softprob.\n3) You may want raw margins for downstream calibration (Platt/isotonic), custom thresholding in log-odds space, ensembling/stacking where the meta-model expects logits, numerical stability in some pipelines, or when you want to apply your own link function / cost-sensitive decision rule.",
+      "explanation": "A frequent interview check is whether candidates understand that boosted trees produce an additive score (margin) and the objective applies a link function (e.g., sigmoid/softmax) to interpret it as a probability. Confusing margin vs probability leads to wrong thresholding, wrong calibration, and wrong metric computation.",
+      "difficulty": "beginner",
+      "tags": [
+        "objectives",
+        "binary_classification",
+        "multiclass",
+        "raw_margin",
+        "probabilities",
+        "calibration"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Match each XGBoost hyperparameter to its most direct effect (choose the best option):\n- max_depth\n- min_child_weight\n- gamma\n- subsample\n- colsample_bytree\n- reg_alpha / reg_lambda\n- eta and n_estimators\n\nWhich option best describes these knobs in a way useful for diagnosing training behavior?",
+      "question_type": "mc",
+      "options": [
+        "A) max_depth controls number of trees; min_child_weight controls learning rate; gamma controls class imbalance; subsample controls L2; colsample_bytree controls L1; reg_alpha/reg_lambda control missing values; eta/n_estimators control feature importance",
+        "B) max_depth increases per-tree complexity; min_child_weight and gamma make splits harder (regularize); subsample/colsample add randomness to reduce variance; reg_alpha/reg_lambda add L1/L2 regularization; eta/n_estimators trade off step size vs number of boosting rounds",
+        "C) max_depth only affects GPU training; min_child_weight only affects multiclass; gamma only affects regression; subsample only affects calibration; colsample_bytree only affects SHAP; reg_alpha/reg_lambda only affect linear booster; eta/n_estimators only affect early stopping",
+        "D) max_depth and min_child_weight are equivalent; gamma is the same as reg_lambda; subsample and colsample_bytree are only for speed; eta is only for inference"
+      ],
+      "correct_answer": "B",
+      "explanation": "Option B captures the practical mapping ML engineers use: depth controls tree capacity; min_child_weight and gamma reduce overfitting by preventing low-gain or low-support splits; subsample/colsample reduce correlation between trees and improve generalization; reg_alpha/reg_lambda are explicit regularizers; and eta with n_estimators controls how gradually the model fits (often smaller eta with more trees generalizes better).",
+      "difficulty": "beginner",
+      "tags": [
+        "hyperparameters",
+        "max_depth",
+        "min_child_weight",
+        "gamma",
+        "subsample_colsample",
+        "regularization",
+        "eta_n_estimators"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Production inference question: You have an XGBoost model with 2000 trees, max_depth=8, and it meets offline metrics but is too slow at p95 latency.\n\nList practical levers you would consider to reduce inference latency while preserving most of the model quality, and call out at least one pitfall related to feature preprocessing parity.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Latency levers: (1) Reduce n_estimators (trees) via retraining with early stopping and/or a slightly higher eta, keeping an eye on calibration/metrics. (2) Reduce tree complexity: lower max_depth or switch to a leaf-based setup with fewer effective splits; increase min_child_weight/gamma to avoid tiny splits. (3) Use a faster predictor and deployment format: XGBoost’s native predictor, model compilation/treelite where applicable, or serving in C++/Java rather than Python overhead. (4) Batch requests to amortize overhead if the product allows it. (5) Reduce feature count and expensive feature computations (e.g., remove high-cost features, precompute aggregates, or simplify text features). (6) Consider quantization-like strategies only if supported by your serving stack; more commonly, you trade off trees/depth.\n\nPreprocessing parity pitfall: The online feature pipeline must match training exactly (same missing-value handling, same category mapping/one-hot columns, same scaling/transform logic). Unseen categories can cause missing columns or shifted indices; the safe approach is to use a fixed training-time schema (e.g., one-hot with a fixed vocabulary plus 'other'), and ensure missing values are represented consistently (NaN vs sentinel).",
+      "explanation": "XGBoost inference time is roughly proportional to (number of trees) × (average path length per tree). ML engineers optimize latency by reducing trees and depth, simplifying features, and using efficient serving runtimes. The most common production failure mode is feature skew: the model is fast but wrong because online preprocessing differs from training (especially with one-hot categories and missing values).",
+      "difficulty": "intermediate",
+      "tags": [
+        "production_inference",
+        "latency",
+        "eta_n_estimators",
+        "max_depth",
+        "feature_preprocessing",
+        "unseen_categories"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to ship an XGBoost model to production with reproducible training runs.\n\nWhich statement is most accurate about persistence and reproducibility for XGBoost across environments (CPU/GPU, versions)?",
+      "question_type": "mc",
+      "options": [
+        "A) Setting random_state guarantees identical models across CPU and GPU and across XGBoost versions",
+        "B) Saving with Python pickle is always the most stable cross-language and cross-version format for XGBoost models",
+        "C) Even with a fixed seed, GPU training and some parallel algorithms can be non-deterministic; you should log data version, XGBoost version, parameters, and save the model in a stable format (e.g., JSON/UBJ) to reproduce as closely as possible",
+        "D) Determinism is automatic in XGBoost; no special steps are needed besides early stopping"
+      ],
+      "correct_answer": "C",
+      "explanation": "In practice, reproducibility requires more than setting a seed. Parallelism and GPU kernels can introduce non-determinism; even on CPU, thread scheduling can affect floating-point accumulation. Additionally, different XGBoost versions can change defaults/behavior. ML engineers typically: pin and log library versions, capture the full training config, control randomness (seed/random_state), control threading where needed, version the dataset/features, and persist models using XGBoost’s native formats (JSON/UBJ or binary) rather than relying on pickling Python objects for long-term artifact stability.",
+      "difficulty": "intermediate",
+      "tags": [
+        "model_persistence",
+        "reproducibility",
+        "seed",
+        "gpu_determinism",
+        "mlops"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a monotonic relationship between a feature (e.g., 'income') and the prediction (higher income should not decrease approval probability), but you also have a feature engineering step that creates interaction features (e.g., income * debt_ratio) and you use one-hot encoded categories.\n\nWhat can break monotonicity guarantees in practice, and what is a sensible way to apply monotonic constraints when interactions are present?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Monotonicity guarantees apply to the constrained feature(s) as they appear in the model input. They can be effectively undermined if you introduce interaction features that allow the model to change predictions in ways that counteract the intended relationship (e.g., adding income*debt_ratio can allow a higher income to reduce prediction for certain debt_ratio regions, even if the raw income feature is constrained, depending on how the interaction is constructed and which features are constrained). Also, applying constraints inconsistently across derived features (constraining income but not its transforms like log(income), income bins, or interaction terms) can lead to behavior that violates the business intent.\n\nSensible approach: (1) Decide which representation of the concept should be monotonic (raw income vs transformed). (2) Constrain all features that represent that concept (e.g., income and log_income, or income bins) and consider removing or carefully designing interactions that can reverse the effect. (3) If you must include interactions, either constrain the interaction feature appropriately (if it has a clear monotonic direction) or avoid interactions that conflict with the monotonic requirement. (4) Validate monotonic behavior empirically by partial dependence/ICE or monotonicity tests over a grid of values, since constraints can reduce accuracy and the business requirement may be about monotonicity holding conditional on certain segments.\n\nAdditionally, monotonic constraints can reduce model flexibility and may increase bias; expect potential performance trade-offs, especially when the true relationship is not globally monotonic.",
+      "explanation": "In interviews, the key is to distinguish a mathematical guarantee (monotonic in the constrained input feature) from the business intent (monotonic in the underlying concept). Feature engineering can create alternate pathways (derived features) that let the model achieve non-monotone behavior with respect to the concept, even if one column is constrained. Applying constraints thoughtfully across transforms/interactions and validating the resulting behavior is the practical ML-engineering answer.",
+      "difficulty": "advanced",
+      "tags": [
+        "monotonic_constraints",
+        "feature_constraints",
+        "feature_engineering",
+        "interactions",
+        "model_validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "XGBoost supports different tree growth policies. At a practical, non-specialist level, what is the main difference between 'depthwise' and 'lossguide', and when might switching to 'lossguide' matter most?",
+      "question_type": "mc",
+      "options": [
+        "A) depthwise grows all leaves level-by-level; lossguide grows the leaf with the best loss reduction first; lossguide can help when you want many leaves but controlled depth (e.g., sparse high-dimensional features)",
+        "B) depthwise uses L1 regularization; lossguide uses L2 regularization; switch when overfitting",
+        "C) depthwise is only for regression; lossguide is only for classification; switch based on objective",
+        "D) depthwise is GPU-only; lossguide is CPU-only; switch based on hardware"
+      ],
+      "correct_answer": "A",
+      "explanation": "Depthwise (level-wise) expands the tree uniformly by depth, which can create many nodes even if some branches are not useful. Lossguide grows the tree by repeatedly splitting the leaf that yields the largest loss reduction, typically controlled via max_leaves. This can be beneficial when you want a large number of leaves (fine partitioning) but don’t want the tree to become very deep everywhere, and it’s commonly useful for sparse/high-dimensional problems (e.g., one-hot or text-like features). The other options describe incorrect distinctions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tree_growth_policy",
+        "depthwise",
+        "lossguide",
+        "hyperparameters"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You train an XGBoost model and see:\n- Training RMSE: 12.0\n- Validation RMSE: 12.5\nBoth are worse than a simpler baseline model (e.g., linear regression gives validation RMSE 10.8).\n\nHow would you diagnose whether this is primarily bias (underfitting) vs a data/label issue, and which concrete XGBoost parameter changes would you try first to reduce bias if the data looks OK?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Diagnosis: If both train and validation errors are high and close to each other (and worse than a simpler baseline), that suggests high bias/underfitting or a mismatch between features and target. First check data/label issues: target leakage reversals, incorrect joins, missing target alignment, severe outliers/units problems, and whether the baseline was evaluated with the same split/metric. Also check whether early stopping stopped too early (learning rate too low with too few trees) and whether features are informative.\n\nIf data seems sound, reduce bias by increasing model capacity and/or training longer: increase n_estimators (with early_stopping), decrease eta while increasing n_estimators, increase max_depth (or max_leaves if using lossguide), reduce min_child_weight, reduce gamma, and potentially reduce regularization (lower reg_lambda/reg_alpha). Also ensure you are using an appropriate objective (e.g., reg:squarederror vs reg:pseudohubererror) and that feature preprocessing is correct.\n\nKey idea: high bias shows up as poor training performance; variance shows up as a large train–validation gap.",
+      "explanation": "Bias/variance diagnosis in tree boosting is still based on train vs validation behavior: underfitting typically yields high training error (and validation similar), while overfitting yields low training error but much worse validation. For XGBoost, bias is reduced by increasing effective capacity (deeper trees/more leaves, smaller min_child_weight, smaller gamma) and by fitting longer (more boosting rounds, often with smaller eta). Data/label issues can mimic bias, so an ML engineer should first validate the pipeline and splits before tuning.",
+      "difficulty": "intermediate",
+      "tags": [
+        "bias_variance",
+        "error_analysis",
+        "hyperparameters",
+        "eta_n_estimators",
+        "objective"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You train an XGBoost binary classifier and see this pattern:\n- Training AUC: 0.98\n- Validation AUC: 0.78\n- Validation logloss is much worse than training logloss\n\nWhich set of hyperparameter moves is the most direct way to reduce variance (overfitting) in XGBoost while keeping the general approach the same?",
+      "question_type": "mc",
+      "options": [
+        "A) Increase max_depth and increase n_estimators (more trees) while keeping eta the same",
+        "B) Decrease max_depth, increase min_child_weight, increase reg_lambda, and use subsample/colsample_bytree < 1.0",
+        "C) Increase eta and decrease reg_alpha to let the model fit faster",
+        "D) Switch objective from binary:logistic to reg:squarederror"
+      ],
+      "correct_answer": "B",
+      "explanation": "The pattern (very strong train performance, much weaker validation) is classic high variance. In XGBoost, the most common variance-reducing knobs are: (1) reduce tree complexity (lower max_depth, higher min_child_weight, higher gamma), (2) add regularization (increase reg_lambda and/or reg_alpha), and (3) add stochasticity via row/column subsampling (subsample, colsample_bytree/colsample_bylevel/colsample_bynode). Option B directly targets these. Option A increases capacity and typically increases variance. Option C often increases instability/overfitting. Option D changes the loss and is not an appropriate fix for overfitting in a binary classification setting.",
+      "difficulty": "beginner",
+      "tags": [
+        "bias_variance",
+        "error_analysis",
+        "hyperparameters",
+        "regularization",
+        "subsample_colsample"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a baseline XGBoost model that is underperforming. You want an efficient hyperparameter tuning plan beyond “grid/random search.” Propose an order of operations (what to tune first), give sensible ranges, and mention at least two key interactions (e.g., eta↔n_estimators).\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A practical tuning plan:\n1) Start with a reliable split/CV scheme (time/group aware if needed) and set early_stopping_rounds with a large n_estimators (e.g., 2000–10000) so boosting rounds are effectively tuned.\n2) Tune learning dynamics: eta (learning_rate) and n_estimators are coupled. Try eta in ~[0.01, 0.3]. Lower eta usually needs more trees; rely on early stopping to pick the best iteration.\n3) Tune tree complexity: max_depth (e.g., 3–10) and min_child_weight (e.g., 1–20+). Interaction: deeper trees often require higher min_child_weight to avoid overfitting.\n4) Tune split aggressiveness: gamma (e.g., 0–10). Higher gamma reduces splits.\n5) Tune randomness for variance reduction: subsample and colsample_bytree (and/or colsample_bylevel/colsample_bynode) in ~[0.5, 1.0]. Interaction: lower subsample/colsample can regularize but may require more trees.\n6) Tune weight regularization: reg_lambda (e.g., 1–50) and reg_alpha (e.g., 0–10). L1 can induce sparsity in leaf weights; L2 stabilizes.\n7) If imbalance: adjust sample_weight / scale_pos_weight (binary) and re-check metrics.\n\nKey interactions to mention: eta↔n_estimators; max_depth↔min_child_weight; subsample↔colsample (overall stochasticity) and their effect on required n_estimators; regularization strength often needs retuning when depth changes.",
+      "explanation": "Efficient XGBoost tuning prioritizes the parameters that most strongly shape bias/variance and training dynamics. Early stopping turns “n_estimators” into a controlled knob rather than a fixed guess. Depth-related parameters define representational power; sampling and regularization then manage variance. Calling out interactions demonstrates understanding that parameters are not independent and that changing complexity often changes the optimal learning rate and number of trees.",
+      "difficulty": "advanced",
+      "tags": [
+        "hyperparameter-tuning",
+        "eta",
+        "n_estimators",
+        "max_depth",
+        "min_child_weight",
+        "subsample",
+        "colsample",
+        "early-stopping"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You notice your XGBoost model overfits: training AUC is very high, validation AUC is much lower. Which set of changes most directly increases regularization, balancing both weight regularization and tree structure?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Increase max_depth, decrease min_child_weight, decrease gamma",
+        "B. Increase reg_alpha and/or reg_lambda; increase min_child_weight; increase gamma; consider reducing max_depth",
+        "C. Increase eta and increase n_estimators substantially",
+        "D. Set subsample=1 and colsample_bytree=1 to use all data and features"
+      ],
+      "correct_answer": "B",
+      "explanation": "reg_alpha (L1) and reg_lambda (L2) regularize leaf weights. Structural regularization controls tree complexity: higher min_child_weight makes it harder to create leaves with few effective samples; higher gamma requires a larger loss reduction to make a split; reducing max_depth limits interaction complexity. Increasing eta and estimators (C) can worsen overfitting if not paired with early stopping, and using all rows/features each tree (D) typically increases variance/overfit.",
+      "difficulty": "beginner",
+      "tags": [
+        "regularization",
+        "reg_alpha",
+        "reg_lambda",
+        "min_child_weight",
+        "gamma",
+        "max_depth"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have high-cardinality categorical features (e.g., merchant_id with 200k unique values) in a tabular dataset. Which approach is generally most appropriate, and what leakage pitfall must you avoid?\n",
+      "question_type": "mc",
+      "options": [
+        "A. One-hot encode all categories; it is always safe and usually best for trees",
+        "B. Target encode using the full dataset’s labels to compute category means, then split into train/validation/test",
+        "C. Use target encoding (with smoothing) computed in a leakage-safe way (e.g., within CV folds / using only past data for time series), or use XGBoost’s native categorical handling when available and appropriate; avoid computing encodings using validation/test labels",
+        "D. Drop the feature because XGBoost cannot use categorical variables"
+      ],
+      "correct_answer": "C",
+      "explanation": "High-cardinality one-hot can explode dimensionality and overfit. Target encoding is often effective but is extremely leakage-prone if you compute category statistics using labels from validation/test (or future time). The safe pattern is CV/OOF encoding (compute encoding on training fold, apply to held-out fold) or time-aware encoding for temporal data. XGBoost also offers native categorical support in some configurations, which can be a good alternative depending on version and constraints.",
+      "difficulty": "intermediate",
+      "tags": [
+        "categorical-features",
+        "target-encoding",
+        "native-categorical",
+        "leakage",
+        "feature-engineering"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a 5-class classification problem with XGBoost. Classes are imbalanced (one class is 60%, others are rare). Describe an end-to-end setup: objective, evaluation metrics, how you would handle imbalance, and what you would NOT do compared to binary classification.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a multiclass objective such as multi:softprob with num_class=5 to get per-class probabilities. Evaluate with multiclass-appropriate metrics such as macro-F1, weighted-F1, per-class precision/recall, and/or log loss; also consider top-k accuracy if the application supports it. For imbalance, consider class weights (sample_weight) to upweight rare classes, and evaluate with macro-averaged metrics to avoid majority-class dominance; you can also use stratified splits (if i.i.d.) or group/time-aware stratification where applicable.\n\nWhat not to do: don’t apply a single decision threshold like 0.5 as in binary classification. Instead, use argmax over class probabilities (or cost-sensitive decision rules / class-specific thresholds if you’re optimizing a business cost matrix). Also, avoid using binary-only settings like scale_pos_weight (which is primarily for binary) as the sole imbalance fix; use per-row weights or resampling strategies if needed.",
+      "explanation": "Multiclass changes both the objective and the decision rule. Probability calibration and evaluation should reflect all classes, especially under imbalance. Macro metrics highlight performance on rare classes; log loss measures probability quality. Thresholding is not a single scalar decision in multiclass unless you define a custom cost-based rule.",
+      "difficulty": "intermediate",
+      "tags": [
+        "multiclass",
+        "metrics",
+        "class-imbalance",
+        "objectives",
+        "evaluation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Match the XGBoost objective to the type of output you get at prediction time (conceptually). Which option is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A. binary:logistic outputs raw margins (log-odds); binary:logitraw outputs probabilities in [0,1]",
+        "B. binary:logistic outputs probabilities in [0,1]; binary:logitraw outputs raw margins (log-odds)",
+        "C. multi:softprob outputs a single class label; multi:softmax outputs a probability vector",
+        "D. reg:squarederror outputs probabilities in [0,1]"
+      ],
+      "correct_answer": "B",
+      "explanation": "binary:logistic applies the sigmoid to produce probabilities; binary:logitraw returns the raw score (margin), which is typically the log-odds before sigmoid. For multiclass, multi:softprob outputs a probability distribution over classes, while multi:softmax outputs the argmax class label. reg:squarederror is regression and outputs a real-valued prediction, not a probability unless you explicitly calibrate/clip it.",
+      "difficulty": "beginner",
+      "tags": [
+        "objectives",
+        "binary-classification",
+        "multiclass",
+        "outputs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to build a stacked model: base model is XGBoost; meta-model is logistic regression. What is the correct way to generate training data for the meta-model to avoid leakage?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Fit XGBoost on the full training set, generate predictions on the same training set, and train the meta-model on those predictions",
+        "B. Fit XGBoost on the full training set, generate predictions on the validation set only, and train the meta-model on validation predictions",
+        "C. Use K-fold CV on the training set to generate out-of-fold (OOF) predictions for every training row; train the meta-model on OOF predictions; then refit XGBoost on full training and predict test for meta-model input",
+        "D. Train the meta-model directly on the original features plus the XGBoost feature importances"
+      ],
+      "correct_answer": "C",
+      "explanation": "The meta-model must be trained on predictions that were generated by a model that did not see that row during training—otherwise it learns from overly optimistic, in-sample predictions and leaks target information. OOF predictions provide an unbiased training signal for the meta-model. Afterward, you refit the base model on all training data to produce test-time base predictions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "stacking",
+        "out-of-fold",
+        "leakage",
+        "blending"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re modeling credit line increases with XGBoost. Business requires that predicted approval probability must be non-decreasing with income and non-increasing with existing debt (all else equal). How would you enforce this in XGBoost, and what is a key tradeoff?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use monotonic constraints in XGBoost by specifying a constraint vector aligned to feature order, e.g., income: +1 (monotone increasing), debt: -1 (monotone decreasing), and 0 for unconstrained features. In Python this is typically done via params like monotone_constraints or monotonic_constraints (depending on API), passing something like \"(1,-1,0,0,...)\" or a feature-name mapping if supported.\n\nTradeoff: constraints can reduce maximum achievable accuracy because they restrict the set of functions the model can learn; however, they can improve generalization, enforce business rules, and increase interpretability/robustness (especially under distribution shift).",
+      "explanation": "Monotonic constraints force every split and leaf value arrangement to respect a monotone relationship between a feature and the prediction. This is useful for regulated domains and for preventing counterintuitive behavior. The main downside is reduced flexibility: if the true relationship is non-monotonic or if features are highly correlated, the constraint can hurt performance or shift importance to proxy features.",
+      "difficulty": "advanced",
+      "tags": [
+        "monotonic-constraints",
+        "feature-constraints",
+        "interpretability",
+        "business-rules"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In learning-to-rank, you want to rank products for each search query. You have features for (query, product) pairs and relevance labels (0–3). When is it appropriate to use XGBoost ranking objectives (e.g., rank:pairwise, rank:ndcg), and what is the most important data formatting requirement?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use ranking objectives when the goal is to optimize ordering within groups (e.g., per query) rather than predict an absolute probability/label. XGBoost ranking objectives are designed to learn relative preferences within each group and are evaluated with ranking metrics like NDCG/MAP.\n\nKey requirement: you must provide group/query boundaries (e.g., a group size array in XGBoost) so the algorithm knows which rows belong to the same query. You must not mix items from different queries in a single group, and train/validation splits should respect grouping (avoid splitting items from the same query across folds if your evaluation assumes per-query ranking).",
+      "explanation": "Ranking tasks are fundamentally different from classification/regression: the loss is defined over sets of candidates for the same query/user/context. XGBoost’s ranking objectives compute gradients based on within-group comparisons (pairwise) or listwise approximations (NDCG). Without correct group information, the model would compare unrelated items across queries, producing meaningless training signals and invalid evaluation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ranking",
+        "learning-to-rank",
+        "ndcg",
+        "map",
+        "grouping"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re training XGBoost on weekly demand forecasting data with features such as:\n- rolling_mean_4w = mean(demand over last 4 weeks)\n- expanding_mean = mean(demand since product launch)\n- lag_1w = demand last week\n\nYou plan to do cross-validation. Which approach best prevents temporal leakage while still using CV?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Standard KFold with shuffle=True, because lag features already encode time",
+        "B. Rolling/forward-chaining (walk-forward) CV where each fold trains on earlier weeks and validates on subsequent weeks; compute rolling/expanding features using only data available up to each row’s timestamp",
+        "C. Random split with stratification by week number to preserve seasonality",
+        "D. Leave-One-Out CV, because it uses almost all data for training"
+      ],
+      "correct_answer": "B",
+      "explanation": "Time series requires forward-chaining evaluation: training windows must precede validation windows. Leakage often comes not only from the split but from feature generation: rolling/expanding statistics must be computed with a strict lookback (using only past data). Shuffled folds (A/C) will mix future and past, and LOOCV (D) is especially leaky for temporal problems because almost every training set contains future data relative to the held-out point.",
+      "difficulty": "intermediate",
+      "tags": [
+        "time-series",
+        "temporal-leakage",
+        "rolling-cv",
+        "feature-engineering"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building an XGBoost model to predict whether a user will churn in the next 30 days. Your dataset contains multiple rows per user over time (daily snapshots), with columns: user_id, snapshot_date, features..., label (churn_in_next_30d). Which splitting strategy is MOST appropriate to avoid overly optimistic validation?\n\nAssume you want a realistic estimate of future performance.\n",
+      "question_type": "mc",
+      "options": [
+        "A. Randomly split rows into train/validation/test (e.g., 80/10/10), stratified by label",
+        "B. Split by user_id only (users in train never appear in validation/test), ignoring time ordering",
+        "C. Time-based split by snapshot_date so validation/test are later dates than train; additionally ensure no user’s future rows leak into train relative to each evaluation window",
+        "D. Use k-fold CV with shuffling to reduce variance of the estimate"
+      ],
+      "correct_answer": "C",
+      "explanation": "For temporally-evolving tabular data, a random row split leaks future information because later snapshots of the same user (or correlated population shifts) can end up in train while earlier snapshots are in validation. A time-based split best matches the production scenario (train on past, predict future). When you have multiple rows per entity, you must also ensure that for each evaluation period you don’t train on rows that occur after the validation/test period for the same entity (or that include features computed using future data). User-only splits (B) can be useful for cold-start/generalization to unseen users, but it does not guarantee temporal correctness if your production use case predicts future behavior for existing users.",
+      "difficulty": "beginner",
+      "tags": [
+        "splitting",
+        "time-based-split",
+        "group-based-split",
+        "leakage"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Regularization & tree complexity tradeoffs: You’re seeing overfitting and very complex trees. Which set of changes is most directly aimed at making splits harder and leaves less “fragile,” and how do these interact with `reg_alpha`/`reg_lambda`?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "To make trees simpler/more conservative: reduce `max_depth`, increase `min_child_weight` (require more weighted data in a leaf), increase `gamma` (require a minimum loss reduction to split), and use `subsample`/`colsample_bytree` (<1.0). These control tree growth and split permissiveness. `reg_lambda` (L2) and `reg_alpha` (L1) regularize leaf weights (the magnitude of leaf scores) rather than directly preventing splits; stronger leaf regularization can reduce overfitting but often works best in combination with structural constraints like depth/min_child_weight/gamma. Practical heuristic: first constrain tree structure (depth/min_child_weight/gamma, subsampling), then adjust `reg_lambda`/`reg_alpha` to further dampen leaf weights and improve generalization.",
+      "explanation": "In boosted trees, overfitting often comes from too many degrees of freedom: deep trees, tiny leaves, and easy splits. Structural parameters control the hypothesis space; leaf regularization controls how extreme predictions can get at the leaves. They complement each other: you can have shallow trees with overly large leaf weights (fixed by regularization) or deep trees with many small leaves (fixed by structural constraints). Interviewers often want to see that you know which knobs affect *structure* vs *leaf values* and how to tune them pragmatically.",
+      "difficulty": "advanced",
+      "tags": [
+        "regularization",
+        "max_depth",
+        "min_child_weight",
+        "gamma",
+        "reg_alpha",
+        "reg_lambda",
+        "overfitting",
+        "hyperparameter_tuning"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Feature importance pitfalls: Your XGBoost model shows one feature as overwhelmingly important by built-in gain importance. Later you discover it’s highly correlated with another feature and may also contain subtle leakage. What is the best practice to assess whether the feature is truly useful and stable?",
+      "question_type": "mc",
+      "options": [
+        "A. Trust built-in gain importance; XGBoost importance is always reliable even with correlated features.",
+        "B. Use permutation importance (ideally on a validation set), check stability across CV folds, and consider SHAP for local explanations; also rerun after removing suspected leakage features to see performance impact.",
+        "C. Use only SHAP values on the training set; if SHAP is large, the feature must be causal.",
+        "D. Drop all correlated features automatically; correlation always means redundancy and no performance loss."
+      ],
+      "correct_answer": "B",
+      "explanation": "Built-in importances (gain/weight/cover) can be misleading with correlated features (importance can be arbitrarily split) and with leakage (leaky features dominate). Permutation importance tests marginal utility on held-out data (though correlation can still complicate interpretation), and checking across folds reveals stability. SHAP is useful for understanding model behavior, but it does not prove causality and can also be affected by correlation/leakage. The most practical check is: does performance drop when the feature is removed, and is the effect consistent across folds/time splits?",
+      "difficulty": "intermediate",
+      "tags": [
+        "feature_importance",
+        "correlated_features",
+        "leakage",
+        "permutation_importance",
+        "shap",
+        "model_explainability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "End-to-end workflow + best iteration: Describe a robust sklearn/XGBoost training workflow for tabular data that includes:\n- train/valid/test split (or CV)\n- `eval_set` and early stopping\n- selecting `best_iteration`\n- refitting on more data after tuning\n\nBe explicit about what data is used at each step and how you avoid leakage.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One robust workflow:\n1) Split data into train and test once (test untouched until the end). If time series, do a time-aware split.\n2) On the training portion, do CV or a train/valid split for tuning. Fit all preprocessing (imputation/encoding/scaling) inside the CV fold or on train only.\n3) For each candidate hyperparameter set, train XGBoost with a large `n_estimators` as an upper bound and use `eval_set=[(X_valid, y_valid)]` with `early_stopping_rounds` so the effective number of trees is chosen by validation.\n4) Record `best_iteration` (and the validation score) for model selection. Ensure validation weights/metrics match training if using `sample_weight`.\n5) After choosing hyperparameters, refit a final model on train+valid (all non-test data). Either: (a) set `n_estimators = best_iteration+1` (or a robust aggregate like median across folds) and train without early stopping, or (b) keep early stopping but use an internal split within train+valid.\n6) Evaluate once on the held-out test set.\nThis avoids leakage by never using test labels (or test-derived preprocessing stats) during tuning and by ensuring early stopping uses only validation data.",
+      "explanation": "Interviewers look for disciplined separation of concerns: (1) a final untouched test set, (2) model selection using only training/validation data, (3) preprocessing fit only on training data within each split, and (4) correct use of early stopping as a way to pick the effective number of trees. Refitting on more data after tuning is common, but you must not “peek” at the test set for early stopping or hyperparameter choices.",
+      "difficulty": "advanced",
+      "tags": [
+        "workflow",
+        "train_valid_test_split",
+        "eval_set",
+        "early_stopping_rounds",
+        "best_iteration",
+        "refit",
+        "leakage_prevention"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Objectives vs metrics: You’re building a fraud model. The business cares about catching as much fraud as possible at a very low false positive rate, and your final decision uses a threshold tuned to a review capacity.\n\nWhich approach is most appropriate?\n\nAssume you’re using XGBoost for binary classification.",
+      "question_type": "mc",
+      "options": [
+        "A. Optimize `objective='binary:logistic'` and use `eval_metric='aucpr'` or a custom metric aligned to the operating region; tune the threshold on a validation set to meet capacity/cost constraints.",
+        "B. Optimize `objective='binary:logistic'` and use `eval_metric='logloss'` only; threshold choice doesn’t matter for business outcomes.",
+        "C. Optimize `objective='rank:pairwise'` because fraud is rare; it always improves precision at low FPR.",
+        "D. Optimize `objective='binary:hinge'` so predictions are 0/1 and you don’t need thresholding."
+      ],
+      "correct_answer": "A",
+      "explanation": "Most teams train probabilistic classifiers with `binary:logistic` and then evaluate using metrics aligned to the business objective. For heavy imbalance and “top-of-list” performance, PR-AUC (or precision/recall at a fixed threshold or fixed alert volume) is often more informative than ROC-AUC. You still need threshold selection (or top-K selection) based on capacity/costs, and that should be done on validation data (and confirmed on a test set). Logloss is useful for calibration but may not reflect performance at the operating point.",
+      "difficulty": "intermediate",
+      "tags": [
+        "objectives",
+        "metrics",
+        "class_imbalance",
+        "pr_auc",
+        "business_alignment",
+        "thresholding"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Heteroskedastic regression: Your regression target has much higher noise for some observations (you trust some labels more than others). How would you use XGBoost to account for this, and what should you watch out for when choosing the metric?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `sample_weight` to upweight reliable observations and downweight noisy ones so the objective focuses on trusted labels. For example, set weight proportional to inverse variance (or another reliability proxy). Ensure your evaluation metric matches: if you care about weighted error, compute a weighted metric on validation/test (and pass validation weights for early stopping). Also pick an objective consistent with the error you care about (e.g., squared error emphasizes large residuals; MAE is more robust).",
+      "explanation": "Weights are a practical way to handle heteroskedasticity when you have a proxy for label noise. But you can accidentally optimize one thing and report another: if training uses weights but validation metrics are unweighted, early stopping and model selection can be biased toward the wrong data regime. Also, squared-error objectives will still emphasize large residuals; if large residuals are precisely the noisy cases, you may prefer robust objectives/metrics (MAE/Huber/quantile) in addition to weighting.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sample_weights",
+        "heteroskedastic_regression",
+        "objectives",
+        "metrics",
+        "workflow"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Sample weights end-to-end (classification): You have a severe class imbalance and also different misclassification costs per example. You decide to use per-row `sample_weight`.\n\nWhich statement is correct about how weights interact with training and evaluation in XGBoost’s sklearn API?",
+      "question_type": "mc",
+      "options": [
+        "A. `sample_weight` affects training only; evaluation metrics in `eval_set` are always unweighted.",
+        "B. `sample_weight` affects both training and evaluation if you pass `sample_weight_eval_set` (or equivalent) for the validation set; otherwise validation metrics may be computed unweighted.",
+        "C. Weights are ignored for tree splitting in XGBoost; they only rescale the final predicted probabilities.",
+        "D. Using `scale_pos_weight` and `sample_weight` together is always recommended because they multiply to improve AUC."
+      ],
+      "correct_answer": "B",
+      "explanation": "In practice, you must ensure weights are applied consistently. XGBoost uses weights in the objective (gradients/hessians) and thus affects split decisions and leaf values. For evaluation, you need to provide weights for the validation set too (API varies by version: e.g., `sample_weight_eval_set` in the sklearn wrapper) if you want weighted metrics/early stopping decisions. Otherwise you can end up optimizing a weighted objective but early-stopping on an unweighted metric, which can misalign training with business costs.",
+      "difficulty": "advanced",
+      "tags": [
+        "sample_weights",
+        "class_imbalance",
+        "eval_set",
+        "early_stopping",
+        "metrics_objectives_alignment"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Target leakage via encoding: You want to do target encoding for a high-cardinality categorical feature and then train XGBoost. What is the correct approach to avoid leakage?\n\nAssume you will evaluate with cross-validation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use out-of-fold target encoding: for each CV fold, compute the encoding statistics (e.g., mean target per category with smoothing) using only the training portion of that fold, then apply them to the validation portion. Optionally use nested CV or a separate holdout for final evaluation. Never compute target encodings using the full dataset before splitting. Also handle unseen categories in validation/test with a global prior and apply smoothing/regularization to reduce noise.",
+      "explanation": "Target encoding directly uses the label to create a feature, so computing it on all data leaks label information into validation/test. Out-of-fold encoding preserves the causal structure: validation rows are encoded using statistics computed without their labels. This is a common real-world failure mode that can produce spectacular offline metrics and poor deployment performance.",
+      "difficulty": "advanced",
+      "tags": [
+        "target_leakage",
+        "encoding",
+        "cross_validation",
+        "debugging",
+        "workflow"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Data leakage debugging: You get extremely high validation AUC (0.99+) very quickly, but when you deploy, performance collapses. Which is the most plausible leakage symptom and next debugging step?",
+      "question_type": "mc",
+      "options": [
+        "A. XGBoost is too powerful; deploy a linear model instead.",
+        "B. Leakage is unlikely if you used early stopping; focus on tuning `max_depth`.",
+        "C. Likely target leakage (features contain future information or post-outcome signals). Audit features for time travel, post-event fields, and encodings computed using the full dataset (e.g., target encoding without proper CV).",
+        "D. The model is underfitting; increase `n_estimators` and `learning_rate`."
+      ],
+      "correct_answer": "C",
+      "explanation": "AUC near 1.0 on validation is often a red flag, especially when real-world performance is poor. Common leakage sources: timestamps that allow future info, features derived after the label is known, IDs that proxy the target, or preprocessing that used the full dataset (e.g., target encoding, imputation statistics, scaling) rather than being fit on train only. The right response is a feature and pipeline audit: verify time-aware splits, recompute encodings within folds, and ensure all transformations are fit only on training data for each split.",
+      "difficulty": "intermediate",
+      "tags": [
+        "data_leakage",
+        "debugging",
+        "target_leakage",
+        "encoding",
+        "validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe the following pattern when training XGBoost with a proper train/valid split:\n- Training logloss keeps decreasing steadily.\n- Validation logloss improves for a while, then starts getting worse.\n\nWhich change is usually the best *first* thing to try (assuming you already use early stopping)?",
+      "question_type": "mc",
+      "options": [
+        "A. Increase `max_depth` significantly to fit the training set even better.",
+        "B. Add regularization / reduce tree complexity (e.g., lower `max_depth`, increase `min_child_weight`, add `subsample`/`colsample_bytree`, or increase `reg_lambda`).",
+        "C. Remove the validation set and train on all data to avoid the divergence.",
+        "D. Switch the objective to a different one; hyperparameters do not affect this pattern."
+      ],
+      "correct_answer": "B",
+      "explanation": "This is classic overfitting: training keeps improving while validation degrades after some point. Early stopping helps pick the best iteration, but if the gap is large or the best iteration is very early, you usually need stronger regularization or less complex trees. Typical first moves: reduce `max_depth`, increase `min_child_weight`, increase `gamma` (min split loss), use `subsample` and `colsample_bytree`, and/or increase `reg_lambda` (L2). Lowering `learning_rate` can also help, but complexity/regularization knobs are often the first diagnostic step.",
+      "difficulty": "intermediate",
+      "tags": [
+        "debugging",
+        "train_valid_divergence",
+        "overfitting",
+        "regularization",
+        "hyperparameter_tuning"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Bias/variance intuition for boosted trees: which statement is most accurate?\n\nAssume a fixed dataset size and no leakage.",
+      "question_type": "mc",
+      "options": [
+        "A. Boosting mainly reduces bias by adding trees sequentially; variance can still increase and cause overfitting, especially with too many trees or overly complex trees.",
+        "B. Boosting always reduces variance because it averages many trees, like bagging; it rarely overfits.",
+        "C. Boosting reduces bias only when trees are very deep; shallow trees cannot reduce bias.",
+        "D. Overfitting in boosting is caused only by high learning_rate; number of trees and depth do not matter."
+      ],
+      "correct_answer": "A",
+      "explanation": "Gradient boosting is primarily a bias-reduction technique: each new tree corrects residual errors of the ensemble. However, as you add more trees (or allow very complex trees), the model can start fitting noise, increasing effective variance and hurting validation performance. Unlike bagging (e.g., Random Forest), boosting is not simply variance-reduction via averaging independent trees; it’s a sequential, error-correcting procedure that can overfit without constraints (early stopping, shrinkage, subsampling, regularization, limiting depth).",
+      "difficulty": "intermediate",
+      "tags": [
+        "bias_variance",
+        "boosting_intuition",
+        "overfitting",
+        "tree_complexity"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to keep model capacity roughly similar but speed up training. Which change is most likely to preserve performance (all else equal) and why?\n\nAssume you’re using early stopping on a stable validation split.\n\n1) `learning_rate=0.1, n_estimators=500`\n2) `learning_rate=0.05, n_estimators=1000`",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A common heuristic is that smaller `learning_rate` typically needs more trees (boosting rounds) to reach a similar training loss, while larger `learning_rate` needs fewer trees but can be less stable and overfit sooner. So (1) may train faster (fewer rounds) but can require stronger regularization/early stopping to avoid overshooting; (2) is often more stable and can generalize better but takes longer. With early stopping, you set `n_estimators` high as an upper bound; the effective number of trees is `best_iteration+1`. The tradeoff is step size vs number of additive steps.",
+      "explanation": "Boosting is additive: each tree is a step in function space. `learning_rate` (eta) scales each step. Halving the learning rate often requires roughly ~2× trees to reach similar fit, but the relationship isn’t exact because regularization, subsampling, and tree constraints change the dynamics. In practice, many engineers start with a moderate learning rate (0.05–0.2) and rely on early stopping; if validation is noisy/overfitting, they reduce `learning_rate` and allow more rounds.",
+      "difficulty": "beginner",
+      "tags": [
+        "learning_rate",
+        "n_estimators",
+        "early_stopping",
+        "training_mechanics",
+        "hyperparameter_tradeoffs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You train an XGBoost model with early stopping:\n\n```python\nfrom xgboost import XGBClassifier\n\nmodel = XGBClassifier(\n    n_estimators=2000,\n    learning_rate=0.05,\n    max_depth=4,\n    subsample=0.8,\n    colsample_bytree=0.8,\n    eval_metric=\"logloss\",\n    random_state=0\n)\n\nmodel.fit(\n    X_train, y_train,\n    eval_set=[(X_valid, y_valid)],\n    early_stopping_rounds=50,\n    verbose=False\n)\n```\n\nWhat does `n_estimators=2000` actually mean here, and which iteration should you use at inference time?",
+      "question_type": "mc",
+      "options": [
+        "A. The model always trains exactly 2000 trees; early stopping only affects logging. Use all 2000 trees at inference.",
+        "B. `n_estimators` is an upper bound on boosting rounds; training may stop earlier. Use the best iteration (e.g., `model.best_iteration`) / best number of trees for inference.",
+        "C. `n_estimators` sets the number of features sampled per tree; early stopping determines depth. Inference uses `max_depth` only.",
+        "D. Early stopping prunes trees after training; inference uses the pruned forest but `n_estimators` is still the final count."
+      ],
+      "correct_answer": "B",
+      "explanation": "`n_estimators` (a.k.a. number of boosting rounds) is the maximum number of trees the algorithm is allowed to add. With `early_stopping_rounds`, training stops when the validation metric hasn’t improved for that many rounds, and XGBoost records the best iteration. For inference you should use the best iteration (or best number of trees) rather than blindly using the maximum. In modern XGBoost sklearn wrappers, `predict` typically respects early stopping internally, but in some versions you may need to pass `iteration_range=(0, model.best_iteration+1)` (or historically use `best_ntree_limit`).",
+      "difficulty": "beginner",
+      "tags": [
+        "early_stopping",
+        "n_estimators",
+        "best_iteration",
+        "sklearn_api",
+        "training_mechanics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A stakeholder asks: “Which features matter most?” You compute XGBoost feature importance and see different rankings depending on importance_type='weight' vs 'gain'. Explain what 'weight', 'gain', and 'cover' mean in XGBoost feature importance, one pitfall of relying on them, and when you would use SHAP instead (high level).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "'weight' counts how many times a feature is used in splits across all trees (frequency). 'gain' measures the average (or total, depending on API) improvement in the objective brought by splits on that feature, so it reflects contribution to loss reduction. 'cover' relates to the number of samples (or summed Hessians) affected by splits on that feature—how broadly it applies. Pitfalls: these importances can be biased (e.g., toward high-cardinality/continuous features, or toward features that appear early), can be unstable with correlated features (importance gets split among them), and they are global summaries that don’t show directionality or per-row explanations. SHAP is preferred when you need consistent, additive attributions and per-instance explanations (e.g., why this specific prediction is high), and for more reliable global importance via aggregation of absolute SHAP values—while still being mindful of correlation/causality limitations.",
+      "explanation": "This checks whether candidates can interpret common importance outputs, warn about correlation and bias, and know when SHAP provides more actionable explanations (local + global) than split-based heuristics.",
+      "difficulty": "advanced",
+      "tags": [
+        "interpretability",
+        "feature-importance",
+        "gain",
+        "weight",
+        "cover",
+        "shap"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building an imbalanced binary classifier (1% positive) with XGBoost. You need both good ranking and a decision threshold for an alerting system. Which approach is most appropriate?\n\nA) Optimize accuracy and use threshold 0.5; accuracy is robust to imbalance\nB) Use AUC-ROC (or PR-AUC) to assess ranking; choose threshold based on business cost/constraints (e.g., precision/recall target) and validate it on a separate set; consider scale_pos_weight or class weights\nC) Only optimize F1 during training; AUC and logloss are irrelevant\nD) Use logloss only; threshold selection is unnecessary if logloss is low",
+      "question_type": "mc",
+      "options": [
+        "A) Optimize accuracy and use threshold 0.5; accuracy is robust to imbalance",
+        "B) Use AUC-ROC (or PR-AUC) to assess ranking; choose threshold based on business cost/constraints (e.g., precision/recall target) and validate it on a separate set; consider scale_pos_weight or class weights",
+        "C) Only optimize F1 during training; AUC and logloss are irrelevant",
+        "D) Use logloss only; threshold selection is unnecessary if logloss is low"
+      ],
+      "correct_answer": "B",
+      "explanation": "On severe imbalance, accuracy and a 0.5 threshold are usually misleading. AUC-ROC/PR-AUC evaluate ranking, while threshold selection should be driven by operating requirements (e.g., max false positives, minimum recall) and validated to avoid overfitting the threshold. scale_pos_weight (or sample weights) can help the learner pay more attention to positives; you still need to evaluate with appropriate metrics.",
+      "difficulty": "intermediate",
+      "tags": [
+        "evaluation-metrics",
+        "thresholding",
+        "imbalanced-data",
+        "scale_pos_weight",
+        "auc",
+        "logloss",
+        "f1"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "How does XGBoost handle missing values during training and prediction, and when would you still consider explicit imputation? Mention the idea of a “default direction” in splits.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "XGBoost can handle missing values natively: when evaluating a split, it learns a default direction (send missing values to the left or right child) that optimizes the split gain. At prediction time, if a feature value is missing, the instance follows that learned default branch. You might still impute when: (a) your preprocessing/feature generation produces NaNs that should represent a specific value rather than “unknown,” (b) you need consistent handling across multiple models in an ensemble/stack, (c) you plan to use encoders/transformers that don’t accept NaNs, or (d) missingness is better represented explicitly (e.g., add missing-indicator features) depending on the domain. Often, for pure tree-based XGBoost with numeric inputs, imputation is not strictly required.",
+      "explanation": "This tests practical knowledge: XGBoost’s learned missing-value routing often removes the need for imputation, but real pipelines may still require it due to upstream transformations or semantics of missingness.",
+      "difficulty": "intermediate",
+      "tags": [
+        "missing-values",
+        "default-direction",
+        "preprocessing",
+        "pipelines"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following sklearn-style training code:\n\n```python\nfrom xgboost import XGBClassifier\n\nmodel = XGBClassifier(\n    n_estimators=5000,\n    learning_rate=0.05,\n    max_depth=6,\n    subsample=0.8,\n    colsample_bytree=0.8,\n    eval_metric=\"auc\",\n    random_state=42,\n)\n\nmodel.fit(\n    X_train, y_train,\n    eval_set=[(X_val, y_val)],\n    verbose=200,\n    early_stopping_rounds=100,\n)\n```\n\nWhat is the most important reason for including a separate (X_val, y_val) in eval_set here?\n\nA) It makes the model use X_val during training to reduce bias\nB) It provides a validation signal for early stopping to choose the best number of boosting rounds without using the test set\nC) It is required for XGBoost to handle missing values\nD) It automatically calibrates predicted probabilities",
+      "question_type": "mc",
+      "options": [
+        "A) It makes the model use X_val during training to reduce bias",
+        "B) It provides a validation signal for early stopping to choose the best number of boosting rounds without using the test set",
+        "C) It is required for XGBoost to handle missing values",
+        "D) It automatically calibrates predicted probabilities"
+      ],
+      "correct_answer": "B",
+      "explanation": "early_stopping_rounds monitors performance on a validation set and stops adding trees when the metric stops improving, selecting an effective number of boosting rounds. This is model selection and should not be done on the test set. The validation set is not used to fit trees (beyond guiding stopping). Missing values and calibration are unrelated to eval_set.",
+      "difficulty": "beginner",
+      "tags": [
+        "sklearn-workflow",
+        "eval_set",
+        "early-stopping",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to speed up XGBoost training on a dataset with 5 million rows and 300 features. Which statement is most accurate at a high level?\n\nA) Setting tree_method='hist' (or 'gpu_hist' if on GPU) can significantly speed up training vs exact methods; max_bin can trade accuracy for speed\nB) Training time is mostly determined by reg_alpha/reg_lambda; increasing them always makes training faster\nC) GPU is always faster than CPU regardless of dataset size and feature count\nD) Increasing n_estimators always reduces training time because trees become smaller",
+      "question_type": "mc",
+      "options": [
+        "A) Setting tree_method='hist' (or 'gpu_hist' if on GPU) can significantly speed up training vs exact methods; max_bin can trade accuracy for speed",
+        "B) Training time is mostly determined by reg_alpha/reg_lambda; increasing them always makes training faster",
+        "C) GPU is always faster than CPU regardless of dataset size and feature count",
+        "D) Increasing n_estimators always reduces training time because trees become smaller"
+      ],
+      "correct_answer": "A",
+      "explanation": "Histogram-based algorithms reduce the cost of finding split points by binning feature values, typically making training much faster on large datasets. GPU can be faster but is not universally faster (depends on data transfer, sparsity, depth, and hardware). Regularization affects model structure but is not the primary driver of compute. More estimators generally increases training time.",
+      "difficulty": "beginner",
+      "tags": [
+        "performance",
+        "compute",
+        "tree_method",
+        "hist",
+        "gpu"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In many real-world problems, XGBoost’s predicted probabilities can be poorly calibrated (e.g., overconfident). Name two common signs of miscalibration and describe, at a high level, how Platt scaling and isotonic regression differ as calibration methods (including when you might prefer one).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Signs: (1) Reliability curve deviates from the diagonal (e.g., among samples predicted at 0.8, only ~0.6 are positive). (2) Good ranking metrics (AUC) but poor probabilistic metrics (log loss/Brier score), or systematic over/under-confidence across score ranges. Platt scaling fits a logistic regression on the model’s raw scores/probabilities using a calibration set (parametric, low variance, works well with limited calibration data). Isotonic regression fits a non-parametric monotonic function (more flexible, can correct complex miscalibration but higher risk of overfitting; typically needs more calibration data). Prefer Platt when calibration set is small; prefer isotonic when you have enough data and miscalibration is not well-captured by a sigmoid.",
+      "explanation": "This checks that the candidate distinguishes ranking vs probability quality, knows how to detect miscalibration, and understands the bias/variance tradeoff between parametric (Platt) and non-parametric (isotonic) calibration.",
+      "difficulty": "intermediate",
+      "tags": [
+        "calibration",
+        "probabilities",
+        "platt-scaling",
+        "isotonic-regression",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have two categorical features: (1) a low-cardinality feature with 5 categories, and (2) a high-cardinality feature with ~50,000 categories. In a typical sklearn + XGBoost pipeline (without using XGBoost’s native categorical support), which encoding choices are most reasonable?\n\nA) One-hot encode both; it’s always best for trees\nB) One-hot encode the 5-category feature; use target encoding (with proper CV to avoid leakage) or hashing/embedding-like approach for the 50k feature\nC) Label-encode both as integers; trees will treat them as categories automatically\nD) Drop both categorical features; XGBoost can’t use them",
+      "question_type": "mc",
+      "options": [
+        "A) One-hot encode both; it’s always best for trees",
+        "B) One-hot encode the 5-category feature; use target encoding (with proper CV to avoid leakage) or hashing/embedding-like approach for the 50k feature",
+        "C) Label-encode both as integers; trees will treat them as categories automatically",
+        "D) Drop both categorical features; XGBoost can’t use them"
+      ],
+      "correct_answer": "B",
+      "explanation": "One-hot is usually fine for low cardinality. For very high cardinality, one-hot can explode dimensionality and memory, slowing training and risking overfitting. Target encoding can work well but must be done in a leakage-safe way (fit encoding on training folds only). Plain integer label encoding is generally wrong because XGBoost will interpret the numeric codes as ordered/continuous splits unless using native categorical handling explicitly.",
+      "difficulty": "intermediate",
+      "tags": [
+        "categorical-features",
+        "one-hot-encoding",
+        "target-encoding",
+        "leakage",
+        "pipelines"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re doing hyperparameter search for XGBoost with early stopping. Describe a robust strategy to avoid data leakage and still get an unbiased estimate of generalization. Include how you would handle: (1) early stopping, (2) final model training, and (3) evaluation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A robust approach is nested or at least properly separated validation: (1) Use CV (or repeated CV) on the training set for hyperparameter selection; within each CV fold, perform early stopping using that fold’s validation portion (eval_set) and record the best_iteration. (2) After selecting hyperparameters, retrain a final model on the full training data (train+validation used for tuning) using either: (a) n_estimators set to the average/median best_iteration from CV, or (b) early stopping again using a new internal split carved out from the training data (not the test set). (3) Evaluate once on a locked test set that was never used for tuning or early stopping decisions. If preprocessing includes target encoding, scaling, imputation, etc., fit those steps only on the training portion within each fold (e.g., sklearn Pipeline) to avoid leakage.",
+      "explanation": "This tests whether the candidate understands that early stopping is itself a form of model selection and must not touch the test set. It also checks practical workflow: per-fold early stopping, aggregating best_iteration, and using Pipelines so preprocessing is fit only on training folds.",
+      "difficulty": "advanced",
+      "tags": [
+        "cross-validation",
+        "hyperparameter-search",
+        "early-stopping",
+        "leakage",
+        "sklearn-pipeline"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a dataset with time-based leakage risk (events over time). You want to tune XGBoost hyperparameters with early stopping. Which approach is most appropriate?\n\nA) Random K-fold CV with early stopping on each fold using the full dataset as eval_set\nB) TimeSeriesSplit (or a forward-chaining split) where each fold has its own validation window; early stopping is done within each fold on that fold’s validation set\nC) Fit once on all data with early stopping using the test set as eval_set to pick the best iteration\nD) Use a single holdout split and reuse it for both early stopping and final performance reporting",
+      "question_type": "mc",
+      "options": [
+        "A) Random K-fold CV with early stopping on each fold using the full dataset as eval_set",
+        "B) TimeSeriesSplit (or a forward-chaining split) where each fold has its own validation window; early stopping is done within each fold on that fold’s validation set",
+        "C) Fit once on all data with early stopping using the test set as eval_set to pick the best iteration",
+        "D) Use a single holdout split and reuse it for both early stopping and final performance reporting"
+      ],
+      "correct_answer": "B",
+      "explanation": "For time-ordered data, you must respect temporal order to avoid leakage. Forward-chaining/TimeSeriesSplit ensures training uses only past data relative to validation. Early stopping must be computed on the fold’s validation split, not on the full dataset or the test set. Reusing the same holdout for both early stopping and final reporting biases the reported metric upward (you’ve tuned to that split).",
+      "difficulty": "intermediate",
+      "tags": [
+        "cross-validation",
+        "early-stopping",
+        "leakage",
+        "model-selection"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In XGBoost, you can control feature subsampling at different granularities: colsample_bytree, colsample_bylevel, and colsample_bynode. Describe a practical situation where you would prefer using colsample_bynode (or bylevel) in addition to colsample_bytree, and what effect you expect on bias/variance and training stability.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "colsample_bytree samples a subset of features once per tree; colsample_bylevel samples per depth level; colsample_bynode samples per split. In high-dimensional, correlated-feature settings (e.g., many similar derived features), adding bylevel/bynode can further decorrelate splits and reduce variance/overfitting because each split (or level) sees a different feature subset. It often improves generalization but can increase bias if set too low (the model may miss useful features at a split) and can add randomness that makes results less stable across seeds. A practical use is when trees keep repeatedly splitting on a small set of correlated features; bynode/bylevel encourages exploration of alternative features and can work well with modest values (e.g., colsample_bytree=0.8, colsample_bynode=0.8) while monitoring validation metrics.",
+      "explanation": "The key is understanding the granularity: per-tree vs per-level vs per-node. More granular sampling increases randomness and typically reduces variance, but too much can underfit. Mentioning correlated features, repeated split dominance, and the stability/seed sensitivity tradeoff reflects real applied tuning.",
+      "difficulty": "advanced",
+      "tags": [
+        "hyperparameters",
+        "colsample_bytree",
+        "colsample_bylevel",
+        "colsample_bynode",
+        "bias-variance",
+        "generalization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re training an XGBoost binary classifier on a tabular dataset with ~200 numeric features. Training AUC on the train split is very high, but validation AUC is much lower (clear overfitting). You already tried reducing max_depth and increasing min_child_weight. Which next change is most directly aimed at reducing variance via feature and row sampling?\n\nA) Increase colsample_bytree and subsample toward 1.0\nB) Decrease colsample_bytree and subsample (e.g., 0.6–0.9)\nC) Increase reg_lambda to 0 and reg_alpha to 0\nD) Increase learning_rate and reduce n_estimators",
+      "question_type": "mc",
+      "options": [
+        "A) Increase colsample_bytree and subsample toward 1.0",
+        "B) Decrease colsample_bytree and subsample (e.g., 0.6–0.9)",
+        "C) Increase reg_lambda to 0 and reg_alpha to 0",
+        "D) Increase learning_rate and reduce n_estimators"
+      ],
+      "correct_answer": "B",
+      "explanation": "subsample (row sampling) and colsample_* (feature sampling) inject randomness similar to bagging/random forests, which typically reduces variance and overfitting. Increasing them toward 1.0 removes that regularization. Setting reg terms to 0 reduces regularization. Raising learning_rate usually increases overfitting risk unless paired carefully with fewer trees; it’s not the most direct variance-reduction lever here.",
+      "difficulty": "beginner",
+      "tags": [
+        "hyperparameters",
+        "subsample",
+        "colsample_bytree",
+        "bias-variance",
+        "generalization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Code review scenario (Python):\n\n```python\nimport xgboost as xgb\nfrom sklearn.model_selection import train_test_split\n\nX_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)\n\nmodel = xgb.XGBClassifier(\n    n_estimators=2000,\n    learning_rate=0.05,\n    max_depth=8,\n    subsample=1.0,\n    colsample_bytree=1.0,\n    reg_lambda=0.0,\n)\nmodel.fit(X_train, y_train)\n```\n\nThe model performs very well on training but poorly on validation. Name 3 concrete changes you would try first (parameters or training procedure) and briefly justify each.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Examples of good first changes:\n1) Add early stopping using a validation set (e.g., eval_set=[(X_val,y_val)], early_stopping_rounds=50) to stop when validation metric stops improving.\n2) Reduce complexity: lower max_depth (e.g., 3–6) and/or increase min_child_weight to make splits more conservative.\n3) Add stochastic regularization: set subsample and colsample_bytree < 1 (e.g., 0.7–0.9) to reduce variance.\nAdditional valid changes: increase reg_lambda (>0) and/or add reg_alpha, increase gamma, reduce n_estimators if not using early stopping, or lower learning_rate with appropriate early stopping.",
+      "explanation": "The configuration is aggressively prone to overfitting: deep trees (max_depth=8), no subsampling/column sampling (both 1.0), and no L2 regularization (reg_lambda=0.0), plus many boosting rounds (n_estimators=2000) without early stopping. Practical fixes target (a) stopping at the right number of trees (early stopping), (b) reducing tree complexity, and (c) adding regularization and randomness to reduce variance.",
+      "difficulty": "advanced",
+      "tags": [
+        "practical-tuning",
+        "overfitting-control",
+        "early-stopping",
+        "hyperparameters",
+        "regularization",
+        "subsample",
+        "colsample",
+        "max-depth"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re tuning XGBoost for a high-dimensional sparse dataset (e.g., one-hot encoded text or many categorical levels). You suspect many features are irrelevant.\n\nWhich regularization setting is often particularly helpful for this scenario, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "L1 regularization (reg_alpha) is often especially helpful because it encourages sparsity in leaf weights (driving some weights toward exactly zero), which can reduce overfitting when many features are irrelevant/noisy. Combined with column subsampling (colsample_bytree/colsample_bylevel) it can further reduce reliance on spurious features.",
+      "explanation": "In high-dimensional sparse settings, overfitting can come from chasing noise in many weak features. L1 (reg_alpha) can act like a feature/structure simplifier by shrinking some leaf weights to zero, while L2 (reg_lambda) stabilizes weights without promoting exact sparsity. In practice, both can help, but L1 is the one most associated with sparsity benefits.",
+      "difficulty": "advanced",
+      "tags": [
+        "regularization",
+        "reg-alpha",
+        "reg-lambda",
+        "sparse-data",
+        "overfitting-control"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider these hyperparameters: max_depth, min_child_weight, gamma.\n\nWhat do they primarily control in XGBoost trees?",
+      "question_type": "mc",
+      "options": [
+        "A. They only control learning rate schedules and have no effect on tree structure",
+        "B. They control tree complexity / split behavior (depth, minimum child node weight to allow splits, and minimum loss reduction required to split)",
+        "C. They control the number of classes and label encoding strategy",
+        "D. They control GPU utilization and distributed training behavior"
+      ],
+      "correct_answer": "B",
+      "explanation": "max_depth caps how deep a tree can grow (directly affecting complexity). min_child_weight sets a threshold on the minimum sum of instance weights (or Hessians) needed in a child; higher values make splitting harder and reduce overfitting. gamma (min_split_loss) requires a minimum loss reduction to make a split; higher gamma also makes splitting more conservative. Together they shape how complex and “eager” the tree is to split.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hyperparameters",
+        "tree-complexity",
+        "max-depth",
+        "min-child-weight",
+        "gamma"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You notice your XGBoost model overfits: training AUC keeps increasing but validation AUC peaks early and then declines.\n\nWhich combination of changes is most likely to reduce overfitting (while keeping the model family the same)?",
+      "question_type": "mc",
+      "options": [
+        "A. Increase max_depth, increase n_estimators, set subsample=1.0 and colsample_bytree=1.0",
+        "B. Decrease max_depth, increase min_child_weight, use subsample<1 and/or colsample_bytree<1, and consider early stopping",
+        "C. Set learning_rate to 1.0 and reduce n_estimators to 1",
+        "D. Remove regularization by setting reg_lambda=0 and reg_alpha=0"
+      ],
+      "correct_answer": "B",
+      "explanation": "Common overfitting controls in XGBoost include reducing tree complexity (shallower max_depth, higher min_child_weight), adding stochasticity (subsample and colsample_bytree < 1), and using early stopping to prevent adding trees after validation performance stops improving. Increasing depth and removing subsampling generally increases overfitting risk. Removing regularization also increases overfitting risk.",
+      "difficulty": "intermediate",
+      "tags": [
+        "overfitting-control",
+        "hyperparameters",
+        "max-depth",
+        "min-child-weight",
+        "subsample",
+        "colsample",
+        "early-stopping"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Free text: In your own words, what does XGBoost’s “objective function” represent? Include (a) what the loss measures, and (b) what role regularization plays in the objective.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The objective function is what XGBoost is trying to minimize during training. It typically equals (a) a data-fitting loss that measures how wrong the model’s predictions are (e.g., squared error for regression, logistic loss for binary classification), plus (b) a regularization term that penalizes model complexity (e.g., too many leaves, large leaf weights, L1/L2 penalties). Regularization discourages overly complex trees and helps prevent overfitting.",
+      "explanation": "Thinking in terms of an objective helps you reason about behavior: the loss pushes the model to fit the training data, while regularization pushes back against complexity. XGBoost explicitly includes tree complexity penalties (and L1/L2 on leaf weights), which is one reason it can be tuned to generalize well.",
+      "difficulty": "intermediate",
+      "tags": [
+        "objective-function",
+        "regularization",
+        "loss-functions",
+        "overfitting-control"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Match the task to a common XGBoost objective (high level):\n\n1) Predict a continuous value (house price)\n2) Predict probability of churn (yes/no)\n3) Predict one of 5 product categories\n\nWhich mapping is most appropriate?",
+      "question_type": "mc",
+      "options": [
+        "A. 1) reg:squarederror, 2) binary:logistic, 3) multi:softprob",
+        "B. 1) binary:logistic, 2) reg:squarederror, 3) reg:squarederror",
+        "C. 1) multi:softprob, 2) binary:hinge, 3) binary:logistic",
+        "D. 1) reg:tweedie, 2) multi:softprob, 3) binary:logistic"
+      ],
+      "correct_answer": "A",
+      "explanation": "For regression, squared error is a standard default (reg:squarederror). For binary classification with probabilities, binary:logistic outputs probabilities via a logistic link. For multiclass classification with probabilities over K classes, multi:softprob is commonly used (it outputs a probability distribution across classes).",
+      "difficulty": "beginner",
+      "tags": [
+        "objectives",
+        "regression",
+        "binary-classification",
+        "multiclass"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In XGBoost, what is the practical effect of decreasing learning_rate (eta) while increasing n_estimators (num_boost_round) to keep training loss similar?",
+      "question_type": "mc",
+      "options": [
+        "A. It usually makes training faster and increases variance",
+        "B. It usually makes training slower, can improve generalization, and reduces the impact of each tree (shrinkage)",
+        "C. It guarantees better performance regardless of data",
+        "D. It makes each tree deeper by default"
+      ],
+      "correct_answer": "B",
+      "explanation": "The learning rate scales each tree’s contribution. Lower eta means each step is smaller, often improving generalization (less overfitting) but requiring more trees to reach similar training loss—so training is typically slower. It’s a classic bias-variance/optimization tradeoff: smaller steps can be more stable but cost more iterations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "learning-rate",
+        "n-estimators",
+        "shrinkage",
+        "bias-variance",
+        "overfitting-control"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re comparing random forest vs XGBoost for a churn prediction problem (binary classification). Which statement is most accurate in practice?",
+      "question_type": "mc",
+      "options": [
+        "A. Random forests and XGBoost are identical; they only differ in software implementation",
+        "B. Random forests train trees sequentially to fix previous errors; XGBoost trains trees independently using bagging",
+        "C. Random forests reduce variance via averaging many independent trees; XGBoost reduces bias by sequentially adding trees that correct errors (but can overfit without regularization)",
+        "D. XGBoost cannot handle categorical features even after one-hot encoding, while random forests can"
+      ],
+      "correct_answer": "C",
+      "explanation": "Random forests are a bagging method: many trees are trained largely independently on bootstrapped samples and feature subsampling, and predictions are averaged/voted, primarily reducing variance. XGBoost is boosting: it adds trees sequentially to reduce training loss, often reducing bias and achieving higher accuracy, but it can overfit if too many trees are added or trees are too complex without proper regularization and early stopping.",
+      "difficulty": "beginner",
+      "tags": [
+        "gdbt-vs-rf",
+        "bias-variance",
+        "model-selection"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain, at a high level, what boosting means in XGBoost. In your explanation, include what “additive trees” and “sequential error correction” refer to.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Boosting in XGBoost builds an ensemble model as a sum of many small decision trees (additive model). Trees are added sequentially: each new tree is trained to reduce the errors made by the current ensemble (often by fitting to gradients/residuals of the loss). Over iterations, the model corrects its mistakes step-by-step, gradually improving performance.",
+      "explanation": "XGBoost is a gradient boosting method: it optimizes a loss function by adding weak learners (trees) one at a time. “Additive trees” means the prediction is the sum of contributions from all trees. “Sequential error correction” means later trees focus on what earlier trees got wrong, using the loss’s gradients (and often second-order information) to decide how to adjust predictions.",
+      "difficulty": "beginner",
+      "tags": [
+        "boosting-concepts",
+        "additive-model",
+        "sequential-learning",
+        "residuals-gradients"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a model for a tabular dataset with mixed numeric/categorical (already one-hot encoded) features, some missing values, and potentially non-linear interactions. You have ~200k rows and want strong predictive performance quickly.\n\nWhich model choice is typically the best first baseline and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Logistic/linear regression, because it always generalizes best on tabular data",
+        "B. Random forest, because it usually outperforms boosted trees on tabular data",
+        "C. XGBoost (gradient boosted decision trees), because it handles non-linearities/interactions well and is a strong default for tabular data",
+        "D. k-NN, because distance-based methods naturally capture feature interactions"
+      ],
+      "correct_answer": "C",
+      "explanation": "For many real-world tabular problems, gradient-boosted decision trees (like XGBoost) are a strong default because they capture non-linearities and feature interactions without heavy feature engineering, handle missing values reasonably, and often achieve excellent accuracy with manageable training time. Linear/logistic regression can be a good baseline but may underfit when interactions/non-linearities matter. Random forests are strong but often slightly less accurate than well-tuned boosting on many tabular tasks. k-NN typically scales poorly and is sensitive to feature scaling and irrelevant features.",
+      "difficulty": "beginner",
+      "tags": [
+        "when-to-use",
+        "model-selection",
+        "gdbt-vs-linear",
+        "gdbt-vs-rf",
+        "tabular-data"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    }
+  ]
+}

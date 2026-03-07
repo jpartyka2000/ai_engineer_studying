@@ -1,0 +1,2757 @@
+{
+  "metadata": {
+    "subject_slug": "numpy",
+    "subject_name": "NumPy",
+    "exported_at": "2026-03-07T22:49:44.582087",
+    "question_count": 140,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Structured/record arrays: You receive a NumPy structured array `data` with dtype `[('user_id','i4'), ('age','f4'), ('label','i1')]` and shape (N,). You want to build:\n- `X` as a float32 feature matrix of shape (N, 1) containing age\n- `y` as int64 labels of shape (N,)\n\nWrite the conversion code and mention one reason structured arrays are often avoided in ML model input pipelines.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```python\nage = data['age'].astype(np.float32)          # (N,)\nX = age.reshape(-1, 1)                        # (N,1)\ny = data['label'].astype(np.int64)            # (N,)\n```\n\nOne reason structured arrays are often avoided for ML inputs: many ML libraries and vectorized numeric code expect homogeneous dense ndarrays (e.g., float32 matrices). Structured dtypes can hinder interoperability, complicate batching/stacking, and may lead to slower operations or awkward conversions compared to using separate homogeneous arrays or a single dense feature matrix.",
+      "explanation": "Structured arrays are convenient for tabular-like data, but typical ML compute kernels (BLAS/GPU ops, `matmul`, etc.) assume dense numeric tensors. Converting early to homogeneous `float32` features and separate label arrays is a common practical step.",
+      "difficulty": "intermediate",
+      "tags": [
+        "structured-arrays",
+        "data-preprocessing",
+        "dtype",
+        "interoperability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Out-of-core arrays: You need to train on a dataset too large to fit in RAM, stored as a contiguous float32 array on disk. You want to iterate in mini-batches without loading the whole array.\n\nWhich statement about `np.memmap` is most accurate?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `np.memmap` automatically compresses data on disk to reduce I/O, making it faster than normal arrays.",
+        "B) `np.memmap` lets you access array-like data backed by a file; slicing reads pages on demand, but many small random reads can be slow.",
+        "C) `np.memmap` always loads the full file into RAM when you create the object, so it doesn’t help with large datasets.",
+        "D) `np.memmap` is required to share arrays between processes; without it multiprocessing cannot work."
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.memmap` provides an ndarray-like interface to data stored in a file. The OS loads pages as accessed, so sequential batch slicing can be efficient, but access patterns with lots of small random reads can become I/O-bound. It does not compress data (A). It does not eagerly load the full file (C). It can help with multi-process sharing, but it’s not required for multiprocessing in general (D).",
+      "difficulty": "intermediate",
+      "tags": [
+        "memmap",
+        "out-of-core",
+        "performance",
+        "data-loading"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Robust preprocessing with missing values: You have a feature matrix `X` of shape (N, D) with missing values encoded as NaN. You want to:\n1) compute per-feature median ignoring NaNs\n2) impute NaNs with that median\n3) clip each feature to the 1st and 99th percentile (ignoring NaNs in percentile computation)\n\nWrite NumPy code to do this (you may use `np.nanmedian` / `np.nanpercentile`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct approach:\n\n```python\n# 1) per-feature median\nmed = np.nanmedian(X, axis=0)                 # (D,)\n\n# 2) impute\nX_imp = X.copy()\nnan_mask = np.isnan(X_imp)\nX_imp[nan_mask] = np.take(med, np.where(nan_mask)[1])\n\n# 3) per-feature clipping thresholds\nlo = np.nanpercentile(X_imp, 1, axis=0)       # (D,)\nhi = np.nanpercentile(X_imp, 99, axis=0)      # (D,)\n\nX_clip = np.clip(X_imp, lo, hi)               # broadcasts (D,) over (N,D)\n```\n\nAlternative imputation that avoids `np.where` indexing is also acceptable, e.g. `X_imp = np.where(np.isnan(X), med, X)` using broadcasting with `med` shaped (1,D) or (D,).",
+      "explanation": "In real ML data, NaNs are common and robust stats (median/percentiles) are preferred to mean/std under outliers. The key is using the `nan*` reductions so missing values don’t contaminate the statistics, then using broadcasting to apply per-feature thresholds. Many candidates forget that `np.percentile` does not ignore NaNs, so `np.nanpercentile` is required.",
+      "difficulty": "intermediate",
+      "tags": [
+        "missing-values",
+        "robust-statistics",
+        "preprocessing",
+        "broadcasting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a 3D tensor `X` with shape (B, T, D) and you want to compute per-feature mean over both batch and time, resulting in shape (D,). Which is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `X.mean(axis=0)`",
+        "B) `X.mean(axis=(0, 1))`",
+        "C) `X.mean(axis=2)`",
+        "D) `X.mean(axis=(1, 2))`"
+      ],
+      "correct_answer": "B",
+      "explanation": "To reduce over batch and time, reduce axes 0 and 1: `axis=(0,1)` leaving axis 2 (features) intact, producing shape (D,). A leaves (T,D). C leaves (B,T). D leaves (B,).",
+      "difficulty": "beginner",
+      "tags": [
+        "axis-conventions",
+        "reductions",
+        "batched-tensors"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Performance tradeoff: You want to compute pairwise squared Euclidean distances between embeddings `X` (N, D) and `Y` (M, D): result shape (N, M).\n\nWhich implementation is usually best in NumPy for performance/memory (for large N, M, D), assuming you can afford an (N, M) output but want to avoid an (N, M, D) temporary?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `((X[:, None, :] - Y[None, :, :]) ** 2).sum(axis=-1)`",
+        "B) `np.einsum('nd,md->nm', X, Y)` then use it to form distances via norms and dot products",
+        "C) `np.linalg.norm(X[:, None, :] - Y[None, :, :], axis=-1) ** 2`",
+        "D) `np.apply_along_axis(lambda x: ((Y - x) ** 2).sum(axis=1), 1, X)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "The identity ‖x−y‖² = ‖x‖² + ‖y‖² − 2 x·y lets you compute distances using two small norm vectors plus a matrix multiplication-like contraction for X·Yᵀ, avoiding an (N,M,D) broadcasted temporary. `np.einsum('nd,md->nm', X, Y)` (or `X @ Y.T`) computes the dot products efficiently. \n\nA and C create an (N,M,D) intermediate, which can blow up memory. D is Python-looping and typically very slow.",
+      "difficulty": "advanced",
+      "tags": [
+        "performance",
+        "vectorization",
+        "einsum",
+        "broadcasting",
+        "memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Implement a numerically stable masked softmax for attention.\n\nGiven:\n- `S`: float array of shape (B, T, T)\n- `key_pad`: boolean array of shape (B, T) where True means padding key (should get probability 0)\n\nWrite NumPy code that returns `P` of shape (B, T, T) where rows sum to 1 over the last axis for non-all-masked rows, and padded keys have probability 0. Assume at least one non-padded key per row.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct implementation:\n\n```python\nmask = key_pad[:, None, :]              # (B,1,T) broadcast over queries\nS_masked = np.where(mask, -1e9, S)      # or -np.inf if you handle it carefully\nS_shift = S_masked - S_masked.max(axis=-1, keepdims=True)\nexpS = np.exp(S_shift)\nexpS = np.where(mask, 0.0, expS)        # ensure padded keys contribute 0\nZ = expS.sum(axis=-1, keepdims=True)\nP = expS / Z\n```\n\nThis yields P with padded keys exactly 0 and softmax normalization over the last axis.",
+      "explanation": "Masked softmax is a frequent source of NaNs and shape bugs. The key steps are: (1) broadcast the key mask to (B,1,T) to match the last axis; (2) subtract `max` along the softmax axis for numerical stability; (3) zero out masked positions after exponentiation (or use -inf carefully); (4) normalize with a keepdims sum to preserve shape for broadcasting.",
+      "difficulty": "advanced",
+      "tags": [
+        "masking",
+        "sequence-models",
+        "broadcasting",
+        "numerical-stability",
+        "reductions"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Sequence masking: You have attention scores `S` with shape (B, T, T). A boolean padding mask `pad` has shape (B, T) where `pad[b, t] == True` means token t is padding and should NOT be attended to.\n\nYou want to set scores to a large negative value wherever the key position is padding (mask over the last dimension of S) before softmax.\n\nWhich NumPy expression correctly creates a broadcastable mask for keys?\n",
+      "question_type": "mc",
+      "options": [
+        "A) S = np.where(pad, -1e9, S)",
+        "B) S = np.where(pad[:, None, :], -1e9, S)",
+        "C) S = np.where(pad[:, :, None], -1e9, S)",
+        "D) S = np.where(pad[None, :, :], -1e9, S)"
+      ],
+      "correct_answer": "B",
+      "explanation": "Keys correspond to the last dimension in (B, T_query, T_key). `pad` is (B, T_key), so you need it to broadcast across the query dimension: `pad[:, None, :]` gives (B, 1, T) which broadcasts to (B, T, T). \n\nA fails because (B,T) cannot broadcast to (B,T,T). C masks queries instead of keys. D has wrong leading dimension and shape.",
+      "difficulty": "intermediate",
+      "tags": [
+        "masking",
+        "sequence-models",
+        "broadcasting",
+        "attention"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have per-class weights `w` of shape (C,) and logits `logits` of shape (B, C). You want to multiply each class logit by its class weight (same weight applied across the batch) without copying `w` into a (B, C) array.\n\nWhich expression is correct and idiomatic?\n",
+      "question_type": "mc",
+      "options": [
+        "A) logits * w",
+        "B) logits * w.reshape(B, 1)",
+        "C) logits * w.reshape(1, B)",
+        "D) logits * w[:, None]"
+      ],
+      "correct_answer": "A",
+      "explanation": "`(B, C) * (C,)` broadcasts the 1D array across the leading batch dimension, producing (B, C) without explicitly tiling. B is wrong because `w` has length C, not B. C has incompatible shape. D yields shape (C,1) which would broadcast against (B,C) incorrectly (it would try to match C with B).",
+      "difficulty": "beginner",
+      "tags": [
+        "broadcasting",
+        "shape-debugging",
+        "classification"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Spot the bug and fix it. You have features `X` with shape (N, D) and want to standardize each feature (column) using mean and std computed over the dataset.\n\n```python\nmu = X.mean(axis=1)\nsigma = X.std(axis=1) + 1e-8\nXn = (X - mu) / sigma\n```\n\nWhat is wrong, and what is the corrected code (including shapes)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The reduction axis is wrong: `axis=1` computes per-sample stats (shape (N,)), but standardization for preprocessing typically uses per-feature stats over samples (axis=0), yielding shape (D,). Correct:\n\n```python\nmu = X.mean(axis=0)              # (D,)\nsigma = X.std(axis=0) + 1e-8     # (D,)\nXn = (X - mu) / sigma            # broadcasts (N,D)-(D,) -> (N,D)\n```\n\nIf you want to keep explicit 2D shapes you can use `keepdims=True`:\n\n```python\nmu = X.mean(axis=0, keepdims=True)          # (1,D)\nsigma = X.std(axis=0, keepdims=True) + 1e-8 # (1,D)\nXn = (X - mu) / sigma\n```",
+      "explanation": "In ML pipelines, feature-wise normalization uses statistics across the dataset dimension (N). Using the wrong axis silently produces incorrect scaling and may still broadcast without raising errors, making it a common interview \"spot the bug\". `keepdims=True` is useful to make broadcasting intentions explicit and avoid shape surprises later.",
+      "difficulty": "beginner",
+      "tags": [
+        "axis-conventions",
+        "reductions",
+        "broadcasting",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a batch of model logits with shape (B, C) and integer labels with shape (B,). Which NumPy expression correctly computes the mean cross-entropy loss?\n\n```python\n# logits: (B, C)\n# y: (B,) int in [0, C)\n# stable softmax + NLL\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A) probs = np.exp(logits) / np.exp(logits).sum(); loss = -np.log(probs[y]).mean()",
+        "B) z = logits - logits.max(axis=1, keepdims=True); logZ = np.log(np.exp(z).sum(axis=1)); loss = -(z[np.arange(B), y] - logZ).mean()",
+        "C) z = logits - logits.max(); logZ = np.log(np.exp(z).sum(axis=0)); loss = -(z[:, y] - logZ).mean()",
+        "D) probs = np.softmax(logits, axis=0); loss = -np.log(probs[np.arange(B), y]).sum()"
+      ],
+      "correct_answer": "B",
+      "explanation": "For batched classification, you need a per-example normalization over classes (axis=1). A numerically stable log-softmax uses `z = logits - max_per_row`. Then `logZ = log(sum(exp(z), axis=1))` produces shape (B,). The correct class log-prob is `z[np.arange(B), y] - logZ`, and the mean over the batch yields scalar loss. \n\nA is wrong because `.sum()` without axis collapses all dimensions and `probs[y]` uses label indexing on the first axis, not per-row. C mixes axes and uses a global max, and `z[:, y]` is incorrect fancy indexing (broadcasts labels across columns). D uses a non-existent `np.softmax` and normalizes over the wrong axis; also sums rather than mean.",
+      "difficulty": "intermediate",
+      "tags": [
+        "axis-conventions",
+        "reductions",
+        "broadcasting",
+        "numerical-stability",
+        "classification-loss"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Groupby-style reductions (beyond bincount): You have per-example values `v` and integer group IDs `g` (e.g., user_id bucketed to [0, K-1]). You want per-group mean, including groups that may have zero members.\n\nWrite NumPy code to compute:\n- sum_per_group (shape (K,))\n- count_per_group (shape (K,))\n- mean_per_group (shape (K,)) with 0 for empty groups\n\nAssume:\n```python\nK = 5\nv = np.array([1.0, 2.0, 10.0, 4.0], dtype=np.float32)\ng = np.array([0,   1,   1,    3], dtype=np.int64)\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "sum_per_group = np.bincount(g, weights=v, minlength=K).astype(np.float32)\ncount_per_group = np.bincount(g, minlength=K).astype(np.float32)\nmean_per_group = np.divide(sum_per_group, count_per_group, out=np.zeros(K, dtype=np.float32), where=count_per_group!=0)",
+      "explanation": "np.bincount is the go-to primitive for groupby-style sums/counts when group IDs are non-negative integers. `minlength=K` ensures missing groups appear with zeros. For means, use `np.divide(..., where=...)` to avoid division-by-zero and to define the behavior for empty groups (here: mean=0). This pattern generalizes to weighted means (use weights in both numerator and denominator) and is common in recommender systems, calibration, and per-bucket metrics.",
+      "difficulty": "intermediate",
+      "tags": [
+        "groupby_reductions",
+        "bincount",
+        "weighted_reductions",
+        "missing_groups",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Missing-data robustness: You’re computing a metric over predictions that may contain NaN/Inf due to upstream instability.\n\nGiven:\n```python\npred = np.array([0.2, np.nan, 0.8, np.inf, -np.inf], dtype=np.float32)\n```\n1) Write NumPy code to compute the mean of only finite values.\n2) Explain one way to prevent NaNs from silently propagating in a preprocessing/metric pipeline.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1)\n```python\nmask = np.isfinite(pred)\nmean_finite = pred[mask].mean() if mask.any() else np.nan\n```\n2) Use explicit checks/masks and fail fast or sanitize at boundaries, e.g., `assert np.isfinite(x).all()` in debug, or replace non-finite values with a defined fallback: `pred = np.nan_to_num(pred, nan=0.0, posinf=1.0, neginf=-1.0)` depending on the metric. Also consider using `np.errstate` to surface invalid operations during development.",
+      "explanation": "np.isfinite filters out NaN and ±Inf. In ML, non-finite values often come from log/exp overflow, division by zero, or invalid normalization; if you don’t explicitly handle them, reductions like mean will become NaN and poison downstream metrics. A robust workflow either (a) asserts and stops (preferred in training debug) or (b) sanitizes with documented, task-appropriate replacements.",
+      "difficulty": "beginner",
+      "tags": [
+        "missing_data",
+        "nan_inf",
+        "masking",
+        "metrics",
+        "robustness"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Interoperability: You have a NumPy array `x_np` (float32, contiguous, on CPU) and want to pass it to PyTorch without an extra copy to avoid overhead in an input pipeline.\n\nWhich statement is correct?",
+      "question_type": "mc",
+      "options": [
+        "A) torch.tensor(x_np) is always zero-copy; it shares memory with NumPy.",
+        "B) torch.from_numpy(x_np) shares memory (zero-copy) when possible; moving to GPU later (e.g., .to('cuda')) will copy.",
+        "C) np.asarray(x_torch) always returns a view into the torch tensor regardless of device.",
+        "D) Converting NumPy to PyTorch is always a copy because the frameworks use different memory layouts."
+      ],
+      "correct_answer": "B",
+      "explanation": "`torch.from_numpy` creates a CPU tensor that shares the same underlying memory with the NumPy array (when the NumPy array is compatible, e.g., not object dtype). `torch.tensor(x_np)` typically makes a copy. If you then transfer to GPU, that transfer necessarily copies to device memory. For TensorFlow, similar concepts exist (e.g., `tf.convert_to_tensor` may copy; device placement affects copies). Understanding zero-copy vs copy is important for fast data pipelines and avoiding subtle bugs when mutating shared buffers.",
+      "difficulty": "intermediate",
+      "tags": [
+        "interop",
+        "pytorch",
+        "zero_copy",
+        "device_transfer",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Dtype management scenario: You’re computing a running sum of token counts per batch for logging.\n\nGiven:\n```python\ncounts = np.array([2_000_000_000, 2_000_000_000], dtype=np.int32)\ntotal = counts.sum()\n```\nWhat is the most likely outcome and the best fix in NumPy?",
+      "question_type": "mc",
+      "options": [
+        "A) total is 4_000_000_000 as int32; fix: no change needed.",
+        "B) total overflows in int32 (wraps/incorrect); fix: use counts.sum(dtype=np.int64) or cast to int64 before summing.",
+        "C) total becomes float64 automatically; fix: cast to float32.",
+        "D) NumPy raises an OverflowError; fix: catch the exception."
+      ],
+      "correct_answer": "B",
+      "explanation": "int32 can overflow above ~2.147e9. Summing two 2e9 values in int32 commonly wraps around and yields an incorrect negative or otherwise wrong result. NumPy typically does not raise OverflowError for integer overflow; it wraps modulo 2^32 for int32. The fix is to accumulate in a wider dtype: `counts.sum(dtype=np.int64)` or `counts.astype(np.int64).sum()`. In ML pipelines, this matters for counters, histogram bins, and indexing computations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dtype",
+        "integer_overflow",
+        "reductions_axis",
+        "ml_logging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Pairwise squared Euclidean distances: You have embeddings X with shape (N, D). You want a matrix dist2 of shape (N, N) where dist2[i,j] = ||X[i]-X[j]||^2.\n\n1) Provide a vectorized NumPy expression using broadcasting or algebra.\n2) Mention one memory/performance concern for large N and one mitigation strategy.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Example using the (x-y)^2 expansion:\n```python\n# dist2 = ||x||^2 + ||y||^2 - 2 x·y\nx2 = np.sum(X*X, axis=1, keepdims=True)          # (N,1)\ndist2 = x2 + x2.T - 2.0 * (X @ X.T)             # (N,N)\ndist2 = np.maximum(dist2, 0.0)                  # optional: clamp tiny negatives\n```\nOr broadcasting:\n```python\ndiff = X[:, None, :] - X[None, :, :]\ndist2 = np.sum(diff*diff, axis=-1)\n```\n2) Concern: (N,N) output is O(N^2) memory; broadcasting diff is O(N^2*D) temporary memory. Mitigation: compute in blocks/chunks (tile over rows), use float32, or avoid full pairwise matrix (e.g., approximate nearest neighbors) depending on the task.",
+      "explanation": "The algebraic form avoids creating the huge (N,N,D) temporary `diff`, which is often the real memory killer. Even with the algebraic form, the output itself is still O(N^2), so for large N you typically compute distances in chunks or avoid materializing the full matrix. Clamping helps because floating-point roundoff can produce small negative values for distances that should be non-negative.",
+      "difficulty": "advanced",
+      "tags": [
+        "distance_similarity",
+        "broadcasting",
+        "performance",
+        "memory",
+        "matmul"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need cosine similarity between two matrices A and B:\n- A shape: (N, D)\n- B shape: (M, D)\n\nYou want an (N, M) cosine similarity matrix. Which implementation is both correct and avoids common normalization pitfalls?\n\nAssume float32 inputs and you want numerical stability for near-zero vectors.",
+      "question_type": "mc",
+      "options": [
+        "A) sim = (A @ B.T) / (np.linalg.norm(A) * np.linalg.norm(B))",
+        "B) sim = (A @ B.T) / (np.linalg.norm(A, axis=1, keepdims=True) * np.linalg.norm(B, axis=1, keepdims=True))",
+        "C) An = A / (np.linalg.norm(A, axis=1, keepdims=True) + 1e-8); Bn = B / (np.linalg.norm(B, axis=1, keepdims=True) + 1e-8); sim = An @ Bn.T",
+        "D) sim = np.cos(A - B)"
+      ],
+      "correct_answer": "C",
+      "explanation": "Cosine similarity is dot(a, b) / (||a||·||b||) computed per vector. A incorrectly uses global norms (single scalar norm for entire matrices). B has shape issues: norms are (N,1) and (M,1) and cannot broadcast to (N,M) directly in that form; you’d need (N,1) * (1,M). C is the standard stable pattern: normalize each row with an epsilon to avoid division by zero, then use a matrix multiply. D is not a cosine similarity definition. This is a common ML interview topic for retrieval/embedding similarity.",
+      "difficulty": "intermediate",
+      "tags": [
+        "distance_similarity",
+        "broadcasting",
+        "numerical_stability",
+        "matmul"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re aggregating a loss with sample weights (e.g., class imbalance). Given per-example losses and weights:\n```python\nloss = np.array([0.2, 1.0, 0.3, 2.0], dtype=np.float32)\nw    = np.array([1.0, 0.5, 2.0, 0.0], dtype=np.float32)\n```\nWrite NumPy code to compute the weighted mean loss, robust to the case where sum of weights is 0 (return 0.0 in that case).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "w_sum = w.sum()\nweighted_mean = (loss * w).sum() / w_sum if w_sum != 0 else 0.0",
+      "explanation": "Weighted mean is sum(loss_i * w_i) / sum(w_i). In ML metrics/loss aggregation, weights can be zero (masked samples), so guard against division by zero. Using vectorized operations avoids Python loops and keeps dtype consistent (float32 here). You can also use np.divide with where:\n```python\nnum = (loss*w).sum()\nden = w.sum()\nweighted_mean = np.divide(num, den, out=np.array(0.0, dtype=loss.dtype), where=den!=0)\n```",
+      "difficulty": "beginner",
+      "tags": [
+        "weighted_reductions",
+        "normalization",
+        "metrics",
+        "nan_robustness"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Copy vs view is a frequent source of subtle bugs in ML pipelines (e.g., in-place updates, accumulating gradients, caching features).\n\nConsider:\n```python\nx = np.arange(10)\na = x[2:7]\nb = x[[2,3,4,5,6]]\n\n# Then:\n#a[:] = -1\n#b[:] = -2\n```\nWhich statement is true?",
+      "question_type": "mc",
+      "options": [
+        "A) Both a and b are views into x; both in-place assignments modify x.",
+        "B) a is a view and b is a copy; only assigning to a modifies x.",
+        "C) a is a copy and b is a view; only assigning to b modifies x.",
+        "D) Both a and b are copies; neither modifies x."
+      ],
+      "correct_answer": "B",
+      "explanation": "Basic slicing (x[2:7]) returns a view when possible, so modifying a modifies x. Advanced indexing with an integer array (x[[...]] ) returns a copy, so modifying b does not affect x. This matters in ML when you expect in-place updates (e.g., updating a subset of parameters/features) or when you think you’re accumulating into a larger buffer; advanced indexing can silently break that assumption and also increases memory/time.",
+      "difficulty": "intermediate",
+      "tags": [
+        "advanced_indexing",
+        "views_vs_copies",
+        "inplace_updates",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have batch logits of shape (N, C) and integer labels y of shape (N,) with values in [0, C-1]. You want to compute per-example negative log-likelihood using NumPy.\n\nGiven:\n```python\nlog_probs = logits - np.log(np.sum(np.exp(logits), axis=1, keepdims=True))\n# shapes: logits (N,C), log_probs (N,C), y (N,)\n```\nWhich indexing expression correctly selects the log-prob of the true class for each example?\n",
+      "question_type": "mc",
+      "options": [
+        "A) logp_true = log_probs[:, y]",
+        "B) logp_true = log_probs[y, :]",
+        "C) logp_true = log_probs[np.arange(N), y]",
+        "D) logp_true = log_probs[np.arange(C), y]"
+      ],
+      "correct_answer": "C",
+      "explanation": "To pick one element per row, you need matching row indices and column indices: log_probs[np.arange(N), y] returns shape (N,). A performs advanced indexing on the second axis with an array, producing shape (N, N) (or (N, len(y))) and is a common beginner mistake. B indexes rows by y (wrong axis). D uses np.arange(C) which mismatches N and is incorrect unless N==C (not generally true). This checks understanding of elementwise selection and advanced indexing semantics used in losses/metrics.",
+      "difficulty": "beginner",
+      "tags": [
+        "ufuncs",
+        "broadcasting",
+        "reductions_axis",
+        "advanced_indexing",
+        "ml_losses"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a vector of learning-rate schedule steps from 0 to 1 inclusive with exactly 101 points (including both endpoints) to use as an interpolation parameter.\n\nWhich is the correct NumPy call?\n\nAlso assume you care about float32 output.",
+      "question_type": "mc",
+      "options": [
+        "A) t = np.arange(0, 1, 101, dtype=np.float32)",
+        "B) t = np.linspace(0, 1, 101, dtype=np.float32)",
+        "C) t = np.arange(0, 1, 0.01, dtype=np.float32)",
+        "D) t = np.linspace(0, 1, 100, dtype=np.float32)"
+      ],
+      "correct_answer": "B",
+      "explanation": "np.linspace(0, 1, 101) guarantees exactly 101 points including both 0 and 1 (by default endpoint=True). np.arange is step-based and can miss the endpoint due to floating-point step accumulation, and A is incorrect usage because the third argument to arange is step, not count. D gives 100 points, not 101. In ML, linspace is preferred when you need a precise number of samples.",
+      "difficulty": "beginner",
+      "tags": [
+        "array_creation",
+        "arange_linspace",
+        "dtype",
+        "numerical_stability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re writing a minibatch preprocessing step. You need a feature matrix X of shape (batch_size, num_features) filled with zeros, dtype float32, and you want the most idiomatic/robust NumPy initialization.\n\nWhich option is best?\n\nAssume batch_size=128 and num_features=64.",
+      "question_type": "mc",
+      "options": [
+        "A) X = np.zeros((128, 64), dtype=np.float32)",
+        "B) X = np.array([0] * (128 * 64), dtype=np.float32).reshape(128, 64)",
+        "C) X = np.zeros(128, 64, np.float32)",
+        "D) X = np.empty((128, 64), dtype=np.float32); X.fill(0)"
+      ],
+      "correct_answer": "A",
+      "explanation": "A is the standard, clear, and efficient way to allocate a zero-initialized array with the correct shape and dtype. B is slower and less readable (creates a Python list first). C is invalid because np.zeros expects the shape as a single tuple-like argument. D works but is more verbose; np.zeros is already optimized and communicates intent clearly. In ML code, correctness of shape/dtype and readability matter, and np.zeros(..., dtype=...) is the common pattern.",
+      "difficulty": "beginner",
+      "tags": [
+        "array_creation",
+        "dtype",
+        "performance",
+        "ml_preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Broadcasting + dtype pitfalls: You have `X` with shape (B, T, D) and a per-feature scale `s` with shape (D,) and per-time bias `b` with shape (T,). You want:\n\n```python\nY = X * s + b\n```\n\nAssume `X` is float32, `s` is float32, but `b` was created as a Python list and became float64.\n\n1) Show the correct way to reshape/align `s` and `b` so broadcasting does what you intend.\n2) Explain how `b` being float64 can silently upcast `Y` and how to prevent it.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Align shapes explicitly:\n```python\ns_ = s.reshape(1, 1, D)      # or s[None, None, :]\nb_ = np.asarray(b, dtype=np.float32).reshape(1, T, 1)  # or b[None, :, None]\nY = X * s_ + b_\n```\nThis makes `s` broadcast over (B, T) and `b` broadcast over (B, D).\n\n2) If `b` is float64, NumPy will typically upcast the result of `X * s + b` to float64 (because mixed float32/float64 promotes to float64), increasing memory and compute cost and potentially changing downstream expectations. Prevent by ensuring `b` is float32 (`np.asarray(b, dtype=np.float32)`), or cast the final output explicitly (`Y = (X * s_ + b_).astype(np.float32, copy=False)`), ideally avoiding the float64 temporary in the first place by casting `b` before the operation.",
+      "explanation": "This tests two common ML issues: (1) broadcasting across higher-rank tensors where you must place singleton dimensions correctly (using `reshape`/`None`/`expand_dims`), and (2) dtype promotion causing unintended float64 pipelines. The intended broadcasting is easiest to reason about by writing shapes: X (B,T,D), s (1,1,D), b (1,T,1).",
+      "difficulty": "advanced",
+      "tags": [
+        "broadcasting",
+        "reshape",
+        "expand_dims",
+        "dtype",
+        "float32-float64",
+        "B-T-D-shapes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building a feature matrix incrementally inside a loop over mini-batches. Each batch produces `feat_i` of shape (B_i, D). A candidate writes:\n\n```python\nX = np.empty((0, D), dtype=np.float32)\nfor feat_i in feats:\n    X = np.concatenate([X, feat_i], axis=0)\n```\n\nWhy is this problematic, and what is the preferred NumPy pattern?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "It’s problematic because repeated `np.concatenate` in a loop reallocates and copies the entire accumulated array each iteration (quadratic time/memory traffic). Preferred patterns:\n\n1) Collect then concatenate once:\n```python\nchunks = []\nfor feat_i in feats:\n    chunks.append(feat_i)\nX = np.concatenate(chunks, axis=0)\n```\n\n2) If total size is known, preallocate and fill:\n```python\nN = sum(f.shape[0] for f in feats)\nX = np.empty((N, D), dtype=np.float32)\noff = 0\nfor f in feats:\n    X[off:off+f.shape[0]] = f\n    off += f.shape[0]\n```\nAlso choose `concatenate` vs `stack` correctly: `concatenate` joins along an existing axis; `stack` creates a new axis (e.g., producing (num_batches, B, D)).",
+      "explanation": "This mirrors real ML pipelines where features are accumulated. The key is understanding that NumPy arrays are fixed-size; concatenation creates new arrays. The fix is either one-shot concatenation (amortize copying) or preallocation (best when sizes are known). This also tests axis reasoning (concatenate vs stack).",
+      "difficulty": "beginner",
+      "tags": [
+        "concatenate",
+        "stack",
+        "pipeline",
+        "performance",
+        "preallocation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are computing `y = a * x + y` repeatedly inside a training loop (classic axpy) and want to minimize allocations. `x` and `y` are float32 arrays of shape (N,).\n\nWhich option best uses ufuncs and `out=` to avoid temporaries?\n",
+      "question_type": "mc",
+      "options": [
+        "A) y = a * x + y",
+        "B) np.add(np.multiply(a, x), y, out=y)",
+        "C) y += a * x",
+        "D) y = np.add(a, x, out=y)"
+      ],
+      "correct_answer": "B",
+      "explanation": "B expresses the computation as ufuncs with an explicit `out=y` for the final add, enabling reuse of the `y` buffer and avoiding allocating a new output array. Note: `np.multiply(a, x)` may still allocate; you can avoid that too with `np.multiply(x, a, out=tmp)` using a preallocated `tmp`, or use `np.multiply(x, a, out=y); np.add(y, y_old, out=y)` depending on constraints. C is concise and often efficient, but `a * x` typically creates a temporary unless fused by a JIT (NumPy doesn’t fuse). D computes the wrong expression.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ufunc",
+        "out-parameter",
+        "performance",
+        "avoiding-temporaries",
+        "float32"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a time series batch `X` with shape (B, T, D). You want to create sliding windows of length `W` over the time axis to feed a model, producing a view (no copy) of shape (B, T-W+1, W, D).\n\nWhich approach is the most appropriate in modern NumPy?\n",
+      "question_type": "mc",
+      "options": [
+        "A) Use a Python loop over t and stack: `np.stack([X[:, t:t+W, :] for t in range(T-W+1)], axis=1)`",
+        "B) Use `np.lib.stride_tricks.sliding_window_view(X, window_shape=W, axis=1)` and then reshape/reorder if needed",
+        "C) Use `np.concatenate([X[:, :W, :], X[:, 1:W+1, :], ...], axis=1)`",
+        "D) Use `X.reshape(B*(T-W+1), W, D)` directly"
+      ],
+      "correct_answer": "B",
+      "explanation": "`sliding_window_view` is the practical, high-level stride-tricks utility that creates a view when possible, avoiding Python loops and large copies. A and C create many temporaries and often copy data (and can become quadratic). D is incorrect because reshaping cannot create overlapping windows; it only reinterprets existing contiguous layout.",
+      "difficulty": "advanced",
+      "tags": [
+        "stride-tricks",
+        "sliding-window",
+        "sequence-batching",
+        "performance",
+        "B-T-D-shapes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re implementing an embedding-bag style sum. You have an embedding table `E` of shape (V, D) and a list of token ids `ids` (N,) and bag ids `bag` (N,) where `bag[i]` indicates which bag the token `ids[i]` belongs to. You want output `out` of shape (B, D) where `out[b]` is the sum of embeddings for tokens assigned to bag b.\n\nWrite NumPy code using `np.add.at` to do this accumulation (assume `B = bag.max()+1`). Briefly explain why `out[bag] += E[ids]` is not always correct.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nB = int(bag.max()) + 1\nout = np.zeros((B, E.shape[1]), dtype=E.dtype)\n\n# Gather embeddings (N, D)\nemb = E[ids]\n\n# Scatter-add into bags\nnp.add.at(out, bag, emb)\n```\n\n`out[bag] += E[ids]` uses fancy indexing on the LHS, which typically writes into a temporary copy; repeated indices in `bag` can lead to lost updates (non-atomic behavior) because the increments may be applied to the temporary and then assigned back once. `np.add.at` guarantees correct accumulation for repeated indices.",
+      "explanation": "This mirrors common ML tasks (embedding bags, histogram-like accumulation). The key interview insight is that fancy indexing assignment with repeated indices is not a true scatter-add; `np.add.at` is the correct primitive when indices repeat and you need deterministic accumulation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "np.add.at",
+        "scatter-add",
+        "embeddings",
+        "accumulation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have class labels `y` (N,) with values in `[0, K-1]` and a float feature `s` (N,) (e.g., per-example loss). Compute per-class mean of `s` using NumPy only, handling classes that may have zero count.\n\nWhich option is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A) means = np.mean(s[y == np.arange(K)])",
+        "B) sums = np.bincount(y, weights=s, minlength=K); cnt = np.bincount(y, minlength=K); means = sums / cnt",
+        "C) means = np.bincount(s, minlength=K) / np.bincount(y, minlength=K)",
+        "D) means = np.add.reduceat(s, np.argsort(y))"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.bincount` with `weights=` is the standard groupby-like reduction for non-negative integer keys. You compute weighted sums and counts per class, then divide. In practice you should guard against zero counts: `means = sums / np.maximum(cnt, 1)` or `means = np.divide(sums, cnt, out=np.zeros_like(sums), where=cnt>0)`. A is not valid broadcasting logic. C uses `s` as bins (wrong). D is incomplete: `reduceat` needs carefully constructed segment boundaries and sorted data; it’s easy to get wrong and doesn’t directly handle missing classes.",
+      "difficulty": "beginner",
+      "tags": [
+        "aggregation",
+        "bincount",
+        "groupby-reduction",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have predicted labels `y_pred` and true labels `y_true`, both shape (N,), with classes in `[0, K-1]`. Build a confusion matrix `cm` of shape (K, K) using NumPy only (no loops). Then explain how you would compute per-class precision and recall from `cm`.\n\nProvide code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One common NumPy-only approach:\n\n```python\n# y_true, y_pred: (N,)\nidx = y_true * K + y_pred                 # (N,)\ncm = np.bincount(idx, minlength=K*K).reshape(K, K)\n\n# Per-class metrics\n# cm[i, j] = count of true class i predicted as j\nTP = np.diag(cm)\nFP = cm.sum(axis=0) - TP\nFN = cm.sum(axis=1) - TP\n\nprecision = TP / (TP + FP + 1e-12)\nrecall    = TP / (TP + FN + 1e-12)\n```\n",
+      "explanation": "Flattening the (true, pred) pairs into a single index lets `np.bincount` act like a fast 2D histogram. This is a common interview pattern because it’s vectorized, avoids Python loops, and is robust. Precision uses column sums (predicted positives), recall uses row sums (actual positives). Adding a small epsilon avoids division-by-zero for classes with no predicted/true samples.",
+      "difficulty": "intermediate",
+      "tags": [
+        "aggregation",
+        "confusion-matrix",
+        "bincount",
+        "metrics",
+        "numerical-stability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a numerically safe normalization step for input features `X` with shape (N, D). You want per-feature standardization:\n\n```python\nXn = (X - mean) / (std + eps)\n```\n\nWhich implementation best avoids unintended float64 upcasting and is composable (minimizes temporaries) when `X` is float32?\n",
+      "question_type": "mc",
+      "options": [
+        "A) mean = X.mean(axis=0); std = X.std(axis=0); Xn = (X - mean) / (std + 1e-8)",
+        "B) mean = X.mean(axis=0, dtype=np.float32); std = X.std(axis=0, dtype=np.float32); Xn = (X - mean) / (std + np.float32(1e-8))",
+        "C) mean = np.mean(X, axis=1); std = np.std(X, axis=1); Xn = (X - mean) / (std + 1e-8)",
+        "D) Xn = (X - X.mean()) / (X.std() + 1e-8)"
+      ],
+      "correct_answer": "B",
+      "explanation": "NumPy reductions can produce float64 depending on inputs and defaults; explicitly requesting `dtype=np.float32` for the reductions and making `eps` float32 helps keep the pipeline in float32 and avoids silent float64 temporaries. C normalizes per-sample (axis=1) not per-feature. D uses global stats, which is often wrong for per-feature normalization and can be unstable if features have different scales.",
+      "difficulty": "intermediate",
+      "tags": [
+        "normalization",
+        "np.clip",
+        "dtype",
+        "float32-float64",
+        "numerical-stability",
+        "reductions"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Decision patterns in preprocessing: You have an array `x` of shape (B, D). You want to create `y` of the same shape using three rules applied elementwise:\n- if x < 0: y = 0\n- elif x <= 1: y = x\n- else: y = 1\n\nWrite two NumPy-only implementations:\n1) using boolean indexing (in-place into a preallocated `y`), and\n2) using `np.select`.\n\nAlso explain when `np.where` is preferable vs boolean indexing vs `np.select` in ML code (include a note about broadcasting/shape behavior).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One possible answer:\n\n1) Boolean indexing (preallocate and fill):\n```python\ny = np.empty_like(x)\nneg = x < 0\nmid = (x >= 0) & (x <= 1)\npos = x > 1\n\ny[neg] = 0\ny[mid] = x[mid]\ny[pos] = 1\n```\n\n2) np.select:\n```python\nconds = [x < 0, x <= 1, x > 1]\nchoices = [0, x, 1]\ny = np.select(conds, choices)  # default=0 if needed\n```\n\nWhen to use what:\n- `np.where(cond, a, b)` is best for a single binary choice and returns a new array; it broadcasts `a` and `b` to the condition’s shape. It’s concise and often fastest for 2-way selection.\n- Boolean indexing is best when you want to write in-place into an existing buffer (avoid extra temporaries) or when each branch needs different indexing logic. It can be more memory-efficient but requires careful ordering to avoid overwriting.\n- `np.select` is best for multi-branch (if/elif/else) logic; it keeps the intent clear. All `choices` are broadcast to the output shape; note that passing `x` as a choice is fine because it matches the shape.\nBroadcasting/shape note: `np.where`/`np.select` broadcast their choice arrays to the condition shape; boolean indexing selects a 1D view of the True elements and assignments must match that flattened selection size.",
+      "explanation": "This tests practical branching patterns used in feature engineering and post-processing. `np.where` is a 2-branch expression that broadcasts inputs; boolean indexing is an in-place scatter into selected elements; `np.select` generalizes `if/elif/else` and is clearer for multiple mutually exclusive ranges. The key shape pitfall: boolean indexing flattens the selected elements, so the RHS must match the number of True elements, while `where/select` produce full-shaped outputs via broadcasting.",
+      "difficulty": "intermediate",
+      "tags": [
+        "np.where",
+        "boolean-indexing",
+        "np.select",
+        "broadcasting",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have model logits `logits` with shape (B, C) and integer labels `y` with shape (B,). You want to set the logit of the true class to `-np.inf` (mask it out) without a Python loop.\n\nWhich option is correct and shape-safe?\n\n```python\n# logits: (B, C)\n# y: (B,)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A) logits[np.arange(B), y] = -np.inf",
+        "B) logits[y, np.arange(B)] = -np.inf",
+        "C) logits[np.arange(C), y] = -np.inf",
+        "D) logits[:, y] = -np.inf"
+      ],
+      "correct_answer": "A",
+      "explanation": "Advanced indexing with row indices `np.arange(B)` and column indices `y` selects exactly one element per row (the true class per example). Option B swaps axes and will fail or mask wrong elements because `y` indexes the first axis. Option C uses `np.arange(C)` which doesn’t align with batch size. Option D selects all rows for the set of columns in `y` (and duplicates if labels repeat), masking many logits per row rather than one per row.",
+      "difficulty": "beginner",
+      "tags": [
+        "broadcasting",
+        "shape-alignment",
+        "advanced-indexing",
+        "B-T-D-shapes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Efficient dataset assembly and batching.\n\nYou are building a training matrix from many small chunks:\n\n```python\nchunks = [np.random.randn(128, 64).astype(np.float32) for _ in range(1000)]\n```\n\nWhich approach is typically most efficient in NumPy and why?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Start with X = np.empty((0,64), np.float32) and do X = np.vstack([X, c]) in a loop",
+        "B. Preallocate X = np.empty((len(chunks)*128, 64), np.float32) and assign slices in a loop",
+        "C. Convert each chunk to a Python list and use sum(lists, []) then np.array(...)",
+        "D. Use np.concatenate inside the loop each iteration to keep X contiguous"
+      ],
+      "correct_answer": "B",
+      "explanation": "Repeated `vstack`/`concatenate` in a loop reallocates and copies the growing array each iteration (quadratic-ish total copying). Preallocating once and filling by slices is O(total_size) and avoids repeated reallocations. If you already have all chunks, a single `np.concatenate(chunks, axis=0)` is also efficient, but among the listed options, preallocation + slice assignment is the best general pattern when assembling incrementally.",
+      "difficulty": "beginner",
+      "tags": [
+        "batching",
+        "concatenate",
+        "preallocation",
+        "performance",
+        "dataset-assembly"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Missing-data handling + normalization edge cases.\n\nYou want to standardize features column-wise:\n\n```python\n# X shape (N, D), may contain np.nan and np.inf\n```\n\nWrite NumPy code to:\n1) detect and replace `+/-inf` with `nan`\n2) compute per-feature mean/std ignoring NaNs\n3) standardize safely (avoid divide-by-zero for zero-variance features)\n4) keep NaNs as NaNs (do not impute), so downstream code can mask them\n\nUse vectorized NumPy operations.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nX = X.copy()\n# 1) inf -> nan\nX[~np.isfinite(X)] = np.nan\n\n# 2) nan-aware stats\nmu = np.nanmean(X, axis=0)\nsigma = np.nanstd(X, axis=0)\n\n# 3) safe division: if sigma==0, use 1 (leaves centered values unchanged)\nsafe_sigma = np.where(sigma > 0, sigma, 1.0)\n\n# 4) standardize; NaNs remain NaN automatically\nZ = (X - mu) / safe_sigma\n```\n\nOptionally, you can also return a mask: `mask = np.isnan(X)` for downstream handling.",
+      "explanation": "`np.isfinite` catches both `nan` and `inf`; converting non-finite to `nan` makes `nanmean/nanstd` handle them consistently. Using `np.where` to form `safe_sigma` avoids division by zero on constant features (a common edge case). NaNs propagate through arithmetic, so missing values remain missing, enabling downstream masking rather than accidental imputation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "missing-data",
+        "nan",
+        "inf",
+        "standardization",
+        "safe-division",
+        "masking"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Dtype management in ML pipelines.\n\nYou load integer features and do normalization:\n\n```python\nX = np.array([[1, 2], [3, 4]], dtype=np.int32)\nmu = X.mean(axis=0)\nXc = X - mu\n```\n\nWhat is the dtype of `mu` and `Xc`, and what is a good practice for ML pipelines regarding float32/float64 here?\n",
+      "question_type": "mc",
+      "options": [
+        "A. mu is int32, Xc is int32; always keep int for speed",
+        "B. mu is float64, Xc is float64; cast to float32 early if you train in float32",
+        "C. mu is float32, Xc is float32; NumPy defaults to float32 for means",
+        "D. mu is object, Xc is object; subtraction forces Python objects"
+      ],
+      "correct_answer": "B",
+      "explanation": "In NumPy, reductions like `mean` on integer arrays produce floating results (typically `float64` by default). Subtracting a `float64` mean from an `int32` array upcasts to `float64`, so `Xc` becomes `float64`. In ML pipelines, if your downstream training uses float32 (common on GPUs and for memory), it’s often better to cast once (e.g., `X = X.astype(np.float32)`) and keep computations consistently in float32 to avoid silent upcasting and extra memory bandwidth.",
+      "difficulty": "beginner",
+      "tags": [
+        "dtype",
+        "upcasting",
+        "float32-vs-float64",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Data splitting and leakage prevention.\n\nYou have:\n- `X` shape `(N, D)`\n- `y` shape `(N,)`\n- `group_id` shape `(N,)` indicating which samples come from the same user/session\n\nRequirement: split into train/val so that **no group_id appears in both** sets, and keep the validation fraction close to 20%.\n\nDescribe an interview-appropriate NumPy approach (no sklearn) to implement this grouped split.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One approach:\n\n```python\nrng = np.random.default_rng(0)\nunique_groups = np.unique(group_id)\nrng.shuffle(unique_groups)\n\n# choose groups until ~20% of samples are in val\nval_groups = []\nval_count = 0\nN = len(group_id)\nfor g in unique_groups:\n    g_count = np.sum(group_id == g)\n    if val_count + g_count <= 0.2 * N or len(val_groups) == 0:\n        val_groups.append(g)\n        val_count += g_count\n\nval_groups = np.array(val_groups)\nval_mask = np.isin(group_id, val_groups)\n\nX_val, y_val = X[val_mask], y[val_mask]\nX_train, y_train = X[~val_mask], y[~val_mask]\n```\n\n(Variants: pick a target number of groups, or compute cumulative counts over shuffled groups for a closer 20%.)",
+      "explanation": "The key is to split on groups, not rows, to prevent leakage (same user/session in both sets). `np.unique` gets group labels, shuffling randomizes, and `np.isin` builds a boolean mask for selecting rows. Using counts (not just number of groups) helps keep the validation size close to the desired fraction because groups can be imbalanced.",
+      "difficulty": "advanced",
+      "tags": [
+        "data-splitting",
+        "leakage",
+        "grouped-split",
+        "masking",
+        "rng"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Views vs copies and stride/shape reasoning.\n\nConsider:\n```python\nX = np.zeros((100, 64), dtype=np.float32)\nA = X[:, ::2]\nB = X.T\nC = X.reshape(64, 100)\nD = X[:, [0, 2, 4]]\n```\n\nWhich of these is guaranteed to be a **view** (not a copy) of `X` in NumPy?\n",
+      "question_type": "mc",
+      "options": [
+        "A. A only",
+        "B. A, B, and C",
+        "C. B and D",
+        "D. C and D"
+      ],
+      "correct_answer": "B",
+      "explanation": "`X[:, ::2]` is basic slicing with a step, producing a strided view. `X.T` is a transposed view with swapped strides. `reshape(64, 100)` is a view here because `X` is C-contiguous and the new shape is compatible without reordering data. `X[:, [0,2,4]]` uses advanced indexing (a list/array of indices), which creates a copy.",
+      "difficulty": "intermediate",
+      "tags": [
+        "strides",
+        "views-vs-copies",
+        "slicing",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a covariance/kernel matrix `K` (shape `(N,N)`) that should be symmetric positive semidefinite (PSD). In Gaussian processes / sampling / whitening, you want a factorization `K ≈ L L^T`.\n\nWhen `K` is PSD (and numerically well-behaved), which factorization is typically the first choice and why?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use the Cholesky factorization:\n\n```python\nL = np.linalg.cholesky(K)  # K = L @ L.T\n```\n\nIt is efficient (about half the work of a general-purpose decomposition), numerically stable for SPD matrices, and directly provides a triangular factor used for solving systems and sampling. If `K` is only semidefinite or has numerical issues, a common workaround is adding jitter: `K + eps*np.eye(N)` before Cholesky, or falling back to an eigen/SVD-based factorization.",
+      "explanation": "In ML contexts (GPs, Kalman filters, whitening), Cholesky is the standard tool for symmetric positive definite matrices because it is faster and more stable than generic methods. PSD vs SPD matters: exact PSD can cause Cholesky to fail due to zero/negative pivots from numerical error; adding a small diagonal term (“jitter”) is a common practical fix.",
+      "difficulty": "advanced",
+      "tags": [
+        "linalg",
+        "cholesky",
+        "psd",
+        "gaussian-process",
+        "numerical-stability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are fitting a linear regression model and want to solve for weights `w` in a numerically stable way.\n\nGiven `X` shape `(N, D)` and `y` shape `(N,)`, which approach is generally preferred in ML code to avoid explicitly computing `(X^T X)^{-1}`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. w = np.linalg.inv(X.T @ X) @ (X.T @ y)",
+        "B. w = np.linalg.solve(X.T @ X, X.T @ y)",
+        "C. w = np.linalg.lstsq(X, y, rcond=None)[0]",
+        "D. w = np.linalg.eig(X.T @ X)[1] @ y"
+      ],
+      "correct_answer": "C",
+      "explanation": "In practice, `np.linalg.lstsq` (or QR/SVD-based solvers) is preferred because it is more numerically stable and handles rank-deficient `X` better than forming and inverting `X^T X`. `solve` (B) avoids an explicit inverse but still uses the normal equations, which can square the condition number. (A) is the least stable. (D) is not a valid way to solve least squares.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linalg",
+        "least-squares",
+        "numerical-stability",
+        "ml-linear-models"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Translate between `einsum` and `matmul`.\n\nGiven `A` shape `(B, M, K)` and `Bmat` shape `(B, K, N)`, you see code:\n\n```python\nC = np.einsum('bmk,bkn->bmn', A, Bmat)\n```\n\nWhich expression is equivalent (assuming standard NumPy broadcasting rules and no extra copies are forced)?\n",
+      "question_type": "mc",
+      "options": [
+        "A. C = A * Bmat",
+        "B. C = A @ Bmat",
+        "C. C = np.dot(A, Bmat)",
+        "D. C = np.matmul(A.T, Bmat)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`'bmk,bkn->bmn'` is batched matrix multiplication over `b`, contracting `k`. In NumPy, `@` (i.e., `np.matmul`) supports batch dimensions, so `A @ Bmat` yields shape `(B, M, N)`. `np.dot` has different batching semantics and often gives unexpected shapes for >2D inputs. The transpose in D is wrong and changes axes.",
+      "difficulty": "beginner",
+      "tags": [
+        "einsum",
+        "matmul",
+        "batched-matmul",
+        "shapes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a batch of embeddings `X` with shape `(B, D)` and want the full pairwise dot-product matrix per batch element:\n\n- Input: `X` shape `(B, N, D)`\n- Output: `S[b, i, j] = X[b, i] · X[b, j]` with shape `(B, N, N)`\n\nWhich `np.einsum` expression is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A. np.einsum('bnd,bmd->bnm', X, X)",
+        "B. np.einsum('bnd,bnd->bnn', X, X)",
+        "C. np.einsum('bnd,bmd->bd', X, X)",
+        "D. np.einsum('bnn,bnd->bnd', X, X)"
+      ],
+      "correct_answer": "A",
+      "explanation": "For `S[b,i,j] = sum_d X[b,i,d] * X[b,j,d]`, the correct subscripts are `bnd,bmd->bnm` (i.e., `n` and `m` index the two sets of vectors and `d` is reduced). This is the batched Gram matrix and is equivalent to `X @ X.transpose(0,2,1)` when using `matmul` with appropriate transpose.",
+      "difficulty": "intermediate",
+      "tags": [
+        "einsum",
+        "batched-dot",
+        "matmul-equivalence",
+        "linear-algebra"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing a numerically stable logistic loss and want to avoid Python loops.\n\nGiven:\n```python\nlogits = np.array([...], dtype=np.float32)  # shape (N,)\ny = np.array([...], dtype=np.int64)         # 0/1 labels, shape (N,)\n```\n\nWrite NumPy code to compute the mean binary cross-entropy loss:\n\n\\[ L = -\\frac{1}{N} \\sum_i y_i \\log \\sigma(z_i) + (1-y_i)\\log(1-\\sigma(z_i)) \\]\n\nin a stable way (hint: use `np.logaddexp`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One stable vectorized form is:\n\n```python\n# y in {0,1}\nz = logits\n# BCE with logits: log(1+exp(z)) - y*z\nloss = np.logaddexp(0.0, z) - y.astype(z.dtype) * z\nmean_loss = loss.mean()\n```\n\nOptionally clip/validate finite logits before computing if needed.",
+      "explanation": "Computing BCE via probabilities can overflow/underflow because `exp` and `log` become unstable for large |z|. The identity for BCE with logits is:\n\n- For y∈{0,1}: `BCE(z,y) = log(1+exp(z)) - y*z`.\n- `np.logaddexp(0, z)` computes `log(exp(0)+exp(z)) = log(1+exp(z))` stably.\n\nThis is fully vectorized and avoids per-element Python loops.",
+      "difficulty": "intermediate",
+      "tags": [
+        "vectorization",
+        "ufunc",
+        "numerical-stability",
+        "logaddexp",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have arrays:\n\n```python\nx = np.array([1.0, -2.0, 3.0])\nw = np.array([0.1, 0.2, 0.3])\n```\n\nYou want to compute `y = exp(x)` but only for elements where `w > 0.15`, and keep `y` unchanged elsewhere, **without allocating a temporary `exp(x)` for all elements**.\n\nWhich NumPy pattern best matches this goal?\n",
+      "question_type": "mc",
+      "options": [
+        "A. y = np.where(w > 0.15, np.exp(x), y)",
+        "B. np.exp(x, out=y, where=(w > 0.15))",
+        "C. y[w > 0.15] = np.exp(x[w > 0.15])",
+        "D. y = np.exp(x); y[w <= 0.15] = y"
+      ],
+      "correct_answer": "B",
+      "explanation": "Using a ufunc with `out=` and `where=` (here `np.exp`) lets NumPy compute only the masked elements and write directly into `y`, avoiding a full-size temporary `np.exp(x)`. Option A typically computes `np.exp(x)` for all elements before `where` selects, creating a temporary. Option C avoids a full temporary but still creates a temporary for the masked slice and can be slower due to advanced indexing. Option D explicitly creates a full temporary.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ufunc",
+        "out",
+        "where",
+        "masked-computation",
+        "memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Feature engineering with time-series/cyclical features:\n\nYou have timestamps in seconds `t` of shape (B, T) (float or int). Build a feature tensor `F` of shape (B, T, 6) containing:\n- normalized time `t_norm = (t - t0) / scale` where `t0` is the first timestamp per sequence (shape (B,1)) and `scale` is a scalar\n- sin/cos for hour-of-day and day-of-week (assume `t` is UNIX time, UTC)\n  - hour angle: 2π * (hour / 24)\n  - dow angle: 2π * (dow / 7)\n\nNo Python loops. Show the NumPy code and be explicit about shapes.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef time_features(t, scale=3600.0):\n    t = np.asarray(t)\n    B, T = t.shape\n\n    # t0: (B, 1)\n    t0 = t[:, :1]\n    t_norm = (t - t0) / scale  # (B, T)\n\n    # Convert to integer seconds for calendar-like features\n    ts = t.astype(np.int64)\n\n    # hour of day in [0, 23]\n    hour = (ts // 3600) % 24  # (B, T)\n    hour_angle = 2 * np.pi * (hour / 24.0)\n\n    # day of week in [0, 6] (Unix epoch 1970-01-01 was a Thursday)\n    days = ts // 86400\n    dow = (days + 3) % 7  # (B, T)\n    dow_angle = 2 * np.pi * (dow / 7.0)\n\n    hour_sin = np.sin(hour_angle)\n    hour_cos = np.cos(hour_angle)\n    dow_sin = np.sin(dow_angle)\n    dow_cos = np.cos(dow_angle)\n\n    # Stack into (B, T, 6)\n    F = np.stack([t_norm, hour_sin, hour_cos, dow_sin, dow_cos, np.ones_like(t_norm)], axis=-1)\n    return F\n```\n",
+      "explanation": "This builds an end-to-end time feature tensor with correct batching and shapes. `t0 = t[:, :1]` preserves (B,1) so broadcasting works for `(t - t0)`. Hour/day-of-week are computed with integer arithmetic and modulo, then mapped to angles and sin/cos for cyclical encoding. Finally, `np.stack(..., axis=-1)` forms the (B, T, features) layout commonly consumed by ML models.",
+      "difficulty": "advanced",
+      "tags": [
+        "feature-engineering",
+        "time-series",
+        "cyclical-features",
+        "broadcasting",
+        "vectorization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Advanced indexing pattern (batched gather):\n\nYou have an embedding table `W` of shape (V, D) and a batch of token ids `ids` of shape (B, T) with values in [0, V).\n\n1) Write NumPy code to get embeddings `E` of shape (B, T, D).\n2) Then, given `pos` of shape (B,) indicating one position per sequence, gather the embedding at that position to get `E_sel` of shape (B, D) without Python loops.\n\nProvide the code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef embed_and_select(W, ids, pos):\n    # 1) embedding lookup (gather)\n    E = W[ids]  # (B, T, D)\n\n    # 2) batched gather at per-row positions\n    b = np.arange(ids.shape[0])\n    E_sel = E[b, pos]  # (B, D)\n    return E, E_sel\n```\n",
+      "explanation": "`W[ids]` is the standard NumPy gather for embedding lookup, producing (B, T, D) via advanced indexing. For per-sequence selection, pair batch indices `np.arange(B)` with `pos` to index the second axis: `E[b, pos]`. This pattern mirrors common ML operations like selecting the last valid token representation or a [CLS]-like position.",
+      "difficulty": "beginner",
+      "tags": [
+        "advanced-indexing",
+        "gather",
+        "embeddings",
+        "batched-indexing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Memory layout/contiguity in practice:\n\nYou slice and transpose an array before passing it to a deep learning framework that expects C-contiguous float32.\n\nGiven:\n```python\nA = np.random.randn(32, 128, 64).astype(np.float32)\nB = A[:, :, ::2]      # take every other feature\nC = B.transpose(0, 2, 1)\n```\n\nWhich statement is most accurate?\n\nA) `C` is guaranteed C-contiguous; `reshape` on `C` will always be a view.\n\nB) `C` is likely non-contiguous; use `np.ascontiguousarray(C)` before handing off.\n\nC) `B` is always F-contiguous because of the stride `::2`.\n\nD) `transpose` never changes contiguity; it only changes metadata.",
+      "question_type": "mc",
+      "options": [
+        "A) C is guaranteed C-contiguous; reshape on C will always be a view.",
+        "B) C is likely non-contiguous; use np.ascontiguousarray(C) before handing off.",
+        "C) B is always F-contiguous because of the stride ::2.",
+        "D) transpose never changes contiguity; it only changes metadata."
+      ],
+      "correct_answer": "B",
+      "explanation": "Strided slicing (`::2`) and `transpose` typically produce views with non-standard strides, so the result is often non-C-contiguous. Many frameworks either require contiguous inputs or will silently copy; making contiguity explicit with `np.ascontiguousarray` prevents surprises and can improve performance. `transpose` changes strides and can break contiguity, so (D) is misleading; `reshape` is only a view when the memory layout allows it.",
+      "difficulty": "intermediate",
+      "tags": [
+        "memory-layout",
+        "contiguity",
+        "views-vs-copies",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re profiling a NumPy preprocessing pipeline and see large temporary allocations.\n\nWhich change most directly reduces temporaries when computing row-wise squared L2 norms for `X` with shape (N, D)?\n\nA)\n```python\nnorm2 = np.sum(X**2, axis=1)\n```\n\nB)\n```python\nnorm2 = np.einsum('nd,nd->n', X, X)\n```\n\nC)\n```python\nnorm2 = (X @ X.T).diagonal()\n```\n\nD)\n```python\nnorm2 = np.linalg.norm(X, axis=1)\n```",
+      "question_type": "mc",
+      "options": [
+        "A) norm2 = np.sum(X**2, axis=1)",
+        "B) norm2 = np.einsum('nd,nd->n', X, X)",
+        "C) norm2 = (X @ X.T).diagonal()",
+        "D) norm2 = np.linalg.norm(X, axis=1)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`X**2` in (A) materializes a full N×D temporary. `np.einsum('nd,nd->n', X, X)` can fuse the multiply-and-reduce without creating that explicit squared array, often reducing peak memory. (C) forms an N×N matrix—much worse. (D) computes sqrt (and may still allocate intermediates); also it returns L2 norm, not squared norm.",
+      "difficulty": "advanced",
+      "tags": [
+        "performance",
+        "vectorization",
+        "einsum",
+        "memory-optimization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Implement a mini-batch index iterator in pure NumPy.\n\nRequirements:\n- Inputs: `N` (dataset size), `batch_size`, `shuffle=True`, `seed=None`, `drop_last=False`\n- Each epoch: return a list (or generator) of 1D index arrays\n- If `drop_last=False`, include the final smaller batch\n- Shuffling must be reproducible with `seed`\n\nWrite the code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef batch_indices(N, batch_size, shuffle=True, seed=None, drop_last=False):\n    idx = np.arange(N)\n    if shuffle:\n        rng = np.random.default_rng(seed)\n        rng.shuffle(idx)\n\n    end = (N // batch_size) * batch_size if drop_last else N\n    for start in range(0, end, batch_size):\n        yield idx[start:start + batch_size]\n```\n",
+      "explanation": "This is a common interview building block for training loops without a framework. `default_rng(seed)` provides reproducible shuffles. Slicing the shuffled index array is efficient and avoids copying data. `drop_last` controls whether the last partial batch is included.",
+      "difficulty": "intermediate",
+      "tags": [
+        "minibatching",
+        "shuffling",
+        "training-loop",
+        "numpy-rng"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Label smoothing: given one-hot labels `Y` of shape (N, C) and smoothing factor `eps` (e.g., 0.1), implement label-smoothed targets `Y_smooth` where:\n- correct class gets (1 - eps)\n- the remaining mass eps is distributed uniformly across all classes (including or excluding the correct class? Use the common formulation that distributes across all classes).\n\nWrite vectorized NumPy code and state the final formula.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Formula (common across all classes):\n- `Y_smooth = (1 - eps) * Y + eps / C`\n\n```python\nimport numpy as np\n\ndef label_smooth(Y, eps):\n    Y = np.asarray(Y)\n    C = Y.shape[1]\n    return (1.0 - eps) * Y + (eps / C)\n```\n",
+      "explanation": "This formulation adds a uniform prior over classes (`eps/C`) and scales down the hard one-hot target by `(1-eps)`. It’s fully vectorized and avoids per-sample operations. (Some variants distribute `eps` over only the incorrect classes, using `eps/(C-1)`; the question specifies the common “across all classes” version.)",
+      "difficulty": "beginner",
+      "tags": [
+        "label-smoothing",
+        "one-hot",
+        "vectorization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to create one-hot labels for a large classification problem.\n- `y` is int64 of shape (N,) with class indices in [0, C)\n- You want `Y` of shape (N, C) float32\n\nWhich is the most efficient and idiomatic NumPy approach (time/memory wise) without Python loops?\n\nA)\n```python\nY = np.zeros((N, C), dtype=np.float32)\nfor i in range(N):\n    Y[i, y[i]] = 1\n```\n\nB)\n```python\nY = np.eye(C, dtype=np.float32)[y]\n```\n\nC)\n```python\nY = np.zeros((N, C), dtype=np.float32)\nY[np.arange(N), y] = 1\n```\n\nD)\n```python\nY = (np.arange(C) == y[:, None]).astype(np.float32)\n```",
+      "question_type": "mc",
+      "options": [
+        "A) Loop and assign Y[i, y[i]] = 1",
+        "B) Y = np.eye(C, dtype=np.float32)[y]",
+        "C) Y = np.zeros((N, C), dtype=np.float32); Y[np.arange(N), y] = 1",
+        "D) Y = (np.arange(C) == y[:, None]).astype(np.float32)"
+      ],
+      "correct_answer": "C",
+      "explanation": "(C) uses advanced indexing to scatter 1s into a preallocated array—fast and memory predictable. (B) can be fine but constructs (or at least materializes) an identity matrix of size C×C, which is wasteful when C is large. (D) creates a large boolean intermediate of size N×C before casting. (A) is slow due to Python looping.",
+      "difficulty": "beginner",
+      "tags": [
+        "one-hot",
+        "advanced-indexing",
+        "vectorization",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have per-token embeddings `E` with shape (B, T, D) and sequence lengths `lengths` with shape (B,) (each length <= T). You want the masked mean embedding per sequence: output shape (B, D).\n\nWrite a fully vectorized NumPy implementation (no Python loops). Handle cases where length can be 0 safely (avoid division by zero).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef masked_mean(E, lengths):\n    B, T, D = E.shape\n    lengths = np.asarray(lengths)\n\n    # mask: (B, T)\n    t = np.arange(T)[None, :]\n    mask = t < lengths[:, None]\n\n    # sum over time using mask\n    masked_sum = (E * mask[:, :, None]).sum(axis=1)  # (B, D)\n\n    denom = np.maximum(lengths, 1)[:, None]  # avoid /0\n    return masked_sum / denom\n```\n",
+      "explanation": "This is a standard padding-mask pattern: build a (B, T) mask via comparison with `np.arange(T)`, broadcast it to (B, T, 1) to zero-out padded vectors, then reduce. Safe division uses `np.maximum(lengths, 1)` to avoid NaNs/inf when a sequence has length 0; downstream code can also separately handle those rows if needed.",
+      "difficulty": "intermediate",
+      "tags": [
+        "masking",
+        "padding",
+        "masked-reduction",
+        "safe-division",
+        "broadcasting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Given attention logits `scores` of shape (B, Tq, Tk) and a boolean mask `valid_k` of shape (B, Tk) where True means the key position is valid (not padding).\n\nWrite NumPy code to:\n1) Convert `valid_k` into a broadcastable mask for `scores`\n2) Set invalid positions in `scores` to a large negative number (so softmax ignores them)\n3) Compute masked softmax probabilities over the last axis.\n\nAssume you already have a stable `softmax(scores, axis=-1)` function.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef masked_attention_probs(scores, valid_k):\n    # valid_k: (B, Tk) -> (B, 1, Tk)\n    mask = valid_k[:, None, :]\n\n    # Use a large negative value compatible with dtype\n    neg = -1e9 if scores.dtype == np.float32 else -1e30\n    masked_scores = np.where(mask, scores, neg)\n\n    return softmax(masked_scores, axis=-1)\n```\n",
+      "explanation": "Padding masks are typically boolean and need reshaping to broadcast across query positions: (B, Tk) → (B, 1, Tk). Setting invalid logits to a very negative number ensures `exp(neg)` is ~0, so softmax probability mass goes to valid tokens. Using `np.where` is a common pure-NumPy building block for masking in attention.",
+      "difficulty": "intermediate",
+      "tags": [
+        "masking",
+        "padding",
+        "attention",
+        "stable-softmax",
+        "broadcasting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have queries `Q` and keys `K` in an attention block:\n- `Q` shape: (B, Tq, D)\n- `K` shape: (B, Tk, D)\n\nYou want attention scores `S[b, i, j] = sum_d Q[b, i, d] * K[b, j, d]` giving shape (B, Tq, Tk).\n\nWhich `np.einsum` expression is correct?\n\nA) `np.einsum('btd,btd->bt', Q, K)`\n\nB) `np.einsum('bid,bjd->bij', Q, K)`\n\nC) `np.einsum('bik,bjk->bij', Q, K)`\n\nD) `np.einsum('bdi,bdj->bij', Q, K)`",
+      "question_type": "mc",
+      "options": [
+        "A) np.einsum('btd,btd->bt', Q, K)",
+        "B) np.einsum('bid,bjd->bij', Q, K)",
+        "C) np.einsum('bik,bjk->bij', Q, K)",
+        "D) np.einsum('bdi,bdj->bij', Q, K)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`'bid,bjd->bij'` contracts over the shared `d` dimension while keeping batch `b`, query position `i`, and key position `j`. (A) produces (B, T) and assumes same T for Q and K; (C) uses `k` as the contracted dim but Q/K last dim is D (not K); (D) implies Q is shaped (B, D, I) and K is (B, D, J), which is not the given layout.",
+      "difficulty": "intermediate",
+      "tags": [
+        "einsum",
+        "attention",
+        "tensor-contraction",
+        "batched-matmul"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need `logsumexp(x, axis=1)` for `x` with shape (batch, classes) without using SciPy.\n\nWhich implementation is numerically stable and correct?\n\nA)\n```python\nnp.log(np.sum(np.exp(x), axis=1))\n```\n\nB)\n```python\nm = np.max(x, axis=1)\nnp.log(np.sum(np.exp(x - m[:, None]), axis=1)) + m\n```\n\nC)\n```python\nm = np.min(x, axis=1)\nnp.log(np.sum(np.exp(x - m[:, None]), axis=1)) + m\n```\n\nD)\n```python\nnp.sum(x, axis=1) - np.log(x.shape[1])\n```",
+      "question_type": "mc",
+      "options": [
+        "A) np.log(np.sum(np.exp(x), axis=1))",
+        "B) m = np.max(x, axis=1); np.log(np.sum(np.exp(x - m[:, None]), axis=1)) + m",
+        "C) m = np.min(x, axis=1); np.log(np.sum(np.exp(x - m[:, None]), axis=1)) + m",
+        "D) np.sum(x, axis=1) - np.log(x.shape[1])"
+      ],
+      "correct_answer": "B",
+      "explanation": "The stable trick is to factor out the maximum: log(sum(exp(x))) = m + log(sum(exp(x-m))). Subtracting `m` avoids overflow and keeps exponentials in a safe range. (A) can overflow, (C) can still overflow because subtracting the minimum increases values, and (D) is not equivalent to logsumexp.",
+      "difficulty": "intermediate",
+      "tags": [
+        "logsumexp",
+        "numerical-stability",
+        "stable-softmax"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Implement a numerically stable softmax for a 2D logits array `x` of shape (batch, classes). Return probabilities with the same shape.\n\nConstraints:\n- Must be stable for large positive/negative logits\n- Must be vectorized (no Python loops)\n- Must handle `x` as float32 or float64\n\nWrite the NumPy code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef softmax(x, axis=-1):\n    x = np.asarray(x)\n    m = np.max(x, axis=axis, keepdims=True)\n    z = x - m\n    ez = np.exp(z)\n    return ez / np.sum(ez, axis=axis, keepdims=True)\n```\n",
+      "explanation": "Subtracting the maximum per row (or along `axis`) prevents overflow in `exp` when logits are large. Using `keepdims=True` preserves broadcasting shape. The computation is fully vectorized and works for float32/float64. This is the standard stable softmax building block used for converting logits to probabilities in classification and attention.",
+      "difficulty": "beginner",
+      "tags": [
+        "stable-softmax",
+        "numerical-stability",
+        "broadcasting",
+        "vectorization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Random sampling for ML workflows: You need a reproducible stratified train/val split for classification.\n\nWrite NumPy code (no scikit-learn) that:\n- takes `y` (shape `(N,)`) and `val_frac`\n- returns `train_idx`, `val_idx`\n- preserves class proportions approximately\n- is reproducible given a seed\n\nExplain how you handle sampling without replacement and what could go wrong if you sample with replacement.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\ndef stratified_split(y, val_frac=0.2, seed=0):\n    rng = np.random.default_rng(seed)\n    y = np.asarray(y)\n    classes, inv = np.unique(y, return_inverse=True)\n\n    train_parts = []\n    val_parts = []\n    for c in range(classes.size):\n        idx = np.flatnonzero(inv == c)\n        rng.shuffle(idx)\n        n_val = int(np.round(val_frac * idx.size))\n        val_parts.append(idx[:n_val])\n        train_parts.append(idx[n_val:])\n\n    val_idx = np.concatenate(val_parts)\n    train_idx = np.concatenate(train_parts)\n    rng.shuffle(val_idx)\n    rng.shuffle(train_idx)\n    return train_idx, val_idx\n```\n\nSampling is without replacement because we shuffle indices within each class and then take disjoint slices. If you sample with replacement (e.g., `rng.choice(idx, size=n_val, replace=True)`), you can duplicate samples in validation and leave some samples unused, and you can even end up with overlap between train and val if you’re not careful—invalidating evaluation.",
+      "explanation": "Stratification is common when classes are imbalanced. Using `default_rng(seed)` makes randomness reproducible. Working with per-class index arrays avoids slow Python loops over samples and makes it easy to guarantee disjoint splits (no leakage).",
+      "difficulty": "intermediate",
+      "tags": [
+        "random-sampling",
+        "stratified-sampling",
+        "reproducibility",
+        "train-val-split",
+        "set-uniqueness"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Advanced indexing + framework interoperability: You have a large NumPy array `X` (float32) and want to create a PyTorch tensor without copying for performance. You also need to select a subset of rows.\n\nWhich statement is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `torch.from_numpy(X[rows])` is always zero-copy because `from_numpy` never copies.",
+        "B. Fancy indexing like `X[rows]` usually creates a copy in NumPy, so `from_numpy(X[rows])` will wrap a new buffer; to keep zero-copy you need a view-based selection (e.g., slicing) or accept the copy.",
+        "C. `torch.as_tensor(X)` always copies to make the tensor contiguous, even if X is contiguous.",
+        "D. If X is float64, `torch.from_numpy(X)` will silently cast to float32 without copying."
+      ],
+      "correct_answer": "B",
+      "explanation": "In NumPy, fancy indexing (index arrays/lists) produces a copy, not a view. So `X[rows]` allocates a new array; `torch.from_numpy` can still be zero-copy with respect to that newly created NumPy array, but you’ve already paid the copy cost during indexing. For true zero-copy from the original buffer, you need view-based operations (basic slicing, reshape, transpose with compatible strides) and a contiguous-compatible layout. Also, dtype must be supported; `from_numpy` preserves dtype (no silent float64→float32 cast).",
+      "difficulty": "advanced",
+      "tags": [
+        "advanced-indexing",
+        "views-vs-copies",
+        "interoperability",
+        "pytorch",
+        "performance",
+        "contiguous"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Interoperability + linear algebra (advanced): You’re fitting linear regression with many correlated features. You consider using either the normal equations with `solve`, or a least-squares/SVD-based approach.\n\n1) Explain when `np.linalg.solve(A, b)` is appropriate vs when `np.linalg.lstsq(A, b)` is safer.\n2) Provide a NumPy snippet that uses SVD to compute a numerically stable solution (possibly with small singular values handled).\n3) Mention one common shape pitfall with `np.linalg.svd` outputs.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `np.linalg.solve(A, b)` is appropriate when `A` is square (n×n) and well-conditioned and you truly want to solve `Ax=b`. It will fail or be unstable if `A` is singular/near-singular. `np.linalg.lstsq(A, b)` is safer for over/under-determined systems (A is n×d) and handles rank-deficiency by returning a least-squares solution.\n\n2)\n```python\nA = ...  # (n, d)\nb = ...  # (n,) or (n, k)\nU, S, Vt = np.linalg.svd(A, full_matrices=False)\n# Pseudoinverse with tolerance\nrcond = 1e-12\nS_inv = np.where(S > rcond * S.max(), 1.0 / S, 0.0)\nA_pinv = (Vt.T * S_inv) @ U.T\nw = A_pinv @ b  # (d,) or (d, k)\n```\n\n3) Shape pitfall: `np.linalg.svd` returns `U` (n×r), `S` (r,), `Vt` (r×d) when `full_matrices=False` where `r=min(n,d)`. People often expect `V` instead of `Vt`, or try to do `U @ S @ Vt` without expanding `S` to a diagonal or broadcasting correctly.",
+      "explanation": "In ML, feature multicollinearity makes `A^T A` ill-conditioned; using `solve(A.T@A, A.T@b)` can amplify numerical error. `lstsq` and SVD-based pseudoinverse are standard remedies. Understanding SVD shapes and conditioning helps avoid silent bugs and improves stability. This also connects to framework interoperability: many pipelines compute weights in NumPy then move them into PyTorch/TensorFlow; stable solutions reduce downstream training/inference issues.",
+      "difficulty": "advanced",
+      "tags": [
+        "linear-algebra",
+        "svd",
+        "conditioning",
+        "least-squares-vs-solve",
+        "shape-pitfalls",
+        "interoperability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re computing normalization stats for features with outliers and missing values.\n\nGiven `X` shape `(N, d)` with possible NaNs, which approach best implements a robust scaler using the median and IQR (75th-25th percentile) while ignoring NaNs?\n",
+      "question_type": "mc",
+      "options": [
+        "A. med = X.mean(0); iqr = np.percentile(X, 75, 0) - np.percentile(X, 25, 0)",
+        "B. med = np.nanmedian(X, axis=0); iqr = np.nanpercentile(X, 75, axis=0) - np.nanpercentile(X, 25, axis=0)",
+        "C. med = np.median(X); iqr = np.quantile(X, [0.25, 0.75])",
+        "D. med = np.nanmean(X, axis=0); iqr = np.nanstd(X, axis=0, ddof=1)"
+      ],
+      "correct_answer": "B",
+      "explanation": "Robust scaling typically uses median and IQR to reduce sensitivity to outliers. With NaNs present, use `nan*` variants: `np.nanmedian` and `np.nanpercentile` (or `np.nanquantile`). Option A doesn’t ignore NaNs, so results become NaN. Option C computes over the whole array unless axes are specified and doesn’t ignore NaNs. Option D is mean/std, not robust, and `ddof` is unrelated to IQR.",
+      "difficulty": "intermediate",
+      "tags": [
+        "statistics",
+        "nan-handling",
+        "percentile-quantile",
+        "robust-scaling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have class probabilities `probs` of shape `(N, C)` from a model and want predicted class IDs and also a one-hot mask for the predicted class.\n\nImplement this in NumPy and address tie behavior.\n\nRequirements:\n- `pred` should be shape `(N,)`\n- `pred_mask` should be shape `(N, C)` and broadcast-safe\n- Mention what happens if two classes have equal max probability.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\npred = np.argmax(probs, axis=1)  # (N,)\n\n# keepdims to make broadcasting easy\nmaxv = np.max(probs, axis=1, keepdims=True)      # (N, 1)\npred_mask = (probs == maxv)                      # (N, C) (may be multi-hot on ties)\n\n# If you need strict one-hot even with ties, use argmax indices:\npred_mask_oh = np.eye(probs.shape[1], dtype=bool)[pred]  # (N, C)\n```\n\nTie behavior: `np.argmax` returns the first occurrence of the maximum along the axis (lowest class index among ties). The equality mask `(probs == maxv)` becomes multi-hot if there are ties; using `np.eye(...)[pred]` enforces exactly one class per row consistent with `argmax`.",
+      "explanation": "In ML inference code, `axis` handling is critical: `axis=1` selects the class dimension. `keepdims=True` preserves rank so downstream broadcasting works (e.g., subtracting row-wise maxima for stability). Tie handling matters for reproducibility and correctness: argmax is deterministic but biased toward lower indices; equality masks can accidentally create multiple positives per sample.",
+      "difficulty": "intermediate",
+      "tags": [
+        "argmax-argmin",
+        "keepdims",
+        "broadcasting",
+        "classification"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Dataset hygiene: you have `y_train` labels and a set of allowed labels `allowed`. You want to filter out samples whose labels are not allowed.\n\nWhich option correctly builds a boolean mask for the allowed labels?\n\n```python\ny_train = np.array([0, 1, 2, 2, 5])\nallowed = np.array([0, 2])\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. mask = y_train in allowed",
+        "B. mask = np.isin(y_train, allowed)",
+        "C. mask = np.intersect1d(y_train, allowed)",
+        "D. mask = np.setdiff1d(y_train, allowed)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.isin(y_train, allowed)` returns a boolean mask aligned with `y_train`, which you can use to filter rows: `X_train[mask]`, `y_train[mask]`. `intersect1d` returns the sorted intersection values (not a per-element mask). `setdiff1d` returns values in y_train not in allowed (also not a mask). Python’s `in` doesn’t vectorize over arrays.",
+      "difficulty": "beginner",
+      "tags": [
+        "set-uniqueness",
+        "isin",
+        "intersect1d-setdiff1d",
+        "dataset-hygiene"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have string labels and need to encode them to integer class IDs for a classifier, while also being able to decode predictions back to original labels.\n\nGiven:\n\n```python\nlabels = np.array([\"cat\", \"dog\", \"cat\", \"bird\", \"dog\"])\n```\n\nWrite NumPy code using `np.unique` to produce:\n1) `classes` (sorted unique labels)\n2) `y` (integer encoded labels)\n3) `counts` (per-class counts)\n\nAlso explain what `return_inverse` means and why it’s useful in ML pipelines.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nclasses, y, counts = np.unique(labels, return_inverse=True, return_counts=True)\n# classes: array([\"bird\", \"cat\", \"dog\"], dtype=...)\n# y:       array([1, 2, 1, 0, 2])\n# counts:  array([1, 2, 2])\n```\n\n`return_inverse=True` returns an integer array `y` such that `classes[y]` reconstructs the original `labels`. This is useful for turning arbitrary label types (strings, IDs) into contiguous class indices required by many ML losses/metrics, while keeping a reversible mapping for decoding predictions.",
+      "explanation": "Label encoding is a frequent preprocessing step. `np.unique(..., return_inverse=True)` gives a stable, vectorized way to build the mapping without Python dict loops, and `return_counts=True` is handy for class imbalance checks and stratification logic.",
+      "difficulty": "intermediate",
+      "tags": [
+        "set-uniqueness",
+        "np-unique",
+        "label-encoding",
+        "dataset-hygiene"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re implementing a train/val split and want to split indices into K folds. Sometimes `N` isn’t divisible by `K`.\n\nWhich approach is most appropriate to split an array of indices into K nearly equal parts without dropping elements?\n",
+      "question_type": "mc",
+      "options": [
+        "A. np.split(indices, K) because it automatically balances uneven splits.",
+        "B. np.array_split(indices, K) because it allows uneven splits and keeps all elements.",
+        "C. np.vsplit(indices, K) because it works for 1D arrays and balances folds.",
+        "D. np.hsplit(indices, K) because it is designed for splitting index arrays."
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.split` requires equal-sized splits (N must be divisible by K). `np.array_split` allows the last chunks to differ by at most 1 element, which is common for K-fold style splitting. `vsplit/hsplit` are convenience wrappers for splitting along axis 0/1 primarily for 2D arrays; for 1D indices they’re not the standard choice.",
+      "difficulty": "intermediate",
+      "tags": [
+        "stacking-splitting",
+        "split-array-split",
+        "ml-workflows",
+        "cross-validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have features `X` of shape `(N, d)` and labels `y` of shape `(N,)`. You want to create a single array for saving to disk where the last column is the label.\n\nWhich option produces an array of shape `(N, d+1)` correctly and idiomatically?\n",
+      "question_type": "mc",
+      "options": [
+        "A. np.row_stack([X, y])",
+        "B. np.column_stack([X, y])",
+        "C. np.hsplit(X, y)",
+        "D. np.vstack((X, y))"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.column_stack([X, y])` stacks 1D arrays as columns and 2D arrays column-wise. With `X` as (N, d) and `y` as (N,), it yields (N, d+1). `vstack/row_stack` would stack along rows and would fail or produce the wrong shape because `y` is 1D. `hsplit` splits an array; it’s not for concatenation.",
+      "difficulty": "beginner",
+      "tags": [
+        "stacking-splitting",
+        "column-stack",
+        "feature-label-assembly",
+        "shapes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a single example feature vector `x` of shape `(d,)` and you need it as a batch of size 1 for a model expecting `(batch, d)`.\n\nWrite NumPy code that converts `x` into shape `(1, d)` without copying if possible, and explain the difference between `np.expand_dims`, `np.atleast_2d`, and `np.squeeze` in this context.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```python\nx2 = np.expand_dims(x, axis=0)  # shape (1, d)\n# or\nx2 = np.atleast_2d(x)           # shape (1, d) for 1D input\n```\n\n`np.expand_dims(x, axis=0)` inserts a new axis at a specified position (here, batch axis). `np.atleast_2d(x)` ensures the result has at least 2 dimensions; for 1D input it becomes (1, d), but for already-2D input it returns it unchanged (often a view). `np.squeeze(a)` removes axes of length 1; it’s the inverse operation used when you want to drop accidental singleton dimensions (e.g., from (batch, 1) to (batch,)).",
+      "explanation": "Batching a single feature vector is a common ML preprocessing step. `expand_dims` is explicit about where the new axis goes, which is useful when you have (H, W, C) vs (C, H, W) conventions. `atleast_2d` is convenient for generic code that accepts either a single sample (d,) or a batch (n, d). `squeeze` should be used carefully because it can drop more dimensions than intended if multiple axes have size 1; prefer `squeeze(axis=...)` when you know which axis to remove.",
+      "difficulty": "beginner",
+      "tags": [
+        "array-api",
+        "squeeze-expand-dims",
+        "atleast-nd",
+        "shapes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a model pipeline you flatten feature maps for a linear layer. Consider:\n\n```python\nx = np.arange(12).reshape(3, 4)\ny = x[:, :]\n\nr = y.ravel()\nf = y.flatten()\n\nr[0] = 999\n```\n\nWhat is true about `x` after this code runs (typical NumPy behavior)?",
+      "question_type": "mc",
+      "options": [
+        "A. `x[0,0]` becomes 999 because both ravel() and flatten() always return views.",
+        "B. `x[0,0]` becomes 999 because ravel() returns a view when possible; flatten() returns a copy.",
+        "C. `x[0,0]` stays 0 because ravel() always returns a copy and flatten() returns a view.",
+        "D. The behavior is undefined and depends on NumPy version; neither can be relied upon."
+      ],
+      "correct_answer": "B",
+      "explanation": "flatten() always returns a copy. ravel() returns a view when it can (e.g., for contiguous arrays or simple views that remain contiguous); otherwise it falls back to a copy. In this case `y = x[:, :]` is typically a view that remains contiguous, so `r` aliases `x` and mutating `r` updates `x` (so `x[0,0]` becomes 999). This matters in ML code where flattening for a head layer should not silently mutate upstream tensors/arrays.",
+      "difficulty": "intermediate",
+      "tags": [
+        "array-api",
+        "ravel-vs-flatten",
+        "views-vs-copies",
+        "memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re writing a preprocessing function that accepts either a Python list, a NumPy array, or a NumPy view. You want to avoid unnecessary copies, but also ensure you don’t accidentally modify the caller’s data.\n\nWhich choice best matches this intent?\n\n```python\nx = ...  # list or np.ndarray\n# goal: get ndarray without copy when possible\n# but if you plan to mutate, ensure you don't mutate the caller\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use np.array(x) always; it never copies if x is already an ndarray, and it is safe to mutate.",
+        "B. Use np.asarray(x) for read-only operations; if you need to mutate, do x = np.asarray(x).copy().",
+        "C. Use np.copy(x) always; it guarantees a view and is fastest for large arrays.",
+        "D. Use np.asarray(x) always; it always returns a view so mutating is safe."
+      ],
+      "correct_answer": "B",
+      "explanation": "np.asarray(x) converts inputs to an ndarray but avoids copying when x is already an ndarray of compatible dtype/order. That’s ideal for read-only pipelines. If you plan to mutate, you must ensure ownership by copying (e.g., np.asarray(x).copy()), otherwise you may mutate the caller’s array (or a view into it). np.array often copies more aggressively (e.g., can change dtype/order), and np.copy always copies (not a view).",
+      "difficulty": "beginner",
+      "tags": [
+        "array-api",
+        "asarray-vs-array-vs-copy",
+        "memory",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a large feature matrix `X` (float32) used for both NumPy preprocessing and then conversion to PyTorch. You notice memory spikes and slowdowns.\n\nWhich statement is most accurate about performance-aware NumPy usage and NumPy↔PyTorch interoperability?",
+      "question_type": "mc",
+      "options": [
+        "A. Transposes and fancy indexing always return views, so they are always zero-copy before converting to a tensor",
+        "B. Using in-place ops (e.g., `X -= mean`) always improves performance and is always safe in ML pipelines",
+        "C. Ensuring arrays are contiguous (e.g., `np.ascontiguousarray`) can avoid implicit copies when converting to tensors; some operations like transpose/fancy indexing often create non-contiguous views/copies that trigger extra allocations",
+        "D. PyTorch always shares memory with any NumPy array regardless of dtype, so dtype doesn’t matter"
+      ],
+      "correct_answer": "C",
+      "explanation": "Many tensor libraries prefer (or require) contiguous memory layouts for zero-copy conversion. NumPy transposes typically create non-contiguous views; fancy indexing often creates copies. If you pass a non-contiguous array, frameworks may silently copy, causing memory spikes. In-place ops can help but are not always safe (they can break reuse of raw features, cached arrays, or autograd expectations once in a tensor). Dtype matters: PyTorch/TF have specific supported dtypes and may copy/cast if mismatched (e.g., float64 vs float32).",
+      "difficulty": "intermediate",
+      "tags": [
+        "performance",
+        "copies-vs-views",
+        "contiguity",
+        "preallocation",
+        "interop",
+        "pytorch",
+        "tensorflow"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to compute macro-averaged precision/recall/F1 for a multi-class classifier using NumPy only.\n\nGiven:\n- `y_true`: shape (n,), int labels in [0, K-1]\n- `y_pred`: shape (n,), int labels in [0, K-1]\n\nWrite vectorized NumPy code to compute:\n- confusion matrix (KxK)\n- per-class precision/recall/F1\n- macro F1\n\nAvoid Python loops over samples (looping over classes is acceptable but try to keep it vectorized).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\nK = int(max(y_true.max(), y_pred.max()) + 1)\n\ny_true = np.asarray(y_true)\ny_pred = np.asarray(y_pred)\n\n# Confusion matrix: rows=true, cols=pred\ncm = np.zeros((K, K), dtype=np.int64)\nnp.add.at(cm, (y_true, y_pred), 1)\n\n# Per-class metrics\nTP = np.diag(cm).astype(np.float64)\nFP = cm.sum(axis=0) - TP\nFN = cm.sum(axis=1) - TP\n\nprecision = TP / np.maximum(TP + FP, 1e-12)\nrecall    = TP / np.maximum(TP + FN, 1e-12)\nf1        = 2 * precision * recall / np.maximum(precision + recall, 1e-12)\n\nmacro_f1 = f1.mean()\n```",
+      "explanation": "`np.add.at` is a standard NumPy trick to build a confusion matrix without looping over samples. From the confusion matrix, TP/FP/FN are computed via row/column sums and the diagonal. Using `np.maximum(denom, eps)` prevents division-by-zero for classes with no predicted or true samples, which is a common edge case in real evaluations (especially with imbalanced data).",
+      "difficulty": "advanced",
+      "tags": [
+        "metrics",
+        "confusion-matrix",
+        "precision-recall-f1",
+        "vectorization",
+        "clip",
+        "edge-cases"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a preprocessing pipeline where missing values are represented as NaN and some upstream step can produce ±Inf. You need a robust feature-wise mean imputation:\n- Compute per-feature mean ignoring NaNs and ignoring Infs\n- Replace NaNs/Infs in X with that per-feature mean\n\nWhich NumPy approach is most appropriate?",
+      "question_type": "mc",
+      "options": [
+        "A. `mu = X.mean(axis=0); X = np.nan_to_num(X, nan=mu)`",
+        "B. `X = np.nan_to_num(X); mu = X.mean(axis=0)`",
+        "C. `X_clean = np.where(np.isfinite(X), X, np.nan); mu = np.nanmean(X_clean, axis=0); X_out = np.where(np.isfinite(X), X, mu)`",
+        "D. `mu = np.mean(X[X == X], axis=0); X_out = np.where(X == X, X, mu)`"
+      ],
+      "correct_answer": "C",
+      "explanation": "You must ignore both NaN and Inf when computing statistics. `np.nanmean` ignores NaNs but not Infs, so first convert non-finite values to NaN via `np.where(np.isfinite(X), X, np.nan)`. Then compute `mu` with `nanmean` and impute using `where`. Options A/B misuse `nan_to_num` (it doesn’t broadcast a per-feature vector into `nan=` that way) and can contaminate the mean by turning NaNs/Infs into arbitrary finite numbers before computing statistics. D only handles NaNs (via `X==X`) and is brittle for Infs.",
+      "difficulty": "advanced",
+      "tags": [
+        "nan-handling",
+        "inf-handling",
+        "nanmean",
+        "masking",
+        "robust-preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a 1D time series `x` (shape (T,)) and want two features often used in ML:\n1) cumulative return: \\(r_t = \\prod_{i=0}^t (1 + x_i) - 1\\)\n2) first difference of cumulative sum: \\(d_t = (\\sum_{i=0}^t x_i) - (\\sum_{i=0}^{t-1} x_i)\\)\n\nWrite NumPy code for both, and briefly explain what `np.diff` returns and how you align shapes.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\nx = np.asarray(x, dtype=np.float64)\n\n# 1) cumulative return\nr = np.cumprod(1.0 + x) - 1.0\n\n# 2) first difference of cumulative sum\ncs = np.cumsum(x)\n# np.diff(cs) has length T-1; prepend the first element to align to length T\n# Since cs[t] - cs[t-1] == x[t], this recovers x with alignment.\nd = np.r_[cs[0], np.diff(cs)]\n\n# Alternatively, directly: d == x\n```",
+      "explanation": "`np.cumprod` and `np.cumsum` are common for time-series feature engineering. `np.diff(arr)` returns consecutive differences `arr[1:] - arr[:-1]`, so its output is length `T-1`. If you need a `T`-length feature aligned to the original timeline, you typically prepend an initial value (e.g., `cs[0]`) or choose another convention (pad with 0/NaN).",
+      "difficulty": "beginner",
+      "tags": [
+        "cumsum",
+        "cumprod",
+        "diff",
+        "time-series",
+        "feature-engineering"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Implement a numerically safe elementwise division `z = a / b` where `a` and `b` are NumPy arrays. Requirements:\n- Where `b == 0`, output 0 (not inf/nan)\n- Preserve float dtype\n- Do it without Python loops\n\nWrite the NumPy code.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\na = np.asarray(a, dtype=np.float32)\nb = np.asarray(b, dtype=np.float32)\n\nz = np.divide(a, b, out=np.zeros_like(a, dtype=np.float32), where=(b != 0))\n```",
+      "explanation": "`np.divide` supports `out=` and `where=` to compute only where valid and fill the rest with a chosen default. This avoids generating inf/nan in intermediate results and is typically faster than masking with temporary arrays. Explicit float casting avoids integer division and ensures consistent downstream behavior in ML pipelines.",
+      "difficulty": "intermediate",
+      "tags": [
+        "where",
+        "safe-division",
+        "nan-prevention",
+        "vectorization",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re computing cross-entropy loss from predicted probabilities `p` (shape (n, K)) and integer labels `y` (shape (n,)). Some probabilities can be exactly 0 due to underflow, causing `log(0)`.\n\nWhich NumPy approach is best to prevent `-inf` while minimally biasing the loss?",
+      "question_type": "mc",
+      "options": [
+        "A. `loss = -np.log(p[np.arange(n), y]).mean()`",
+        "B. `loss = -np.log(np.clip(p[np.arange(n), y], 1e-12, 1.0)).mean()`",
+        "C. `loss = -np.log(p + 1e-12).mean()`",
+        "D. `loss = -np.log1p(p[np.arange(n), y]).mean()`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Clipping only the selected true-class probabilities prevents `log(0)` while limiting the perturbation to values near 0. Adding epsilon to the entire `p` matrix (C) changes all probabilities (and can break normalization assumptions if reused). `log1p` (D) computes log(1+p), which is not the cross-entropy term.",
+      "difficulty": "intermediate",
+      "tags": [
+        "clip",
+        "safe-transforms",
+        "cross-entropy",
+        "numerical-stability",
+        "nan-prevention"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have integer class labels `y` of shape (n,) with values in `[0, K-1]`. Create a one-hot matrix of shape (n, K) using NumPy. Then show how to map predictions `probs` (shape (n, K)) back to labels. Include one method using `np.eye` and one using advanced indexing.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\n# y: (n,), K: int\nonehot1 = np.eye(K, dtype=np.float32)[y]          # (n, K)\n\nonehot2 = np.zeros((y.shape[0], K), dtype=np.float32)\nonehot2[np.arange(y.shape[0]), y] = 1.0\n\n# probs: (n, K)\ny_pred = probs.argmax(axis=1)\n```",
+      "explanation": "`np.eye(K)[y]` is concise and fast for typical sizes. The advanced-indexing approach is useful when you want to control dtype or avoid creating a full identity matrix (helpful when K is large). Mapping probabilities back to labels is `argmax` over the class axis, which is the standard preprocessing/postprocessing pattern in ML pipelines.",
+      "difficulty": "beginner",
+      "tags": [
+        "one-hot",
+        "label-encoding",
+        "advanced-indexing",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to L2-normalize each row of `X` (shape (batch, d)) for cosine similarity. Some rows may be all zeros. Which implementation best avoids NaNs while keeping vectorization?\n\nAssume float input.",
+      "question_type": "mc",
+      "options": [
+        "A. `X / np.linalg.norm(X, axis=1, keepdims=True)`",
+        "B. `X / (np.linalg.norm(X, axis=1, keepdims=True) + 1e-12)`",
+        "C. `X / np.maximum(np.linalg.norm(X, axis=1, keepdims=True), 1e-12)`",
+        "D. `X / np.linalg.inv(np.linalg.norm(X, axis=1, keepdims=True))`"
+      ],
+      "correct_answer": "C",
+      "explanation": "A will produce NaNs for zero rows (division by 0). B often works, but adding epsilon changes the scaling for all rows (even non-zero ones) slightly; clamping with `maximum` preserves norms for non-zero rows while only stabilizing the degenerate case. D is invalid (inverse of a non-square array and conceptually wrong).",
+      "difficulty": "beginner",
+      "tags": [
+        "normalization",
+        "edge-cases",
+        "numerical-stability",
+        "vectorization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Implement feature standardization (z-score) in NumPy for a 2D array `X` of shape (n_samples, n_features). Handle these edge cases:\n- Some features may have zero variance\n- `X` may be integer dtype\n- Avoid division-by-zero and avoid producing NaNs\n\nWrite a function `standardize(X, eps=1e-8)` that returns `(X_std, mean, std)`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\ndef standardize(X, eps=1e-8):\n    Xf = np.asarray(X, dtype=np.float32)  # ensure float for mean/std and division\n    mean = Xf.mean(axis=0)\n    var = Xf.var(axis=0)\n    std = np.sqrt(var)\n\n    # Avoid zero-variance: ensure denominator >= eps\n    denom = np.maximum(std, eps)\n    X_std = (Xf - mean) / denom\n\n    # Optional: keep truly-constant features as 0 exactly\n    # mask = std < eps\n    # X_std[:, mask] = 0.0\n\n    return X_std, mean, std\n```",
+      "explanation": "Integer arrays will produce float means/vars, but the standardized output must be float; explicitly casting avoids surprises and can improve performance consistency. Zero-variance features cause division-by-zero; clamping the denominator with `np.maximum(std, eps)` prevents NaNs/Infs. Placing `eps` in the denominator (not inside the variance unless you intend to bias it) is a common, explicit way to stabilize preprocessing pipelines.",
+      "difficulty": "intermediate",
+      "tags": [
+        "standardization",
+        "normalization",
+        "edge-cases",
+        "dtype",
+        "numerical-stability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Which approach is generally preferred in NumPy for solving \\(A x = b\\) in ML code when \\(A\\) is square and well-conditioned, and why?\n\nA is shape (d, d), b is shape (d,).",
+      "question_type": "mc",
+      "options": [
+        "A. `x = np.linalg.inv(A) @ b` because it is the most explicit and readable",
+        "B. `x = np.linalg.solve(A, b)` because it avoids forming an explicit inverse and is typically more stable and efficient",
+        "C. `x = (A.T @ A) @ (A.T @ b)` because normal equations reduce noise",
+        "D. `x = np.linalg.eig(A)[1] @ (np.linalg.eig(A)[0] ** -1) @ b` because eigen-decomposition is always stable"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.linalg.solve` uses dedicated linear-solve routines (e.g., LU) and avoids explicitly computing `inv(A)`, which is slower and can amplify numerical error. Normal equations (option C) are not equivalent to solving Ax=b and often worsen conditioning. Eigen-based inversion (option D) is expensive and not generally stable for solving arbitrary systems.",
+      "difficulty": "beginner",
+      "tags": [
+        "linalg",
+        "solve",
+        "no-matrix-inverse",
+        "numerical-stability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re fitting linear regression with an intercept using NumPy. You have X with shape (n_samples, n_features) and y with shape (n_samples,). Implement a numerically stable solution for the weights w (including intercept) without explicitly computing a matrix inverse. Also mention when you would prefer `np.linalg.lstsq` over `np.linalg.solve`.\n\nProvide code using NumPy only.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport numpy as np\n\n# X: (n, d), y: (n,)\nXb = np.c_[np.ones((X.shape[0], 1), dtype=X.dtype), X]  # add intercept\n\n# Option 1: least squares (works for over/under-determined, rank-deficient)\nw, residuals, rank, s = np.linalg.lstsq(Xb, y, rcond=None)\n\n# If you *know* Xb is square and full rank (rare in ML), you can use solve:\n# w = np.linalg.solve(Xb, y)\n```\nPrefer `np.linalg.lstsq` when the system is overdetermined (typical in regression: n_samples > n_features), underdetermined, or potentially rank-deficient/ill-conditioned. `np.linalg.solve` requires a square, non-singular matrix and is not appropriate for the normal regression design matrix unless you formed normal equations (which is discouraged). Avoid `np.linalg.inv` because it is slower and numerically less stable than solving or least-squares routines.",
+      "explanation": "In ML, linear regression is usually an overdetermined least-squares problem. `np.linalg.lstsq` solves min ||Xw − y||₂ without forming an explicit inverse, and it handles rank deficiency more gracefully (returns rank and singular values). `np.linalg.solve(A, b)` is for square full-rank systems A w = b. A common anti-pattern is `w = np.linalg.inv(X.T @ X) @ (X.T @ y)`: it forms normal equations (squares the condition number) and computes an explicit inverse, both of which worsen numerical stability and often performance.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linalg",
+        "solve",
+        "lstsq",
+        "no-matrix-inverse",
+        "linear-regression"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need class counts and weighted class counts for labels in a mini-batch.\n\nGiven:\n- `y`: integer labels shape `(N,)`, values in `[0, K-1]`\n- `w`: sample weights shape `(N,)`\n\nWrite NumPy code to compute:\n1) `counts`: shape `(K,)` with counts per class\n2) `wcounts`: shape `(K,)` with sum of weights per class\n\nMake it robust if some classes are missing in the batch.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\ncounts = np.bincount(y, minlength=K)\nwcounts = np.bincount(y, weights=w, minlength=K)\n```",
+      "explanation": "`np.bincount` is the go-to for fast class counting on integer labels. `minlength=K` is the defensive piece: it guarantees the output has length `K` even if some classes don’t appear in the batch (common in imbalanced data or small batches). Using `weights=` turns it into weighted aggregation per class, useful for weighted metrics and loss reweighting.",
+      "difficulty": "beginner",
+      "tags": [
+        "histogram-binning",
+        "bincount",
+        "data-analysis",
+        "defensive-programming",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re doing masked updates on a batch of predictions.\n\n```python\npred = np.zeros((4, 3), dtype=np.float32)\nmask = np.array([True, False, True, False])\nvalues = np.array([1.0, 2.0, 3.0], dtype=np.float32)\n\npred[mask] = values\n```\n\nWhat happens and why? Choose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Works; `values` broadcasts to all True rows automatically",
+        "B. Fails with a shape mismatch because `pred[mask]` is shape `(2, 3)` but `values` is `(3,)` and does not broadcast for assignment",
+        "C. Works but only fills the first True row; the rest stay zeros",
+        "D. Fails because boolean masks cannot be used on 2D arrays"
+      ],
+      "correct_answer": "B",
+      "explanation": "`pred[mask]` selects the rows where mask is True, yielding shape `(2,3)`. Assignment broadcasting in NumPy is stricter than expression broadcasting: a `(3,)` RHS does **not** automatically broadcast across the first dimension for assignment into `(2,3)` in this context. Fixes include `pred[mask] = values[None, :]` if you intend to copy the same row into each selected row, or provide `(2,3)` values.",
+      "difficulty": "advanced",
+      "tags": [
+        "masking",
+        "boolean-indexing",
+        "broadcasting",
+        "shape-debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Dtype bug in an ML pipeline:\n\n```python\nx = np.array([300, 301, 302], dtype=np.uint8)\ny = x + 10\nprint(y, y.dtype)\n```\n\nWhat prints, and what’s the most ML-relevant lesson?",
+      "question_type": "mc",
+      "options": [
+        "A. `[310 311 312] uint8`; lesson: uint8 is safe for arithmetic",
+        "B. `[54 55 56] uint8`; lesson: uint8 overflows modulo 256, so cast before math",
+        "C. `[310 311 312] int64`; lesson: NumPy always upcasts small ints to int64",
+        "D. Raises OverflowError; lesson: NumPy prevents integer overflow by default"
+      ],
+      "correct_answer": "B",
+      "explanation": "`uint8` arithmetic wraps around modulo 256: 300 becomes 44, so 44+10=54, etc. NumPy does not raise on overflow for typical integer ufuncs. In ML pipelines, this bites when images are `uint8`: do `x = x.astype(np.float32, copy=False)` (or similar) before normalization/augmentation to avoid wraparound and to get stable gradients/statistics.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dtype",
+        "overflow-underflow",
+        "casting",
+        "pipelines"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You compute softmax probabilities from logits `z` of shape `(batch, classes)`.\n\nWhich implementation is most numerically stable?\n\nAssume `axis=1` is the classes axis.",
+      "question_type": "mc",
+      "options": [
+        "A. `p = np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)`",
+        "B. `p = np.exp(z - z.max(axis=1, keepdims=True)) / np.sum(np.exp(z - z.max(axis=1, keepdims=True)), axis=1, keepdims=True)`",
+        "C. `p = np.exp(np.clip(z, -10, 10)) / np.sum(np.exp(np.clip(z, -10, 10)), axis=1, keepdims=True)`",
+        "D. `p = (z - z.min(axis=1, keepdims=True)) / np.sum(z - z.min(axis=1, keepdims=True), axis=1, keepdims=True)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Subtracting `max` per row implements the classic log-sum-exp stabilization: it prevents `exp` overflow for large positive logits while preserving the exact softmax result (up to floating-point roundoff). Clipping (C) can help but changes the function; (A) can overflow; (D) is not softmax at all.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numerical-stability",
+        "normalization",
+        "log-exp",
+        "reductions",
+        "broadcasting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re implementing a pairwise squared Euclidean distance matrix between two sets of embeddings:\n- `A`: shape `(n, d)`\n- `B`: shape `(m, d)`\n\nWrite NumPy code (no explicit Python loops) to compute `D2` of shape `(n, m)` where `D2[i, j] = ||A[i]-B[j]||^2`.\n\nBonus: mention one place where `keepdims` or `np.newaxis` helps.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\n# Using ||a-b||^2 = ||a||^2 + ||b||^2 - 2 a·b\nA2 = np.sum(A*A, axis=1, keepdims=True)      # (n, 1)\nB2 = np.sum(B*B, axis=1, keepdims=True).T    # (1, m)\nD2 = A2 + B2 - 2.0 * (A @ B.T)               # (n, m)\n```\n\n`keepdims=True` (or `[:, None]`) makes `A2` shape `(n,1)` so it broadcasts correctly against `(1,m)`.",
+      "explanation": "This is a standard ML feature engineering/metric pattern. The algebra avoids constructing `(n,m,d)` intermediate tensors (which can be huge). `keepdims=True` (or `np.newaxis`) is a defensive shape tool: it forces the norm vectors into 2D so broadcasting is explicit and stable.",
+      "difficulty": "advanced",
+      "tags": [
+        "linear-algebra",
+        "broadcasting",
+        "np.newaxis",
+        "keepdims",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have:\n\n```python\nx = np.random.randn(32, 128)   # (batch, features)\nw = np.random.randn(128,)      # (features,)\n\ny = x @ w\n```\n\nWhat is the shape of `y` and which primitive is being used under the hood (conceptually)?",
+      "question_type": "mc",
+      "options": [
+        "A. Shape (32, 128); matrix-matrix multiplication",
+        "B. Shape (32,); matrix-vector multiplication",
+        "C. Shape (128,); vector-matrix multiplication",
+        "D. Shape (); dot product producing a scalar"
+      ],
+      "correct_answer": "B",
+      "explanation": "`(32,128) @ (128,)` performs a **matrix-vector** product, yielding shape `(32,)`. In ML this is a common linear layer computation for a single output neuron (or scoring function) applied to a batch. Knowing these shape rules helps debug silent broadcasting/shape mismatches.",
+      "difficulty": "beginner",
+      "tags": [
+        "linear-algebra",
+        "matmul",
+        "shape-debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want code that works whether images come as `(N, H, W, C)` or `(N, C, H, W)`.\n\nGiven `x` and an integer `channel_axis` that tells you where channels are, implement per-channel mean subtraction that is axis-agnostic.\n\nReturn `y = x - mean_per_channel` with correct broadcasting for any `channel_axis`.\n\n(You may assume `x.ndim == 4`.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\n# x: (N, H, W, C) or (N, C, H, W)\naxes = tuple(ax for ax in range(x.ndim) if ax != channel_axis)\nmean_per_channel = x.mean(axis=axes, keepdims=True)\ny = x - mean_per_channel\n```",
+      "explanation": "A robust mental model is: compute statistics over all axes *except* the channel axis. Using `keepdims=True` keeps the channel dimension in place and leaves other reduced dims as 1s so subtraction broadcasts correctly regardless of layout. This pattern generalizes to batchnorm-like preprocessing and avoids hardcoding axis numbers.",
+      "difficulty": "advanced",
+      "tags": [
+        "axis-conventions",
+        "axis-agnostic",
+        "broadcasting",
+        "reductions",
+        "defensive-programming"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You receive activations `x` shaped `(batch, time, features)` and you need to compute per-feature mean and std over **batch and time**, then normalize while keeping dimensions for broadcasting.\n\nWrite NumPy code that:\n1) computes `mu` and `sigma` with shapes `(1, 1, features)`\n2) returns `x_norm = (x - mu) / (sigma + eps)`\n\nAssume `eps = 1e-5`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\neps = 1e-5\nmu = x.mean(axis=(0, 1), keepdims=True)        # (1, 1, F)\nsigma = x.std(axis=(0, 1), keepdims=True)      # (1, 1, F)\nx_norm = (x - mu) / (sigma + eps)\n```",
+      "explanation": "For `(B, T, F)`, reducing over batch and time means `axis=(0,1)`. Using `keepdims=True` preserves reduced axes as size-1 dimensions, producing `(1,1,F)` so broadcasting back to `(B,T,F)` works without manual reshaping. This avoids common axis bugs when later code assumes consistent rank.",
+      "difficulty": "intermediate",
+      "tags": [
+        "axis-conventions",
+        "reductions",
+        "normalization",
+        "keepdims",
+        "broadcasting"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to extract a subset of rows for a mini-batch and then modify it without affecting the original dataset array.\n\n```python\nidx = np.array([0, 2])\nsub = X[idx]      # X is shape (N, D)\nsub *= 0.0\n```\n\nWhich statement is true about whether `X` is modified?",
+      "question_type": "mc",
+      "options": [
+        "A. `X` is modified because any indexing returns a view.",
+        "B. `X` is not modified because fancy indexing with an integer array returns a copy.",
+        "C. `X` is modified only if `idx` is sorted and unique; otherwise it’s a copy.",
+        "D. `X` is not modified only if you call `sub = X[idx].copy()`; otherwise it’s a view."
+      ],
+      "correct_answer": "B",
+      "explanation": "Indexing with an integer array is **advanced/fancy indexing**, which returns a **copy** (not a view). Therefore in-place changes to `sub` do not affect `X`. This matters in ML pipelines: using fancy indexing is safer for mutation but can be slower/more memory-hungry than slicing views. If you *need* a view, you generally must use slicing (or structured tricks), not fancy indexing.",
+      "difficulty": "beginner",
+      "tags": [
+        "indexing",
+        "advanced-indexing",
+        "views-vs-copies",
+        "mutation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re debugging a training pipeline where a preprocessing step unexpectedly modifies the original batch tensor.\n\n```python\nimport numpy as np\n\nx = np.arange(12).reshape(3, 4)\ny = x[:, 1:3]\ny[:] = -1\nprint(x)\n```\n\nWhat will `print(x)` show, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`x` will have columns 1 and 2 overwritten with -1 for all rows because `y = x[:, 1:3]` is a slice that returns a view; assigning into `y` mutates the same underlying data as `x`.",
+      "explanation": "Basic slicing (using `:` and slice ranges) typically returns a **view** in NumPy, meaning the new array shares memory with the original. Here `x[:, 1:3]` selects a contiguous column slice, so `y` aliases `x`’s data. Writing `y[:] = -1` updates those elements in-place in the shared buffer, so `x` changes too. This is a common ML bug when you intend to create a derived tensor but accidentally mutate the input batch.",
+      "difficulty": "beginner",
+      "tags": [
+        "indexing",
+        "views-vs-copies",
+        "mutation",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are computing evaluation metrics and need deterministic tie-breaking. You have arrays:\n\n- scores: shape (N,), float\n- group_id: shape (N,), int (e.g., query id)\n\nYou want to sort examples primarily by group_id ascending, and within each group by scores descending, using a stable method so that equal scores preserve original order.\n\nWhich NumPy approach best matches this requirement?\n\nA) idx = np.argsort(group_id)\nB) idx = np.argsort(-scores)\nC) idx = np.lexsort(( -scores, group_id ))\nD) idx = np.argsort(group_id) + np.argsort(-scores)",
+      "question_type": "mc",
+      "options": [
+        "A) idx = np.argsort(group_id)",
+        "B) idx = np.argsort(-scores)",
+        "C) idx = np.lexsort(( -scores, group_id ))",
+        "D) idx = np.argsort(group_id) + np.argsort(-scores)"
+      ],
+      "correct_answer": "C",
+      "explanation": "np.lexsort sorts by multiple keys: the last key is primary. With np.lexsort((-scores, group_id)), the primary key is group_id ascending, and the secondary key is -scores (i.e., scores descending). lexsort is stable, which helps deterministic tie-breaking (ties in both keys preserve input order). Options A and B only sort by one key. Option D is not a valid way to combine rankings.",
+      "difficulty": "advanced",
+      "tags": [
+        "sorting",
+        "lexsort",
+        "stable-sort",
+        "ranking",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport numpy as np\nx = np.arange(24).reshape(2, 3, 4)\ny = x.transpose(0, 2, 1)   # shape?\nz = y.reshape(2, 12)      # does this always work without copying?\n```\n\nWhich statement is most accurate?\n\nA) y is always C-contiguous, so z is always a view.\nB) y is a view but typically non-contiguous; z may require a copy or may error depending on memory layout.\nC) transpose always copies, so y is a copy and z is always safe.\nD) reshape always copies, so z is always a copy regardless of y.",
+      "question_type": "mc",
+      "options": [
+        "A) y is always C-contiguous, so z is always a view.",
+        "B) y is a view but typically non-contiguous; z may require a copy or may error depending on memory layout.",
+        "C) transpose always copies, so y is a copy and z is always safe.",
+        "D) reshape always copies, so z is always a copy regardless of y."
+      ],
+      "correct_answer": "B",
+      "explanation": "transpose typically returns a view with modified strides, and the result is often non-contiguous. reshape can return a view only if the new shape is compatible with the current strides; otherwise it must allocate a copy (or in some cases cannot provide a view and will allocate). In practice, if you need a guaranteed contiguous buffer after transpose (e.g., before handing to a library expecting contiguous), use np.ascontiguousarray(y) or y.copy().",
+      "difficulty": "advanced",
+      "tags": [
+        "memory-layout",
+        "contiguity",
+        "views-vs-copies",
+        "transpose",
+        "reshape"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing a numerically stable cosine similarity between two matrices A and B, shapes (N, D) and (M, D). You want an (N, M) similarity matrix.\n\nWrite NumPy code that:\n1) Computes row-wise L2-normalized versions of A and B using keepdims correctly.\n2) Uses matrix multiplication to get cosine similarities.\n3) Avoids division by zero.\n\n(Assume float32 is fine.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```python\nimport numpy as np\n\neps = 1e-8\nA = A.astype(np.float32, copy=False)\nB = B.astype(np.float32, copy=False)\n\nA_norm = np.linalg.norm(A, axis=1, keepdims=True)\nB_norm = np.linalg.norm(B, axis=1, keepdims=True)\n\nA_unit = A / np.maximum(A_norm, eps)\nB_unit = B / np.maximum(B_norm, eps)\n\nS = A_unit @ B_unit.T  # (N,D) @ (D,M) -> (N,M)\n```\n\nKey points: keepdims=True keeps norms as (N,1) and (M,1) so broadcasting works; eps (or maximum) prevents divide-by-zero; using matmul is efficient and idiomatic.",
+      "explanation": "Cosine similarity is a common retrieval/metric building block in ML. The interview gotchas are (a) using keepdims to make broadcasting correct without reshaping, and (b) numerical stability when rows can be all zeros (e.g., after masking, padding, or sparse-to-dense conversions).",
+      "difficulty": "intermediate",
+      "tags": [
+        "linear-algebra",
+        "norms",
+        "normalization",
+        "cosine-similarity",
+        "reductions",
+        "keepdims"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have per-sample class probability vectors probs with shape (B, C). For each sample, you already computed the predicted class index pred with shape (B,) (ints in [0,C-1]). You want the predicted probability p_hat for each sample (shape (B,)).\n\nWhich is the most robust NumPy approach?\n\nA) probs[:, pred]\nB) probs[pred]\nC) np.take_along_axis(probs, pred[:, None], axis=1)[:, 0]\nD) np.take(probs, pred, axis=0)",
+      "question_type": "mc",
+      "options": [
+        "A) probs[:, pred]",
+        "B) probs[pred]",
+        "C) np.take_along_axis(probs, pred[:, None], axis=1)[:, 0]",
+        "D) np.take(probs, pred, axis=0)"
+      ],
+      "correct_answer": "C",
+      "explanation": "We need per-row indexing: for row i, take column pred[i]. np.take_along_axis with pred shaped (B,1) along axis=1 does exactly that and avoids common advanced-indexing pitfalls. probs[:, pred] performs column selection with broadcasting and returns shape (B,B) in many cases (not what you want). probs[pred] indexes rows, not columns. np.take(..., axis=0) also takes rows.",
+      "difficulty": "intermediate",
+      "tags": [
+        "gather",
+        "take_along_axis",
+        "advanced-indexing",
+        "metrics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an integer label vector y with values in [0, C-1], shape (N,). You want class counts quickly to check class imbalance.\n\nChoose the best approach and explain the tradeoff.\n\nA) np.unique(y, return_counts=True)\nB) np.bincount(y, minlength=C)\nC) np.histogram(y, bins=C)\nD) np.sum(y, axis=0)",
+      "question_type": "mc",
+      "options": [
+        "A) np.unique(y, return_counts=True)",
+        "B) np.bincount(y, minlength=C)",
+        "C) np.histogram(y, bins=C)",
+        "D) np.sum(y, axis=0)"
+      ],
+      "correct_answer": "B",
+      "explanation": "np.bincount is typically fastest and most direct for non-negative integer labels, and minlength=C ensures missing classes still appear with count 0. np.unique(..., return_counts=True) is fine and general (works for non-integer labels too) but returns only present classes unless you post-process, and can be slower. np.histogram is meant for numeric binning; for discrete labels it’s more error-prone (bin edges) and less direct. np.sum is not a counting method.",
+      "difficulty": "intermediate",
+      "tags": [
+        "unique-counting",
+        "bincount",
+        "class-balance",
+        "histogram"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to compute scaled dot-product attention scores:\n\nGiven Q, K with shapes (B, H, T, D), compute scores S with shape (B, H, T, T) where S[b,h,i,j] = sum_d Q[b,h,i,d] * K[b,h,j,d].\n\nWhich np.einsum call expresses this correctly?\n\nA) np.einsum('bhtd,bhtd->bhtt', Q, K)\nB) np.einsum('bhtd,bhjd->bhtj', Q, K)\nC) np.einsum('bhtd,bhsd->bhts', Q, K)\nD) np.einsum('bhtd,bhTd->bhTT', Q, K)",
+      "question_type": "mc",
+      "options": [
+        "A) np.einsum('bhtd,bhtd->bhtt', Q, K)",
+        "B) np.einsum('bhtd,bhjd->bhtj', Q, K)",
+        "C) np.einsum('bhtd,bhsd->bhts', Q, K)",
+        "D) np.einsum('bhtd,bhTd->bhTT', Q, K)"
+      ],
+      "correct_answer": "C",
+      "explanation": "We need to contract over d, keep b,h, and produce two time axes: one from Q (t) and one from K (s). 'bhtd,bhsd->bhts' does exactly that: it multiplies Q[b,h,t,d] with K[b,h,s,d] and sums over d. Option B uses j but K is not shaped with a separate j axis unless you rename T; conceptually it’s similar but mismatched to the stated shapes. Option A incorrectly aligns both time axes (t with t). Option D is invalid: einsum subscripts must be lowercase letters (by convention) and must match actual axes.",
+      "difficulty": "advanced",
+      "tags": [
+        "einsum",
+        "attention",
+        "tensor-ops",
+        "nlp"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have embeddings E with shape (B, T, D) and a weight matrix W with shape (D, K). You want logits with shape (B, T, K) computed as a batched matrix multiply over the last dimension.\n\nWhich expression is correct and idiomatic?\n\nA) np.dot(E, W)\nB) E @ W\nC) np.matmul(W, E)\nD) np.dot(W, E)",
+      "question_type": "mc",
+      "options": [
+        "A) np.dot(E, W)",
+        "B) E @ W",
+        "C) np.matmul(W, E)",
+        "D) np.dot(W, E)"
+      ],
+      "correct_answer": "B",
+      "explanation": "For arrays with ndim > 2, the @ operator (np.matmul) performs a batched matmul over the last two dimensions, so (B,T,D) @ (D,K) -> (B,T,K). np.dot has legacy behavior: for higher-dimensional inputs it can produce results that are easy to misinterpret (it sums over the last axis of the first and second-to-last of the second, but the broadcasting/batching semantics differ from matmul and are less explicit). W @ E is dimensionally incompatible here.",
+      "difficulty": "beginner",
+      "tags": [
+        "linear-algebra",
+        "matmul",
+        "dot",
+        "batched-matmul",
+        "nlp"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a CV pipeline, images come in as NHWC (N,H,W,C) but your model expects NCHW (N,C,H,W). Given x.shape == (N,H,W,C), compare these operations:\n\n1) y1 = x.transpose(0, 3, 1, 2)\n2) y2 = np.swapaxes(x, 1, 3)\n3) y3 = np.moveaxis(x, -1, 1)\n\nFor each (y1,y2,y3):\n- What is the resulting shape?\n- Which of these is the most semantically clear for 'move channels last to channels first'?\n- Are these likely to be views or copies, and what is the usual contiguity outcome?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Shapes: y1 = (N, C, H, W) because transpose permutes axes (0,3,1,2). y2 swaps axis 1 (H) with axis 3 (C), giving shape (N, C, W, H) — not the desired layout. y3 moves last axis to position 1, giving (N, C, H, W), matching the desired conversion.\n\nSemantic clarity: np.moveaxis(x, -1, 1) is typically clearest for 'move channels from last to index 1' because it expresses intent without spelling the full permutation.\n\nViews/copies & contiguity: transpose/swapaxes/moveaxis usually return views (they change strides) rather than copying data. The result is often non-contiguous in memory (not C-contiguous) after such axis reorders. Many downstream libraries (or operations that require contiguous buffers) may trigger an implicit copy; you can make it explicit with np.ascontiguousarray(y) or y.copy() when needed.",
+      "explanation": "This tests practical tensor axis manipulation for CV/NLP and the important performance implication: axis reorders change strides. In ML pipelines, getting the right shape is only half the job—knowing when you now have a non-contiguous view (and when a copy is required for speed/interop) is a common real-world issue.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reshape-transpose",
+        "transpose",
+        "swapaxes",
+        "moveaxis",
+        "contiguity",
+        "cv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an array x with shape (N, D) and dtype float32. You want an array y with the same shape and dtype, initialized to 0, to accumulate gradients. Which is the best choice?\n\nA) np.zeros(x.shape)\nB) np.zeros_like(x)\nC) np.full_like(x, fill_value=None)\nD) np.empty_like(x)",
+      "question_type": "mc",
+      "options": [
+        "A) np.zeros(x.shape)",
+        "B) np.zeros_like(x)",
+        "C) np.full_like(x, fill_value=None)",
+        "D) np.empty_like(x)"
+      ],
+      "correct_answer": "B",
+      "explanation": "np.zeros_like(x) preserves both shape and dtype (and can preserve memory order) from x, which is exactly what you want for gradient accumulators. np.zeros(x.shape) would default dtype to float64 unless you pass dtype explicitly, which can cause silent dtype mismatches. np.empty_like does not initialize values (bad for accumulation). np.full_like with fill_value=None is invalid for numeric arrays and conceptually wrong here.",
+      "difficulty": "beginner",
+      "tags": [
+        "array-creation",
+        "zeros_like",
+        "full_like",
+        "dtype"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to create a batch buffer for images with shape (batch=32, channels=3, height=224, width=224) in float32, and you will fully overwrite every element before reading it. Which NumPy creation pattern is most appropriate and why?\n\nA) np.zeros((32,3,224,224), dtype=np.float32)\nB) np.ones((32,3,224,224), dtype=np.float32)\nC) np.empty((32,3,224,224), dtype=np.float32)\nD) np.eye(32, dtype=np.float32)",
+      "question_type": "mc",
+      "options": [
+        "A) np.zeros((32,3,224,224), dtype=np.float32)",
+        "B) np.ones((32,3,224,224), dtype=np.float32)",
+        "C) np.empty((32,3,224,224), dtype=np.float32)",
+        "D) np.eye(32, dtype=np.float32)"
+      ],
+      "correct_answer": "C",
+      "explanation": "If you will definitely overwrite all elements before any read, np.empty is usually the best choice because it avoids the cost of initializing memory (unlike zeros/ones). np.eye creates an identity matrix (2D) and is not appropriate for an image batch buffer. In ML code, np.zeros is common when you need deterministic initialization (e.g., accumulators), while np.empty is common for temporary buffers that are immediately filled.",
+      "difficulty": "beginner",
+      "tags": [
+        "array-creation",
+        "zeros-ones-empty",
+        "dtype",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a dataset `X` of shape (N, D). You want to split it into train/val/test with sizes n_train, n_val, n_test (sum to N) without copying data if possible.\n\n1) Show NumPy code to split `X`.\n2) Are the resulting arrays views or copies, and what determines that?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1)\n```python\nX_train, X_val, X_test = np.split(X, [n_train, n_train + n_val], axis=0)\n```\n(Alternatively, slicing works too: `X[:n_train]`, `X[n_train:n_train+n_val]`, `X[n_train+n_val:]`.)\n\n2) For basic slicing / `np.split` along an axis with contiguous blocks, the results are typically views into the same underlying array (no copy). Whether it’s a view depends on the slicing pattern and the array’s memory layout/strides; advanced indexing (e.g., using an index array for shuffling) produces copies.",
+      "explanation": "Splitting datasets is common in ML. Views are memory-efficient but share storage: in-place modification of a split can affect the original. If you need isolation, explicitly copy (`X_train = X_train.copy()`). Shuffling with permutation indices usually forces a copy because it’s advanced indexing.",
+      "difficulty": "intermediate",
+      "tags": [
+        "splitting",
+        "views-vs-copies",
+        "slicing",
+        "dataset-handling",
+        "memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building a training batch by combining two feature matrices `A` and `B`, each shape (N, D). You want a single matrix shape (2N, D).\n\nWhich statement is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `np.stack([A, B], axis=0)` gives shape (2N, D)",
+        "B) `np.concatenate([A, B], axis=0)` gives shape (2N, D)",
+        "C) `np.hstack([A, B])` gives shape (2N, D)",
+        "D) `np.vstack([A, B])` gives shape (N, 2D)"
+      ],
+      "correct_answer": "B",
+      "explanation": "`concatenate` along axis=0 appends rows: (N, D) + (N, D) -> (2N, D). `stack([A,B], axis=0)` creates a new axis: (2, N, D). `hstack` concatenates columns for 2D arrays: (N, 2D). `vstack` is equivalent to concatenate(axis=0) for 2D arrays, so D is wrong for `vstack` here.",
+      "difficulty": "beginner",
+      "tags": [
+        "concatenate",
+        "stack",
+        "hstack",
+        "vstack",
+        "batching"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You computed `topk_idx = np.argpartition(logits, -k, axis=1)[:, -k:]` for `logits.shape == (N, C)`.\n\nHow do you return the top-k indices **sorted by descending logit value** for each row (still shape (N, k))? Write NumPy code.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\n# logits: (N, C), topk_idx: (N, k)\nrow = np.arange(logits.shape[0])[:, None]               # (N, 1)\ntopk_logits = logits[row, topk_idx]                     # (N, k)\norder = np.argsort(topk_logits, axis=1)[:, ::-1]        # (N, k)\ntopk_sorted = topk_idx[row, order]                      # (N, k)\n```\n",
+      "explanation": "`argpartition` doesn’t sort within the selected k. Gather the candidate logits with advanced indexing, argsort those k values per row, then reindex the candidate indices accordingly. This pattern is common in retrieval/inference code for ranking predictions.",
+      "difficulty": "advanced",
+      "tags": [
+        "sorting",
+        "top-k",
+        "argpartition",
+        "argsort",
+        "advanced-indexing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have model logits `logits` of shape (N, C). You want the top-5 class indices for each sample.\n\nWhich approach is typically faster for large `C` and why?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `np.argsort(logits, axis=1)[:, -5:]` because full sort is always fastest in NumPy",
+        "B) `np.argpartition(logits, -5, axis=1)[:, -5:]` because it avoids fully sorting all C classes",
+        "C) `np.sort(logits, axis=1)[:, -5:]` because it returns values and indices together",
+        "D) `np.argmax(logits, axis=1)` because repeating it 5 times gives top-5"
+      ],
+      "correct_answer": "B",
+      "explanation": "`argpartition` performs a partial selection: it guarantees the top-k elements are in the last k positions (in arbitrary order) without fully sorting all C entries, which is typically faster when C is large. If you need them sorted within top-5, you can sort just those k indices afterward.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sorting",
+        "top-k",
+        "argsort",
+        "argpartition",
+        "logits"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport numpy as np\nx = np.arange(10)\ny = x[2:8]\ny[:] = -1\n```\n\nWhat is `x` after this runs?\n",
+      "question_type": "mc",
+      "options": [
+        "A) `x` is unchanged because slicing creates a copy",
+        "B) `x` becomes `[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]`",
+        "C) `x` becomes `[0, 1, -1, -1, -1, -1, -1, -1, 8, 9]`",
+        "D) It raises an error because `y` is a view"
+      ],
+      "correct_answer": "C",
+      "explanation": "Basic slicing (like `2:8`) returns a view, not a copy. Assigning into `y[:]` writes into the same underlying memory, so elements 2 through 7 of `x` become -1. This matters in ML pipelines where in-place augmentation or masking can accidentally mutate cached arrays.",
+      "difficulty": "beginner",
+      "tags": [
+        "views-vs-copies",
+        "slicing",
+        "mutability",
+        "in-place-ops"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a batch of sequences `X` with shape (N, T, D) and want to feed it into a model that expects (N*T, D) while preserving the order of samples and timesteps.\n\n1) What reshape would you use?\n2) When might `.reshape(...)` fail or produce unexpected results, and what would you do then?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `X2 = X.reshape(N*T, D)`.\n2) `.reshape` can fail or produce a copy if the array is not contiguous in memory (e.g., after certain transposes/slices). If you previously did something like `X = X.transpose(...)`, it may be non-contiguous. In that case, use `X2 = np.ascontiguousarray(X).reshape(N*T, D)` or `X2 = X.reshape(N*T, D, order='C')` after making it contiguous; `X = X.copy()` also works but is less explicit.",
+      "explanation": "For ML data, reshaping between (N, T, D) and (N*T, D) is common for batching and loss computation. Reshape is a view when possible, but requires compatible strides. Non-contiguous arrays often arise after transpose (e.g., changing from time-major to batch-major), so making the array contiguous avoids subtle performance and correctness issues.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reshape",
+        "contiguity",
+        "transpose",
+        "shape-semantics",
+        "views-vs-copies"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You implement cosine similarity between two embedding matrices `X` and `Y`, each of shape (N, D), producing a vector of length N where each entry is the cosine similarity of corresponding rows.\n\nWrite NumPy code that computes this efficiently (no Python loops). Assume no row is all zeros.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\n# X, Y: (N, D)\ndot = np.sum(X * Y, axis=1)                     # (N,)\nXn = np.linalg.norm(X, axis=1)                  # (N,)\nYn = np.linalg.norm(Y, axis=1)                  # (N,)\ncos = dot / (Xn * Yn)                           # (N,)\n```\nAlternatively, `dot = np.einsum('nd,nd->n', X, Y)` is equivalent.",
+      "explanation": "Row-wise cosine similarity is (x·y)/(|x||y|). Elementwise multiply plus sum over D gives per-row dot products. `np.linalg.norm(..., axis=1)` gives per-row L2 norms. Broadcasting handles dividing (N,) by (N,). This is a common ML task for retrieval and embedding evaluation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "linalg",
+        "norm",
+        "broadcasting",
+        "embeddings",
+        "vectorization"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Given `A.shape == (64, 128)` and `B.shape == (128,)`, what is the shape of `A @ B` and why? Also, how would the result differ (in shape) if `B.shape == (128, 1)`?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "If B has shape (128,), then A @ B has shape (64,). NumPy treats (128,) as a 1D vector; matrix-vector multiply yields a 1D result with length equal to A’s first dimension. If B has shape (128, 1), then A @ B has shape (64, 1), i.e., a 2D column vector result.",
+      "explanation": "`@` follows linear algebra rules with special-casing for 1D arrays: (m, n) @ (n,) -> (m,). Using (n,1) keeps the 2D structure, producing (m,1). This matters in ML pipelines where downstream code expects explicit 2D shapes (e.g., keeping logits as (N,1) vs (N,)).",
+      "difficulty": "beginner",
+      "tags": [
+        "linalg",
+        "matmul",
+        "shape-semantics",
+        "vectors-vs-matrices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have images `X` with shape (N, C, H, W) and per-channel mean/std arrays `mean` and `std` with shape (C,). You want to normalize each channel: `(X - mean) / std`.\n\nWhich reshaping is correct to make broadcasting explicit and robust?\n",
+      "question_type": "mc",
+      "options": [
+        "A) mean = mean.reshape(C, 1, 1); std = std.reshape(C, 1, 1)",
+        "B) mean = mean.reshape(1, C, 1, 1); std = std.reshape(1, C, 1, 1)",
+        "C) mean = mean.reshape(N, C, 1, 1); std = std.reshape(N, C, 1, 1)",
+        "D) mean = mean.reshape(1, 1, H, W); std = std.reshape(1, 1, H, W)"
+      ],
+      "correct_answer": "B",
+      "explanation": "To broadcast over (N, C, H, W), `mean` and `std` should be shaped (1, C, 1, 1). This makes it clear they vary only along channel dimension and broadcast across batch and spatial dims. A would align as (C,1,1) against the last 3 dims (C vs W mismatch). C is unnecessary and ties normalization to a specific N. D normalizes per-pixel, not per-channel.",
+      "difficulty": "intermediate",
+      "tags": [
+        "broadcasting",
+        "shape-compatibility",
+        "NCHW",
+        "preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a batch of feature vectors `X` with shape (N, D) and want to subtract the per-feature mean so each column has zero mean.\n\nWhich line correctly does this using broadcasting?\n\n```python\nmu = X.mean(axis=0)\n# X: (N, D), mu: (D,)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A) X_centered = X - mu",
+        "B) X_centered = X - mu.reshape(N, 1)",
+        "C) X_centered = X - mu.reshape(1, N)",
+        "D) X_centered = X - mu.reshape(D, 1)"
+      ],
+      "correct_answer": "A",
+      "explanation": "`mu` has shape (D,), which broadcasts against (N, D) by aligning the trailing dimension: D matches D, and the missing leading dimension is treated as 1 and broadcast to N. Options B/C/D reshape `mu` incorrectly (they don’t align with the feature dimension).",
+      "difficulty": "beginner",
+      "tags": [
+        "broadcasting",
+        "shape-semantics",
+        "mean-centering",
+        "numpy-basics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a pandas Series and want to round values to 2 decimals while preserving the result as a Series (not converting to a NumPy ndarray):\n\n```python\nimport pandas as pd\nimport numpy as np\n\ns = pd.Series([1.234, 5.678])\n```\n\n1) Write the single best line of code to do this.\n2) Briefly explain why `np.round(s, 2)` is not ideal if you need to keep a Series.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) s.round(2)\n2) `np.round(s, 2)` performs elementwise rounding but typically returns a NumPy `ndarray`, losing the pandas Series type (and potentially its index/metadata). Using `s.round(2)` preserves the Series and its index.",
+      "explanation": "Pandas objects implement their own rounding methods and `__round__`. While `round(s, 2)` may work by calling `s.__round__(2)`, the most explicit way to keep the pandas type is `s.round(2)`. In contrast, `np.round(s, 2)` is a NumPy operation that commonly yields an `ndarray`, which is undesirable when you want to maintain pandas semantics and metadata.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "pandas",
+        "series",
+        "np.round",
+        "round",
+        "dtype",
+        "index-preservation",
+        "vectorization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following NumPy code:\n\n```python\nimport numpy as np\narr = np.array([1.234, 5.678])\n\nx = round(arr, 2)\ny = np.round(arr, 2)\n```\nWhich statement best describes why `y` is generally preferred over `x` in NumPy-focused code?",
+      "question_type": "mc",
+      "options": [
+        "`round(arr, 2)` will always raise a `TypeError` for NumPy arrays, but `np.round(arr, 2)` will not.",
+        "`np.round(arr, 2)` is more idiomatic and makes the vectorized/elementwise intent explicit, even though `round(arr, 2)` may work via `__round__`.",
+        "`np.round(arr, 2)` returns a Python list, while `round(arr, 2)` returns a NumPy array.",
+        "`round(arr, 2)` rounds to the nearest integer regardless of the `ndigits` argument, while `np.round(arr, 2)` respects `ndigits`."
+      ],
+      "correct_answer": "B",
+      "explanation": "NumPy arrays implement `__round__`, so `round(arr, 2)` can work. However, in NumPy code it is clearer and more idiomatic to call `np.round(arr, 2)` (or `arr.round(2)`) to signal that you are performing a vectorized, elementwise operation over an array, rather than a scalar operation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "np.round",
+        "python-round",
+        "ndarray",
+        "idiomatic-code",
+        "vectorization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to round every element in a plain Python list to 2 decimal places.\n\n```python\nvals = [1.234, 5.678]\n# Choose the best approach\n```\nWhich option correctly performs the rounding without error and returns all rounded values?",
+      "question_type": "mc",
+      "options": [
+        "`round(vals, 2)`",
+        "`np.round(vals, 2)`",
+        "`vals.__round__(2)`",
+        "`int(vals)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "The built-in `round()` is intended for scalars (or objects implementing `__round__`). A plain Python `list` does not implement `__round__`, so `round(vals, 2)` raises a `TypeError`. `np.round(vals, 2)` performs vectorized, elementwise rounding over array-like inputs such as lists and returns a NumPy `ndarray` of rounded values.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "np.round",
+        "python-round",
+        "vectorization",
+        "lists"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A dataset uses `day_of_week` encoded as integers 0–6 (Monday=0, ..., Sunday=6). You create cyclical features:\n\n```python\nimport numpy as np\nP = 7\nangle = 2 * np.pi * day_of_week / P\nx = np.cos(angle)\ny = np.sin(angle)\n```\n\nSuppose someone suggests using only one feature, `np.sin(angle)`, and dropping `np.cos(angle)` to reduce dimensionality.\n\nExplain why using only sine can lose information, and give a concrete example (specific day values) where sine alone cannot distinguish two different days but the (sin, cos) pair can.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Using only sine is not one-to-one on the circle: different angles can have the same sine value (symmetry about π/2). For example, with P=7, day 1 and day 2 correspond to angles 2π/7 and 4π/7; these are not the same day but can produce similar/ambiguous sine values in general because sin(θ)=sin(π−θ). A clearer demonstration of non-uniqueness is the identity sin(θ)=sin(π−θ): two distinct points on the circle share the same sine but have different cosine. Therefore, the pair (sin, cos) uniquely identifies the angle (up to floating error), while sine alone can map multiple days to the same value and lose phase information.",
+      "explanation": "Sine alone collapses the 2D circular representation to 1D, and sine is periodic and symmetric: sin(θ)=sin(π−θ), so distinct positions on the cycle can become indistinguishable. Adding cosine provides the second coordinate needed to uniquely represent the point on the unit circle (i.e., preserve full phase information), which is why cyclical encoding typically uses both.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "feature-engineering",
+        "cyclical-features",
+        "information-loss",
+        "sin",
+        "cos",
+        "geometry",
+        "day-of-week"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a NumPy array of month numbers in the range 1–12:\n\n```python\nimport numpy as np\nmonths = np.array([1, 6, 12])\n```\n\nWrite NumPy code to create two cyclical features `m_sin` and `m_cos` using the correct period and a correct transformation that respects the 1–12 encoding. (Assume month 1 and month 12 should be adjacent.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nP = 12\nangle = 2 * np.pi * (months - 1) / P\nm_sin = np.sin(angle)\nm_cos = np.cos(angle)\n```",
+      "explanation": "The period for month-of-year is P=12. Because the input is 1–12 (not 0–11), subtracting 1 aligns month 1 with angle 0 and ensures month 12 maps near month 1 on the circle. Then apply sin/cos to the angle to get cyclical coordinates on the unit circle.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "feature-engineering",
+        "cyclical-features",
+        "month-of-year",
+        "vectorization",
+        "sin",
+        "cos"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is it often better to encode `hour` (0–23) using sine and cosine rather than using the raw integer hour as a feature?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "It makes the feature strictly increasing, which improves linear model accuracy.",
+        "It preserves cyclical proximity so that hours like 23 and 0 are close in feature space.",
+        "It removes the need to scale features because sine/cosine outputs are always positive.",
+        "It guarantees the model will learn periodicity without any training data."
+      ],
+      "correct_answer": "B",
+      "explanation": "Hours wrap around: 23:00 and 00:00 are adjacent in time, but numerically far apart (23 vs 0). The mapping (sin(2πx/P), cos(2πx/P)) places each hour on the unit circle, making nearby times map to nearby points and avoiding an artificial discontinuity at the boundary.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "feature-engineering",
+        "cyclical-features",
+        "trigonometry",
+        "sin",
+        "cos",
+        "time-series"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a 2D array:\n\n```python\nimport numpy as np\n\na = np.array([[1, 4, 2],\n              [0, 5, 3]])\n```\n\n1) Use the one-argument form of `np.where` to produce the indices of elements greater than 2.\n\n2) Then, use those indices to extract the corresponding values from `a`.\n\nWrite the code and state the extracted values.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "idx = np.where(a > 2)\nvals = a[idx]\n# idx is (array([0, 1, 1]), array([1, 1, 2]))\n# vals is array([4, 5, 3])",
+      "explanation": "For `np.where(a > 2)`, the condition is `True` at positions (0,1), (1,1), and (1,2). The one-argument form returns a tuple of index arrays: the first for row indices and the second for column indices. Using that tuple for fancy indexing (`a[idx]`) extracts the elements at those coordinates, yielding `[4, 5, 3]`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "np.where",
+        "fancy-indexing",
+        "boolean-conditions",
+        "2d-arrays"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the code below, what is the value of `result`?\n\n```python\nimport numpy as np\n\na = np.array([10, 15, 20, 25])\nresult = np.where(a % 2 == 0, \"even\", \"odd\")\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `array([True, False, True, False])`",
+        "B. `(array([0, 2]),)`",
+        "C. `array(['even', 'odd', 'even', 'odd'], dtype='<U4')`",
+        "D. `array(['odd', 'even', 'odd', 'even'], dtype='<U4')`"
+      ],
+      "correct_answer": "C",
+      "explanation": "This uses the three-argument form `np.where(condition, x, y)`, which performs an element-wise selection: choose `x` where the condition is `True` and `y` where it is `False`. Even elements (10, 20) map to \"even\" and odd elements (15, 25) map to \"odd\".",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "np.where",
+        "vectorization",
+        "conditional-selection",
+        "arrays"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In NumPy, what does the one-argument form `np.where(condition)` return?\n\n```python\nimport numpy as np\ncond = np.array([[True, False],\n                 [False, True]])\nout = np.where(cond)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. A boolean array with the same shape as `cond`",
+        "B. A tuple of integer index arrays (one per dimension) for the `True` entries",
+        "C. A 2D array of coordinate pairs shaped `(n_true, 2)`",
+        "D. A flattened 1D array of the `True` values from `cond`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.where(condition)` (with a single argument) is the index-finding form. It returns a tuple of integer arrays, one array per dimension, giving the coordinates of elements where the condition is `True`. For a 2D condition, you get two arrays: row indices and column indices.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "np.where",
+        "boolean-indexing",
+        "indices",
+        "ndarray"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are cleaning a NumPy array that may contain `NaN` and `inf`, and you need an integer array representing the ceiling of each finite element.\n\nWrite a function `safe_ceil_to_int(x)` that:\n1) Accepts a NumPy array `x`\n2) Computes ceilings elementwise\n3) Returns an `int` array for finite values\n4) Leaves `NaN` and `inf` as-is in a separate mask or otherwise avoids raising exceptions / producing invalid integer casts\n\nExplain briefly why using `math.ceil` directly is problematic here and what edge case must be handled before calling `.astype(int)`.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One correct approach:\n\n```python\nimport numpy as np\n\ndef safe_ceil_to_int(x):\n    x = np.asarray(x)\n    y = np.ceil(x)  # vectorized; keeps nan/inf as nan/inf\n    finite = np.isfinite(y)\n    out = np.empty_like(y, dtype=int)\n    out[finite] = y[finite].astype(int)\n    return out, finite\n```\n\nExplanation: `math.ceil` is scalar-only and will raise on `nan`/`inf` (`ValueError` for `nan`, `OverflowError` for `inf`), and it cannot be applied efficiently elementwise to arrays without looping. With `np.ceil`, `nan` and `inf` propagate without exceptions, but you must handle the edge case that casting `nan`/`inf` to `int` is invalid/unsafe; therefore, check finiteness (e.g., `np.isfinite`) before `.astype(int)` and only cast finite elements.",
+      "explanation": "This tests understanding of (1) vectorization vs scalar functions, (2) exception behavior differences (`math.ceil` vs `np.ceil`), and (3) the crucial edge case: `np.ceil` will happily produce `nan`/`inf`, but converting those to integers is not valid. A finiteness mask (or other policy such as filling non-finite values) is required before casting to `int`.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "np.ceil",
+        "math.ceil",
+        "nan",
+        "inf",
+        "astype",
+        "isfinite",
+        "data-cleaning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code. What is printed?\n\n```python\nimport math\nimport numpy as np\n\nx = [1.2, 3.0, -1.2]\nprint(np.ceil(x))\nprint(type(np.ceil(1.2)))\nprint(math.ceil(1.2), type(math.ceil(1.2)))\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "First line prints a NumPy array of floats: `array([ 2.,  3., -1.])` (formatting/spaces may vary). Second line prints the NumPy scalar type for the result of `np.ceil(1.2)` (e.g., `<class 'numpy.float64'>`). Third line prints `2 <class 'int'>`.",
+      "explanation": "`np.ceil` is elementwise and returns floating-point values, so `np.ceil([1.2, 3.0, -1.2])` becomes an array with `.0` decimals. On a scalar, `np.ceil(1.2)` returns a NumPy floating scalar (commonly `numpy.float64`). `math.ceil(1.2)` returns a Python integer `2`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "ceil",
+        "math.ceil",
+        "ndarray",
+        "numpy-scalar",
+        "python-int"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement correctly describes a key difference between `math.ceil` and `numpy.ceil`?\n",
+      "question_type": "mc",
+      "options": [
+        "`math.ceil` is vectorized over arrays and returns a float array; `np.ceil` works only on scalars and returns an int.",
+        "`math.ceil` works on a single scalar and returns a Python `int`; `np.ceil` applies elementwise to arrays and returns floating-point results (array or NumPy scalar).",
+        "`math.ceil` and `np.ceil` both raise `ValueError` on `NaN` and `OverflowError` on `inf`.",
+        "`np.ceil` always returns an integer dtype when the input is integer dtype."
+      ],
+      "correct_answer": "B",
+      "explanation": "`math.ceil` is designed for scalar inputs and returns a Python `int`. `np.ceil` is vectorized (elementwise on arrays/lists and supports broadcasting) and returns floating-point results (e.g., `2.0` or `array([2., ...])`), even when the input values are integers.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "math",
+        "ceil",
+        "vectorization",
+        "return-types"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to check whether a float array `arr` contains **only NaN values**. Consider two approaches:\n\n1) `np.isnan(arr).all()`\n2) `np.allclose(arr, np.nan, equal_nan=True)`\n\nWhich statement is most accurate?\n",
+      "question_type": "mc",
+      "options": [
+        "Both are correct, but `np.isnan(arr).all()` is the more direct and canonical way to express “all elements are NaN”.",
+        "`np.allclose(arr, np.nan, equal_nan=True)` is the canonical approach and is always faster than `np.isnan(arr).all()`.",
+        "`np.isnan(arr).all()` is incorrect because `.all()` cannot be applied to boolean arrays.",
+        "Neither works because NaN comparisons are always false, even with `equal_nan=True`."
+      ],
+      "correct_answer": "A",
+      "explanation": "`np.isnan(arr).all()` is the standard, direct way: it explicitly tests NaN-ness elementwise and then reduces with `.all()`. While `np.allclose(arr, np.nan, equal_nan=True)` can also return `True` when all elements are NaN, it is less direct (it’s meant for approximate numeric comparisons) and may do extra work. Boolean arrays absolutely support `.all()`. With `equal_nan=True`, `np.allclose` treats NaNs in corresponding positions as equal, so it can succeed in this special case.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "nan",
+        "np.isnan",
+        "np.allclose",
+        "edge-cases",
+        "performance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given a 2D array, fill in the missing expressions so the code prints whether **each column** and **each row** is entirely `NaN`.\n\n```python\nimport numpy as np\n\narr2 = np.array([\n    [np.nan, 1.0],\n    [np.nan, np.nan]\n])\n\n# TODO: produce boolean arrays\ncols_all_nan = ______________________\nrows_all_nan = ______________________\n\nprint(cols_all_nan)  # expected: [ True False]\nprint(rows_all_nan)  # expected: [False  True]\n```\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "cols_all_nan = np.isnan(arr2).all(axis=0)\nrows_all_nan = np.isnan(arr2).all(axis=1)",
+      "explanation": "`np.isnan(arr2)` creates a boolean array of the same shape as `arr2`. Using `.all(axis=0)` reduces over rows, leaving one boolean per column that is `True` only if all entries in that column are NaN. Using `.all(axis=1)` reduces over columns, leaving one boolean per row that is `True` only if all entries in that row are NaN.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "nan",
+        "np.isnan",
+        "ndarray",
+        "axis",
+        "reduction"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In NumPy, which expression correctly returns `True` only if **every** element of a 1D array `arr` is `NaN`?\n\n```python\nimport numpy as np\narr = np.array([np.nan, np.nan, np.nan])\n```\n",
+      "question_type": "mc",
+      "options": [
+        "np.isnan(arr).all()",
+        "np.all(arr == np.nan)",
+        "np.isnan(arr).any()",
+        "arr.all(np.isnan)"
+      ],
+      "correct_answer": "A",
+      "explanation": "`np.isnan(arr)` produces a boolean array indicating which elements are NaN, and calling `.all()` on that boolean array returns `True` only if all entries are `True` (i.e., every element is NaN). `arr == np.nan` is always `False` elementwise because NaN is not equal to itself. `.any()` would return `True` if at least one element is NaN, not all. `arr.all(np.isnan)` is not a valid way to pass `np.isnan` to `.all()`.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "nan",
+        "np.isnan",
+        "all",
+        "boolean-mask"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nx = np.round(np.random.uniform(0.25, 0.5, size=1_000_000), 3)\n```\n\nWhich statement is TRUE about the values in `x`?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `x` is still continuously distributed; rounding does not change the distribution type.",
+        "B. `x` can take only a finite set of values spaced by 0.001, and values near 0.25 and 0.5 are less likely than values in the middle due to rounding boundaries.",
+        "C. `x` will never contain 0.25 because `np.random.uniform` excludes the lower bound.",
+        "D. `x` will frequently contain 0.5 because rounding pushes many values up to the upper bound."
+      ],
+      "correct_answer": "B",
+      "explanation": "Rounding to 3 decimals discretizes the output into steps of 0.001 (a finite set of possible values). Because `np.random.uniform(low, high)` draws from a continuous interval [low, high) and rounding maps ranges of raw values to each rounded value, interior rounded values typically correspond to a full-width bin (about 0.001 wide), while edge values (near 0.25 and near 0.5) correspond to truncated bins (about half-width), making them less likely. Option A is false because rounding makes the distribution discrete. Option C is false because the lower bound is included, so 0.25 can occur (though rarely, and also via rounding of values near 0.25). Option D is false because 0.5 is not produced by `uniform(..., 0.5)` and rounding cannot create 0.5 unless the raw value is at least 0.4995; such values exist, but 0.5 is still not 'frequent' and remains less likely than interior values due to edge truncation.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "np.random.uniform",
+        "np.round",
+        "discretization",
+        "probability",
+        "edge-cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given a pandas DataFrame `df_campaign_data` with N rows, write a single line of code that creates a `conv_rate` column containing N values sampled uniformly from 0.25 to 0.5 (inclusive of 0.25 and exclusive of 0.5), rounded to 3 decimal places.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "df_campaign_data['conv_rate'] = np.round(np.random.uniform(0.25, 0.5, size=len(df_campaign_data)), 3)",
+      "explanation": "`np.random.uniform(0.25, 0.5, size=len(df_campaign_data))` generates one random value per row. Wrapping with `np.round(..., 3)` rounds each generated value to 3 decimal places before assignment to the new column.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "pandas",
+        "vectorization",
+        "np.random.uniform",
+        "np.round",
+        "dataframe"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to create a NumPy array of 10 random values uniformly distributed between 0.25 and 0.5, rounded to 3 decimal places. Which code snippet correctly does this?\n\n```python\n# Choose the correct option\n```",
+      "question_type": "mc",
+      "options": [
+        "A. np.round(np.random.uniform(0.25, 0.5, size=10), 3)",
+        "B. np.random.uniform(np.round(0.25, 3), np.round(0.5, 3), size=10)",
+        "C. np.random.uniform(0.25, 0.5, size=10).round()",
+        "D. np.random.round(np.uniform(0.25, 0.5, size=10), 3)"
+      ],
+      "correct_answer": "A",
+      "explanation": "To round the generated random values (not just the bounds), you wrap the output of `np.random.uniform(...)` with `np.round(..., 3)`. Option B rounds only the endpoints (which are already at 2 decimals), not the sampled values. Option C rounds to the nearest integer because no decimals are specified. Option D is invalid because `np.random.round` and `np.uniform` do not exist as written.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "np.random.uniform",
+        "np.round",
+        "rounding",
+        "random"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given an array and want two different behaviors: (1) shuffle the array in-place, and (2) create a shuffled copy while leaving the original unchanged. Using `numpy.random.default_rng()`, write code that demonstrates both behaviors, and explain which line mutates the original array.\n\nUse this starter:\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(seed=123)\narr = np.array([10, 20, 30, 40, 50])\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example solution:\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(seed=123)\narr = np.array([10, 20, 30, 40, 50])\n\n# (1) In-place shuffle (mutates arr)\nrng.shuffle(arr)\n\n# (2) Shuffled copy (does not mutate arr further)\narr2 = rng.permutation(arr)\n```\n\n`rng.shuffle(arr)` mutates the original array in-place. `rng.permutation(arr)` returns a shuffled copy and leaves its input unchanged (aside from any earlier mutations you already performed).",
+      "explanation": "`rng.shuffle` is explicitly documented/used as an in-place operation: it reorders the elements of the provided array object, so `arr` changes. `rng.permutation` returns a new array containing a permuted version of the input, which is useful when you need to preserve the original data. Demonstrating both in the same snippet tests understanding of side effects (mutation) vs. pure-return operations when working with randomization.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "numpy.random",
+        "default_rng",
+        "shuffle",
+        "permutation",
+        "in-place",
+        "mutation",
+        "reproducibility"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the code below:\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(42)\narr = np.array([10, 20, 30, 40, 50])\n\nx = rng.choice(arr, size=3)\ny = rng.choice(arr, size=3, replace=False)\n```\n\nWhich statement is guaranteed to be true?\n\nA. `x` must contain 3 distinct values\nB. `y` must contain 3 distinct values\nC. Both `x` and `y` are shuffles of the entire array `arr`\nD. `x` and `y` will always be identical because the same seed is used",
+      "question_type": "mc",
+      "options": [
+        "A. `x` must contain 3 distinct values",
+        "B. `y` must contain 3 distinct values",
+        "C. Both `x` and `y` are shuffles of the entire array `arr`",
+        "D. `x` and `y` will always be identical because the same seed is used"
+      ],
+      "correct_answer": "B",
+      "explanation": "`replace=False` means sampling *without* replacement, so `y` cannot repeat elements and therefore must contain 3 distinct values. In contrast, `x` uses the default `replace=True`, so repeats are allowed and distinctness is not guaranteed. Neither `x` nor `y` is necessarily a permutation of the full array because `size=3` selects only 3 elements. Finally, using the same seed does not make `x` and `y` identical because they are produced by different calls that consume the generator’s state differently.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "numpy.random",
+        "choice",
+        "replace",
+        "sampling",
+        "default_rng"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which approach is the recommended modern way to generate random numbers in NumPy, and why?\n\nA. Use `np.random.rand()` because it is faster than all other methods\nB. Use `np.random.default_rng()` because it returns a `Generator` with better statistical properties and supports reproducibility via seeding\nC. Use Python’s built-in `random` module because NumPy random is deprecated\nD. Use `np.random.choice()` because it automatically seeds itself for reproducible results",
+      "question_type": "mc",
+      "options": [
+        "A. Use `np.random.rand()` because it is faster than all other methods",
+        "B. Use `np.random.default_rng()` because it returns a `Generator` with better statistical properties and supports reproducibility via seeding",
+        "C. Use Python’s built-in `random` module because NumPy random is deprecated",
+        "D. Use `np.random.choice()` because it automatically seeds itself for reproducible results"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.random.default_rng()` constructs a modern `Generator` instance. This is the recommended API because it provides improved statistical properties and a clearer, object-oriented interface. It also supports reproducibility by explicitly seeding the generator (e.g., `np.random.default_rng(seed=42)`), rather than relying on implicit global state.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "numpy.random",
+        "default_rng",
+        "generator",
+        "reproducibility",
+        "seeding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Write NumPy code (no Python loops) to construct an adjacency matrix `U` from a square matrix `A` such that:\n\n1) `U` keeps **only** the strictly upper-triangular entries of `A` (i.e., above the main diagonal),\n2) all other entries become 0,\n3) `U` has the same shape as `A`.\n\nAssume `A` is a 2D NumPy array.\n\nAlso explain briefly why your choice of `k` works.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "U = np.triu(A, k=1)\n\nExplanation: k=1 uses the diagonal one above the main diagonal as the cutoff, so the main diagonal and everything below it are set to 0, leaving only entries strictly above the main diagonal.",
+      "explanation": "To keep strictly upper-triangular values, you must exclude the main diagonal. In `np.triu`, setting `k=1` shifts the kept region upward so that elements on and below the main diagonal are zeroed, and only elements with column index > row index remain.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "np.triu",
+        "adjacency-matrix",
+        "strictly-upper-triangular",
+        "vectorization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the code below, what is the output of `np.triu(a, k=-1)`?\n\n```python\nimport numpy as np\n\na = np.arange(1, 10).reshape(3, 3)\nprint(a)\nprint(np.triu(a, k=-1))\n```",
+      "question_type": "mc",
+      "options": [
+        "[[1 2 3]\n [4 5 6]\n [7 8 9]]",
+        "[[1 2 3]\n [0 5 6]\n [0 0 9]]",
+        "[[1 2 3]\n [4 5 6]\n [0 8 9]]",
+        "[[0 2 3]\n [0 0 6]\n [0 0 0]]"
+      ],
+      "correct_answer": "C",
+      "explanation": "With `k=-1`, the cutoff diagonal is one below the main diagonal, so `np.triu` keeps the main diagonal, everything above it, and also the first subdiagonal (directly below the main diagonal). Only elements below that (here, just `a[2,0]=7`) are zeroed. Thus the result is `[[1,2,3],[4,5,6],[0,8,9]]`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "np.triu",
+        "k-parameter",
+        "matrix-indexing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In NumPy, what does `np.triu(m, k=0)` return for a 2D array `m`?",
+      "question_type": "mc",
+      "options": [
+        "The lower triangular part of `m`, setting elements above the main diagonal to zero",
+        "The upper triangular part of `m`, setting elements below the main diagonal to zero",
+        "Only the main diagonal of `m`, setting all other elements to zero",
+        "A transposed copy of `m` with the lower triangle removed"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.triu` keeps the main diagonal and all elements above it (for `k=0`) and sets all elements below that diagonal to zero. It does not transpose the matrix and does not restrict output to only the diagonal.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "np.triu",
+        "triangular-matrix",
+        "matrix-basics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a 2D array `arr_2d` with shape `(2, 3)`:\n\n```python\nimport numpy as np\narr_2d = np.array([[1, 2, 3],\n                   [4, 5, 6]])\n```\n\nWrite NumPy code to compute the mean along rows while keeping the reduced dimension (so the result has shape `(2, 1)`), and state the resulting array values and shape.\n\n(Your answer should use `np.mean` and include the `keepdims` parameter.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Code: `np.mean(arr_2d, axis=1, keepdims=True)`\nResult values: `[[2.], [5.]]`\nResult shape: `(2, 1)`",
+      "explanation": "`axis=1` computes the mean across columns for each row: first row mean is `(1+2+3)/3 = 2`, second row mean is `(4+5+6)/3 = 5`. With `keepdims=True`, NumPy retains the reduced axis as a dimension of size 1, so the output is a column vector with shape `(2, 1)` rather than a 1D array of shape `(2,)`.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "numpy.mean",
+        "keepdims",
+        "axis",
+        "array-shape"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the 2D array below. Which expression returns the mean of each column?\n\n```python\nimport numpy as np\narr_2d = np.array([[1, 2, 3],\n                   [4, 5, 6]])\n```",
+      "question_type": "mc",
+      "options": [
+        "np.mean(arr_2d)",
+        "np.mean(arr_2d, axis=1)",
+        "np.mean(arr_2d, axis=0)",
+        "np.mean(arr_2d, axis=2)"
+      ],
+      "correct_answer": "C",
+      "explanation": "For a 2D array, `axis=0` reduces rows (down the first dimension), producing one value per column. Here that yields `[ (1+4)/2, (2+5)/2, (3+6)/2 ] = [2.5, 3.5, 4.5 ]`. `np.mean(arr_2d)` would reduce all elements to a single scalar, and `axis=1` would produce row means. `axis=2` is invalid for a 2D array.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "numpy.mean",
+        "axis",
+        "2d-arrays",
+        "reduction"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the code below, what is the output of `np.mean(arr)`?\n\n```python\nimport numpy as np\narr = np.array([1, 2, 3, 4, 5])\nprint(np.mean(arr))\n```",
+      "question_type": "mc",
+      "options": [
+        "3",
+        "3.0",
+        "2.5",
+        "TypeError because the array is integer"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.mean` computes the arithmetic mean. For `[1,2,3,4,5]` the mean is `(1+2+3+4+5)/5 = 3`. NumPy returns a floating-point result (`3.0`) by default for the mean, even if the input array is of integer type.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "numpy.mean",
+        "arithmetic-mean",
+        "ndarray"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to create a large 2D array of shape `(10000, 10000)` filled with the constant `-1`.\n\n1) Write NumPy code using `np.full` to create this array as `int16`.\n2) Briefly explain why `np.full` is typically more efficient than constructing the same array using Python list multiplication followed by `np.array(...)` (e.g., `np.array([value] * size)`).\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) `arr = np.full((10000, 10000), -1, dtype=np.int16)`\n2) `np.full` allocates the NumPy array in one step and fills it using optimized C-level loops, avoiding the overhead of creating large intermediate Python lists and then converting/copying them into a NumPy array.",
+      "explanation": "A correct solution uses `np.full(shape, fill_value, dtype=...)` with `shape=(10000, 10000)`, `fill_value=-1`, and `dtype=np.int16`. The performance advantage comes from avoiding Python-level element creation and intermediate containers; NumPy can allocate contiguous memory once and write the repeated value efficiently in compiled code.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "np.full",
+        "performance",
+        "memory-allocation",
+        "dtype"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following code:\n\n```python\nimport numpy as np\nx = np.full(3, 1)\ny = np.full(3, 1, dtype=float)\n```\n\nWhich option correctly describes the dtypes of `x` and `y`?",
+      "question_type": "mc",
+      "options": [
+        "`x` is float, `y` is int",
+        "`x` is int, `y` is float",
+        "Both `x` and `y` are float because NumPy defaults to float",
+        "Both `x` and `y` are int because `fill_value` is an integer"
+      ],
+      "correct_answer": "B",
+      "explanation": "If `dtype` is omitted, NumPy infers the dtype from `fill_value`. Since `fill_value` is `1` (an integer), `x` will be an integer array (commonly `int64` on 64-bit systems). For `y`, `dtype=float` is explicitly provided, so it will be a floating-point array.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "np.full",
+        "dtype",
+        "type-inference"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes what `np.full` does?\n\n```python\nimport numpy as np\narr = np.full((2, 3), 7)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "Creates a 2×3 array with values 0 through 6 reshaped into (2, 3)",
+        "Creates a 2×3 array where every element is initialized to 7",
+        "Creates a 2×3 array filled with random integers between 0 and 7",
+        "Creates a 2×3 array with uninitialized (arbitrary) memory values"
+      ],
+      "correct_answer": "B",
+      "explanation": "`np.full(shape, fill_value, ...)` allocates a new array of the given shape and sets every element to the provided `fill_value`. In the code, the shape is `(2, 3)` and the fill value is `7`, so all 6 elements are `7`.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "np.full",
+        "array-creation",
+        "shape"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a 2D array:\n\n```python\nimport numpy as np\nx = np.array([[1, 2, 4],\n              [3, 6, 7]])\n```\n\nWhich option correctly describes the results of `np.diff(x, axis=0)` and `np.diff(x, axis=1)`?",
+      "question_type": "mc",
+      "options": [
+        "A. `axis=0` gives `array([[2, 4, 3]])` and `axis=1` gives `array([[1, 2], [3, 1]])`",
+        "B. `axis=0` gives `array([[1, 2], [3, 1]])` and `axis=1` gives `array([[2, 4, 3]])`",
+        "C. `axis=0` gives `array([[2, 4, 3], [2, 4, 3]])` and `axis=1` gives `array([[1, 2, 0], [3, 1, 0]])`",
+        "D. `axis=0` gives `array([[2, 4, 3]])` and `axis=1` gives `array([[1, 2, 4], [3, 6, 7]])`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`axis=0` computes differences down rows (between row 1 and row 0), column-wise: `[3−1, 6−2, 7−4] = [2,4,3]`, producing shape (1,3). `axis=1` computes differences across columns within each row: first row `[2−1, 4−2]=[1,2]`, second row `[6−3, 7−6]=[3,1]`, producing shape (2,2). Options that keep the same shape without `prepend/append`, swap axes, or return the original array are incorrect.",
+      "difficulty": "advanced",
+      "tags": [
+        "numpy",
+        "np.diff",
+        "axis-parameter",
+        "ndarray",
+        "shape"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Compute the result of the following NumPy operations. Show the final arrays.\n\n```python\nimport numpy as np\n\na = np.array([1, 4, 9, 16])\nfirst = np.diff(a)\nsecond = np.diff(a, n=2)\n```\n\nWhat are `first` and `second`?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "first = array([3, 5, 7])\nsecond = array([2, 2])",
+      "explanation": "First differences are computed as `a[i+1] - a[i]`: 4−1=3, 9−4=5, 16−9=7, so `first = [3,5,7]`. Second differences apply `diff` again to the first differences: 5−3=2, 7−5=2, so `second = [2,2]`. Using `n=2` is equivalent to calling `np.diff` twice.",
+      "difficulty": "intermediate",
+      "tags": [
+        "numpy",
+        "np.diff",
+        "n-parameter",
+        "second-differences"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the code below, what is the output of `np.diff(a)`?\n\n```python\nimport numpy as np\n\na = np.array([10, 15, 23, 32])\nprint(np.diff(a))\n```",
+      "question_type": "mc",
+      "options": [
+        "A. array([ 5,  8,  9])",
+        "B. array([10, 15, 23])",
+        "C. array([ 5,  8,  9,  0])",
+        "D. array([22])"
+      ],
+      "correct_answer": "A",
+      "explanation": "`np.diff(x)` computes adjacent differences: `x[i+1] - x[i]`. Here: 15−10=5, 23−15=8, 32−23=9, so the result is `array([5, 8, 9])`. The output is one element shorter than the input when no `prepend`/`append` is used.",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "np.diff",
+        "adjacent-differences",
+        "1d-array"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}
