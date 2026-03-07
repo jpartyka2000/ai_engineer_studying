@@ -131,14 +131,19 @@ class Question(models.Model):
     @property
     def options_list(self) -> list[dict]:
         """Return options as a list of dicts with letter and text."""
+        import re
+
         if not self.options:
             return []
         letters = "ABCDEFGHIJ"
-        return [
-            {"letter": letters[i], "text": opt}
-            for i, opt in enumerate(self.options)
-            if i < len(letters)
-        ]
+        result = []
+        for i, opt in enumerate(self.options):
+            if i >= len(letters):
+                break
+            # Strip existing letter prefix if present (e.g., "A. ", "B) ", "A: ")
+            text = re.sub(r'^[A-Za-z][.):]\s*', '', opt)
+            result.append({"letter": letters[i], "text": text})
+        return result
 
 
 class StudyMaterial(models.Model):
