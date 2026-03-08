@@ -297,7 +297,7 @@ def submit_lightning_answer(request, subject_slug, pk):
             {
                 "status": "ok",
                 "is_correct": is_correct,
-                "correct_answer": question.correct_answer,
+                "correct_answer": question.correct_answer_display,
                 "explanation": question.explanation,
                 "questions_answered": session.questions_answered,
                 "questions_correct": session.questions_correct,

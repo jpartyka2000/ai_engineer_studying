@@ -145,6 +145,27 @@ class Question(models.Model):
             result.append({"letter": letters[i], "text": text})
         return result
 
+    @property
+    def correct_answer_display(self) -> str:
+        """
+        Return the full correct answer text.
+
+        For multiple choice questions, looks up the letter in options and returns
+        the full text (e.g., "B" -> "B. Use torch.autocast for automatic mixed precision").
+        For free text questions, returns the correct_answer as-is.
+        """
+        if not self.is_multiple_choice:
+            return self.correct_answer
+
+        # Look up the letter in options_list
+        answer_letter = self.correct_answer.strip().upper()
+        for option in self.options_list:
+            if option["letter"] == answer_letter:
+                return f"{option['letter']}. {option['text']}"
+
+        # Fallback to the raw answer if letter not found
+        return self.correct_answer
+
 
 class StudyMaterial(models.Model):
     """

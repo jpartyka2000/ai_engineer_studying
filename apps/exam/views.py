@@ -502,6 +502,7 @@ def create_llm_questions(request, subject_slug, pk, question_id):
     from django.http import HttpResponse
 
     from apps.core.services.llm_service import LLMAPIError, get_llm_service
+    from apps.core.templatetags.core_tags import render_code_blocks
     from apps.questions.models import Question
 
     # Verify the session belongs to the user
@@ -665,20 +666,24 @@ For each question, provide a detailed answer. Respond with a JSON object:
             answer = item.get("answer", "")
             key_points = item.get("key_points", [])
 
+            # Render markdown in the answer
+            rendered_answer = render_code_blocks(answer)
+
             html_parts.append(
                 f'<div class="border border-gray-200 rounded-lg p-4 mb-3">'
                 f'<div class="font-medium text-gray-900 mb-2">'
                 f'<span class="text-purple-600">Q{i+1}:</span> {q_text}'
                 f'</div>'
                 f'<div class="text-gray-700 text-sm mb-2">'
-                f'<span class="font-medium text-gray-900">Answer:</span> {answer}'
+                f'<span class="font-medium text-gray-900">Answer:</span> {rendered_answer}'
                 f'</div>'
             )
 
             if key_points:
                 html_parts.append('<div class="mt-2"><span class="text-xs font-medium text-gray-500">Key Points:</span><ul class="list-disc list-inside text-sm text-gray-600 mt-1">')
                 for pt in key_points:
-                    html_parts.append(f'<li>{pt}</li>')
+                    rendered_pt = render_code_blocks(pt)
+                    html_parts.append(f'<li>{rendered_pt}</li>')
                 html_parts.append('</ul></div>')
 
             html_parts.append('</div>')

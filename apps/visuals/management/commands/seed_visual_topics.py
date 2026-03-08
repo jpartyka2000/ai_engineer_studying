@@ -43,6 +43,8 @@ class Command(BaseCommand):
         self.seed_lightgbm_tree_growth_visual()
         self.seed_lightgbm_parallel_training_visual()
         self.seed_system_design_visuals()
+        self.seed_gpu_generations_visual()
+        self.seed_gpu_architecture_visual()
 
         self.stdout.write(self.style.SUCCESS("Successfully seeded visual topics!"))
 
@@ -1903,6 +1905,812 @@ class Command(BaseCommand):
                         "title": "Logging & Monitoring",
                         "explanation": "Every prediction is **logged** for debugging, monitoring, and model retraining. Metrics like latency, throughput, and prediction distribution are tracked.",
                         "diagram_data": 'graph TB\n    Server["Model Server"]\n    Server --> Log["Prediction Logs<br/>(input, output, latency)"]\n    Server --> Metrics["Metrics<br/>(Prometheus)"]\n    Log --> DW["Data Warehouse<br/>(Retraining)"]\n    Metrics --> Alert["Alerting<br/>(PagerDuty)"]\n    Metrics --> Dash["Dashboard<br/>(Grafana)"]\n    style Log fill:#FFFACD\n    style Metrics fill:#E6E6FA',
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_gpu_generations_visual(self):
+        """Seed GPU generations visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="nvidia-gpu-generations",
+            defaults={
+                "title": "NVIDIA GPU Generations: Volta to Blackwell",
+                "description": "Explore the evolution of NVIDIA GPUs for ML/AI, from Volta's introduction of Tensor Cores to Blackwell's latest innovations",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["gpu", "nvidia", "tensor-cores", "cuda", "ml-hardware", "deep-learning"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "GPU Generation Timeline",
+                        "explanation": "NVIDIA has released several GPU architectures optimized for AI/ML workloads. Each generation brings significant improvements in Tensor Core performance, memory bandwidth, and specialized features for deep learning.",
+                        "diagram_data": """timeline
+    title NVIDIA GPU Architectures for AI/ML
+    2017 : Volta (V100)
+         : 1st Gen Tensor Cores
+    2018 : Turing (T4, RTX 20)
+         : 2nd Gen Tensor Cores
+         : RT Cores introduced
+    2020 : Ampere (A100, RTX 30)
+         : 3rd Gen Tensor Cores
+         : TF32 format
+    2022 : Ada Lovelace (L40, RTX 40)
+         : 4th Gen Tensor Cores
+         : FP8 support
+    2022 : Hopper (H100)
+         : Transformer Engine
+         : HBM3 memory
+    2024 : Blackwell (B100/B200)
+         : 5th Gen Tensor Cores
+         : 2nd Gen Transformer Engine""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Volta (2017) - The Tensor Core Revolution",
+                        "explanation": "**Volta** introduced **Tensor Cores** - specialized matrix multiply units that revolutionized deep learning training. The V100 became the workhorse of AI research, offering mixed-precision (FP16/FP32) training with massive speedups.\n\n**Key Specs (V100):**\n- 5,120 CUDA Cores\n- 640 Tensor Cores (1st Gen)\n- 16GB/32GB HBM2 (900 GB/s)\n- 125 TFLOPS Tensor (FP16)\n- NVLink 2.0 (300 GB/s)",
+                        "diagram_data": """graph TB
+    subgraph "Volta V100 Architecture"
+        SM["80 Streaming Multiprocessors"]
+        TC["640 Tensor Cores<br/>(8 per SM)"]
+        CUDA["5,120 CUDA Cores"]
+        HBM["HBM2 Memory<br/>16/32GB @ 900 GB/s"]
+        NVL["NVLink 2.0<br/>300 GB/s"]
+    end
+
+    subgraph "Tensor Core Operation"
+        Matrix["D = A × B + C<br/>(4×4 matrices)"]
+        FP16["FP16 inputs"]
+        FP32["FP32 accumulate"]
+    end
+
+    SM --> TC
+    SM --> CUDA
+    TC --> Matrix
+    FP16 --> Matrix
+    Matrix --> FP32
+
+    style TC fill:#90EE90
+    style Matrix fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Turing (2018) - RT Cores & INT8 Inference",
+                        "explanation": "**Turing** brought 2nd Gen Tensor Cores with **INT8 inference** support, enabling faster and more efficient model deployment. Also introduced RT Cores for ray tracing (less relevant for ML).\n\n**Key Specs (T4):**\n- 2,560 CUDA Cores\n- 320 Tensor Cores (2nd Gen)\n- 16GB GDDR6 (320 GB/s)\n- 65 TFLOPS (FP16), 130 TOPS (INT8)\n- Popular for inference workloads",
+                        "diagram_data": """graph TB
+    subgraph "Turing Improvements"
+        TC2["2nd Gen Tensor Cores"]
+        INT8["INT8 Precision<br/>2x INT8 throughput"]
+        RT["RT Cores<br/>(Ray Tracing)"]
+        INF["Inference Optimized"]
+    end
+
+    subgraph "T4 Use Cases"
+        Cloud["Cloud Inference<br/>(AWS, GCP)"]
+        Edge["Edge Deployment"]
+        Video["Video Processing"]
+    end
+
+    TC2 --> INT8
+    INT8 --> INF
+    INF --> Cloud
+    INF --> Edge
+    INF --> Video
+
+    style TC2 fill:#90EE90
+    style INT8 fill:#FFFACD
+    style INF fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Ampere (2020) - TF32 & Sparsity",
+                        "explanation": "**Ampere** introduced **TF32** - a new format that provides FP32-level accuracy with Tensor Core speeds (no code changes needed!). Also added **structural sparsity** support for 2x speedups on sparse models.\n\n**Key Specs (A100):**\n- 6,912 CUDA Cores\n- 432 Tensor Cores (3rd Gen)\n- 40GB/80GB HBM2e (2 TB/s)\n- 312 TFLOPS (TF32), 624 TFLOPS (FP16)\n- Multi-Instance GPU (MIG)\n- NVLink 3.0 (600 GB/s)",
+                        "diagram_data": """graph TB
+    subgraph "Ampere A100 Features"
+        TC3["3rd Gen Tensor Cores"]
+        TF32["TF32 Format<br/>FP32 range, FP16 speed"]
+        BF16["BF16 Support"]
+        Sparse["Structural Sparsity<br/>2:4 pattern = 2x speedup"]
+        MIG["Multi-Instance GPU<br/>Up to 7 instances"]
+    end
+
+    subgraph "Precision Formats"
+        direction LR
+        F32["FP32: 19 TFLOPS"]
+        T32["TF32: 156 TFLOPS"]
+        F16["FP16: 312 TFLOPS"]
+        I8["INT8: 624 TOPS"]
+    end
+
+    TC3 --> TF32
+    TC3 --> BF16
+    TC3 --> Sparse
+
+    style TC3 fill:#90EE90
+    style TF32 fill:#FFD700
+    style Sparse fill:#DDA0DD
+    style MIG fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Ada Lovelace (2022) - FP8 & Efficiency",
+                        "explanation": "**Ada Lovelace** brought 4th Gen Tensor Cores with **FP8 precision** for even faster inference. Focused on efficiency improvements and consumer/professional markets (RTX 40 series, L40).\n\n**Key Specs (L40):**\n- 18,176 CUDA Cores\n- 568 Tensor Cores (4th Gen)\n- 48GB GDDR6 (864 GB/s)\n- 181 TFLOPS (FP16), 362 TFLOPS (FP8)\n- DLSS 3 / AI-accelerated features",
+                        "diagram_data": """graph TB
+    subgraph "Ada Lovelace Features"
+        TC4["4th Gen Tensor Cores"]
+        FP8["FP8 Precision<br/>E4M3 & E5M2 formats"]
+        DLSS["DLSS 3<br/>AI Frame Generation"]
+        EFF["Power Efficiency<br/>2x perf/watt vs Ampere"]
+    end
+
+    subgraph "FP8 Benefits"
+        Train["Faster Training<br/>(with loss scaling)"]
+        Infer["2x Inference Speed"]
+        Mem["Lower Memory Usage"]
+    end
+
+    TC4 --> FP8
+    FP8 --> Train
+    FP8 --> Infer
+    FP8 --> Mem
+
+    style TC4 fill:#90EE90
+    style FP8 fill:#FFD700
+    style EFF fill:#98FB98""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Hopper (2022) - Transformer Engine",
+                        "explanation": "**Hopper** was designed specifically for large language models with the **Transformer Engine** - hardware that automatically manages FP8/FP16 precision per-layer. Features HBM3 memory and massive improvements for LLM training.\n\n**Key Specs (H100 SXM):**\n- 16,896 CUDA Cores\n- 528 Tensor Cores (4th Gen)\n- 80GB HBM3 (3.35 TB/s)\n- 989 TFLOPS (FP16), 1,979 TFLOPS (FP8)\n- Transformer Engine\n- NVLink 4.0 (900 GB/s)",
+                        "diagram_data": """graph TB
+    subgraph "Hopper H100 Features"
+        TE["Transformer Engine<br/>Auto FP8-FP16 per layer"]
+        HBM3["HBM3 Memory<br/>3.35 TB/s bandwidth"]
+        NVL4["NVLink 4.0<br/>900 GB/s"]
+        DPX["DPX Instructions<br/>Dynamic Programming"]
+    end
+
+    subgraph "Transformer Engine Detail"
+        Layer1["Layer 1: FP8<br/>(stable gradients)"]
+        Layer2["Layer 2: FP16<br/>(sensitive layer)"]
+        Layer3["Layer 3: FP8<br/>(stable gradients)"]
+        Auto["Automatic Selection<br/>Per-layer optimization"]
+    end
+
+    TE --> Layer1
+    TE --> Layer2
+    TE --> Layer3
+    TE --> Auto
+
+    style TE fill:#FFD700
+    style HBM3 fill:#ADD8E6
+    style Auto fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Blackwell (2024) - The Next Frontier",
+                        "explanation": "**Blackwell** represents NVIDIA's latest architecture with 5th Gen Tensor Cores, 2nd Gen Transformer Engine, and unprecedented scale for training frontier models.\n\n**Key Specs (B200):**\n- 208B transistors (2 dies)\n- 5th Gen Tensor Cores\n- 192GB HBM3e (8 TB/s)\n- 4,500 TFLOPS (FP8), 9,000 TFLOPS (FP4)\n- 2nd Gen Transformer Engine\n- NVLink 5.0 (1.8 TB/s)",
+                        "diagram_data": """graph TB
+    subgraph "Blackwell B200 Features"
+        TC5["5th Gen Tensor Cores"]
+        TE2["2nd Gen Transformer Engine"]
+        FP4["FP4 Precision<br/>New lowest precision"]
+        MCM["Multi-Chip Module<br/>2 dies, 208B transistors"]
+        HBM3E["HBM3e Memory<br/>192GB @ 8 TB/s"]
+    end
+
+    subgraph "Performance Leap"
+        Train["4x Training Speed<br/>vs H100"]
+        Infer["30x Inference Speed<br/>for LLMs"]
+        Power["25x Energy Efficiency<br/>vs H100"]
+    end
+
+    TC5 --> Train
+    TE2 --> Infer
+    FP4 --> Power
+
+    style TC5 fill:#90EE90
+    style TE2 fill:#FFD700
+    style FP4 fill:#DDA0DD
+    style MCM fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Tensor Core Evolution",
+                        "explanation": "Tensor Cores have evolved dramatically across generations, with each version adding new precision formats and capabilities. Understanding these helps you choose the right GPU and optimize your code.",
+                        "diagram_data": """graph LR
+    subgraph Gen1["1st Gen - Volta"]
+        V1["FP16 to FP32"]
+    end
+
+    subgraph Gen2["2nd Gen - Turing"]
+        V2["FP16 to FP32"]
+        V2b["INT8, INT4, INT1"]
+    end
+
+    subgraph Gen3["3rd Gen - Ampere"]
+        V3["TF32, BF16"]
+        V3b["FP64 Tensor Cores"]
+        V3c["Sparsity Support"]
+    end
+
+    subgraph Gen4["4th Gen - Ada/Hopper"]
+        V4["FP8 E4M3, E5M2"]
+        V4b["Transformer Engine"]
+    end
+
+    subgraph Gen5["5th Gen - Blackwell"]
+        V5["FP4"]
+        V5b["2nd Gen TE"]
+        V5c["9 PFLOPS peak"]
+    end
+
+    Gen1 --> Gen2 --> Gen3 --> Gen4 --> Gen5
+
+    style Gen1 fill:#E6E6FA
+    style Gen2 fill:#FFFACD
+    style Gen3 fill:#ADD8E6
+    style Gen4 fill:#90EE90
+    style Gen5 fill:#FFD700""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Memory Bandwidth Progression",
+                        "explanation": "Memory bandwidth is often the bottleneck in ML workloads. Each generation has significantly increased bandwidth through faster memory technologies (HBM2 -> HBM2e -> HBM3 -> HBM3e).",
+                        "diagram_data": """graph TB
+    subgraph "Memory Evolution"
+        V["V100<br/>HBM2<br/>900 GB/s"]
+        A["A100<br/>HBM2e<br/>2,039 GB/s"]
+        H["H100<br/>HBM3<br/>3,350 GB/s"]
+        B["B200<br/>HBM3e<br/>8,000 GB/s"]
+    end
+
+    V -->|"2.3x"| A
+    A -->|"1.6x"| H
+    H -->|"2.4x"| B
+
+    subgraph "Capacity Growth"
+        VC["16-32 GB"]
+        AC["40-80 GB"]
+        HC["80 GB"]
+        BC["192 GB"]
+    end
+
+    style V fill:#E6E6FA
+    style A fill:#ADD8E6
+    style H fill:#90EE90
+    style B fill:#FFD700""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Choosing the Right GPU",
+                        "explanation": "Different GPUs serve different purposes. Consider your workload (training vs inference), model size, and budget when selecting hardware.",
+                        "diagram_data": """flowchart TD
+    Start{What is your use case?}
+
+    Start -->|"Training<br/>Large Models"| Train
+    Start -->|"Inference<br/>Production"| Infer
+    Start -->|"Development<br/>Experimentation"| Dev
+
+    subgraph Train["Training Recommendations"]
+        H100T["H100/H200<br/>LLMs, Foundation Models"]
+        A100T["A100 80GB<br/>Large CV/NLP Models"]
+        A10T["A10G<br/>Medium Models"]
+    end
+
+    subgraph Infer["Inference Recommendations"]
+        L40["L40/L40S<br/>Balanced perf/cost"]
+        T4["T4<br/>Cost-effective"]
+        H100I["H100<br/>Latency-critical LLMs"]
+    end
+
+    subgraph Dev["Development Recommendations"]
+        RTX["RTX 4090<br/>Best consumer GPU"]
+        A10D["A10<br/>Cloud dev instance"]
+        T4D["T4<br/>Budget option"]
+    end
+
+    style H100T fill:#FFD700
+    style A100T fill:#90EE90
+    style L40 fill:#ADD8E6
+    style RTX fill:#DDA0DD""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "PyTorch GPU Optimization Tips",
+                        "explanation": "To leverage these GPU features in PyTorch, use automatic mixed precision (AMP), enable TF32 on Ampere+, and consider torch.compile for additional optimizations.",
+                        "diagram_data": """flowchart LR
+    subgraph "Enable Mixed Precision"
+        AMP["torch.autocast<br/>torch.amp.GradScaler"]
+    end
+
+    subgraph "Enable TF32 - Ampere+"
+        TF32["torch.backends.cuda<br/>.matmul.allow_tf32 = True"]
+    end
+
+    subgraph "Compile - PyTorch 2.0+"
+        Compile["model = torch.compile<br/>mode='max-autotune'"]
+    end
+
+    subgraph "Results"
+        Speed["2-3x Training Speed"]
+        Mem["Lower Memory Usage"]
+        Easy["No Code Changes<br/>(for TF32)"]
+    end
+
+    AMP --> Speed
+    TF32 --> Easy
+    Compile --> Speed
+    AMP --> Mem
+
+    style AMP fill:#90EE90
+    style TF32 fill:#FFD700
+    style Compile fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_gpu_architecture_visual(self):
+        """Seed GPU architecture visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="gpu-architecture-components",
+            defaults={
+                "title": "GPU Architecture: Components Deep Dive",
+                "description": "Understand the key components of a modern GPU - from Streaming Multiprocessors to memory hierarchy",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 15,
+                "tags": ["gpu", "architecture", "cuda", "memory-hierarchy", "streaming-multiprocessor", "tensor-cores"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "GPU vs CPU: High-Level View",
+                        "explanation": "A **GPU** is designed for massive parallelism with thousands of simple cores, while a **CPU** has fewer but more powerful cores optimized for sequential tasks. GPUs excel at tasks that can be broken into many independent operations.",
+                        "diagram_data": """graph TB
+    subgraph CPU["CPU - Few Powerful Cores"]
+        direction LR
+        C1["Core 1<br/>Complex ALU"]
+        C2["Core 2<br/>Complex ALU"]
+        C3["Core 3<br/>Complex ALU"]
+        C4["Core 4<br/>Complex ALU"]
+        CC["Large Cache"]
+    end
+
+    subgraph GPU["GPU - Many Simple Cores"]
+        direction TB
+        SM1["SM"]
+        SM2["SM"]
+        SM3["SM"]
+        SM4["SM"]
+        SM5["..."]
+        SM6["SM"]
+        SMN["80+ SMs"]
+    end
+
+    CPU -->|"Best for"| Seq["Sequential Tasks<br/>Complex Logic<br/>Branch-Heavy Code"]
+    GPU -->|"Best for"| Par["Parallel Tasks<br/>Matrix Operations<br/>Data-Parallel Workloads"]
+
+    style CPU fill:#ADD8E6
+    style GPU fill:#90EE90
+    style Par fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "GPU High-Level Architecture",
+                        "explanation": "A modern NVIDIA GPU consists of multiple **Graphics Processing Clusters (GPCs)**, each containing multiple **Streaming Multiprocessors (SMs)**. The GPU also has L2 cache, memory controllers, and high-bandwidth memory (HBM or GDDR).",
+                        "diagram_data": """graph TB
+    subgraph GPU["NVIDIA GPU - e.g. H100"]
+        subgraph GPC1["GPC 1"]
+            SM1["SM"]
+            SM2["SM"]
+            SM3["SM"]
+        end
+        subgraph GPC2["GPC 2"]
+            SM4["SM"]
+            SM5["SM"]
+            SM6["SM"]
+        end
+        subgraph GPC3["GPC ..."]
+            SM7["SM"]
+            SM8["SM"]
+            SM9["SM"]
+        end
+
+        L2["L2 Cache - 50+ MB"]
+        MC["Memory Controllers"]
+    end
+
+    HBM["HBM3 Memory<br/>80GB @ 3+ TB/s"]
+    PCIE["PCIe Gen5<br/>Host Connection"]
+    NVL["NVLink<br/>GPU-to-GPU"]
+
+    MC --> HBM
+    GPU --> PCIE
+    GPU --> NVL
+
+    style L2 fill:#FFFACD
+    style HBM fill:#ADD8E6
+    style NVL fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Streaming Multiprocessor (SM)",
+                        "explanation": "The **SM** is the fundamental building block of a GPU. Each SM contains CUDA cores for general computation, Tensor Cores for matrix operations, shared memory/L1 cache, and warp schedulers that manage thread execution.",
+                        "diagram_data": """graph TB
+    subgraph SM["Streaming Multiprocessor"]
+        subgraph Compute["Compute Units"]
+            CUDA["128 CUDA Cores<br/>FP32/INT32"]
+            TC["4 Tensor Cores<br/>Matrix Ops"]
+            SFU["Special Function Units<br/>sin, cos, sqrt"]
+            LD["Load/Store Units"]
+        end
+
+        subgraph Sched["Scheduling"]
+            WS1["Warp Scheduler 1"]
+            WS2["Warp Scheduler 2"]
+            WS3["Warp Scheduler 3"]
+            WS4["Warp Scheduler 4"]
+        end
+
+        subgraph Mem["Memory"]
+            RF["Register File<br/>256 KB"]
+            SMEM["Shared Memory<br/>+ L1 Cache<br/>128-228 KB"]
+        end
+    end
+
+    Sched --> Compute
+    Compute --> Mem
+
+    style TC fill:#90EE90
+    style CUDA fill:#ADD8E6
+    style SMEM fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "CUDA Cores",
+                        "explanation": "**CUDA Cores** are the basic processing units that execute arithmetic operations. Each CUDA core can perform one floating-point or integer operation per clock cycle. Modern GPUs have thousands of CUDA cores distributed across all SMs.",
+                        "diagram_data": """graph TB
+    subgraph "CUDA Core"
+        FPU["FP32 Unit<br/>Floating Point"]
+        ALU["INT32 Unit<br/>Integer"]
+        Dispatch["Dispatch Port"]
+        Result["Result Bus"]
+    end
+
+    subgraph "Operations"
+        Add["Addition"]
+        Mul["Multiplication"]
+        FMA["Fused Multiply-Add<br/>a * b + c"]
+        Logic["Bitwise Logic"]
+    end
+
+    Dispatch --> FPU
+    Dispatch --> ALU
+    FPU --> Result
+    ALU --> Result
+    FPU --> Add
+    FPU --> Mul
+    FPU --> FMA
+
+    subgraph "Scale"
+        Count["H100: 16,896 CUDA Cores<br/>A100: 6,912 CUDA Cores<br/>RTX 4090: 16,384 CUDA Cores"]
+    end
+
+    style FMA fill:#90EE90
+    style Count fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Tensor Cores",
+                        "explanation": "**Tensor Cores** are specialized units designed for matrix multiply-accumulate operations (D = A x B + C). They operate on small matrices (e.g., 4x4 or 8x8) and provide massive speedups for deep learning workloads.",
+                        "diagram_data": """graph TB
+    subgraph "Tensor Core Operation"
+        A["Matrix A<br/>4x4 FP16"]
+        B["Matrix B<br/>4x4 FP16"]
+        C["Matrix C<br/>4x4 FP32"]
+        D["Matrix D<br/>4x4 FP32"]
+    end
+
+    A --> MMA["Matrix Multiply<br/>Accumulate"]
+    B --> MMA
+    C --> MMA
+    MMA --> D
+
+    subgraph "Supported Precisions"
+        FP16["FP16/BF16"]
+        TF32["TF32"]
+        FP8["FP8"]
+        INT8["INT8"]
+        FP64["FP64 - A100+"]
+    end
+
+    subgraph "Performance - H100"
+        TFLOP["FP16: 989 TFLOPS<br/>FP8: 1,979 TFLOPS<br/>vs CUDA: ~60 TFLOPS"]
+    end
+
+    style MMA fill:#90EE90
+    style D fill:#FFFACD
+    style TFLOP fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Warp Schedulers and Execution",
+                        "explanation": "Threads on a GPU are organized into **warps** of 32 threads that execute in lockstep (SIMT - Single Instruction, Multiple Threads). **Warp schedulers** select ready warps and issue instructions to the execution units.",
+                        "diagram_data": """graph TB
+    subgraph "Thread Hierarchy"
+        Grid["Grid<br/>All Threads"]
+        Block["Thread Block<br/>Up to 1024 threads"]
+        Warp["Warp<br/>32 threads"]
+        Thread["Thread"]
+    end
+
+    Grid --> Block
+    Block --> Warp
+    Warp --> Thread
+
+    subgraph "Warp Execution"
+        WS["Warp Scheduler"]
+        Ready["Ready Warps"]
+        Stalled["Stalled Warps<br/>waiting for memory"]
+        Exec["Execute 1 instruction<br/>across all 32 threads"]
+    end
+
+    WS --> Ready
+    Ready --> Exec
+    Stalled -.->|"data arrives"| Ready
+
+    subgraph "Key Concept"
+        SIMT["SIMT: All 32 threads<br/>execute SAME instruction<br/>on DIFFERENT data"]
+    end
+
+    style Warp fill:#90EE90
+    style SIMT fill:#FFFACD
+    style WS fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Memory Hierarchy Overview",
+                        "explanation": "GPUs have a complex memory hierarchy optimized for throughput. Understanding it is crucial for writing efficient GPU code. Memory closer to the cores is faster but smaller.",
+                        "diagram_data": """graph TB
+    subgraph "Memory Hierarchy - Fastest to Slowest"
+        R["Registers<br/>~256 KB per SM<br/>~0 cycles latency"]
+        SM["Shared Memory / L1<br/>~128-228 KB per SM<br/>~20-30 cycles"]
+        L2["L2 Cache<br/>~50 MB total<br/>~200 cycles"]
+        HBM["HBM / Global Memory<br/>80 GB<br/>~400-800 cycles"]
+    end
+
+    R -->|"Fastest"| SM
+    SM --> L2
+    L2 -->|"Slowest"| HBM
+
+    subgraph "Bandwidth"
+        BW_R["Registers: ~20 TB/s"]
+        BW_SM["Shared: ~10 TB/s"]
+        BW_L2["L2: ~5 TB/s"]
+        BW_HBM["HBM3: ~3 TB/s"]
+    end
+
+    style R fill:#90EE90
+    style SM fill:#FFFACD
+    style L2 fill:#ADD8E6
+    style HBM fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Registers",
+                        "explanation": "**Registers** are the fastest memory, private to each thread. The compiler allocates registers automatically. Using too many registers per thread reduces **occupancy** (number of concurrent warps).",
+                        "diagram_data": """graph TB
+    subgraph "Register Allocation"
+        Thread1["Thread 1<br/>32 registers"]
+        Thread2["Thread 2<br/>32 registers"]
+        ThreadN["Thread N<br/>32 registers"]
+        Pool["SM Register File<br/>65,536 registers"]
+    end
+
+    Pool --> Thread1
+    Pool --> Thread2
+    Pool --> ThreadN
+
+    subgraph "Trade-off"
+        More["More Registers/Thread"]
+        Fewer["Fewer Active Warps"]
+        Less["Less Latency Hiding"]
+    end
+
+    More --> Fewer --> Less
+
+    subgraph "Best Practice"
+        Tip["Limit register usage<br/>Use --maxrregcount<br/>Monitor with nvcc -Xptxas -v"]
+    end
+
+    style Pool fill:#90EE90
+    style Tip fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Shared Memory",
+                        "explanation": "**Shared Memory** is fast, programmer-managed memory shared by all threads in a thread block. It's ideal for data reuse within a block and reducing global memory access.",
+                        "diagram_data": """graph TB
+    subgraph "Thread Block"
+        T1["Thread 1"]
+        T2["Thread 2"]
+        T3["Thread 3"]
+        TN["Thread N"]
+        SMEM["Shared Memory<br/>Up to 228 KB"]
+    end
+
+    T1 <--> SMEM
+    T2 <--> SMEM
+    T3 <--> SMEM
+    TN <--> SMEM
+
+    subgraph "Use Cases"
+        Tile["Matrix Tiling"]
+        Reduce["Reductions"]
+        Comm["Thread Communication"]
+        Cache["Manual Caching"]
+    end
+
+    SMEM --> Tile
+    SMEM --> Reduce
+    SMEM --> Comm
+
+    subgraph "Code Example"
+        Code["__shared__ float data[256]<br/>data[threadIdx.x] = ...<br/>__syncthreads()<br/>// All threads can read"]
+    end
+
+    style SMEM fill:#FFFACD
+    style Code fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "L2 Cache and Global Memory",
+                        "explanation": "**L2 Cache** is shared across all SMs and automatically caches global memory accesses. **Global Memory (HBM)** is the largest but slowest memory, accessible by all threads and the CPU.",
+                        "diagram_data": """graph TB
+    subgraph "All SMs"
+        SM1["SM 1"]
+        SM2["SM 2"]
+        SMN["SM N"]
+    end
+
+    L2["L2 Cache<br/>50+ MB<br/>Automatic Caching"]
+
+    SM1 <--> L2
+    SM2 <--> L2
+    SMN <--> L2
+
+    subgraph "Memory Controllers"
+        MC1["MC 1"]
+        MC2["MC 2"]
+        MC3["MC 3"]
+    end
+
+    L2 <--> MC1
+    L2 <--> MC2
+    L2 <--> MC3
+
+    HBM["HBM3 Global Memory<br/>80 GB @ 3+ TB/s"]
+
+    MC1 <--> HBM
+    MC2 <--> HBM
+    MC3 <--> HBM
+
+    style L2 fill:#ADD8E6
+    style HBM fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Memory Coalescing",
+                        "explanation": "**Memory coalescing** is critical for performance. When threads in a warp access consecutive memory addresses, the GPU combines them into fewer memory transactions. Uncoalesced access wastes bandwidth.",
+                        "diagram_data": """graph TB
+    subgraph "Coalesced Access - GOOD"
+        W1["Warp: 32 Threads"]
+        CA["Thread 0 -> addr 0<br/>Thread 1 -> addr 4<br/>Thread 2 -> addr 8<br/>...<br/>Thread 31 -> addr 124"]
+        One["1 Memory Transaction<br/>128 bytes"]
+    end
+
+    W1 --> CA --> One
+
+    subgraph "Uncoalesced Access - BAD"
+        W2["Warp: 32 Threads"]
+        UA["Thread 0 -> addr 0<br/>Thread 1 -> addr 512<br/>Thread 2 -> addr 1024<br/>...<br/>Random pattern"]
+        Many["32 Memory Transactions<br/>Massive slowdown"]
+    end
+
+    W2 --> UA --> Many
+
+    style One fill:#90EE90
+    style Many fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "NVLink and PCIe",
+                        "explanation": "**NVLink** provides high-bandwidth GPU-to-GPU communication (up to 900 GB/s on H100), enabling multi-GPU training. **PCIe** connects the GPU to the CPU/host memory (much slower, ~64 GB/s for Gen5).",
+                        "diagram_data": """graph TB
+    subgraph "Multi-GPU System"
+        GPU1["GPU 1"]
+        GPU2["GPU 2"]
+        GPU3["GPU 3"]
+        GPU4["GPU 4"]
+    end
+
+    GPU1 <-->|"NVLink<br/>900 GB/s"| GPU2
+    GPU2 <-->|"NVLink"| GPU3
+    GPU3 <-->|"NVLink"| GPU4
+    GPU4 <-->|"NVLink"| GPU1
+
+    CPU["CPU / Host"]
+    RAM["System RAM"]
+
+    GPU1 <-->|"PCIe Gen5<br/>64 GB/s"| CPU
+    CPU <--> RAM
+
+    subgraph "Use Cases"
+        NVL_Use["NVLink: Tensor Parallelism<br/>All-Reduce, P2P Transfer"]
+        PCIe_Use["PCIe: Data Loading<br/>Model Transfer"]
+    end
+
+    style GPU1 fill:#90EE90
+    style GPU2 fill:#90EE90
+    style GPU3 fill:#90EE90
+    style GPU4 fill:#90EE90
+    style NVL_Use fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Putting It All Together",
+                        "explanation": "When you launch a CUDA kernel, the GPU distributes thread blocks across SMs, warps get scheduled, threads access memory through the hierarchy, and results flow back. Understanding this flow helps optimize performance.",
+                        "diagram_data": """graph TB
+    subgraph "Kernel Launch"
+        Host["Host - CPU"]
+        Launch["kernel<<<grid, block>>>"]
+    end
+
+    Host --> Launch
+
+    subgraph "GPU Execution"
+        Dist["Thread Block<br/>Distribution"]
+        SM1["SM 1<br/>Blocks 0, 4, 8..."]
+        SM2["SM 2<br/>Blocks 1, 5, 9..."]
+        SMN["SM N<br/>Blocks 3, 7, 11..."]
+    end
+
+    Launch --> Dist
+    Dist --> SM1
+    Dist --> SM2
+    Dist --> SMN
+
+    subgraph "Per-SM Execution"
+        WS["Warp Schedulers<br/>Issue Instructions"]
+        Cores["CUDA/Tensor Cores<br/>Compute"]
+        Mem["Memory Access<br/>Reg->Shared->L2->HBM"]
+    end
+
+    SM1 --> WS --> Cores --> Mem
+
+    subgraph "Optimization Goals"
+        Occ["High Occupancy<br/>many active warps"]
+        Coal["Coalesced Memory"]
+        Reuse["Data Reuse<br/>shared memory"]
+    end
+
+    style Launch fill:#ADD8E6
+    style Cores fill:#90EE90
+    style Occ fill:#FFFACD""",
                     },
                 ],
             },

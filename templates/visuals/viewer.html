@@ -8,15 +8,89 @@
     .mermaid {
         text-align: center;
         background: white;
+        display: inline-block;
     }
     .mermaid svg {
-        max-width: 100%;
+        max-width: none;
         height: auto;
+        display: block;
+    }
+    #diagram-wrapper {
+        min-height: 400px;
+        max-height: 600px;
+        overflow: auto;
+        position: relative;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        background: #f9fafb;
     }
     #diagram-container {
-        min-height: 300px;
+        min-height: 400px;
+        min-width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    #diagram-inner {
+        transform-origin: center center;
+        transition: transform 0.15s ease;
+    }
+    /* Fullscreen mode */
+    .fullscreen-mode {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        z-index: 9999;
+        background: white;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+    .fullscreen-mode #diagram-container {
+        min-height: 100vh;
+    }
+    /* Zoom controls */
+    .zoom-controls {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        display: flex;
+        gap: 0.25rem;
+        z-index: 10;
+        background: white;
+        border-radius: 0.5rem;
+        padding: 0.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .zoom-btn {
+        width: 2rem;
+        height: 2rem;
         display: flex;
         align-items: center;
+        justify-content: center;
+        border-radius: 0.375rem;
+        border: 1px solid #e5e7eb;
+        background: white;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .zoom-btn:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+    .zoom-btn:active {
+        background: #e5e7eb;
+    }
+    .zoom-level {
+        font-size: 0.75rem;
+        color: #6b7280;
+        padding: 0 0.5rem;
+        display: flex;
+        align-items: center;
+        min-width: 3rem;
         justify-content: center;
     }
     .step-dot {
@@ -90,8 +164,39 @@
         <!-- Diagram Panel -->
         <div class="bg-white rounded-lg shadow-md p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4" id="step-title">Loading...</h2>
-            <div id="diagram-container" class="border rounded-lg p-4 bg-gray-50">
-                <div class="text-gray-400">Loading diagram...</div>
+            <div id="diagram-wrapper">
+                <!-- Zoom Controls -->
+                <div class="zoom-controls">
+                    <button id="zoom-out-btn" class="zoom-btn" title="Zoom out (-)">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
+                    </button>
+                    <span id="zoom-level" class="zoom-level">100%</span>
+                    <button id="zoom-in-btn" class="zoom-btn" title="Zoom in (+)">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                    </button>
+                    <button id="zoom-reset-btn" class="zoom-btn" title="Reset zoom (0)">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </button>
+                    <button id="fullscreen-btn" class="zoom-btn" title="Fullscreen (F)">
+                        <svg id="fullscreen-icon" class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                        <svg id="exit-fullscreen-icon" class="w-4 h-4 text-gray-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4H4m0 5l5-5m11 5h-5V4m0 5l5-5M9 20v-5H4m0 0l5 5m11-5h-5v5m0 0l5-5"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="diagram-container">
+                    <div id="diagram-inner">
+                        <div class="text-gray-400">Loading diagram...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -215,7 +320,9 @@ const autoAdvanceInterval = 4000; // 4 seconds per step when playing
 const csrfToken = '{{ csrf_token }}';
 
 // DOM elements
+const diagramWrapper = document.getElementById('diagram-wrapper');
 const diagramContainer = document.getElementById('diagram-container');
+const diagramInner = document.getElementById('diagram-inner');
 const stepTitle = document.getElementById('step-title');
 const stepExplanation = document.getElementById('step-explanation');
 const currentStepDisplay = document.getElementById('current-step-display');
@@ -230,6 +337,109 @@ const claudeExplanation = document.getElementById('claude-explanation');
 const claudeResponse = document.getElementById('claude-response');
 const progressBar = document.getElementById('progress-bar');
 const progressPercentage = document.getElementById('progress-percentage');
+const zoomInBtn = document.getElementById('zoom-in-btn');
+const zoomOutBtn = document.getElementById('zoom-out-btn');
+const zoomResetBtn = document.getElementById('zoom-reset-btn');
+const zoomLevelDisplay = document.getElementById('zoom-level');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+const fullscreenIcon = document.getElementById('fullscreen-icon');
+const exitFullscreenIcon = document.getElementById('exit-fullscreen-icon');
+
+// Zoom state
+let zoomLevel = 1;
+const zoomStep = 0.25;
+const minZoom = 0.5;
+const maxZoom = 3;
+let isFullscreen = false;
+
+// Zoom functions
+function updateZoom() {
+    diagramInner.style.transform = `scale(${zoomLevel})`;
+    zoomLevelDisplay.textContent = `${Math.round(zoomLevel * 100)}%`;
+
+    // Calculate the scaled size and update container to enable proper scrolling
+    const innerContent = diagramInner.firstElementChild;
+    if (innerContent) {
+        const originalWidth = innerContent.scrollWidth || innerContent.offsetWidth;
+        const originalHeight = innerContent.scrollHeight || innerContent.offsetHeight;
+
+        // Set minimum dimensions based on zoomed content
+        const scaledWidth = originalWidth * zoomLevel;
+        const scaledHeight = originalHeight * zoomLevel;
+
+        diagramContainer.style.minWidth = `${Math.max(scaledWidth + 32, diagramWrapper.clientWidth)}px`;
+        diagramContainer.style.minHeight = `${Math.max(scaledHeight + 32, 400)}px`;
+    }
+
+    // Center scroll position when zooming in
+    if (zoomLevel > 1) {
+        const scrollX = (diagramContainer.scrollWidth - diagramWrapper.clientWidth) / 2;
+        const scrollY = (diagramContainer.scrollHeight - diagramWrapper.clientHeight) / 2;
+        diagramWrapper.scrollLeft = Math.max(0, scrollX);
+        diagramWrapper.scrollTop = Math.max(0, scrollY);
+    }
+}
+
+function zoomIn() {
+    if (zoomLevel < maxZoom) {
+        zoomLevel = Math.min(maxZoom, zoomLevel + zoomStep);
+        updateZoom();
+    }
+}
+
+function zoomOut() {
+    if (zoomLevel > minZoom) {
+        zoomLevel = Math.max(minZoom, zoomLevel - zoomStep);
+        updateZoom();
+    }
+}
+
+function resetZoom() {
+    zoomLevel = 1;
+    diagramInner.style.transform = 'scale(1)';
+    diagramContainer.style.minWidth = '100%';
+    diagramContainer.style.minHeight = '400px';
+    zoomLevelDisplay.textContent = '100%';
+    diagramWrapper.scrollLeft = 0;
+    diagramWrapper.scrollTop = 0;
+}
+
+function toggleFullscreen() {
+    isFullscreen = !isFullscreen;
+
+    if (isFullscreen) {
+        diagramWrapper.classList.add('fullscreen-mode');
+        fullscreenIcon.classList.add('hidden');
+        exitFullscreenIcon.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    } else {
+        diagramWrapper.classList.remove('fullscreen-mode');
+        fullscreenIcon.classList.remove('hidden');
+        exitFullscreenIcon.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Re-apply zoom after fullscreen toggle
+    setTimeout(() => updateZoom(), 100);
+}
+
+// Zoom event listeners
+zoomInBtn.addEventListener('click', zoomIn);
+zoomOutBtn.addEventListener('click', zoomOut);
+zoomResetBtn.addEventListener('click', resetZoom);
+fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+// Mouse wheel zoom (with Ctrl key)
+diagramWrapper.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+            zoomIn();
+        } else {
+            zoomOut();
+        }
+    }
+}, { passive: false });
 
 // Render a step
 async function renderStep(stepIndex) {
@@ -237,6 +447,11 @@ async function renderStep(stepIndex) {
 
     const step = steps[stepIndex];
     currentStep = stepIndex;
+
+    // Reset zoom when changing steps
+    if (zoomLevel !== 1) {
+        resetZoom();
+    }
 
     // Update UI elements
     currentStepDisplay.textContent = stepIndex + 1;
@@ -270,12 +485,12 @@ async function renderStep(stepIndex) {
 
 // Render diagram based on type
 async function renderDiagram(step) {
-    diagramContainer.innerHTML = '';
+    diagramInner.innerHTML = '';
 
     const diagramData = step.diagram_data;
 
     if (!diagramData) {
-        diagramContainer.innerHTML = '<div class="text-gray-400">No diagram for this step</div>';
+        diagramInner.innerHTML = '<div class="text-gray-400">No diagram for this step</div>';
         return;
     }
 
@@ -285,11 +500,18 @@ async function renderDiagram(step) {
             const diagramDiv = document.createElement('div');
             diagramDiv.className = 'mermaid';
             diagramDiv.textContent = diagramData;
-            diagramContainer.appendChild(diagramDiv);
+            diagramInner.appendChild(diagramDiv);
             await mermaid.run({ nodes: [diagramDiv] });
+
+            // After rendering, update container size for proper scrolling
+            setTimeout(() => {
+                if (zoomLevel !== 1) {
+                    updateZoom();
+                }
+            }, 100);
         } catch (error) {
             console.error('Mermaid rendering error:', error);
-            diagramContainer.innerHTML = `
+            diagramInner.innerHTML = `
                 <div class="text-red-500 p-4">
                     <p class="font-semibold">Diagram rendering error</p>
                     <pre class="text-xs mt-2 bg-gray-100 p-2 rounded overflow-auto">${diagramData}</pre>
@@ -298,7 +520,7 @@ async function renderDiagram(step) {
         }
     } else {
         // For other diagram types (JSON/object data), show as code for now
-        diagramContainer.innerHTML = `
+        diagramInner.innerHTML = `
             <pre class="text-xs bg-gray-100 p-4 rounded overflow-auto max-h-64">${JSON.stringify(diagramData, null, 2)}</pre>
         `;
     }
@@ -457,6 +679,30 @@ document.addEventListener('keydown', (e) => {
         case ' ':
             e.preventDefault();
             togglePlay();
+            break;
+        case '+':
+        case '=':
+            e.preventDefault();
+            zoomIn();
+            break;
+        case '-':
+        case '_':
+            e.preventDefault();
+            zoomOut();
+            break;
+        case '0':
+            e.preventDefault();
+            resetZoom();
+            break;
+        case 'f':
+        case 'F':
+            e.preventDefault();
+            toggleFullscreen();
+            break;
+        case 'Escape':
+            if (isFullscreen) {
+                toggleFullscreen();
+            }
             break;
     }
 });
