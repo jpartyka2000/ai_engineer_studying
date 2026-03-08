@@ -38,9 +38,13 @@ def format_ms(value):
 @register.filter(is_safe=True)
 def render_code_blocks(value):
     """
-    Convert markdown code blocks to HTML with syntax highlighting support.
+    Convert markdown to HTML with syntax highlighting support.
 
-    Handles both fenced code blocks (```python...```) and inline code (`code`).
+    Handles:
+    - Fenced code blocks (```python...```)
+    - Inline code (`code`)
+    - Bold text (**bold**)
+    - Bullet points (- item)
     """
     if not value:
         return ""
@@ -70,6 +74,19 @@ def render_code_blocks(value):
         text,
     )
 
+    # Pattern for bold text: **bold**
+    bold_pattern = r"\*\*([^*]+)\*\*"
+    text = re.sub(bold_pattern, r"<strong>\1</strong>", text)
+
+    # Pattern for section headers: "Title:" at start of line (not already bold)
+    # Match lines that are just a title with colon, or title: followed by newline
+    header_pattern = r"(^|\n)([A-Z][^:\n]{2,50}:)\s*(?=\n|$)"
+    text = re.sub(
+        header_pattern,
+        r'\1<span class="font-semibold text-base text-gray-800 border-b border-gray-300 pb-1 inline-block mb-1">\2</span>',
+        text,
+    )
+
     # Convert remaining newlines to <br> tags (but not inside pre tags)
     # Split by pre tags, process non-pre parts
     parts = re.split(r"(<pre.*?</pre>)", text, flags=re.DOTALL)
@@ -78,7 +95,14 @@ def render_code_blocks(value):
         if part.startswith("<pre"):
             result.append(part)
         else:
+            # Convert bullet points: "- item" at start of line
+            part = re.sub(
+                r"(^|\n)- ",
+                r'\1<span class="ml-4">•</span> ',
+                part,
+            )
             # Convert newlines to <br> for non-code parts
-            result.append(part.replace("\n", "<br>\n"))
+            part = part.replace("\n", "<br>\n")
+            result.append(part)
 
     return mark_safe("".join(result))
