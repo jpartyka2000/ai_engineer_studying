@@ -56,6 +56,17 @@ class Command(BaseCommand):
         self.seed_pandas_pivot_melt_visual()
         self.seed_pandas_loc_iloc_visual()
         self.seed_pandas_serialization_visual()
+        self.seed_pandas_groupby_aggregation_visual()
+        self.seed_pandas_missing_data_visual()
+        self.seed_pandas_window_functions_visual()
+        self.seed_pandas_concatenation_visual()
+        self.seed_pandas_advanced_filtering_visual()
+        self.seed_pandas_dtype_management_visual()
+        self.seed_pandas_string_operations_visual()
+        self.seed_pandas_duplicates_visual()
+        self.seed_pandas_index_multiindex_visual()
+        self.seed_pandas_apply_functions_visual()
+        self.seed_pandas_data_quality_visual()
         self.seed_gradient_descent_visual()
         self.seed_cross_validation_visual()
         self.seed_regularization_visual()
@@ -280,6 +291,48 @@ class Command(BaseCommand):
         self.seed_git_revert_visual()
         self.seed_git_stash_visual()
         self.seed_git_remote_tracking_visual()
+
+        # Pathlib visuals
+        self.seed_pathlib_anatomy_visual()
+        self.seed_pathlib_resolution_visual()
+        self.seed_pathlib_glob_rglob_visual()
+        self.seed_pathlib_join_operator_visual()
+        self.seed_pathlib_relative_to_visual()
+        self.seed_pathlib_mkdir_visual()
+        self.seed_pathlib_existence_checks_visual()
+        self.seed_pathlib_with_methods_visual()
+        self.seed_pathlib_parent_chain_visual()
+        self.seed_pathlib_read_write_visual()
+
+        # Transformers visuals (new)
+        self.seed_transformers_kv_cache_visual()
+        self.seed_transformers_rag_pipeline_visual()
+        self.seed_transformers_cross_attention_visual()
+        self.seed_transformers_attention_masking_visual()
+        self.seed_transformers_qkv_computation_visual()
+        self.seed_transformers_tensor_shapes_visual()
+        self.seed_transformers_bert_gpt_t5_visual()
+        self.seed_transformers_parallelism_visual()
+        self.seed_transformers_long_context_visual()
+        self.seed_transformers_scaling_laws_visual()
+        self.seed_transformers_finetuning_visual()
+        self.seed_transformers_decoding_strategies_visual()
+        self.seed_transformers_rope_visual()
+
+        # Databricks visuals
+        self.seed_databricks_medallion_visual()
+        self.seed_databricks_delta_lake_visual()
+        self.seed_databricks_acid_transactions_visual()
+        self.seed_databricks_cluster_architecture_visual()
+        self.seed_databricks_unity_catalog_visual()
+        self.seed_databricks_dlt_pipeline_visual()
+        self.seed_databricks_time_travel_visual()
+        self.seed_databricks_jobs_orchestration_visual()
+        self.seed_databricks_sql_warehouse_visual()
+        self.seed_databricks_dbfs_storage_visual()
+        self.seed_databricks_model_serving_visual()
+        self.seed_databricks_vector_search_visual()
+        self.seed_databricks_zordering_visual()
 
         self.stdout.write(self.style.SUCCESS("Successfully seeded visual topics!"))
 
@@ -2148,7 +2201,7 @@ class Command(BaseCommand):
 
     def seed_gpu_generations_visual(self):
         """Seed GPU generations visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -2496,7 +2549,7 @@ class Command(BaseCommand):
 
     def seed_gpu_architecture_visual(self):
         """Seed GPU architecture visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -4654,9 +4707,2650 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
 
+    def seed_pandas_groupby_aggregation_visual(self):
+        """Seed Pandas groupby and aggregation visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-groupby-aggregation",
+            defaults={
+                "title": "Pandas GroupBy & Aggregation",
+                "description": "Master groupby operations, aggregation functions, transform, and apply for powerful data analysis",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 15,
+                "tags": ["pandas", "groupby", "aggregation", "transform", "apply"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Split-Apply-Combine Pattern",
+                        "explanation": "**GroupBy** follows a three-step pattern:\n\n1. **Split**: Divide data into groups based on key(s)\n2. **Apply**: Perform operation on each group\n3. **Combine**: Merge results back together\n\nThis is the foundation of all groupby operations.",
+                        "diagram_data": """graph TB
+    subgraph "Original DataFrame"
+        DF["| dept | name  | salary |<br/>|------|-------|--------|<br/>| Eng  | Alice | 80000  |<br/>| Eng  | Bob   | 75000  |<br/>| Sales| Carol | 60000  |<br/>| Sales| Dave  | 65000  |"]
+    end
+
+    subgraph "1. SPLIT by dept"
+        G1["Eng Group<br/>Alice: 80000<br/>Bob: 75000"]
+        G2["Sales Group<br/>Carol: 60000<br/>Dave: 65000"]
+    end
+
+    subgraph "2. APPLY mean()"
+        A1["mean = 77500"]
+        A2["mean = 62500"]
+    end
+
+    subgraph "3. COMBINE"
+        Result["| dept  | salary |<br/>|-------|--------|<br/>| Eng   | 77500  |<br/>| Sales | 62500  |"]
+    end
+
+    DF --> G1
+    DF --> G2
+    G1 --> A1
+    G2 --> A2
+    A1 --> Result
+    A2 --> Result
+
+    style DF fill:#ADD8E6
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Basic GroupBy Syntax",
+                        "explanation": "The basic syntax is `df.groupby('column').agg_func()`. You can group by one or multiple columns.\n\n```python\n# Single column groupby\ndf.groupby('dept')['salary'].mean()\n\n# Multiple columns\ndf.groupby(['dept', 'year'])['sales'].sum()\n\n# GroupBy object (lazy - no computation yet)\ngrouped = df.groupby('dept')\n```",
+                        "diagram_data": """graph TB
+    subgraph "GroupBy Syntax"
+        S1["df.groupby('col')"]
+        S2["df.groupby(['col1', 'col2'])"]
+        S3["df.groupby('col', as_index=False)"]
+    end
+
+    subgraph "Common Aggregations"
+        A1["grouped.mean()"]
+        A2["grouped.sum()"]
+        A3["grouped.count()"]
+        A4["grouped.min() / max()"]
+        A5["grouped.std() / var()"]
+        A6["grouped.first() / last()"]
+    end
+
+    subgraph "Key Options"
+        O1["as_index=False<br/>Keep group cols as columns"]
+        O2["sort=False<br/>Don't sort by group keys"]
+        O3["dropna=False<br/>Include NaN as group"]
+    end
+
+    S1 --> A1
+    S1 --> A2
+
+    style S1 fill:#ADD8E6
+    style O1 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The agg() Method - Multiple Aggregations",
+                        "explanation": "Use `agg()` to apply multiple functions at once or different functions to different columns.\n\n```python\n# Multiple functions on one column\ndf.groupby('dept')['salary'].agg(['mean', 'min', 'max'])\n\n# Different functions per column\ndf.groupby('dept').agg({\n    'salary': ['mean', 'sum'],\n    'bonus': 'max',\n    'name': 'count'\n})\n```",
+                        "diagram_data": """graph TB
+    subgraph "Single Column, Multiple Funcs"
+        Code1["df.groupby('dept')['salary'].agg(['mean', 'sum', 'count'])"]
+        Result1["| dept  | mean  | sum    | count |<br/>|-------|-------|--------|-------|<br/>| Eng   | 77500 | 155000 | 2     |<br/>| Sales | 62500 | 125000 | 2     |"]
+    end
+
+    subgraph "Multiple Columns, Custom Funcs"
+        Code2["df.groupby('dept').agg({<br/>    'salary': ['mean', 'max'],<br/>    'years': 'sum'<br/>})"]
+        Result2["MultiIndex columns:<br/>salary_mean, salary_max, years_sum"]
+    end
+
+    subgraph "Named Aggregations (Clean Output)"
+        Code3["df.groupby('dept').agg(<br/>    avg_salary=('salary', 'mean'),<br/>    max_salary=('salary', 'max'),<br/>    headcount=('name', 'count')<br/>)"]
+        Result3["Clean column names!<br/>avg_salary, max_salary, headcount"]
+    end
+
+    Code1 --> Result1
+    Code3 --> Result3
+
+    style Code3 fill:#90EE90
+    style Result3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "transform() - Same Shape Output",
+                        "explanation": "**transform()** returns data with the same shape as input - perfect for adding group statistics back to original rows.\n\n```python\n# Add group mean as new column\ndf['dept_avg'] = df.groupby('dept')['salary'].transform('mean')\n\n# Normalize within groups\ndf['salary_zscore'] = df.groupby('dept')['salary'].transform(\n    lambda x: (x - x.mean()) / x.std()\n)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original Data"
+        Orig["| dept | name  | salary |<br/>|------|-------|--------|<br/>| Eng  | Alice | 80000  |<br/>| Eng  | Bob   | 75000  |<br/>| Sales| Carol | 60000  |"]
+    end
+
+    subgraph "transform('mean')"
+        Trans["Returns same-length Series:<br/>[77500, 77500, 60000]<br/><br/>Each row gets its GROUP's mean"]
+    end
+
+    subgraph "Result with New Column"
+        Result["| dept | name  | salary | dept_avg |<br/>|------|-------|--------|----------|<br/>| Eng  | Alice | 80000  | 77500    |<br/>| Eng  | Bob   | 75000  | 77500    |<br/>| Sales| Carol | 60000  | 60000    |"]
+    end
+
+    subgraph "Common Uses"
+        U1["Group normalization"]
+        U2["Fill missing with group mean"]
+        U3["Rank within groups"]
+        U4["Percent of group total"]
+    end
+
+    Orig --> Trans --> Result
+
+    style Trans fill:#ADD8E6
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "transform() vs agg() Comparison",
+                        "explanation": "The key difference: **agg()** reduces to one row per group, **transform()** keeps all rows.",
+                        "diagram_data": """graph TB
+    subgraph "Input: 4 rows"
+        Input["| dept | salary |<br/>|------|--------|<br/>| Eng  | 80000  |<br/>| Eng  | 75000  |<br/>| Sales| 60000  |<br/>| Sales| 65000  |"]
+    end
+
+    subgraph "groupby('dept')['salary'].mean()"
+        AggResult["2 rows (one per group)<br/>| dept  | salary |<br/>| Eng   | 77500  |<br/>| Sales | 62500  |"]
+    end
+
+    subgraph "groupby('dept')['salary'].transform('mean')"
+        TransResult["4 rows (same as input)<br/>[77500, 77500, 62500, 62500]<br/><br/>Can assign back to df!"]
+    end
+
+    Input -->|"agg/mean"| AggResult
+    Input -->|"transform"| TransResult
+
+    style AggResult fill:#FFB6C1
+    style TransResult fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "apply() - Maximum Flexibility",
+                        "explanation": "**apply()** lets you apply any function to each group. It's the most flexible but slowest option.\n\n```python\n# Custom function per group\ndef top_earners(group):\n    return group.nlargest(2, 'salary')\n\ndf.groupby('dept').apply(top_earners)\n\n# Lambda for quick operations\ndf.groupby('dept').apply(lambda g: g['salary'].max() - g['salary'].min())\n```",
+                        "diagram_data": """graph TB
+    subgraph "apply() Flow"
+        Input["GroupBy Object"]
+        Func["Your Function"]
+        G1["Group 1 DataFrame"]
+        G2["Group 2 DataFrame"]
+        R1["Result 1"]
+        R2["Result 2"]
+        Output["Combined Result"]
+    end
+
+    Input --> G1
+    Input --> G2
+    G1 --> Func --> R1
+    G2 --> Func --> R2
+    R1 --> Output
+    R2 --> Output
+
+    subgraph "Return Types"
+        RT1["Scalar → Series result"]
+        RT2["Series → DataFrame result"]
+        RT3["DataFrame → DataFrame result"]
+    end
+
+    subgraph "Example"
+        Ex["def summarize(g):<br/>    return pd.Series({<br/>        'count': len(g),<br/>        'avg': g['salary'].mean(),<br/>        'range': g['salary'].max() - g['salary'].min()<br/>    })<br/><br/>df.groupby('dept').apply(summarize)"]
+    end
+
+    style Func fill:#ADD8E6
+    style Ex fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Choosing: agg vs transform vs apply",
+                        "explanation": "Use this decision tree to pick the right method.",
+                        "diagram_data": """graph TB
+    Start["What do you need?"]
+
+    Start --> Q1{"One row per group?"}
+    Q1 -->|"Yes"| Q2{"Standard aggregation?"}
+    Q1 -->|"No, keep all rows"| Transform["Use transform()"]
+
+    Q2 -->|"Yes (mean, sum, etc)"| Agg["Use agg()"]
+    Q2 -->|"No, custom logic"| Apply["Use apply()"]
+
+    subgraph "Performance"
+        P1["agg() - Fastest<br/>Vectorized operations"]
+        P2["transform() - Fast<br/>Vectorized per group"]
+        P3["apply() - Slowest<br/>Python loop over groups"]
+    end
+
+    subgraph "Quick Reference"
+        R1["agg(): Summarize groups"]
+        R2["transform(): Broadcast back"]
+        R3["apply(): Anything goes"]
+    end
+
+    style Agg fill:#90EE90
+    style Transform fill:#ADD8E6
+    style Apply fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Multi-Level GroupBy",
+                        "explanation": "Group by multiple columns to create hierarchical groups.\n\n```python\n# Group by two columns\ndf.groupby(['dept', 'year'])['sales'].sum()\n\n# Results in MultiIndex\n# dept   year\n# Eng    2023    150000\n#        2024    180000\n# Sales  2023    120000\n```",
+                        "diagram_data": """graph TB
+    subgraph "Multi-Column GroupBy"
+        Code["df.groupby(['region', 'product'])['sales'].sum()"]
+    end
+
+    subgraph "Creates Hierarchical Groups"
+        H1["East + Widget"]
+        H2["East + Gadget"]
+        H3["West + Widget"]
+        H4["West + Gadget"]
+    end
+
+    subgraph "Result: MultiIndex"
+        Result["| region | product | sales |<br/>|--------|---------|-------|<br/>| East   | Widget  | 1000  |<br/>| East   | Gadget  | 800   |<br/>| West   | Widget  | 1200  |<br/>| West   | Gadget  | 900   |"]
+    end
+
+    subgraph "Flatten with reset_index()"
+        Flat["df.groupby(['region', 'product'])<br/>  .sum()<br/>  .reset_index()"]
+    end
+
+    Code --> H1
+    Code --> H2
+    Code --> H3
+    Code --> H4
+
+    style Result fill:#90EE90
+    style Flat fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "filter() - Keep/Remove Entire Groups",
+                        "explanation": "**filter()** keeps or removes entire groups based on a condition.\n\n```python\n# Keep only departments with avg salary > 70000\ndf.groupby('dept').filter(lambda g: g['salary'].mean() > 70000)\n\n# Keep groups with at least 5 members\ndf.groupby('team').filter(lambda g: len(g) >= 5)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original Data"
+        Orig["| dept | salary |<br/>|------|--------|<br/>| Eng  | 80000  |<br/>| Eng  | 75000  |<br/>| Sales| 50000  |<br/>| Sales| 55000  |<br/>| HR   | 60000  |"]
+    end
+
+    subgraph "filter(lambda g: g['salary'].mean() > 60000)"
+        Check1["Eng: mean=77500 > 60000 ✓"]
+        Check2["Sales: mean=52500 < 60000 ✗"]
+        Check3["HR: mean=60000 = 60000 ✗"]
+    end
+
+    subgraph "Result"
+        Result["| dept | salary |<br/>|------|--------|<br/>| Eng  | 80000  |<br/>| Eng  | 75000  |<br/><br/>Only Eng rows kept!"]
+    end
+
+    Orig --> Check1
+    Orig --> Check2
+    Orig --> Check3
+    Check1 -->|"keep"| Result
+
+    style Check1 fill:#90EE90
+    style Check2 fill:#FFB6C1
+    style Check3 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Common GroupBy Patterns",
+                        "explanation": "Here are frequently used groupby patterns in data analysis.",
+                        "diagram_data": """graph TB
+    subgraph "Percent of Total"
+        P1["df['pct'] = df.groupby('cat')['val']<br/>    .transform(lambda x: x / x.sum() * 100)"]
+    end
+
+    subgraph "Rank Within Group"
+        P2["df['rank'] = df.groupby('dept')['sales']<br/>    .rank(ascending=False)"]
+    end
+
+    subgraph "Cumulative Sum by Group"
+        P3["df['cumsum'] = df.groupby('user')['amount']<br/>    .cumsum()"]
+    end
+
+    subgraph "Fill NA with Group Mean"
+        P4["df['val'] = df.groupby('cat')['val']<br/>    .transform(lambda x: x.fillna(x.mean()))"]
+    end
+
+    subgraph "First/Last by Group"
+        P5["df.groupby('user').first()<br/>df.groupby('user').last()"]
+    end
+
+    subgraph "Nth Row per Group"
+        P6["df.groupby('cat').nth(0)  # First<br/>df.groupby('cat').nth(-1) # Last"]
+    end
+
+    style P1 fill:#ADD8E6
+    style P4 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "GroupBy Pitfalls",
+                        "explanation": "Watch out for these common mistakes!",
+                        "diagram_data": """graph TB
+    subgraph "Pitfall 1: Forgetting as_index"
+        Bad1["df.groupby('dept').mean()<br/>→ dept becomes index"]
+        Good1["df.groupby('dept', as_index=False).mean()<br/>→ dept stays as column"]
+    end
+
+    subgraph "Pitfall 2: apply() Performance"
+        Bad2["df.groupby('x').apply(lambda g: g['y'].sum())<br/>→ Slow! Python loop"]
+        Good2["df.groupby('x')['y'].sum()<br/>→ Fast! Vectorized"]
+    end
+
+    subgraph "Pitfall 3: MultiIndex Confusion"
+        Bad3["Result has MultiIndex columns<br/>Hard to access"]
+        Good3["Use named agg or reset_index()"]
+    end
+
+    subgraph "Pitfall 4: NaN Groups"
+        Bad4["NaN keys are excluded by default"]
+        Good4["groupby('col', dropna=False)"]
+    end
+
+    style Bad1 fill:#FFB6C1
+    style Bad2 fill:#FFB6C1
+    style Good1 fill:#90EE90
+    style Good2 fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_missing_data_visual(self):
+        """Seed Pandas missing data handling visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-missing-data",
+            defaults={
+                "title": "Pandas Missing Data Handling",
+                "description": "Learn to detect, analyze, and handle missing values with fillna, dropna, interpolate, and more",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "missing-data", "fillna", "dropna", "isna", "interpolate"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Types of Missing Data",
+                        "explanation": "In Pandas, missing data is represented by:\n\n- **NaN** (Not a Number) - for floats\n- **None** - Python's null object\n- **NaT** (Not a Time) - for datetime\n- **pd.NA** - Pandas nullable integer/string\n\nAll are detected by `isna()` / `isnull()` (they're identical).",
+                        "diagram_data": """graph TB
+    subgraph "Missing Value Types"
+        NaN["np.nan / float('nan')<br/>Used in: float columns"]
+        None_["None<br/>Used in: object columns"]
+        NaT["pd.NaT<br/>Used in: datetime columns"]
+        NA["pd.NA<br/>Used in: nullable int/string"]
+    end
+
+    subgraph "Detection (all work the same)"
+        Detect["df.isna()<br/>df.isnull()<br/>pd.isna(value)"]
+    end
+
+    subgraph "Example DataFrame"
+        DF["| name  | age  | date       |<br/>|-------|------|------------|<br/>| Alice | 30.0 | 2024-01-01 |<br/>| None  | NaN  | NaT        |<br/>| Bob   | 25.0 | 2024-01-03 |"]
+    end
+
+    NaN --> Detect
+    None_ --> Detect
+    NaT --> Detect
+
+    style NaN fill:#FFB6C1
+    style Detect fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Detecting Missing Values",
+                        "explanation": "Use these methods to find missing data:\n\n```python\n# Boolean mask of missing values\ndf.isna()          # True where missing\ndf.notna()         # True where NOT missing\n\n# Count missing per column\ndf.isna().sum()\n\n# Percent missing\ndf.isna().mean() * 100\n```",
+                        "diagram_data": """graph TB
+    subgraph "Detection Methods"
+        M1["df.isna()<br/>Returns boolean DataFrame"]
+        M2["df.isna().sum()<br/>Count per column"]
+        M3["df.isna().sum().sum()<br/>Total count"]
+        M4["df.isna().any()<br/>Any missing per column?"]
+        M5["df.isna().all()<br/>All missing per column?"]
+    end
+
+    subgraph "Visual Summary"
+        Code["# Quick overview<br/>print(df.isna().sum())<br/><br/>name     1<br/>age      1<br/>date     1<br/>salary   0"]
+    end
+
+    subgraph "Find Rows with Missing"
+        Rows["# Rows with any missing<br/>df[df.isna().any(axis=1)]<br/><br/># Rows with specific col missing<br/>df[df['age'].isna()]"]
+    end
+
+    style M1 fill:#ADD8E6
+    style Code fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "dropna() - Remove Missing Values",
+                        "explanation": "Remove rows or columns with missing values.\n\n```python\n# Drop rows with ANY missing\ndf.dropna()\n\n# Drop rows where ALL values missing\ndf.dropna(how='all')\n\n# Drop rows missing in specific columns\ndf.dropna(subset=['name', 'age'])\n\n# Require minimum non-null values\ndf.dropna(thresh=3)  # Keep if >= 3 non-null\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        Orig["| A    | B    | C    |<br/>|------|------|------|<br/>| 1    | NaN  | 3    |<br/>| NaN  | NaN  | NaN  |<br/>| 7    | 8    | 9    |"]
+    end
+
+    subgraph "dropna() - any missing"
+        Any["| A | B | C |<br/>|---|---|---|<br/>| 7 | 8 | 9 |<br/><br/>Only fully complete rows"]
+    end
+
+    subgraph "dropna(how='all')"
+        All["| A    | B    | C    |<br/>|------|------|------|<br/>| 1    | NaN  | 3    |<br/>| 7    | 8    | 9    |<br/><br/>Row 2 dropped (all NaN)"]
+    end
+
+    subgraph "dropna(thresh=2)"
+        Thresh["| A    | B    | C    |<br/>|------|------|------|<br/>| 1    | NaN  | 3    |<br/>| 7    | 8    | 9    |<br/><br/>Keep rows with ≥2 values"]
+    end
+
+    Orig --> Any
+    Orig --> All
+    Orig --> Thresh
+
+    style Any fill:#FFB6C1
+    style All fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "fillna() - Replace Missing Values",
+                        "explanation": "Fill missing values with a constant, computed value, or method.\n\n```python\n# Constant value\ndf.fillna(0)\ndf['age'].fillna(df['age'].mean())\n\n# Different values per column\ndf.fillna({'age': 0, 'name': 'Unknown'})\n\n# Forward/backward fill\ndf.fillna(method='ffill')  # Use previous value\ndf.fillna(method='bfill')  # Use next value\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        Orig["| value |<br/>|-------|<br/>| 1     |<br/>| NaN   |<br/>| 3     |<br/>| NaN   |<br/>| 5     |"]
+    end
+
+    subgraph "fillna(0)"
+        Zero["| value |<br/>|-------|<br/>| 1     |<br/>| 0     |<br/>| 3     |<br/>| 0     |<br/>| 5     |"]
+    end
+
+    subgraph "fillna(method='ffill')"
+        FFill["| value |<br/>|-------|<br/>| 1     |<br/>| 1     |← prev<br/>| 3     |<br/>| 3     |← prev<br/>| 5     |"]
+    end
+
+    subgraph "fillna(method='bfill')"
+        BFill["| value |<br/>|-------|<br/>| 1     |<br/>| 3     |← next<br/>| 3     |<br/>| 5     |← next<br/>| 5     |"]
+    end
+
+    Orig --> Zero
+    Orig --> FFill
+    Orig --> BFill
+
+    style FFill fill:#90EE90
+    style BFill fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "interpolate() - Smart Filling",
+                        "explanation": "**interpolate()** estimates missing values using surrounding data - great for time series.\n\n```python\n# Linear interpolation (default)\ndf['value'].interpolate()\n\n# Time-based interpolation\ndf['value'].interpolate(method='time')\n\n# Polynomial interpolation\ndf['value'].interpolate(method='polynomial', order=2)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original Data"
+        Orig["| idx | value |<br/>|-----|-------|<br/>| 0   | 0     |<br/>| 1   | NaN   |<br/>| 2   | NaN   |<br/>| 3   | 6     |<br/>| 4   | NaN   |<br/>| 5   | 10    |"]
+    end
+
+    subgraph "interpolate() - Linear"
+        Linear["| idx | value |<br/>|-----|-------|<br/>| 0   | 0     |<br/>| 1   | 2     |← estimated<br/>| 2   | 4     |← estimated<br/>| 3   | 6     |<br/>| 4   | 8     |← estimated<br/>| 5   | 10    |"]
+    end
+
+    subgraph "Visual"
+        Graph["0 → ? → ? → 6<br/>Linear: 0, 2, 4, 6<br/><br/>Fills gaps proportionally"]
+    end
+
+    subgraph "Methods Available"
+        Methods["linear - straight line<br/>time - time-weighted<br/>index - index-weighted<br/>polynomial - curve fit<br/>spline - smooth curve"]
+    end
+
+    Orig --> Linear
+    Linear --> Graph
+
+    style Linear fill:#90EE90
+    style Graph fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Filling with Group Statistics",
+                        "explanation": "Fill missing values using group-specific statistics - more accurate than global fill.\n\n```python\n# Fill with group mean\ndf['salary'] = df.groupby('dept')['salary'].transform(\n    lambda x: x.fillna(x.mean())\n)\n\n# Fill with group median\ndf['age'] = df.groupby('category')['age'].transform(\n    lambda x: x.fillna(x.median())\n)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        Orig["| dept | salary |<br/>|------|--------|<br/>| Eng  | 80000  |<br/>| Eng  | NaN    |<br/>| Eng  | 70000  |<br/>| Sales| 50000  |<br/>| Sales| NaN    |"]
+    end
+
+    subgraph "Global Mean Fill"
+        Global["All NaN → 66666<br/>(mean of all salaries)<br/><br/>Ignores department context!"]
+    end
+
+    subgraph "Group Mean Fill"
+        Group["Eng NaN → 75000<br/>(mean of Eng)<br/><br/>Sales NaN → 50000<br/>(mean of Sales)<br/><br/>Respects department context!"]
+    end
+
+    subgraph "Code"
+        Code["df.groupby('dept')['salary'].transform(<br/>    lambda x: x.fillna(x.mean())<br/>)"]
+    end
+
+    Orig --> Global
+    Orig --> Group
+
+    style Global fill:#FFB6C1
+    style Group fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Missing Data Decision Tree",
+                        "explanation": "Use this flowchart to decide how to handle missing values.",
+                        "diagram_data": """graph TB
+    Start["Missing Values Detected"]
+
+    Start --> Q1{"How much is missing?"}
+    Q1 -->|"> 50%"| Drop["Consider dropping column"]
+    Q1 -->|"< 5%"| Q2{"Data type?"}
+    Q1 -->|"5-50%"| Q3{"Pattern?"}
+
+    Q2 -->|"Numeric"| FillMean["Fill with mean/median"]
+    Q2 -->|"Categorical"| FillMode["Fill with mode/'Unknown'"]
+    Q2 -->|"Time series"| Interpolate["Use interpolate()"]
+
+    Q3 -->|"Random"| Q2
+    Q3 -->|"Systematic"| Investigate["Investigate cause<br/>May be informative!"]
+
+    subgraph "Best Practices"
+        BP1["Always document your strategy"]
+        BP2["Consider creating 'was_missing' flag"]
+        BP3["Use domain knowledge"]
+        BP4["Test impact on model"]
+    end
+
+    style Drop fill:#FFB6C1
+    style FillMean fill:#90EE90
+    style Interpolate fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Creating Missing Indicators",
+                        "explanation": "Sometimes missingness itself is informative. Create indicator columns to preserve this signal.\n\n```python\n# Create indicator for missing\ndf['salary_missing'] = df['salary'].isna().astype(int)\n\n# Then fill the original\ndf['salary'] = df['salary'].fillna(df['salary'].median())\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        Orig["| id | salary |<br/>|----|--------|<br/>| 1  | 50000  |<br/>| 2  | NaN    |<br/>| 3  | 60000  |<br/>| 4  | NaN    |"]
+    end
+
+    subgraph "Add Indicator + Fill"
+        Result["| id | salary | salary_missing |<br/>|----|--------|----------------|<br/>| 1  | 50000  | 0              |<br/>| 2  | 55000  | 1              |← filled<br/>| 3  | 60000  | 0              |<br/>| 4  | 55000  | 1              |← filled"]
+    end
+
+    subgraph "Why This Matters"
+        Why["• Missing salary might mean:<br/>  - New hire (no history)<br/>  - Contractor (different pay)<br/>  - Data entry issue<br/><br/>• Indicator preserves this info<br/>• Model can learn pattern"]
+    end
+
+    Orig --> Result
+
+    style Result fill:#90EE90
+    style Why fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "replace() - Handle Special Values",
+                        "explanation": "Sometimes 'missing' is encoded as special values (0, -1, 999, 'N/A'). Use `replace()` first.\n\n```python\n# Replace special values with NaN\ndf.replace(-1, np.nan)\ndf.replace([999, -999, 'N/A', ''], np.nan)\n\n# Then handle as normal missing data\ndf.fillna(df.mean())\n```",
+                        "diagram_data": """graph TB
+    subgraph "Hidden Missing Values"
+        Hidden["| age | code  | status |<br/>|-----|-------|--------|<br/>| 25  | ABC   | active |<br/>| -1  | N/A   |        |<br/>| 30  | 999   | active |<br/>| 0   | XYZ   | N/A    |"]
+    end
+
+    subgraph "Replace with NaN"
+        Replace["df.replace({<br/>    'age': {-1: np.nan, 0: np.nan},<br/>    'code': {'N/A': np.nan, '999': np.nan},<br/>    'status': {'N/A': np.nan, '': np.nan}<br/>})"]
+    end
+
+    subgraph "Now Properly Missing"
+        Clean["| age  | code | status |<br/>|------|------|--------|<br/>| 25   | ABC  | active |<br/>| NaN  | NaN  | NaN    |<br/>| 30   | NaN  | active |<br/>| NaN  | XYZ  | NaN    |"]
+    end
+
+    Hidden --> Replace --> Clean
+
+    style Hidden fill:#FFB6C1
+    style Clean fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of all missing data methods.",
+                        "diagram_data": """graph TB
+    subgraph "Detection"
+        D1["df.isna() - Boolean mask"]
+        D2["df.isna().sum() - Count per col"]
+        D3["df.isna().mean() - Percent missing"]
+    end
+
+    subgraph "Removal"
+        R1["df.dropna() - Drop any missing"]
+        R2["df.dropna(how='all') - All missing"]
+        R3["df.dropna(subset=[...]) - Specific cols"]
+        R4["df.dropna(thresh=n) - Min non-null"]
+    end
+
+    subgraph "Filling"
+        F1["df.fillna(value) - Constant"]
+        F2["df.fillna(method='ffill') - Forward"]
+        F3["df.fillna(method='bfill') - Backward"]
+        F4["df.interpolate() - Estimate"]
+    end
+
+    subgraph "Best Practices"
+        BP["1. Understand WHY data is missing<br/>2. Check % missing per column<br/>3. Consider domain knowledge<br/>4. Create indicators if informative<br/>5. Validate after filling"]
+    end
+
+    style D1 fill:#ADD8E6
+    style F4 fill:#90EE90
+    style BP fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_window_functions_visual(self):
+        """Seed Pandas window functions visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-window-functions",
+            defaults={
+                "title": "Pandas Window Functions",
+                "description": "Master rolling, expanding, shift, diff, and resample for time series feature engineering",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 14,
+                "tags": ["pandas", "rolling", "window", "time-series", "shift", "resample"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Window Functions?",
+                        "explanation": "**Window functions** compute values using a subset (window) of rows. Essential for:\n\n- Moving averages\n- Lag/lead features\n- Rolling statistics\n- Time series analysis\n\nUnlike groupby, windows can overlap!",
+                        "diagram_data": """graph TB
+    subgraph "DataFrame"
+        D1["Row 1: 10"]
+        D2["Row 2: 20"]
+        D3["Row 3: 30"]
+        D4["Row 4: 40"]
+        D5["Row 5: 50"]
+    end
+
+    subgraph "Rolling Window (size=3)"
+        W1["Window 1: [10, 20, 30]<br/>mean = 20"]
+        W2["Window 2: [20, 30, 40]<br/>mean = 30"]
+        W3["Window 3: [30, 40, 50]<br/>mean = 40"]
+    end
+
+    D1 --> W1
+    D2 --> W1
+    D3 --> W1
+    D2 --> W2
+    D3 --> W2
+    D4 --> W2
+    D3 --> W3
+    D4 --> W3
+    D5 --> W3
+
+    style W1 fill:#ADD8E6
+    style W2 fill:#90EE90
+    style W3 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "rolling() - Moving Window",
+                        "explanation": "**rolling()** creates a sliding window of fixed size.\n\n```python\n# 3-day moving average\ndf['ma_3'] = df['price'].rolling(window=3).mean()\n\n# Rolling with min_periods\ndf['ma_3'] = df['price'].rolling(3, min_periods=1).mean()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original Data"
+        Orig["| day | price |<br/>|-----|-------|<br/>| 1   | 100   |<br/>| 2   | 110   |<br/>| 3   | 105   |<br/>| 4   | 115   |<br/>| 5   | 120   |"]
+    end
+
+    subgraph "rolling(3).mean()"
+        Roll["| day | price | ma_3  |<br/>|-----|-------|-------|<br/>| 1   | 100   | NaN   |← not enough data<br/>| 2   | 110   | NaN   |← not enough data<br/>| 3   | 105   | 105.0 |← (100+110+105)/3<br/>| 4   | 115   | 110.0 |← (110+105+115)/3<br/>| 5   | 120   | 113.3 |← (105+115+120)/3"]
+    end
+
+    subgraph "Common Parameters"
+        Params["window - size of window<br/>min_periods - min values needed<br/>center - center the window<br/>win_type - 'gaussian', 'triang'"]
+    end
+
+    Orig --> Roll
+
+    style Roll fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Rolling Aggregation Functions",
+                        "explanation": "All standard aggregations work with rolling windows.",
+                        "diagram_data": """graph TB
+    subgraph "Common Rolling Operations"
+        R1["df['col'].rolling(n).mean()<br/>Moving average"]
+        R2["df['col'].rolling(n).sum()<br/>Rolling sum"]
+        R3["df['col'].rolling(n).std()<br/>Rolling volatility"]
+        R4["df['col'].rolling(n).min()<br/>Rolling minimum"]
+        R5["df['col'].rolling(n).max()<br/>Rolling maximum"]
+        R6["df['col'].rolling(n).count()<br/>Rolling count"]
+    end
+
+    subgraph "Advanced Rolling"
+        A1["rolling(n).apply(custom_func)<br/>Any custom function"]
+        A2["rolling(n).quantile(0.5)<br/>Rolling median"]
+        A3["rolling(n).var()<br/>Rolling variance"]
+        A4["rolling(n).skew()<br/>Rolling skewness"]
+    end
+
+    subgraph "Feature Engineering Example"
+        FE["# Price features<br/>df['ma_7'] = df['price'].rolling(7).mean()<br/>df['ma_30'] = df['price'].rolling(30).mean()<br/>df['volatility'] = df['price'].rolling(7).std()<br/>df['max_7d'] = df['price'].rolling(7).max()"]
+    end
+
+    style R1 fill:#90EE90
+    style FE fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "shift() - Lag and Lead",
+                        "explanation": "**shift()** moves data up or down - essential for creating lag features.\n\n```python\n# Previous value (lag)\ndf['price_yesterday'] = df['price'].shift(1)\n\n# Future value (lead)\ndf['price_tomorrow'] = df['price'].shift(-1)\n\n# Calculate change\ndf['daily_change'] = df['price'] - df['price'].shift(1)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        Orig["| day | price |<br/>|-----|-------|<br/>| Mon | 100   |<br/>| Tue | 110   |<br/>| Wed | 105   |<br/>| Thu | 115   |"]
+    end
+
+    subgraph "shift(1) - Lag"
+        Lag["| day | price | prev  |<br/>|-----|-------|-------|<br/>| Mon | 100   | NaN   |← no prev<br/>| Tue | 110   | 100   |← Mon's price<br/>| Wed | 105   | 110   |← Tue's price<br/>| Thu | 115   | 105   |← Wed's price"]
+    end
+
+    subgraph "shift(-1) - Lead"
+        Lead["| day | price | next  |<br/>|-----|-------|-------|<br/>| Mon | 100   | 110   |← Tue's price<br/>| Tue | 110   | 105   |← Wed's price<br/>| Wed | 105   | 115   |← Thu's price<br/>| Thu | 115   | NaN   |← no next"]
+    end
+
+    Orig --> Lag
+    Orig --> Lead
+
+    style Lag fill:#90EE90
+    style Lead fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "diff() - Differences",
+                        "explanation": "**diff()** calculates the difference from the previous row - useful for changes and derivatives.\n\n```python\n# First difference (change from previous)\ndf['price_change'] = df['price'].diff()\n\n# Second difference (change in change)\ndf['acceleration'] = df['price'].diff().diff()\n\n# Percent change\ndf['pct_change'] = df['price'].pct_change()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        Orig["| day | price |<br/>|-----|-------|<br/>| 1   | 100   |<br/>| 2   | 110   |<br/>| 3   | 105   |<br/>| 4   | 120   |"]
+    end
+
+    subgraph "diff()"
+        Diff["| day | price | change |<br/>|-----|-------|--------|<br/>| 1   | 100   | NaN    |<br/>| 2   | 110   | +10    |← 110-100<br/>| 3   | 105   | -5     |← 105-110<br/>| 4   | 120   | +15    |← 120-105"]
+    end
+
+    subgraph "pct_change()"
+        Pct["| day | price | pct    |<br/>|-----|-------|--------|<br/>| 1   | 100   | NaN    |<br/>| 2   | 110   | +10%   |<br/>| 3   | 105   | -4.5%  |<br/>| 4   | 120   | +14.3% |"]
+    end
+
+    Orig --> Diff
+    Orig --> Pct
+
+    style Diff fill:#90EE90
+    style Pct fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "expanding() - Cumulative Window",
+                        "explanation": "**expanding()** uses all data up to current row - the window grows over time.\n\n```python\n# Cumulative mean\ndf['cumulative_avg'] = df['value'].expanding().mean()\n\n# Cumulative max (running maximum)\ndf['running_max'] = df['value'].expanding().max()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        Orig["| row | value |<br/>|-----|-------|<br/>| 1   | 10    |<br/>| 2   | 20    |<br/>| 3   | 15    |<br/>| 4   | 25    |"]
+    end
+
+    subgraph "expanding().mean()"
+        Exp["| row | value | cum_mean |<br/>|-----|-------|----------|<br/>| 1   | 10    | 10.0     |← just row 1<br/>| 2   | 20    | 15.0     |← rows 1-2<br/>| 3   | 15    | 15.0     |← rows 1-3<br/>| 4   | 25    | 17.5     |← rows 1-4"]
+    end
+
+    subgraph "Window Growth"
+        Growth["Row 1: [10]<br/>Row 2: [10, 20]<br/>Row 3: [10, 20, 15]<br/>Row 4: [10, 20, 15, 25]"]
+    end
+
+    subgraph "vs cumsum()"
+        Cum["expanding().sum() == cumsum()<br/>df['cumsum'] = df['value'].cumsum()"]
+    end
+
+    Orig --> Exp
+    Exp --> Growth
+
+    style Exp fill:#90EE90
+    style Growth fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "resample() - Time-Based Grouping",
+                        "explanation": "**resample()** groups time series by time periods - like groupby for dates.\n\n```python\n# Daily data to monthly\ndf.resample('M')['sales'].sum()\n\n# Hourly data to daily\ndf.resample('D')['temp'].mean()\n\n# Upsample with fill\ndf.resample('H').ffill()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Downsample: Daily → Monthly"
+        DS["| date       | sales |<br/>|------------|-------|<br/>| 2024-01-01 | 100   |<br/>| 2024-01-15 | 150   |<br/>| 2024-02-01 | 200   |<br/><br/>df.resample('M').sum()<br/><br/>| month   | sales |<br/>|---------|-------|<br/>| 2024-01 | 250   |<br/>| 2024-02 | 200   |"]
+    end
+
+    subgraph "Frequency Codes"
+        Freq["D - Day<br/>W - Week<br/>M - Month end<br/>MS - Month start<br/>Q - Quarter<br/>Y - Year<br/>H - Hour<br/>T/min - Minute"]
+    end
+
+    subgraph "Upsample with Fill"
+        US["# Monthly → Daily<br/>df.resample('D').ffill()<br/><br/>Fills gaps with<br/>forward-filled values"]
+    end
+
+    style DS fill:#90EE90
+    style Freq fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "ewm() - Exponential Weighted Moving",
+                        "explanation": "**ewm()** gives more weight to recent values - better for trend detection.\n\n```python\n# Exponential moving average\ndf['ema'] = df['price'].ewm(span=10).mean()\n\n# Using halflife\ndf['ema'] = df['price'].ewm(halflife=5).mean()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Simple Moving Average"
+        SMA["All values weighted equally<br/>[1, 1, 1, 1, 1]<br/>Slow to react to changes"]
+    end
+
+    subgraph "Exponential Moving Average"
+        EMA["Recent values weighted more<br/>[0.06, 0.12, 0.18, 0.26, 0.38]<br/>Faster reaction to changes"]
+    end
+
+    subgraph "Parameters"
+        Params["span - similar to window size<br/>halflife - time for weight to halve<br/>alpha - smoothing factor (0-1)"]
+    end
+
+    subgraph "Comparison"
+        Comp["Original: [10, 10, 10, 50, 50]<br/><br/>rolling(3).mean():<br/>[NaN, NaN, 10, 23, 37]<br/><br/>ewm(span=3).mean():<br/>[10, 10, 10, 30, 40]<br/><br/>EMA reacts faster to jump!"]
+    end
+
+    style EMA fill:#90EE90
+    style Comp fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Feature Engineering Patterns",
+                        "explanation": "Common window-based features for ML models.",
+                        "diagram_data": """graph TB
+    subgraph "Lag Features"
+        L["df['lag_1'] = df['value'].shift(1)<br/>df['lag_7'] = df['value'].shift(7)<br/>df['lag_30'] = df['value'].shift(30)"]
+    end
+
+    subgraph "Rolling Statistics"
+        R["df['ma_7'] = df['value'].rolling(7).mean()<br/>df['std_7'] = df['value'].rolling(7).std()<br/>df['min_7'] = df['value'].rolling(7).min()<br/>df['max_7'] = df['value'].rolling(7).max()"]
+    end
+
+    subgraph "Change Features"
+        C["df['diff_1'] = df['value'].diff(1)<br/>df['pct_change'] = df['value'].pct_change()<br/>df['momentum'] = df['value'] - df['value'].shift(7)"]
+    end
+
+    subgraph "Ratio Features"
+        Ratio["df['vs_ma'] = df['value'] / df['value'].rolling(7).mean()<br/>df['vs_max'] = df['value'] / df['value'].rolling(30).max()"]
+    end
+
+    style L fill:#ADD8E6
+    style R fill:#90EE90
+    style Ratio fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of all window functions.",
+                        "diagram_data": """graph TB
+    subgraph "Moving Windows"
+        MW["rolling(n) - Fixed size sliding window<br/>ewm() - Exponential weighted<br/>expanding() - Growing window (cumulative)"]
+    end
+
+    subgraph "Position Shifts"
+        PS["shift(n) - Move data up/down<br/>diff(n) - Difference from n rows ago<br/>pct_change() - Percent change"]
+    end
+
+    subgraph "Time-Based"
+        TB["resample('freq') - Group by time period<br/>asfreq('freq') - Change frequency<br/>rolling('7D') - Time-based window"]
+    end
+
+    subgraph "Key Tips"
+        Tips["1. Use min_periods for early rows<br/>2. Consider center=True for analysis<br/>3. ewm reacts faster than rolling<br/>4. Avoid lookahead bias in ML"]
+    end
+
+    style MW fill:#90EE90
+    style Tips fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_concatenation_visual(self):
+        """Seed Pandas concatenation visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-concatenation",
+            defaults={
+                "title": "Pandas Concatenation & Appending",
+                "description": "Learn to combine DataFrames with concat, append, and understand axis and index alignment",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 10,
+                "tags": ["pandas", "concat", "append", "combine", "stack"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "concat() vs merge() - When to Use Which",
+                        "explanation": "**concat()** stacks DataFrames (no key matching)\n**merge()** joins DataFrames on keys\n\n```python\n# concat - stack vertically or horizontally\npd.concat([df1, df2])\n\n# merge - join on common columns\npd.merge(df1, df2, on='key')\n```",
+                        "diagram_data": """graph TB
+    subgraph "concat() - Stacking"
+        C1["df1"]
+        C2["df2"]
+        CR["df1<br/>---<br/>df2<br/><br/>Just stacks rows"]
+        C1 --> CR
+        C2 --> CR
+    end
+
+    subgraph "merge() - Joining"
+        M1["df1 (has key)"]
+        M2["df2 (has key)"]
+        MR["Matched rows<br/>by key value"]
+        M1 --> MR
+        M2 --> MR
+    end
+
+    subgraph "When to Use"
+        Use1["concat: Same structure,<br/>stack together"]
+        Use2["merge: Different data,<br/>match by key"]
+    end
+
+    style CR fill:#ADD8E6
+    style MR fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Vertical Concatenation (axis=0)",
+                        "explanation": "Stack DataFrames on top of each other - adds rows.\n\n```python\n# Default: vertical stack\npd.concat([df1, df2])\npd.concat([df1, df2], axis=0)  # explicit\n\n# Multiple DataFrames\npd.concat([df1, df2, df3, df4])\n```",
+                        "diagram_data": """graph TB
+    subgraph "df1"
+        D1["| A | B |<br/>|---|---|<br/>| 1 | 2 |<br/>| 3 | 4 |"]
+    end
+
+    subgraph "df2"
+        D2["| A | B |<br/>|---|---|<br/>| 5 | 6 |<br/>| 7 | 8 |"]
+    end
+
+    subgraph "pd.concat([df1, df2], axis=0)"
+        Result["| A | B |<br/>|---|---|<br/>| 1 | 2 |← from df1<br/>| 3 | 4 |← from df1<br/>| 5 | 6 |← from df2<br/>| 7 | 8 |← from df2"]
+    end
+
+    D1 -->|"stack"| Result
+    D2 -->|"below"| Result
+
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Horizontal Concatenation (axis=1)",
+                        "explanation": "Stack DataFrames side by side - adds columns.\n\n```python\n# Horizontal stack\npd.concat([df1, df2], axis=1)\n```",
+                        "diagram_data": """graph TB
+    subgraph "df1"
+        D1["| A | B |<br/>|---|---|<br/>| 1 | 2 |<br/>| 3 | 4 |"]
+    end
+
+    subgraph "df2"
+        D2["| C | D |<br/>|---|---|<br/>| 5 | 6 |<br/>| 7 | 8 |"]
+    end
+
+    subgraph "pd.concat([df1, df2], axis=1)"
+        Result["| A | B | C | D |<br/>|---|---|---|---|<br/>| 1 | 2 | 5 | 6 |<br/>| 3 | 4 | 7 | 8 |"]
+    end
+
+    D1 -->|"stack"| Result
+    D2 -->|"beside"| Result
+
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Handling Different Columns",
+                        "explanation": "When DataFrames have different columns, `concat` fills missing with NaN.\n\n```python\n# Different columns - fills with NaN\npd.concat([df1, df2])  # keeps all columns\n\n# Only keep common columns\npd.concat([df1, df2], join='inner')\n```",
+                        "diagram_data": """graph TB
+    subgraph "df1"
+        D1["| A | B |<br/>|---|---|<br/>| 1 | 2 |"]
+    end
+
+    subgraph "df2"
+        D2["| B | C |<br/>|---|---|<br/>| 3 | 4 |"]
+    end
+
+    subgraph "concat - join='outer' (default)"
+        Outer["| A   | B | C   |<br/>|-----|---|-----|<br/>| 1   | 2 | NaN |← df1 missing C<br/>| NaN | 3 | 4   |← df2 missing A"]
+    end
+
+    subgraph "concat - join='inner'"
+        Inner["| B |<br/>|---|<br/>| 2 |<br/>| 3 |<br/><br/>Only common column B"]
+    end
+
+    D1 --> Outer
+    D2 --> Outer
+    D1 --> Inner
+    D2 --> Inner
+
+    style Outer fill:#FFFACD
+    style Inner fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Index Handling with ignore_index",
+                        "explanation": "By default, concat preserves original indices. Use `ignore_index=True` to reset.\n\n```python\n# Keeps original indices (may duplicate!)\npd.concat([df1, df2])\n\n# Reset to 0, 1, 2, ...\npd.concat([df1, df2], ignore_index=True)\n```",
+                        "diagram_data": """graph TB
+    subgraph "df1 (index 0,1)"
+        D1["idx | val<br/>0   | A<br/>1   | B"]
+    end
+
+    subgraph "df2 (index 0,1)"
+        D2["idx | val<br/>0   | C<br/>1   | D"]
+    end
+
+    subgraph "concat (default)"
+        Dup["idx | val<br/>0   | A<br/>1   | B<br/>0   | C ← duplicate!<br/>1   | D ← duplicate!"]
+    end
+
+    subgraph "concat(ignore_index=True)"
+        Reset["idx | val<br/>0   | A<br/>1   | B<br/>2   | C ← clean<br/>3   | D ← clean"]
+    end
+
+    D1 --> Dup
+    D2 --> Dup
+    D1 --> Reset
+    D2 --> Reset
+
+    style Dup fill:#FFB6C1
+    style Reset fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Adding Keys for Identification",
+                        "explanation": "Use `keys` to identify source DataFrame - creates MultiIndex.\n\n```python\n# Add source identifier\npd.concat([df1, df2], keys=['first', 'second'])\n\n# Access specific source\nresult.loc['first']\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original DataFrames"
+        D1["df1: Jan data"]
+        D2["df2: Feb data"]
+    end
+
+    subgraph "concat with keys"
+        Code["pd.concat([df1, df2],<br/>          keys=['Jan', 'Feb'])"]
+    end
+
+    subgraph "Result: MultiIndex"
+        Result["     | A | B |<br/>-----|---|---|<br/>Jan 0| 1 | 2 |<br/>    1| 3 | 4 |<br/>Feb 0| 5 | 6 |<br/>    1| 7 | 8 |"]
+    end
+
+    subgraph "Access by Key"
+        Access["result.loc['Jan']<br/>→ Returns just Jan data"]
+    end
+
+    D1 --> Code
+    D2 --> Code
+    Code --> Result
+
+    style Result fill:#90EE90
+    style Access fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Common concat() Patterns",
+                        "explanation": "Frequently used concatenation patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Combine List of DataFrames"
+        P1["dfs = [df1, df2, df3, df4]<br/>result = pd.concat(dfs, ignore_index=True)"]
+    end
+
+    subgraph "Combine Files in Directory"
+        P2["import glob<br/>files = glob.glob('data/*.csv')<br/>dfs = [pd.read_csv(f) for f in files]<br/>result = pd.concat(dfs, ignore_index=True)"]
+    end
+
+    subgraph "Add Single Row"
+        P3["new_row = pd.DataFrame([{'A': 1, 'B': 2}])<br/>df = pd.concat([df, new_row], ignore_index=True)"]
+    end
+
+    subgraph "Stack with Source Column"
+        P4["df1['source'] = 'file1'<br/>df2['source'] = 'file2'<br/>result = pd.concat([df1, df2])"]
+    end
+
+    style P2 fill:#90EE90
+    style P4 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "concat() Pitfalls",
+                        "explanation": "Watch out for these common issues!",
+                        "diagram_data": """graph TB
+    subgraph "Pitfall 1: Duplicate Indices"
+        P1["Problem: Same indices appear twice<br/>Solution: ignore_index=True"]
+    end
+
+    subgraph "Pitfall 2: Different Column Types"
+        P2["Problem: int + float = float<br/>         int + str = object<br/>Solution: Standardize before concat"]
+    end
+
+    subgraph "Pitfall 3: Memory with Large Lists"
+        P3["Bad: Loop with concat<br/>for df in dfs:<br/>    result = pd.concat([result, df])<br/><br/>Good: Concat all at once<br/>result = pd.concat(dfs)"]
+    end
+
+    subgraph "Pitfall 4: Empty DataFrames"
+        P4["Empty dfs can cause issues<br/>Filter: [df for df in dfs if len(df) > 0]"]
+    end
+
+    style P1 fill:#FFB6C1
+    style P3 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of concatenation options.",
+                        "diagram_data": """graph TB
+    subgraph "Syntax"
+        S["pd.concat(objs, axis=0, join='outer',<br/>          ignore_index=False, keys=None)"]
+    end
+
+    subgraph "Key Parameters"
+        P1["axis=0 → vertical (add rows)"]
+        P2["axis=1 → horizontal (add cols)"]
+        P3["join='outer' → keep all columns"]
+        P4["join='inner' → only common columns"]
+        P5["ignore_index=True → reset index"]
+        P6["keys=['a','b'] → add source labels"]
+    end
+
+    subgraph "Remember"
+        R["concat = stacking (no key matching)<br/>merge = joining (matches on key)<br/><br/>Always use ignore_index=True<br/>unless you need original indices"]
+    end
+
+    style S fill:#ADD8E6
+    style R fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_advanced_filtering_visual(self):
+        """Seed Pandas advanced filtering visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-advanced-filtering",
+            defaults={
+                "title": "Pandas Advanced Filtering & Selection",
+                "description": "Master boolean indexing, query(), isin(), between(), and complex filtering patterns",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "filtering", "query", "isin", "boolean-indexing"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Boolean Indexing Basics",
+                        "explanation": "Filter rows using boolean conditions - the most common filtering method.\n\n```python\n# Single condition\ndf[df['age'] > 30]\n\n# Multiple conditions (use & | ~)\ndf[(df['age'] > 30) & (df['salary'] > 50000)]\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original DataFrame"
+        DF["| name  | age | salary |<br/>|-------|-----|--------|<br/>| Alice | 35  | 60000  |<br/>| Bob   | 28  | 45000  |<br/>| Carol | 42  | 75000  |"]
+    end
+
+    subgraph "Boolean Mask: df['age'] > 30"
+        Mask["[True, False, True]"]
+    end
+
+    subgraph "Result: df[df['age'] > 30]"
+        Result["| name  | age | salary |<br/>|-------|-----|--------|<br/>| Alice | 35  | 60000  |<br/>| Carol | 42  | 75000  |"]
+    end
+
+    DF --> Mask --> Result
+
+    style Mask fill:#ADD8E6
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Combining Conditions",
+                        "explanation": "Use **&** (and), **|** (or), **~** (not) for complex filters.\n\n**Important**: Wrap each condition in parentheses!\n\n```python\n# AND - both conditions\ndf[(df['age'] > 30) & (df['dept'] == 'Eng')]\n\n# OR - either condition\ndf[(df['age'] < 25) | (df['age'] > 60)]\n\n# NOT - negate condition\ndf[~(df['status'] == 'inactive')]\n```",
+                        "diagram_data": """graph TB
+    subgraph "AND: Both Must Be True"
+        AND["(df['age'] > 30) & (df['salary'] > 50000)<br/><br/>True & True = True<br/>True & False = False<br/>False & True = False"]
+    end
+
+    subgraph "OR: Either Can Be True"
+        OR["(df['dept'] == 'Eng') | (df['dept'] == 'Sales')<br/><br/>True | False = True<br/>False | True = True<br/>False | False = False"]
+    end
+
+    subgraph "NOT: Invert"
+        NOT["~(df['status'] == 'inactive')<br/><br/>~True = False<br/>~False = True"]
+    end
+
+    subgraph "Common Mistake"
+        Wrong["df[df['age'] > 30 & df['salary'] > 50000]<br/>← Missing parentheses!<br/><br/>df[(df['age'] > 30) & (df['salary'] > 50000)]<br/>← Correct!"]
+    end
+
+    style AND fill:#90EE90
+    style Wrong fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "query() - SQL-like Filtering",
+                        "explanation": "**query()** uses string expressions - cleaner for complex conditions.\n\n```python\n# Equivalent to boolean indexing\ndf.query('age > 30 and salary > 50000')\n\n# Use @ for external variables\nmin_age = 30\ndf.query('age > @min_age')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Boolean Indexing"
+        BI["df[(df['age'] > 30) & <br/>   (df['salary'] > 50000) &<br/>   (df['dept'] == 'Engineering')]"]
+    end
+
+    subgraph "query() Equivalent"
+        Q["df.query('age > 30 and <br/>          salary > 50000 and<br/>          dept == \"Engineering\"')"]
+    end
+
+    subgraph "query() Benefits"
+        B1["Cleaner syntax"]
+        B2["No repeated df references"]
+        B3["Can use and/or instead of &/|"]
+        B4["Faster for large DataFrames"]
+    end
+
+    subgraph "External Variables"
+        Ext["threshold = 50000<br/>df.query('salary > @threshold')<br/><br/>@ prefix for Python variables"]
+    end
+
+    BI -.->|"same result"| Q
+
+    style Q fill:#90EE90
+    style BI fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "isin() - Match Multiple Values",
+                        "explanation": "**isin()** checks if values are in a list - like SQL's IN clause.\n\n```python\n# Filter for specific values\ndf[df['dept'].isin(['Eng', 'Sales', 'Marketing'])]\n\n# Exclude specific values\ndf[~df['status'].isin(['inactive', 'suspended'])]\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        DF["| name  | dept    |<br/>|-------|---------|<br/>| Alice | Eng     |<br/>| Bob   | HR      |<br/>| Carol | Sales   |<br/>| Dave  | Eng     |"]
+    end
+
+    subgraph "df['dept'].isin(['Eng', 'Sales'])"
+        Mask["[True, False, True, True]"]
+    end
+
+    subgraph "Result"
+        Result["| name  | dept  |<br/>|-------|-------|<br/>| Alice | Eng   |<br/>| Carol | Sales |<br/>| Dave  | Eng   |"]
+    end
+
+    subgraph "vs Multiple OR"
+        Compare["# These are equivalent:<br/>df[df['dept'].isin(['Eng', 'Sales'])]<br/><br/>df[(df['dept'] == 'Eng') |<br/>   (df['dept'] == 'Sales')]"]
+    end
+
+    DF --> Mask --> Result
+
+    style Result fill:#90EE90
+    style Compare fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "between() - Range Filtering",
+                        "explanation": "**between()** checks if values fall within a range (inclusive by default).\n\n```python\n# Age between 25 and 35 (inclusive)\ndf[df['age'].between(25, 35)]\n\n# Exclusive bounds\ndf[df['price'].between(100, 200, inclusive='neither')]\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        DF["| name  | age |<br/>|-------|-----|<br/>| Alice | 22  |<br/>| Bob   | 28  |<br/>| Carol | 35  |<br/>| Dave  | 42  |"]
+    end
+
+    subgraph "df['age'].between(25, 35)"
+        Mask["[False, True, True, False]"]
+    end
+
+    subgraph "Result"
+        Result["| name  | age |<br/>|-------|-----|<br/>| Bob   | 28  |<br/>| Carol | 35  |← 35 included"]
+    end
+
+    subgraph "inclusive parameter"
+        Inc["'both' (default) - include both bounds<br/>'left' - include only lower<br/>'right' - include only upper<br/>'neither' - exclude both"]
+    end
+
+    DF --> Mask --> Result
+
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "String Filtering with str accessor",
+                        "explanation": "Use `str` accessor for text column filtering.\n\n```python\n# Contains substring\ndf[df['name'].str.contains('john', case=False)]\n\n# Starts/ends with\ndf[df['email'].str.endswith('@gmail.com')]\n\n# Regex matching\ndf[df['phone'].str.match(r'^\\d{3}-\\d{4}$')]\n```",
+                        "diagram_data": """graph TB
+    subgraph "String Methods"
+        M1["str.contains('text')<br/>Substring match"]
+        M2["str.startswith('prefix')<br/>Starts with"]
+        M3["str.endswith('suffix')<br/>Ends with"]
+        M4["str.match(r'regex')<br/>Full regex match"]
+        M5["str.len() > 5<br/>String length"]
+    end
+
+    subgraph "Examples"
+        E1["# Names containing 'son'<br/>df[df['name'].str.contains('son')]"]
+        E2["# Emails from gmail<br/>df[df['email'].str.endswith('@gmail.com')]"]
+        E3["# Phone format XXX-XXXX<br/>df[df['phone'].str.match(r'^\\d{3}-\\d{4}$')]"]
+    end
+
+    subgraph "Handle NaN"
+        NaN["# na=False to ignore NaN<br/>df[df['col'].str.contains('x', na=False)]"]
+    end
+
+    style E1 fill:#90EE90
+    style NaN fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Filtering with loc and iloc",
+                        "explanation": "Combine filtering with column selection using `loc`.\n\n```python\n# Filter rows + select columns\ndf.loc[df['age'] > 30, ['name', 'salary']]\n\n# Filter + modify\ndf.loc[df['status'] == 'active', 'bonus'] = 1000\n```",
+                        "diagram_data": """graph TB
+    subgraph "Select Rows Only"
+        R1["df[df['age'] > 30]<br/>All columns returned"]
+    end
+
+    subgraph "Select Rows + Columns"
+        R2["df.loc[df['age'] > 30, ['name', 'salary']]<br/>Only specified columns"]
+    end
+
+    subgraph "Modify Filtered Rows"
+        R3["# Set values for filtered rows<br/>df.loc[df['dept'] == 'Eng', 'bonus'] = 5000<br/><br/># This modifies df in place!"]
+    end
+
+    subgraph "Common Pattern"
+        Pattern["# Filter, select, and transform<br/>result = df.loc[<br/>    df['status'] == 'active',<br/>    ['id', 'name', 'amount']<br/>].copy()"]
+    end
+
+    style R2 fill:#90EE90
+    style R3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Complex Filtering Patterns",
+                        "explanation": "Common real-world filtering patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Top N per Group"
+        P1["df.groupby('dept')<br/>  .apply(lambda x: x.nlargest(3, 'salary'))"]
+    end
+
+    subgraph "Filter by Aggregation"
+        P2["# Keep rows from groups with count > 5<br/>df.groupby('category')<br/>  .filter(lambda x: len(x) > 5)"]
+    end
+
+    subgraph "Date Range"
+        P3["df[df['date'].between('2024-01-01', '2024-12-31')]"]
+    end
+
+    subgraph "Null-Aware Filtering"
+        P4["# Non-null AND condition<br/>df[df['email'].notna() & (df['verified'] == True)]"]
+    end
+
+    subgraph "Multiple Column Match"
+        P5["# Any column contains value<br/>mask = df[['col1','col2']].isin(['value']).any(axis=1)<br/>df[mask]"]
+    end
+
+    style P1 fill:#90EE90
+    style P3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of filtering methods.",
+                        "diagram_data": """graph TB
+    subgraph "Basic Filtering"
+        B1["df[df['col'] > value]"]
+        B2["df[(cond1) & (cond2)]"]
+        B3["df[(cond1) | (cond2)]"]
+        B4["df[~condition]"]
+    end
+
+    subgraph "Specialized Methods"
+        S1["df.query('col > value')"]
+        S2["df[df['col'].isin([...])"]
+        S3["df[df['col'].between(a, b)]"]
+        S4["df[df['col'].str.contains('x')]"]
+    end
+
+    subgraph "With Selection"
+        W1["df.loc[condition, ['cols']]"]
+        W2["df.loc[condition, 'col'] = value"]
+    end
+
+    subgraph "Tips"
+        T["• Parentheses around each condition<br/>• Use query() for complex filters<br/>• isin() beats multiple OR<br/>• loc for filter + select/modify"]
+    end
+
+    style B1 fill:#ADD8E6
+    style S1 fill:#90EE90
+    style T fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_dtype_management_visual(self):
+        """Seed Pandas data type management visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-dtype-management",
+            defaults={
+                "title": "Pandas Data Type Management",
+                "description": "Master astype(), dtype optimization, nullable types, and memory-efficient data handling",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "dtypes", "astype", "memory", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Pandas Data Types Overview",
+                        "explanation": "Pandas has many data types. Choosing the right one affects memory usage and performance.",
+                        "diagram_data": """graph TB
+    subgraph "Numeric Types"
+        N1["int64 - Integer (8 bytes)"]
+        N2["int32/int16/int8 - Smaller ints"]
+        N3["float64 - Decimal (8 bytes)"]
+        N4["float32/float16 - Smaller floats"]
+    end
+
+    subgraph "Text Types"
+        T1["object - Any Python object"]
+        T2["string - Pandas string type"]
+        T3["category - Categorical"]
+    end
+
+    subgraph "Other Types"
+        O1["bool - True/False"]
+        O2["datetime64 - Dates/times"]
+        O3["timedelta64 - Time differences"]
+    end
+
+    subgraph "Nullable Types (new)"
+        NL["Int64 - Nullable integer<br/>Float64 - Nullable float<br/>boolean - Nullable bool<br/>string - Nullable string"]
+    end
+
+    style N1 fill:#ADD8E6
+    style T3 fill:#90EE90
+    style NL fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Checking Data Types",
+                        "explanation": "Always inspect dtypes before processing.\n\n```python\n# Check all dtypes\ndf.dtypes\n\n# Memory usage\ndf.info(memory_usage='deep')\n\n# Check specific column\ndf['col'].dtype\n```",
+                        "diagram_data": """graph TB
+    subgraph "df.dtypes"
+        DT["name      object<br/>age       int64<br/>salary    float64<br/>date      datetime64[ns]<br/>active    bool"]
+    end
+
+    subgraph "df.info()"
+        Info["<class 'DataFrame'><br/>5 columns, 1000 rows<br/>Column    Dtype    Memory<br/>name      object   64KB<br/>age       int64    8KB<br/>...<br/>Total: 120KB"]
+    end
+
+    subgraph "Memory Inspection"
+        Mem["df.memory_usage(deep=True)<br/><br/>Returns bytes per column<br/>deep=True for accurate object size"]
+    end
+
+    style DT fill:#ADD8E6
+    style Info fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "astype() - Convert Data Types",
+                        "explanation": "**astype()** converts column types.\n\n```python\n# Convert single column\ndf['age'] = df['age'].astype('int32')\n\n# Convert multiple columns\ndf = df.astype({'age': 'int32', 'price': 'float32'})\n\n# Convert with errors handling\ndf['num'] = pd.to_numeric(df['num'], errors='coerce')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Basic Conversion"
+        B1["df['col'].astype('int64')"]
+        B2["df['col'].astype('float32')"]
+        B3["df['col'].astype('str')"]
+        B4["df['col'].astype('category')"]
+    end
+
+    subgraph "Multiple Columns"
+        MC["df.astype({<br/>    'age': 'int32',<br/>    'price': 'float32',<br/>    'name': 'string'<br/>})"]
+    end
+
+    subgraph "Handling Errors"
+        E1["# astype fails on bad values<br/>df['num'].astype('int')  # Error if 'abc'<br/><br/># Use to_numeric for safety<br/>pd.to_numeric(df['num'], errors='coerce')<br/>→ Invalid becomes NaN"]
+    end
+
+    style MC fill:#90EE90
+    style E1 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Category Type - Memory Saver",
+                        "explanation": "**category** type dramatically reduces memory for low-cardinality columns.\n\n```python\n# Convert to category\ndf['status'] = df['status'].astype('category')\n\n# Check memory savings\ndf['status'].memory_usage(deep=True)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Object Type (Before)"
+        Obj["status column: 100,000 rows<br/>Values: 'active', 'inactive', 'pending'<br/><br/>Each row stores full string<br/>Memory: ~6MB"]
+    end
+
+    subgraph "Category Type (After)"
+        Cat["Stores integer codes + lookup table<br/>0 → 'active'<br/>1 → 'inactive'<br/>2 → 'pending'<br/><br/>Memory: ~100KB (60x smaller!)"]
+    end
+
+    subgraph "When to Use"
+        When["✓ Repeated values (status, country)<br/>✓ Low cardinality (< 50% unique)<br/>✗ High cardinality (IDs, names)<br/>✗ Frequently changing values"]
+    end
+
+    Obj -->|"astype('category')"| Cat
+
+    style Obj fill:#FFB6C1
+    style Cat fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Downcasting Numeric Types",
+                        "explanation": "Use smaller numeric types when values fit.\n\n```python\n# Downcast integers\ndf['age'] = pd.to_numeric(df['age'], downcast='integer')\n\n# Downcast floats\ndf['price'] = pd.to_numeric(df['price'], downcast='float')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Integer Ranges"
+        I1["int8: -128 to 127"]
+        I2["int16: -32,768 to 32,767"]
+        I3["int32: -2B to 2B"]
+        I4["int64: -9Q to 9Q"]
+    end
+
+    subgraph "Memory Per Type"
+        M["int8: 1 byte<br/>int16: 2 bytes<br/>int32: 4 bytes<br/>int64: 8 bytes<br/><br/>Age column (0-100)?<br/>→ int8 is enough!"]
+    end
+
+    subgraph "Auto-Downcast"
+        AD["pd.to_numeric(df['col'], downcast='integer')<br/><br/>Automatically picks smallest type<br/>that fits the data"]
+    end
+
+    subgraph "Example Savings"
+        Ex["1M rows × age (0-100)<br/>int64: 8MB<br/>int8: 1MB<br/>Savings: 87%!"]
+    end
+
+    style M fill:#ADD8E6
+    style Ex fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Nullable Integer Types",
+                        "explanation": "Traditional int64 can't hold NaN. Use nullable types (capital letter).\n\n```python\n# Nullable integer\ndf['id'] = df['id'].astype('Int64')  # Note capital I\n\n# Can now have NaN in integer column\ndf['id'] = pd.array([1, 2, None, 4], dtype='Int64')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Traditional Problem"
+        Prob["int64 + NaN → becomes float64!<br/><br/>[1, 2, NaN, 4]<br/>→ [1.0, 2.0, NaN, 4.0]<br/><br/>Loses integer precision"]
+    end
+
+    subgraph "Nullable Types Solution"
+        Sol["Int64 (capital I) can hold NaN<br/><br/>[1, 2, None, 4]<br/>→ [1, 2, <NA>, 4]<br/><br/>Stays as integer!"]
+    end
+
+    subgraph "Nullable Types Available"
+        Types["Int8, Int16, Int32, Int64<br/>UInt8, UInt16, UInt32, UInt64<br/>Float32, Float64<br/>boolean, string"]
+    end
+
+    Prob -->|"astype('Int64')"| Sol
+
+    style Prob fill:#FFB6C1
+    style Sol fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Memory Optimization Strategy",
+                        "explanation": "Follow this process to optimize DataFrame memory usage.",
+                        "diagram_data": """graph TB
+    Start["Check df.info(memory_usage='deep')"]
+
+    Start --> S1["1. Convert object → category<br/>(for low cardinality strings)"]
+    S1 --> S2["2. Downcast integers<br/>(int64 → int32/16/8)"]
+    S2 --> S3["3. Downcast floats<br/>(float64 → float32)"]
+    S3 --> S4["4. Parse dates<br/>(object → datetime64)"]
+
+    subgraph "Optimization Function"
+        Func["def optimize_df(df):<br/>    for col in df.select_dtypes('object'):<br/>        if df[col].nunique() / len(df) < 0.5:<br/>            df[col] = df[col].astype('category')<br/>    for col in df.select_dtypes('integer'):<br/>        df[col] = pd.to_numeric(df[col], downcast='integer')<br/>    return df"]
+    end
+
+    style S1 fill:#90EE90
+    style Func fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of dtype management.",
+                        "diagram_data": """graph TB
+    subgraph "Inspection"
+        I1["df.dtypes - All types"]
+        I2["df.info() - Memory overview"]
+        I3["df['col'].dtype - Single column"]
+    end
+
+    subgraph "Conversion"
+        C1["df['col'].astype('type')"]
+        C2["pd.to_numeric(errors='coerce')"]
+        C3["pd.to_datetime()"]
+    end
+
+    subgraph "Memory Savers"
+        M1["category - Repeated strings"]
+        M2["int32/16/8 - Smaller integers"]
+        M3["float32 - Smaller decimals"]
+        M4["Int64 - Nullable integers"]
+    end
+
+    subgraph "Best Practices"
+        BP["1. Check memory first<br/>2. Use category for strings<br/>3. Downcast numerics<br/>4. Parse dates properly<br/>5. Use nullable types for NaN"]
+    end
+
+    style M1 fill:#90EE90
+    style BP fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_string_operations_visual(self):
+        """Seed Pandas string operations visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-string-operations",
+            defaults={
+                "title": "Pandas String Operations",
+                "description": "Master the str accessor for text manipulation, extraction, splitting, and cleaning",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "string", "str-accessor", "text", "regex"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The str Accessor",
+                        "explanation": "Access string methods via the `str` accessor on Series.\n\n```python\n# Basic usage\ndf['name'].str.lower()\ndf['name'].str.upper()\ndf['name'].str.title()\n```",
+                        "diagram_data": """graph TB
+    subgraph "String Accessor"
+        SA["df['column'].str.method()<br/><br/>Vectorized string operations<br/>Much faster than .apply(str.method)"]
+    end
+
+    subgraph "Common Methods"
+        M1["str.lower() / str.upper()"]
+        M2["str.strip() / str.lstrip() / str.rstrip()"]
+        M3["str.replace('old', 'new')"]
+        M4["str.split('delimiter')"]
+        M5["str.len()"]
+    end
+
+    subgraph "Example"
+        Ex["df['name'].str.upper()<br/><br/>Input:  ['alice', 'Bob', 'CAROL']<br/>Output: ['ALICE', 'BOB', 'CAROL']"]
+    end
+
+    style SA fill:#ADD8E6
+    style Ex fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Case Conversion & Whitespace",
+                        "explanation": "Clean up text casing and whitespace.",
+                        "diagram_data": """graph TB
+    subgraph "Case Methods"
+        C1["str.lower() - all lowercase"]
+        C2["str.upper() - ALL UPPERCASE"]
+        C3["str.title() - Title Case"]
+        C4["str.capitalize() - First only"]
+        C5["str.swapcase() - sWAP"]
+    end
+
+    subgraph "Whitespace Methods"
+        W1["str.strip() - Remove both sides"]
+        W2["str.lstrip() - Remove left"]
+        W3["str.rstrip() - Remove right"]
+    end
+
+    subgraph "Example: Data Cleaning"
+        Ex["# Clean messy names<br/>df['name'] = (df['name']<br/>    .str.strip()<br/>    .str.lower()<br/>    .str.title()<br/>)<br/><br/>'  JOHN DOE  ' → 'John Doe'"]
+    end
+
+    style Ex fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Searching & Matching",
+                        "explanation": "Find patterns within strings.\n\n```python\n# Contains substring\ndf['text'].str.contains('pattern')\n\n# Starts/ends with\ndf['text'].str.startswith('Hello')\ndf['text'].str.endswith('.com')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Search Methods"
+        S1["str.contains('text') - Has substring?"]
+        S2["str.startswith('x') - Begins with?"]
+        S3["str.endswith('x') - Ends with?"]
+        S4["str.match(r'regex') - Matches pattern?"]
+    end
+
+    subgraph "Example: Filter Emails"
+        Ex["# Gmail users<br/>gmail_users = df[<br/>    df['email'].str.endswith('@gmail.com')<br/>]<br/><br/># Contains 'manager' in title<br/>managers = df[<br/>    df['title'].str.contains('manager', case=False)<br/>]"]
+    end
+
+    subgraph "Handle NaN"
+        NaN["# NaN causes errors by default<br/>df['col'].str.contains('x')  # Error if NaN<br/><br/># Use na parameter<br/>df['col'].str.contains('x', na=False)"]
+    end
+
+    style Ex fill:#90EE90
+    style NaN fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Split & Join",
+                        "explanation": "Split strings into parts or join them together.\n\n```python\n# Split into list\ndf['name'].str.split(' ')\n\n# Expand to columns\ndf[['first', 'last']] = df['name'].str.split(' ', expand=True)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Split Methods"
+        S1["str.split('delim') → list"]
+        S2["str.split('delim', expand=True) → columns"]
+        S3["str.split('delim', n=1) → max splits"]
+        S4["str.rsplit() → split from right"]
+    end
+
+    subgraph "Example: Split Names"
+        Ex["df['fullname'] = ['John Doe', 'Jane Smith']<br/><br/># Split to list<br/>df['fullname'].str.split(' ')<br/>→ [['John', 'Doe'], ['Jane', 'Smith']]<br/><br/># Expand to columns<br/>df[['first', 'last']] = <br/>    df['fullname'].str.split(' ', expand=True)"]
+    end
+
+    subgraph "Join Strings"
+        J["# Join list elements<br/>df['tags'].str.join(', ')<br/>['a','b','c'] → 'a, b, c'<br/><br/># Concatenate columns<br/>df['full'] = df['first'] + ' ' + df['last']"]
+    end
+
+    style Ex fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Extract with Regex",
+                        "explanation": "Extract parts of strings using regex patterns.\n\n```python\n# Extract first group\ndf['area_code'] = df['phone'].str.extract(r'\\((\\d{3})\\)')\n\n# Extract multiple groups\ndf[['area', 'number']] = df['phone'].str.extract(r'\\((\\d{3})\\) (\\d{3}-\\d{4})')\n```",
+                        "diagram_data": """graph TB
+    subgraph "extract() - First Match"
+        E1["df['phone'].str.extract(r'(\\d{3})')<br/><br/>'(123) 456-7890' → '123'<br/><br/>Returns first capturing group"]
+    end
+
+    subgraph "extractall() - All Matches"
+        E2["df['text'].str.extractall(r'(\\d+)')<br/><br/>'A1 B2 C3' → ['1', '2', '3']<br/><br/>Returns all matches"]
+    end
+
+    subgraph "Multiple Groups"
+        MG["pattern = r'(\\w+)@(\\w+)\\.com'<br/>df['email'].str.extract(pattern)<br/><br/>'john@gmail.com'<br/>→ ['john', 'gmail']"]
+    end
+
+    subgraph "Named Groups"
+        NG["pattern = r'(?P<user>\\w+)@(?P<domain>\\w+)'<br/>df['email'].str.extract(pattern)<br/><br/>Returns DataFrame with<br/>columns: user, domain"]
+    end
+
+    style E1 fill:#ADD8E6
+    style NG fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Replace & Substitute",
+                        "explanation": "Replace text patterns.\n\n```python\n# Simple replace\ndf['text'].str.replace('old', 'new')\n\n# Regex replace\ndf['phone'].str.replace(r'\\D', '', regex=True)  # Remove non-digits\n```",
+                        "diagram_data": """graph TB
+    subgraph "Simple Replace"
+        S1["df['col'].str.replace('old', 'new')<br/><br/>'hello world' → 'hello earth'<br/>(replace 'world' with 'earth')"]
+    end
+
+    subgraph "Regex Replace"
+        R1["# Remove all digits<br/>df['col'].str.replace(r'\\d', '', regex=True)<br/>'abc123' → 'abc'<br/><br/># Replace multiple spaces<br/>df['col'].str.replace(r'\\s+', ' ', regex=True)"]
+    end
+
+    subgraph "Common Patterns"
+        CP["# Remove special chars<br/>df['col'].str.replace(r'[^a-zA-Z0-9]', '')<br/><br/># Normalize phone numbers<br/>df['phone'].str.replace(r'\\D', '')<br/>'(123) 456-7890' → '1234567890'"]
+    end
+
+    style R1 fill:#90EE90
+    style CP fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Indexing & Slicing",
+                        "explanation": "Access specific characters or substrings.\n\n```python\n# Get first 3 characters\ndf['code'].str[:3]\n\n# Get last 4 characters\ndf['code'].str[-4:]\n\n# Get specific index\ndf['code'].str[0]  # First char\n```",
+                        "diagram_data": """graph TB
+    subgraph "String Slicing"
+        S1["str[0] - First character"]
+        S2["str[-1] - Last character"]
+        S3["str[:3] - First 3 chars"]
+        S4["str[-4:] - Last 4 chars"]
+        S5["str[2:5] - Chars 2-4"]
+    end
+
+    subgraph "Example"
+        Ex["df['code'] = ['ABC123', 'XYZ789']<br/><br/>df['code'].str[:3]  → ['ABC', 'XYZ']<br/>df['code'].str[-3:] → ['123', '789']<br/>df['code'].str[0]   → ['A', 'X']"]
+    end
+
+    subgraph "Get Specific Position"
+        Get["# Get nth item after split<br/>df['name'].str.split(' ').str[0]  # First word<br/>df['name'].str.split(' ').str[-1] # Last word"]
+    end
+
+    style Ex fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Padding & Alignment",
+                        "explanation": "Pad strings to fixed width.\n\n```python\n# Pad with zeros\ndf['id'].str.zfill(5)  # '42' → '00042'\n\n# Pad with any character\ndf['code'].str.pad(10, side='left', fillchar='0')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Padding Methods"
+        P1["str.zfill(width) - Zero-pad left"]
+        P2["str.pad(width, side, fillchar)"]
+        P3["str.center(width) - Center align"]
+        P4["str.ljust(width) - Left align"]
+        P5["str.rjust(width) - Right align"]
+    end
+
+    subgraph "Examples"
+        Ex["# Zero-pad IDs<br/>df['id'].str.zfill(5)<br/>'42' → '00042'<br/><br/># Pad with spaces<br/>df['code'].str.ljust(10)<br/>'ABC' → 'ABC       '"]
+    end
+
+    subgraph "Use Case"
+        UC["# Standardize product codes<br/>df['sku'] = df['sku'].str.upper().str.zfill(8)<br/>'abc123' → 'ABC00123'"]
+    end
+
+    style Ex fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of string operations.",
+                        "diagram_data": """graph TB
+    subgraph "Transformation"
+        T1["lower() upper() title() strip()"]
+    end
+
+    subgraph "Search"
+        S1["contains() startswith() endswith()"]
+    end
+
+    subgraph "Split/Join"
+        SJ["split(expand=True) join() cat()"]
+    end
+
+    subgraph "Extract/Replace"
+        ER["extract(regex) replace(old, new)"]
+    end
+
+    subgraph "Access"
+        A["str[0] str[:3] str.get(n)"]
+    end
+
+    subgraph "Tips"
+        Tips["• Always use na=False for safety<br/>• regex=True for pattern matching<br/>• expand=True for new columns<br/>• Chain methods for cleaning"]
+    end
+
+    style Tips fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_duplicates_visual(self):
+        """Seed Pandas duplicate detection visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-duplicates",
+            defaults={
+                "title": "Pandas Duplicate Detection & Removal",
+                "description": "Find and handle duplicate rows with duplicated(), drop_duplicates(), and key-based uniqueness",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 10,
+                "tags": ["pandas", "duplicates", "deduplication", "unique"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "duplicated() - Find Duplicates",
+                        "explanation": "**duplicated()** returns a boolean Series marking duplicate rows.\n\n```python\n# Find duplicates (all columns)\ndf.duplicated()\n\n# Find duplicates by specific columns\ndf.duplicated(subset=['name', 'email'])\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original DataFrame"
+        DF["| id | name  | email           |<br/>|----|-------|-----------------|<br/>| 1  | Alice | alice@mail.com  |<br/>| 2  | Bob   | bob@mail.com    |<br/>| 3  | Alice | alice@mail.com  |← duplicate<br/>| 4  | Carol | carol@mail.com  |"]
+    end
+
+    subgraph "df.duplicated()"
+        Dup["[False, False, True, False]<br/><br/>First occurrence = False<br/>Subsequent = True"]
+    end
+
+    subgraph "Filter Duplicates"
+        Filter["df[df.duplicated()]<br/>→ Shows duplicate rows<br/><br/>df[~df.duplicated()]<br/>→ Shows unique rows"]
+    end
+
+    DF --> Dup
+
+    style Dup fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "keep Parameter",
+                        "explanation": "Control which duplicate to mark.\n\n```python\n# Mark all except first (default)\ndf.duplicated(keep='first')\n\n# Mark all except last\ndf.duplicated(keep='last')\n\n# Mark ALL duplicates (including first)\ndf.duplicated(keep=False)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original Data"
+        DF["Row 0: Alice<br/>Row 1: Bob<br/>Row 2: Alice  ← same as row 0<br/>Row 3: Alice  ← same as row 0"]
+    end
+
+    subgraph "keep='first' (default)"
+        First["[False, False, True, True]<br/><br/>Row 0 kept (first Alice)"]
+    end
+
+    subgraph "keep='last'"
+        Last["[True, False, True, False]<br/><br/>Row 3 kept (last Alice)"]
+    end
+
+    subgraph "keep=False"
+        All["[True, False, True, True]<br/><br/>ALL Alices marked as duplicates"]
+    end
+
+    DF --> First
+    DF --> Last
+    DF --> All
+
+    style First fill:#90EE90
+    style All fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "drop_duplicates() - Remove Duplicates",
+                        "explanation": "**drop_duplicates()** removes duplicate rows.\n\n```python\n# Remove all duplicates\ndf.drop_duplicates()\n\n# Remove duplicates by specific columns\ndf.drop_duplicates(subset=['email'])\n\n# Keep last instead of first\ndf.drop_duplicates(keep='last')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        DF["| name  | email           |<br/>|-------|-----------------|<br/>| Alice | alice@mail.com  |<br/>| Bob   | bob@mail.com    |<br/>| Alice | alice@mail.com  |<br/>| Alice | alice2@mail.com |"]
+    end
+
+    subgraph "drop_duplicates()"
+        All["All columns must match<br/><br/>| Alice | alice@mail.com  |<br/>| Bob   | bob@mail.com    |<br/>| Alice | alice2@mail.com |"]
+    end
+
+    subgraph "drop_duplicates(subset=['name'])"
+        Sub["Only name must match<br/><br/>| Alice | alice@mail.com  |<br/>| Bob   | bob@mail.com    |<br/><br/>Last two Alices removed"]
+    end
+
+    DF --> All
+    DF --> Sub
+
+    style All fill:#ADD8E6
+    style Sub fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Counting Duplicates",
+                        "explanation": "Analyze duplicate distribution.\n\n```python\n# Count total duplicates\ndf.duplicated().sum()\n\n# Count by group\ndf.groupby('email').size().value_counts()\n\n# See duplicate values\ndf[df.duplicated(subset=['email'], keep=False)]\n```",
+                        "diagram_data": """graph TB
+    subgraph "Count Duplicates"
+        C1["# Total duplicate rows<br/>df.duplicated().sum()"]
+        C2["# Percent duplicates<br/>df.duplicated().mean() * 100"]
+        C3["# Unique vs total<br/>len(df) - df['col'].nunique()"]
+    end
+
+    subgraph "Analyze Distribution"
+        A1["# How many times each value appears<br/>df['email'].value_counts()<br/><br/>alice@mail.com    3<br/>bob@mail.com      1"]
+    end
+
+    subgraph "View All Duplicates"
+        V1["# Show ALL rows with duplicates<br/>(including first occurrence)<br/>df[df.duplicated(subset=['email'], keep=False)]"]
+    end
+
+    style C1 fill:#ADD8E6
+    style V1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Common Deduplication Patterns",
+                        "explanation": "Real-world duplicate handling scenarios.",
+                        "diagram_data": """graph TB
+    subgraph "Keep Most Recent"
+        P1["# Sort by date, keep last<br/>df.sort_values('date')<br/>  .drop_duplicates(subset=['id'], keep='last')"]
+    end
+
+    subgraph "Keep Best Quality"
+        P2["# Sort by quality score, keep best<br/>df.sort_values('completeness', ascending=False)<br/>  .drop_duplicates(subset=['id'], keep='first')"]
+    end
+
+    subgraph "Merge Duplicates"
+        P3["# Aggregate duplicate info<br/>df.groupby('email').agg({<br/>    'name': 'first',<br/>    'purchases': 'sum',<br/>    'last_login': 'max'<br/>})"]
+    end
+
+    subgraph "Flag Without Removing"
+        P4["df['is_duplicate'] = df.duplicated(subset=['email'])"]
+    end
+
+    style P1 fill:#90EE90
+    style P3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of duplicate operations.",
+                        "diagram_data": """graph TB
+    subgraph "Detection"
+        D1["df.duplicated() - Boolean mask"]
+        D2["df.duplicated().sum() - Count"]
+        D3["df.duplicated(keep=False) - All dups"]
+    end
+
+    subgraph "Removal"
+        R1["df.drop_duplicates() - Remove dups"]
+        R2["subset=['cols'] - Check specific columns"]
+        R3["keep='first'/'last'/False"]
+    end
+
+    subgraph "Analysis"
+        A1["df['col'].nunique() - Unique count"]
+        A2["df['col'].value_counts() - Frequency"]
+    end
+
+    subgraph "Tips"
+        Tips["• Check duplicates before merge<br/>• Document dedup strategy<br/>• Consider which duplicate to keep<br/>• Use subset for logical uniqueness"]
+    end
+
+    style Tips fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_index_multiindex_visual(self):
+        """Seed Pandas index and MultiIndex visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-index-multiindex",
+            defaults={
+                "title": "Pandas Index & MultiIndex",
+                "description": "Master set_index, reset_index, MultiIndex operations, and hierarchical data access",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "index", "multiindex", "hierarchical"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is an Index?",
+                        "explanation": "Every DataFrame has an **index** - labels for rows. By default, it's integers 0, 1, 2, ...",
+                        "diagram_data": """graph TB
+    subgraph "Default Integer Index"
+        DF1["index | name  | age<br/>------|-------|----<br/>0     | Alice | 30<br/>1     | Bob   | 25<br/>2     | Carol | 35"]
+    end
+
+    subgraph "Custom Index"
+        DF2["index | name  | age<br/>------|-------|----<br/>emp1  | Alice | 30<br/>emp2  | Bob   | 25<br/>emp3  | Carol | 35"]
+    end
+
+    subgraph "Why Custom Index?"
+        Why["• Fast lookups: df.loc['emp1']<br/>• Alignment in operations<br/>• Meaningful labels<br/>• Time series: date index"]
+    end
+
+    style DF1 fill:#ADD8E6
+    style DF2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "set_index() & reset_index()",
+                        "explanation": "Convert between column and index.\n\n```python\n# Make column the index\ndf.set_index('id')\n\n# Move index back to column\ndf.reset_index()\n\n# Drop old index\ndf.reset_index(drop=True)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        O["| id  | name  | val |<br/>|-----|-------|-----|<br/>| A1  | Alice | 100 |<br/>| B2  | Bob   | 200 |"]
+    end
+
+    subgraph "set_index('id')"
+        SI["| id  | name  | val |<br/>|-----|-------|-----|<br/>| A1  | Alice | 100 |<br/>| B2  | Bob   | 200 |<br/><br/>id is now the index"]
+    end
+
+    subgraph "reset_index()"
+        RI["| id  | name  | val |<br/>|-----|-------|-----|<br/>| A1  | Alice | 100 |<br/>| B2  | Bob   | 200 |<br/><br/>id is back as column"]
+    end
+
+    O -->|"set_index('id')"| SI
+    SI -->|"reset_index()"| RI
+
+    style SI fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "MultiIndex - Hierarchical Index",
+                        "explanation": "**MultiIndex** has multiple levels - great for grouped data.\n\n```python\n# Create from columns\ndf.set_index(['region', 'product'])\n\n# From groupby\ndf.groupby(['region', 'product']).sum()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Flat Structure"
+        Flat["| region | product | sales |<br/>|--------|---------|-------|<br/>| East   | Widget  | 100   |<br/>| East   | Gadget  | 150   |<br/>| West   | Widget  | 200   |"]
+    end
+
+    subgraph "MultiIndex Structure"
+        MI["| region | product | sales |<br/>|--------|---------|-------|<br/>| East   | Widget  | 100   |<br/>|        | Gadget  | 150   |<br/>| West   | Widget  | 200   |<br/><br/>Hierarchical levels!"]
+    end
+
+    subgraph "Access Levels"
+        Access["df.loc['East']  # All East rows<br/>df.loc[('East', 'Widget')]  # Specific<br/>df.loc['East', 'Widget']  # Same"]
+    end
+
+    Flat -->|"set_index(['region', 'product'])"| MI
+
+    style MI fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Accessing MultiIndex Data",
+                        "explanation": "Different ways to slice hierarchical data.\n\n```python\n# Get all rows for first level\ndf.loc['East']\n\n# Get specific combination\ndf.loc[('East', 'Widget')]\n\n# Cross-section\ndf.xs('Widget', level='product')\n```",
+                        "diagram_data": """graph TB
+    subgraph "MultiIndex DataFrame"
+        MI["region | product || sales<br/>--------|---------|-------<br/>East   | Widget  | 100<br/>       | Gadget  | 150<br/>West   | Widget  | 200<br/>       | Gadget  | 250"]
+    end
+
+    subgraph "df.loc['East']"
+        L1["product || sales<br/>---------|-------<br/>Widget  | 100<br/>Gadget  | 150"]
+    end
+
+    subgraph "df.xs('Widget', level='product')"
+        XS["region || sales<br/>--------|-------<br/>East   | 100<br/>West   | 200<br/><br/>All Widgets across regions"]
+    end
+
+    MI --> L1
+    MI --> XS
+
+    style L1 fill:#ADD8E6
+    style XS fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Index Operations",
+                        "explanation": "Common index manipulations.",
+                        "diagram_data": """graph TB
+    subgraph "Reorder Levels"
+        R["df.swaplevel(0, 1)<br/>df.reorder_levels(['product', 'region'])"]
+    end
+
+    subgraph "Sort Index"
+        S["df.sort_index()  # Sort by index<br/>df.sort_index(level='region')"]
+    end
+
+    subgraph "Rename Index"
+        RN["df.index.rename(['Region', 'Item'])"]
+    end
+
+    subgraph "Get Level Values"
+        GL["df.index.get_level_values('region')<br/>→ ['East', 'East', 'West', 'West']"]
+    end
+
+    subgraph "Check Index"
+        CI["df.index.names  # Level names<br/>df.index.nlevels  # Number of levels"]
+    end
+
+    style S fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "stack() & unstack()",
+                        "explanation": "Convert between index levels and columns.\n\n```python\n# Move column level to index\ndf.stack()\n\n# Move index level to columns\ndf.unstack()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Wide Format"
+        Wide["      || Jan | Feb | Mar<br/>------|-----|-----|-----<br/>East | 100 | 110 | 120<br/>West | 200 | 210 | 220"]
+    end
+
+    subgraph "stack() → Long Format"
+        Long["region | month || value<br/>--------|-------|-------<br/>East   | Jan   | 100<br/>       | Feb   | 110<br/>       | Mar   | 120<br/>West   | Jan   | 200<br/>..."]
+    end
+
+    subgraph "unstack() reverses"
+        Rev["Long → Wide<br/>Moves inner index to columns"]
+    end
+
+    Wide -->|"stack()"| Long
+    Long -->|"unstack()"| Wide
+
+    style Wide fill:#ADD8E6
+    style Long fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of index operations.",
+                        "diagram_data": """graph TB
+    subgraph "Basic"
+        B1["set_index('col') - Column → Index"]
+        B2["reset_index() - Index → Column"]
+    end
+
+    subgraph "MultiIndex"
+        M1["set_index(['a','b']) - Multi-level"]
+        M2["df.loc['level1'] - First level"]
+        M3["df.xs('val', level='name') - Cross-section"]
+    end
+
+    subgraph "Reshape"
+        R1["stack() - Columns → Index"]
+        R2["unstack() - Index → Columns"]
+        R3["swaplevel() - Reorder levels"]
+    end
+
+    subgraph "Tips"
+        Tips["• Sort index for faster lookups<br/>• reset_index() for clean merge<br/>• Use xs() for cross-level access<br/>• Name your index levels"]
+    end
+
+    style Tips fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_apply_functions_visual(self):
+        """Seed Pandas apply and custom functions visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-apply-functions",
+            defaults={
+                "title": "Pandas Apply & Custom Functions",
+                "description": "Learn apply(), map(), applymap(), and when to use vectorization instead",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "apply", "map", "vectorization", "lambda"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Apply Family",
+                        "explanation": "Pandas has several ways to apply functions:\n\n- **apply()** - on rows/columns\n- **map()** - element-wise on Series\n- **applymap()** - element-wise on DataFrame",
+                        "diagram_data": """graph TB
+    subgraph "Series.apply()"
+        SA["Apply function to each element<br/>df['col'].apply(func)"]
+    end
+
+    subgraph "DataFrame.apply()"
+        DA["Apply function to each row/column<br/>df.apply(func, axis=0)  # columns<br/>df.apply(func, axis=1)  # rows"]
+    end
+
+    subgraph "Series.map()"
+        SM["Element-wise mapping<br/>df['col'].map(func_or_dict)"]
+    end
+
+    subgraph "DataFrame.applymap()"
+        DAM["Element-wise on all cells<br/>df.applymap(func)"]
+    end
+
+    style DA fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Series.apply() - Element-wise",
+                        "explanation": "Apply function to each element in a Series.\n\n```python\n# Lambda function\ndf['upper'] = df['name'].apply(lambda x: x.upper())\n\n# Custom function\ndef clean_name(name):\n    return name.strip().title()\ndf['clean'] = df['name'].apply(clean_name)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Input Series"
+        Input["df['name']<br/>['alice', 'bob', 'carol']"]
+    end
+
+    subgraph "apply(lambda x: x.upper())"
+        Apply["For each element:<br/>  'alice' → 'ALICE'<br/>  'bob' → 'BOB'<br/>  'carol' → 'CAROL'"]
+    end
+
+    subgraph "Result"
+        Result["['ALICE', 'BOB', 'CAROL']"]
+    end
+
+    Input --> Apply --> Result
+
+    style Apply fill:#ADD8E6
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "DataFrame.apply() - Row/Column",
+                        "explanation": "Apply function to entire rows or columns.\n\n```python\n# Apply to each column (axis=0)\ndf.apply(lambda col: col.max())\n\n# Apply to each row (axis=1)\ndf.apply(lambda row: row['a'] + row['b'], axis=1)\n```",
+                        "diagram_data": """graph TB
+    subgraph "DataFrame"
+        DF["| A | B | C |<br/>|---|---|---|<br/>| 1 | 4 | 7 |<br/>| 2 | 5 | 8 |<br/>| 3 | 6 | 9 |"]
+    end
+
+    subgraph "axis=0 (default) - Per Column"
+        Col["func([1,2,3]) → result for A<br/>func([4,5,6]) → result for B<br/>func([7,8,9]) → result for C"]
+    end
+
+    subgraph "axis=1 - Per Row"
+        Row["func([1,4,7]) → result for row 0<br/>func([2,5,8]) → result for row 1<br/>func([3,6,9]) → result for row 2"]
+    end
+
+    DF -->|"axis=0"| Col
+    DF -->|"axis=1"| Row
+
+    style Col fill:#ADD8E6
+    style Row fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "map() - Mapping Values",
+                        "explanation": "**map()** replaces values using a dict or function.\n\n```python\n# Dictionary mapping\ndf['grade'] = df['score'].map({90: 'A', 80: 'B', 70: 'C'})\n\n# Function mapping\ndf['grade'] = df['score'].map(lambda x: 'Pass' if x >= 60 else 'Fail')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Dictionary Mapping"
+        Dict["mapping = {'NY': 'New York', 'CA': 'California'}<br/>df['state'].map(mapping)<br/><br/>'NY' → 'New York'<br/>'CA' → 'California'<br/>'TX' → NaN (not in dict)"]
+    end
+
+    subgraph "Function Mapping"
+        Func["df['category'].map(str.upper)<br/><br/>Same as apply() for Series"]
+    end
+
+    subgraph "map() vs apply()"
+        Vs["map() - Can use dict or function<br/>apply() - Only function<br/><br/>For dict lookups, use map()!"]
+    end
+
+    style Dict fill:#90EE90
+    style Vs fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Vectorization vs Apply",
+                        "explanation": "**Vectorized operations are MUCH faster** than apply. Always prefer them!",
+                        "diagram_data": """graph TB
+    subgraph "BAD: Using Apply"
+        Bad["# Slow - Python loop<br/>df['total'] = df.apply(<br/>    lambda row: row['a'] + row['b'],<br/>    axis=1<br/>)<br/><br/>Time: 1000ms"]
+    end
+
+    subgraph "GOOD: Vectorized"
+        Good["# Fast - NumPy operation<br/>df['total'] = df['a'] + df['b']<br/><br/>Time: 1ms (1000x faster!)"]
+    end
+
+    subgraph "When to Use Apply"
+        When["Use apply ONLY when:<br/>• Complex logic (multiple conditions)<br/>• External function calls<br/>• No vectorized equivalent<br/><br/>Try vectorized first!"]
+    end
+
+    style Bad fill:#FFB6C1
+    style Good fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Vectorized Alternatives",
+                        "explanation": "Replace apply with these faster options.",
+                        "diagram_data": """graph TB
+    subgraph "Instead of apply() for conditions"
+        C1["# Bad<br/>df.apply(lambda r: 'A' if r['score']>90 else 'B', axis=1)<br/><br/># Good - np.where<br/>np.where(df['score'] > 90, 'A', 'B')<br/><br/># Good - np.select for multiple<br/>np.select([cond1, cond2], ['A', 'B'], default='C')"]
+    end
+
+    subgraph "Instead of apply() for math"
+        M1["# Bad<br/>df['x'].apply(lambda x: x**2)<br/><br/># Good<br/>df['x'] ** 2"]
+    end
+
+    subgraph "Instead of apply() for strings"
+        S1["# Bad<br/>df['name'].apply(str.upper)<br/><br/># Good<br/>df['name'].str.upper()"]
+    end
+
+    style C1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Complex Apply Examples",
+                        "explanation": "When you really need apply, do it right.",
+                        "diagram_data": """graph TB
+    subgraph "Multiple Columns Output"
+        MC["def extract_info(row):<br/>    return pd.Series({<br/>        'first': row['name'].split()[0],<br/>        'last': row['name'].split()[-1],<br/>        'len': len(row['name'])<br/>    })<br/><br/>df[['first','last','len']] = df.apply(extract_info, axis=1)"]
+    end
+
+    subgraph "With Try/Except"
+        TE["def safe_parse(val):<br/>    try:<br/>        return float(val)<br/>    except:<br/>        return np.nan<br/><br/>df['num'] = df['raw'].apply(safe_parse)"]
+    end
+
+    subgraph "Performance Tip"
+        Tip["# If you must use apply,<br/># use raw=True for speed<br/>df.apply(lambda x: x.sum(), axis=1, raw=True)"]
+    end
+
+    style MC fill:#ADD8E6
+    style Tip fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Quick Reference",
+                        "explanation": "Summary and decision guide.",
+                        "diagram_data": """graph TB
+    subgraph "Decision Tree"
+        Start["Need to transform data?"]
+        Start --> Q1{"Vectorized possible?"}
+        Q1 -->|"Yes"| Vec["Use vectorized ops<br/>+, -, str., np.where"]
+        Q1 -->|"No"| Q2{"Single column?"}
+        Q2 -->|"Yes"| SerApply["Series.apply()"]
+        Q2 -->|"No"| DFApply["DataFrame.apply(axis=1)"]
+    end
+
+    subgraph "Speed Ranking"
+        Speed["1. Vectorized (fastest)<br/>2. map() with dict<br/>3. apply() with raw=True<br/>4. apply() (slowest)"]
+    end
+
+    style Vec fill:#90EE90
+    style Speed fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_data_quality_visual(self):
+        """Seed Pandas data quality patterns visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-data-quality",
+            defaults={
+                "title": "Pandas Data Quality Patterns",
+                "description": "Master data validation, assertions, quality checks, and production-ready data pipelines",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 15,
+                "tags": ["pandas", "data-quality", "validation", "testing", "production"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Data Quality Matters",
+                        "explanation": "Bad data in = bad predictions out. Data quality checks catch issues early.",
+                        "diagram_data": """graph TB
+    subgraph "Without Quality Checks"
+        Bad1["Raw Data"] --> Bad2["Model Training"]
+        Bad2 --> Bad3["Silent Failures<br/>Wrong Predictions<br/>Production Issues"]
+    end
+
+    subgraph "With Quality Checks"
+        Good1["Raw Data"] --> Check["Quality Checks<br/>Validation<br/>Assertions"]
+        Check -->|"Pass"| Good2["Model Training"]
+        Check -->|"Fail"| Alert["Alert & Fix<br/>Before Damage"]
+    end
+
+    style Bad3 fill:#FFB6C1
+    style Check fill:#90EE90
+    style Alert fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Basic Quality Checks",
+                        "explanation": "Essential checks for any DataFrame.\n\n```python\n# Check shape\nassert len(df) > 0, 'Empty DataFrame!'\n\n# Check for nulls\nassert df['id'].notna().all(), 'Null IDs found!'\n\n# Check for duplicates\nassert not df['id'].duplicated().any(), 'Duplicate IDs!'\n```",
+                        "diagram_data": """graph TB
+    subgraph "Shape Checks"
+        S1["len(df) > 0  # Not empty"]
+        S2["len(df) == expected_rows"]
+        S3["len(df.columns) == expected_cols"]
+    end
+
+    subgraph "Null Checks"
+        N1["df.isna().sum()  # Count nulls"]
+        N2["df['col'].notna().all()  # No nulls"]
+        N3["df.dropna().shape == df.shape  # No nulls anywhere"]
+    end
+
+    subgraph "Duplicate Checks"
+        D1["~df.duplicated().any()  # No dup rows"]
+        D2["df['id'].nunique() == len(df)  # Unique IDs"]
+    end
+
+    subgraph "Data Type Checks"
+        T1["df['id'].dtype == 'int64'"]
+        T2["pd.api.types.is_numeric_dtype(df['col'])"]
+    end
+
+    style S1 fill:#90EE90
+    style N2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Value Range Validation",
+                        "explanation": "Ensure values fall within expected ranges.\n\n```python\n# Numeric ranges\nassert (df['age'] >= 0).all(), 'Negative ages!'\nassert (df['age'] <= 120).all(), 'Unrealistic ages!'\n\n# Categorical values\nvalid_statuses = {'active', 'inactive', 'pending'}\nassert df['status'].isin(valid_statuses).all()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Numeric Ranges"
+        NR["# Age must be 0-120<br/>assert df['age'].between(0, 120).all()<br/><br/># Price must be positive<br/>assert (df['price'] > 0).all()<br/><br/># Percentage must be 0-100<br/>assert df['pct'].between(0, 100).all()"]
+    end
+
+    subgraph "Categorical Values"
+        CV["valid = ['A', 'B', 'C']<br/>assert df['grade'].isin(valid).all()<br/><br/># Find invalid values<br/>invalid = df[~df['grade'].isin(valid)]"]
+    end
+
+    subgraph "String Patterns"
+        SP["# Email format<br/>pattern = r'^[\\w.-]+@[\\w.-]+\\.\\w+$'<br/>assert df['email'].str.match(pattern).all()<br/><br/># Phone format<br/>assert df['phone'].str.match(r'^\\d{10}$').all()"]
+    end
+
+    style NR fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Cross-Column Validation",
+                        "explanation": "Check relationships between columns.\n\n```python\n# Date order\nassert (df['end_date'] >= df['start_date']).all()\n\n# Sum constraint\nassert np.isclose(df[['a','b','c']].sum(axis=1), 1.0).all()\n\n# Conditional requirement\nmask = df['status'] == 'shipped'\nassert df.loc[mask, 'ship_date'].notna().all()\n```",
+                        "diagram_data": """graph TB
+    subgraph "Date Relationships"
+        DR["# End after start<br/>assert (df['end'] >= df['start']).all()<br/><br/># Birth before hire<br/>assert (df['hire_date'] > df['birth_date']).all()"]
+    end
+
+    subgraph "Numeric Relationships"
+        NR["# Total equals sum<br/>assert (df['a'] + df['b'] == df['total']).all()<br/><br/># Percentages sum to 100<br/>pct_cols = ['pct_a', 'pct_b', 'pct_c']<br/>assert np.isclose(df[pct_cols].sum(axis=1), 100).all()"]
+    end
+
+    subgraph "Conditional Requirements"
+        CR["# If shipped, must have ship_date<br/>shipped = df['status'] == 'shipped'<br/>assert df.loc[shipped, 'ship_date'].notna().all()<br/><br/># If paid, amount must be positive<br/>paid = df['status'] == 'paid'<br/>assert (df.loc[paid, 'amount'] > 0).all()"]
+    end
+
+    style CR fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Creating a Validation Function",
+                        "explanation": "Encapsulate checks in reusable functions.",
+                        "diagram_data": """graph TB
+    subgraph "Validation Function"
+        VF["def validate_orders(df):<br/>    errors = []<br/>    <br/>    if df.empty:<br/>        errors.append('Empty DataFrame')<br/>    <br/>    if df['order_id'].duplicated().any():<br/>        errors.append('Duplicate order IDs')<br/>    <br/>    if (df['amount'] < 0).any():<br/>        errors.append('Negative amounts')<br/>    <br/>    if not df['status'].isin(['pending','complete']).all():<br/>        errors.append('Invalid status values')<br/>    <br/>    if errors:<br/>        raise ValueError(f'Validation failed: {errors}')<br/>    <br/>    return True"]
+    end
+
+    subgraph "Usage"
+        U["try:<br/>    validate_orders(df)<br/>    process_orders(df)<br/>except ValueError as e:<br/>    log.error(e)<br/>    send_alert(e)"]
+    end
+
+    style VF fill:#ADD8E6
+    style U fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Schema Validation with Pandera",
+                        "explanation": "Use **pandera** for declarative schema validation.\n\n```python\nimport pandera as pa\n\nschema = pa.DataFrameSchema({\n    'id': pa.Column(int, unique=True),\n    'age': pa.Column(int, pa.Check.between(0, 120)),\n    'email': pa.Column(str, pa.Check.str_matches(r'.+@.+')),\n})\n\nvalidated_df = schema.validate(df)\n```",
+                        "diagram_data": """graph TB
+    subgraph "Define Schema"
+        Schema["schema = pa.DataFrameSchema({<br/>    'id': pa.Column(int,<br/>        checks=pa.Check.greater_than(0),<br/>        unique=True),<br/>    'name': pa.Column(str,<br/>        nullable=False),<br/>    'score': pa.Column(float,<br/>        checks=pa.Check.between(0, 100)),<br/>})"]
+    end
+
+    subgraph "Validate"
+        Val["# Raises SchemaError if invalid<br/>validated_df = schema.validate(df)<br/><br/># Or as decorator<br/>@pa.check_input(schema)<br/>def process(df):<br/>    ..."]
+    end
+
+    subgraph "Benefits"
+        Ben["• Declarative & readable<br/>• Detailed error messages<br/>• Type checking<br/>• Can generate fake data"]
+    end
+
+    style Schema fill:#ADD8E6
+    style Ben fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Data Profiling",
+                        "explanation": "Generate reports to understand data quality issues.",
+                        "diagram_data": """graph TB
+    subgraph "Quick Profile"
+        QP["# Basic stats<br/>df.describe(include='all')<br/><br/># Missing value report<br/>df.isna().sum().sort_values(ascending=False)<br/><br/># Value counts<br/>df['status'].value_counts(dropna=False)"]
+    end
+
+    subgraph "Custom Profile Function"
+        CP["def profile(df):<br/>    return pd.DataFrame({<br/>        'dtype': df.dtypes,<br/>        'nulls': df.isna().sum(),<br/>        'null_pct': df.isna().mean() * 100,<br/>        'unique': df.nunique(),<br/>        'sample': df.iloc[0]<br/>    })"]
+    end
+
+    subgraph "Libraries"
+        Lib["# ydata-profiling (pandas-profiling)<br/>from ydata_profiling import ProfileReport<br/>ProfileReport(df).to_file('report.html')<br/><br/># Great Expectations<br/># Enterprise-grade validation"]
+    end
+
+    style CP fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Pipeline Integration",
+                        "explanation": "Integrate quality checks into data pipelines.",
+                        "diagram_data": """graph TB
+    subgraph "Quality Gate Pattern"
+        QG["def pipeline(raw_data):<br/>    # 1. Load<br/>    df = pd.read_csv(raw_data)<br/>    <br/>    # 2. Validate raw<br/>    validate_raw_schema(df)<br/>    <br/>    # 3. Transform<br/>    df = clean_data(df)<br/>    df = engineer_features(df)<br/>    <br/>    # 4. Validate transformed<br/>    validate_output_schema(df)<br/>    <br/>    # 5. Output<br/>    return df"]
+    end
+
+    subgraph "Monitoring"
+        Mon["# Log quality metrics<br/>log.info(f'Rows: {len(df)}')<br/>log.info(f'Null rate: {df.isna().mean().mean():.2%}')<br/>log.info(f'Duplicates: {df.duplicated().sum()}')<br/><br/># Alert on anomalies<br/>if len(df) < expected * 0.9:<br/>    send_alert('Row count too low!')"]
+    end
+
+    style QG fill:#90EE90
+    style Mon fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Quick Reference Checklist",
+                        "explanation": "Data quality checklist for production.",
+                        "diagram_data": """graph TB
+    subgraph "Before Processing"
+        B1["☐ Check row count"]
+        B2["☐ Check column count"]
+        B3["☐ Check data types"]
+        B4["☐ Check for nulls"]
+        B5["☐ Check for duplicates"]
+    end
+
+    subgraph "Value Validation"
+        V1["☐ Numeric ranges"]
+        V2["☐ Categorical values"]
+        V3["☐ String patterns"]
+        V4["☐ Date ranges"]
+    end
+
+    subgraph "Relationship Checks"
+        R1["☐ Cross-column logic"]
+        R2["☐ Referential integrity"]
+        R3["☐ Aggregation totals"]
+    end
+
+    subgraph "After Processing"
+        A1["☐ Output schema valid"]
+        A2["☐ No data loss"]
+        A3["☐ Metrics logged"]
+    end
+
+    style B1 fill:#ADD8E6
+    style V1 fill:#90EE90
+    style A3 fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
     def seed_mixed_precision_training_visual(self):
         """Seed mixed precision training visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -5038,7 +7732,7 @@ class Command(BaseCommand):
 
     def seed_cuda_programming_model_visual(self):
         """Seed CUDA programming model visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -5469,7 +8163,7 @@ class Command(BaseCommand):
 
     def seed_tensor_core_operations_visual(self):
         """Seed Tensor Core operations visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -5863,7 +8557,7 @@ class Command(BaseCommand):
 
     def seed_multi_gpu_training_visual(self):
         """Seed multi-GPU training strategies visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -6354,7 +9048,7 @@ class Command(BaseCommand):
 
     def seed_gpu_memory_optimization_visual(self):
         """Seed GPU memory optimization visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -6809,7 +9503,7 @@ class Command(BaseCommand):
 
     def seed_flash_attention_visual(self):
         """Seed FlashAttention visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -7221,7 +9915,7 @@ class Command(BaseCommand):
 
     def seed_gradient_checkpointing_visual(self):
         """Seed gradient checkpointing visual topic."""
-        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+        subject = self.get_or_create_subject("GPU Computing", "gpu", "Hardware & Architecture")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -7602,7 +10296,7 @@ class Command(BaseCommand):
     def seed_gradient_descent_visual(self):
         """Seed gradient descent variants visual topic."""
         subject = self.get_or_create_subject(
-            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+            "Machine Learning", "machine_learning", "Data Science & ML"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -7850,7 +10544,7 @@ class Command(BaseCommand):
     def seed_cross_validation_visual(self):
         """Seed cross-validation visual topic."""
         subject = self.get_or_create_subject(
-            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+            "Machine Learning", "machine_learning", "Data Science & ML"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -8095,7 +10789,7 @@ class Command(BaseCommand):
     def seed_regularization_visual(self):
         """Seed regularization techniques visual topic."""
         subject = self.get_or_create_subject(
-            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+            "Machine Learning", "machine_learning", "Data Science & ML"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -8322,7 +11016,7 @@ class Command(BaseCommand):
     def seed_classification_metrics_visual(self):
         """Seed classification metrics visual topic."""
         subject = self.get_or_create_subject(
-            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+            "Machine Learning", "machine_learning", "Data Science & ML"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -8528,7 +11222,7 @@ class Command(BaseCommand):
     def seed_ensemble_methods_visual(self):
         """Seed ensemble methods visual topic."""
         subject = self.get_or_create_subject(
-            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+            "Machine Learning", "machine_learning", "Data Science & ML"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -8776,7 +11470,7 @@ class Command(BaseCommand):
     def seed_dimensionality_reduction_visual(self):
         """Seed dimensionality reduction visual topic."""
         subject = self.get_or_create_subject(
-            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+            "Machine Learning", "machine_learning", "Data Science & ML"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -8975,7 +11669,7 @@ class Command(BaseCommand):
     def seed_transfer_learning_visual(self):
         """Seed transfer learning visual topic."""
         subject = self.get_or_create_subject(
-            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+            "Machine Learning", "machine_learning", "Data Science & ML"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -17393,7 +20087,7 @@ class Command(BaseCommand):
     def seed_logging_hierarchy_visual(self):
         """Seed Logging Hierarchy & Flow visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -17610,7 +20304,7 @@ class Command(BaseCommand):
     def seed_logging_levels_visual(self):
         """Seed Log Levels Explained visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -17801,7 +20495,7 @@ class Command(BaseCommand):
     def seed_logging_inheritance_visual(self):
         """Seed Logger Inheritance visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -17998,7 +20692,7 @@ class Command(BaseCommand):
     def seed_logging_configuration_visual(self):
         """Seed Configuration Methods visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -18190,7 +20884,7 @@ class Command(BaseCommand):
     def seed_logging_handlers_visual(self):
         """Seed Handler Types visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -18403,7 +21097,7 @@ class Command(BaseCommand):
     def seed_logging_formatters_visual(self):
         """Seed Formatters Deep Dive visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -18587,7 +21281,7 @@ class Command(BaseCommand):
     def seed_logging_structured_visual(self):
         """Seed Structured Logging visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -18783,7 +21477,7 @@ class Command(BaseCommand):
     def seed_logging_ml_pipelines_visual(self):
         """Seed Logging in ML Pipelines visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -18980,7 +21674,7 @@ class Command(BaseCommand):
     def seed_logging_antipatterns_visual(self):
         """Seed Common Anti-Patterns visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -19189,7 +21883,7 @@ class Command(BaseCommand):
     def seed_logging_performance_visual(self):
         """Seed Performance Considerations visual topic."""
         subject = self.get_or_create_subject(
-            "Python logging", "python-logging", "Python"
+            "Python Logging", "logging", "Python"
         )
 
         topic, created = VisualTopic.objects.update_or_create(
@@ -39409,6 +42103,5260 @@ class Command(BaseCommand):
     end
     style L1 fill:#C8E6C9
     style EX fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== PATHLIB VISUALS ====================
+
+    def seed_pathlib_anatomy_visual(self):
+        """Seed Path Anatomy & Components visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="path-anatomy",
+            defaults={
+                "title": "Path Anatomy & Components",
+                "description": "Understanding the parts of a Path object: anchor, parent, name, stem, suffix, and more",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 8,
+                "tags": ["pathlib", "path", "anatomy", "components", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "A Path Has Many Parts",
+                        "explanation": "Every `Path` object can be decomposed into logical components. Understanding these parts is essential for manipulating paths correctly.",
+                        "diagram_data": """graph TB
+    subgraph "Example Path"
+        P["/home/user/project/data/report.csv.gz"]
+    end
+    subgraph "We'll Learn"
+        C1["anchor - root of the path"]
+        C2["parent/parents - directories above"]
+        C3["name - final component"]
+        C4["stem - name without suffix"]
+        C5["suffix/suffixes - file extensions"]
+        C6["parts - tuple of all components"]
+    end
+    P --> C1
+    P --> C2
+    P --> C3
+    P --> C4
+    P --> C5
+    P --> C6
+    style P fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Anchor",
+                        "explanation": "The **anchor** is the root of the path. On Unix it's `/`, on Windows it could be `C:\\\\`. For relative paths, the anchor is empty string.",
+                        "diagram_data": """graph TB
+    subgraph "Unix Paths"
+        U1["Path('/home/user/file.txt')"]
+        U1A["anchor = '/'"]
+        U1 --> U1A
+    end
+    subgraph "Windows Paths"
+        W1["Path('C:/Users/file.txt')"]
+        W1A["anchor = 'C:\\\\'"]
+        W1 --> W1A
+    end
+    subgraph "Relative Paths"
+        R1["Path('data/file.txt')"]
+        R1A["anchor = '' (empty)"]
+        R1 --> R1A
+    end
+    style U1A fill:#C8E6C9
+    style W1A fill:#C8E6C9
+    style R1A fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Parent and Parents",
+                        "explanation": "`.parent` returns the immediate parent directory. `.parents` returns an immutable sequence of all ancestors, from immediate parent to the root.",
+                        "diagram_data": """graph TB
+    subgraph "Path: /home/user/project/file.txt"
+        P["Path('/home/user/project/file.txt')"]
+    end
+    subgraph ".parent"
+        PA["Path('/home/user/project')"]
+    end
+    subgraph ".parents (sequence)"
+        P0["parents[0] = '/home/user/project'"]
+        P1["parents[1] = '/home/user'"]
+        P2["parents[2] = '/home'"]
+        P3["parents[3] = '/'"]
+    end
+    P --> PA
+    PA --> P0
+    P0 --> P1
+    P1 --> P2
+    P2 --> P3
+    style PA fill:#C8E6C9
+    style P0 fill:#BBDEFB
+    style P1 fill:#BBDEFB
+    style P2 fill:#BBDEFB
+    style P3 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Name, Stem, and Suffix",
+                        "explanation": "`.name` is the final component. `.stem` is the name without the last suffix. `.suffix` is the last extension (with dot). `.suffixes` returns ALL extensions as a list.",
+                        "diagram_data": """graph TB
+    subgraph "Path: /data/report.csv.gz"
+        P["report.csv.gz"]
+    end
+    subgraph "Components"
+        N[".name = 'report.csv.gz'<br/>(full filename)"]
+        ST[".stem = 'report.csv'<br/>(name minus last suffix)"]
+        SU[".suffix = '.gz'<br/>(last extension only)"]
+        SUS[".suffixes = ['.csv', '.gz']<br/>(ALL extensions)"]
+    end
+    P --> N
+    P --> ST
+    P --> SU
+    P --> SUS
+    style N fill:#E1BEE7
+    style ST fill:#C8E6C9
+    style SU fill:#FFCDD2
+    style SUS fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Parts - The Complete Breakdown",
+                        "explanation": "`.parts` returns a tuple of ALL path components, starting with the anchor. This is useful for iteration or indexed access.",
+                        "diagram_data": """graph TB
+    subgraph "Path: /home/user/project/file.txt"
+        P["Path('/home/user/project/file.txt')"]
+    end
+    subgraph ".parts tuple"
+        T["('/', 'home', 'user', 'project', 'file.txt')"]
+        I0["parts[0] = '/'"]
+        I1["parts[1] = 'home'"]
+        I2["parts[2] = 'user'"]
+        I3["parts[3] = 'project'"]
+        I4["parts[4] = 'file.txt'"]
+    end
+    P --> T
+    T --> I0
+    T --> I1
+    T --> I2
+    T --> I3
+    T --> I4
+    style T fill:#C8E6C9
+    style I0 fill:#FFCDD2
+    style I4 fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Visual Summary",
+                        "explanation": "Here's how all components map to a single path. Remember: **stem** + **suffix** = **name**, and the **anchor** is the root.",
+                        "diagram_data": """graph LR
+    subgraph "Path: /home/user/data/report.csv.gz"
+        A["/ "]
+        B["home"]
+        C["user"]
+        D["data"]
+        E["report"]
+        F[".csv"]
+        G[".gz"]
+    end
+    A ---|"anchor"| A
+    A --> B --> C --> D --> E --> F --> G
+    D ---|"parent"| D
+    E ---|"stem"| E
+    G ---|"suffix"| G
+    F ---|"suffixes[0]"| F
+    style A fill:#FFCDD2
+    style D fill:#BBDEFB
+    style E fill:#C8E6C9
+    style F fill:#FFE0B2
+    style G fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Code Example",
+                        "explanation": "Here's Python code demonstrating all the path components in action.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        C1["from pathlib import Path"]
+        C2["p = Path('/home/user/data/report.csv.gz')"]
+        C3["p.anchor    # '/'"]
+        C4["p.parent    # Path('/home/user/data')"]
+        C5["p.name      # 'report.csv.gz'"]
+        C6["p.stem      # 'report.csv'"]
+        C7["p.suffix    # '.gz'"]
+        C8["p.suffixes  # ['.csv', '.gz']"]
+        C9["p.parts     # ('/', 'home', 'user', 'data', 'report.csv.gz')"]
+    end
+    C1 --> C2 --> C3 --> C4 --> C5 --> C6 --> C7 --> C8 --> C9
+    style C1 fill:#E3F2FD
+    style C2 fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_resolution_visual(self):
+        """Seed Path Resolution Flow visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="path-resolution",
+            defaults={
+                "title": "Path Resolution Flow",
+                "description": "How resolve() transforms relative paths to absolute, handles symlinks, and normalizes ./ and ../",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pathlib", "resolve", "absolute", "symlinks", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Does resolve() Do?",
+                        "explanation": "`resolve()` makes a path **absolute** and **canonical**. It resolves `.` (current), `..` (parent), and follows symlinks by default.",
+                        "diagram_data": """graph TB
+    subgraph "Input Path"
+        I["./data/../config/settings.yaml"]
+    end
+    subgraph "resolve() does"
+        R1["1. Make absolute<br/>(prepend cwd)"]
+        R2["2. Normalize dots<br/>(remove ./ and ../)"]
+        R3["3. Follow symlinks<br/>(get real path)"]
+    end
+    subgraph "Output"
+        O["/home/user/project/config/settings.yaml"]
+    end
+    I --> R1 --> R2 --> R3 --> O
+    style I fill:#FFCDD2
+    style O fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Step 1: Making Absolute",
+                        "explanation": "If the path is relative, `resolve()` prepends the current working directory (cwd) to make it absolute.",
+                        "diagram_data": """graph TB
+    subgraph "Current Working Directory"
+        CWD["/home/user/project"]
+    end
+    subgraph "Relative Path"
+        REL["Path('data/file.txt')"]
+    end
+    subgraph "After Prepending CWD"
+        ABS["/home/user/project/data/file.txt"]
+    end
+    REL --> |"prepend cwd"| ABS
+    CWD -.-> ABS
+    style REL fill:#FFCDD2
+    style ABS fill:#C8E6C9
+    style CWD fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Step 2: Normalizing . and ..",
+                        "explanation": "`.` (current directory) is removed. `..` (parent) cancels the previous directory component.",
+                        "diagram_data": """graph TB
+    subgraph "Input"
+        I1["/home/user/./project/../data/file.txt"]
+    end
+    subgraph "Processing"
+        P1["/home/user/project/../data/file.txt"]
+        P2["/home/user/data/file.txt"]
+        N1["Remove ./ (current)"]
+        N2["Cancel project with ../"]
+    end
+    subgraph "Output"
+        O1["/home/user/data/file.txt"]
+    end
+    I1 --> |"remove ./"| P1
+    P1 --> |"resolve ../"| P2
+    P2 --> O1
+    style I1 fill:#FFCDD2
+    style O1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Step 3: Following Symlinks",
+                        "explanation": "By default, `resolve()` follows symbolic links to return the **real** (canonical) path.",
+                        "diagram_data": """graph TB
+    subgraph "Filesystem"
+        L["/home/user/link<br/>(symlink)"]
+        T["/var/data/actual<br/>(real target)"]
+        L --> |"points to"| T
+    end
+    subgraph "resolve() behavior"
+        R1["Path('/home/user/link').resolve()"]
+        R2["Returns: Path('/var/data/actual')"]
+    end
+    R1 --> |"follows symlink"| R2
+    style L fill:#FFE0B2
+    style T fill:#C8E6C9
+    style R2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "The strict Parameter",
+                        "explanation": "`resolve(strict=False)` (default) works even if path doesn't exist. `resolve(strict=True)` raises `FileNotFoundError` if the path doesn't exist.",
+                        "diagram_data": """graph TB
+    subgraph "Path doesn't exist"
+        P["Path('/nonexistent/file.txt')"]
+    end
+    subgraph "strict=False (default)"
+        S1["resolve()"]
+        R1["Returns normalized path<br/>(even if doesn't exist)"]
+        S1 --> R1
+    end
+    subgraph "strict=True"
+        S2["resolve(strict=True)"]
+        R2["Raises FileNotFoundError!"]
+        S2 --> R2
+    end
+    P --> S1
+    P --> S2
+    style R1 fill:#C8E6C9
+    style R2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "resolve() vs absolute()",
+                        "explanation": "`absolute()` only prepends cwd—it does NOT resolve symlinks or normalize `..`. Use `resolve()` when you need the canonical path.",
+                        "diagram_data": """graph TB
+    subgraph "Path"
+        P["Path('./data/../file.txt')"]
+    end
+    subgraph ".absolute()"
+        A1["Prepends cwd only"]
+        A2["/home/user/project/./data/../file.txt"]
+        A1 --> A2
+    end
+    subgraph ".resolve()"
+        R1["Full normalization"]
+        R2["/home/user/project/file.txt"]
+        R1 --> R2
+    end
+    P --> A1
+    P --> R1
+    style A2 fill:#FFE0B2
+    style R2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Code Examples",
+                        "explanation": "Practical examples of using `resolve()` with different scenarios.",
+                        "diagram_data": """graph TB
+    subgraph "Examples"
+        E1["# Make relative path absolute"]
+        E2["Path('data/file.txt').resolve()"]
+        E3["# /home/user/project/data/file.txt"]
+        E4["# Normalize path with ../"]
+        E5["Path('/a/b/../c').resolve()"]
+        E6["# /a/c"]
+        E7["# Strict mode (must exist)"]
+        E8["Path('/etc/hosts').resolve(strict=True)"]
+        E9["# /etc/hosts (raises if missing)"]
+    end
+    E1 --> E2 --> E3
+    E4 --> E5 --> E6
+    E7 --> E8 --> E9
+    style E3 fill:#C8E6C9
+    style E6 fill:#C8E6C9
+    style E9 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_glob_rglob_visual(self):
+        """Seed glob vs rglob Directory Traversal visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="glob-rglob",
+            defaults={
+                "title": "glob vs rglob Directory Traversal",
+                "description": "Understanding glob patterns, recursive search with rglob, and generator behavior",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["pathlib", "glob", "rglob", "generators", "recursion", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "glob() vs rglob()",
+                        "explanation": "`glob()` searches in a **single directory** (unless using `**/`). `rglob()` automatically searches **recursively** through all subdirectories.",
+                        "diagram_data": """graph TB
+    subgraph "glob('*.py')"
+        G1["Searches current level ONLY"]
+        G2["project/<br/>├── main.py ✓<br/>├── utils.py ✓<br/>└── src/<br/>    └── app.py ✗"]
+    end
+    subgraph "rglob('*.py')"
+        R1["Searches ALL levels"]
+        R2["project/<br/>├── main.py ✓<br/>├── utils.py ✓<br/>└── src/<br/>    └── app.py ✓"]
+    end
+    style G2 fill:#FFE0B2
+    style R2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Directory Structure Example",
+                        "explanation": "Let's use this directory structure to understand how glob and rglob search differently.",
+                        "diagram_data": """graph TB
+    subgraph "project/"
+        ROOT["project/"]
+        M["main.py"]
+        U["utils.py"]
+        SRC["src/"]
+        A["app.py"]
+        H["helpers.py"]
+        TEST["tests/"]
+        T1["test_main.py"]
+        T2["test_utils.py"]
+    end
+    ROOT --> M
+    ROOT --> U
+    ROOT --> SRC
+    SRC --> A
+    SRC --> H
+    ROOT --> TEST
+    TEST --> T1
+    TEST --> T2
+    style ROOT fill:#E3F2FD
+    style SRC fill:#BBDEFB
+    style TEST fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "glob('*.py') - Single Level",
+                        "explanation": "`glob('*.py')` only matches files in the directory you call it on—NOT subdirectories.",
+                        "diagram_data": """graph TB
+    subgraph "Path('project').glob('*.py')"
+        R["project/"]
+        M["main.py ✓"]
+        U["utils.py ✓"]
+        SRC["src/ (not searched)"]
+        TEST["tests/ (not searched)"]
+    end
+    subgraph "Result"
+        RES["[Path('main.py'), Path('utils.py')]"]
+    end
+    R --> M
+    R --> U
+    R --> SRC
+    R --> TEST
+    M --> RES
+    U --> RES
+    style M fill:#C8E6C9
+    style U fill:#C8E6C9
+    style SRC fill:#FFCDD2
+    style TEST fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "rglob('*.py') - Recursive",
+                        "explanation": "`rglob('*.py')` searches the directory AND all subdirectories recursively.",
+                        "diagram_data": """graph TB
+    subgraph "Path('project').rglob('*.py')"
+        R["project/"]
+        M["main.py ✓"]
+        U["utils.py ✓"]
+        SRC["src/"]
+        A["app.py ✓"]
+        H["helpers.py ✓"]
+        TEST["tests/"]
+        T1["test_main.py ✓"]
+        T2["test_utils.py ✓"]
+    end
+    subgraph "Result (6 files)"
+        RES["All .py files found!"]
+    end
+    R --> M --> RES
+    R --> U --> RES
+    R --> SRC --> A --> RES
+    SRC --> H --> RES
+    R --> TEST --> T1 --> RES
+    TEST --> T2 --> RES
+    style M fill:#C8E6C9
+    style U fill:#C8E6C9
+    style A fill:#C8E6C9
+    style H fill:#C8E6C9
+    style T1 fill:#C8E6C9
+    style T2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "glob('**/*.py') = rglob('*.py')",
+                        "explanation": "You can use `**` in glob() for recursion. `glob('**/*.py')` is equivalent to `rglob('*.py')`.",
+                        "diagram_data": """graph TB
+    subgraph "Equivalents"
+        G["glob('**/*.py')"]
+        R["rglob('*.py')"]
+        EQ["Same result!"]
+    end
+    G --> EQ
+    R --> EQ
+    subgraph "Note"
+        N["rglob(pattern) is shorthand for<br/>glob('**/' + pattern)"]
+    end
+    style EQ fill:#C8E6C9
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Generators - Lazy Evaluation",
+                        "explanation": "Both `glob()` and `rglob()` return **generators**, not lists. Results are produced lazily one at a time, which is memory-efficient for large directories.",
+                        "diagram_data": """graph TB
+    subgraph "Generator Behavior"
+        G["gen = p.rglob('*.py')"]
+        T["type(gen) = generator"]
+        L["Lazy! Files found on demand"]
+    end
+    subgraph "Iteration"
+        I1["next(gen) → first match"]
+        I2["next(gen) → second match"]
+        I3["..."]
+    end
+    subgraph "Convert to List"
+        CL["list(gen) → exhausts generator"]
+        W["WARNING: Can't iterate twice!"]
+    end
+    G --> T --> L
+    L --> I1 --> I2 --> I3
+    L --> CL --> W
+    style L fill:#C8E6C9
+    style W fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Generator Exhaustion Gotcha",
+                        "explanation": "Once you iterate through a generator, it's **exhausted**. You cannot iterate again without creating a new generator.",
+                        "diagram_data": """graph TB
+    subgraph "Common Mistake"
+        C1["gen = p.rglob('*.py')"]
+        C2["a = list(gen)  # works, gets all files"]
+        C3["b = list(gen)  # EMPTY! generator exhausted"]
+    end
+    subgraph "Solution"
+        S1["# Create new generator each time"]
+        S2["a = list(p.rglob('*.py'))"]
+        S3["b = list(p.rglob('*.py'))"]
+        S4["# Or store in a list once"]
+        S5["files = list(p.rglob('*.py'))"]
+        S6["# Reuse 'files' as many times as needed"]
+    end
+    C1 --> C2 --> C3
+    style C3 fill:#FFCDD2
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Efficient Pattern: Early Exit",
+                        "explanation": "Because glob/rglob return generators, you can stop early without scanning the entire directory tree.",
+                        "diagram_data": """graph TB
+    subgraph "Check if ANY .py file exists"
+        C1["gen = p.rglob('*.py')"]
+        C2["first = next(gen, None)"]
+        C3["has_python = first is not None"]
+        C4["Stops after first match!"]
+    end
+    subgraph "Alternative with any()"
+        A1["has_python = any(p.rglob('*.py'))"]
+        A2["Short-circuits on first True"]
+    end
+    C1 --> C2 --> C3 --> C4
+    style C4 fill:#C8E6C9
+    style A2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Common Glob Patterns",
+                        "explanation": "Here are the most useful glob patterns to know.",
+                        "diagram_data": """graph TB
+    subgraph "Patterns"
+        P1["*.py → all .py files"]
+        P2["*.* → all files with extension"]
+        P3["test_* → files starting with 'test_'"]
+        P4["**/test_*.py → recursive test files"]
+        P5["[abc]*.py → a.py, b.py, c.py..."]
+        P6["data?.csv → data1.csv, data2.csv..."]
+    end
+    subgraph "Wildcards"
+        W1["* = any characters (not /)"]
+        W2["? = single character"]
+        W3["** = any subdirectories"]
+        W4["[abc] = character class"]
+    end
+    style P1 fill:#E3F2FD
+    style P4 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_join_operator_visual(self):
+        """Seed Path Joining with / Operator visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="join-operator",
+            defaults={
+                "title": "Path Joining with / Operator",
+                "description": "How the overloaded / operator works for joining paths, including the absolute path gotcha",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["pathlib", "join", "operator", "division", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The / Operator for Paths",
+                        "explanation": "pathlib overloads the `/` (division) operator to join paths. It's the Pythonic way to build paths and works cross-platform.",
+                        "diagram_data": """graph TB
+    subgraph "Traditional"
+        T1["os.path.join('home', 'user', 'file.txt')"]
+    end
+    subgraph "Pathlib Way"
+        P1["Path('home') / 'user' / 'file.txt'"]
+    end
+    subgraph "Result"
+        R["Path('home/user/file.txt')"]
+    end
+    T1 --> R
+    P1 --> R
+    style P1 fill:#C8E6C9
+    style T1 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Chaining Multiple Parts",
+                        "explanation": "You can chain multiple `/` operations. Each one appends to the path.",
+                        "diagram_data": """graph LR
+    subgraph "Building a Path"
+        A["Path('/home')"]
+        B["/ 'user'"]
+        C["/ 'project'"]
+        D["/ 'src'"]
+        E["/ 'main.py'"]
+    end
+    subgraph "Result"
+        R["Path('/home/user/project/src/main.py')"]
+    end
+    A --> B --> C --> D --> E --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Joining Path Objects",
+                        "explanation": "You can join Path objects with strings, or Path objects with other Path objects.",
+                        "diagram_data": """graph TB
+    subgraph "Path / string"
+        P1["Path('/home') / 'user'"]
+        R1["Path('/home/user')"]
+        P1 --> R1
+    end
+    subgraph "Path / Path"
+        P2["Path('/home') / Path('user/data')"]
+        R2["Path('/home/user/data')"]
+        P2 --> R2
+    end
+    subgraph "Both work!"
+        OK["✓"]
+    end
+    R1 --> OK
+    R2 --> OK
+    style R1 fill:#C8E6C9
+    style R2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "THE GOTCHA: Absolute Path on Right",
+                        "explanation": "**Critical:** If the right side is an absolute path, it **replaces** the entire left side! This catches many developers off guard.",
+                        "diagram_data": """graph TB
+    subgraph "Expected"
+        E1["Path('/home/user') / '/data/file.txt'"]
+        E2["Want: /home/user/data/file.txt"]
+    end
+    subgraph "ACTUAL Result"
+        A1["Path('/data/file.txt')"]
+        A2["The /data/file.txt REPLACED /home/user!"]
+    end
+    E1 --> A1
+    E2 -.->|"NOT what happens!"| A1
+    style E2 fill:#FFCDD2
+    style A1 fill:#FFCDD2
+    style A2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Why Does This Happen?",
+                        "explanation": "This mimics how `os.path.join` works. An absolute path on the right is considered a complete path, so it replaces everything.",
+                        "diagram_data": """graph TB
+    subgraph "Rule"
+        R1["If right operand is absolute"]
+        R2["It becomes the entire result"]
+        R3["Left side is discarded"]
+    end
+    subgraph "Examples"
+        E1["Path('/a') / '/b'  → Path('/b')"]
+        E2["Path('/a') / 'b'   → Path('/a/b')"]
+        E3["Path('a') / '/b'   → Path('/b')"]
+    end
+    R1 --> R2 --> R3
+    style E1 fill:#FFCDD2
+    style E2 fill:#C8E6C9
+    style E3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "How to Avoid the Gotcha",
+                        "explanation": "Strip leading slashes or use `lstrip('/')` to ensure the right side is relative.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["user_input = '/data/file.txt'"]
+        BAD["Path('/home') / user_input"]
+        BR["Result: Path('/data/file.txt') ✗"]
+    end
+    subgraph "Solutions"
+        S1["# Remove leading slash"]
+        S2["Path('/home') / user_input.lstrip('/')"]
+        SR["Result: Path('/home/data/file.txt') ✓"]
+        S3["# Or use relative_to"]
+        S4["Path('/home') / Path(user_input).relative_to('/')"]
+    end
+    BAD --> BR
+    S2 --> SR
+    style BR fill:#FFCDD2
+    style SR fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "joinpath() Alternative",
+                        "explanation": "`joinpath()` method works the same as `/` but allows joining multiple parts at once.",
+                        "diagram_data": """graph TB
+    subgraph "Using /"
+        D1["Path('/home') / 'user' / 'data'"]
+    end
+    subgraph "Using joinpath()"
+        J1["Path('/home').joinpath('user', 'data')"]
+        J2["Can pass multiple arguments!"]
+    end
+    subgraph "Same Result"
+        R["Path('/home/user/data')"]
+    end
+    D1 --> R
+    J1 --> R
+    style J2 fill:#FFF9C4
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_relative_to_visual(self):
+        """Seed relative_to() Method visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="relative-to",
+            defaults={
+                "title": "relative_to() Method",
+                "description": "Computing relative paths with relative_to(), including the walk_up parameter in Python 3.12+",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pathlib", "relative_to", "walk_up", "relative", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Does relative_to() Do?",
+                        "explanation": "`relative_to()` returns the portion of the path that comes after a given base. It's useful for computing relative paths.",
+                        "diagram_data": """graph TB
+    subgraph "Full Path"
+        F["/home/user/project/src/main.py"]
+    end
+    subgraph "Base Path"
+        B["/home/user/project"]
+    end
+    subgraph "relative_to(base)"
+        R["src/main.py"]
+    end
+    F --> |"minus"| B
+    B --> |"equals"| R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Basic Usage",
+                        "explanation": "Pass a base path, get back the remaining relative portion.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        C1["path = Path('/home/user/project/data/file.csv')"]
+        C2["base = Path('/home/user/project')"]
+        C3["rel = path.relative_to(base)"]
+        C4["# rel = Path('data/file.csv')"]
+    end
+    subgraph "Visual"
+        V1["/home/user/project/data/file.csv"]
+        V2["/home/user/project"]
+        V3["data/file.csv"]
+        V1 --> |"relative_to"| V2
+        V2 --> |"result"| V3
+    end
+    style C4 fill:#C8E6C9
+    style V3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Path Must Start With Base",
+                        "explanation": "**Important:** The path must actually start with the base path, or `ValueError` is raised.",
+                        "diagram_data": """graph TB
+    subgraph "Works"
+        W1["Path('/a/b/c').relative_to('/a')"]
+        W2["Result: Path('b/c') ✓"]
+    end
+    subgraph "Fails"
+        F1["Path('/a/b/c').relative_to('/x')"]
+        F2["ValueError! /a/b/c doesn't start with /x"]
+    end
+    W1 --> W2
+    F1 --> F2
+    style W2 fill:#C8E6C9
+    style F2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "The Problem: Sibling Paths",
+                        "explanation": "What if you want a relative path between two sibling directories? By default, this fails.",
+                        "diagram_data": """graph TB
+    subgraph "Directory Structure"
+        ROOT["/project"]
+        SRC["src/"]
+        TESTS["tests/"]
+        M["main.py"]
+        T["test_main.py"]
+        ROOT --> SRC --> M
+        ROOT --> TESTS --> T
+    end
+    subgraph "Problem"
+        P1["Path('/project/tests/test_main.py')"]
+        P2[".relative_to('/project/src')"]
+        P3["ValueError!<br/>tests isn't under src"]
+    end
+    P1 --> P2 --> P3
+    style P3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "walk_up=True (Python 3.12+)",
+                        "explanation": "The `walk_up=True` parameter allows relative paths with `..` to go up before going down. This solves the sibling problem!",
+                        "diagram_data": """graph TB
+    subgraph "With walk_up=True"
+        C1["path = Path('/project/tests/test_main.py')"]
+        C2["base = Path('/project/src')"]
+        C3["rel = path.relative_to(base, walk_up=True)"]
+        C4["# Result: '../tests/test_main.py'"]
+    end
+    subgraph "How It Works"
+        H1["Go UP from src to project"]
+        H2["Then DOWN into tests"]
+        H3["Result: ../tests/test_main.py"]
+    end
+    C1 --> C2 --> C3 --> C4
+    style C4 fill:#C8E6C9
+    style H3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "walk_up Visual Example",
+                        "explanation": "Here's how walk_up navigates the directory tree to compute the relative path.",
+                        "diagram_data": """graph TB
+    subgraph "Directory Tree"
+        ROOT["/project"]
+        SRC["src/"]
+        TESTS["tests/"]
+        M["main.py"]
+        T["test_main.py"]
+        ROOT --> SRC
+        ROOT --> TESTS
+        SRC --> M
+        TESTS --> T
+    end
+    subgraph "Navigation"
+        START["Start: /project/src"]
+        UP["Go up: .. (to /project)"]
+        DOWN["Go down: tests/test_main.py"]
+        RESULT["Result: ../tests/test_main.py"]
+    end
+    START --> UP --> DOWN --> RESULT
+    style START fill:#BBDEFB
+    style RESULT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Compatibility Note",
+                        "explanation": "`walk_up` was added in Python 3.12. For earlier versions, compute the relative path manually or use `os.path.relpath()`.",
+                        "diagram_data": """graph TB
+    subgraph "Python >= 3.12"
+        P12["path.relative_to(base, walk_up=True)"]
+    end
+    subgraph "Python < 3.12"
+        OLD["import os"]
+        OLD2["os.path.relpath(path, base)"]
+        OLD3["# Works for all cases"]
+    end
+    subgraph "Choose Based on Version"
+        V["Check sys.version_info"]
+    end
+    P12 --> V
+    OLD2 --> V
+    style P12 fill:#C8E6C9
+    style OLD2 fill:#FFE0B2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_mkdir_visual(self):
+        """Seed mkdir() Decision Tree visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="mkdir-decision-tree",
+            defaults={
+                "title": "mkdir() Decision Tree",
+                "description": "Understanding mkdir() behavior with parents and exist_ok parameters",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["pathlib", "mkdir", "parents", "exist_ok", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "mkdir() Parameters",
+                        "explanation": "`mkdir()` has two important boolean parameters: `parents` and `exist_ok`. Their combination determines the behavior.",
+                        "diagram_data": """graph TB
+    subgraph "Parameters"
+        P["parents=False (default)<br/>Only create final directory"]
+        E["exist_ok=False (default)<br/>Error if already exists"]
+    end
+    subgraph "Common Usage"
+        C["path.mkdir(parents=True, exist_ok=True)<br/>Most flexible - always safe"]
+    end
+    P --> C
+    E --> C
+    style C fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Default: parents=False, exist_ok=False",
+                        "explanation": "By default, mkdir() only creates the final directory, and raises an error if parent directories are missing OR if the target already exists.",
+                        "diagram_data": """graph TB
+    subgraph "Path('/a/b/c').mkdir()"
+        Q1{"Does /a/b exist?"}
+        Q2{"Does /a/b/c exist?"}
+        R1["FileNotFoundError!<br/>Parent missing"]
+        R2["FileExistsError!<br/>Already exists"]
+        R3["✓ Creates /a/b/c"]
+    end
+    Q1 -->|No| R1
+    Q1 -->|Yes| Q2
+    Q2 -->|Yes| R2
+    Q2 -->|No| R3
+    style R1 fill:#FFCDD2
+    style R2 fill:#FFCDD2
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "parents=True",
+                        "explanation": "With `parents=True`, mkdir creates all missing parent directories (like `mkdir -p` in shell).",
+                        "diagram_data": """graph TB
+    subgraph "Path('/a/b/c/d').mkdir(parents=True)"
+        Q1{"Any parents missing?"}
+        A1["Creates /a, /a/b, /a/b/c, /a/b/c/d"]
+        Q2{"Does /a/b/c/d exist?"}
+        R2["FileExistsError!<br/>Target exists"]
+        R3["✓ All directories created"]
+    end
+    Q1 -->|Missing| A1
+    A1 --> Q2
+    Q2 -->|Yes| R2
+    Q2 -->|No| R3
+    style A1 fill:#BBDEFB
+    style R2 fill:#FFCDD2
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "exist_ok=True",
+                        "explanation": "With `exist_ok=True`, mkdir does NOT raise an error if the directory already exists.",
+                        "diagram_data": """graph TB
+    subgraph "path.mkdir(exist_ok=True)"
+        Q1{"Does path exist?"}
+        Q2{"Is it a directory?"}
+        R1["Does nothing<br/>(silently succeeds)"]
+        R2["NotADirectoryError!<br/>It's a file"]
+        R3["Creates directory"]
+    end
+    Q1 -->|Yes| Q2
+    Q1 -->|No| R3
+    Q2 -->|Yes| R1
+    Q2 -->|No| R2
+    style R1 fill:#C8E6C9
+    style R2 fill:#FFCDD2
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "The Complete Decision Tree",
+                        "explanation": "Here's the full decision tree showing all combinations of `parents` and `exist_ok`.",
+                        "diagram_data": """graph TB
+    START["path.mkdir(parents=?, exist_ok=?)"]
+    PARENTS{"parents=True?"}
+    EXISTS{"exist_ok=True?"}
+    PMISSING{"Parent dirs exist?"}
+    TEXISTS{"Target exists?"}
+    ISDIR{"Is directory?"}
+
+    START --> PARENTS
+    PARENTS -->|False| PMISSING
+    PMISSING -->|No| ERR1["FileNotFoundError"]
+    PMISSING -->|Yes| TEXISTS
+
+    PARENTS -->|True| TEXISTS2{"Target exists?"}
+    TEXISTS2 -->|No| CREATE2["Creates all dirs ✓"]
+    TEXISTS2 -->|Yes| EXISTS2{"exist_ok?"}
+    EXISTS2 -->|False| ERR2["FileExistsError"]
+    EXISTS2 -->|True| OK2["OK (no-op) ✓"]
+
+    TEXISTS -->|Yes| EXISTS
+    TEXISTS -->|No| CREATE["Creates dir ✓"]
+    EXISTS -->|False| ERR3["FileExistsError"]
+    EXISTS -->|True| ISDIR
+    ISDIR -->|Yes| OK["OK (no-op) ✓"]
+    ISDIR -->|No| ERR4["NotADirectoryError"]
+
+    style ERR1 fill:#FFCDD2
+    style ERR2 fill:#FFCDD2
+    style ERR3 fill:#FFCDD2
+    style ERR4 fill:#FFCDD2
+    style CREATE fill:#C8E6C9
+    style CREATE2 fill:#C8E6C9
+    style OK fill:#C8E6C9
+    style OK2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Best Practice: Both True",
+                        "explanation": "For most use cases, use `mkdir(parents=True, exist_ok=True)`. This is the safest, most flexible option.",
+                        "diagram_data": """graph TB
+    subgraph "Recommended"
+        R1["path.mkdir(parents=True, exist_ok=True)"]
+        R2["Creates parent dirs if missing"]
+        R3["No error if already exists"]
+        R4["Idempotent - safe to call multiple times"]
+    end
+    R1 --> R2
+    R1 --> R3
+    R1 --> R4
+    style R1 fill:#C8E6C9
+    style R4 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Code Examples",
+                        "explanation": "Common mkdir() patterns in practice.",
+                        "diagram_data": """graph TB
+    subgraph "Safe Creation"
+        S1["output_dir = Path('results/experiment_1')"]
+        S2["output_dir.mkdir(parents=True, exist_ok=True)"]
+        S3["# Always works!"]
+    end
+    subgraph "Strict Creation"
+        ST1["# Error if already exists (e.g., prevent overwrite)"]
+        ST2["Path('new_folder').mkdir()"]
+        ST3["# FileExistsError if exists"]
+    end
+    subgraph "temp directories"
+        T1["from tempfile import mkdtemp"]
+        T2["# Or use Path with timestamp"]
+    end
+    S1 --> S2 --> S3
+    style S2 fill:#C8E6C9
+    style ST3 fill:#FFE0B2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_existence_checks_visual(self):
+        """Seed File Existence Checks visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="existence-checks",
+            defaults={
+                "title": "File Existence Checks",
+                "description": "Decision tree for exists(), is_file(), is_dir(), and is_symlink()",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["pathlib", "exists", "is_file", "is_dir", "is_symlink", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Four Existence Methods",
+                        "explanation": "pathlib provides four methods to check what exists at a path. Each answers a different question.",
+                        "diagram_data": """graph TB
+    subgraph "Methods"
+        E["exists() - Does anything exist here?"]
+        F["is_file() - Is it a regular file?"]
+        D["is_dir() - Is it a directory?"]
+        S["is_symlink() - Is it a symbolic link?"]
+    end
+    subgraph "Key Point"
+        K["They can all be True/False<br/>independently!"]
+    end
+    E --> K
+    F --> K
+    D --> K
+    S --> K
+    style K fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "exists()",
+                        "explanation": "`exists()` returns True if the path points to ANYTHING that exists—file, directory, symlink (resolved), etc.",
+                        "diagram_data": """graph TB
+    subgraph "path.exists()"
+        Q{"Path points to<br/>something?"}
+        T["True"]
+        F["False"]
+    end
+    Q -->|file| T
+    Q -->|directory| T
+    Q -->|symlink to existing| T
+    Q -->|nothing| F
+    Q -->|broken symlink| F
+    style T fill:#C8E6C9
+    style F fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "is_file()",
+                        "explanation": "`is_file()` returns True only if the path points to a regular file (not a directory). Follows symlinks.",
+                        "diagram_data": """graph TB
+    subgraph "path.is_file()"
+        Q{"Type?"}
+        T["True"]
+        F["False"]
+    end
+    Q -->|"regular file"| T
+    Q -->|"directory"| F
+    Q -->|"symlink → file"| T
+    Q -->|"symlink → dir"| F
+    Q -->|"doesn't exist"| F
+    style T fill:#C8E6C9
+    style F fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "is_dir()",
+                        "explanation": "`is_dir()` returns True only if the path points to a directory. Follows symlinks.",
+                        "diagram_data": """graph TB
+    subgraph "path.is_dir()"
+        Q{"Type?"}
+        T["True"]
+        F["False"]
+    end
+    Q -->|"directory"| T
+    Q -->|"regular file"| F
+    Q -->|"symlink → dir"| T
+    Q -->|"symlink → file"| F
+    Q -->|"doesn't exist"| F
+    style T fill:#C8E6C9
+    style F fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "is_symlink()",
+                        "explanation": "`is_symlink()` returns True if the path IS a symlink (not following it). Works even for broken symlinks!",
+                        "diagram_data": """graph TB
+    subgraph "path.is_symlink()"
+        Q{"Is it a symlink?"}
+        T["True"]
+        F["False"]
+    end
+    Q -->|"symlink → file"| T
+    Q -->|"symlink → dir"| T
+    Q -->|"broken symlink"| T
+    Q -->|"regular file"| F
+    Q -->|"directory"| F
+    Q -->|"doesn't exist"| F
+    style T fill:#C8E6C9
+    style F fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Symlink Behavior Comparison",
+                        "explanation": "Key difference: `is_symlink()` checks the symlink itself, while `is_file()`/`is_dir()` follow the symlink to check the target.",
+                        "diagram_data": """graph TB
+    subgraph "Symlink to File"
+        SF["link → /etc/hosts"]
+        SF1["is_symlink() = True"]
+        SF2["is_file() = True"]
+        SF3["is_dir() = False"]
+    end
+    subgraph "Symlink to Dir"
+        SD["link → /var/log"]
+        SD1["is_symlink() = True"]
+        SD2["is_file() = False"]
+        SD3["is_dir() = True"]
+    end
+    subgraph "Broken Symlink"
+        BR["link → /nonexistent"]
+        BR1["is_symlink() = True"]
+        BR2["is_file() = False"]
+        BR3["is_dir() = False"]
+        BR4["exists() = False!"]
+    end
+    style SF1 fill:#C8E6C9
+    style SD1 fill:#C8E6C9
+    style BR1 fill:#C8E6C9
+    style BR4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Decision Tree: What Is This Path?",
+                        "explanation": "Use this decision tree to determine what type of filesystem object you're dealing with.",
+                        "diagram_data": """graph TB
+    START["Check path"]
+    SYM{"is_symlink()?"}
+    EX{"exists()?"}
+    FILE{"is_file()?"}
+    DIR{"is_dir()?"}
+
+    START --> SYM
+    SYM -->|Yes| EX
+    SYM -->|No| EX2{"exists()?"}
+
+    EX -->|Yes| RT["Symlink to real target"]
+    EX -->|No| RB["Broken symlink"]
+
+    EX2 -->|No| RN["Nothing here"]
+    EX2 -->|Yes| FILE
+    FILE -->|Yes| RF["Regular file"]
+    FILE -->|No| DIR
+    DIR -->|Yes| RD["Directory"]
+    DIR -->|No| RO["Other (device, socket, etc)"]
+
+    style RF fill:#C8E6C9
+    style RD fill:#BBDEFB
+    style RT fill:#FFE0B2
+    style RB fill:#FFCDD2
+    style RN fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Common Patterns",
+                        "explanation": "Practical code patterns for checking path types.",
+                        "diagram_data": """graph TB
+    subgraph "Check Before Reading"
+        C1["if path.is_file():"]
+        C2["    content = path.read_text()"]
+    end
+    subgraph "Check Before Listing"
+        D1["if path.is_dir():"]
+        D2["    files = list(path.iterdir())"]
+    end
+    subgraph "Safe Operation"
+        S1["if path.exists():"]
+        S2["    # Do something"]
+        S3["else:"]
+        S4["    # Handle missing"]
+    end
+    subgraph "Create If Missing"
+        M1["if not path.exists():"]
+        M2["    path.mkdir(parents=True)"]
+    end
+    style C1 fill:#E3F2FD
+    style D1 fill:#E3F2FD
+    style S1 fill:#E3F2FD
+    style M1 fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_with_methods_visual(self):
+        """Seed with_* Methods for Path Mutation visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="with-methods",
+            defaults={
+                "title": "with_* Methods for Path Mutation",
+                "description": "Using with_suffix(), with_name(), and with_stem() to create modified paths",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pathlib", "with_suffix", "with_name", "with_stem", "immutable", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Paths Are Immutable",
+                        "explanation": "Path objects are **immutable**. The `with_*` methods don't modify the original—they return a NEW Path object.",
+                        "diagram_data": """graph TB
+    subgraph "Immutability"
+        O["original = Path('data/report.csv')"]
+        M["new = original.with_suffix('.json')"]
+        R1["original is still: data/report.csv"]
+        R2["new is: data/report.json"]
+    end
+    O --> M
+    M --> R1
+    M --> R2
+    style R1 fill:#BBDEFB
+    style R2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "with_suffix() - Change Extension",
+                        "explanation": "`with_suffix()` replaces the file extension (suffix). The new suffix must start with a dot, or be empty to remove it.",
+                        "diagram_data": """graph TB
+    subgraph "with_suffix()"
+        O["Path('data/report.csv')"]
+        N1[".with_suffix('.json')"]
+        N2[".with_suffix('.txt')"]
+        N3[".with_suffix('')"]
+        R1["data/report.json"]
+        R2["data/report.txt"]
+        R3["data/report"]
+    end
+    O --> N1 --> R1
+    O --> N2 --> R2
+    O --> N3 --> R3
+    style R1 fill:#C8E6C9
+    style R2 fill:#C8E6C9
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "with_suffix() Gotcha: Must Include Dot",
+                        "explanation": "**Critical:** The new suffix MUST start with `.` (or be empty). Passing `'json'` without the dot raises `ValueError`.",
+                        "diagram_data": """graph TB
+    subgraph "Correct"
+        C1["path.with_suffix('.json')"]
+        C2["path.with_suffix('.tar.gz')"]
+        C3["path.with_suffix('')"]
+    end
+    subgraph "WRONG - Raises ValueError"
+        W1["path.with_suffix('json')"]
+        W2["No dot = ValueError!"]
+    end
+    C1 --> OK1["✓"]
+    C2 --> OK2["✓"]
+    C3 --> OK3["✓"]
+    W1 --> W2
+    style OK1 fill:#C8E6C9
+    style OK2 fill:#C8E6C9
+    style OK3 fill:#C8E6C9
+    style W2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "with_name() - Change Entire Filename",
+                        "explanation": "`with_name()` replaces the entire filename (name + extension) while keeping the directory path.",
+                        "diagram_data": """graph TB
+    subgraph "with_name()"
+        O["Path('/home/user/data/old_report.csv')"]
+        N[".with_name('new_data.json')"]
+        R["/home/user/data/new_data.json"]
+    end
+    subgraph "Breakdown"
+        D["Directory: /home/user/data/"]
+        OLD["Old name: old_report.csv"]
+        NEW["New name: new_data.json"]
+    end
+    O --> N --> R
+    D --> R
+    style R fill:#C8E6C9
+    style OLD fill:#FFCDD2
+    style NEW fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "with_stem() - Change Name, Keep Extension",
+                        "explanation": "`with_stem()` (Python 3.9+) replaces just the stem (name without extension), preserving the suffix.",
+                        "diagram_data": """graph TB
+    subgraph "with_stem()"
+        O["Path('data/report.csv')"]
+        N[".with_stem('summary')"]
+        R["data/summary.csv"]
+    end
+    subgraph "Breakdown"
+        STEM["Old stem: report → New stem: summary"]
+        SUF["Suffix preserved: .csv"]
+    end
+    O --> N --> R
+    STEM --> R
+    SUF --> R
+    style R fill:#C8E6C9
+    style SUF fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Comparison: All Three Methods",
+                        "explanation": "Here's how all three methods compare when applied to the same path.",
+                        "diagram_data": """graph TB
+    subgraph "Original: /data/report.csv"
+        O["Path('/data/report.csv')"]
+    end
+    subgraph "with_suffix('.json')"
+        S["/data/report.json"]
+        SD["Changes: .csv → .json"]
+    end
+    subgraph "with_name('output.txt')"
+        N["/data/output.txt"]
+        ND["Changes: report.csv → output.txt"]
+    end
+    subgraph "with_stem('summary')"
+        T["/data/summary.csv"]
+        TD["Changes: report → summary"]
+    end
+    O --> S
+    O --> N
+    O --> T
+    style S fill:#C8E6C9
+    style N fill:#BBDEFB
+    style T fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Practical Use Cases",
+                        "explanation": "Common scenarios where each method is useful.",
+                        "diagram_data": """graph TB
+    subgraph "with_suffix: Format Conversion"
+        S1["# Convert CSV to JSON"]
+        S2["json_path = csv_path.with_suffix('.json')"]
+    end
+    subgraph "with_name: Backup Files"
+        N1["# Create backup filename"]
+        N2["backup = path.with_name(path.name + '.bak')"]
+    end
+    subgraph "with_stem: Version Files"
+        T1["# Add version to filename"]
+        T2["v2 = path.with_stem(path.stem + '_v2')"]
+        T3["# report.csv → report_v2.csv"]
+    end
+    style S2 fill:#C8E6C9
+    style N2 fill:#BBDEFB
+    style T2 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Chaining Methods",
+                        "explanation": "Since each method returns a new Path, you can chain multiple calls together.",
+                        "diagram_data": """graph LR
+    subgraph "Chaining"
+        O["Path('data/old.csv')"]
+        C1[".with_stem('new')"]
+        C2[".with_suffix('.json')"]
+        R["data/new.json"]
+    end
+    O --> C1 --> C2 --> R
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_parent_chain_visual(self):
+        """Seed Parent Chain & Root Behavior visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="parent-chain",
+            defaults={
+                "title": "Parent Chain & Root Behavior",
+                "description": "Understanding .parent, .parents, and the special case where root is its own parent",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 5,
+                "tags": ["pathlib", "parent", "parents", "root", "anchor", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The .parent Property",
+                        "explanation": "`.parent` returns a new Path pointing to the immediate parent directory.",
+                        "diagram_data": """graph TB
+    subgraph "Path"
+        P["Path('/home/user/project/file.txt')"]
+    end
+    subgraph ".parent"
+        PA["Path('/home/user/project')"]
+    end
+    P --> PA
+    style PA fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Chaining .parent",
+                        "explanation": "You can chain `.parent` multiple times to go up the directory tree.",
+                        "diagram_data": """graph TB
+    subgraph "Chaining .parent"
+        P0["Path('/home/user/project/file.txt')"]
+        P1["'/home/user/project'"]
+        P2["'/home/user'"]
+        P3["'/home'"]
+        P4["'/'"]
+    end
+    P0 -->|.parent| P1
+    P1 -->|.parent| P2
+    P2 -->|.parent| P3
+    P3 -->|.parent| P4
+    style P0 fill:#E3F2FD
+    style P4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Root Is Its Own Parent!",
+                        "explanation": "**Special case:** The root directory's parent is itself! This prevents infinite recursion but can cause infinite loops if not careful.",
+                        "diagram_data": """graph TB
+    subgraph "Root Behavior"
+        ROOT["Path('/')"]
+        PARENT["Path('/').parent"]
+        SAME["Also Path('/')!"]
+    end
+    ROOT --> PARENT --> SAME
+    SAME -->|"loops forever!"| ROOT
+    subgraph "Danger"
+        W["while p != p.parent:<br/>    p = p.parent<br/># This is the safe idiom"]
+    end
+    style SAME fill:#FFE0B2
+    style W fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "The .parents Sequence",
+                        "explanation": "`.parents` returns an immutable sequence of ALL ancestors, from immediate parent up to (but often not including) the anchor.",
+                        "diagram_data": """graph TB
+    subgraph "Path('/a/b/c/d/file.txt').parents"
+        I0["parents[0] = '/a/b/c/d'"]
+        I1["parents[1] = '/a/b/c'"]
+        I2["parents[2] = '/a/b'"]
+        I3["parents[3] = '/a'"]
+        I4["parents[4] = '/'"]
+    end
+    subgraph "Properties"
+        L["len(parents) = 5"]
+        IT["Can iterate: for p in path.parents"]
+    end
+    I0 --> I1 --> I2 --> I3 --> I4
+    style I0 fill:#BBDEFB
+    style I4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Relative Path Parents",
+                        "explanation": "For relative paths, `.parents` goes up to (and includes) the current directory marker `.`",
+                        "diagram_data": """graph TB
+    subgraph "Path('a/b/c/file.txt').parents"
+        I0["parents[0] = 'a/b/c'"]
+        I1["parents[1] = 'a/b'"]
+        I2["parents[2] = 'a'"]
+        I3["parents[3] = '.'"]
+    end
+    subgraph "Note"
+        N["Relative paths end at '.'<br/>not at a root"]
+    end
+    I0 --> I1 --> I2 --> I3
+    style I3 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Safe Parent Traversal",
+                        "explanation": "The safe idiom to traverse to the root: check if `p != p.parent` to avoid infinite loops.",
+                        "diagram_data": """graph TB
+    subgraph "Safe Pattern"
+        C1["p = Path('/home/user/file.txt')"]
+        C2["while p != p.parent:"]
+        C3["    print(p)"]
+        C4["    p = p.parent"]
+        C5["# Stops at root"]
+    end
+    subgraph "Why It Works"
+        W1["At root: p.parent == p"]
+        W2["Loop condition becomes False"]
+        W3["Loop exits cleanly"]
+    end
+    C1 --> C2 --> C3 --> C4 --> C5
+    style C5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Finding a File Up the Tree",
+                        "explanation": "A common pattern: search for a config file by walking up parent directories.",
+                        "diagram_data": """graph TB
+    subgraph "Find pyproject.toml"
+        C1["def find_project_root(start):"]
+        C2["    p = Path(start).resolve()"]
+        C3["    while p != p.parent:"]
+        C4["        if (p / 'pyproject.toml').exists():"]
+        C5["            return p"]
+        C6["        p = p.parent"]
+        C7["    return None"]
+    end
+    subgraph "Visual"
+        START["/home/user/project/src/module/file.py"]
+        P1["Check: /home/user/project/src/module/"]
+        P2["Check: /home/user/project/src/"]
+        P3["Check: /home/user/project/ ✓ Found!"]
+    end
+    START --> P1 --> P2 --> P3
+    style P3 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pathlib_read_write_visual(self):
+        """Seed Read/Write Operations visual topic."""
+        subject = self.get_or_create_subject(
+            "Pathlib", "pathlib", "Python Core"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="read-write-operations",
+            defaults={
+                "title": "Read/Write Operations",
+                "description": "Using read_text(), write_text(), read_bytes(), write_bytes() vs traditional open()",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["pathlib", "read_text", "write_text", "read_bytes", "write_bytes", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Four Convenience Methods",
+                        "explanation": "pathlib provides four methods for reading and writing files without needing explicit `open()` calls.",
+                        "diagram_data": """graph TB
+    subgraph "Text Operations"
+        RT["read_text() → str"]
+        WT["write_text(str) → int"]
+    end
+    subgraph "Binary Operations"
+        RB["read_bytes() → bytes"]
+        WB["write_bytes(bytes) → int"]
+    end
+    subgraph "Benefit"
+        B["No need for 'with open()' blocks!"]
+    end
+    RT --> B
+    WT --> B
+    RB --> B
+    WB --> B
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "read_text() - Read File as String",
+                        "explanation": "`read_text()` reads the entire file and returns it as a string. Optional `encoding` parameter (default: platform-dependent).",
+                        "diagram_data": """graph TB
+    subgraph "Traditional"
+        T1["with open('file.txt', 'r') as f:"]
+        T2["    content = f.read()"]
+    end
+    subgraph "Pathlib Way"
+        P1["content = Path('file.txt').read_text()"]
+        P2["# Optional: specify encoding"]
+        P3["content = Path('file.txt').read_text(encoding='utf-8')"]
+    end
+    T1 --> T2
+    P1 --> P2 --> P3
+    style P1 fill:#C8E6C9
+    style P3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "write_text() - Write String to File",
+                        "explanation": "`write_text()` writes a string to the file. **Overwrites** existing content. Returns number of characters written.",
+                        "diagram_data": """graph TB
+    subgraph "Traditional"
+        T1["with open('file.txt', 'w') as f:"]
+        T2["    f.write('Hello, World!')"]
+    end
+    subgraph "Pathlib Way"
+        P1["Path('file.txt').write_text('Hello, World!')"]
+        P2["# Returns: 13 (characters written)"]
+    end
+    subgraph "Warning"
+        W["OVERWRITES existing content!"]
+    end
+    T1 --> T2
+    P1 --> P2
+    P1 --> W
+    style P1 fill:#C8E6C9
+    style W fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "read_bytes() & write_bytes()",
+                        "explanation": "For binary files (images, PDFs, etc.), use `read_bytes()` and `write_bytes()` instead.",
+                        "diagram_data": """graph TB
+    subgraph "read_bytes()"
+        R1["data = Path('image.png').read_bytes()"]
+        R2["type(data) → bytes"]
+    end
+    subgraph "write_bytes()"
+        W1["Path('copy.png').write_bytes(data)"]
+        W2["# Returns: number of bytes written"]
+    end
+    subgraph "Use Cases"
+        U1["Images, PDFs, binary files"]
+        U2["Serialized data (pickle, msgpack)"]
+    end
+    R1 --> R2
+    W1 --> W2
+    style R1 fill:#C8E6C9
+    style W1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "There Is NO append_text()!",
+                        "explanation": "**Important:** pathlib does NOT have `append_text()` or `append_bytes()`. For appending, you must use `open()` with mode `'a'`.",
+                        "diagram_data": """graph TB
+    subgraph "This Does NOT Exist"
+        NO["path.append_text('more data')"]
+        X["❌ AttributeError!"]
+    end
+    subgraph "For Appending, Use open()"
+        Y1["with path.open('a') as f:"]
+        Y2["    f.write('appended text')"]
+    end
+    subgraph "Or One-Liner"
+        Z["path.open('a').write('text')"]
+        ZW["# But doesn't close properly!"]
+    end
+    NO --> X
+    Y1 --> Y2
+    style X fill:#FFCDD2
+    style Y1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Path.open() Method",
+                        "explanation": "`Path.open()` is an alternative to the built-in `open()`. Same arguments, returns a file object.",
+                        "diagram_data": """graph TB
+    subgraph "Built-in open()"
+        B1["with open('/path/to/file.txt', 'r') as f:"]
+        B2["    content = f.read()"]
+    end
+    subgraph "Path.open()"
+        P1["with Path('/path/to/file.txt').open('r') as f:"]
+        P2["    content = f.read()"]
+    end
+    subgraph "Equivalent!"
+        E["Both work the same way"]
+    end
+    B1 --> E
+    P1 --> E
+    style E fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Comparison: When to Use Which",
+                        "explanation": "Quick reference for choosing the right method.",
+                        "diagram_data": """graph TB
+    subgraph "Use read_text/write_text"
+        T1["✓ Simple text files"]
+        T2["✓ One-shot read/write"]
+        T3["✓ Entire file at once"]
+    end
+    subgraph "Use open()"
+        O1["✓ Need to append ('a' mode)"]
+        O2["✓ Line-by-line reading"]
+        O3["✓ Large files (streaming)"]
+        O4["✓ Custom buffering"]
+    end
+    subgraph "Use read_bytes/write_bytes"
+        B1["✓ Binary files"]
+        B2["✓ Images, audio, video"]
+        B3["✓ Serialized data"]
+    end
+    style T1 fill:#C8E6C9
+    style O1 fill:#BBDEFB
+    style B1 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Code Examples",
+                        "explanation": "Common patterns for file I/O with pathlib.",
+                        "diagram_data": """graph TB
+    subgraph "Copy File"
+        C1["src = Path('source.txt')"]
+        C2["dst = Path('dest.txt')"]
+        C3["dst.write_text(src.read_text())"]
+    end
+    subgraph "Read JSON"
+        J1["import json"]
+        J2["data = json.loads(Path('config.json').read_text())"]
+    end
+    subgraph "Write Config"
+        W1["Path('settings.yaml').write_text(yaml.dump(config))"]
+    end
+    subgraph "Process Lines"
+        L1["for line in Path('data.txt').read_text().splitlines():"]
+        L2["    process(line)"]
+    end
+    style C3 fill:#C8E6C9
+    style J2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== TRANSFORMERS VISUALS (NEW) ====================
+
+    def seed_transformers_kv_cache_visual(self):
+        """Seed KV-Cache visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="kv-cache",
+            defaults={
+                "title": "KV-Cache: Efficient Autoregressive Generation",
+                "description": "How Key-Value caching speeds up transformer inference by avoiding redundant computation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["transformers", "kv-cache", "inference", "optimization", "attention"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Redundant Computation",
+                        "explanation": "In autoregressive generation, each new token attends to ALL previous tokens. Without caching, we recompute K and V for all past tokens at every step.",
+                        "diagram_data": """graph TB
+    subgraph "Generating: The cat sat"
+        T1["Step 1: The"]
+        T2["Step 2: The cat"]
+        T3["Step 3: The cat sat"]
+    end
+    subgraph "Without Cache"
+        N1["Compute K,V for The"]
+        N2["Compute K,V for The, cat"]
+        N3["Compute K,V for The, cat, sat"]
+    end
+    T1 --> N1
+    T2 --> N2
+    T3 --> N3
+    style N2 fill:#FFCDD2
+    style N3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Solution: Cache K and V",
+                        "explanation": "The **KV-Cache** stores computed Keys and Values from previous tokens. For each new token, we only compute K,V for that token and append to the cache.",
+                        "diagram_data": """graph TB
+    subgraph "With KV-Cache"
+        S1["Step 1: Compute K1,V1 for The"]
+        C1["Cache: K1,V1"]
+        S2["Step 2: Compute K2,V2 for cat only"]
+        C2["Cache: K1,V1, K2,V2"]
+        S3["Step 3: Compute K3,V3 for sat only"]
+        C3["Cache: K1,V1, K2,V2, K3,V3"]
+    end
+    S1 --> C1 --> S2 --> C2 --> S3 --> C3
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Attention with KV-Cache",
+                        "explanation": "The new token's Query attends to ALL cached Keys. The attention output uses ALL cached Values. Only Q is computed fresh each step.",
+                        "diagram_data": """graph LR
+    subgraph "New Token"
+        Q["Q (new)"]
+    end
+    subgraph "KV-Cache"
+        K["K1, K2, ... Kn"]
+        V["V1, V2, ... Vn"]
+    end
+    subgraph "Attention"
+        ATT["Q x K^T -> scores"]
+        OUT["softmax scores x V"]
+    end
+    Q --> ATT
+    K --> ATT
+    ATT --> OUT
+    V --> OUT
+    style Q fill:#C8E6C9
+    style K fill:#BBDEFB
+    style V fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Memory Layout",
+                        "explanation": "The KV-Cache is stored per layer, per head. Shape: `(batch, num_heads, seq_len, head_dim)` for both K and V.",
+                        "diagram_data": """graph TB
+    subgraph "KV-Cache Structure"
+        L1["Layer 1: K-cache, V-cache"]
+        L2["Layer 2: K-cache, V-cache"]
+        L3["..."]
+        LN["Layer N: K-cache, V-cache"]
+    end
+    subgraph "Each Cache Shape"
+        S["(batch, num_heads, seq_len, head_dim)"]
+        EX["Example: (1, 32, 512, 128)"]
+    end
+    L1 --> S
+    L2 --> S
+    LN --> S
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Complexity Comparison",
+                        "explanation": "KV-Cache reduces computation from O(n^2) to O(n) per token, but increases memory usage.",
+                        "diagram_data": """graph TB
+    subgraph "Without Cache"
+        W1["Compute: O n^2 total"]
+        W2["Memory: O 1 for KV"]
+        W3["Slow but memory-efficient"]
+    end
+    subgraph "With Cache"
+        C1["Compute: O n per token"]
+        C2["Memory: O n for KV-cache"]
+        C3["Fast but memory-hungry"]
+    end
+    subgraph "Trade-off"
+        T["Speed vs Memory"]
+    end
+    W1 --> T
+    C1 --> T
+    style C1 fill:#C8E6C9
+    style C2 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Memory Calculation",
+                        "explanation": "KV-Cache memory grows with sequence length. For large models with long contexts, this can be gigabytes.",
+                        "diagram_data": """graph TB
+    subgraph "Memory Formula"
+        F["2 x layers x heads x seq_len x head_dim x bytes"]
+        EX1["LLaMA-7B 32 layers, 32 heads, 128 dim:"]
+        EX2["2 x 32 x 32 x 2048 x 128 x 2 bytes"]
+        EX3["= 1 GB per batch item!"]
+    end
+    subgraph "Scaling"
+        S1["Longer context = more memory"]
+        S2["Larger batch = more memory"]
+        S3["More layers = more memory"]
+    end
+    F --> EX1 --> EX2 --> EX3
+    style EX3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Optimizations",
+                        "explanation": "Several techniques reduce KV-Cache memory: Multi-Query Attention (MQA), Grouped-Query Attention (GQA), and PagedAttention.",
+                        "diagram_data": """graph TB
+    subgraph "Standard MHA"
+        MHA["32 heads x 32 K-caches x 32 V-caches"]
+    end
+    subgraph "Multi-Query Attention"
+        MQA["32 Q-heads, 1 shared K, 1 shared V"]
+        MQA2["32x less KV memory!"]
+    end
+    subgraph "Grouped-Query Attention"
+        GQA["32 Q-heads, 8 K-heads, 8 V-heads"]
+        GQA2["4x less KV memory"]
+    end
+    MHA --> MQA
+    MHA --> GQA
+    style MQA2 fill:#C8E6C9
+    style GQA2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_rag_pipeline_visual(self):
+        """Seed RAG Pipeline visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="rag-pipeline",
+            defaults={
+                "title": "RAG: Retrieval-Augmented Generation",
+                "description": "How RAG combines retrieval and generation to ground LLM responses in external knowledge",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["transformers", "rag", "retrieval", "embeddings", "vector-db"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Knowledge Cutoff",
+                        "explanation": "LLMs have a knowledge cutoff date and can hallucinate. RAG solves this by retrieving relevant documents and including them in the prompt.",
+                        "diagram_data": """graph TB
+    subgraph "Without RAG"
+        Q1["User: Whats the latest on X?"]
+        L1["LLM: I dont know or Hallucination"]
+    end
+    subgraph "With RAG"
+        Q2["User: Whats the latest on X?"]
+        R["Retrieve relevant docs"]
+        L2["LLM: Based on the docs..."]
+    end
+    Q1 --> L1
+    Q2 --> R --> L2
+    style L1 fill:#FFCDD2
+    style L2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "RAG Pipeline Overview",
+                        "explanation": "RAG has two phases: **Indexing** (offline) and **Retrieval + Generation** (online).",
+                        "diagram_data": """graph TB
+    subgraph "Indexing Offline"
+        D["Documents"]
+        CH["Chunk"]
+        EM["Embed"]
+        VDB["Vector DB"]
+        D --> CH --> EM --> VDB
+    end
+    subgraph "Query Online"
+        Q["User Query"]
+        QE["Embed Query"]
+        RET["Retrieve Top-K"]
+        AUG["Augment Prompt"]
+        GEN["Generate"]
+        Q --> QE --> RET --> AUG --> GEN
+    end
+    VDB -.-> RET
+    style VDB fill:#BBDEFB
+    style GEN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Step 1: Document Chunking",
+                        "explanation": "Documents are split into smaller chunks that fit in the embedding model's context and provide focused information.",
+                        "diagram_data": """graph TB
+    subgraph "Original Document"
+        DOC["10,000 word document"]
+    end
+    subgraph "Chunking Strategies"
+        C1["Fixed size 512 tokens"]
+        C2["Sentence-based"]
+        C3["Semantic paragraphs"]
+        C4["Overlapping chunks"]
+    end
+    subgraph "Result"
+        CH1["Chunk 1: 500 tokens"]
+        CH2["Chunk 2: 500 tokens"]
+        CH3["Chunk 3: 500 tokens"]
+    end
+    DOC --> C1
+    DOC --> C2
+    DOC --> C3
+    DOC --> C4
+    C1 --> CH1
+    C1 --> CH2
+    C1 --> CH3
+    style C4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Step 2: Embedding",
+                        "explanation": "Each chunk is converted to a dense vector (embedding) that captures its semantic meaning.",
+                        "diagram_data": """graph LR
+    subgraph "Chunks"
+        CH1["Python is a programming..."]
+        CH2["Machine learning uses..."]
+        CH3["The transformer arch..."]
+    end
+    subgraph "Embedding Model"
+        EM["Encoder: BGE, E5, OpenAI"]
+    end
+    subgraph "Vectors"
+        V1["0.1, -0.3, 0.8, ..."]
+        V2["0.4, 0.2, -0.1, ..."]
+        V3["0.7, 0.1, 0.5, ..."]
+    end
+    CH1 --> EM --> V1
+    CH2 --> EM --> V2
+    CH3 --> EM --> V3
+    style EM fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Step 3: Vector Database",
+                        "explanation": "Embeddings are stored in a vector database optimized for similarity search (FAISS, Pinecone, Weaviate, Chroma).",
+                        "diagram_data": """graph TB
+    subgraph "Vector Database"
+        IDX["Index Structure: HNSW, IVF"]
+        V1["Vector 1 + metadata"]
+        V2["Vector 2 + metadata"]
+        V3["Vector 3 + metadata"]
+        VN["...millions of vectors"]
+    end
+    subgraph "Capabilities"
+        C1["Approximate Nearest Neighbor"]
+        C2["Sub-millisecond search"]
+        C3["Metadata filtering"]
+    end
+    IDX --> V1
+    IDX --> V2
+    IDX --> V3
+    IDX --> VN
+    style IDX fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Step 4: Query and Retrieve",
+                        "explanation": "The user's query is embedded with the same model, then used to find the most similar document chunks.",
+                        "diagram_data": """graph TB
+    subgraph "Query Processing"
+        Q["User: How do transformers work?"]
+        QE["Embed query: 0.6, 0.2, 0.4, ..."]
+    end
+    subgraph "Similarity Search"
+        SIM["Find top-K nearest vectors"]
+        R1["Chunk A score: 0.92"]
+        R2["Chunk B score: 0.87"]
+        R3["Chunk C score: 0.81"]
+    end
+    Q --> QE --> SIM
+    SIM --> R1
+    SIM --> R2
+    SIM --> R3
+    style R1 fill:#C8E6C9
+    style R2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Step 5: Augmented Prompt",
+                        "explanation": "Retrieved chunks are inserted into the prompt as context before the user's question.",
+                        "diagram_data": """graph TB
+    subgraph "Prompt Construction"
+        SYS["System: You are a helpful assistant"]
+        CTX["Context: Chunk A text, Chunk B text, Chunk C text"]
+        USR["User: How do transformers work?"]
+    end
+    subgraph "Final Prompt"
+        FP["System + Context + User Question"]
+    end
+    SYS --> FP
+    CTX --> FP
+    USR --> FP
+    style CTX fill:#BBDEFB
+    style FP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Step 6: Generate Response",
+                        "explanation": "The LLM generates a response grounded in the retrieved context, reducing hallucination.",
+                        "diagram_data": """graph TB
+    subgraph "Generation"
+        P["Augmented Prompt"]
+        LLM["LLM: GPT-4, Claude, LLaMA"]
+        R["Response grounded in context"]
+    end
+    subgraph "Benefits"
+        B1["Up-to-date information"]
+        B2["Reduced hallucination"]
+        B3["Source attribution possible"]
+    end
+    P --> LLM --> R
+    R --> B1
+    R --> B2
+    R --> B3
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_cross_attention_visual(self):
+        """Seed Cross-Attention vs Self-Attention visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cross-attention",
+            defaults={
+                "title": "Cross-Attention vs Self-Attention",
+                "description": "Understanding the difference between self-attention and cross-attention in encoder-decoder models",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["transformers", "attention", "cross-attention", "self-attention", "encoder-decoder"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Types of Attention",
+                        "explanation": "Transformers use two types of attention: **Self-Attention** (within one sequence) and **Cross-Attention** (between two sequences).",
+                        "diagram_data": """graph TB
+    subgraph "Self-Attention"
+        SA["Sequence attends to itself"]
+        SA1["Q, K, V from SAME sequence"]
+    end
+    subgraph "Cross-Attention"
+        CA["One sequence attends to another"]
+        CA1["Q from one, K,V from other"]
+    end
+    style SA fill:#BBDEFB
+    style CA fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Self-Attention: Q, K, V from Same Source",
+                        "explanation": "In self-attention, Query, Key, and Value all come from the same sequence. Each token attends to all other tokens in the same sequence.",
+                        "diagram_data": """graph TB
+    subgraph "Input Sequence"
+        X["X = x1, x2, x3, x4"]
+    end
+    subgraph "Projections"
+        Q["Q = X x Wq"]
+        K["K = X x Wk"]
+        V["V = X x Wv"]
+    end
+    subgraph "Self-Attention"
+        ATT["Attention Q, K, V"]
+        OUT["Each token sees all tokens"]
+    end
+    X --> Q
+    X --> K
+    X --> V
+    Q --> ATT
+    K --> ATT
+    V --> ATT
+    ATT --> OUT
+    style X fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Cross-Attention: Q from Decoder, K/V from Encoder",
+                        "explanation": "In cross-attention, Query comes from the decoder, but Key and Value come from the encoder output. The decoder 'looks at' the encoder.",
+                        "diagram_data": """graph TB
+    subgraph "Encoder Output"
+        ENC["Encoder hidden states"]
+        K["K = Encoder x Wk"]
+        V["V = Encoder x Wv"]
+    end
+    subgraph "Decoder State"
+        DEC["Decoder hidden states"]
+        Q["Q = Decoder x Wq"]
+    end
+    subgraph "Cross-Attention"
+        ATT["Attention Q, K, V"]
+        OUT["Decoder attends to encoder"]
+    end
+    ENC --> K
+    ENC --> V
+    DEC --> Q
+    Q --> ATT
+    K --> ATT
+    V --> ATT
+    style ENC fill:#BBDEFB
+    style DEC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Encoder-Decoder Architecture",
+                        "explanation": "In models like T5 or BART, the decoder has BOTH self-attention (within decoder) AND cross-attention (to encoder).",
+                        "diagram_data": """graph TB
+    subgraph "Encoder"
+        E1["Self-Attention"]
+        E2["Feed Forward"]
+    end
+    subgraph "Decoder"
+        D1["Masked Self-Attention: causal"]
+        D2["Cross-Attention: to encoder"]
+        D3["Feed Forward"]
+    end
+    E1 --> E2
+    D1 --> D2 --> D3
+    E2 -.->|"K, V"| D2
+    style D2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Use Cases",
+                        "explanation": "Different architectures use these attention types differently.",
+                        "diagram_data": """graph TB
+    subgraph "Encoder-Only BERT"
+        B1["Self-attention only"]
+        B2["Bidirectional"]
+        B3["Classification, NER"]
+    end
+    subgraph "Decoder-Only GPT"
+        G1["Causal self-attention"]
+        G2["No cross-attention"]
+        G3["Text generation"]
+    end
+    subgraph "Encoder-Decoder T5"
+        T1["Encoder: self-attention"]
+        T2["Decoder: self + cross"]
+        T3["Translation, summarization"]
+    end
+    style B1 fill:#BBDEFB
+    style G1 fill:#FFE0B2
+    style T2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_attention_masking_visual(self):
+        """Seed Attention Masking visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="attention-masking",
+            defaults={
+                "title": "Attention Masking: Causal and Padding Masks",
+                "description": "Understanding causal masks for autoregressive models and padding masks for variable-length sequences",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["transformers", "attention", "masking", "causal", "padding"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Masking?",
+                        "explanation": "Attention masks control which positions can attend to which. Two main types: **Causal** (prevent future peeking) and **Padding** (ignore pad tokens).",
+                        "diagram_data": """graph TB
+    subgraph "Causal Mask"
+        C["Prevent attending to future tokens"]
+        C1["Used in: GPT, decoder of T5"]
+    end
+    subgraph "Padding Mask"
+        P["Ignore PAD tokens"]
+        P1["Used in: batched sequences"]
+    end
+    subgraph "Combined"
+        B["Often used together"]
+    end
+    C --> B
+    P --> B
+    style C fill:#FFE0B2
+    style P fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Causal Mask Lower Triangular",
+                        "explanation": "In autoregressive generation, each token can only attend to itself and previous tokens. This is enforced with a lower triangular mask.",
+                        "diagram_data": """graph TB
+    subgraph "Causal Mask Matrix"
+        M["Position can attend? 1=yes, 0=no"]
+        MM["t1: 1 0 0 0<br/>t2: 1 1 0 0<br/>t3: 1 1 1 0<br/>t4: 1 1 1 1"]
+    end
+    subgraph "Meaning"
+        M1["t1 sees: t1 only"]
+        M2["t2 sees: t1, t2"]
+        M3["t3 sees: t1, t2, t3"]
+        M4["t4 sees: all"]
+    end
+    M --> MM
+    style MM fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "How Causal Mask Works",
+                        "explanation": "The mask is applied BEFORE softmax. Masked positions are set to -inf, so softmax gives them 0 attention weight.",
+                        "diagram_data": """graph TB
+    subgraph "Attention Scores"
+        S["QK^T = 2, 3, 1, 4 ..."]
+    end
+    subgraph "Apply Mask"
+        M["Add -inf to masked positions"]
+        MS["2, -inf, -inf, -inf<br/>1, 2, -inf, -inf"]
+    end
+    subgraph "After Softmax"
+        SF["1.0, 0, 0, 0<br/>0.27, 0.73, 0, 0"]
+    end
+    S --> M --> MS --> SF
+    style MS fill:#FFE0B2
+    style SF fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Padding Mask",
+                        "explanation": "When batching sequences of different lengths, shorter sequences are padded. The padding mask ensures these PAD tokens are ignored.",
+                        "diagram_data": """graph TB
+    subgraph "Batched Sequences"
+        B1["Seq 1: The, cat, sat, PAD, PAD"]
+        B2["Seq 2: Hello, world, PAD, PAD, PAD"]
+        B3["Seq 3: This, is, a, test, sequence"]
+    end
+    subgraph "Padding Mask"
+        M1["Seq 1: 1, 1, 1, 0, 0"]
+        M2["Seq 2: 1, 1, 0, 0, 0"]
+        M3["Seq 3: 1, 1, 1, 1, 1"]
+    end
+    B1 --> M1
+    B2 --> M2
+    B3 --> M3
+    style M1 fill:#BBDEFB
+    style M2 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Combining Masks",
+                        "explanation": "In decoder-only models with batching, we combine causal AND padding masks.",
+                        "diagram_data": """graph TB
+    subgraph "Causal Mask"
+        CM["1 0 0 0<br/>1 1 0 0<br/>1 1 1 0<br/>1 1 1 1"]
+    end
+    subgraph "Padding Mask"
+        PM["1 1 0 0<br/>1 1 0 0<br/>1 1 0 0<br/>1 1 0 0"]
+    end
+    subgraph "Combined AND"
+        CB["1 0 0 0<br/>1 1 0 0<br/>1 1 0 0<br/>1 1 0 0"]
+    end
+    CM --> CB
+    PM --> CB
+    style CB fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_qkv_computation_visual(self):
+        """Seed QKV Computation Flow visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="qkv-computation",
+            defaults={
+                "title": "QKV Computation Flow",
+                "description": "Step-by-step breakdown of Query, Key, Value projections and attention computation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["transformers", "attention", "qkv", "projection", "matrix"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Big Picture",
+                        "explanation": "Attention transforms input through Q, K, V projections, computes attention weights, and produces a weighted sum of values.",
+                        "diagram_data": """graph LR
+    X["Input X"] --> Q["Q = X Wq"]
+    X --> K["K = X Wk"]
+    X --> V["V = X Wv"]
+    Q --> ATT["Attention"]
+    K --> ATT
+    V --> ATT
+    ATT --> OUT["Output"]
+    style ATT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Step 1: Linear Projections",
+                        "explanation": "Three separate linear layers project X into Q, K, and V. Each projection can have different learned weights.",
+                        "diagram_data": """graph TB
+    subgraph "Input"
+        X["X: batch, seq, d_model"]
+    end
+    subgraph "Weight Matrices"
+        WQ["Wq: d_model, d_k"]
+        WK["Wk: d_model, d_k"]
+        WV["Wv: d_model, d_v"]
+    end
+    subgraph "Projections"
+        Q["Q = X @ Wq: batch, seq, d_k"]
+        K["K = X @ Wk: batch, seq, d_k"]
+        V["V = X @ Wv: batch, seq, d_v"]
+    end
+    X --> WQ --> Q
+    X --> WK --> K
+    X --> WV --> V
+    style Q fill:#FFCDD2
+    style K fill:#BBDEFB
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Step 2: Attention Scores",
+                        "explanation": "Compute similarity between each Query and all Keys using dot product. Result is (seq, seq) attention scores.",
+                        "diagram_data": """graph TB
+    subgraph "Dot Product"
+        Q["Q: batch, seq, d_k"]
+        K["K: batch, seq, d_k"]
+        KT["K^T: batch, d_k, seq"]
+        DOT["Q @ K^T"]
+        S["Scores: batch, seq, seq"]
+    end
+    K --> KT
+    Q --> DOT
+    KT --> DOT
+    DOT --> S
+    style S fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Step 3: Scale and Softmax",
+                        "explanation": "Scores are scaled by sqrt(d_k) to prevent softmax saturation, then softmax converts to probabilities.",
+                        "diagram_data": """graph TB
+    subgraph "Scaling"
+        S["Scores: batch, seq, seq"]
+        SC["Scores / sqrt d_k"]
+        R["Why? Prevents large dot products"]
+    end
+    subgraph "Softmax"
+        SM["softmax dim=-1"]
+        W["Weights: batch, seq, seq"]
+        P["Each row sums to 1"]
+    end
+    S --> SC --> SM --> W
+    W --> P
+    style SC fill:#FFF9C4
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Step 4: Weighted Sum of Values",
+                        "explanation": "Attention weights are used to compute a weighted sum of Value vectors.",
+                        "diagram_data": """graph TB
+    subgraph "Computation"
+        W["Weights: batch, seq, seq"]
+        V["V: batch, seq, d_v"]
+        OUT["Weights @ V"]
+        R["Output: batch, seq, d_v"]
+    end
+    subgraph "Interpretation"
+        I["Each output token is a weighted combination of all Value vectors"]
+    end
+    W --> OUT
+    V --> OUT
+    OUT --> R
+    R --> I
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Complete Formula",
+                        "explanation": "The full attention formula in one equation.",
+                        "diagram_data": """graph TB
+    subgraph "Attention Formula"
+        F["Attention Q, K, V = softmax QK^T / sqrt d_k times V"]
+    end
+    subgraph "Dimensions"
+        D1["Q: batch, seq, d_k"]
+        D2["K: batch, seq, d_k"]
+        D3["V: batch, seq, d_v"]
+        D4["Output: batch, seq, d_v"]
+    end
+    F --> D1
+    F --> D2
+    F --> D3
+    F --> D4
+    style F fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_tensor_shapes_visual(self):
+        """Seed Tensor Shapes Through Transformer visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="tensor-shapes",
+            defaults={
+                "title": "Tensor Shapes Through a Transformer",
+                "description": "Tracking tensor dimensions as data flows through embedding, attention, and feed-forward layers",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["transformers", "tensor", "shapes", "dimensions", "debugging"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Key Dimensions",
+                        "explanation": "These are the key dimensions you'll track through a transformer.",
+                        "diagram_data": """graph TB
+    subgraph "Notation"
+        B["B = batch_size eg 32"]
+        S["S = seq_len eg 128"]
+        D["D = d_model eg 768"]
+        H["H = num_heads eg 12"]
+        DK["d_k = d_model / num_heads eg 64"]
+        V["V = vocab_size eg 50257"]
+    end
+    style B fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Input: Token IDs",
+                        "explanation": "Input starts as integer token IDs from the tokenizer.",
+                        "diagram_data": """graph TB
+    subgraph "Tokenizer Output"
+        T["input_ids: B, S"]
+        EX["Example: 32, 128"]
+        M["32 sequences of 128 token IDs each"]
+    end
+    subgraph "Values"
+        V["Integers in range 0 to vocab_size"]
+    end
+    T --> EX --> M
+    style T fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Token + Position Embeddings",
+                        "explanation": "Token IDs are embedded, then position embeddings are added.",
+                        "diagram_data": """graph TB
+    subgraph "Token Embedding"
+        ID["input_ids: B, S"]
+        TE["token_embed: V, D"]
+        TOK["tokens: B, S, D"]
+    end
+    subgraph "Position Embedding"
+        PE["pos_embed: S, D or 1, S, D"]
+    end
+    subgraph "Combined"
+        X["x = tokens + positions"]
+        XS["x: B, S, D"]
+    end
+    ID --> TE --> TOK
+    TOK --> X
+    PE --> X
+    X --> XS
+    style XS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Multi-Head Attention: Reshape",
+                        "explanation": "For multi-head attention, we reshape (B, S, D) to (B, H, S, d_k) where D = H x d_k.",
+                        "diagram_data": """graph TB
+    subgraph "Before"
+        B1["Q, K, V: B, S, D"]
+        EX1["32, 128, 768"]
+    end
+    subgraph "Reshape for Heads"
+        R["view B, S, H, d_k"]
+        T["transpose 1, 2"]
+    end
+    subgraph "After"
+        B2["Q, K, V: B, H, S, d_k"]
+        EX2["32, 12, 128, 64"]
+    end
+    B1 --> R --> T --> B2
+    EX1 --> EX2
+    style B2 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Feed-Forward Network",
+                        "explanation": "FFN expands to 4xD (typically), applies activation, then projects back to D.",
+                        "diagram_data": """graph TB
+    subgraph "FFN"
+        I["Input: B, S, D"]
+        E["Expand: B, S, 4D"]
+        A["Activation GELU/ReLU"]
+        P["Project: B, S, D"]
+    end
+    subgraph "Example"
+        EX1["32, 128, 768"]
+        EX2["32, 128, 3072"]
+        EX3["32, 128, 768"]
+    end
+    I --> E --> A --> P
+    EX1 --> EX2 --> EX3
+    style E fill:#FFE0B2
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Output: Logits",
+                        "explanation": "Final layer projects from D to vocab_size for next-token prediction.",
+                        "diagram_data": """graph TB
+    subgraph "Final Layer"
+        H["Hidden: B, S, D"]
+        LM["lm_head: D, V"]
+        L["Logits: B, S, V"]
+    end
+    subgraph "Example"
+        EX1["32, 128, 768"]
+        EX2["32, 128, 50257"]
+        M["50257 logits per position"]
+    end
+    H --> LM --> L
+    EX1 --> EX2 --> M
+    style L fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_bert_gpt_t5_visual(self):
+        """Seed BERT vs GPT vs T5 visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="bert-gpt-t5",
+            defaults={
+                "title": "BERT vs GPT vs T5: Architecture Comparison",
+                "description": "Comparing encoder-only, decoder-only, and encoder-decoder transformer architectures",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["transformers", "bert", "gpt", "t5", "architecture", "comparison"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Three Architecture Families",
+                        "explanation": "Modern transformers fall into three categories based on which parts of the original architecture they use.",
+                        "diagram_data": """graph TB
+    subgraph "Original Transformer"
+        E["Encoder"]
+        D["Decoder"]
+        E --> D
+    end
+    subgraph "Three Families"
+        EO["Encoder-Only: BERT"]
+        DO["Decoder-Only: GPT"]
+        ED["Encoder-Decoder: T5, BART"]
+    end
+    style EO fill:#BBDEFB
+    style DO fill:#FFE0B2
+    style ED fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Encoder-Only BERT",
+                        "explanation": "BERT uses only the encoder. It sees ALL tokens at once (bidirectional), making it great for understanding but not generation.",
+                        "diagram_data": """graph TB
+    subgraph "BERT Architecture"
+        I["CLS The cat sat SEP"]
+        E1["Encoder Layer 1"]
+        E2["Encoder Layer 2"]
+        EN["...Layer N"]
+        O["Contextualized embeddings"]
+    end
+    subgraph "Key Properties"
+        P1["Bidirectional attention"]
+        P2["Sees all tokens"]
+        P3["Cannot generate text"]
+    end
+    I --> E1 --> E2 --> EN --> O
+    style P1 fill:#C8E6C9
+    style P3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Decoder-Only GPT",
+                        "explanation": "GPT uses only the decoder with causal masking. Each token only sees previous tokens, enabling autoregressive generation.",
+                        "diagram_data": """graph TB
+    subgraph "GPT Architecture"
+        I["The cat sat"]
+        D1["Decoder Layer 1 causal"]
+        D2["Decoder Layer 2 causal"]
+        DN["...Layer N"]
+        O["Next token prediction"]
+    end
+    subgraph "Key Properties"
+        P1["Autoregressive generation"]
+        P2["Causal left-to-right"]
+        P3["Cannot see future"]
+    end
+    I --> D1 --> D2 --> DN --> O
+    style P1 fill:#C8E6C9
+    style P3 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Encoder-Decoder T5",
+                        "explanation": "T5 uses both encoder AND decoder. Encoder processes input bidirectionally, decoder generates output autoregressively with cross-attention.",
+                        "diagram_data": """graph TB
+    subgraph "T5 Architecture"
+        I["Input: translate English to French: Hello"]
+        E["Encoder bidirectional"]
+        EO["Encoder output"]
+        D["Decoder causal + cross-attn"]
+        O["Output: Bonjour"]
+    end
+    I --> E --> EO
+    EO -.->|"cross-attention"| D
+    D --> O
+    style EO fill:#BBDEFB
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Comparison Summary",
+                        "explanation": "Side-by-side comparison of the three architectures.",
+                        "diagram_data": """graph TB
+    subgraph "BERT Encoder"
+        B1["Direction: Bidirectional"]
+        B2["Task: Understanding"]
+        B3["Training: MLM + NSP"]
+        B4["Examples: BERT, RoBERTa"]
+    end
+    subgraph "GPT Decoder"
+        G1["Direction: Left-to-right"]
+        G2["Task: Generation"]
+        G3["Training: Next token"]
+        G4["Examples: GPT-4, LLaMA, Claude"]
+    end
+    subgraph "T5 Enc-Dec"
+        T1["Direction: Both"]
+        T2["Task: Seq2Seq"]
+        T3["Training: Span corruption"]
+        T4["Examples: T5, BART, mT5"]
+    end
+    style B1 fill:#BBDEFB
+    style G1 fill:#FFE0B2
+    style T1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "When to Use Which?",
+                        "explanation": "Choose architecture based on your task.",
+                        "diagram_data": """graph TB
+    subgraph "Task to Architecture"
+        C["Classification: Encoder BERT"]
+        G["Generation: Decoder GPT"]
+        T["Translation: Enc-Dec T5"]
+        S["Summarization: Enc-Dec or Decoder"]
+        QA["QA extractive: Encoder"]
+        QG["QA generative: Decoder"]
+    end
+    style C fill:#BBDEFB
+    style G fill:#FFE0B2
+    style T fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_parallelism_visual(self):
+        """Seed Parallelism Strategies visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="parallelism-strategies",
+            defaults={
+                "title": "Parallelism Strategies for Large Models",
+                "description": "Data, tensor, pipeline, and expert parallelism for training and inference at scale",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["transformers", "parallelism", "distributed", "training", "scaling"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Parallelism?",
+                        "explanation": "Large models don't fit on one GPU. We need strategies to split the work across multiple devices.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P1["GPT-3: 175B parameters"]
+        P2["= 350 GB in fp16"]
+        P3["Single GPU: 80 GB max"]
+        P4["Need multiple GPUs!"]
+    end
+    subgraph "Solutions"
+        S1["Data Parallelism"]
+        S2["Tensor Parallelism"]
+        S3["Pipeline Parallelism"]
+    end
+    P1 --> P2 --> P3 --> P4
+    P4 --> S1
+    P4 --> S2
+    P4 --> S3
+    style P3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Data Parallelism DP",
+                        "explanation": "Each GPU has a full model copy. Data is split across GPUs. Gradients are synchronized after each step.",
+                        "diagram_data": """graph TB
+    subgraph "Data Parallelism"
+        D["Full batch: 32 samples"]
+        G1["GPU 1: 8 samples, Full model"]
+        G2["GPU 2: 8 samples, Full model"]
+        G3["GPU 3: 8 samples, Full model"]
+        G4["GPU 4: 8 samples, Full model"]
+        SYNC["AllReduce gradients"]
+    end
+    D --> G1
+    D --> G2
+    D --> G3
+    D --> G4
+    G1 --> SYNC
+    G2 --> SYNC
+    G3 --> SYNC
+    G4 --> SYNC
+    style SYNC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Tensor Parallelism TP",
+                        "explanation": "Split individual layers across GPUs. Each GPU computes part of each layer's output.",
+                        "diagram_data": """graph TB
+    subgraph "Linear Layer Split"
+        I["Input: batch, d_in"]
+        W1["W first half on GPU 1"]
+        W2["W second half on GPU 2"]
+        O1["Output part 1"]
+        O2["Output part 2"]
+        C["Concat or AllReduce"]
+    end
+    I --> W1 --> O1 --> C
+    I --> W2 --> O2 --> C
+    style W1 fill:#BBDEFB
+    style W2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Pipeline Parallelism PP",
+                        "explanation": "Split model by layers. Each GPU handles a subset of layers. Data flows through GPUs like a pipeline.",
+                        "diagram_data": """graph LR
+    subgraph "24-Layer Model on 4 GPUs"
+        G1["GPU 1: Layers 1-6"]
+        G2["GPU 2: Layers 7-12"]
+        G3["GPU 3: Layers 13-18"]
+        G4["GPU 4: Layers 19-24"]
+    end
+    G1 --> G2 --> G3 --> G4
+    style G1 fill:#FFCDD2
+    style G2 fill:#FFE0B2
+    style G3 fill:#BBDEFB
+    style G4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "3D Parallelism",
+                        "explanation": "Combine DP + TP + PP for massive scale. Used by GPT-3, Megatron-LM, etc.",
+                        "diagram_data": """graph TB
+    subgraph "3D Parallelism"
+        DP["Data Parallel: 8 copies"]
+        TP["Tensor Parallel: 4 GPUs per copy"]
+        PP["Pipeline Parallel: 4 stages"]
+        T["Total: 8 x 4 x 4 = 128 GPUs"]
+    end
+    subgraph "Hierarchy"
+        H1["TP within node fast NVLink"]
+        H2["PP across nodes slower"]
+        H3["DP across replica groups"]
+    end
+    DP --> T
+    TP --> T
+    PP --> T
+    style T fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_long_context_visual(self):
+        """Seed Long Context Handling visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="long-context",
+            defaults={
+                "title": "Long Context Handling",
+                "description": "Techniques for handling sequences longer than training context: chunking, sliding window, sparse attention",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["transformers", "long-context", "chunking", "sparse-attention", "memory"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Long Context Problem",
+                        "explanation": "Standard attention is O(n^2) in sequence length. Long sequences cause memory explosion and slow computation.",
+                        "diagram_data": """graph TB
+    subgraph "Attention Complexity"
+        C["Memory: O n^2"]
+        C2["Compute: O n^2"]
+    end
+    subgraph "Example"
+        E1["n=512: 262K attention pairs"]
+        E2["n=8K: 64M attention pairs"]
+        E3["n=128K: 16B attention pairs!"]
+    end
+    C --> E1 --> E2 --> E3
+    style E3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Solution 1: Chunking",
+                        "explanation": "Split long documents into chunks that fit the context window. Process independently or with overlap.",
+                        "diagram_data": """graph TB
+    subgraph "Long Document"
+        D["10,000 tokens"]
+    end
+    subgraph "Chunking no overlap"
+        C1["Chunk 1: tokens 0-2047"]
+        C2["Chunk 2: tokens 2048-4095"]
+        C3["Chunk 3: tokens 4096-6143"]
+    end
+    subgraph "With Overlap"
+        O1["Chunk 1: 0-2047"]
+        O2["Chunk 2: 1536-3583"]
+        O3["Better boundary handling"]
+    end
+    D --> C1
+    D --> C2
+    D --> C3
+    style O3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Solution 2: Sliding Window Attention",
+                        "explanation": "Each token only attends to nearby tokens within a fixed window. O(n x w) instead of O(n^2).",
+                        "diagram_data": """graph TB
+    subgraph "Full Attention"
+        F["Full nxn matrix"]
+        FC["O n^2"]
+    end
+    subgraph "Sliding Window w=3"
+        S["Only attend to nearby tokens"]
+        SC["O n x w"]
+    end
+    F --> FC
+    S --> SC
+    style SC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Solution 3: Sparse Attention Patterns",
+                        "explanation": "Combine local attention with global tokens or strided patterns to maintain long-range connections.",
+                        "diagram_data": """graph TB
+    subgraph "Longformer Pattern"
+        L1["Local window attention"]
+        L2["+ Global tokens CLS"]
+        L3["Global tokens attend everywhere"]
+    end
+    subgraph "BigBird Pattern"
+        B1["Local window"]
+        B2["+ Global tokens"]
+        B3["+ Random attention"]
+    end
+    subgraph "Benefit"
+        BN["Long-range with O n memory"]
+    end
+    L1 --> BN
+    B1 --> BN
+    style BN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Comparison",
+                        "explanation": "Trade-offs between different long-context approaches.",
+                        "diagram_data": """graph TB
+    subgraph "Methods Comparison"
+        C["Chunking: Simple, loses cross-chunk info"]
+        SW["Sliding Window: O n, limited range"]
+        SP["Sparse: O n, maintains some global"]
+        SSM["SSM Mamba: O n, emerging approach"]
+        RET["Retrieval: Selective, needs index"]
+    end
+    style C fill:#FFE0B2
+    style SP fill:#BBDEFB
+    style SSM fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_scaling_laws_visual(self):
+        """Seed Scaling Laws visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="scaling-laws",
+            defaults={
+                "title": "Scaling Laws for Language Models",
+                "description": "Understanding how model performance scales with parameters, data, and compute",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["transformers", "scaling", "chinchilla", "compute", "training"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Scaling Laws?",
+                        "explanation": "Scaling laws predict how model loss decreases as you increase parameters (N), data (D), or compute (C).",
+                        "diagram_data": """graph TB
+    subgraph "Key Variables"
+        N["N = Parameters billions"]
+        D["D = Data tokens"]
+        C["C = Compute FLOPs"]
+        L["L = Loss"]
+    end
+    subgraph "The Question"
+        Q["How does L scale with N, D, C?"]
+    end
+    N --> Q
+    D --> Q
+    C --> Q
+    Q --> L
+    style L fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Power Law Relationships",
+                        "explanation": "Loss follows power laws: L is proportional to N^(-alpha) and D^(-beta). Doubling parameters doesn't halve loss.",
+                        "diagram_data": """graph TB
+    subgraph "Power Laws"
+        F1["L N = Nc/N ^ alpha_N"]
+        F2["L D = Dc/D ^ alpha_D"]
+        F3["alpha_N approx 0.076, alpha_D approx 0.095"]
+    end
+    subgraph "Implication"
+        I1["10x parameters: ~0.5 loss reduction"]
+        I2["Diminishing returns"]
+        I3["Need exponentially more for linear gains"]
+    end
+    F1 --> I1
+    F2 --> I2
+    style I3 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Chinchilla Scaling Laws",
+                        "explanation": "DeepMind's Chinchilla paper: parameters and data should scale equally with compute. ~20 tokens per parameter.",
+                        "diagram_data": """graph TB
+    subgraph "Chinchilla 2022"
+        C1["Given fixed compute budget C"]
+        C2["Optimal: N proportional C^0.5, D proportional C^0.5"]
+        C3["Implies: ~20 tokens per parameter"]
+        C4["Chinchilla: 70B params, 1.4T tokens"]
+    end
+    subgraph "Result"
+        R["Smaller model, more data<br/>Same compute, better performance!"]
+    end
+    C1 --> C2 --> C3 --> C4 --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Chinchilla vs GPT-3",
+                        "explanation": "Chinchilla (70B) matched GPT-3 (175B) performance with 4x less compute for inference.",
+                        "diagram_data": """graph TB
+    subgraph "GPT-3"
+        G1["175B parameters"]
+        G2["300B tokens"]
+        G3["Under-trained by Chinchilla standards"]
+    end
+    subgraph "Chinchilla"
+        C1["70B parameters"]
+        C2["1.4T tokens"]
+        C3["Compute-optimal"]
+    end
+    subgraph "Comparison"
+        CP["Same training compute<br/>Chinchilla wins on benchmarks<br/>4x cheaper inference"]
+    end
+    G1 --> CP
+    C1 --> CP
+    style CP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Summary: The Numbers",
+                        "explanation": "Key ratios to remember for compute-optimal training.",
+                        "diagram_data": """graph TB
+    subgraph "Rules of Thumb"
+        R1["Chinchilla: ~20 tokens per parameter"]
+        R2["N and D scale equally with C"]
+        R3["10x compute: 3x N and 3x D"]
+    end
+    subgraph "Example"
+        E1["7B model: 140B tokens minimum"]
+        E2["70B model: 1.4T tokens minimum"]
+        E3["In practice often more"]
+    end
+    R1 --> E1
+    R2 --> E2
+    style R1 fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_finetuning_visual(self):
+        """Seed Fine-tuning Approaches visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="finetuning-approaches",
+            defaults={
+                "title": "Fine-tuning Approaches: Full, LoRA, Prompt Tuning",
+                "description": "Comparing full fine-tuning, parameter-efficient methods (LoRA, adapters), and prompt-based approaches",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["transformers", "finetuning", "lora", "peft", "prompt-tuning", "adapters"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Fine-tuning Spectrum",
+                        "explanation": "From updating all parameters to updating none - different methods trade off between performance and efficiency.",
+                        "diagram_data": """graph LR
+    subgraph "Spectrum"
+        F["Full Fine-tuning: 100% params"]
+        A["Adapters/LoRA: 0.1-1% params"]
+        P["Prompt Tuning: 0.01% params"]
+        I["In-Context Learning: 0% params"]
+    end
+    F --> A --> P --> I
+    style F fill:#FFCDD2
+    style A fill:#FFE0B2
+    style P fill:#BBDEFB
+    style I fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Full Fine-tuning",
+                        "explanation": "Update ALL model parameters on your task-specific data. Most expressive but most expensive.",
+                        "diagram_data": """graph TB
+    subgraph "Full Fine-tuning"
+        M["Pre-trained Model 7B params"]
+        D["Task Data"]
+        T["Train ALL 7B parameters"]
+        O["Fine-tuned Model"]
+    end
+    subgraph "Pros/Cons"
+        P1["+ Best task performance"]
+        P2["+ Full model adaptation"]
+        C1["- Expensive GPU memory"]
+        C2["- Risk of catastrophic forgetting"]
+    end
+    M --> T
+    D --> T
+    T --> O
+    style C1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "LoRA: Low-Rank Adaptation",
+                        "explanation": "Freeze the original weights. Add small trainable low-rank matrices (A, B) to attention layers. W_new = W + BA",
+                        "diagram_data": """graph TB
+    subgraph "LoRA Concept"
+        W["Original W frozen: d x d"]
+        A["A: d x r trainable"]
+        B["B: r x d trainable"]
+        BA["BA: d x d low-rank"]
+        WP["W_new = W + BA"]
+    end
+    subgraph "Example"
+        E1["d=4096, r=8"]
+        E2["Original: 16M params"]
+        E3["LoRA: 65K params 0.4%"]
+    end
+    W --> WP
+    A --> BA --> WP
+    B --> BA
+    style A fill:#C8E6C9
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "QLoRA: Quantized LoRA",
+                        "explanation": "Combine LoRA with 4-bit quantization for even more memory savings. Fine-tune 65B models on a single GPU.",
+                        "diagram_data": """graph TB
+    subgraph "QLoRA"
+        Q1["Base model: 4-bit quantized"]
+        Q2["LoRA adapters: fp16/bf16"]
+        Q3["Double quantization"]
+    end
+    subgraph "Memory Savings"
+        M1["65B model: ~130GB fp16"]
+        M2["65B + QLoRA: ~48GB"]
+        M3["Fits on single 48GB GPU!"]
+    end
+    Q1 --> M2
+    Q2 --> M2
+    Q3 --> M2
+    M2 --> M3
+    style M3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Prompt Tuning",
+                        "explanation": "Learn soft prompt embeddings prepended to input. Model weights completely frozen.",
+                        "diagram_data": """graph TB
+    subgraph "Prompt Tuning"
+        SP["Soft prompts: learned embeddings"]
+        I["User input embeddings"]
+        C["Concatenate: soft_prompts, input"]
+        M["Frozen model processes all"]
+    end
+    subgraph "Properties"
+        P1["~0.01% parameters"]
+        P2["Different prompts per task"]
+        P3["Works better at scale >10B"]
+    end
+    SP --> C
+    I --> C
+    C --> M
+    style SP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Comparison Summary",
+                        "explanation": "Choose based on your compute budget and performance requirements.",
+                        "diagram_data": """graph TB
+    subgraph "Method Comparison"
+        FF["Full FT: Best quality, most expensive"]
+        LO["LoRA: Near-full quality, efficient"]
+        QL["QLoRA: LoRA + quantization, very efficient"]
+        PT["Prompt/Prefix: Most efficient, needs scale"]
+    end
+    subgraph "Recommendation"
+        R1["Small model: Full fine-tune"]
+        R2["Medium: LoRA"]
+        R3["Large: QLoRA"]
+        R4["Huge + limited data: Prompt tuning"]
+    end
+    style LO fill:#C8E6C9
+    style QL fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_decoding_strategies_visual(self):
+        """Seed Decoding Strategies visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="decoding-strategies",
+            defaults={
+                "title": "Decoding Strategies: Beam Search vs Sampling",
+                "description": "Understanding greedy, beam search, top-k, top-p (nucleus), and temperature sampling",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["transformers", "decoding", "beam-search", "sampling", "temperature", "generation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Decoding Problem",
+                        "explanation": "Given logits over vocabulary at each step, how do we select the next token? Many strategies exist.",
+                        "diagram_data": """graph TB
+    subgraph "Model Output"
+        L["Logits: 2.1, 0.5, 3.2, 1.8, ..."]
+        P["Probs: 0.15, 0.03, 0.45, 0.12, ..."]
+    end
+    subgraph "Strategies"
+        S1["Greedy: argmax"]
+        S2["Beam Search: track top-k sequences"]
+        S3["Sampling: random from distribution"]
+    end
+    L --> P
+    P --> S1
+    P --> S2
+    P --> S3
+    style P fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Greedy Decoding",
+                        "explanation": "Always pick the highest probability token. Simple but can produce repetitive or suboptimal text.",
+                        "diagram_data": """graph TB
+    subgraph "Greedy"
+        P["Probs: the 0.4, a 0.3, an 0.2"]
+        G["Pick: the highest"]
+        N["Repeat for next token"]
+    end
+    subgraph "Properties"
+        PR1["+ Fast, deterministic"]
+        PR2["- Locally optimal not globally"]
+        PR3["- Often repetitive"]
+    end
+    P --> G --> N
+    style PR3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Beam Search",
+                        "explanation": "Track top-k sequences (beams) at each step. Explore multiple paths to find higher probability sequences.",
+                        "diagram_data": """graph TB
+    subgraph "Beam Search k=2"
+        START["start"]
+        B1["The 0.4"]
+        B2["A 0.3"]
+        B1C1["The cat 0.3"]
+        B1C2["The dog 0.2"]
+        B2C1["A cat 0.25"]
+    end
+    START --> B1
+    START --> B2
+    B1 --> B1C1
+    B1 --> B1C2
+    B2 --> B2C1
+    subgraph "Keep Top-2"
+        K["The cat, A cat"]
+    end
+    style K fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Temperature Sampling",
+                        "explanation": "Divide logits by temperature T before softmax. T<1 sharpens (confident), T>1 flattens (diverse).",
+                        "diagram_data": """graph TB
+    subgraph "Temperature Effect"
+        L["Logits: 2.0, 1.0, 0.5"]
+        T0["T=0.5: 0.73, 0.20, 0.07 sharper"]
+        T1["T=1.0: 0.51, 0.31, 0.18 normal"]
+        T2["T=2.0: 0.39, 0.33, 0.28 flatter"]
+    end
+    subgraph "Usage"
+        U1["Low T: More deterministic"]
+        U2["High T: More creative/random"]
+    end
+    L --> T0
+    L --> T1
+    L --> T2
+    style T0 fill:#BBDEFB
+    style T2 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Top-K Sampling",
+                        "explanation": "Only sample from the top K most likely tokens. Prevents sampling rare, nonsensical tokens.",
+                        "diagram_data": """graph TB
+    subgraph "Top-K k=3"
+        ALL["All tokens: 0.4, 0.3, 0.15, 0.08, 0.05, 0.02"]
+        TOP["Keep top 3: 0.4, 0.3, 0.15"]
+        NORM["Renormalize: 0.47, 0.35, 0.18"]
+        SAMP["Sample from these 3"]
+    end
+    ALL --> TOP --> NORM --> SAMP
+    subgraph "Effect"
+        E["Excludes unlikely tokens"]
+    end
+    style TOP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Top-P Nucleus Sampling",
+                        "explanation": "Sample from smallest set of tokens whose cumulative probability >= p. Adapts to distribution shape.",
+                        "diagram_data": """graph TB
+    subgraph "Top-P p=0.9"
+        ALL["Sorted probs: 0.5, 0.25, 0.12, 0.08, 0.03, 0.02"]
+        CUM["Cumulative: 0.5, 0.75, 0.87, 0.95, ..."]
+        SEL["Select until >=0.9: first 4 tokens"]
+        NORM["Renormalize and sample"]
+    end
+    ALL --> CUM --> SEL --> NORM
+    subgraph "Advantage"
+        A["Adapts to peaked vs flat distributions"]
+    end
+    style SEL fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Common Configurations",
+                        "explanation": "Typical parameter combinations for different use cases.",
+                        "diagram_data": """graph TB
+    subgraph "Deterministic code, factual"
+        D["temperature=0 or greedy"]
+        D2["Or beam_search with num_beams=4"]
+    end
+    subgraph "Balanced general chat"
+        B["temperature=0.7"]
+        B2["top_p=0.9"]
+    end
+    subgraph "Creative stories, brainstorm"
+        C["temperature=1.0-1.2"]
+        C2["top_p=0.95, top_k=50"]
+    end
+    style D fill:#BBDEFB
+    style B fill:#C8E6C9
+    style C fill:#FFE0B2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transformers_rope_visual(self):
+        """Seed Rotary Position Embeddings (RoPE) visual topic."""
+        subject = self.get_or_create_subject(
+            "Transformers", "transformers", "Deep Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="rope",
+            defaults={
+                "title": "Rotary Position Embeddings RoPE",
+                "description": "Understanding RoPE: rotation-based positional encoding used in LLaMA, GPT-NeoX, and modern LLMs",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["transformers", "rope", "position", "embeddings", "rotation", "llama"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Position Embeddings?",
+                        "explanation": "Attention is permutation-invariant - it doesn't know token order. We must inject position information somehow.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P1["cat sat mat vs mat sat cat"]
+        P2["Same tokens, different meaning"]
+        P3["Attention treats them identically!"]
+    end
+    subgraph "Solutions"
+        S1["Absolute: Add position embedding"]
+        S2["Relative: Encode distance in attention"]
+        S3["RoPE: Rotate queries and keys"]
+    end
+    P1 --> P2 --> P3
+    P3 --> S1
+    P3 --> S2
+    P3 --> S3
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Absolute vs Relative Position",
+                        "explanation": "Absolute adds fixed embeddings per position. Relative encodes distance between tokens in attention scores.",
+                        "diagram_data": """graph TB
+    subgraph "Absolute Original Transformer"
+        A1["pos_embed i added to token i"]
+        A2["Fixed for each position"]
+        A3["Hard to extrapolate beyond training length"]
+    end
+    subgraph "Relative"
+        R1["Encode pos_i - pos_j in attention"]
+        R2["Focus on distance, not absolute position"]
+        R3["Better generalization"]
+    end
+    style A3 fill:#FFCDD2
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "RoPE Core Idea",
+                        "explanation": "RoPE rotates query and key vectors based on position. The dot product then naturally encodes relative position.",
+                        "diagram_data": """graph TB
+    subgraph "Key Insight"
+        I1["Rotate Q at position m by angle m*theta"]
+        I2["Rotate K at position n by angle n*theta"]
+        I3["Q dot K depends on m-n times theta"]
+        I4["Relative position emerges automatically!"]
+    end
+    I1 --> I3
+    I2 --> I3
+    I3 --> I4
+    style I4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "2D Rotation Visualization",
+                        "explanation": "For each pair of dimensions, apply 2D rotation by angle theta*position. Different dimension pairs use different theta.",
+                        "diagram_data": """graph TB
+    subgraph "2D Rotation"
+        V["Vector x, y"]
+        R["Rotate by theta"]
+        VR["x*cos theta - y*sin theta, x*sin theta + y*cos theta"]
+    end
+    subgraph "RoPE applies this"
+        P1["Position 0: no rotation"]
+        P2["Position 1: rotate by theta"]
+        P3["Position 2: rotate by 2*theta"]
+        PN["Position n: rotate by n*theta"]
+    end
+    V --> R --> VR
+    style VR fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Multi-Frequency Rotations",
+                        "explanation": "Different dimension pairs rotate at different frequencies. Low dims: fast rotation (local). High dims: slow (global).",
+                        "diagram_data": """graph TB
+    subgraph "Dimension Pairs"
+        D1["Dims 0,1: theta_0 fastest"]
+        D2["Dims 2,3: theta_1"]
+        D3["Dims 4,5: theta_2"]
+        DN["Dims d-2,d-1: theta_last slowest"]
+    end
+    subgraph "Frequencies"
+        F["theta_i = 10000^-2i/d"]
+        F1["Low i: high frequency local patterns"]
+        F2["High i: low frequency global patterns"]
+    end
+    D1 --> F
+    DN --> F
+    style F fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "RoPE Advantages",
+                        "explanation": "RoPE is efficient, naturally relative, and can extrapolate to longer sequences than seen in training.",
+                        "diagram_data": """graph TB
+    subgraph "Advantages"
+        A1["+ Relative position naturally"]
+        A2["+ No extra parameters to learn"]
+        A3["+ Efficient element-wise"]
+        A4["+ Some length extrapolation"]
+    end
+    subgraph "Used In"
+        U1["LLaMA / LLaMA-2"]
+        U2["GPT-NeoX"]
+        U3["Falcon"]
+        U4["Mistral"]
+    end
+    style A1 fill:#C8E6C9
+    style A4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Length Extrapolation",
+                        "explanation": "RoPE can extend to longer sequences via position interpolation or NTK-aware scaling.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["Trained on 2K context"]
+        P2["Want to use 8K context"]
+    end
+    subgraph "Solutions"
+        S1["Position Interpolation: scale positions"]
+        S2["NTK-aware: adjust base frequency"]
+        S3["YaRN: combines multiple techniques"]
+    end
+    subgraph "Result"
+        R["Extend context 4-8x beyond training"]
+    end
+    P --> P2 --> S1
+    P2 --> S2
+    P2 --> S3
+    S1 --> R
+    S2 --> R
+    S3 --> R
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ============================================================
+    # DATABRICKS VISUALIZATIONS
+    # ============================================================
+
+    def seed_databricks_medallion_visual(self):
+        """Seed Medallion Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="medallion-architecture",
+            defaults={
+                "title": "Medallion Architecture: Bronze, Silver, Gold",
+                "description": "The lakehouse data organization pattern with progressive data refinement layers",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Raw Data Ingestion (Bronze)",
+                        "explanation": "Bronze layer stores raw data exactly as received from source systems. No transformations - just append-only ingestion with metadata.",
+                        "diagram_data": """flowchart LR
+    subgraph Sources
+        S1["APIs"]
+        S2["Databases"]
+        S3["Files"]
+        S4["Streams"]
+    end
+    subgraph Bronze["Bronze Layer"]
+        B["Raw Data<br/>- Exact copy of source<br/>- Append-only<br/>- Full history<br/>- Metadata added"]
+    end
+    S1 --> B
+    S2 --> B
+    S3 --> B
+    S4 --> B
+    style Bronze fill:#CD7F32""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Cleaned Data (Silver)",
+                        "explanation": "Silver layer contains cleaned, validated, and deduplicated data. Schema enforcement, data quality checks, and standardization happen here.",
+                        "diagram_data": """flowchart LR
+    subgraph Bronze["Bronze Layer"]
+        B["Raw Data"]
+    end
+    subgraph Silver["Silver Layer"]
+        S["Cleaned Data<br/>- Deduplicated<br/>- Schema enforced<br/>- Quality validated<br/>- Standardized"]
+    end
+    subgraph Transforms["Transformations"]
+        T1["Deduplication"]
+        T2["Schema validation"]
+        T3["Data type casting"]
+        T4["Null handling"]
+    end
+    B --> T1 --> T2 --> T3 --> T4 --> S
+    style Bronze fill:#CD7F32
+    style Silver fill:#C0C0C0""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Business-Ready Data (Gold)",
+                        "explanation": "Gold layer contains aggregated, business-level data optimized for analytics and reporting. Often organized by business domain.",
+                        "diagram_data": """flowchart LR
+    subgraph Silver["Silver Layer"]
+        S["Cleaned Data"]
+    end
+    subgraph Gold["Gold Layer"]
+        G1["Sales Analytics"]
+        G2["Customer 360"]
+        G3["Financial Reports"]
+        G4["ML Features"]
+    end
+    S --> G1
+    S --> G2
+    S --> G3
+    S --> G4
+    style Silver fill:#C0C0C0
+    style Gold fill:#FFD700""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Complete Medallion Flow",
+                        "explanation": "Data flows progressively through layers, with each layer adding more value. Delta Lake enables ACID transactions and time travel at every layer.",
+                        "diagram_data": """flowchart TB
+    subgraph Sources["Data Sources"]
+        S1["APIs"]
+        S2["DBs"]
+        S3["Files"]
+    end
+    subgraph Bronze["Bronze - Raw"]
+        B["Append-only<br/>Full history<br/>Schema on read"]
+    end
+    subgraph Silver["Silver - Cleaned"]
+        SV["Validated<br/>Deduplicated<br/>Conformed"]
+    end
+    subgraph Gold["Gold - Business"]
+        G1["Aggregates"]
+        G2["Features"]
+        G3["Reports"]
+    end
+    subgraph Consumers["Consumers"]
+        C1["BI Tools"]
+        C2["ML Models"]
+        C3["Apps"]
+    end
+    S1 & S2 & S3 --> Bronze
+    Bronze --> Silver
+    Silver --> Gold
+    G1 & G2 & G3 --> Consumers
+    style Bronze fill:#CD7F32
+    style Silver fill:#C0C0C0
+    style Gold fill:#FFD700""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_delta_lake_visual(self):
+        """Seed Delta Lake Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="delta-lake-architecture",
+            defaults={
+                "title": "Delta Lake Architecture",
+                "description": "How Delta Lake provides ACID transactions on top of cloud object storage",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Delta Table Structure",
+                        "explanation": "A Delta table consists of Parquet data files plus a transaction log (_delta_log). The log tracks all changes to the table.",
+                        "diagram_data": """flowchart TB
+    subgraph DeltaTable["Delta Table"]
+        subgraph Log["_delta_log/"]
+            L1["00000.json"]
+            L2["00001.json"]
+            L3["00002.json"]
+            L4["checkpoint"]
+        end
+        subgraph Data["Data Files"]
+            D1["part-0001.parquet"]
+            D2["part-0002.parquet"]
+            D3["part-0003.parquet"]
+        end
+    end
+    Log --> |"tracks"| Data
+    style Log fill:#BBDEFB
+    style Data fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Transaction Log (Delta Log)",
+                        "explanation": "The _delta_log contains JSON files with actions: add file, remove file, metadata changes, etc. Checkpoints speed up log replay.",
+                        "diagram_data": """flowchart LR
+    subgraph Log["_delta_log/"]
+        subgraph V0["00000.json"]
+            A1["ADD file1.parquet"]
+            A2["ADD file2.parquet"]
+        end
+        subgraph V1["00001.json"]
+            B1["REMOVE file1.parquet"]
+            B2["ADD file3.parquet"]
+        end
+        subgraph V2["00002.json"]
+            C1["ADD file4.parquet"]
+        end
+        subgraph CP["checkpoint"]
+            CP1["Snapshot of state"]
+        end
+    end
+    V0 --> V1 --> V2
+    V2 -.-> CP
+    style CP fill:#FFE082""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Write Operations",
+                        "explanation": "Writes create new Parquet files and append entries to the transaction log. Optimistic concurrency handles conflicts.",
+                        "diagram_data": """flowchart TB
+    subgraph Write["Write Operation"]
+        W1["1. Write new Parquet files"]
+        W2["2. Create log entry"]
+        W3["3. Atomic commit"]
+    end
+    subgraph Conflict["Conflict Resolution"]
+        C1["Read current version"]
+        C2["Check conflicts"]
+        C3["Retry if needed"]
+    end
+    W1 --> W2 --> W3
+    W3 --> |"conflict?"| Conflict
+    C1 --> C2 --> C3 --> W1
+    style Write fill:#C8E6C9
+    style Conflict fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Read Operations",
+                        "explanation": "Reads reconstruct table state by replaying the log from the latest checkpoint. Only active files are read.",
+                        "diagram_data": """flowchart LR
+    subgraph Read["Read Operation"]
+        R1["Find latest checkpoint"]
+        R2["Replay log entries"]
+        R3["Build file list"]
+        R4["Read Parquet files"]
+    end
+    subgraph State["Table State"]
+        S["Active Files:<br/>file2.parquet<br/>file3.parquet<br/>file4.parquet"]
+    end
+    R1 --> R2 --> R3 --> R4
+    R3 --> State
+    style Read fill:#BBDEFB
+    style State fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_acid_transactions_visual(self):
+        """Seed Delta Lake ACID Transactions visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="delta-acid-transactions",
+            defaults={
+                "title": "Delta Lake ACID Transactions",
+                "description": "How Delta Lake achieves Atomicity, Consistency, Isolation, and Durability",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Atomicity",
+                        "explanation": "All changes in a transaction either fully complete or fully fail. The commit to the log is atomic - partial writes are never visible.",
+                        "diagram_data": """flowchart TB
+    subgraph Transaction["Transaction"]
+        T1["Write file1.parquet"]
+        T2["Write file2.parquet"]
+        T3["Update log atomically"]
+    end
+    subgraph Success["Success Case"]
+        S["Both files visible"]
+    end
+    subgraph Failure["Failure Case"]
+        F["Neither file visible<br/>Orphaned files cleaned up"]
+    end
+    T1 --> T2 --> T3
+    T3 --> |"commit succeeds"| Success
+    T3 --> |"commit fails"| Failure
+    style Success fill:#C8E6C9
+    style Failure fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Consistency",
+                        "explanation": "Schema enforcement ensures data quality. Constraints and invariants are checked before commit.",
+                        "diagram_data": """flowchart TB
+    subgraph Write["Incoming Data"]
+        W["New records"]
+    end
+    subgraph Checks["Consistency Checks"]
+        C1["Schema validation"]
+        C2["NOT NULL constraints"]
+        C3["CHECK constraints"]
+        C4["Type enforcement"]
+    end
+    subgraph Result["Result"]
+        R1["Valid: Commit"]
+        R2["Invalid: Reject"]
+    end
+    W --> C1 --> C2 --> C3 --> C4
+    C4 --> |"pass"| R1
+    C4 --> |"fail"| R2
+    style R1 fill:#C8E6C9
+    style R2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Isolation",
+                        "explanation": "Snapshot isolation - each reader sees a consistent snapshot. Writers use optimistic concurrency control.",
+                        "diagram_data": """flowchart TB
+    subgraph Table["Delta Table v5"]
+        T["Current State"]
+    end
+    subgraph Reader1["Reader 1"]
+        R1["Reads v5 snapshot"]
+    end
+    subgraph Reader2["Reader 2"]
+        R2["Reads v5 snapshot"]
+    end
+    subgraph Writer["Writer"]
+        W1["Reads v5"]
+        W2["Writes changes"]
+        W3["Commits v6"]
+    end
+    Table --> R1
+    Table --> R2
+    Table --> W1 --> W2 --> W3
+    R1 -.-> |"still sees v5"| R1
+    style Reader1 fill:#BBDEFB
+    style Reader2 fill:#BBDEFB
+    style Writer fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Durability",
+                        "explanation": "Once committed, data is durable in cloud storage. The transaction log ensures recovery after failures.",
+                        "diagram_data": """flowchart TB
+    subgraph Commit["After Commit"]
+        C1["Log entry written to cloud storage"]
+        C2["Data files written to cloud storage"]
+        C3["Replication by cloud provider"]
+    end
+    subgraph Recovery["After Failure"]
+        R1["Read transaction log"]
+        R2["Reconstruct table state"]
+        R3["Clean orphaned files"]
+    end
+    C1 --> C2 --> C3
+    C3 --> |"system restart"| R1
+    R1 --> R2 --> R3
+    style Commit fill:#C8E6C9
+    style Recovery fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_cluster_architecture_visual(self):
+        """Seed Databricks Cluster Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cluster-architecture",
+            defaults={
+                "title": "Databricks Cluster Architecture",
+                "description": "How Databricks clusters work with driver nodes, workers, and executors",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Cluster Components",
+                        "explanation": "A cluster has one Driver node (coordinates work) and multiple Worker nodes (execute tasks). Each worker runs Executor processes.",
+                        "diagram_data": """flowchart TB
+    subgraph Cluster["Databricks Cluster"]
+        subgraph Driver["Driver Node"]
+            D1["SparkContext"]
+            D2["DAG Scheduler"]
+            D3["Task Scheduler"]
+        end
+        subgraph Workers["Worker Nodes"]
+            subgraph W1["Worker 1"]
+                E1["Executor"]
+                E2["Executor"]
+            end
+            subgraph W2["Worker 2"]
+                E3["Executor"]
+                E4["Executor"]
+            end
+        end
+    end
+    Driver --> |"schedules tasks"| Workers
+    style Driver fill:#BBDEFB
+    style Workers fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Job Execution Flow",
+                        "explanation": "User code runs on the Driver, which creates a DAG of stages. Stages are split into tasks distributed to Executors.",
+                        "diagram_data": """flowchart LR
+    subgraph User["User Code"]
+        U["df.filter().groupBy().count()"]
+    end
+    subgraph Driver["Driver"]
+        D1["Parse to DAG"]
+        D2["Optimize plan"]
+        D3["Create tasks"]
+    end
+    subgraph Executors["Executors"]
+        E1["Task 1"]
+        E2["Task 2"]
+        E3["Task 3"]
+        E4["Task 4"]
+    end
+    U --> D1 --> D2 --> D3
+    D3 --> E1 & E2 & E3 & E4
+    style Driver fill:#BBDEFB
+    style Executors fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Cluster Types",
+                        "explanation": "All-Purpose clusters are interactive (notebooks). Job clusters are ephemeral (created per job). SQL Warehouses are for BI queries.",
+                        "diagram_data": """flowchart TB
+    subgraph Types["Cluster Types"]
+        subgraph AP["All-Purpose"]
+            AP1["Interactive notebooks"]
+            AP2["Development"]
+            AP3["Shared by users"]
+            AP4["Long-running"]
+        end
+        subgraph Job["Job Clusters"]
+            J1["Automated jobs"]
+            J2["Created per run"]
+            J3["Terminated after"]
+            J4["Cost-efficient"]
+        end
+        subgraph SQL["SQL Warehouse"]
+            S1["BI queries"]
+            S2["Serverless option"]
+            S3["Auto-scaling"]
+            S4["SQL-only"]
+        end
+    end
+    style AP fill:#BBDEFB
+    style Job fill:#C8E6C9
+    style SQL fill:#FFE082""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Autoscaling",
+                        "explanation": "Clusters can autoscale between min and max workers based on load. Workers are added when tasks queue up, removed when idle.",
+                        "diagram_data": """flowchart TB
+    subgraph Autoscale["Autoscaling Cluster"]
+        subgraph Min["Min: 2 workers"]
+            M1["Worker 1"]
+            M2["Worker 2"]
+        end
+        subgraph Scale["Scale Up"]
+            S1["Tasks queuing"]
+            S2["Add workers"]
+        end
+        subgraph Max["Max: 8 workers"]
+            X1["Worker 1-8"]
+        end
+        subgraph Down["Scale Down"]
+            D1["Workers idle"]
+            D2["Remove workers"]
+        end
+    end
+    Min --> |"high load"| Scale --> Max
+    Max --> |"low load"| Down --> Min
+    style Min fill:#C8E6C9
+    style Max fill:#FFE082""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_unity_catalog_visual(self):
+        """Seed Unity Catalog Hierarchy visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="unity-catalog-hierarchy",
+            defaults={
+                "title": "Unity Catalog: Data Governance Hierarchy",
+                "description": "The three-level namespace for organizing and securing data assets",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Three-Level Namespace",
+                        "explanation": "Unity Catalog uses a three-level namespace: Catalog > Schema > Object. This replaces the old hive_metastore.",
+                        "diagram_data": """flowchart TB
+    subgraph UC["Unity Catalog"]
+        subgraph Cat["Catalog"]
+            C["prod_catalog"]
+        end
+        subgraph Schema["Schema"]
+            S1["sales"]
+            S2["marketing"]
+        end
+        subgraph Objects["Objects"]
+            T1["customers table"]
+            T2["orders table"]
+            V1["revenue_view"]
+            F1["udf_function"]
+        end
+    end
+    Cat --> Schema
+    S1 --> T1 & T2
+    S2 --> V1 & F1
+    style Cat fill:#BBDEFB
+    style Schema fill:#C8E6C9
+    style Objects fill:#FFE082""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Metastore",
+                        "explanation": "A Metastore is the top-level container that holds catalogs. It maps to a cloud storage location and is shared across workspaces.",
+                        "diagram_data": """flowchart TB
+    subgraph Metastore["Metastore"]
+        M["Region: us-east-1<br/>Storage: s3://unity-metastore/"]
+        subgraph Catalogs["Catalogs"]
+            C1["prod"]
+            C2["dev"]
+            C3["sandbox"]
+        end
+    end
+    subgraph Workspaces["Workspaces"]
+        W1["Workspace A"]
+        W2["Workspace B"]
+    end
+    M --> Catalogs
+    Metastore --> W1
+    Metastore --> W2
+    style Metastore fill:#E1BEE7
+    style Workspaces fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Securable Objects",
+                        "explanation": "Permissions can be granted at any level and are inherited downward. Objects include tables, views, volumes, functions, and models.",
+                        "diagram_data": """flowchart TB
+    subgraph Hierarchy["Permission Inheritance"]
+        CAT["CATALOG prod<br/>GRANT USE"]
+        SCH["SCHEMA sales<br/>inherits USE"]
+        TBL["TABLE customers<br/>inherits USE"]
+    end
+    subgraph Objects["Securable Objects"]
+        O1["Tables"]
+        O2["Views"]
+        O3["Volumes"]
+        O4["Functions"]
+        O5["Models"]
+        O6["Connections"]
+    end
+    CAT --> |"inherits"| SCH --> |"inherits"| TBL
+    style Hierarchy fill:#C8E6C9
+    style Objects fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Access Control",
+                        "explanation": "Privileges include SELECT, MODIFY, CREATE, USAGE, and ALL PRIVILEGES. Groups and users are managed via SCIM or identity providers.",
+                        "diagram_data": """flowchart LR
+    subgraph Principals["Principals"]
+        U["Users"]
+        G["Groups"]
+        SP["Service Principals"]
+    end
+    subgraph Privileges["Privileges"]
+        P1["SELECT"]
+        P2["MODIFY"]
+        P3["CREATE"]
+        P4["USAGE"]
+        P5["ALL PRIVILEGES"]
+    end
+    subgraph Assets["Assets"]
+        A1["Catalogs"]
+        A2["Schemas"]
+        A3["Tables"]
+    end
+    Principals --> |"GRANT"| Privileges
+    Privileges --> |"ON"| Assets
+    style Principals fill:#BBDEFB
+    style Privileges fill:#FFE082
+    style Assets fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_dlt_pipeline_visual(self):
+        """Seed Delta Live Tables Pipeline visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="delta-live-tables-pipeline",
+            defaults={
+                "title": "Delta Live Tables: Declarative ETL Pipelines",
+                "description": "How DLT simplifies ETL with declarative table definitions and automatic dependency management",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "DLT Pipeline Concept",
+                        "explanation": "DLT lets you declare WHAT you want (tables and transformations), not HOW to execute. The engine handles orchestration.",
+                        "diagram_data": """flowchart LR
+    subgraph Traditional["Traditional ETL"]
+        T1["Write ingestion code"]
+        T2["Handle dependencies"]
+        T3["Manage retries"]
+        T4["Track lineage"]
+    end
+    subgraph DLT["Delta Live Tables"]
+        D1["Declare tables"]
+        D2["Define transforms"]
+        D3["Engine handles rest"]
+    end
+    Traditional --> |"replaced by"| DLT
+    style Traditional fill:#FFCDD2
+    style DLT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Table Types",
+                        "explanation": "Streaming tables process incremental data. Materialized views recompute on each refresh. Live tables are always up-to-date.",
+                        "diagram_data": """flowchart TB
+    subgraph Types["DLT Table Types"]
+        subgraph ST["Streaming Table"]
+            ST1["@dlt.table"]
+            ST2["Incremental processing"]
+            ST3["Append-only sources"]
+        end
+        subgraph MV["Materialized View"]
+            MV1["@dlt.table"]
+            MV2["Full recompute"]
+            MV3["Aggregations"]
+        end
+        subgraph LT["Live Table"]
+            LT1["Always current"]
+            LT2["Auto-refreshed"]
+        end
+    end
+    style ST fill:#BBDEFB
+    style MV fill:#C8E6C9
+    style LT fill:#FFE082""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Data Quality with Expectations",
+                        "explanation": "Expectations are data quality rules. You can warn, drop invalid records, or fail the pipeline based on violations.",
+                        "diagram_data": """flowchart TB
+    subgraph Expectations["Data Quality Expectations"]
+        E1["@dlt.expect valid_id IS NOT NULL"]
+        E2["@dlt.expect_or_drop positive_amount > 0"]
+        E3["@dlt.expect_or_fail valid_date IS NOT NULL"]
+    end
+    subgraph Actions["On Violation"]
+        A1["WARN: Log and continue"]
+        A2["DROP: Remove bad records"]
+        A3["FAIL: Stop pipeline"]
+    end
+    E1 --> A1
+    E2 --> A2
+    E3 --> A3
+    style A1 fill:#FFE082
+    style A2 fill:#FFCDD2
+    style A3 fill:#F44336""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Complete Pipeline Example",
+                        "explanation": "A typical pipeline: ingest raw data (Bronze), clean and validate (Silver), aggregate for analytics (Gold). Dependencies are automatic.",
+                        "diagram_data": """flowchart LR
+    subgraph Bronze["Bronze"]
+        B["raw_events<br/>STREAMING TABLE<br/>from cloud_files"]
+    end
+    subgraph Silver["Silver"]
+        S["clean_events<br/>STREAMING TABLE<br/>with expectations"]
+    end
+    subgraph Gold["Gold"]
+        G1["hourly_stats<br/>MATERIALIZED VIEW"]
+        G2["daily_summary<br/>MATERIALIZED VIEW"]
+    end
+    Bronze --> Silver
+    Silver --> G1
+    Silver --> G2
+    style Bronze fill:#CD7F32
+    style Silver fill:#C0C0C0
+    style Gold fill:#FFD700""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_time_travel_visual(self):
+        """Seed Time Travel & Versioning visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="time-travel-versioning",
+            defaults={
+                "title": "Delta Lake Time Travel & Versioning",
+                "description": "Access and restore previous versions of your data using Delta Lake's built-in versioning",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Version History",
+                        "explanation": "Every change to a Delta table creates a new version. The transaction log stores the complete history of all versions.",
+                        "diagram_data": """flowchart LR
+    subgraph History["Table History"]
+        V0["v0: Initial load<br/>1000 rows"]
+        V1["v1: INSERT<br/>+500 rows"]
+        V2["v2: UPDATE<br/>modified 50"]
+        V3["v3: DELETE<br/>-100 rows"]
+        V4["v4: Current<br/>1350 rows"]
+    end
+    V0 --> V1 --> V2 --> V3 --> V4
+    style V4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Query by Version",
+                        "explanation": "Access any historical version using VERSION AS OF or TIMESTAMP AS OF. Great for debugging or reproducing analyses.",
+                        "diagram_data": """flowchart TB
+    subgraph Queries["Time Travel Queries"]
+        Q1["SELECT * FROM table<br/>VERSION AS OF 2"]
+        Q2["SELECT * FROM table<br/>TIMESTAMP AS OF '2024-01-15'"]
+        Q3["SELECT * FROM table@v2"]
+    end
+    subgraph Results["Returns"]
+        R["Data as it existed<br/>at that point in time"]
+    end
+    Q1 & Q2 & Q3 --> R
+    style Queries fill:#BBDEFB
+    style Results fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "RESTORE Command",
+                        "explanation": "RESTORE reverts the table to a previous version. This creates a NEW version that matches the old state - history is preserved.",
+                        "diagram_data": """flowchart LR
+    subgraph Before["Before RESTORE"]
+        B1["v0"] --> B2["v1"] --> B3["v2 - good"]
+        B3 --> B4["v3 - bad data"]
+    end
+    subgraph Command["Command"]
+        C["RESTORE TABLE t<br/>TO VERSION AS OF 2"]
+    end
+    subgraph After["After RESTORE"]
+        A1["v0"] --> A2["v1"] --> A3["v2"]
+        A3 --> A4["v3"] --> A5["v4 = v2"]
+    end
+    Before --> Command --> After
+    style A5 fill:#C8E6C9
+    style B4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Retention & Vacuum",
+                        "explanation": "VACUUM removes old data files. Default retention is 7 days. Time travel only works for versions within retention period.",
+                        "diagram_data": """flowchart TB
+    subgraph Retention["Data Retention"]
+        R1["Default: 7 days"]
+        R2["Configurable per table"]
+        R3["Files older than retention<br/>eligible for VACUUM"]
+    end
+    subgraph Vacuum["VACUUM Command"]
+        V1["VACUUM table"]
+        V2["Removes old files"]
+        V3["Frees storage"]
+    end
+    subgraph Warning["Warning"]
+        W["Cannot time travel<br/>to vacuumed versions"]
+    end
+    R1 --> V1 --> V2 --> V3
+    V3 --> Warning
+    style Warning fill:#FFCDD2
+    style Retention fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_jobs_orchestration_visual(self):
+        """Seed Databricks Jobs Orchestration visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="jobs-orchestration",
+            defaults={
+                "title": "Databricks Jobs: Workflow Orchestration",
+                "description": "Schedule and orchestrate multi-task workflows with dependencies, retries, and alerts",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Job Structure",
+                        "explanation": "A Job contains one or more Tasks. Tasks can be notebooks, Python scripts, JARs, SQL queries, or dbt projects.",
+                        "diagram_data": """flowchart TB
+    subgraph Job["Databricks Job"]
+        subgraph Tasks["Tasks"]
+            T1["Notebook Task"]
+            T2["Python Script"]
+            T3["SQL Query"]
+            T4["dbt Task"]
+            T5["JAR Task"]
+        end
+        subgraph Config["Configuration"]
+            C1["Schedule/Trigger"]
+            C2["Cluster Config"]
+            C3["Alerts"]
+            C4["Retries"]
+        end
+    end
+    style Tasks fill:#BBDEFB
+    style Config fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Task Dependencies",
+                        "explanation": "Tasks can depend on other tasks. The job engine respects dependencies and runs tasks in the correct order, parallelizing where possible.",
+                        "diagram_data": """flowchart LR
+    subgraph DAG["Task Dependencies"]
+        I["ingest_data"]
+        C1["clean_sales"]
+        C2["clean_inventory"]
+        J["join_data"]
+        A["aggregate"]
+        R["report"]
+    end
+    I --> C1 & C2
+    C1 & C2 --> J
+    J --> A --> R
+    style I fill:#CD7F32
+    style C1 fill:#C0C0C0
+    style C2 fill:#C0C0C0
+    style J fill:#C0C0C0
+    style A fill:#FFD700
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Triggers & Schedules",
+                        "explanation": "Jobs can be triggered on a schedule (cron), by file arrival, or via API. Continuous jobs run perpetually for streaming.",
+                        "diagram_data": """flowchart TB
+    subgraph Triggers["Trigger Types"]
+        subgraph Scheduled["Scheduled"]
+            S1["Cron expression"]
+            S2["Every hour/day/week"]
+        end
+        subgraph FileArrival["File Arrival"]
+            F1["Watch cloud path"]
+            F2["Trigger on new files"]
+        end
+        subgraph Manual["Manual/API"]
+            M1["REST API call"]
+            M2["UI Run Now"]
+        end
+        subgraph Continuous["Continuous"]
+            C1["Always running"]
+            C2["For streaming"]
+        end
+    end
+    style Scheduled fill:#BBDEFB
+    style FileArrival fill:#C8E6C9
+    style Manual fill:#FFE082
+    style Continuous fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Error Handling & Alerts",
+                        "explanation": "Configure retries per task, timeout limits, and email/webhook alerts on success, failure, or duration exceeded.",
+                        "diagram_data": """flowchart TB
+    subgraph ErrorHandling["Error Handling"]
+        subgraph Retry["Retries"]
+            R1["Max retries: 3"]
+            R2["Retry delay: 5min"]
+        end
+        subgraph Timeout["Timeouts"]
+            T1["Task timeout"]
+            T2["Job timeout"]
+        end
+    end
+    subgraph Alerts["Notifications"]
+        A1["On Start"]
+        A2["On Success"]
+        A3["On Failure"]
+        A4["On Duration Exceeded"]
+    end
+    subgraph Channels["Channels"]
+        C1["Email"]
+        C2["Slack webhook"]
+        C3["PagerDuty"]
+    end
+    Alerts --> Channels
+    style ErrorHandling fill:#BBDEFB
+    style Alerts fill:#FFE082
+    style Channels fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_sql_warehouse_visual(self):
+        """Seed SQL Warehouse Types visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="sql-warehouse-types",
+            defaults={
+                "title": "Databricks SQL Warehouse Types",
+                "description": "Compare Serverless, Pro, and Classic SQL Warehouses for BI workloads",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "SQL Warehouse Overview",
+                        "explanation": "SQL Warehouses are compute resources optimized for BI queries. They connect to BI tools and run SQL against Delta tables.",
+                        "diagram_data": """flowchart LR
+    subgraph BI["BI Tools"]
+        B1["Tableau"]
+        B2["Power BI"]
+        B3["Looker"]
+    end
+    subgraph SQLWarehouse["SQL Warehouse"]
+        W["Optimized SQL Engine<br/>Photon acceleration<br/>Query caching"]
+    end
+    subgraph Data["Delta Tables"]
+        D["Unity Catalog<br/>Tables & Views"]
+    end
+    BI --> SQLWarehouse --> Data
+    style SQLWarehouse fill:#BBDEFB
+    style Data fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Serverless Warehouse",
+                        "explanation": "Serverless warehouses start instantly and scale automatically. No cluster management - you pay per query. Best for variable workloads.",
+                        "diagram_data": """flowchart TB
+    subgraph Serverless["Serverless SQL Warehouse"]
+        subgraph Pros["Advantages"]
+            P1["Instant startup"]
+            P2["Auto-scaling"]
+            P3["No management"]
+            P4["Pay per query"]
+        end
+        subgraph Cons["Considerations"]
+            C1["Higher per-query cost"]
+            C2["Less control"]
+        end
+        subgraph BestFor["Best For"]
+            B1["Variable workloads"]
+            B2["Quick ad-hoc queries"]
+            B3["Development"]
+        end
+    end
+    style Pros fill:#C8E6C9
+    style Cons fill:#FFE082
+    style BestFor fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Pro Warehouse",
+                        "explanation": "Pro warehouses offer Photon acceleration and intelligent workload management. Good balance of performance and cost for production.",
+                        "diagram_data": """flowchart TB
+    subgraph Pro["Pro SQL Warehouse"]
+        subgraph Features["Features"]
+            F1["Photon engine"]
+            F2["Query queuing"]
+            F3["Workload management"]
+            F4["Predictive IO"]
+        end
+        subgraph BestFor["Best For"]
+            B1["Production BI"]
+            B2["Concurrent users"]
+            B3["Predictable workloads"]
+        end
+    end
+    style Features fill:#C8E6C9
+    style BestFor fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Comparison",
+                        "explanation": "Choose based on workload patterns: Serverless for variable/bursty, Pro for steady production, Classic for legacy compatibility.",
+                        "diagram_data": """flowchart TB
+    subgraph Comparison["SQL Warehouse Comparison"]
+        subgraph Serverless["Serverless"]
+            S1["Startup: Instant"]
+            S2["Scaling: Automatic"]
+            S3["Cost: Per query"]
+            S4["Management: None"]
+        end
+        subgraph Pro["Pro"]
+            P1["Startup: Minutes"]
+            P2["Scaling: Configured"]
+            P3["Cost: Per DBU-hour"]
+            P4["Management: Some"]
+        end
+        subgraph Classic["Classic"]
+            C1["Startup: Minutes"]
+            C2["Scaling: Manual"]
+            C3["Cost: Per DBU-hour"]
+            C4["Management: Full"]
+        end
+    end
+    style Serverless fill:#C8E6C9
+    style Pro fill:#BBDEFB
+    style Classic fill:#FFE082""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_dbfs_storage_visual(self):
+        """Seed DBFS & Storage Layers visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="dbfs-storage-layers",
+            defaults={
+                "title": "DBFS & Storage Layers",
+                "description": "Understanding Databricks File System, workspace files, and cloud storage integration",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Storage Hierarchy",
+                        "explanation": "Databricks has multiple storage layers: Workspace files, DBFS, Unity Catalog Volumes, and direct cloud storage access.",
+                        "diagram_data": """flowchart TB
+    subgraph Storage["Databricks Storage"]
+        subgraph WS["Workspace Files"]
+            W1["/Workspace/Users/..."]
+            W2["Notebooks, repos, files"]
+        end
+        subgraph DBFS["DBFS"]
+            D1["/dbfs/..."]
+            D2["Distributed file system"]
+        end
+        subgraph UC["Unity Catalog Volumes"]
+            U1["/Volumes/catalog/schema/..."]
+            U2["Governed storage"]
+        end
+        subgraph Cloud["Cloud Storage"]
+            C1["s3://bucket/..."]
+            C2["abfss://container@..."]
+        end
+    end
+    style WS fill:#BBDEFB
+    style DBFS fill:#C8E6C9
+    style UC fill:#FFE082
+    style Cloud fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "DBFS Architecture",
+                        "explanation": "DBFS is an abstraction over cloud storage. It includes a DBFS root (managed), mounts to external storage, and FileStore for web-accessible files.",
+                        "diagram_data": """flowchart TB
+    subgraph DBFS["DBFS Paths"]
+        subgraph Root["/dbfs/ Root"]
+            R1["/FileStore - web accessible"]
+            R2["/mnt - mount points"]
+            R3["/user - user dirs"]
+            R4["/databricks-datasets - sample data"]
+        end
+    end
+    subgraph Cloud["Cloud Storage"]
+        C1["S3 bucket"]
+        C2["ADLS container"]
+    end
+    R2 --> |"mount"| Cloud
+    style Root fill:#C8E6C9
+    style Cloud fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Unity Catalog Volumes",
+                        "explanation": "Volumes are the modern way to manage files in Unity Catalog. They provide governance, lineage, and access control for unstructured data.",
+                        "diagram_data": """flowchart TB
+    subgraph UC["Unity Catalog"]
+        subgraph Managed["Managed Volume"]
+            M1["Databricks manages storage"]
+            M2["Automatic lifecycle"]
+        end
+        subgraph External["External Volume"]
+            E1["Your cloud storage"]
+            E2["You manage storage"]
+        end
+    end
+    subgraph Access["Access Patterns"]
+        A1["/Volumes/catalog/schema/volume/file"]
+        A2["dbutils.fs.ls"]
+        A3["Spark read/write"]
+    end
+    UC --> Access
+    style Managed fill:#C8E6C9
+    style External fill:#BBDEFB
+    style Access fill:#FFE082""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Access Methods",
+                        "explanation": "Use dbutils.fs for file operations, Spark for data processing, %sh for shell commands, and Python file APIs for local operations.",
+                        "diagram_data": """flowchart TB
+    subgraph Methods["Access Methods"]
+        subgraph DBUtils["dbutils.fs"]
+            D1["ls, cp, mv, rm"]
+            D2["head, put"]
+            D3["mount, unmount"]
+        end
+        subgraph Spark["Spark"]
+            S1["spark.read.format(...)"]
+            S2["df.write.save(...)"]
+        end
+        subgraph Shell["%sh shell"]
+            SH1["ls /dbfs/..."]
+            SH2["cat, head, tail"]
+        end
+        subgraph Python["Python file APIs"]
+            P1["open('/dbfs/...')"]
+            P2["Standard file I/O"]
+        end
+    end
+    style DBUtils fill:#BBDEFB
+    style Spark fill:#C8E6C9
+    style Shell fill:#FFE082
+    style Python fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_model_serving_visual(self):
+        """Seed Model Serving Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="model-serving-architecture",
+            defaults={
+                "title": "Databricks Model Serving Architecture",
+                "description": "Deploy and serve ML models as REST endpoints with autoscaling",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Model Registry to Serving",
+                        "explanation": "Models are registered in MLflow Model Registry (Unity Catalog), then deployed to serving endpoints with a few clicks or API calls.",
+                        "diagram_data": """flowchart LR
+    subgraph Train["Training"]
+        T["Train Model"]
+    end
+    subgraph Registry["Model Registry"]
+        R["Log to MLflow<br/>Register model<br/>Version control"]
+    end
+    subgraph Deploy["Deployment"]
+        D["Create endpoint<br/>Select version<br/>Configure scaling"]
+    end
+    subgraph Serve["Serving"]
+        S["REST API endpoint"]
+    end
+    Train --> Registry --> Deploy --> Serve
+    style Train fill:#BBDEFB
+    style Registry fill:#C8E6C9
+    style Serve fill:#FFE082""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Endpoint Types",
+                        "explanation": "Serverless endpoints scale to zero. GPU endpoints for deep learning. Custom endpoints for complex preprocessing or multi-model setups.",
+                        "diagram_data": """flowchart TB
+    subgraph Types["Serving Endpoint Types"]
+        subgraph CPU["CPU Serverless"]
+            C1["Scale to zero"]
+            C2["Fast startup"]
+            C3["sklearn, XGBoost"]
+        end
+        subgraph GPU["GPU Endpoints"]
+            G1["Deep learning"]
+            G2["LLMs"]
+            G3["Always running"]
+        end
+        subgraph Custom["Custom"]
+            CU1["Custom containers"]
+            CU2["Multi-model"]
+            CU3["Complex logic"]
+        end
+    end
+    style CPU fill:#C8E6C9
+    style GPU fill:#FFE082
+    style Custom fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Request Flow",
+                        "explanation": "Requests hit the endpoint URL, are load balanced, processed by model replicas, and return predictions. Autoscaling adjusts replicas.",
+                        "diagram_data": """flowchart LR
+    subgraph Client["Client"]
+        CL["POST /serving-endpoints/model/invocations"]
+    end
+    subgraph Endpoint["Serving Endpoint"]
+        LB["Load Balancer"]
+        subgraph Replicas["Model Replicas"]
+            R1["Replica 1"]
+            R2["Replica 2"]
+            R3["Replica N"]
+        end
+    end
+    subgraph Response["Response"]
+        RS["predictions JSON"]
+    end
+    Client --> LB
+    LB --> R1 & R2 & R3
+    R1 & R2 & R3 --> Response
+    style Endpoint fill:#BBDEFB
+    style Replicas fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Traffic Management",
+                        "explanation": "A/B testing and canary deployments route traffic between model versions. Monitor metrics to compare performance before full rollout.",
+                        "diagram_data": """flowchart TB
+    subgraph Traffic["Traffic Configuration"]
+        subgraph AB["A/B Testing"]
+            A1["Version A: 90%"]
+            A2["Version B: 10%"]
+        end
+        subgraph Canary["Canary Deploy"]
+            C1["Old: 95%"]
+            C2["New: 5%"]
+            C3["Gradual increase"]
+        end
+    end
+    subgraph Monitor["Monitoring"]
+        M1["Latency"]
+        M2["Throughput"]
+        M3["Error rate"]
+        M4["Custom metrics"]
+    end
+    Traffic --> Monitor
+    style AB fill:#BBDEFB
+    style Canary fill:#C8E6C9
+    style Monitor fill:#FFE082""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_vector_search_visual(self):
+        """Seed Vector Search Pipeline visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="vector-search-pipeline",
+            defaults={
+                "title": "Databricks Vector Search Pipeline",
+                "description": "Build similarity search with embeddings, vector indexes, and real-time sync",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Vector Search Overview",
+                        "explanation": "Vector Search enables similarity search over embeddings. Use cases include semantic search, recommendations, and RAG for LLMs.",
+                        "diagram_data": """flowchart LR
+    subgraph UseCases["Use Cases"]
+        U1["Semantic search"]
+        U2["Recommendations"]
+        U3["RAG for LLMs"]
+        U4["Image similarity"]
+    end
+    subgraph VS["Vector Search"]
+        V["Find similar items<br/>by embedding distance"]
+    end
+    UseCases --> VS
+    style VS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Creating Embeddings",
+                        "explanation": "Convert text/images to vectors using embedding models. Databricks offers built-in embedding endpoints or bring your own.",
+                        "diagram_data": """flowchart LR
+    subgraph Source["Source Data"]
+        S["Documents, images, products"]
+    end
+    subgraph Embed["Embedding Model"]
+        E1["Databricks BGE"]
+        E2["OpenAI Ada"]
+        E3["Custom model"]
+    end
+    subgraph Vectors["Vectors"]
+        V["[0.1, -0.3, 0.8, ...]<br/>768-4096 dimensions"]
+    end
+    Source --> Embed --> Vectors
+    style Embed fill:#BBDEFB
+    style Vectors fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Index Types",
+                        "explanation": "Delta Sync Index auto-syncs from Delta tables. Direct Vector Access Index for manual updates. Both support filtering.",
+                        "diagram_data": """flowchart TB
+    subgraph Types["Index Types"]
+        subgraph DeltaSync["Delta Sync Index"]
+            D1["Auto-syncs from Delta"]
+            D2["Real-time updates"]
+            D3["Managed by Databricks"]
+        end
+        subgraph Direct["Direct Access Index"]
+            DI1["Manual upsert/delete"]
+            DI2["Full control"]
+            DI3["External sources"]
+        end
+    end
+    subgraph Features["Common Features"]
+        F1["Metadata filtering"]
+        F2["Hybrid search"]
+        F3["Multi-vector"]
+    end
+    Types --> Features
+    style DeltaSync fill:#C8E6C9
+    style Direct fill:#BBDEFB
+    style Features fill:#FFE082""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Query Flow",
+                        "explanation": "Query text is embedded, then compared against indexed vectors. Top-K most similar results returned with optional metadata filtering.",
+                        "diagram_data": """flowchart LR
+    subgraph Query["Query"]
+        Q["User query text"]
+    end
+    subgraph Embed["Embed"]
+        E["Same embedding model"]
+    end
+    subgraph Search["Vector Search"]
+        S1["Find top-K nearest"]
+        S2["Apply metadata filters"]
+    end
+    subgraph Results["Results"]
+        R["Ranked similar docs<br/>with scores"]
+    end
+    Query --> Embed --> Search --> Results
+    style Query fill:#BBDEFB
+    style Search fill:#C8E6C9
+    style Results fill:#FFE082""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_databricks_zordering_visual(self):
+        """Seed Z-Ordering & Data Skipping visual topic."""
+        subject = self.get_or_create_subject(
+            "Databricks", "databricks", "Data Engineering"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="zordering-data-skipping",
+            defaults={
+                "title": "Z-Ordering & Data Skipping",
+                "description": "Optimize query performance by colocating related data and enabling efficient file pruning",
+                "rendering_type": "mermaid",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "title": "Data Skipping Basics",
+                        "explanation": "Delta Lake tracks min/max statistics for each file. Queries skip files that cannot contain matching data.",
+                        "diagram_data": """flowchart TB
+    subgraph Stats["File Statistics"]
+        F1["file1.parquet<br/>date: 2024-01-01 to 01-15<br/>region: US"]
+        F2["file2.parquet<br/>date: 2024-01-16 to 01-31<br/>region: EU"]
+        F3["file3.parquet<br/>date: 2024-02-01 to 02-15<br/>region: US"]
+    end
+    subgraph Query["Query: date = 2024-01-20"]
+        Q["Check file stats"]
+    end
+    subgraph Result["Result"]
+        R1["Skip file1 - max < query"]
+        R2["Read file2 - matches"]
+        R3["Skip file3 - min > query"]
+    end
+    Query --> Stats
+    F1 --> R1
+    F2 --> R2
+    F3 --> R3
+    style R1 fill:#C8E6C9
+    style R2 fill:#FFE082
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Problem: Scattered Data",
+                        "explanation": "Without optimization, related data is scattered across files. Queries must read many files even if few rows match.",
+                        "diagram_data": """flowchart TB
+    subgraph Before["Before Z-Ordering"]
+        subgraph F1["File 1"]
+            A1["US, 2024-01"]
+            A2["EU, 2024-03"]
+            A3["US, 2024-02"]
+        end
+        subgraph F2["File 2"]
+            B1["EU, 2024-01"]
+            B2["US, 2024-03"]
+            B3["EU, 2024-02"]
+        end
+    end
+    subgraph Query["Query: region=US"]
+        Q["Must read ALL files"]
+    end
+    Before --> Query
+    style Before fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Z-Ordering Solution",
+                        "explanation": "OPTIMIZE with Z-ORDER colocates similar values together. Data with same region/date ends up in the same files.",
+                        "diagram_data": """flowchart TB
+    subgraph Command["Command"]
+        C["OPTIMIZE table<br/>ZORDER BY (region, date)"]
+    end
+    subgraph After["After Z-Ordering"]
+        subgraph F1["File 1"]
+            A1["US, 2024-01"]
+            A2["US, 2024-02"]
+            A3["US, 2024-03"]
+        end
+        subgraph F2["File 2"]
+            B1["EU, 2024-01"]
+            B2["EU, 2024-02"]
+            B3["EU, 2024-03"]
+        end
+    end
+    subgraph Query["Query: region=US"]
+        Q["Read only File 1"]
+    end
+    Command --> After
+    After --> Query
+    style After fill:#C8E6C9
+    style Query fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Best Practices",
+                        "explanation": "Z-ORDER on high-cardinality columns used in filters. Limit to 2-4 columns. Run OPTIMIZE regularly after writes.",
+                        "diagram_data": """flowchart TB
+    subgraph Good["Good Z-Order Candidates"]
+        G1["High cardinality"]
+        G2["Frequently filtered"]
+        G3["date, region, customer_id"]
+    end
+    subgraph Bad["Poor Candidates"]
+        B1["Low cardinality - boolean"]
+        B2["Random distribution"]
+        B3["Columns not in filters"]
+    end
+    subgraph Tips["Best Practices"]
+        T1["2-4 columns max"]
+        T2["Most filtered first"]
+        T3["Run after large writes"]
+        T4["Consider partitioning too"]
+    end
+    style Good fill:#C8E6C9
+    style Bad fill:#FFCDD2
+    style Tips fill:#BBDEFB""",
                     },
                 ],
             },
