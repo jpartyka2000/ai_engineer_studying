@@ -45,6 +45,98 @@ class Command(BaseCommand):
         self.seed_system_design_visuals()
         self.seed_gpu_generations_visual()
         self.seed_gpu_architecture_visual()
+        self.seed_mixed_precision_training_visual()
+        self.seed_cuda_programming_model_visual()
+        self.seed_tensor_core_operations_visual()
+        self.seed_multi_gpu_training_visual()
+        self.seed_gpu_memory_optimization_visual()
+        self.seed_flash_attention_visual()
+        self.seed_gradient_checkpointing_visual()
+        self.seed_pandas_merge_join_visual()
+        self.seed_pandas_pivot_melt_visual()
+        self.seed_pandas_loc_iloc_visual()
+        self.seed_pandas_serialization_visual()
+        self.seed_gradient_descent_visual()
+        self.seed_cross_validation_visual()
+        self.seed_regularization_visual()
+        self.seed_classification_metrics_visual()
+        self.seed_ensemble_methods_visual()
+        self.seed_dimensionality_reduction_visual()
+        self.seed_transfer_learning_visual()
+        self.seed_pyspark_cluster_architecture_visual()
+        self.seed_pyspark_job_stage_task_visual()
+        self.seed_pyspark_lazy_evaluation_visual()
+        self.seed_pyspark_partitioning_visual()
+        self.seed_pyspark_shuffle_visual()
+        self.seed_pyspark_wide_narrow_transformations_visual()
+        self.seed_pyspark_data_skew_visual()
+        self.seed_lightgbm_gradient_boosting_basics_visual()
+        self.seed_lightgbm_leaf_vs_level_wise_visual()
+        self.seed_lightgbm_goss_visual()
+        self.seed_lightgbm_efb_visual()
+        self.seed_lightgbm_hyperparameter_tuning_visual()
+        self.seed_lightgbm_overfitting_prevention_visual()
+        self.seed_lightgbm_vs_xgboost_catboost_visual()
+        self.seed_xgboost_regularized_objective_visual()
+        self.seed_xgboost_approximate_split_finding_visual()
+        self.seed_xgboost_sparsity_aware_visual()
+        self.seed_xgboost_tree_pruning_visual()
+        self.seed_xgboost_monotonic_constraints_visual()
+        self.seed_xgboost_parameter_map_visual()
+        self.seed_mlflow_architecture_overview_visual()
+        self.seed_mlflow_experiment_tracking_visual()
+        self.seed_mlflow_run_lifecycle_visual()
+        self.seed_mlflow_artifact_organization_visual()
+        self.seed_mlflow_model_registry_visual()
+        self.seed_mlflow_tracking_server_visual()
+        self.seed_mlflow_autologging_visual()
+        self.seed_mlflow_hyperparameter_tuning_visual()
+        self.seed_statistics_clt_visual()
+        self.seed_statistics_distributions_visual()
+        self.seed_statistics_hypothesis_testing_visual()
+        self.seed_statistics_confidence_intervals_visual()
+        self.seed_statistics_ttest_visual()
+        self.seed_statistics_anova_visual()
+        self.seed_statistics_chi_square_visual()
+        self.seed_statistics_nonparametric_visual()
+        self.seed_statistics_mle_visual()
+        self.seed_statistics_bayesian_vs_frequentist_visual()
+        self.seed_statistics_correlation_causation_visual()
+        self.seed_statistics_ab_testing_visual()
+        self.seed_logging_hierarchy_visual()
+        self.seed_logging_levels_visual()
+        self.seed_logging_inheritance_visual()
+        self.seed_logging_configuration_visual()
+        self.seed_logging_handlers_visual()
+        self.seed_logging_formatters_visual()
+        self.seed_logging_structured_visual()
+        self.seed_logging_ml_pipelines_visual()
+        self.seed_logging_antipatterns_visual()
+        self.seed_logging_performance_visual()
+        self.seed_async_event_loop_visual()
+        self.seed_async_concurrency_models_visual()
+        self.seed_async_await_internals_visual()
+        self.seed_async_task_lifecycle_visual()
+        self.seed_async_gather_wait_visual()
+        self.seed_async_semaphores_visual()
+        self.seed_async_producer_consumer_visual()
+        self.seed_async_timeouts_visual()
+        self.seed_async_http_requests_visual()
+        self.seed_async_database_visual()
+        self.seed_async_websocket_visual()
+        self.seed_async_antipatterns_visual()
+        self.seed_explainability_shap_visual()
+        self.seed_explainability_lime_visual()
+        self.seed_explainability_feature_importance_visual()
+        self.seed_explainability_pdp_visual()
+        self.seed_explainability_tree_based_visual()
+        self.seed_explainability_attention_visual()
+        self.seed_explainability_gradients_visual()
+        self.seed_explainability_global_local_visual()
+        self.seed_explainability_counterfactual_visual()
+        self.seed_explainability_production_visual()
+        self.seed_explainability_faithfulness_visual()
+        self.seed_explainability_regulatory_visual()
 
         self.stdout.write(self.style.SUCCESS("Successfully seeded visual topics!"))
 
@@ -2711,6 +2803,21004 @@ class Command(BaseCommand):
     style Launch fill:#ADD8E6
     style Cores fill:#90EE90
     style Occ fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_merge_join_visual(self):
+        """Seed Pandas merge/join operations visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-merge-join",
+            defaults={
+                "title": "Pandas Merge/Join Operations",
+                "description": "Master the different types of joins in Pandas - inner, outer, left, and right joins with clear visual examples",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["pandas", "merge", "join", "dataframe", "data-manipulation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Our Example DataFrames",
+                        "explanation": "Let's work with two DataFrames that share a common column (`id`). The **left** DataFrame has employees, and the **right** DataFrame has departments. Notice that not all IDs exist in both tables - this is where join types matter!",
+                        "diagram_data": """graph TB
+    subgraph "Left DataFrame: employees"
+        L["| id | name    | salary |<br/>|----|---------|--------|<br/>| 1  | Alice   | 50000  |<br/>| 2  | Bob     | 60000  |<br/>| 3  | Charlie | 55000  |<br/>| 4  | Diana   | 70000  |"]
+    end
+
+    subgraph "Right DataFrame: departments"
+        R["| id | dept       |<br/>|----|------------|<br/>| 1  | Engineering|<br/>| 2  | Marketing  |<br/>| 5  | Sales      |<br/>| 6  | HR         |"]
+    end
+
+    subgraph "Matching Keys"
+        Match["IDs 1, 2: exist in BOTH<br/>IDs 3, 4: only in LEFT<br/>IDs 5, 6: only in RIGHT"]
+    end
+
+    L --> Match
+    R --> Match
+
+    style L fill:#ADD8E6
+    style R fill:#90EE90
+    style Match fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Inner Join - Intersection Only",
+                        "explanation": "**Inner join** keeps only rows where the key exists in **both** DataFrames. This is the most restrictive join type - you lose rows that don't have matches.\n\n```python\npd.merge(employees, departments, on='id', how='inner')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Left: employees"
+        L1["1 - Alice"]
+        L2["2 - Bob"]
+        L3["3 - Charlie"]
+        L4["4 - Diana"]
+    end
+
+    subgraph "Right: departments"
+        R1["1 - Engineering"]
+        R2["2 - Marketing"]
+        R5["5 - Sales"]
+        R6["6 - HR"]
+    end
+
+    subgraph "Inner Join Result"
+        Result["| id | name  | salary | dept        |<br/>|----|-------|--------|-------------|<br/>| 1  | Alice | 50000  | Engineering |<br/>| 2  | Bob   | 60000  | Marketing   |"]
+    end
+
+    L1 -->|"match"| R1
+    L2 -->|"match"| R2
+    L3 -.->|"no match"| X1["dropped"]
+    L4 -.->|"no match"| X2["dropped"]
+    R5 -.->|"no match"| X3["dropped"]
+    R6 -.->|"no match"| X4["dropped"]
+
+    R1 --> Result
+    R2 --> Result
+
+    style Result fill:#90EE90
+    style X1 fill:#FFB6C1
+    style X2 fill:#FFB6C1
+    style X3 fill:#FFB6C1
+    style X4 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Left Join - Keep All Left Rows",
+                        "explanation": "**Left join** keeps all rows from the left DataFrame. If there's no match in the right DataFrame, you get `NaN` values. Use this when you want to preserve all your original data.\n\n```python\npd.merge(employees, departments, on='id', how='left')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Left: employees - ALL KEPT"
+        L1["1 - Alice ✓"]
+        L2["2 - Bob ✓"]
+        L3["3 - Charlie ✓"]
+        L4["4 - Diana ✓"]
+    end
+
+    subgraph "Right: departments"
+        R1["1 - Engineering"]
+        R2["2 - Marketing"]
+        R5["5 - Sales"]
+        R6["6 - HR"]
+    end
+
+    subgraph "Left Join Result"
+        Result["| id | name    | salary | dept        |<br/>|----|---------|--------|-------------|<br/>| 1  | Alice   | 50000  | Engineering |<br/>| 2  | Bob     | 60000  | Marketing   |<br/>| 3  | Charlie | 55000  | NaN         |<br/>| 4  | Diana   | 70000  | NaN         |"]
+    end
+
+    L1 -->|"match"| R1
+    L2 -->|"match"| R2
+    L3 -->|"no match"| NaN1["NaN filled"]
+    L4 -->|"no match"| NaN2["NaN filled"]
+    R5 -.->|"not used"| X1["dropped"]
+    R6 -.->|"not used"| X2["dropped"]
+
+    style L1 fill:#90EE90
+    style L2 fill:#90EE90
+    style L3 fill:#90EE90
+    style L4 fill:#90EE90
+    style NaN1 fill:#FFFACD
+    style NaN2 fill:#FFFACD
+    style X1 fill:#FFB6C1
+    style X2 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Right Join - Keep All Right Rows",
+                        "explanation": "**Right join** keeps all rows from the right DataFrame. If there's no match in the left DataFrame, you get `NaN` values. This is the mirror of left join.\n\n```python\npd.merge(employees, departments, on='id', how='right')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Left: employees"
+        L1["1 - Alice"]
+        L2["2 - Bob"]
+        L3["3 - Charlie"]
+        L4["4 - Diana"]
+    end
+
+    subgraph "Right: departments - ALL KEPT"
+        R1["1 - Engineering ✓"]
+        R2["2 - Marketing ✓"]
+        R5["5 - Sales ✓"]
+        R6["6 - HR ✓"]
+    end
+
+    subgraph "Right Join Result"
+        Result["| id | name  | salary | dept        |<br/>|----|-------|--------|-------------|<br/>| 1  | Alice | 50000  | Engineering |<br/>| 2  | Bob   | 60000  | Marketing   |<br/>| 5  | NaN   | NaN    | Sales       |<br/>| 6  | NaN   | NaN    | HR          |"]
+    end
+
+    L1 -->|"match"| R1
+    L2 -->|"match"| R2
+    L3 -.->|"not used"| X1["dropped"]
+    L4 -.->|"not used"| X2["dropped"]
+    R5 -->|"no match"| NaN1["NaN filled"]
+    R6 -->|"no match"| NaN2["NaN filled"]
+
+    style R1 fill:#90EE90
+    style R2 fill:#90EE90
+    style R5 fill:#90EE90
+    style R6 fill:#90EE90
+    style NaN1 fill:#FFFACD
+    style NaN2 fill:#FFFACD
+    style X1 fill:#FFB6C1
+    style X2 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Outer Join - Keep Everything",
+                        "explanation": "**Outer join** (full outer join) keeps all rows from **both** DataFrames. Missing values are filled with `NaN`. This is the most inclusive join type.\n\n```python\npd.merge(employees, departments, on='id', how='outer')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Left: employees - ALL KEPT"
+        L1["1 - Alice ✓"]
+        L2["2 - Bob ✓"]
+        L3["3 - Charlie ✓"]
+        L4["4 - Diana ✓"]
+    end
+
+    subgraph "Right: departments - ALL KEPT"
+        R1["1 - Engineering ✓"]
+        R2["2 - Marketing ✓"]
+        R5["5 - Sales ✓"]
+        R6["6 - HR ✓"]
+    end
+
+    subgraph "Outer Join Result"
+        Result["| id | name    | salary | dept        |<br/>|----|---------|--------|-------------|<br/>| 1  | Alice   | 50000  | Engineering |<br/>| 2  | Bob     | 60000  | Marketing   |<br/>| 3  | Charlie | 55000  | NaN         |<br/>| 4  | Diana   | 70000  | NaN         |<br/>| 5  | NaN     | NaN    | Sales       |<br/>| 6  | NaN     | NaN    | HR          |"]
+    end
+
+    L1 --> Result
+    L2 --> Result
+    L3 --> Result
+    L4 --> Result
+    R5 --> Result
+    R6 --> Result
+
+    style L1 fill:#90EE90
+    style L2 fill:#90EE90
+    style L3 fill:#90EE90
+    style L4 fill:#90EE90
+    style R1 fill:#90EE90
+    style R2 fill:#90EE90
+    style R5 fill:#90EE90
+    style R6 fill:#90EE90
+    style Result fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Visual Summary of Join Types",
+                        "explanation": "Here's a Venn diagram view of all four join types. Think of the circles as the sets of keys in each DataFrame.",
+                        "diagram_data": """graph TB
+    subgraph "Inner Join"
+        I_L["Left"]
+        I_Int["Only<br/>Intersection"]
+        I_R["Right"]
+        I_L -.-> I_Int
+        I_Int <-.- I_R
+    end
+
+    subgraph "Left Join"
+        LJ_L["Left<br/>ALL"]
+        LJ_Int["Intersection"]
+        LJ_R["Right"]
+        LJ_L --> LJ_Int
+        LJ_Int <-.- LJ_R
+    end
+
+    subgraph "Right Join"
+        RJ_L["Left"]
+        RJ_Int["Intersection"]
+        RJ_R["Right<br/>ALL"]
+        RJ_L -.-> RJ_Int
+        RJ_Int <-- RJ_R
+    end
+
+    subgraph "Outer Join"
+        O_L["Left<br/>ALL"]
+        O_Int["Intersection"]
+        O_R["Right<br/>ALL"]
+        O_L --> O_Int
+        O_Int <-- O_R
+    end
+
+    style I_Int fill:#90EE90
+    style LJ_L fill:#ADD8E6
+    style LJ_Int fill:#90EE90
+    style RJ_R fill:#ADD8E6
+    style RJ_Int fill:#90EE90
+    style O_L fill:#ADD8E6
+    style O_Int fill:#90EE90
+    style O_R fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Merging on Different Column Names",
+                        "explanation": "What if the key columns have different names in each DataFrame? Use `left_on` and `right_on` parameters.\n\n```python\n# employees has 'emp_id', departments has 'dept_id'\npd.merge(employees, departments, \n         left_on='emp_id', right_on='dept_id')\n```",
+                        "diagram_data": """graph TB
+    subgraph "employees"
+        E["| emp_id | name  |<br/>|--------|-------|<br/>| 1      | Alice |<br/>| 2      | Bob   |"]
+    end
+
+    subgraph "departments"
+        D["| dept_id | dept       |<br/>|---------|------------|<br/>| 1       | Engineering|<br/>| 2       | Marketing  |"]
+    end
+
+    subgraph "Merge Code"
+        Code["pd.merge(employees, departments,<br/>         left_on='emp_id',<br/>         right_on='dept_id')"]
+    end
+
+    subgraph "Result"
+        R["| emp_id | name  | dept_id | dept        |<br/>|--------|-------|---------|-------------|<br/>| 1      | Alice | 1       | Engineering |<br/>| 2      | Bob   | 2       | Marketing   |"]
+    end
+
+    E --> Code
+    D --> Code
+    Code --> R
+
+    subgraph "Note"
+        Note["Both emp_id and dept_id columns<br/>are kept in the result!<br/>Drop one if redundant."]
+    end
+
+    style Code fill:#ADD8E6
+    style Note fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Multi-Column Joins",
+                        "explanation": "You can join on multiple columns when a single column isn't unique enough to identify rows.\n\n```python\n# Join on both year and month\npd.merge(sales, targets, on=['year', 'month'])\n```",
+                        "diagram_data": """graph TB
+    subgraph "sales"
+        S["| year | month | revenue |<br/>|------|-------|---------|<br/>| 2024 | Jan   | 10000   |<br/>| 2024 | Feb   | 12000   |<br/>| 2024 | Jan   | 8000    |"]
+    end
+
+    subgraph "targets"
+        T["| year | month | target |<br/>|------|-------|--------|<br/>| 2024 | Jan   | 9000   |<br/>| 2024 | Feb   | 11000  |"]
+    end
+
+    subgraph "Multi-Column Join"
+        Join["pd.merge(sales, targets,<br/>         on=['year', 'month'])"]
+    end
+
+    subgraph "Result"
+        R["| year | month | revenue | target |<br/>|------|-------|---------|--------|<br/>| 2024 | Jan   | 10000   | 9000   |<br/>| 2024 | Feb   | 12000   | 11000  |<br/>| 2024 | Jan   | 8000    | 9000   |"]
+    end
+
+    S --> Join
+    T --> Join
+    Join --> R
+
+    style Join fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "join() vs merge()",
+                        "explanation": "Pandas has two ways to combine DataFrames:\n\n- **merge()**: SQL-style joins, works on columns\n- **join()**: Joins on index by default, more convenient for index-based operations",
+                        "diagram_data": """graph TB
+    subgraph "merge() - Column-based"
+        M1["pd.merge(df1, df2, on='key')"]
+        M2["• Joins on column values<br/>• More flexible<br/>• Explicit join column"]
+    end
+
+    subgraph "join() - Index-based"
+        J1["df1.join(df2)"]
+        J2["• Joins on index by default<br/>• Cleaner syntax<br/>• Good for time series"]
+    end
+
+    subgraph "Equivalents"
+        Eq1["df1.join(df2)"]
+        Eq2["pd.merge(df1, df2,<br/>         left_index=True,<br/>         right_index=True)"]
+        Eq1 <-->|"same as"| Eq2
+    end
+
+    subgraph "When to Use"
+        Use1["merge(): Most data operations"]
+        Use2["join(): Index-aligned data,<br/>time series"]
+    end
+
+    style M1 fill:#ADD8E6
+    style J1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Handling Duplicate Column Names",
+                        "explanation": "When both DataFrames have columns with the same name (besides the join key), Pandas adds suffixes to distinguish them.\n\n```python\npd.merge(df1, df2, on='id', suffixes=('_left', '_right'))\n```",
+                        "diagram_data": """graph TB
+    subgraph "df1"
+        D1["| id | value |<br/>|----|-------|<br/>| 1  | 100   |<br/>| 2  | 200   |"]
+    end
+
+    subgraph "df2"
+        D2["| id | value |<br/>|----|-------|<br/>| 1  | 'A'   |<br/>| 2  | 'B'   |"]
+    end
+
+    subgraph "Default Behavior"
+        Def["pd.merge(df1, df2, on='id')"]
+        DefR["| id | value_x | value_y |<br/>|----|---------|---------|<br/>| 1  | 100     | 'A'     |<br/>| 2  | 200     | 'B'     |"]
+    end
+
+    subgraph "Custom Suffixes"
+        Cust["pd.merge(df1, df2, on='id',<br/>         suffixes=('_num', '_str'))"]
+        CustR["| id | value_num | value_str |<br/>|----|-----------|-----------|<br/>| 1  | 100       | 'A'       |<br/>| 2  | 200       | 'B'       |"]
+    end
+
+    D1 --> Def
+    D2 --> Def
+    Def --> DefR
+
+    D1 --> Cust
+    D2 --> Cust
+    Cust --> CustR
+
+    style Def fill:#FFFACD
+    style Cust fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Indicator Column",
+                        "explanation": "The `indicator` parameter adds a column showing where each row came from. Useful for debugging joins and finding unmatched rows.\n\n```python\npd.merge(df1, df2, how='outer', indicator=True)\n```",
+                        "diagram_data": """graph TB
+    subgraph "df1"
+        D1["| id | val1 |<br/>|----|------|<br/>| 1  | A    |<br/>| 2  | B    |"]
+    end
+
+    subgraph "df2"
+        D2["| id | val2 |<br/>|----|------|<br/>| 2  | X    |<br/>| 3  | Y    |"]
+    end
+
+    subgraph "Outer Join with Indicator"
+        Code["pd.merge(df1, df2, on='id',<br/>         how='outer',<br/>         indicator=True)"]
+    end
+
+    subgraph "Result"
+        R["| id | val1 | val2 | _merge     |<br/>|----|------|------|------------|<br/>| 1  | A    | NaN  | left_only  |<br/>| 2  | B    | X    | both       |<br/>| 3  | NaN  | Y    | right_only |"]
+    end
+
+    D1 --> Code
+    D2 --> Code
+    Code --> R
+
+    subgraph "Use Cases"
+        U1["Find unmatched: df[df['_merge'] == 'left_only']"]
+        U2["Find matched: df[df['_merge'] == 'both']"]
+    end
+
+    style Code fill:#ADD8E6
+    style U1 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "One-to-Many and Many-to-Many",
+                        "explanation": "Joins can create more rows than either input DataFrame when there are duplicate keys. Understanding this prevents unexpected row multiplication.",
+                        "diagram_data": """graph TB
+    subgraph "One-to-One"
+        O1["Each key appears once in both"]
+        O1R["Result: same row count"]
+    end
+
+    subgraph "One-to-Many"
+        OM["| id | name |     | id | item |<br/>|----|------|     |----|------|<br/>| 1  | Alice|     | 1  | Apple|<br/>| 2  | Bob  |     | 1  | Banana|"]
+        OMR["Result:<br/>| 1 | Alice | Apple  |<br/>| 1 | Alice | Banana |<br/>| 2 | Bob   | NaN    |"]
+    end
+
+    subgraph "Many-to-Many ⚠️"
+        MM["| id | A |     | id | B |<br/>|----|---|     |----|---|<br/>| 1  | x |     | 1  | p |<br/>| 1  | y |     | 1  | q |"]
+        MMR["Result: 2 × 2 = 4 rows!<br/>| 1 | x | p |<br/>| 1 | x | q |<br/>| 1 | y | p |<br/>| 1 | y | q |"]
+    end
+
+    subgraph "Validate Parameter"
+        Val["pd.merge(..., validate='one_to_one')<br/>Raises error if assumption violated!"]
+    end
+
+    O1 --> O1R
+    OM --> OMR
+    MM --> MMR
+
+    style MMR fill:#FFB6C1
+    style Val fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "concat() vs merge()",
+                        "explanation": "**concat()** stacks DataFrames (rows or columns), while **merge()** combines based on key values. They serve different purposes.",
+                        "diagram_data": """graph TB
+    subgraph "concat() - Stacking"
+        C1["pd.concat([df1, df2])"]
+        C2["Stacks rows vertically<br/>(or columns horizontally with axis=1)"]
+        C3["| A | B |<br/>| 1 | 2 |<br/>| 3 | 4 |<br/>| 5 | 6 |<br/>| 7 | 8 |"]
+    end
+
+    subgraph "merge() - Joining"
+        M1["pd.merge(df1, df2, on='key')"]
+        M2["Combines based on<br/>matching key values"]
+        M3["| key | A | B |<br/>| x   | 1 | 5 |<br/>| y   | 2 | 6 |"]
+    end
+
+    subgraph "When to Use"
+        When1["concat(): Same columns,<br/>different rows (append data)"]
+        When2["merge(): Different columns,<br/>shared keys (combine info)"]
+    end
+
+    C1 --> C2 --> C3
+    M1 --> M2 --> M3
+
+    style C1 fill:#ADD8E6
+    style M1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "Quick Reference",
+                        "explanation": "Here's a summary of the most common merge operations you'll use.",
+                        "diagram_data": """graph TB
+    subgraph "Most Common Operations"
+        Op1["Inner Join<br/>pd.merge(df1, df2, on='key')"]
+        Op2["Left Join<br/>pd.merge(df1, df2, on='key', how='left')"]
+        Op3["Multi-key Join<br/>pd.merge(df1, df2, on=['k1', 'k2'])"]
+        Op4["Different Key Names<br/>pd.merge(df1, df2, left_on='a', right_on='b')"]
+    end
+
+    subgraph "Tips"
+        T1["Always check row count after merge"]
+        T2["Use indicator=True to debug"]
+        T3["Use validate= to catch errors"]
+        T4["Consider sort=False for performance"]
+    end
+
+    subgraph "Common Pitfalls"
+        P1["Unexpected row multiplication<br/>→ Check for duplicate keys"]
+        P2["Missing data after merge<br/>→ Check join type, key values"]
+        P3["Wrong results<br/>→ Verify on= column is correct"]
+    end
+
+    style Op1 fill:#90EE90
+    style Op2 fill:#ADD8E6
+    style T1 fill:#FFFACD
+    style P1 fill:#FFB6C1""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_pivot_melt_visual(self):
+        """Seed Pandas pivot and melt operations visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-pivot-melt",
+            defaults={
+                "title": "Pandas Pivot and Melt: Reshaping Data",
+                "description": "Learn to reshape DataFrames between wide and long formats using pivot, pivot_table, melt, and stack/unstack",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "pivot", "melt", "reshape", "wide-format", "long-format"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Wide vs Long Format",
+                        "explanation": "Data can be stored in two main formats:\n\n- **Wide format**: Each variable gets its own column\n- **Long format**: Variables are stacked in rows with a 'variable' and 'value' column\n\n**Pivot** transforms long → wide.\n**Melt** transforms wide → long.",
+                        "diagram_data": """graph LR
+    subgraph "Wide Format"
+        W["| name  | math | science |<br/>|-------|------|---------|<br/>| Alice | 90   | 85      |<br/>| Bob   | 80   | 95      |"]
+    end
+
+    subgraph "Long Format"
+        L["| name  | subject | score |<br/>|-------|---------|-------|<br/>| Alice | math    | 90    |<br/>| Alice | science | 85    |<br/>| Bob   | math    | 80    |<br/>| Bob   | science | 95    |"]
+    end
+
+    W -->|"melt()"| L
+    L -->|"pivot()"| W
+
+    style W fill:#ADD8E6
+    style L fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "When to Use Each Format",
+                        "explanation": "Different formats are better for different operations:\n\n- **Wide**: Easier for humans to read, good for correlation analysis\n- **Long**: Better for plotting (seaborn/plotly), groupby operations, and tidy data principles",
+                        "diagram_data": """graph TB
+    subgraph "Wide Format Best For"
+        W1["Human readability"]
+        W2["Correlation between columns"]
+        W3["Matrix operations"]
+        W4["Spreadsheet-like display"]
+    end
+
+    subgraph "Long Format Best For"
+        L1["Seaborn/plotly plotting"]
+        L2["GroupBy operations"]
+        L3["Tidy data principles"]
+        L4["Database storage"]
+    end
+
+    subgraph "Example: Plotting"
+        Plot["# Long format makes this easy:<br/>sns.barplot(data=long_df,<br/>            x='subject',<br/>            y='score',<br/>            hue='name')"]
+    end
+
+    style W1 fill:#ADD8E6
+    style L1 fill:#90EE90
+    style Plot fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "melt() - Wide to Long",
+                        "explanation": "**melt()** unpivots a DataFrame from wide to long format. Key parameters:\n\n- `id_vars`: Columns to keep as identifiers\n- `value_vars`: Columns to unpivot (default: all others)\n- `var_name`: Name for the variable column\n- `value_name`: Name for the value column",
+                        "diagram_data": """graph TB
+    subgraph "Wide DataFrame"
+        Wide["| name  | math | science |<br/>|-------|------|---------|<br/>| Alice | 90   | 85      |<br/>| Bob   | 80   | 95      |"]
+    end
+
+    subgraph "melt() Code"
+        Code["df.melt(<br/>    id_vars=['name'],<br/>    value_vars=['math', 'science'],<br/>    var_name='subject',<br/>    value_name='score'<br/>)"]
+    end
+
+    subgraph "Long Result"
+        Long["| name  | subject | score |<br/>|-------|---------|-------|<br/>| Alice | math    | 90    |<br/>| Bob   | math    | 80    |<br/>| Alice | science | 85    |<br/>| Bob   | science | 95    |"]
+    end
+
+    subgraph "What Happened"
+        Exp["• 'name' stayed as identifier<br/>• 'math' & 'science' columns melted<br/>• Column names → 'subject'<br/>• Values → 'score'"]
+    end
+
+    Wide --> Code --> Long
+
+    style Code fill:#90EE90
+    style Exp fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "melt() Visual Breakdown",
+                        "explanation": "Let's visualize exactly how melt transforms each cell in the wide DataFrame to rows in the long DataFrame.",
+                        "diagram_data": """graph TB
+    subgraph "Original Wide DataFrame"
+        H1["name"]
+        H2["math"]
+        H3["science"]
+        R1C1["Alice"]
+        R1C2["90"]
+        R1C3["85"]
+        R2C1["Bob"]
+        R2C2["80"]
+        R2C3["95"]
+    end
+
+    subgraph "After melt()"
+        LH1["name"]
+        LH2["subject"]
+        LH3["score"]
+        LR1["Alice | math    | 90"]
+        LR2["Alice | science | 85"]
+        LR3["Bob   | math    | 80"]
+        LR4["Bob   | science | 95"]
+    end
+
+    R1C1 --> LR1
+    R1C1 --> LR2
+    R2C1 --> LR3
+    R2C1 --> LR4
+
+    H2 -.->|"becomes"| LR1
+    H3 -.->|"becomes"| LR2
+
+    R1C2 -->|"value"| LR1
+    R1C3 -->|"value"| LR2
+    R2C2 -->|"value"| LR3
+    R2C3 -->|"value"| LR4
+
+    style R1C1 fill:#ADD8E6
+    style R2C1 fill:#ADD8E6
+    style H2 fill:#90EE90
+    style H3 fill:#90EE90
+    style R1C2 fill:#FFFACD
+    style R1C3 fill:#FFFACD
+    style R2C2 fill:#FFFACD
+    style R2C3 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "pivot() - Long to Wide",
+                        "explanation": "**pivot()** transforms long format back to wide format. Key parameters:\n\n- `index`: Column(s) to use as row index\n- `columns`: Column whose unique values become columns\n- `values`: Column containing the values\n\n⚠️ **pivot() fails if there are duplicate entries** for the same index/column combination.",
+                        "diagram_data": """graph TB
+    subgraph "Long DataFrame"
+        Long["| name  | subject | score |<br/>|-------|---------|-------|<br/>| Alice | math    | 90    |<br/>| Alice | science | 85    |<br/>| Bob   | math    | 80    |<br/>| Bob   | science | 95    |"]
+    end
+
+    subgraph "pivot() Code"
+        Code["df.pivot(<br/>    index='name',<br/>    columns='subject',<br/>    values='score'<br/>)"]
+    end
+
+    subgraph "Wide Result"
+        Wide["subject| math | science |<br/>name   |------|---------|<br/>Alice  | 90   | 85      |<br/>Bob    | 80   | 95      |"]
+    end
+
+    subgraph "What Happened"
+        Exp["• 'name' → row index<br/>• 'subject' values → columns<br/>• 'score' → cell values"]
+    end
+
+    Long --> Code --> Wide
+
+    style Code fill:#90EE90
+    style Exp fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "pivot_table() - Pivot with Aggregation",
+                        "explanation": "**pivot_table()** is like pivot(), but handles duplicates by aggregating them. This is the safer choice for most use cases.\n\n```python\ndf.pivot_table(index='name', columns='subject', \n               values='score', aggfunc='mean')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Data with Duplicates"
+        Dup["| name  | subject | score |<br/>|-------|---------|-------|<br/>| Alice | math    | 90    |<br/>| Alice | math    | 85    |<br/>| Bob   | math    | 80    |"]
+    end
+
+    subgraph "pivot() - FAILS!"
+        Fail["df.pivot(index='name',<br/>         columns='subject',<br/>         values='score')"]
+        Err["ValueError: Index contains<br/>duplicate entries!"]
+    end
+
+    subgraph "pivot_table() - WORKS!"
+        PT["df.pivot_table(<br/>    index='name',<br/>    columns='subject',<br/>    values='score',<br/>    aggfunc='mean'<br/>)"]
+        Result["| subject | math |<br/>| name    |------|<br/>| Alice   | 87.5 |<br/>| Bob     | 80   |"]
+    end
+
+    Dup --> Fail --> Err
+    Dup --> PT --> Result
+
+    style Err fill:#FFB6C1
+    style PT fill:#90EE90
+    style Result fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "pivot_table() Aggregation Functions",
+                        "explanation": "**pivot_table()** supports multiple aggregation functions. You can use built-in functions or custom ones.",
+                        "diagram_data": """graph TB
+    subgraph "Common aggfunc Values"
+        A1["'mean' - Average (default)"]
+        A2["'sum' - Total"]
+        A3["'count' - Number of values"]
+        A4["'min' / 'max' - Extremes"]
+        A5["'first' / 'last' - First/last value"]
+    end
+
+    subgraph "Multiple Aggregations"
+        Multi["df.pivot_table(<br/>    index='name',<br/>    columns='subject',<br/>    values='score',<br/>    aggfunc=['mean', 'count']<br/>)"]
+        MultiR["Returns MultiIndex columns:<br/>        | mean        | count       |<br/>        | math | sci  | math | sci  |"]
+    end
+
+    subgraph "Custom Function"
+        Custom["df.pivot_table(<br/>    ...,<br/>    aggfunc=lambda x: x.max() - x.min()<br/>)"]
+    end
+
+    A1 --> Multi
+    Multi --> MultiR
+
+    style A1 fill:#90EE90
+    style Multi fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Margins in pivot_table()",
+                        "explanation": "The `margins=True` parameter adds row and column totals (or other aggregations) to the pivot table - similar to subtotals in Excel.",
+                        "diagram_data": """graph TB
+    subgraph "pivot_table with margins"
+        Code["df.pivot_table(<br/>    index='name',<br/>    columns='subject',<br/>    values='score',<br/>    aggfunc='sum',<br/>    margins=True,<br/>    margins_name='Total'<br/>)"]
+    end
+
+    subgraph "Result"
+        R["subject| math | sci | Total |<br/>name   |------|-----|-------|<br/>Alice  | 90   | 85  | 175   |<br/>Bob    | 80   | 95  | 175   |<br/>Total  | 170  | 180 | 350   |"]
+    end
+
+    subgraph "Use Cases"
+        U1["Summary reports"]
+        U2["Data validation"]
+        U3["Excel-like views"]
+    end
+
+    Code --> R
+
+    style Code fill:#90EE90
+    style R fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "stack() and unstack()",
+                        "explanation": "**stack()** and **unstack()** work with the index:\n\n- **stack()**: Pivots columns → index levels (makes data longer)\n- **unstack()**: Pivots index levels → columns (makes data wider)\n\nThese are useful when working with MultiIndex DataFrames.",
+                        "diagram_data": """graph TB
+    subgraph "Wide DataFrame"
+        W["       | math | science |<br/>name   |------|---------|<br/>Alice  | 90   | 85      |<br/>Bob    | 80   | 95      |"]
+    end
+
+    subgraph "stack()"
+        Stack["df.stack()"]
+        Stacked["name   subject<br/>Alice  math       90<br/>       science    85<br/>Bob    math       80<br/>       science    95<br/><br/>→ Returns a Series with<br/>   MultiIndex"]
+    end
+
+    subgraph "unstack()"
+        Unstack["series.unstack()"]
+        Unstacked["Back to original<br/>wide format"]
+    end
+
+    W --> Stack --> Stacked
+    Stacked --> Unstack --> Unstacked
+
+    style Stack fill:#90EE90
+    style Unstack fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "stack() vs melt()",
+                        "explanation": "Both transform wide to long, but they differ:\n\n- **melt()**: Works on column values, creates DataFrame\n- **stack()**: Works on column labels → index, creates Series (or DataFrame with MultiIndex)",
+                        "diagram_data": """graph TB
+    subgraph "melt()"
+        M1["• Works on DataFrames"]
+        M2["• Returns DataFrame"]
+        M3["• Column names → new column"]
+        M4["• More intuitive for reshaping"]
+    end
+
+    subgraph "stack()"
+        S1["• Works on columns → index"]
+        S2["• Returns Series (usually)"]
+        S3["• Creates MultiIndex"]
+        S4["• Better for hierarchical data"]
+    end
+
+    subgraph "When to Use"
+        When1["melt(): General reshaping<br/>Long format for plotting"]
+        When2["stack(): Working with<br/>MultiIndex DataFrames"]
+    end
+
+    style M1 fill:#ADD8E6
+    style S1 fill:#90EE90
+    style When1 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Real-World Example: Sales Data",
+                        "explanation": "Let's see a complete example transforming sales data between formats.",
+                        "diagram_data": """graph TB
+    subgraph "Original: Wide Format"
+        Wide["| store | Q1_sales | Q2_sales | Q3_sales |<br/>|-------|----------|----------|----------|<br/>| NYC   | 100      | 120      | 150      |<br/>| LA    | 90       | 110      | 140      |"]
+    end
+
+    subgraph "Step 1: melt()"
+        Melt["df.melt(<br/>    id_vars=['store'],<br/>    var_name='quarter',<br/>    value_name='sales'<br/>)"]
+    end
+
+    subgraph "Long Format"
+        Long["| store | quarter  | sales |<br/>|-------|----------|-------|<br/>| NYC   | Q1_sales | 100   |<br/>| NYC   | Q2_sales | 120   |<br/>| NYC   | Q3_sales | 150   |<br/>| LA    | Q1_sales | 90    |<br/>| ...   | ...      | ...   |"]
+    end
+
+    subgraph "Now Easy to Plot!"
+        Plot["sns.lineplot(<br/>    data=long_df,<br/>    x='quarter',<br/>    y='sales',<br/>    hue='store'<br/>)"]
+    end
+
+    Wide --> Melt --> Long --> Plot
+
+    style Melt fill:#90EE90
+    style Plot fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "Cleaning After melt()",
+                        "explanation": "After melting, you often need to clean the variable column. Here's a common pattern.",
+                        "diagram_data": """graph TB
+    subgraph "After melt"
+        After["| store | quarter  | sales |<br/>|-------|----------|-------|<br/>| NYC   | Q1_sales | 100   |<br/>| NYC   | Q2_sales | 120   |"]
+    end
+
+    subgraph "Clean the quarter column"
+        Clean["# Remove '_sales' suffix<br/>df['quarter'] = df['quarter'].str.replace('_sales', '')<br/><br/># Or extract just Q1, Q2, etc.<br/>df['quarter'] = df['quarter'].str.extract(r'(Q\\d)')"]
+    end
+
+    subgraph "Result"
+        Result["| store | quarter | sales |<br/>|-------|---------|-------|<br/>| NYC   | Q1      | 100   |<br/>| NYC   | Q2      | 120   |"]
+    end
+
+    After --> Clean --> Result
+
+    style Clean fill:#FFFACD
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Quick Reference",
+                        "explanation": "Here's a summary of the key reshaping operations in Pandas.",
+                        "diagram_data": """graph TB
+    subgraph "Wide → Long"
+        WL1["melt()<br/>General purpose"]
+        WL2["stack()<br/>Columns to MultiIndex"]
+    end
+
+    subgraph "Long → Wide"
+        LW1["pivot()<br/>No duplicates allowed"]
+        LW2["pivot_table()<br/>Aggregates duplicates"]
+        LW3["unstack()<br/>MultiIndex to columns"]
+    end
+
+    subgraph "Key Parameters"
+        P1["melt: id_vars, value_vars,<br/>var_name, value_name"]
+        P2["pivot: index, columns, values"]
+        P3["pivot_table: + aggfunc, margins"]
+    end
+
+    subgraph "Common Pattern"
+        CP["Wide data → melt() → plot<br/>Long data → pivot_table() → report"]
+    end
+
+    style WL1 fill:#90EE90
+    style LW2 fill:#ADD8E6
+    style CP fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_loc_iloc_visual(self):
+        """Seed Pandas loc vs iloc indexing visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-loc-iloc",
+            defaults={
+                "title": "Pandas loc vs iloc: Indexing Deep Dive",
+                "description": "Master label-based (loc) and position-based (iloc) indexing in Pandas with clear visual examples",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 10,
+                "tags": ["pandas", "loc", "iloc", "indexing", "selection", "dataframe"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Two Types of Indexing",
+                        "explanation": "Pandas provides two main indexing methods:\n\n- **loc**: Uses **labels** (row/column names)\n- **iloc**: Uses **integer positions** (0, 1, 2, ...)\n\nThe 'i' in iloc stands for 'integer' - that's the key difference!",
+                        "diagram_data": """graph TB
+    subgraph "loc - Label Based"
+        Loc["df.loc['Alice', 'age']<br/>Uses actual names/labels"]
+        LocEx["✓ df.loc['Alice']<br/>✓ df.loc['A':'C']<br/>✓ df.loc[True, False, True]"]
+    end
+
+    subgraph "iloc - Integer Position"
+        Iloc["df.iloc[0, 1]<br/>Uses 0-based positions"]
+        IlocEx["✓ df.iloc[0]<br/>✓ df.iloc[0:3]<br/>✗ df.iloc['Alice']"]
+    end
+
+    subgraph "Key Difference"
+        Diff["loc: endpoints INCLUDED<br/>iloc: endpoints EXCLUDED<br/><br/>loc['A':'C'] → A, B, C<br/>iloc[0:3] → 0, 1, 2"]
+    end
+
+    style Loc fill:#ADD8E6
+    style Iloc fill:#90EE90
+    style Diff fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Our Example DataFrame",
+                        "explanation": "We'll use this DataFrame throughout. Notice the index uses names (strings), not the default 0, 1, 2 integers.",
+                        "diagram_data": """graph TB
+    subgraph "DataFrame: df"
+        DF["          | age | city     | salary |<br/>----------|-----|----------|--------|<br/>Alice     | 25  | New York | 70000  |<br/>Bob       | 30  | Chicago  | 80000  |<br/>Charlie   | 35  | Boston   | 90000  |<br/>Diana     | 28  | Seattle  | 75000  |"]
+    end
+
+    subgraph "Index & Columns"
+        Idx["Index (row labels):<br/>['Alice', 'Bob', 'Charlie', 'Diana']"]
+        Cols["Columns:<br/>['age', 'city', 'salary']"]
+    end
+
+    subgraph "Positions"
+        Pos["Position 0 → Alice<br/>Position 1 → Bob<br/>Position 2 → Charlie<br/>Position 3 → Diana"]
+    end
+
+    DF --> Idx
+    DF --> Cols
+    DF --> Pos
+
+    style DF fill:#E6E6FA
+    style Idx fill:#ADD8E6
+    style Pos fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Selecting a Single Row",
+                        "explanation": "Both loc and iloc can select a single row, but use different identifiers.",
+                        "diagram_data": """graph TB
+    subgraph "Using loc - by label"
+        LocCode["df.loc['Bob']"]
+        LocResult["age       30<br/>city      Chicago<br/>salary    80000<br/>Name: Bob, dtype: object"]
+    end
+
+    subgraph "Using iloc - by position"
+        IlocCode["df.iloc[1]"]
+        IlocResult["age       30<br/>city      Chicago<br/>salary    80000<br/>Name: Bob, dtype: object"]
+    end
+
+    subgraph "Same Result!"
+        Same["Both return the row for Bob<br/>(position 1, label 'Bob')"]
+    end
+
+    LocCode --> LocResult
+    IlocCode --> IlocResult
+
+    style LocCode fill:#ADD8E6
+    style IlocCode fill:#90EE90
+    style Same fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Selecting a Single Cell",
+                        "explanation": "Access a specific cell by specifying both row and column.",
+                        "diagram_data": """graph TB
+    subgraph "loc: [row_label, column_label]"
+        LocCode["df.loc['Charlie', 'salary']"]
+        LocR["90000"]
+    end
+
+    subgraph "iloc: [row_position, column_position]"
+        IlocCode["df.iloc[2, 2]"]
+        IlocR["90000"]
+    end
+
+    subgraph "Visual"
+        Grid["          | age | city   | salary |<br/>          | [0] | [1]    | [2]    |<br/>----------|-----|--------|--------|<br/>Alice [0] | 25  | NY     | 70000  |<br/>Bob   [1] | 30  | CHI    | 80000  |<br/>Charlie[2]| 35  | BOS    |→90000←|<br/>Diana [3] | 28  | SEA    | 75000  |"]
+    end
+
+    LocCode --> LocR
+    IlocCode --> IlocR
+
+    style LocCode fill:#ADD8E6
+    style IlocCode fill:#90EE90
+    style Grid fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Slicing Rows - The Big Difference!",
+                        "explanation": "⚠️ **Critical difference**: loc includes the end point, iloc excludes it (like Python lists).\n\n```python\ndf.loc['Alice':'Charlie']  # Alice, Bob, Charlie (3 rows)\ndf.iloc[0:3]               # positions 0, 1, 2 (3 rows)\n```",
+                        "diagram_data": """graph TB
+    subgraph "loc slice - INCLUSIVE"
+        LocCode["df.loc['Alice':'Charlie']"]
+        LocR["Alice   ✓<br/>Bob     ✓<br/>Charlie ✓<br/>Diana   ✗"]
+        LocNote["'Charlie' is INCLUDED"]
+    end
+
+    subgraph "iloc slice - EXCLUSIVE"
+        IlocCode["df.iloc[0:3]"]
+        IlocR["Alice   ✓ (pos 0)<br/>Bob     ✓ (pos 1)<br/>Charlie ✓ (pos 2)<br/>Diana   ✗ (pos 3)"]
+        IlocNote["Position 3 is EXCLUDED"]
+    end
+
+    subgraph "Both return same rows, different syntax!"
+        Same["loc: start:end → includes end<br/>iloc: start:end → excludes end"]
+    end
+
+    LocCode --> LocR
+    IlocCode --> IlocR
+
+    style LocNote fill:#ADD8E6
+    style IlocNote fill:#90EE90
+    style Same fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Selecting Multiple Rows",
+                        "explanation": "Use a list to select specific (non-contiguous) rows.",
+                        "diagram_data": """graph TB
+    subgraph "loc with list of labels"
+        LocCode["df.loc[['Alice', 'Diana']]"]
+        LocR["          | age | city     | salary |<br/>----------|-----|----------|--------|<br/>Alice     | 25  | New York | 70000  |<br/>Diana     | 28  | Seattle  | 75000  |"]
+    end
+
+    subgraph "iloc with list of positions"
+        IlocCode["df.iloc[[0, 3]]"]
+        IlocR["Same result!<br/>Positions 0 and 3"]
+    end
+
+    subgraph "Note"
+        Note["[[double brackets]] = list of indices<br/>Returns a DataFrame<br/><br/>vs<br/><br/>['single'] = one index<br/>Returns a Series (for rows)"]
+    end
+
+    LocCode --> LocR
+    IlocCode --> IlocR
+
+    style LocCode fill:#ADD8E6
+    style IlocCode fill:#90EE90
+    style Note fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Selecting Columns",
+                        "explanation": "Select specific columns using the second position in loc/iloc.\n\n```python\ndf.loc[:, 'age']           # All rows, 'age' column\ndf.iloc[:, 0]              # All rows, first column\n```",
+                        "diagram_data": """graph TB
+    subgraph "loc: select columns by name"
+        LocCode1["df.loc[:, 'age']"]
+        LocCode2["df.loc[:, ['age', 'salary']]"]
+        LocR["The : means 'all rows'"]
+    end
+
+    subgraph "iloc: select columns by position"
+        IlocCode1["df.iloc[:, 0]"]
+        IlocCode2["df.iloc[:, [0, 2]]"]
+        IlocR["Column positions:<br/>0=age, 1=city, 2=salary"]
+    end
+
+    subgraph "Visual"
+        Grid["          | age | city   | salary |<br/>          |  ↓  |        |   ↓    |<br/>----------|-----|--------|--------|<br/>Alice     | 25  | ...    | 70000  |<br/>Bob       | 30  | ...    | 80000  |<br/>Charlie   | 35  | ...    | 90000  |<br/>Diana     | 28  | ...    | 75000  |<br/><br/>df.loc[:, ['age', 'salary']]"]
+    end
+
+    style LocCode1 fill:#ADD8E6
+    style IlocCode1 fill:#90EE90
+    style Grid fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Row and Column Selection Together",
+                        "explanation": "Select a subset of both rows and columns in one operation.",
+                        "diagram_data": """graph TB
+    subgraph "loc: rows and columns by label"
+        LocCode["df.loc['Bob':'Diana', 'age':'city']"]
+        LocR["       | age | city    |<br/>-------|-----|---------|<br/>Bob    | 30  | Chicago |<br/>Charlie| 35  | Boston  |<br/>Diana  | 28  | Seattle |"]
+    end
+
+    subgraph "iloc: rows and columns by position"
+        IlocCode["df.iloc[1:4, 0:2]"]
+        IlocR["Same result!<br/>Rows 1-3, Cols 0-1"]
+    end
+
+    subgraph "Pattern"
+        Pattern["df.loc[row_selection, col_selection]<br/>df.iloc[row_selection, col_selection]"]
+    end
+
+    LocCode --> LocR
+    IlocCode --> IlocR
+
+    style LocCode fill:#ADD8E6
+    style IlocCode fill:#90EE90
+    style Pattern fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Boolean Indexing with loc",
+                        "explanation": "**loc** supports boolean arrays/Series for filtering. This is one of the most powerful features!\n\n```python\ndf.loc[df['age'] > 28]      # All rows where age > 28\n```",
+                        "diagram_data": """graph TB
+    subgraph "Boolean condition"
+        Cond["df['age'] > 28"]
+        Bool["Alice     False<br/>Bob       True<br/>Charlie   True<br/>Diana     False"]
+    end
+
+    subgraph "Using with loc"
+        LocCode["df.loc[df['age'] > 28]"]
+        LocR["       | age | city    | salary |<br/>-------|-----|---------|--------|<br/>Bob    | 30  | Chicago | 80000  |<br/>Charlie| 35  | Boston  | 90000  |"]
+    end
+
+    subgraph "Combine with column selection"
+        Combo["df.loc[df['age'] > 28, 'salary']"]
+        ComboR["Bob        80000<br/>Charlie    90000"]
+    end
+
+    Cond --> Bool --> LocCode --> LocR
+
+    style Cond fill:#ADD8E6
+    style Bool fill:#FFFACD
+    style Combo fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Setting Values",
+                        "explanation": "Both loc and iloc can be used to modify values in place. This is safer than chained indexing!",
+                        "diagram_data": """graph TB
+    subgraph "Setting a single value"
+        Set1["df.loc['Alice', 'age'] = 26"]
+        Set2["df.iloc[0, 0] = 26"]
+    end
+
+    subgraph "Setting multiple values"
+        SetM["# Set all salaries for age > 30<br/>df.loc[df['age'] > 30, 'salary'] = 100000"]
+    end
+
+    subgraph "⚠️ Avoid Chained Indexing"
+        Bad["# DON'T DO THIS<br/>df[df['age'] > 30]['salary'] = 100000<br/><br/>This might not work!<br/>SettingWithCopyWarning"]
+        Good["# DO THIS<br/>df.loc[df['age'] > 30, 'salary'] = 100000<br/><br/>Always works correctly"]
+    end
+
+    style Bad fill:#FFB6C1
+    style Good fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "When Index is Integers",
+                        "explanation": "⚠️ **Confusion alert**: When your index is integers, loc and iloc behave differently!\n\n```python\ndf.loc[1]   # Row with LABEL 1\ndf.iloc[1]  # Row at POSITION 1\n```",
+                        "diagram_data": """graph TB
+    subgraph "Integer Index DataFrame"
+        DF["    | age | city    |<br/>----|-----|---------|<br/>10  | 25  | NYC     |<br/>20  | 30  | Chicago |<br/>30  | 35  | Boston  |"]
+    end
+
+    subgraph "loc uses labels"
+        Loc["df.loc[20]"]
+        LocR["Row with label 20<br/>age=30, city=Chicago"]
+    end
+
+    subgraph "iloc uses positions"
+        Iloc["df.iloc[1]"]
+        IlocR["Row at position 1<br/>(same row, but different syntax)"]
+    end
+
+    subgraph "⚠️ The Trap"
+        Trap["df.loc[1] → KeyError!<br/>(no label '1')<br/><br/>df.iloc[10] → IndexError!<br/>(only 3 positions)"]
+    end
+
+    DF --> Loc --> LocR
+    DF --> Iloc --> IlocR
+
+    style Trap fill:#FFB6C1
+    style Loc fill:#ADD8E6
+    style Iloc fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "at and iat - Fast Scalar Access",
+                        "explanation": "For accessing a **single value**, `at` and `iat` are faster than loc/iloc.\n\n- **at**: Like loc, uses labels\n- **iat**: Like iloc, uses integer positions",
+                        "diagram_data": """graph TB
+    subgraph "at - label based"
+        At["df.at['Alice', 'age']"]
+        AtR["25"]
+    end
+
+    subgraph "iat - position based"
+        Iat["df.iat[0, 0]"]
+        IatR["25"]
+    end
+
+    subgraph "When to Use"
+        When["at/iat: Single value (faster)<br/>loc/iloc: Rows, columns, slices"]
+    end
+
+    subgraph "Speed Comparison"
+        Speed["df.at['Alice', 'age']    → ~1μs<br/>df.loc['Alice', 'age']   → ~5μs<br/><br/>Matters in tight loops!"]
+    end
+
+    style At fill:#ADD8E6
+    style Iat fill:#90EE90
+    style Speed fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Common Patterns",
+                        "explanation": "Here are the most common indexing patterns you'll use.",
+                        "diagram_data": """graph TB
+    subgraph "Select Rows"
+        R1["Single: df.loc['Alice']"]
+        R2["Multiple: df.loc[['A', 'B']]"]
+        R3["Slice: df.loc['A':'C']"]
+        R4["Boolean: df.loc[df['x'] > 5]"]
+    end
+
+    subgraph "Select Columns"
+        C1["Single: df['col'] or df.loc[:,'col']"]
+        C2["Multiple: df[['col1','col2']]"]
+    end
+
+    subgraph "Select Both"
+        B1["df.loc[rows, cols]"]
+        B2["df.loc[df['age']>25, ['name','age']]"]
+    end
+
+    subgraph "Modify"
+        M1["df.loc[condition, 'col'] = value"]
+    end
+
+    style R4 fill:#90EE90
+    style B2 fill:#ADD8E6
+    style M1 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "Quick Reference",
+                        "explanation": "Here's the complete loc vs iloc reference.",
+                        "diagram_data": """graph TB
+    subgraph "loc"
+        L1["Label-based selection"]
+        L2["Slices are INCLUSIVE"]
+        L3["Can use booleans"]
+        L4["df.loc[label]<br/>df.loc[label1:label2]<br/>df.loc[[label1, label2]]<br/>df.loc[bool_array]"]
+    end
+
+    subgraph "iloc"
+        I1["Integer position-based"]
+        I2["Slices are EXCLUSIVE"]
+        I3["Only integers/slices"]
+        I4["df.iloc[n]<br/>df.iloc[n:m]<br/>df.iloc[[n, m]]"]
+    end
+
+    subgraph "Rules of Thumb"
+        Rule1["Know your data → loc"]
+        Rule2["Generic position → iloc"]
+        Rule3["Filtering → loc + boolean"]
+        Rule4["Setting values → always loc"]
+    end
+
+    style L1 fill:#ADD8E6
+    style I1 fill:#90EE90
+    style Rule4 fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pandas_serialization_visual(self):
+        """Seed Pandas DataFrame serialization visual topic."""
+        subject = self.get_or_create_subject("Pandas", "pandas", "Data Science & ML")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pandas-serialization",
+            defaults={
+                "title": "Pandas DataFrame Serialization Formats",
+                "description": "Compare CSV, Parquet, Feather, Pickle, JSON, and other formats for saving and loading DataFrames",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["pandas", "serialization", "parquet", "csv", "pickle", "feather", "json"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Serialization Matters",
+                        "explanation": "**Serialization** converts DataFrames to bytes for storage or transmission. Different formats optimize for different goals:\n\n- **Speed**: How fast can you read/write?\n- **Size**: How much disk space?\n- **Compatibility**: Can other tools read it?\n- **Type preservation**: Are dtypes maintained?",
+                        "diagram_data": """graph TB
+    subgraph "DataFrame in Memory"
+        DF["df = pd.DataFrame(...)"]
+    end
+
+    subgraph "Serialization Formats"
+        CSV["CSV<br/>Human readable"]
+        Parquet["Parquet<br/>Columnar, compressed"]
+        Feather["Feather<br/>Fast read/write"]
+        Pickle["Pickle<br/>Python native"]
+        JSON["JSON<br/>Web compatible"]
+        Excel["Excel<br/>Business users"]
+    end
+
+    DF --> CSV
+    DF --> Parquet
+    DF --> Feather
+    DF --> Pickle
+    DF --> JSON
+    DF --> Excel
+
+    subgraph "Key Trade-offs"
+        T1["Speed vs Compatibility"]
+        T2["Size vs Readability"]
+        T3["Features vs Portability"]
+    end
+
+    style Parquet fill:#90EE90
+    style CSV fill:#ADD8E6
+    style Pickle fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Format Comparison Overview",
+                        "explanation": "Here's a quick comparison of the most common formats. **Parquet** is generally the best choice for data science workflows.",
+                        "diagram_data": """graph TB
+    subgraph "Format Comparison"
+        Header["Format | Speed | Size | Types | Portable"]
+        CSV["CSV     | Slow  | Large | ✗    | ✓✓✓"]
+        Parquet["Parquet | Fast  | Small | ✓    | ✓✓"]
+        Feather["Feather | V.Fast| Medium| ✓    | ✓"]
+        Pickle["Pickle  | Fast  | Medium| ✓    | ✗"]
+        JSON["JSON    | Slow  | Large | ✗    | ✓✓✓"]
+        HDF5["HDF5    | Fast  | Small | ✓    | ✓"]
+    end
+
+    subgraph "Recommendations"
+        R1["Data Science: Parquet"]
+        R2["Sharing with others: CSV"]
+        R3["Temporary/cache: Feather"]
+        R4["Python-only: Pickle"]
+    end
+
+    style Parquet fill:#90EE90
+    style R1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "CSV - The Universal Format",
+                        "explanation": "**CSV** (Comma-Separated Values) is the most widely supported format. Every tool can read it, but it has significant limitations.\n\n```python\ndf.to_csv('data.csv', index=False)\ndf = pd.read_csv('data.csv')\n```",
+                        "diagram_data": """graph TB
+    subgraph "CSV Pros"
+        P1["✓ Universal compatibility"]
+        P2["✓ Human readable/editable"]
+        P3["✓ Works with Excel, SQL, etc."]
+        P4["✓ Simple to debug"]
+    end
+
+    subgraph "CSV Cons"
+        C1["✗ No type preservation<br/>(dates become strings)"]
+        C2["✗ Slow for large files"]
+        C3["✗ Large file sizes"]
+        C4["✗ No compression built-in"]
+        C5["✗ Encoding issues (UTF-8)"]
+    end
+
+    subgraph "Common Parameters"
+        Params["df.to_csv(<br/>    'file.csv',<br/>    index=False,      # Skip index<br/>    compression='gzip', # Compress<br/>    encoding='utf-8'<br/>)<br/><br/>pd.read_csv(<br/>    'file.csv',<br/>    dtype={'col': 'int32'},<br/>    parse_dates=['date_col']<br/>)"]
+    end
+
+    style P1 fill:#90EE90
+    style C1 fill:#FFB6C1
+    style Params fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "CSV Type Loss Problem",
+                        "explanation": "The biggest CSV pitfall: **type information is lost**. Dates become strings, categories become objects, and you must manually specify types when reading.",
+                        "diagram_data": """graph TB
+    subgraph "Original DataFrame"
+        Orig["| date       | category | value |<br/>|------------|----------|-------|<br/>| 2024-01-01 | 'A'      | 1.5   |<br/><br/>dtypes:<br/>date: datetime64<br/>category: category<br/>value: float64"]
+    end
+
+    subgraph "Save to CSV"
+        Save["df.to_csv('data.csv')"]
+        File["2024-01-01,A,1.5"]
+    end
+
+    subgraph "Read from CSV"
+        Read["pd.read_csv('data.csv')"]
+        Result["dtypes:<br/>date: object (string!)<br/>category: object (string!)<br/>value: float64<br/><br/>Types lost!"]
+    end
+
+    subgraph "Fix: Specify types"
+        Fix["pd.read_csv('data.csv',<br/>    dtype={'category': 'category'},<br/>    parse_dates=['date']<br/>)"]
+    end
+
+    Orig --> Save --> File --> Read --> Result
+    Result -.->|"manual fix"| Fix
+
+    style Result fill:#FFB6C1
+    style Fix fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Parquet - The Modern Standard",
+                        "explanation": "**Parquet** is a columnar format designed for analytics. It's the recommended format for most data science work.\n\n```python\ndf.to_parquet('data.parquet')\ndf = pd.read_parquet('data.parquet')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Parquet Pros"
+        P1["✓ Preserves ALL dtypes"]
+        P2["✓ Excellent compression (5-10x)"]
+        P3["✓ Very fast read/write"]
+        P4["✓ Column pruning (read subset)"]
+        P5["✓ Works with Spark, DuckDB, etc."]
+    end
+
+    subgraph "Parquet Cons"
+        C1["✗ Not human readable"]
+        C2["✗ Requires pyarrow/fastparquet"]
+        C3["✗ Can't append rows easily"]
+    end
+
+    subgraph "Why Columnar?"
+        Col["Row storage: [row1], [row2], [row3]<br/>Col storage: [all col1], [all col2]<br/><br/>Benefits:<br/>• Better compression (similar values)<br/>• Read only needed columns<br/>• Optimized for analytics"]
+    end
+
+    style P1 fill:#90EE90
+    style P2 fill:#90EE90
+    style Col fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Parquet Compression Options",
+                        "explanation": "Parquet supports multiple compression algorithms. **snappy** (default) balances speed and size. **gzip** gives better compression but slower speed.",
+                        "diagram_data": """graph TB
+    subgraph "Compression Options"
+        Snappy["snappy (default)<br/>Fast, moderate compression"]
+        Gzip["gzip<br/>Slower, better compression"]
+        Zstd["zstd<br/>Best of both worlds"]
+        Brotli["brotli<br/>Highest compression"]
+        None["None<br/>No compression"]
+    end
+
+    subgraph "Usage"
+        Code["df.to_parquet('data.parquet',<br/>              compression='zstd')"]
+    end
+
+    subgraph "Typical Results (1GB CSV)"
+        Results["| Format    | Size   | Write  | Read   |<br/>|-----------|--------|--------|--------|<br/>| CSV       | 1000MB | 30s    | 25s    |<br/>| Parquet   | 150MB  | 5s     | 2s     |<br/>| +snappy   | 180MB  | 4s     | 2s     |<br/>| +gzip     | 120MB  | 15s    | 3s     |<br/>| +zstd     | 130MB  | 6s     | 2s     |"]
+    end
+
+    Snappy --> Code
+    Zstd --> Code
+
+    style Zstd fill:#90EE90
+    style Results fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Parquet Column Selection",
+                        "explanation": "A powerful Parquet feature: **read only the columns you need**. This is much faster than reading the whole file.",
+                        "diagram_data": """graph TB
+    subgraph "Full File: 100 columns"
+        Full["df.read_parquet('data.parquet')<br/><br/>Reads ALL 100 columns<br/>Memory: 2GB<br/>Time: 5s"]
+    end
+
+    subgraph "Column Selection: 3 columns"
+        Select["pd.read_parquet('data.parquet',<br/>                columns=['a', 'b', 'c'])<br/><br/>Reads only 3 columns<br/>Memory: 60MB<br/>Time: 0.2s"]
+    end
+
+    subgraph "How It Works"
+        How["Parquet stores columns separately<br/>→ Can skip unneeded columns entirely<br/>→ No wasted I/O or memory"]
+    end
+
+    Full --> How
+    Select --> How
+
+    style Select fill:#90EE90
+    style How fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Feather - Speed Champion",
+                        "explanation": "**Feather** (Arrow IPC format) is optimized for speed. It's great for temporary storage and inter-process communication.\n\n```python\ndf.to_feather('data.feather')\ndf = pd.read_feather('data.feather')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Feather Pros"
+        P1["✓ Fastest read/write"]
+        P2["✓ Preserves dtypes"]
+        P3["✓ Language agnostic (R, Python)"]
+        P4["✓ Zero-copy reads possible"]
+    end
+
+    subgraph "Feather Cons"
+        C1["✗ Larger files than Parquet"]
+        C2["✗ Less ecosystem support"]
+        C3["✗ No row groups/partitioning"]
+    end
+
+    subgraph "When to Use"
+        Use["• Caching intermediate results<br/>• Passing data between processes<br/>• Speed is critical<br/>• Don't need long-term storage"]
+    end
+
+    subgraph "Feather vs Parquet"
+        Comp["Feather: Optimized for speed<br/>Parquet: Optimized for storage<br/><br/>For most uses: Parquet<br/>For temp files: Feather"]
+    end
+
+    style P1 fill:#90EE90
+    style Use fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Pickle - Python Native",
+                        "explanation": "**Pickle** serializes Python objects directly. It preserves everything but only works in Python.\n\n```python\ndf.to_pickle('data.pkl')\ndf = pd.read_pickle('data.pkl')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Pickle Pros"
+        P1["✓ Preserves EVERYTHING<br/>(custom objects, indexes, etc.)"]
+        P2["✓ Fast for Python workflows"]
+        P3["✓ No dependencies"]
+        P4["✓ Works with any Python object"]
+    end
+
+    subgraph "Pickle Cons"
+        C1["✗ Python-only (not portable)"]
+        C2["✗ Security risk (arbitrary code)"]
+        C3["✗ Version compatibility issues"]
+        C4["✗ Not human readable"]
+    end
+
+    subgraph "⚠️ Security Warning"
+        Warn["NEVER unpickle data from<br/>untrusted sources!<br/><br/>Pickle can execute arbitrary code<br/>→ Malicious files = compromised system"]
+    end
+
+    subgraph "When to Use"
+        Use["• Temporary caching<br/>• Same Python version<br/>• Complex objects (MultiIndex, etc.)<br/>• Trusted data only"]
+    end
+
+    style Warn fill:#FFB6C1
+    style P1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "JSON - Web Compatible",
+                        "explanation": "**JSON** is standard for web APIs. It's human-readable but inefficient for large DataFrames.\n\n```python\ndf.to_json('data.json', orient='records')\ndf = pd.read_json('data.json')\n```",
+                        "diagram_data": """graph TB
+    subgraph "JSON Orientations"
+        Records["orient='records'<br/>[{'a':1,'b':2}, {'a':3,'b':4}]<br/>Best for APIs"]
+        Split["orient='split'<br/>{'columns':[], 'data':[]}<br/>Preserves structure"]
+        Index["orient='index'<br/>{'row1':{'a':1}, 'row2':{}}<br/>Row-oriented"]
+        Columns["orient='columns'<br/>{'a':{'row1':1}, 'b':{}}<br/>Column-oriented"]
+    end
+
+    subgraph "JSON Pros"
+        P1["✓ Universal web support"]
+        P2["✓ Human readable"]
+        P3["✓ Works with JavaScript"]
+    end
+
+    subgraph "JSON Cons"
+        C1["✗ Very slow"]
+        C2["✗ Large files"]
+        C3["✗ Type issues (dates, NaN)"]
+        C4["✗ Not for large datasets"]
+    end
+
+    style Records fill:#90EE90
+    style C1 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Excel - Business Users",
+                        "explanation": "**Excel** format is essential for sharing with non-technical users. It's slow but preserves formatting.\n\n```python\ndf.to_excel('data.xlsx', index=False)\ndf = pd.read_excel('data.xlsx')\n```",
+                        "diagram_data": """graph TB
+    subgraph "Excel Pros"
+        P1["✓ Business users can open it"]
+        P2["✓ Supports multiple sheets"]
+        P3["✓ Preserves formatting"]
+        P4["✓ Charts, formulas possible"]
+    end
+
+    subgraph "Excel Cons"
+        C1["✗ Very slow"]
+        C2["✗ Large files"]
+        C3["✗ Row limit (1M rows)"]
+        C4["✗ Requires openpyxl/xlrd"]
+    end
+
+    subgraph "Multiple Sheets"
+        Sheets["with pd.ExcelWriter('out.xlsx') as w:<br/>    df1.to_excel(w, sheet_name='Data')<br/>    df2.to_excel(w, sheet_name='Summary')<br/><br/># Read specific sheet<br/>pd.read_excel('out.xlsx', sheet_name='Data')"]
+    end
+
+    style P1 fill:#90EE90
+    style Sheets fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "HDF5 - Scientific Computing",
+                        "explanation": "**HDF5** (Hierarchical Data Format) excels at storing large, complex datasets with multiple arrays.\n\n```python\ndf.to_hdf('data.h5', key='df')\ndf = pd.read_hdf('data.h5', key='df')\n```",
+                        "diagram_data": """graph TB
+    subgraph "HDF5 Pros"
+        P1["✓ Multiple datasets in one file"]
+        P2["✓ Partial reads (chunking)"]
+        P3["✓ Compression built-in"]
+        P4["✓ Metadata support"]
+        P5["✓ Append mode"]
+    end
+
+    subgraph "HDF5 Cons"
+        C1["✗ Complex API"]
+        C2["✗ File can corrupt"]
+        C3["✗ Requires pytables"]
+        C4["✗ Less common now"]
+    end
+
+    subgraph "Store Multiple DataFrames"
+        Store["store = pd.HDFStore('data.h5')<br/>store['df1'] = df1<br/>store['df2'] = df2<br/>store['results/summary'] = df3<br/>store.close()"]
+    end
+
+    subgraph "Note"
+        Note["For new projects, prefer Parquet<br/>HDF5 still good for scientific data<br/>and append-heavy workloads"]
+    end
+
+    style P1 fill:#90EE90
+    style Note fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Performance Comparison",
+                        "explanation": "Real benchmark with a 1 million row DataFrame (10 columns, mixed types). Results vary by data, but relative rankings are consistent.",
+                        "diagram_data": """graph TB
+    subgraph "Write Speed (lower = faster)"
+        WS["| Format  | Time   |<br/>|---------|--------|<br/>| Feather | 0.3s   |<br/>| Parquet | 0.8s   |<br/>| Pickle  | 1.2s   |<br/>| HDF5    | 1.5s   |<br/>| CSV     | 8.0s   |<br/>| JSON    | 15.0s  |<br/>| Excel   | 45.0s  |"]
+    end
+
+    subgraph "Read Speed (lower = faster)"
+        RS["| Format  | Time   |<br/>|---------|--------|<br/>| Feather | 0.2s   |<br/>| Parquet | 0.4s   |<br/>| Pickle  | 0.5s   |<br/>| HDF5    | 0.6s   |<br/>| CSV     | 5.0s   |<br/>| JSON    | 12.0s  |<br/>| Excel   | 25.0s  |"]
+    end
+
+    subgraph "File Size (lower = better)"
+        FS["| Format  | Size   |<br/>|---------|--------|<br/>| Parquet | 50MB   |<br/>| HDF5    | 80MB   |<br/>| Feather | 120MB  |<br/>| Pickle  | 150MB  |<br/>| CSV     | 400MB  |<br/>| JSON    | 600MB  |<br/>| Excel   | 350MB  |"]
+    end
+
+    style WS fill:#ADD8E6
+    style RS fill:#90EE90
+    style FS fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "Decision Flowchart",
+                        "explanation": "Use this flowchart to choose the right format for your use case.",
+                        "diagram_data": """graph TB
+    Start["What's your use case?"]
+
+    Start --> Q1{"Need to share<br/>with non-Python?"}
+    Q1 -->|"Yes"| Q2{"Technical users?"}
+    Q1 -->|"No"| Q3{"Long-term storage?"}
+
+    Q2 -->|"Yes"| Parquet["Use Parquet"]
+    Q2 -->|"No, business"| Q4{"Need Excel features?"}
+
+    Q4 -->|"Yes"| Excel["Use Excel"]
+    Q4 -->|"No, just data"| CSV["Use CSV"]
+
+    Q3 -->|"Yes"| Parquet2["Use Parquet"]
+    Q3 -->|"No, temporary"| Q5{"Speed critical?"}
+
+    Q5 -->|"Yes"| Feather["Use Feather"]
+    Q5 -->|"No"| Pickle["Use Pickle"]
+
+    style Parquet fill:#90EE90
+    style Parquet2 fill:#90EE90
+    style Feather fill:#ADD8E6
+    style CSV fill:#FFFACD
+    style Excel fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 14,
+                        "title": "Quick Reference",
+                        "explanation": "Here's a summary of all serialization methods with their typical use cases.",
+                        "diagram_data": """graph TB
+    subgraph "Best Practices"
+        BP1["Default choice: Parquet<br/>df.to_parquet('data.parquet')"]
+        BP2["Sharing data: CSV (small) or Parquet"]
+        BP3["Caching: Feather or Pickle"]
+        BP4["APIs: JSON with orient='records'"]
+        BP5["Business: Excel"]
+    end
+
+    subgraph "Common Patterns"
+        CP1["# Save with compression<br/>df.to_parquet('data.parquet.gz',<br/>              compression='gzip')"]
+        CP2["# Read subset of columns<br/>pd.read_parquet('data.parquet',<br/>                columns=['a','b'])"]
+        CP3["# Chunked CSV reading<br/>for chunk in pd.read_csv('big.csv',<br/>                         chunksize=10000):<br/>    process(chunk)"]
+    end
+
+    subgraph "Remember"
+        R1["CSV: loses types, slow, universal"]
+        R2["Parquet: fast, small, typed"]
+        R3["Pickle: Python-only, security risk"]
+    end
+
+    style BP1 fill:#90EE90
+    style R2 fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mixed_precision_training_visual(self):
+        """Seed mixed precision training visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="mixed-precision-training",
+            defaults={
+                "title": "Mixed Precision Training: Complete Guide",
+                "description": "Master FP32, FP16, BF16, TF32, and FP8 - when to use each precision format and how automatic mixed precision works",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["gpu", "mixed-precision", "fp16", "bf16", "tf32", "amp", "training"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Mixed Precision?",
+                        "explanation": "**Mixed precision training** uses lower-precision formats (FP16, BF16) for most operations while keeping critical computations in FP32. Benefits:\n\n- **2-3x faster training** via Tensor Cores\n- **~50% memory reduction** (smaller activations/gradients)\n- **Same model accuracy** when done correctly\n\nThe key insight: most neural network operations don't need full FP32 precision.",
+                        "diagram_data": """graph TB
+    subgraph "Traditional FP32 Training"
+        F32["All operations in FP32<br/>32 bits per number"]
+        F32_Mem["Memory: 100%"]
+        F32_Speed["Speed: 1x<br/>CUDA cores only"]
+    end
+
+    subgraph "Mixed Precision Training"
+        Mixed["Most ops in FP16/BF16<br/>Critical ops in FP32"]
+        Mix_Mem["Memory: ~50%"]
+        Mix_Speed["Speed: 2-3x<br/>Tensor Cores"]
+    end
+
+    F32 --> |"Same accuracy"| Mixed
+
+    style Mixed fill:#90EE90
+    style Mix_Speed fill:#90EE90
+    style Mix_Mem fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Precision Formats Overview",
+                        "explanation": "Different floating-point formats trade off **range** (exponent bits) vs **precision** (mantissa bits). Understanding these helps you choose the right format for your workload.",
+                        "diagram_data": """graph TB
+    subgraph "Format Breakdown"
+        FP32["FP32: 1 sign + 8 exp + 23 mantissa<br/>Range: ~1e-38 to 1e38<br/>Precision: ~7 decimal digits"]
+        FP16["FP16: 1 sign + 5 exp + 10 mantissa<br/>Range: ~6e-5 to 65504<br/>Precision: ~3 decimal digits"]
+        BF16["BF16: 1 sign + 8 exp + 7 mantissa<br/>Range: same as FP32<br/>Precision: ~2 decimal digits"]
+        TF32["TF32: 1 sign + 8 exp + 10 mantissa<br/>Range: same as FP32<br/>Precision: ~3 decimal digits"]
+        FP8["FP8: 1 sign + 4/5 exp + 2/3 mantissa<br/>Very limited range/precision<br/>Inference focused"]
+    end
+
+    FP32 --> FP16
+    FP32 --> BF16
+    FP32 --> TF32
+    FP16 --> FP8
+
+    style FP32 fill:#E6E6FA
+    style BF16 fill:#90EE90
+    style TF32 fill:#FFD700""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "FP16 vs BF16: The Key Difference",
+                        "explanation": "**FP16** has more precision but limited range (max ~65504). **BF16** has the same range as FP32 but less precision. For deep learning, **range matters more than precision** - gradients can be very small or large.\n\n**BF16 is generally preferred** for training because:\n- No overflow issues (same range as FP32)\n- No loss scaling needed\n- Supported on Ampere+ GPUs",
+                        "diagram_data": """graph TB
+    subgraph "FP16 Limitations"
+        FP16_Over["Max value: 65504<br/>Large gradients OVERFLOW"]
+        FP16_Under["Min value: ~6e-5<br/>Small gradients UNDERFLOW"]
+        FP16_Fix["Requires LOSS SCALING<br/>to prevent underflow"]
+    end
+
+    subgraph "BF16 Advantages"
+        BF16_Range["Same range as FP32<br/>No overflow issues"]
+        BF16_Simple["No loss scaling needed<br/>Drop-in replacement"]
+        BF16_Req["Requires Ampere+ GPU<br/>A100, RTX 30xx+"]
+    end
+
+    FP16_Fix -->|"or use"| BF16_Simple
+
+    style FP16_Over fill:#FFB6C1
+    style FP16_Under fill:#FFB6C1
+    style BF16_Range fill:#90EE90
+    style BF16_Simple fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "TF32: Automatic Speedup on Ampere+",
+                        "explanation": "**TF32 (TensorFloat-32)** is NVIDIA's format for Ampere+ GPUs. It provides FP32-level accuracy with Tensor Core speedups - **with zero code changes**.\n\nTF32 uses FP32 range but only 10 mantissa bits internally during matrix operations. Results are stored as FP32.",
+                        "diagram_data": """graph LR
+    subgraph "TF32 Operation"
+        Input["FP32 Input"]
+        Round["Round to 10-bit mantissa<br/>internally"]
+        TC["Tensor Core<br/>Matrix Multiply"]
+        Output["FP32 Output"]
+    end
+
+    Input --> Round --> TC --> Output
+
+    subgraph "Enable in PyTorch"
+        Code["torch.backends.cuda.matmul<br/>.allow_tf32 = True<br/><br/>torch.backends.cudnn<br/>.allow_tf32 = True"]
+    end
+
+    subgraph "Performance"
+        Perf["8x faster than FP32 CUDA<br/>Same accuracy for most models<br/>Default ON in PyTorch 1.12+"]
+    end
+
+    style TC fill:#FFD700
+    style Perf fill:#90EE90
+    style Code fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Loss Scaling for FP16",
+                        "explanation": "When using FP16, small gradients can **underflow to zero**. **Loss scaling** multiplies the loss by a large factor before backward pass, then divides gradients after. This keeps gradients in FP16's representable range.",
+                        "diagram_data": """graph TB
+    subgraph "Without Loss Scaling"
+        Loss1["Loss: 0.001"]
+        Grad1["Gradient: 1e-6"]
+        FP16_1["FP16: UNDERFLOWS to 0"]
+        Update1["No weight update!"]
+    end
+
+    Loss1 --> Grad1 --> FP16_1 --> Update1
+
+    subgraph "With Loss Scaling"
+        Loss2["Loss: 0.001"]
+        Scale["Scale: x 1024"]
+        Scaled["Scaled Loss: 1.024"]
+        Grad2["Gradient: 0.001"]
+        FP16_2["FP16: Representable"]
+        Unscale["Unscale: / 1024"]
+        Update2["Correct weight update"]
+    end
+
+    Loss2 --> Scale --> Scaled --> Grad2 --> FP16_2 --> Unscale --> Update2
+
+    style FP16_1 fill:#FFB6C1
+    style Update1 fill:#FFB6C1
+    style FP16_2 fill:#90EE90
+    style Update2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Dynamic Loss Scaling",
+                        "explanation": "**Dynamic loss scaling** automatically adjusts the scale factor during training. If gradients overflow (become inf/nan), it reduces the scale. If no overflows occur for N steps, it increases the scale.\n\nPyTorch's `GradScaler` handles this automatically.",
+                        "diagram_data": """graph TB
+    subgraph "Dynamic Loss Scaling Algorithm"
+        Start["Initial scale: 65536"]
+        Forward["Forward pass in FP16"]
+        ScaleLoss["Multiply loss by scale"]
+        Backward["Backward pass"]
+        Check{{"Check for inf/nan<br/>in gradients"}}
+        Overflow["Skip update<br/>Scale = Scale / 2"]
+        NoOverflow["Unscale gradients<br/>Optimizer step"]
+        Count{{"N steps without<br/>overflow?"}}
+        Increase["Scale = Scale * 2"]
+        Next["Next iteration"]
+    end
+
+    Start --> Forward --> ScaleLoss --> Backward --> Check
+    Check -->|"inf/nan found"| Overflow --> Next
+    Check -->|"gradients OK"| NoOverflow --> Count
+    Count -->|"Yes"| Increase --> Next
+    Count -->|"No"| Next
+    Next --> Forward
+
+    style Overflow fill:#FFB6C1
+    style NoOverflow fill:#90EE90
+    style Increase fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "PyTorch AMP: Automatic Mixed Precision",
+                        "explanation": "PyTorch's **torch.amp** module provides easy mixed precision training with `autocast` and `GradScaler`. It automatically selects which ops run in FP16 vs FP32.",
+                        "diagram_data": """graph TB
+    subgraph "AMP Training Loop"
+        Code["scaler = GradScaler()<br/><br/>for data, target in loader:<br/>    optimizer.zero_grad()<br/>    <br/>    with autocast(dtype=torch.float16):<br/>        output = model(data)<br/>        loss = criterion(output, target)<br/>    <br/>    scaler.scale(loss).backward()<br/>    scaler.step(optimizer)<br/>    scaler.update()"]
+    end
+
+    subgraph "What autocast does"
+        Auto1["Matmul, Conv -> FP16"]
+        Auto2["Softmax, LayerNorm -> FP32"]
+        Auto3["Loss functions -> FP32"]
+    end
+
+    subgraph "What GradScaler does"
+        GS1["Scales loss before backward"]
+        GS2["Unscales gradients"]
+        GS3["Skips steps on overflow"]
+        GS4["Dynamically adjusts scale"]
+    end
+
+    style Code fill:#E6E6FA
+    style Auto1 fill:#90EE90
+    style Auto2 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Which Ops Use Which Precision?",
+                        "explanation": "PyTorch's autocast automatically selects precision based on numerical stability. Some ops are always FP32 for safety, while compute-heavy ops use FP16 for speed.",
+                        "diagram_data": """graph TB
+    subgraph "FP16 - Fast Path"
+        FP16_Ops["Linear / MatMul<br/>Conv1d, Conv2d, Conv3d<br/>BMM, GEMM<br/>RNN cells (LSTM, GRU)"]
+        FP16_Why["Tensor Core accelerated<br/>Largest speedup"]
+    end
+
+    subgraph "FP32 - Safe Path"
+        FP32_Ops["Softmax<br/>LayerNorm, BatchNorm<br/>Loss functions<br/>Log, Exp, Pow<br/>Sum, Mean reductions"]
+        FP32_Why["Numerically sensitive<br/>Need full precision"]
+    end
+
+    subgraph "Varies by Input"
+        Vary_Ops["Pointwise ops<br/>Activation functions<br/>Dropout"]
+        Vary_Why["Uses input dtype"]
+    end
+
+    style FP16_Ops fill:#90EE90
+    style FP32_Ops fill:#FFFACD
+    style Vary_Ops fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "BF16 Training (Simpler)",
+                        "explanation": "**BF16 training is simpler** than FP16 because it doesn't need loss scaling. On Ampere+ GPUs, BF16 is often the best choice for training.",
+                        "diagram_data": """graph TB
+    subgraph "BF16 Training Loop"
+        Code["# No GradScaler needed!<br/><br/>for data, target in loader:<br/>    optimizer.zero_grad()<br/>    <br/>    with autocast(dtype=torch.bfloat16):<br/>        output = model(data)<br/>        loss = criterion(output, target)<br/>    <br/>    loss.backward()<br/>    optimizer.step()"]
+    end
+
+    subgraph "BF16 Advantages"
+        Adv1["No loss scaling"]
+        Adv2["No GradScaler"]
+        Adv3["Same range as FP32"]
+        Adv4["Simpler code"]
+    end
+
+    subgraph "BF16 Requirements"
+        Req1["Ampere+ GPU<br/>A100, RTX 30xx, H100"]
+        Req2["PyTorch 1.10+"]
+    end
+
+    style Code fill:#E6E6FA
+    style Adv1 fill:#90EE90
+    style Adv4 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "FP8 Training (Emerging)",
+                        "explanation": "**FP8** is the newest format, available on Hopper (H100) GPUs. It offers 2x throughput over FP16 but requires careful handling. The **Transformer Engine** automates FP8 for transformer models.",
+                        "diagram_data": """graph TB
+    subgraph "FP8 Formats"
+                        E4M3["E4M3: 4 exp + 3 mantissa<br/>Better precision<br/>Forward pass"]
+        E5M2["E5M2: 5 exp + 2 mantissa<br/>Better range<br/>Backward pass"]
+    end
+
+    subgraph "Transformer Engine"
+        TE1["Automatic FP8 quantization"]
+        TE2["Per-tensor scaling"]
+        TE3["Delayed scaling"]
+        TE4["Automatic format selection"]
+    end
+
+    subgraph "Usage"
+        Code["import transformer_engine as te<br/><br/>model = te.Linear(in, out)<br/># Automatic FP8 in forward/backward"]
+    end
+
+    subgraph "Performance"
+        Perf["2x throughput vs FP16<br/>Requires H100 GPU<br/>Best for transformers"]
+    end
+
+    style E4M3 fill:#90EE90
+    style E5M2 fill:#ADD8E6
+    style Perf fill:#FFD700""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Decision Flowchart: Which Precision?",
+                        "explanation": "Use this flowchart to decide which precision format to use for your training workload.",
+                        "diagram_data": """flowchart TD
+    Start{{"What GPU do you have?"}}
+
+    Start -->|"Hopper H100"| Hopper
+    Start -->|"Ampere A100/RTX30"| Ampere
+    Start -->|"Turing/Volta"| Older
+
+    subgraph Hopper["H100 Options"]
+        H_Q{{"Training transformers?"}}
+        H_Q -->|"Yes"| H_FP8["Use FP8 + Transformer Engine<br/>Maximum throughput"]
+        H_Q -->|"No"| H_BF16["Use BF16<br/>Simple and fast"]
+    end
+
+    subgraph Ampere["Ampere Options"]
+        A_Rec["Use BF16<br/>Best balance of speed/simplicity"]
+        A_Alt["TF32 for drop-in speedup<br/>No code changes needed"]
+    end
+
+    subgraph Older["Volta/Turing Options"]
+        O_Rec["Use FP16 + GradScaler<br/>Loss scaling required"]
+        O_Note["No BF16 support"]
+    end
+
+    style H_FP8 fill:#FFD700
+    style H_BF16 fill:#90EE90
+    style A_Rec fill:#90EE90
+    style O_Rec fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "Common Pitfalls and Solutions",
+                        "explanation": "Mixed precision training can fail in subtle ways. Here are the most common issues and how to fix them.",
+                        "diagram_data": """graph TB
+    subgraph "Loss goes to NaN"
+        NaN_Cause["Gradient overflow in FP16"]
+        NaN_Fix["1. Use BF16 instead<br/>2. Reduce learning rate<br/>3. Add gradient clipping"]
+    end
+
+    subgraph "Training diverges"
+        Div_Cause["Precision loss in accumulation"]
+        Div_Fix["1. Keep optimizer states in FP32<br/>2. Use FP32 for loss computation<br/>3. Check BatchNorm is FP32"]
+    end
+
+    subgraph "Slow training"
+        Slow_Cause["Ops not using Tensor Cores"]
+        Slow_Fix["1. Ensure dims divisible by 8<br/>2. Use channels_last format<br/>3. Profile with torch.profiler"]
+    end
+
+    subgraph "Memory not reduced"
+        Mem_Cause["FP32 copies kept"]
+        Mem_Fix["1. Use model.half() for inference<br/>2. Check optimizer states<br/>3. Use gradient checkpointing"]
+    end
+
+    NaN_Cause --> NaN_Fix
+    Div_Cause --> Div_Fix
+    Slow_Cause --> Slow_Fix
+    Mem_Cause --> Mem_Fix
+
+    style NaN_Fix fill:#90EE90
+    style Div_Fix fill:#90EE90
+    style Slow_Fix fill:#90EE90
+    style Mem_Fix fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Best Practices Summary",
+                        "explanation": "Follow these best practices for successful mixed precision training.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        Do1["Use BF16 on Ampere+ GPUs"]
+        Do2["Keep optimizer states in FP32"]
+        Do3["Keep loss computation in FP32"]
+        Do4["Use dimensions divisible by 8"]
+        Do5["Profile to verify Tensor Core usage"]
+        Do6["Start with default autocast settings"]
+    end
+
+    subgraph "Avoid"
+        Dont1["Dont disable autocast for softmax/norms"]
+        Dont2["Dont use FP16 weights for inference<br/>without testing accuracy"]
+        Dont3["Dont ignore inf/nan warnings"]
+        Dont4["Dont skip loss scaling with FP16"]
+    end
+
+    subgraph "Performance Checklist"
+        Check1["Batch size divisible by 8"]
+        Check2["Hidden dims divisible by 8"]
+        Check3["Sequence length divisible by 8"]
+        Check4["Using channels_last for CNNs"]
+    end
+
+    style Do1 fill:#90EE90
+    style Do2 fill:#90EE90
+    style Dont1 fill:#FFB6C1
+    style Dont4 fill:#FFB6C1
+    style Check1 fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_cuda_programming_model_visual(self):
+        """Seed CUDA programming model visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cuda-programming-model",
+            defaults={
+                "title": "CUDA Programming Model: Grids, Blocks, and Threads",
+                "description": "Understand the CUDA execution model - how work is organized into grids, blocks, threads, and warps",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 14,
+                "tags": ["gpu", "cuda", "threads", "blocks", "warps", "kernels", "programming"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Big Picture: Kernels",
+                        "explanation": "A **CUDA kernel** is a function that runs on the GPU. When you launch a kernel, you specify how many **threads** should execute it. Each thread runs the same code but operates on different data - this is **SIMT** (Single Instruction, Multiple Threads).",
+                        "diagram_data": """graph TB
+    subgraph "CPU (Host)"
+        CPU_Code["Python/C++ Code"]
+        Launch["kernel<<<grid, block>>>(args)"]
+    end
+
+    subgraph "GPU (Device)"
+        Kernel["CUDA Kernel Function"]
+        T1["Thread 0"]
+        T2["Thread 1"]
+        T3["Thread 2"]
+        TN["Thread N-1"]
+    end
+
+    CPU_Code --> Launch
+    Launch --> Kernel
+    Kernel --> T1
+    Kernel --> T2
+    Kernel --> T3
+    Kernel --> TN
+
+    subgraph "Key Concept"
+        SIMT["Every thread executes<br/>the SAME kernel code<br/>on DIFFERENT data"]
+    end
+
+    style Launch fill:#ADD8E6
+    style SIMT fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Thread Hierarchy: Grid, Block, Thread",
+                        "explanation": "CUDA organizes threads in a **3-level hierarchy**:\n\n1. **Grid** - All threads for one kernel launch\n2. **Block** - A group of threads that can cooperate (share memory, synchronize)\n3. **Thread** - Individual execution unit\n\nThis hierarchy maps to GPU hardware for efficient execution.",
+                        "diagram_data": """graph TB
+    subgraph Grid["Grid (All Threads)"]
+        subgraph Block0["Block 0"]
+            T00["Thread 0"]
+            T01["Thread 1"]
+            T02["Thread ..."]
+        end
+        subgraph Block1["Block 1"]
+            T10["Thread 0"]
+            T11["Thread 1"]
+            T12["Thread ..."]
+        end
+        subgraph Block2["Block 2"]
+            T20["Thread 0"]
+            T21["Thread 1"]
+            T22["Thread ..."]
+        end
+        subgraph BlockN["Block N-1"]
+            TN0["Thread 0"]
+            TN1["Thread 1"]
+            TN2["Thread ..."]
+        end
+    end
+
+    subgraph "Hardware Mapping"
+        HW1["Grid -> Entire GPU"]
+        HW2["Block -> 1 SM"]
+        HW3["Thread -> 1 CUDA Core"]
+    end
+
+    style Grid fill:#E6E6FA
+    style Block0 fill:#ADD8E6
+    style Block1 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Thread Indexing",
+                        "explanation": "Every thread knows its position via built-in variables:\n\n- `threadIdx.x/y/z` - Position within block\n- `blockIdx.x/y/z` - Block position within grid\n- `blockDim.x/y/z` - Block dimensions\n- `gridDim.x/y/z` - Grid dimensions\n\nGlobal thread ID = `blockIdx.x * blockDim.x + threadIdx.x`",
+                        "diagram_data": """graph TB
+    subgraph "1D Example: 256 elements, 64 threads per block"
+        Grid1D["Grid: 4 blocks"]
+        B0["Block 0<br/>blockIdx.x = 0<br/>threads 0-63"]
+        B1["Block 1<br/>blockIdx.x = 1<br/>threads 64-127"]
+        B2["Block 2<br/>blockIdx.x = 2<br/>threads 128-191"]
+        B3["Block 3<br/>blockIdx.x = 3<br/>threads 192-255"]
+    end
+
+    Grid1D --> B0
+    Grid1D --> B1
+    Grid1D --> B2
+    Grid1D --> B3
+
+    subgraph "Global ID Formula"
+        Formula["global_id = blockIdx.x * blockDim.x + threadIdx.x<br/><br/>Example: Block 2, Thread 5<br/>= 2 * 64 + 5 = 133"]
+    end
+
+    style Formula fill:#FFFACD
+    style B0 fill:#90EE90
+    style B2 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "2D and 3D Grids",
+                        "explanation": "Grids and blocks can be **1D, 2D, or 3D**. Use 2D for images/matrices, 3D for volumes. This is just syntactic sugar - hardware sees it as 1D.",
+                        "diagram_data": """graph TB
+    subgraph "2D Grid for Image Processing"
+        direction TB
+        Row0["Block(0,0) | Block(1,0) | Block(2,0) | Block(3,0)"]
+        Row1["Block(0,1) | Block(1,1) | Block(2,1) | Block(3,1)"]
+        Row2["Block(0,2) | Block(1,2) | Block(2,2) | Block(3,2)"]
+    end
+
+    subgraph "2D Block for 16x16 Tile"
+        Tile["Each block = 16x16 = 256 threads<br/>threadIdx.x: 0-15<br/>threadIdx.y: 0-15"]
+    end
+
+    subgraph "Pixel Position"
+        Pos["pixel_x = blockIdx.x * blockDim.x + threadIdx.x<br/>pixel_y = blockIdx.y * blockDim.y + threadIdx.y"]
+    end
+
+    style Row1 fill:#ADD8E6
+    style Tile fill:#90EE90
+    style Pos fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Warps: The True Execution Unit",
+                        "explanation": "The GPU executes threads in groups of **32 called warps**. All 32 threads in a warp execute the **same instruction** at the same time. This is critical for performance - divergent branches hurt!",
+                        "diagram_data": """graph TB
+    subgraph "Block of 128 Threads"
+        Warp0["Warp 0<br/>Threads 0-31"]
+        Warp1["Warp 1<br/>Threads 32-63"]
+        Warp2["Warp 2<br/>Threads 64-95"]
+        Warp3["Warp 3<br/>Threads 96-127"]
+    end
+
+    subgraph "Warp Execution"
+        Exec["All 32 threads execute<br/>SAME instruction<br/>at SAME time"]
+    end
+
+    subgraph "Performance Impact"
+        Good["All threads take same path<br/>= Full efficiency"]
+        Bad["Threads take different paths<br/>= Serialized execution"]
+    end
+
+    Warp0 --> Exec
+    Exec --> Good
+    Exec --> Bad
+
+    style Exec fill:#FFFACD
+    style Good fill:#90EE90
+    style Bad fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Warp Divergence",
+                        "explanation": "When threads in a warp take **different branches**, the warp must execute **both paths sequentially**, with inactive threads masked. This is called **warp divergence** and kills performance.",
+                        "diagram_data": """graph TB
+    subgraph "Divergent Code"
+        Code["if (threadIdx.x < 16):<br/>    do_A()  # Threads 0-15<br/>else:<br/>    do_B()  # Threads 16-31"]
+    end
+
+    subgraph "Execution (SLOW)"
+        Step1["Step 1: Execute do_A()<br/>Threads 0-15 active<br/>Threads 16-31 MASKED"]
+        Step2["Step 2: Execute do_B()<br/>Threads 0-15 MASKED<br/>Threads 16-31 active"]
+        Step3["Step 3: Converge<br/>All threads continue"]
+    end
+
+    Code --> Step1 --> Step2 --> Step3
+
+    subgraph "Impact"
+        Impact["2x slower!<br/>Both paths executed sequentially"]
+    end
+
+    style Step1 fill:#FFB6C1
+    style Step2 fill:#FFB6C1
+    style Impact fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Block Limits and Occupancy",
+                        "explanation": "Each block has limits on resources. **Occupancy** is the ratio of active warps to maximum possible warps on an SM. Higher occupancy helps hide memory latency.",
+                        "diagram_data": """graph TB
+    subgraph "Block Limits"
+        Threads["Max 1024 threads per block"]
+        Regs["Limited registers per SM<br/>~65K registers"]
+        Smem["Limited shared memory<br/>48-228 KB per SM"]
+        Blocks["Max ~16-32 blocks per SM"]
+    end
+
+    subgraph "Occupancy Calculation"
+        Occ["Occupancy = Active Warps / Max Warps<br/><br/>Example SM with max 64 warps:<br/>- 2 blocks x 256 threads = 16 warps<br/>- Occupancy = 16/64 = 25%"]
+    end
+
+    subgraph "Trade-offs"
+        Trade1["More threads per block<br/>-> Fewer blocks fit"]
+        Trade2["More registers per thread<br/>-> Fewer warps fit"]
+        Trade3["More shared memory per block<br/>-> Fewer blocks fit"]
+    end
+
+    style Occ fill:#FFFACD
+    style Threads fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Kernel Launch Syntax",
+                        "explanation": "In CUDA C++, kernels are launched with the `<<<grid, block>>>` syntax. In PyTorch/Triton, this is abstracted but the concepts remain.",
+                        "diagram_data": """graph TB
+    subgraph "CUDA C++ Launch"
+        CUDA["// Define kernel<br/>__global__ void add(float* a, float* b, float* c) {<br/>    int i = blockIdx.x * blockDim.x + threadIdx.x;<br/>    c[i] = a[i] + b[i];<br/>}<br/><br/>// Launch kernel<br/>add<<<num_blocks, threads_per_block>>>(a, b, c);"]
+    end
+
+    subgraph "PyTorch Custom CUDA"
+        PyTorch["# Uses torch.cuda.launch_kernel<br/># or custom CUDA extension"]
+    end
+
+    subgraph "Triton (Recommended)"
+        Triton["@triton.jit<br/>def add_kernel(a_ptr, b_ptr, c_ptr, n):<br/>    pid = tl.program_id(0)  # ~blockIdx<br/>    offsets = pid * BLOCK + tl.arange(0, BLOCK)<br/>    tl.store(c_ptr + offsets, <br/>             tl.load(a_ptr + offsets) + <br/>             tl.load(b_ptr + offsets))"]
+    end
+
+    style CUDA fill:#E6E6FA
+    style Triton fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Choosing Block Size",
+                        "explanation": "Block size affects performance significantly. Guidelines:\n\n- **Minimum 128 threads** (4 warps) for latency hiding\n- **Usually 256 or 512** for good occupancy\n- **Multiple of 32** (warp size)\n- **Power of 2** often works well",
+                        "diagram_data": """flowchart TD
+    Start{{"Choosing Block Size"}}
+
+    Start --> Q1{{"Shared memory needed?"}}
+    Q1 -->|"Heavy use"| Small["128-256 threads<br/>More shared mem per thread"]
+    Q1 -->|"Light/none"| Large["256-512 threads<br/>Better occupancy"]
+
+    Start --> Q2{{"Register pressure?"}}
+    Q2 -->|"Many registers"| Smaller["Smaller blocks<br/>Fit more warps"]
+    Q2 -->|"Few registers"| Larger["Larger blocks OK"]
+
+    subgraph "Common Choices"
+        C1["1D: 256 or 512"]
+        C2["2D: 16x16 = 256"]
+        C3["3D: 8x8x8 = 512"]
+    end
+
+    subgraph "Always"
+        Rule1["Multiple of 32"]
+        Rule2["At most 1024"]
+        Rule3["Profile to verify!"]
+    end
+
+    style Small fill:#ADD8E6
+    style Large fill:#90EE90
+    style Rule3 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Synchronization Within Blocks",
+                        "explanation": "Threads within a block can **synchronize** using `__syncthreads()`. This creates a barrier - all threads must reach it before any can proceed. **Cannot sync across blocks!**",
+                        "diagram_data": """graph TB
+    subgraph "Within Block - OK"
+        T1_1["Thread 0: Load data"]
+        T2_1["Thread 1: Load data"]
+        TN_1["Thread N: Load data"]
+        Sync["__syncthreads()"]
+        T1_2["Thread 0: Use shared data"]
+        T2_2["Thread 1: Use shared data"]
+        TN_2["Thread N: Use shared data"]
+    end
+
+    T1_1 --> Sync
+    T2_1 --> Sync
+    TN_1 --> Sync
+    Sync --> T1_2
+    Sync --> T2_2
+    Sync --> TN_2
+
+    subgraph "Across Blocks - NOT POSSIBLE"
+        Block1["Block 0"]
+        Block2["Block 1"]
+        NoSync["Cannot sync!<br/>Blocks may run<br/>in any order"]
+    end
+
+    Block1 -.- NoSync
+    Block2 -.- NoSync
+
+    style Sync fill:#90EE90
+    style NoSync fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Hardware Mapping Summary",
+                        "explanation": "Understanding how the software hierarchy maps to hardware helps you write efficient kernels.",
+                        "diagram_data": """graph LR
+    subgraph "Software"
+        Grid["Grid"]
+        Block["Block"]
+        Warp["Warp<br/>32 threads"]
+        Thread["Thread"]
+    end
+
+    subgraph "Hardware"
+        GPU["Entire GPU"]
+        SM["Streaming Multiprocessor"]
+        WarpSched["Warp Scheduler"]
+        Core["CUDA Core"]
+    end
+
+    Grid --> GPU
+    Block --> SM
+    Warp --> WarpSched
+    Thread --> Core
+
+    subgraph "Key Points"
+        K1["Multiple blocks can run on 1 SM"]
+        K2["Blocks cannot migrate between SMs"]
+        K3["Warps are scheduled independently"]
+        K4["All 32 threads execute together"]
+    end
+
+    style Grid fill:#E6E6FA
+    style Block fill:#ADD8E6
+    style Warp fill:#90EE90
+    style Thread fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "Complete Example: Vector Add",
+                        "explanation": "Let's trace through a complete vector addition example to see all concepts in action.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        Prob["Add two arrays of 10,000 elements<br/>C[i] = A[i] + B[i]"]
+    end
+
+    subgraph "Configuration"
+        Config["threads_per_block = 256<br/>num_blocks = ceil(10000/256) = 40<br/>Total threads = 40 * 256 = 10,240"]
+    end
+
+    subgraph "Kernel Code"
+        Code["__global__ void add(float* A, float* B, float* C, int N) {<br/>    int i = blockIdx.x * blockDim.x + threadIdx.x;<br/>    if (i < N) {  // Bounds check!<br/>        C[i] = A[i] + B[i];<br/>    }<br/>}"]
+    end
+
+    subgraph "Execution"
+        B0["Block 0: threads 0-255<br/>Process elements 0-255"]
+        B1["Block 1: threads 256-511<br/>Process elements 256-511"]
+        B39["Block 39: threads 9984-10239<br/>Process elements 9984-9999<br/>Threads 10000-10239 exit early"]
+    end
+
+    Prob --> Config --> Code --> B0
+    Code --> B1
+    Code --> B39
+
+    style Config fill:#ADD8E6
+    style Code fill:#E6E6FA
+    style B39 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Common Patterns",
+                        "explanation": "These patterns appear frequently in CUDA kernels. Mastering them helps you write efficient GPU code.",
+                        "diagram_data": """graph TB
+    subgraph "Grid-Stride Loop"
+        GSL["Process more elements than threads:<br/><br/>for (int i = idx; i < N; i += gridDim.x * blockDim.x)<br/>    process(i);"]
+        GSL_Why["Handles any array size<br/>Reuses threads efficiently"]
+    end
+
+    subgraph "Tiled Processing"
+        Tile["Load tile to shared memory<br/>__syncthreads()<br/>Process tile<br/>__syncthreads()<br/>Move to next tile"]
+        Tile_Why["Reduces global memory access<br/>Essential for matrix multiply"]
+    end
+
+    subgraph "Reduction"
+        Red["Parallel sum/max/min:<br/>Each thread loads one element<br/>Tree-based reduction in shared mem<br/>Block result -> global memory"]
+        Red_Why["Log(N) steps instead of N"]
+    end
+
+    style GSL fill:#ADD8E6
+    style Tile fill:#90EE90
+    style Red fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "PyTorch and CUDA",
+                        "explanation": "In PyTorch, CUDA kernels run behind the scenes. Understanding the model helps you optimize performance and debug issues.",
+                        "diagram_data": """graph TB
+    subgraph "PyTorch Operations"
+        Py1["x = torch.randn(1000).cuda()"]
+        Py2["y = x * 2 + 1"]
+        Py3["z = torch.matmul(a, b)"]
+    end
+
+    subgraph "Under the Hood"
+        CUDA1["Launches elementwise kernel"]
+        CUDA2["Launches GEMM kernel<br/>Highly optimized cuBLAS"]
+    end
+
+    Py2 --> CUDA1
+    Py3 --> CUDA2
+
+    subgraph "Optimization Tips"
+        Tip1["Batch operations to reduce kernel launches"]
+        Tip2["Use torch.compile for kernel fusion"]
+        Tip3["Ensure tensors are contiguous"]
+        Tip4["Use channels_last for CNNs"]
+    end
+
+    subgraph "Custom Kernels"
+        Custom["When needed:<br/>- Triton (easiest)<br/>- torch.cuda extension<br/>- Raw CUDA"]
+    end
+
+    style Py3 fill:#ADD8E6
+    style CUDA2 fill:#90EE90
+    style Tip2 fill:#FFD700""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_tensor_core_operations_visual(self):
+        """Seed Tensor Core operations visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="tensor-core-operations",
+            defaults={
+                "title": "Tensor Core Operations: Matrix Multiply Deep Dive",
+                "description": "Understand how Tensor Cores accelerate matrix operations with warp-level MMA instructions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 15,
+                "tags": ["gpu", "tensor-cores", "mma", "matrix-multiply", "cuda", "wmma"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Tensor Cores?",
+                        "explanation": "**Tensor Cores** are specialized hardware units that perform matrix multiply-accumulate (MMA) operations in a single clock cycle. They're the key to fast deep learning training and inference.\n\n- Introduced in Volta (2017)\n- Perform D = A × B + C in one operation\n- 4-16x faster than CUDA cores for matrix ops",
+                        "diagram_data": """graph TB
+    subgraph "CUDA Core - Sequential"
+        CC1["Multiply a × b"]
+        CC2["Multiply a × b"]
+        CC3["...many cycles..."]
+        CC4["Add all products"]
+        CC1 --> CC2 --> CC3 --> CC4
+    end
+
+    subgraph "Tensor Core - Parallel"
+        TC["D = A × B + C<br/>Entire matrix operation<br/>in ONE cycle"]
+    end
+
+    subgraph "Speed Comparison"
+        Speed["CUDA Cores: ~1 TFLOPS (FP32)<br/>Tensor Cores: ~300+ TFLOPS (FP16)<br/><br/>300x faster for matrix ops!"]
+    end
+
+    style TC fill:#90EE90
+    style Speed fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Matrix Multiply-Accumulate (MMA)",
+                        "explanation": "The fundamental Tensor Core operation is **D = A × B + C** where:\n- A, B are input matrices (in lower precision)\n- C is the accumulator (can be higher precision)\n- D is the output\n\nThis maps perfectly to neural network operations: `output = weights × input + bias`",
+                        "diagram_data": """graph LR
+    subgraph "MMA Operation"
+        A["Matrix A<br/>M × K"]
+        B["Matrix B<br/>K × N"]
+        C["Matrix C<br/>M × N"]
+        D["Matrix D<br/>M × N"]
+    end
+
+    A -->|"×"| Mult["A × B"]
+    B --> Mult
+    Mult -->|"+"| Add["+ C"]
+    C --> Add
+    Add --> D
+
+    subgraph "Neural Network Mapping"
+        NN["output = weights × activations + bias<br/><br/>A = weights<br/>B = activations<br/>C = bias<br/>D = output"]
+    end
+
+    style D fill:#90EE90
+    style NN fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Tensor Core Shapes",
+                        "explanation": "Tensor Cores operate on fixed matrix tile sizes. The basic unit is a small matrix fragment that the hardware can process efficiently.",
+                        "diagram_data": """graph TB
+    subgraph "Volta/Turing (First Gen)"
+        V1["4×4×4 FP16<br/>A[4×4] × B[4×4] = C[4×4]"]
+    end
+
+    subgraph "Ampere (2nd Gen)"
+        A1["8×8×4 for various types<br/>16×8×8 for INT8<br/>More flexible shapes"]
+    end
+
+    subgraph "Hopper (3rd Gen)"
+        H1["Up to 64×64×16<br/>Larger tiles = more efficiency<br/>New FP8 support"]
+    end
+
+    subgraph "Warp-Level Operation"
+        Warp["32 threads cooperate to:<br/>• Load matrix fragments<br/>• Execute MMA<br/>• Store results<br/><br/>All 32 threads MUST participate"]
+    end
+
+    V1 --> A1 --> H1
+
+    style H1 fill:#90EE90
+    style Warp fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Precision Modes",
+                        "explanation": "Tensor Cores support multiple precision combinations. The accumulator is typically higher precision to maintain accuracy.",
+                        "diagram_data": """graph TB
+    subgraph "Input Precision → Accumulator"
+        FP16["FP16 × FP16 → FP16/FP32"]
+        BF16["BF16 × BF16 → FP32"]
+        TF32["TF32 × TF32 → FP32"]
+        FP8["FP8 × FP8 → FP16/FP32"]
+        INT8["INT8 × INT8 → INT32"]
+        INT4["INT4 × INT4 → INT32"]
+    end
+
+    subgraph "Use Cases"
+        UC1["FP16/BF16: Training"]
+        UC2["TF32: Drop-in FP32 replacement"]
+        UC3["FP8: Fast training (Hopper+)"]
+        UC4["INT8/INT4: Inference"]
+    end
+
+    subgraph "Throughput (H100)"
+        TP["FP16: 989 TFLOPS<br/>TF32: 495 TFLOPS<br/>FP8: 1,979 TFLOPS<br/>INT8: 1,979 TOPS"]
+    end
+
+    style BF16 fill:#90EE90
+    style FP8 fill:#ADD8E6
+    style TP fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "WMMA API (Warp Matrix Multiply-Accumulate)",
+                        "explanation": "CUDA provides the **WMMA API** for programming Tensor Cores. Operations are performed at the warp level (32 threads).",
+                        "diagram_data": """graph TB
+    subgraph "WMMA Workflow"
+        Step1["1. Declare fragments<br/>wmma::fragment<...> a, b, c"]
+        Step2["2. Load from memory<br/>wmma::load_matrix_sync(a, ptr, stride)"]
+        Step3["3. Execute MMA<br/>wmma::mma_sync(c, a, b, c)"]
+        Step4["4. Store results<br/>wmma::store_matrix_sync(ptr, c, stride)"]
+    end
+
+    Step1 --> Step2 --> Step3 --> Step4
+
+    subgraph "Fragment Types"
+        Frag["matrix_a: M×K (row major)<br/>matrix_b: K×N (col major)<br/>accumulator: M×N"]
+    end
+
+    subgraph "Key Points"
+        KP1["All 32 threads must call together"]
+        KP2["_sync suffix = warp synchronization"]
+        KP3["Fragments distributed across threads"]
+    end
+
+    style Step3 fill:#90EE90
+    style KP1 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Fragment Distribution",
+                        "explanation": "Matrix fragments are distributed across the 32 threads of a warp. Each thread holds a portion of the data.",
+                        "diagram_data": """graph TB
+    subgraph "16×16 Matrix Fragment"
+        Mat["256 elements total<br/>Distributed across 32 threads<br/>8 elements per thread"]
+    end
+
+    subgraph "Thread Distribution"
+        T0["Thread 0: elements 0,1,2,3,4,5,6,7"]
+        T1["Thread 1: elements 8,9,10,11,12,13,14,15"]
+        TN["...<br/>Thread 31: last 8 elements"]
+    end
+
+    subgraph "Why This Matters"
+        Why["• Can't access individual elements<br/>• Must use load/store APIs<br/>• Hardware manages layout<br/>• Enables parallel execution"]
+    end
+
+    Mat --> T0
+    Mat --> T1
+    Mat --> TN
+
+    style Mat fill:#ADD8E6
+    style Why fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Memory Requirements",
+                        "explanation": "Tensor Cores have strict alignment and layout requirements for optimal performance.",
+                        "diagram_data": """graph TB
+    subgraph "Alignment Requirements"
+        A1["Matrix A: 16-byte aligned"]
+        A2["Matrix B: 16-byte aligned"]
+        A3["Leading dimension: multiple of 8"]
+    end
+
+    subgraph "Layout Requirements"
+        L1["A: Row-major (default) or Col-major"]
+        L2["B: Col-major (default) or Row-major"]
+        L3["Must match fragment declaration"]
+    end
+
+    subgraph "Performance Tips"
+        P1["Use shared memory for fragments"]
+        P2["Coalesce global memory loads"]
+        P3["Pad matrices to alignment"]
+        P4["Avoid bank conflicts"]
+    end
+
+    subgraph "Common Pitfall"
+        Pit["Misaligned data:<br/>• Silent wrong results<br/>• Or major slowdown<br/>• Always verify alignment!"]
+    end
+
+    style Pit fill:#FFB6C1
+    style P1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Tiled Matrix Multiplication",
+                        "explanation": "Large matrices are processed in tiles. Each tile uses Tensor Core operations, and tiles are accumulated.",
+                        "diagram_data": """graph TB
+    subgraph "Large Matrix Multiply"
+        BigA["Matrix A<br/>1024 × 1024"]
+        BigB["Matrix B<br/>1024 × 1024"]
+        BigC["Result C<br/>1024 × 1024"]
+    end
+
+    subgraph "Tiling Strategy"
+        Tile["Split into 16×16 tiles<br/>64 × 64 = 4096 tiles<br/><br/>For each output tile:<br/>  C_tile = Σ A_tile × B_tile"]
+    end
+
+    subgraph "Outer Loop"
+        OL["for tile_m in range(M/16):<br/>  for tile_n in range(N/16):<br/>    c_frag = 0<br/>    for tile_k in range(K/16):<br/>      a_frag = load(A, tile_m, tile_k)<br/>      b_frag = load(B, tile_k, tile_n)<br/>      c_frag = mma(a_frag, b_frag, c_frag)<br/>    store(C, tile_m, tile_n, c_frag)"]
+    end
+
+    BigA --> Tile
+    BigB --> Tile
+    Tile --> OL --> BigC
+
+    style Tile fill:#ADD8E6
+    style OL fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Shared Memory Staging",
+                        "explanation": "For best performance, load tiles into shared memory before feeding Tensor Cores. This reduces global memory traffic.",
+                        "diagram_data": """graph TB
+    subgraph "Without Shared Memory"
+        Bad["Global Mem → Tensor Core<br/>High latency, low bandwidth"]
+    end
+
+    subgraph "With Shared Memory"
+        Good["Global Mem → Shared Mem → Tensor Core<br/>Load once, reuse many times"]
+    end
+
+    subgraph "Pipeline Pattern"
+        Pipe["1. Load tile A to shared mem<br/>2. Load tile B to shared mem<br/>3. __syncthreads()<br/>4. WMMA from shared mem<br/>5. Repeat for next tiles"]
+    end
+
+    subgraph "Double Buffering"
+        DB["While computing tile N:<br/>  Prefetch tile N+1<br/><br/>Hides memory latency"]
+    end
+
+    Bad -.->|"slow"| X["✗"]
+    Good -->|"fast"| Check["✓"]
+
+    style Good fill:#90EE90
+    style DB fill:#ADD8E6
+    style X fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "cuBLAS and cuDNN",
+                        "explanation": "You rarely program Tensor Cores directly. Libraries like **cuBLAS** and **cuDNN** use them automatically.",
+                        "diagram_data": """graph TB
+    subgraph "Library Stack"
+        PyTorch["PyTorch: torch.matmul()"]
+        cuBLAS["cuBLAS: cublasGemmEx()"]
+        TC["Tensor Cores"]
+    end
+
+    PyTorch --> cuBLAS --> TC
+
+    subgraph "Automatic Usage"
+        Auto["cuBLAS auto-selects Tensor Cores when:<br/>• Dimensions are multiples of 8<br/>• Data types are FP16/BF16/TF32<br/>• Alignment requirements met"]
+    end
+
+    subgraph "Enabling in PyTorch"
+        PT["# Use TF32 (default on Ampere+)<br/>torch.backends.cuda.matmul.allow_tf32 = True<br/><br/># Use FP16<br/>with torch.autocast('cuda'):<br/>    output = model(input)"]
+    end
+
+    style cuBLAS fill:#90EE90
+    style PT fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Dimension Padding",
+                        "explanation": "Tensor Cores work best when matrix dimensions are multiples of 8 (or 16). Padding odd-sized matrices improves performance significantly.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        Prob["Matrix: 127 × 127<br/>Not a multiple of 8<br/>→ Falls back to CUDA cores<br/>→ Much slower!"]
+    end
+
+    subgraph "Solution: Padding"
+        Sol["Pad to 128 × 128<br/>Multiple of 8 ✓<br/>→ Uses Tensor Cores<br/>→ Fast!"]
+    end
+
+    subgraph "PyTorch Tip"
+        Tip["# Pad embedding dims, hidden sizes<br/>hidden_size = 768  # ✓ divisible by 8<br/>hidden_size = 770  # ✗ not divisible<br/><br/># Pad batch size if needed<br/>batch_size = 32    # ✓"]
+    end
+
+    subgraph "Performance Impact"
+        Impact["127×127: ~50 TFLOPS<br/>128×128: ~300 TFLOPS<br/><br/>6x speedup from 1 extra row/col!"]
+    end
+
+    Prob --> Sol
+
+    style Prob fill:#FFB6C1
+    style Sol fill:#90EE90
+    style Impact fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "Hopper Innovations",
+                        "explanation": "NVIDIA Hopper (H100) introduced significant Tensor Core improvements with the **Transformer Engine** and new instructions.",
+                        "diagram_data": """graph TB
+    subgraph "Hopper New Features"
+                        H1["FP8 Support<br/>2x throughput vs FP16"]
+        H2["Larger Tiles<br/>Up to 64×64"]
+        H3["Transformer Engine<br/>Automatic FP8 scaling"]
+        H4["TMA (Tensor Memory Accelerator)<br/>Async bulk data movement"]
+    end
+
+    subgraph "Transformer Engine"
+        TE["Per-tensor dynamic scaling<br/>• Tracks activation ranges<br/>• Adjusts scale factors<br/>• Maintains accuracy in FP8"]
+    end
+
+    subgraph "FP8 Throughput (H100)"
+        FP8["FP8: 1,979 TFLOPS<br/>FP16: 989 TFLOPS<br/>TF32: 495 TFLOPS<br/><br/>FP8 = 2x FP16 speed!"]
+    end
+
+    style H1 fill:#90EE90
+    style H3 fill:#ADD8E6
+    style FP8 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "When Are Tensor Cores Used?",
+                        "explanation": "Here's how to ensure your operations use Tensor Cores rather than falling back to slower CUDA cores.",
+                        "diagram_data": """graph TB
+    subgraph "Requirements for Tensor Cores"
+        R1["✓ Matrix multiply (GEMM) operation"]
+        R2["✓ FP16, BF16, TF32, or INT8 data"]
+        R3["✓ Dimensions multiple of 8"]
+        R4["✓ Aligned memory access"]
+        R5["✓ Using cuBLAS/cuDNN"]
+    end
+
+    subgraph "Common Failures"
+        F1["✗ Small matrices (< 256 elements)"]
+        F2["✗ Odd dimensions (not mult of 8)"]
+        F3["✗ FP32 without TF32 enabled"]
+        F4["✗ Element-wise ops (not matmul)"]
+    end
+
+    subgraph "Verification"
+        Ver["# Profile with Nsight<br/>ncu --set full python train.py<br/><br/>Look for:<br/>• sm__pipe_tensor_cycles<br/>• tensor_active > 0"]
+    end
+
+    style R1 fill:#90EE90
+    style F1 fill:#FFB6C1
+    style Ver fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of Tensor Core essentials for ML practitioners.",
+                        "diagram_data": """graph TB
+    subgraph "Key Takeaways"
+        K1["Tensor Cores = fast matrix multiply"]
+        K2["D = A × B + C in one cycle"]
+        K3["Use FP16/BF16/TF32 for training"]
+        K4["Dimensions should be multiples of 8"]
+    end
+
+    subgraph "In PyTorch"
+        PT1["# Enable TF32 (usually default)<br/>torch.backends.cuda.matmul.allow_tf32 = True"]
+        PT2["# Use automatic mixed precision<br/>with torch.autocast('cuda', dtype=torch.bfloat16):<br/>    output = model(input)"]
+    end
+
+    subgraph "Best Practices"
+        BP1["Pad dimensions to multiples of 8"]
+        BP2["Use cuBLAS/cuDNN (automatic)"]
+        BP3["Enable TF32 or use AMP"]
+        BP4["Profile to verify TC usage"]
+    end
+
+    style K1 fill:#90EE90
+    style PT2 fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_multi_gpu_training_visual(self):
+        """Seed multi-GPU training strategies visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="multi-gpu-training",
+            defaults={
+                "title": "Multi-GPU Training Strategies",
+                "description": "Master data parallelism, model parallelism, tensor parallelism, pipeline parallelism, and ZeRO",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 18,
+                "tags": ["gpu", "distributed-training", "data-parallel", "model-parallel", "zero", "fsdp"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Multi-GPU Training?",
+                        "explanation": "Single GPUs have memory and compute limits. Modern models require multiple GPUs to:\n\n- **Fit larger models** (LLMs exceed single GPU memory)\n- **Train faster** (parallelize computation)\n- **Use larger batch sizes** (better gradient estimates)",
+                        "diagram_data": """graph TB
+    subgraph "Single GPU Limits"
+        S1["Memory: 80GB (H100)"]
+        S2["LLaMA 70B: ~140GB needed"]
+        S3["→ Doesn't fit!"]
+    end
+
+    subgraph "Multi-GPU Solutions"
+        M1["Split model across GPUs"]
+        M2["Split data across GPUs"]
+        M3["Or both!"]
+    end
+
+    subgraph "Parallelism Types"
+        P1["Data Parallelism<br/>Same model, different data"]
+        P2["Model Parallelism<br/>Split model layers"]
+        P3["Tensor Parallelism<br/>Split individual layers"]
+        P4["Pipeline Parallelism<br/>Split stages"]
+    end
+
+    S1 --> S2 --> S3
+    S3 --> M1
+    S3 --> M2
+
+    style S3 fill:#FFB6C1
+    style M1 fill:#90EE90
+    style M2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Data Parallelism (DP)",
+                        "explanation": "**Data Parallelism** is the simplest approach: replicate the entire model on each GPU, split the batch across GPUs, then synchronize gradients.\n\nEach GPU processes a different mini-batch of data.",
+                        "diagram_data": """graph TB
+    subgraph "Data Parallel Setup"
+        Data["Batch: 32 samples"]
+        GPU1["GPU 0<br/>Full Model<br/>Samples 0-7"]
+        GPU2["GPU 1<br/>Full Model<br/>Samples 8-15"]
+        GPU3["GPU 2<br/>Full Model<br/>Samples 16-23"]
+        GPU4["GPU 3<br/>Full Model<br/>Samples 24-31"]
+    end
+
+    Data --> GPU1
+    Data --> GPU2
+    Data --> GPU3
+    Data --> GPU4
+
+    subgraph "Gradient Sync"
+        Sync["All-Reduce gradients<br/>Average across all GPUs<br/>Then update weights"]
+    end
+
+    GPU1 --> Sync
+    GPU2 --> Sync
+    GPU3 --> Sync
+    GPU4 --> Sync
+
+    subgraph "Result"
+        R["All GPUs have identical weights<br/>Effective batch = 32<br/>4x faster than single GPU"]
+    end
+
+    Sync --> R
+
+    style Sync fill:#ADD8E6
+    style R fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "DP vs DDP",
+                        "explanation": "PyTorch has two data parallel implementations:\n\n- **DataParallel (DP)**: Single-process, simple but slow\n- **DistributedDataParallel (DDP)**: Multi-process, fast and scalable\n\n**Always use DDP** for serious training.",
+                        "diagram_data": """graph TB
+    subgraph "DataParallel (DP) - Avoid"
+        DP1["Single Python process"]
+        DP2["GIL bottleneck"]
+        DP3["Data copied through GPU 0"]
+        DP4["Uneven GPU memory usage"]
+    end
+
+    subgraph "DistributedDataParallel (DDP) - Use This"
+        DDP1["One process per GPU"]
+        DDP2["No GIL issues"]
+        DDP3["Direct GPU-to-GPU (NCCL)"]
+        DDP4["Even memory distribution"]
+    end
+
+    subgraph "Code"
+        Code["# DDP setup<br/>torch.distributed.init_process_group('nccl')<br/>model = DDP(model, device_ids=[local_rank])<br/><br/># Run with torchrun<br/>torchrun --nproc_per_node=4 train.py"]
+    end
+
+    style DP1 fill:#FFB6C1
+    style DDP1 fill:#90EE90
+    style Code fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "All-Reduce Communication",
+                        "explanation": "**All-Reduce** is the key operation in data parallelism. It sums gradients across all GPUs and distributes the result back to all GPUs.",
+                        "diagram_data": """graph TB
+    subgraph "Before All-Reduce"
+        G0["GPU 0: grad = [1, 2]"]
+        G1["GPU 1: grad = [3, 4]"]
+        G2["GPU 2: grad = [5, 6]"]
+        G3["GPU 3: grad = [7, 8]"]
+    end
+
+    subgraph "All-Reduce Operation"
+        Op["Sum all gradients:<br/>[1+3+5+7, 2+4+6+8]<br/>= [16, 20]"]
+    end
+
+    subgraph "After All-Reduce"
+        R0["GPU 0: grad = [16, 20]"]
+        R1["GPU 1: grad = [16, 20]"]
+        R2["GPU 2: grad = [16, 20]"]
+        R3["GPU 3: grad = [16, 20]"]
+    end
+
+    G0 --> Op
+    G1 --> Op
+    G2 --> Op
+    G3 --> Op
+    Op --> R0
+    Op --> R1
+    Op --> R2
+    Op --> R3
+
+    subgraph "Implementations"
+        Impl["Ring All-Reduce: O(N) bandwidth-optimal<br/>Tree All-Reduce: O(log N) latency-optimal<br/>NCCL chooses automatically"]
+    end
+
+    style Op fill:#90EE90
+    style Impl fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Data Parallelism Limitations",
+                        "explanation": "Data parallelism requires the **full model** to fit on each GPU. For large models like GPT-3 (175B parameters), this isn't possible.",
+                        "diagram_data": """graph TB
+    subgraph "Memory Per GPU (Data Parallel)"
+                        Mem["Model weights: W<br/>Gradients: W<br/>Optimizer states: 2W (Adam)<br/>Activations: varies<br/><br/>Total: ~4W + activations"]
+    end
+
+    subgraph "Example: 7B Parameter Model"
+        Ex["7B params × 4 bytes = 28 GB<br/>+ Gradients: 28 GB<br/>+ Adam states: 56 GB<br/>+ Activations: ~20 GB<br/><br/>Total: ~132 GB per GPU!"]
+    end
+
+    subgraph "Problem"
+        Prob["H100 has 80 GB<br/>→ Model doesn't fit<br/>→ Need model parallelism"]
+    end
+
+    Mem --> Ex --> Prob
+
+    style Prob fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Model Parallelism (Layer-wise)",
+                        "explanation": "**Model Parallelism** splits the model across GPUs. Each GPU holds different layers and passes activations to the next GPU.",
+                        "diagram_data": """graph LR
+    subgraph "GPU 0"
+        L1["Layers 1-8"]
+    end
+
+    subgraph "GPU 1"
+        L2["Layers 9-16"]
+    end
+
+    subgraph "GPU 2"
+        L3["Layers 17-24"]
+    end
+
+    subgraph "GPU 3"
+        L4["Layers 25-32"]
+    end
+
+    Input["Input"] --> L1
+    L1 -->|"activations"| L2
+    L2 -->|"activations"| L3
+    L3 -->|"activations"| L4
+    L4 --> Output["Output"]
+
+    subgraph "Problem: Low Utilization"
+        Prob["GPU 0 works → GPUs 1,2,3 idle<br/>GPU 1 works → GPUs 0,2,3 idle<br/>...<br/>Only 25% utilization!"]
+    end
+
+    style Prob fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Pipeline Parallelism",
+                        "explanation": "**Pipeline Parallelism** solves the idle GPU problem by processing multiple micro-batches simultaneously. While GPU 1 processes batch 1, GPU 0 starts batch 2.",
+                        "diagram_data": """graph TB
+    subgraph "Time →"
+        T1["t=1"]
+        T2["t=2"]
+        T3["t=3"]
+        T4["t=4"]
+        T5["t=5"]
+    end
+
+    subgraph "GPU 0 (Layers 1-8)"
+        G0T1["B1"]
+        G0T2["B2"]
+        G0T3["B3"]
+        G0T4["B4"]
+        G0T5["-"]
+    end
+
+    subgraph "GPU 1 (Layers 9-16)"
+        G1T1["-"]
+        G1T2["B1"]
+        G1T3["B2"]
+        G1T4["B3"]
+        G1T5["B4"]
+    end
+
+    subgraph "GPU 2 (Layers 17-24)"
+        G2T1["-"]
+        G2T2["-"]
+        G2T3["B1"]
+        G2T4["B2"]
+        G2T5["B3"]
+    end
+
+    subgraph "Key Concepts"
+        KC["Micro-batches: B1, B2, B3, B4<br/>Pipeline bubble: startup/shutdown idle time<br/>More micro-batches = less bubble overhead"]
+    end
+
+    style G0T1 fill:#90EE90
+    style G1T2 fill:#90EE90
+    style G2T3 fill:#90EE90
+    style KC fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Tensor Parallelism",
+                        "explanation": "**Tensor Parallelism** splits individual layers across GPUs. For transformers, this means splitting attention heads and MLP columns.",
+                        "diagram_data": """graph TB
+    subgraph "Single GPU"
+        Single["Linear layer: [4096 × 16384]<br/>All on one GPU"]
+    end
+
+    subgraph "Tensor Parallel (4 GPUs)"
+        TP0["GPU 0: [4096 × 4096]"]
+        TP1["GPU 1: [4096 × 4096]"]
+        TP2["GPU 2: [4096 × 4096]"]
+        TP3["GPU 3: [4096 × 4096]"]
+    end
+
+    subgraph "Attention Heads Split"
+        AH["32 attention heads<br/>→ 8 heads per GPU<br/>Each GPU computes partial attention<br/>All-reduce to combine"]
+    end
+
+    subgraph "Advantages"
+        Adv["• Reduces memory per GPU<br/>• Minimal pipeline bubbles<br/>• Good for wide layers"]
+    end
+
+    subgraph "Disadvantage"
+        Dis["Requires fast GPU interconnect<br/>(NVLink preferred)"]
+    end
+
+    Single --> TP0
+    Single --> TP1
+    Single --> TP2
+    Single --> TP3
+
+    style TP0 fill:#90EE90
+    style AH fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "ZeRO: Zero Redundancy Optimizer",
+                        "explanation": "**ZeRO** (from DeepSpeed) eliminates memory redundancy in data parallelism by partitioning optimizer states, gradients, and parameters.",
+                        "diagram_data": """graph TB
+    subgraph "Standard Data Parallel"
+        SDP["Each GPU stores:<br/>• Full weights (W)<br/>• Full gradients (W)<br/>• Full optimizer (2W)<br/>Total: 4W per GPU"]
+    end
+
+    subgraph "ZeRO Stage 1"
+        Z1["Partition optimizer states<br/>Each GPU: W + W + 2W/N<br/>Saves optimizer memory"]
+    end
+
+    subgraph "ZeRO Stage 2"
+        Z2["+ Partition gradients<br/>Each GPU: W + W/N + 2W/N<br/>Saves gradient memory"]
+    end
+
+    subgraph "ZeRO Stage 3 (FSDP)"
+        Z3["+ Partition weights<br/>Each GPU: W/N + W/N + 2W/N<br/>= 4W/N total<br/>Near-linear scaling!"]
+    end
+
+    SDP --> Z1 --> Z2 --> Z3
+
+    subgraph "Memory Comparison (8 GPUs)"
+        Comp["Standard: 4W per GPU<br/>ZeRO-3: 0.5W per GPU<br/>8x memory reduction!"]
+    end
+
+    style Z3 fill:#90EE90
+    style Comp fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "ZeRO Stage 3 / FSDP",
+                        "explanation": "**ZeRO-3** (DeepSpeed) and **FSDP** (PyTorch) fully shard all model states. During forward/backward, parameters are gathered just-in-time.",
+                        "diagram_data": """graph TB
+    subgraph "Sharded State"
+        Shard["GPU 0: params[0:N/4]<br/>GPU 1: params[N/4:N/2]<br/>GPU 2: params[N/2:3N/4]<br/>GPU 3: params[3N/4:N]"]
+    end
+
+    subgraph "Forward Pass"
+        FW1["1. All-gather layer params"]
+        FW2["2. Compute forward"]
+        FW3["3. Discard non-owned params"]
+        FW4["4. Repeat for next layer"]
+    end
+
+    subgraph "Backward Pass"
+        BW1["1. All-gather layer params"]
+        BW2["2. Compute gradients"]
+        BW3["3. Reduce-scatter gradients"]
+        BW4["4. Each GPU keeps its shard"]
+    end
+
+    Shard --> FW1 --> FW2 --> FW3 --> FW4
+
+    subgraph "Trade-off"
+        Trade["More communication<br/>but fits larger models<br/>in less total memory"]
+    end
+
+    style Shard fill:#ADD8E6
+    style Trade fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Combining Parallelism Strategies",
+                        "explanation": "Large-scale training often combines multiple parallelism strategies. This is called **3D Parallelism** or **hybrid parallelism**.",
+                        "diagram_data": """graph TB
+    subgraph "3D Parallelism Example"
+        Config["64 GPUs total<br/>Data Parallel: 4-way<br/>Tensor Parallel: 4-way<br/>Pipeline Parallel: 4-way<br/>4 × 4 × 4 = 64"]
+    end
+
+    subgraph "Hierarchy"
+        DP["Data Parallel Groups<br/>(across nodes)"]
+        TP["Tensor Parallel Groups<br/>(within node, NVLink)"]
+        PP["Pipeline Parallel Groups<br/>(across nodes)"]
+    end
+
+    subgraph "Why This Works"
+        Why["• TP needs fast interconnect → within node<br/>• PP tolerates latency → across nodes<br/>• DP scales batch size → across nodes"]
+    end
+
+    subgraph "Real Example: GPT-3 175B"
+        GPT3["• 8-way tensor parallel<br/>• 8-way pipeline parallel<br/>• 8-way data parallel<br/>• Total: 512 GPUs"]
+    end
+
+    style Config fill:#90EE90
+    style GPT3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "Memory Comparison",
+                        "explanation": "Here's how different strategies affect memory usage for a 7B parameter model.",
+                        "diagram_data": """graph TB
+    subgraph "7B Model Memory Analysis"
+        Base["Base memory per GPU:<br/>Weights: 28 GB (FP32)<br/>Gradients: 28 GB<br/>Adam: 56 GB<br/>Total: 112 GB"]
+    end
+
+    subgraph "Data Parallel"
+        DP["Each GPU: 112 GB<br/>→ Doesn't fit in 80GB!"]
+    end
+
+    subgraph "ZeRO Stage 1"
+        Z1["Each GPU: ~70 GB<br/>Partitioned optimizer"]
+    end
+
+    subgraph "ZeRO Stage 2"
+        Z2["Each GPU: ~42 GB<br/>+ Partitioned grads"]
+    end
+
+    subgraph "ZeRO Stage 3 / FSDP"
+        Z3["Each GPU: ~14 GB (8 GPUs)<br/>Fully sharded<br/>Fits easily!"]
+    end
+
+    Base --> DP
+    Base --> Z1
+    Base --> Z2
+    Base --> Z3
+
+    style DP fill:#FFB6C1
+    style Z3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Choosing a Strategy",
+                        "explanation": "Use this decision tree to choose the right parallelism strategy for your use case.",
+                        "diagram_data": """graph TB
+    Start["Does model fit on 1 GPU?"]
+
+    Start -->|"Yes"| Q1{"Need faster training?"}
+    Start -->|"No"| Q2{"How much larger?"}
+
+    Q1 -->|"Yes"| DDP["Use DDP<br/>Data Parallel"]
+    Q1 -->|"No"| Single["Single GPU is fine"]
+
+    Q2 -->|"2-4x"| FSDP["Use FSDP/ZeRO-3<br/>Shard everything"]
+    Q2 -->|"10x+"| Q3{"Have NVLink?"}
+
+    Q3 -->|"Yes"| TP["Tensor Parallel<br/>+ FSDP"]
+    Q3 -->|"No"| PP["Pipeline Parallel<br/>+ FSDP"]
+
+    subgraph "Quick Guide"
+        QG["DDP: Simple, model fits, need speed<br/>FSDP: Model barely fits, easy setup<br/>TP: Large model, fast interconnect<br/>PP: Very large model, any interconnect"]
+    end
+
+    style DDP fill:#90EE90
+    style FSDP fill:#ADD8E6
+    style QG fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "PyTorch Code Examples",
+                        "explanation": "Here's how to set up each parallelism strategy in PyTorch.",
+                        "diagram_data": """graph TB
+    subgraph "DDP (Data Parallel)"
+        DDP_Code["# Launch with torchrun<br/>model = DDP(model)"]
+    end
+
+    subgraph "FSDP (Fully Sharded)"
+        FSDP_Code["from torch.distributed.fsdp import FSDP<br/>model = FSDP(<br/>    model,<br/>    sharding_strategy=FULL_SHARD,<br/>    mixed_precision=MixedPrecision(...)<br/>)"]
+    end
+
+    subgraph "DeepSpeed ZeRO"
+        DS_Code["import deepspeed<br/>model, optimizer, _, _ = deepspeed.initialize(<br/>    model=model,<br/>    config='ds_config.json'  # ZeRO stage 3<br/>)"]
+    end
+
+    subgraph "Tensor Parallel (Megatron)"
+        TP_Code["# Requires model changes<br/>from megatron.core import tensor_parallel<br/>linear = tensor_parallel.ColumnParallelLinear(...)"]
+    end
+
+    style DDP_Code fill:#90EE90
+    style FSDP_Code fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 14,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of multi-GPU training strategies.",
+                        "diagram_data": """graph TB
+    subgraph "Strategy Summary"
+        S1["DDP: Replicate model, split data<br/>FSDP/ZeRO-3: Shard everything<br/>TP: Split layers horizontally<br/>PP: Split layers vertically"]
+    end
+
+    subgraph "Communication Patterns"
+        C1["DDP: All-reduce gradients<br/>FSDP: All-gather + reduce-scatter<br/>TP: All-reduce activations<br/>PP: Point-to-point activations"]
+    end
+
+    subgraph "Best Practices"
+        BP1["Start with DDP if model fits"]
+        BP2["Use FSDP for larger models"]
+        BP3["Combine strategies for huge models"]
+        BP4["Profile to find bottlenecks"]
+    end
+
+    subgraph "Tools"
+        Tools["PyTorch: DDP, FSDP<br/>DeepSpeed: ZeRO<br/>Megatron-LM: TP + PP<br/>FairScale: FSDP predecessor"]
+    end
+
+    style S1 fill:#ADD8E6
+    style BP1 fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_gpu_memory_optimization_visual(self):
+        """Seed GPU memory optimization visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="gpu-memory-optimization",
+            defaults={
+                "title": "GPU Memory Optimization Techniques",
+                "description": "Master memory coalescing, bank conflicts, tiling strategies, and memory-bound vs compute-bound optimization",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 15,
+                "tags": ["gpu", "memory", "optimization", "coalescing", "bank-conflicts", "tiling"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "GPU Memory Hierarchy Review",
+                        "explanation": "Understanding the memory hierarchy is essential for optimization. Each level has different speed, size, and access patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Memory Hierarchy (H100)"
+        Reg["Registers<br/>Fastest, per-thread<br/>~256 KB per SM"]
+        Shared["Shared Memory<br/>Per-block, ~19 TB/s<br/>228 KB per SM"]
+        L1["L1 Cache<br/>Per-SM, automatic<br/>256 KB per SM"]
+        L2["L2 Cache<br/>Shared across SMs<br/>50 MB total"]
+        HBM["HBM3 Global Memory<br/>80 GB, ~3 TB/s<br/>Slowest"]
+    end
+
+    Reg --> Shared --> L1 --> L2 --> HBM
+
+    subgraph "Access Latency"
+        Lat["Registers: 1 cycle<br/>Shared: ~20 cycles<br/>L1: ~30 cycles<br/>L2: ~200 cycles<br/>HBM: ~400 cycles"]
+    end
+
+    subgraph "Key Insight"
+        Key["Minimize HBM access!<br/>Reuse data in shared memory<br/>and registers"]
+    end
+
+    style Reg fill:#90EE90
+    style HBM fill:#FFB6C1
+    style Key fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Memory Coalescing",
+                        "explanation": "**Memory coalescing** combines multiple thread memory accesses into fewer transactions. When threads access consecutive addresses, the GPU can load a single cache line instead of many separate loads.",
+                        "diagram_data": """graph TB
+    subgraph "Coalesced Access (GOOD)"
+        C1["Thread 0 → addr 0"]
+        C2["Thread 1 → addr 4"]
+        C3["Thread 2 → addr 8"]
+        C4["Thread 31 → addr 124"]
+        CResult["→ 1 transaction (128 bytes)"]
+    end
+
+    subgraph "Strided Access (BAD)"
+        S1["Thread 0 → addr 0"]
+        S2["Thread 1 → addr 512"]
+        S3["Thread 2 → addr 1024"]
+        S4["Thread 31 → addr 15872"]
+        SResult["→ 32 transactions!"]
+    end
+
+    subgraph "Impact"
+        Impact["Coalesced: Full bandwidth<br/>Strided: 1/32 bandwidth<br/>32x slowdown!"]
+    end
+
+    C1 --> CResult
+    S1 --> SResult
+
+    style CResult fill:#90EE90
+    style SResult fill:#FFB6C1
+    style Impact fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Coalescing in Practice",
+                        "explanation": "Array access patterns determine coalescing. Adjacent threads should access adjacent memory.",
+                        "diagram_data": """graph TB
+    subgraph "2D Array: Row-major in C"
+        RM["Memory: [row0][row1][row2]...<br/><br/>data[i][j]: row-major layout"]
+    end
+
+    subgraph "Good: Access along rows"
+        Good["// tid = thread index<br/>data[row][tid]  // Adjacent threads → adjacent addresses<br/>→ COALESCED"]
+    end
+
+    subgraph "Bad: Access along columns"
+        Bad["data[tid][col]  // Adjacent threads → strided addresses<br/>→ NOT COALESCED"]
+    end
+
+    subgraph "Fix: Transpose or change access"
+        Fix["Option 1: Transpose data<br/>Option 2: Load to shared memory<br/>         in coalesced pattern,<br/>         then access strided from shared"]
+    end
+
+    RM --> Good
+    RM --> Bad
+    Bad --> Fix
+
+    style Good fill:#90EE90
+    style Bad fill:#FFB6C1
+    style Fix fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Shared Memory Basics",
+                        "explanation": "**Shared memory** is fast, programmer-managed memory shared by all threads in a block. It's organized into **banks** for parallel access.",
+                        "diagram_data": """graph TB
+    subgraph "Shared Memory Properties"
+        P1["~100x faster than global memory"]
+        P2["Limited size (~48-228 KB per SM)"]
+        P3["Shared within thread block"]
+        P4["Programmer managed"]
+    end
+
+    subgraph "Declaration"
+        Code["__shared__ float tile[16][16];<br/><br/>// All threads in block can<br/>// read/write 'tile'"]
+    end
+
+    subgraph "Use Cases"
+        UC1["Cache global memory reads"]
+        UC2["Inter-thread communication"]
+        UC3["Avoid redundant loads"]
+        UC4["Enable coalesced patterns"]
+    end
+
+    subgraph "Synchronization"
+        Sync["__syncthreads();<br/>Barrier for all threads in block<br/>REQUIRED after shared mem writes<br/>before other threads read"]
+    end
+
+    style P1 fill:#90EE90
+    style Sync fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Shared Memory Banks",
+                        "explanation": "Shared memory is divided into 32 **banks** (like lanes on a highway). Each bank can serve one address per cycle. Conflicts occur when multiple threads access the same bank.",
+                        "diagram_data": """graph TB
+    subgraph "32 Banks"
+        Banks["Bank 0: addr 0, 32, 64...<br/>Bank 1: addr 1, 33, 65...<br/>Bank 2: addr 2, 34, 66...<br/>...<br/>Bank 31: addr 31, 63, 95..."]
+    end
+
+    subgraph "No Conflict"
+        NC["Thread 0 → Bank 0<br/>Thread 1 → Bank 1<br/>Thread 2 → Bank 2<br/>...<br/>All different banks → parallel access"]
+    end
+
+    subgraph "Bank Conflict"
+        BC["Thread 0 → Bank 0<br/>Thread 1 → Bank 0 (conflict!)<br/>Thread 2 → Bank 0 (conflict!)<br/>...<br/>Same bank → serialized access"]
+    end
+
+    subgraph "32-way Conflict"
+        Worst["All threads access Bank 0<br/>→ 32x slower!"]
+    end
+
+    Banks --> NC
+    Banks --> BC
+    BC --> Worst
+
+    style NC fill:#90EE90
+    style Worst fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Avoiding Bank Conflicts",
+                        "explanation": "Common patterns that cause bank conflicts and how to fix them.",
+                        "diagram_data": """graph TB
+    subgraph "Conflict: Column Access"
+        Col["__shared__ float data[32][32];<br/><br/>// Each thread accesses same column<br/>data[tid][0];  // All hit bank 0!"]
+    end
+
+    subgraph "Fix 1: Padding"
+        Pad["__shared__ float data[32][33];  // Add 1 column<br/><br/>// Now columns are staggered across banks<br/>data[tid][0];  // Different banks!"]
+    end
+
+    subgraph "Fix 2: Transpose access"
+        Trans["// Access rows instead of columns<br/>data[0][tid];  // Different banks"]
+    end
+
+    subgraph "Conflict: Stride-32 access"
+        Stride["data[tid * 32];  // All same bank!"]
+    end
+
+    subgraph "Fix: Change stride"
+        FixS["data[tid * 33];  // Different banks"]
+    end
+
+    Col --> Pad
+    Col --> Trans
+    Stride --> FixS
+
+    style Col fill:#FFB6C1
+    style Pad fill:#90EE90
+    style Stride fill:#FFB6C1
+    style FixS fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Tiling Strategy",
+                        "explanation": "**Tiling** loads data into shared memory in chunks (tiles), processes the tile, then moves to the next. This maximizes data reuse.",
+                        "diagram_data": """graph TB
+    subgraph "Without Tiling"
+        NoTile["Each element loaded from global memory<br/>No reuse<br/>Memory bound"]
+    end
+
+    subgraph "With Tiling"
+        Tile["1. Load TILE_SIZE × TILE_SIZE to shared<br/>2. Process entire tile<br/>3. Move to next tile<br/>4. Repeat"]
+    end
+
+    subgraph "Matrix Multiply Example"
+        MM["C[i,j] = Σ A[i,k] × B[k,j]<br/><br/>Each A[i,k] used N times (all j)<br/>Each B[k,j] used M times (all i)<br/><br/>Load once to shared, use many times!"]
+    end
+
+    subgraph "Reuse Factor"
+        Reuse["Tile size: 16×16<br/>Each element used 16 times<br/>→ 16x fewer global loads!"]
+    end
+
+    NoTile --> Tile --> MM
+
+    style Tile fill:#90EE90
+    style Reuse fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Tiled Matrix Multiply",
+                        "explanation": "Step-by-step tiled matrix multiplication, the canonical example of GPU memory optimization.",
+                        "diagram_data": """graph TB
+    subgraph "Algorithm"
+        Step1["1. Load A_tile[TILE×TILE] to shared"]
+        Step2["2. Load B_tile[TILE×TILE] to shared"]
+        Step3["3. __syncthreads()"]
+        Step4["4. Each thread: partial_sum += A_tile × B_tile"]
+        Step5["5. __syncthreads()"]
+        Step6["6. Move to next tile, repeat"]
+        Step7["7. Write final sum to C"]
+    end
+
+    Step1 --> Step2 --> Step3 --> Step4 --> Step5 --> Step6 --> Step7
+
+    subgraph "Memory Access Pattern"
+        Pattern["Global reads: 2 × N × (N/TILE)²<br/>vs without tiling: 2 × N³<br/><br/>With TILE=16, N=1024:<br/>8M reads vs 2B reads!"]
+    end
+
+    subgraph "Key Insight"
+        Key["Each global load is REUSED<br/>TILE times from shared memory"]
+    end
+
+    style Step4 fill:#90EE90
+    style Key fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Memory Bound vs Compute Bound",
+                        "explanation": "Operations are limited by either memory bandwidth or compute throughput. Different optimizations apply to each.",
+                        "diagram_data": """graph TB
+    subgraph "Compute Bound"
+        CB["Arithmetic intensity HIGH<br/>Many ops per byte loaded<br/><br/>Examples:<br/>• Matrix multiply<br/>• Convolutions<br/><br/>Optimize: More compute per thread"]
+    end
+
+    subgraph "Memory Bound"
+        MB["Arithmetic intensity LOW<br/>Few ops per byte loaded<br/><br/>Examples:<br/>• Element-wise ops<br/>• Reductions<br/>• Softmax<br/><br/>Optimize: Reduce memory traffic"]
+    end
+
+    subgraph "Arithmetic Intensity"
+        AI["AI = FLOPs / Bytes loaded<br/><br/>Example:<br/>Vector add: 1 FLOP / 12 bytes = 0.08<br/>MatMul NxN: N FLOPs / 4 bytes = N/4"]
+    end
+
+    subgraph "Roofline Model"
+        Roof["If AI < HW_ratio: memory bound<br/>If AI > HW_ratio: compute bound<br/><br/>H100: ~10 FLOPs/byte threshold"]
+    end
+
+    style CB fill:#90EE90
+    style MB fill:#ADD8E6
+    style AI fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Kernel Fusion",
+                        "explanation": "**Kernel fusion** combines multiple operations into a single kernel, reducing memory traffic between operations.",
+                        "diagram_data": """graph TB
+    subgraph "Without Fusion"
+        WF1["Kernel 1: y = x + 1<br/>Read x from HBM<br/>Write y to HBM"]
+        WF2["Kernel 2: z = y * 2<br/>Read y from HBM<br/>Write z to HBM"]
+        WF3["4 HBM accesses"]
+    end
+
+    subgraph "With Fusion"
+        Fused["Single Kernel: z = (x + 1) * 2<br/>Read x from HBM<br/>y in registers only<br/>Write z to HBM"]
+        FResult["2 HBM accesses<br/>2x faster!"]
+    end
+
+    WF1 --> WF2 --> WF3
+    Fused --> FResult
+
+    subgraph "Tools for Fusion"
+        Tools["• torch.compile (TorchInductor)<br/>• Triton<br/>• Custom CUDA kernels<br/>• XLA"]
+    end
+
+    style WF3 fill:#FFB6C1
+    style FResult fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Register Pressure",
+                        "explanation": "Each thread has limited registers. Using too many **spills** to slow local memory. Using too few reduces parallelism.",
+                        "diagram_data": """graph TB
+    subgraph "Register Limits"
+        Lim["Max 255 registers per thread<br/>65536 registers per SM (H100)<br/><br/>More registers per thread =<br/>fewer concurrent threads"]
+    end
+
+    subgraph "Occupancy Trade-off"
+        Occ["High register usage:<br/>• Less parallelism<br/>• But more work per thread<br/><br/>Low register usage:<br/>• More parallelism<br/>• But may spill to memory"]
+    end
+
+    subgraph "Spilling"
+        Spill["When registers exhausted:<br/>Compiler spills to 'local memory'<br/>Actually in global memory!<br/>Very slow!"]
+    end
+
+    subgraph "Optimization"
+        Opt["1. Reduce variables in loop<br/>2. Recompute vs store<br/>3. Use __launch_bounds__<br/>4. Check nvcc --ptxas-options=-v"]
+    end
+
+    Lim --> Occ
+    Occ --> Spill
+
+    style Spill fill:#FFB6C1
+    style Opt fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "Memory Access Patterns",
+                        "explanation": "Common access patterns and their performance characteristics.",
+                        "diagram_data": """graph TB
+    subgraph "Sequential (Best)"
+        Seq["data[tid]<br/>Coalesced, full bandwidth"]
+    end
+
+    subgraph "Strided (Varies)"
+        Str["data[tid * stride]<br/>Small stride: OK<br/>Large stride: Bad"]
+    end
+
+    subgraph "Random (Worst)"
+        Rand["data[random_idx]<br/>Cache misses, low bandwidth"]
+    end
+
+    subgraph "Broadcast (OK)"
+        Broad["data[0]  // All threads same addr<br/>L1 cache broadcast<br/>No conflict, but serialized"]
+    end
+
+    subgraph "Optimization Strategies"
+        Strat["1. Reorganize data for sequential access<br/>2. Use shared memory to reorder<br/>3. Sort indices before access<br/>4. Use texture cache for random"]
+    end
+
+    Seq --> Str --> Rand
+
+    style Seq fill:#90EE90
+    style Rand fill:#FFB6C1
+    style Strat fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Prefetching and Async Copies",
+                        "explanation": "Modern GPUs support asynchronous memory copies to overlap data movement with computation.",
+                        "diagram_data": """graph TB
+    subgraph "Synchronous (Old Way)"
+        Sync1["Load tile N"]
+        Sync2["Compute tile N"]
+        Sync3["Load tile N+1"]
+        Sync4["Compute tile N+1"]
+        Sync1 --> Sync2 --> Sync3 --> Sync4
+    end
+
+    subgraph "Async/Prefetch (Modern)"
+        Async1["Load tile N"]
+        Async2["Compute N-1 | Load N+1"]
+        Async3["Compute N | Load N+2"]
+        Async1 --> Async2 --> Async3
+    end
+
+    subgraph "CUDA API"
+        API["// Async copy (Ampere+)<br/>cuda::memcpy_async(dst, src, size, barrier);<br/><br/>// Wait for completion<br/>barrier.arrive_and_wait();"]
+    end
+
+    subgraph "Benefit"
+        Ben["Overlaps memory latency<br/>with computation<br/>Can hide ~100% of load time"]
+    end
+
+    style Async2 fill:#90EE90
+    style Ben fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "Profiling Memory Performance",
+                        "explanation": "Use NVIDIA profiling tools to identify memory bottlenecks.",
+                        "diagram_data": """graph TB
+    subgraph "Key Metrics"
+        M1["Global Memory Throughput<br/>Should be close to peak (~3 TB/s)"]
+        M2["L2 Hit Rate<br/>Higher = better cache usage"]
+        M3["Shared Memory Efficiency<br/>Bank conflicts reduce this"]
+        M4["Achieved Occupancy<br/>Thread utilization"]
+    end
+
+    subgraph "Tools"
+        T1["nsight-compute (ncu)<br/>Detailed kernel analysis"]
+        T2["nsight-systems (nsys)<br/>Timeline view"]
+        T3["torch.profiler<br/>PyTorch integration"]
+    end
+
+    subgraph "Example Command"
+        Cmd["ncu --set full \\<br/>    --target-processes all \\<br/>    python train.py"]
+    end
+
+    subgraph "Common Issues"
+        Issues["Low throughput → coalescing<br/>High L2 miss → working set too large<br/>Low SM efficiency → bank conflicts"]
+    end
+
+    style M1 fill:#ADD8E6
+    style Issues fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 14,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of GPU memory optimization techniques.",
+                        "diagram_data": """graph TB
+    subgraph "Essential Techniques"
+        E1["Coalescing: Adjacent threads → adjacent memory"]
+        E2["Tiling: Load to shared, reuse many times"]
+        E3["Bank conflicts: Pad arrays, avoid stride-32"]
+        E4["Fusion: Combine kernels, reduce HBM access"]
+    end
+
+    subgraph "Checklist"
+        C1["✓ Access memory sequentially"]
+        C2["✓ Use shared memory for reuse"]
+        C3["✓ Pad shared arrays to avoid conflicts"]
+        C4["✓ Fuse element-wise operations"]
+        C5["✓ Profile with ncu to verify"]
+    end
+
+    subgraph "Rules of Thumb"
+        R1["Coalesced > cached > random"]
+        R2["Shared memory > global memory"]
+        R3["Compute more, load less"]
+        R4["Profile before optimizing"]
+    end
+
+    style E1 fill:#90EE90
+    style C1 fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_flash_attention_visual(self):
+        """Seed FlashAttention visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="flash-attention",
+            defaults={
+                "title": "FlashAttention: Memory-Efficient Attention",
+                "description": "Understand how FlashAttention reduces memory from O(n²) to O(n) using tiling and kernel fusion",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 15,
+                "tags": ["gpu", "attention", "flash-attention", "memory", "transformers", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Attention Memory Problem",
+                        "explanation": "Standard attention computes **Q × K^T** creating an N×N attention matrix. For long sequences, this matrix becomes huge and causes out-of-memory errors.",
+                        "diagram_data": """graph TB
+    subgraph "Standard Attention Memory"
+        QKV["Q, K, V: N × d<br/>Each: N × d × 4 bytes"]
+        Attn["Attention scores: N × N<br/>N² × 4 bytes"]
+        Soft["After softmax: N × N<br/>N² × 4 bytes"]
+    end
+
+    subgraph "Memory Scaling"
+        Ex1["N = 1K: 4 MB"]
+        Ex2["N = 4K: 64 MB"]
+        Ex3["N = 16K: 1 GB"]
+        Ex4["N = 64K: 16 GB"]
+        Ex5["N = 256K: 256 GB!"]
+    end
+
+    subgraph "Problem"
+        Prob["Long sequences = OOM<br/>Even if compute is fast,<br/>can't fit attention matrix!"]
+    end
+
+    QKV --> Attn --> Soft
+    Ex1 --> Ex2 --> Ex3 --> Ex4 --> Ex5
+
+    style Ex4 fill:#FFB6C1
+    style Ex5 fill:#FFB6C1
+    style Prob fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "FlashAttention Key Insight",
+                        "explanation": "FlashAttention's key insight: **never materialize the full N×N attention matrix**. Instead, compute attention in tiles and accumulate results directly.",
+                        "diagram_data": """graph TB
+    subgraph "Standard Attention"
+        S1["1. S = Q × K^T (N×N matrix)"]
+        S2["2. P = softmax(S) (N×N matrix)"]
+        S3["3. O = P × V"]
+        S1 --> S2 --> S3
+        SMem["Memory: O(N²)"]
+    end
+
+    subgraph "FlashAttention"
+        F1["Process in tiles"]
+        F2["Never store full N×N"]
+        F3["Accumulate output directly"]
+        F1 --> F2 --> F3
+        FMem["Memory: O(N)"]
+    end
+
+    subgraph "The Challenge"
+        Chal["Softmax needs ALL values<br/>to compute denominator...<br/>How to do in tiles?"]
+    end
+
+    Chal --> F1
+
+    style SMem fill:#FFB6C1
+    style FMem fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Tiled Computation",
+                        "explanation": "FlashAttention processes Q, K, V in small tiles that fit in fast **SRAM** (shared memory). Each tile computes a partial result.",
+                        "diagram_data": """graph TB
+    subgraph "Tile Setup"
+        Q["Q matrix: split into Q₁, Q₂, ..."]
+        K["K matrix: split into K₁, K₂, ..."]
+        V["V matrix: split into V₁, V₂, ..."]
+    end
+
+    subgraph "Processing"
+        Loop["For each Q tile:<br/>  For each K,V tile:<br/>    Load Qᵢ, Kⱼ, Vⱼ to SRAM<br/>    Compute partial attention<br/>    Update running output"]
+    end
+
+    subgraph "Memory"
+        Mem["Only store in SRAM:<br/>• Current Q tile: Bq × d<br/>• Current K tile: Bk × d<br/>• Current V tile: Bk × d<br/>• Running output: Bq × d<br/><br/>Independent of N!"]
+    end
+
+    Q --> Loop
+    K --> Loop
+    V --> Loop
+    Loop --> Mem
+
+    style Mem fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Online Softmax",
+                        "explanation": "The clever trick: compute softmax **incrementally** using the online softmax algorithm. Track running max and sum to update correctly.",
+                        "diagram_data": """graph TB
+    subgraph "Normal Softmax"
+        NS["softmax(x)ᵢ = exp(xᵢ) / Σⱼ exp(xⱼ)<br/><br/>Need ALL values to compute<br/>the denominator!"]
+    end
+
+    subgraph "Online Softmax"
+        OS1["Track running: m (max), l (sum)"]
+        OS2["For new values x:<br/>  m_new = max(m, max(x))<br/>  l_new = l × exp(m - m_new) + Σ exp(x - m_new)"]
+        OS3["Rescale previous results<br/>by exp(m_old - m_new)"]
+    end
+
+    subgraph "Key Equations"
+        Eq["m = max(m, max(Sᵢⱼ))<br/>l = l × exp(m_prev - m) + Σ exp(Sᵢⱼ - m)<br/>O = O × exp(m_prev - m) + softmax_tile × Vⱼ"]
+    end
+
+    NS --> OS1 --> OS2 --> OS3
+
+    style OS1 fill:#90EE90
+    style Eq fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "FlashAttention Algorithm",
+                        "explanation": "The complete FlashAttention algorithm, processing tiles in a nested loop.",
+                        "diagram_data": """graph TB
+    subgraph "Algorithm"
+        Init["Initialize O = 0, l = 0, m = -∞"]
+        Loop1["For j = 1 to N/Bk:"]
+        Load["  Load Kⱼ, Vⱼ to SRAM"]
+        Comp["  Sᵢⱼ = Qᵢ × Kⱼᵀ"]
+        Max["  m_new = max(m, rowmax(Sᵢⱼ))"]
+        Soft["  P̃ᵢⱼ = exp(Sᵢⱼ - m_new)"]
+        Sum["  l_new = l × exp(m - m_new) + rowsum(P̃ᵢⱼ)"]
+        Update["  O = O × exp(m - m_new) + P̃ᵢⱼ × Vⱼ"]
+        Save["  m = m_new, l = l_new"]
+        Final["O = O / l"]
+    end
+
+    Init --> Loop1 --> Load --> Comp --> Max --> Soft --> Sum --> Update --> Save
+    Save -->|"next j"| Loop1
+    Loop1 -->|"done"| Final
+
+    style Comp fill:#ADD8E6
+    style Update fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Memory Comparison",
+                        "explanation": "FlashAttention dramatically reduces memory usage, enabling much longer sequences.",
+                        "diagram_data": """graph TB
+    subgraph "Standard Attention Memory"
+        Std["Store N×N attention matrix<br/>Memory: O(N²)"]
+    end
+
+    subgraph "FlashAttention Memory"
+        FA["Store only tiles in SRAM<br/>Output accumulator: O(N)<br/>Memory: O(N)"]
+    end
+
+    subgraph "Concrete Example: N=8192, d=64"
+        StdEx["Standard:<br/>Attention matrix: 8192² × 4 = 256 MB<br/>+ Q, K, V: 6 MB<br/>= 262 MB"]
+        FAEx["FlashAttention:<br/>Tiles in SRAM: ~1 MB<br/>Output: 2 MB<br/>= ~3 MB"]
+        Ratio["~87x memory reduction!"]
+    end
+
+    Std --> StdEx
+    FA --> FAEx
+    StdEx --> Ratio
+    FAEx --> Ratio
+
+    style StdEx fill:#FFB6C1
+    style FAEx fill:#90EE90
+    style Ratio fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Why Is It Also Faster?",
+                        "explanation": "FlashAttention isn't just memory-efficient—it's **faster** than standard attention despite doing more FLOPs!",
+                        "diagram_data": """graph TB
+    subgraph "Standard Attention I/O"
+        IO1["1. Read Q, K from HBM"]
+        IO2["2. Write S (N×N) to HBM"]
+        IO3["3. Read S from HBM"]
+        IO4["4. Write P to HBM"]
+        IO5["5. Read P, V from HBM"]
+        IO6["6. Write O to HBM"]
+        IOT["Many HBM round-trips!"]
+    end
+
+    subgraph "FlashAttention I/O"
+        FA1["1. Read Q, K, V from HBM"]
+        FA2["2. All computation in SRAM"]
+        FA3["3. Write O to HBM"]
+        FAT["Minimal HBM access!"]
+    end
+
+    subgraph "The Key"
+        Key["Modern GPUs are memory-bound<br/>HBM bandwidth: 3 TB/s<br/>Compute: 1000+ TFLOPS<br/><br/>Reducing I/O > reducing FLOPs"]
+    end
+
+    IO1 --> IO2 --> IO3 --> IO4 --> IO5 --> IO6 --> IOT
+    FA1 --> FA2 --> FA3 --> FAT
+
+    style IOT fill:#FFB6C1
+    style FAT fill:#90EE90
+    style Key fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Kernel Fusion",
+                        "explanation": "FlashAttention fuses multiple operations into a single GPU kernel, eliminating intermediate memory writes.",
+                        "diagram_data": """graph TB
+    subgraph "Standard: Multiple Kernels"
+        K1["Kernel 1: S = Q @ K.T"]
+        K2["Write S to HBM"]
+        K3["Kernel 2: S = S / sqrt(d)"]
+        K4["Write S to HBM"]
+        K5["Kernel 3: P = softmax(S)"]
+        K6["Write P to HBM"]
+        K7["Kernel 4: O = P @ V"]
+    end
+
+    subgraph "FlashAttention: One Kernel"
+        FK["Single fused kernel:<br/>• Matmul Q @ K.T<br/>• Scale by sqrt(d)<br/>• Online softmax<br/>• Matmul with V<br/>• Accumulate output<br/><br/>All in SRAM!"]
+    end
+
+    K1 --> K2 --> K3 --> K4 --> K5 --> K6 --> K7
+    K1 -.->|"fuse"| FK
+
+    style K2 fill:#FFB6C1
+    style K4 fill:#FFB6C1
+    style K6 fill:#FFB6C1
+    style FK fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Backward Pass",
+                        "explanation": "FlashAttention also optimizes the backward pass using **recomputation** instead of storing the attention matrix.",
+                        "diagram_data": """graph TB
+    subgraph "Standard Backward"
+        StdB["Need attention matrix P<br/>to compute gradients<br/><br/>Either store P (O(N²) memory)<br/>Or recompute naively (slow)"]
+    end
+
+    subgraph "FlashAttention Backward"
+        FAB1["Store only: Q, K, V, O, logsumexp"]
+        FAB2["Recompute P in tiles during backward"]
+        FAB3["Same tiling strategy as forward"]
+        FAB4["Still O(N) memory!"]
+    end
+
+    subgraph "Checkpointing"
+        Ckpt["Standard gradient checkpointing:<br/>Recompute forward to get P<br/><br/>FlashAttention:<br/>Efficient tiled recomputation<br/>built into backward kernel"]
+    end
+
+    StdB --> FAB1 --> FAB2 --> FAB3 --> FAB4
+
+    style StdB fill:#FFB6C1
+    style FAB4 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "FlashAttention-2 Improvements",
+                        "explanation": "FlashAttention-2 introduced additional optimizations for even better performance.",
+                        "diagram_data": """graph TB
+    subgraph "FlashAttention-1"
+        FA1_1["Good parallelism across batch, heads"]
+        FA1_2["Sequential over sequence length"]
+    end
+
+    subgraph "FlashAttention-2"
+        FA2_1["Parallelize over sequence length too"]
+        FA2_2["Better work partitioning"]
+        FA2_3["Reduced non-matmul FLOPs"]
+        FA2_4["~2x faster than FA-1"]
+    end
+
+    subgraph "Key Changes"
+        KC1["Inner loop over K,V (not Q)"]
+        KC2["Better thread block sizing"]
+        KC3["Warp specialization"]
+    end
+
+    subgraph "Performance"
+        Perf["FA-2 achieves 50-73% of<br/>theoretical max FLOPS<br/>(vs ~25-40% for standard)"]
+    end
+
+    FA1_1 --> FA2_1
+    FA1_2 --> FA2_1
+    FA2_1 --> FA2_4
+
+    style FA2_4 fill:#90EE90
+    style Perf fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "FlashAttention-3 (Hopper)",
+                        "explanation": "FlashAttention-3 leverages new Hopper features for additional speedups.",
+                        "diagram_data": """graph TB
+    subgraph "Hopper Features Used"
+        H1["WGMMA: Warp Group Matrix Multiply"]
+        H2["TMA: Tensor Memory Accelerator"]
+        H3["Async operations"]
+        H4["FP8 support"]
+    end
+
+    subgraph "FA-3 Innovations"
+        I1["Producer-consumer async pipeline"]
+        I2["Warp specialization"]
+        I3["Block quantization for FP8"]
+        I4["Low-precision with high accuracy"]
+    end
+
+    subgraph "Performance"
+        Perf["FA-3 on H100:<br/>Up to 2x faster than FA-2<br/>FP8: 1.2 PFLOPS attention!"]
+    end
+
+    H1 --> I1
+    H2 --> I1
+    H3 --> I1
+    H4 --> I3
+    I1 --> Perf
+
+    style Perf fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "When to Use FlashAttention",
+                        "explanation": "FlashAttention is beneficial in most scenarios but has some considerations.",
+                        "diagram_data": """graph TB
+    subgraph "Use FlashAttention When"
+        Use1["✓ Training transformers"]
+        Use2["✓ Long sequence lengths"]
+        Use3["✓ Memory is a bottleneck"]
+        Use4["✓ Using PyTorch 2.0+"]
+    end
+
+    subgraph "Considerations"
+        C1["Short sequences: Less benefit<br/>(but not slower)"]
+        C2["Custom attention masks<br/>may need adaptation"]
+        C3["Need compatible GPU<br/>(NVIDIA, some AMD)"]
+    end
+
+    subgraph "Variants"
+        Var["FlashAttention: Standard attention<br/>FlashAttention-2: Faster<br/>FlashAttention-3: Hopper optimized<br/>xFormers: Memory efficient attention<br/>PyTorch SDPA: Built-in, auto-selects"]
+    end
+
+    style Use1 fill:#90EE90
+    style Var fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Using FlashAttention",
+                        "explanation": "How to use FlashAttention in your code.",
+                        "diagram_data": """graph TB
+    subgraph "PyTorch 2.0+ (Recommended)"
+        PT["# Automatic selection<br/>from torch.nn.functional import scaled_dot_product_attention<br/><br/>out = scaled_dot_product_attention(q, k, v)<br/><br/># Enable Flash specifically<br/>with torch.backends.cuda.sdp_kernel(<br/>    enable_flash=True,<br/>    enable_math=False,<br/>    enable_mem_efficient=False<br/>):<br/>    out = scaled_dot_product_attention(q, k, v)"]
+    end
+
+    subgraph "flash-attn Package"
+        FA["pip install flash-attn<br/><br/>from flash_attn import flash_attn_func<br/>out = flash_attn_func(q, k, v, causal=True)"]
+    end
+
+    subgraph "HuggingFace"
+        HF["model = AutoModel.from_pretrained(<br/>    'model_name',<br/>    attn_implementation='flash_attention_2'<br/>)"]
+    end
+
+    style PT fill:#90EE90
+    style HF fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of FlashAttention concepts.",
+                        "diagram_data": """graph TB
+    subgraph "Key Ideas"
+        K1["Tile computation: process in SRAM blocks"]
+        K2["Online softmax: incremental computation"]
+        K3["Kernel fusion: minimize HBM access"]
+        K4["Recomputation: backward without storing P"]
+    end
+
+    subgraph "Benefits"
+        B1["Memory: O(N²) → O(N)"]
+        B2["Speed: 2-4x faster"]
+        B3["Longer sequences: 16K+ tokens"]
+    end
+
+    subgraph "Usage"
+        U1["PyTorch 2.0+: scaled_dot_product_attention"]
+        U2["HuggingFace: attn_implementation='flash_attention_2'"]
+        U3["Direct: flash-attn package"]
+    end
+
+    subgraph "Remember"
+        R["FlashAttention is I/O-aware<br/>Not just memory efficient—<br/>it's faster because modern GPUs<br/>are memory-bandwidth limited"]
+    end
+
+    style B1 fill:#90EE90
+    style B2 fill:#90EE90
+    style R fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_gradient_checkpointing_visual(self):
+        """Seed gradient checkpointing visual topic."""
+        subject = self.get_or_create_subject("GPU", "gpu", "Hardware & Architecture")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="gradient-checkpointing",
+            defaults={
+                "title": "Gradient Checkpointing: Trading Compute for Memory",
+                "description": "Understand activation recomputation to train larger models with limited GPU memory",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["gpu", "memory", "gradient-checkpointing", "activation-checkpointing", "training"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Memory Problem",
+                        "explanation": "During training, we must store **activations** from the forward pass to compute gradients in the backward pass. For deep networks, this uses enormous memory.",
+                        "diagram_data": """graph TB
+    subgraph "Forward Pass"
+        X["Input x"]
+        A1["a₁ = f₁(x)"]
+        A2["a₂ = f₂(a₁)"]
+        A3["a₃ = f₃(a₂)"]
+        AN["aₙ = fₙ(aₙ₋₁)"]
+        L["Loss L"]
+    end
+
+    X --> A1 --> A2 --> A3 -->|"..."| AN --> L
+
+    subgraph "Must Store for Backward"
+        Store["x, a₁, a₂, a₃, ..., aₙ₋₁<br/><br/>All intermediate activations<br/>needed to compute gradients!"]
+    end
+
+    subgraph "Memory Problem"
+        Prob["GPT-3 (175B):<br/>~100 GB just for activations<br/>per batch!"]
+    end
+
+    A1 --> Store
+    A2 --> Store
+    A3 --> Store
+
+    style Store fill:#FFB6C1
+    style Prob fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Activations Are Needed",
+                        "explanation": "The chain rule requires activations from the forward pass to compute gradients.",
+                        "diagram_data": """graph TB
+    subgraph "Chain Rule"
+        CR["∂L/∂W₂ = ∂L/∂a₂ × ∂a₂/∂W₂<br/><br/>∂a₂/∂W₂ requires a₁!<br/>(the input to layer 2)"]
+    end
+
+    subgraph "Concrete Example"
+        Ex["a₂ = W₂ × a₁ + b₂<br/><br/>∂a₂/∂W₂ = a₁<br/><br/>Must have stored a₁<br/>from forward pass!"]
+    end
+
+    subgraph "Memory Per Layer"
+        Mem["Each layer stores:<br/>• Input activation: batch × hidden_dim<br/>• Sometimes also: masks, norms, etc.<br/><br/>100 layers × batch 8 × hidden 4096<br/>= several GB"]
+    end
+
+    style CR fill:#ADD8E6
+    style Ex fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Checkpointing Idea",
+                        "explanation": "**Gradient checkpointing** trades compute for memory: don't store all activations, **recompute** them during the backward pass.",
+                        "diagram_data": """graph TB
+    subgraph "Standard Training"
+        Std1["Forward: compute & STORE all aᵢ"]
+        Std2["Backward: use stored aᵢ"]
+        StdMem["Memory: O(n) for n layers"]
+    end
+
+    subgraph "With Checkpointing"
+        Ck1["Forward: compute all, STORE only some"]
+        Ck2["Backward: RECOMPUTE missing aᵢ"]
+        CkMem["Memory: O(√n) possible!"]
+        CkComp["Compute: ~33% more (recompute once)"]
+    end
+
+    Std1 --> Std2 --> StdMem
+    Ck1 --> Ck2 --> CkMem
+    Ck2 --> CkComp
+
+    subgraph "Trade-off"
+        Trade["Less memory<br/>↓<br/>More compute<br/>↓<br/>Fits larger models!"]
+    end
+
+    style StdMem fill:#FFB6C1
+    style CkMem fill:#90EE90
+    style Trade fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "How It Works",
+                        "explanation": "Checkpointing marks certain layers as **checkpoint boundaries**. Activations are only stored at boundaries; intermediate activations are recomputed during backward.",
+                        "diagram_data": """graph TB
+    subgraph "8 Layers, Checkpoint Every 4"
+        F1["Layer 1"]
+        F2["Layer 2"]
+        F3["Layer 3"]
+        F4["Layer 4 ✓"]
+        F5["Layer 5"]
+        F6["Layer 6"]
+        F7["Layer 7"]
+        F8["Layer 8 ✓"]
+    end
+
+    subgraph "Forward Pass"
+        FP["Compute all layers<br/>Store: input, a₄, a₈<br/>Discard: a₁, a₂, a₃, a₅, a₆, a₇"]
+    end
+
+    subgraph "Backward Pass (Layer 5-8)"
+        BP1["Need a₅, a₆, a₇ for gradients"]
+        BP2["Recompute: forward from a₄ to a₇"]
+        BP3["Compute gradients for layers 5-8"]
+        BP4["Discard a₅, a₆, a₇"]
+    end
+
+    F4 --> FP
+    F8 --> FP
+    FP --> BP1 --> BP2 --> BP3 --> BP4
+
+    style F4 fill:#90EE90
+    style F8 fill:#90EE90
+    style BP2 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Memory vs Compute Trade-off",
+                        "explanation": "Different checkpoint frequencies trade off memory and compute differently.",
+                        "diagram_data": """graph TB
+    subgraph "No Checkpointing"
+        NC["Memory: O(n)<br/>Compute: 1x forward, 1x backward<br/>Total: 2x"]
+    end
+
+    subgraph "Checkpoint Every Layer"
+        CE["Memory: O(1) - just input/output<br/>Compute: n forward passes!<br/>Total: (n+1)x<br/>Very slow!"]
+    end
+
+    subgraph "Checkpoint Every √n Layers"
+        SQ["Memory: O(√n)<br/>Compute: 1x + 1x recompute<br/>Total: ~3x<br/>Good balance!"]
+    end
+
+    subgraph "Comparison (32 layers)"
+        Comp["No checkpoint: 32 activations, 2x compute<br/>Every layer: 1 activation, 33x compute<br/>Every 6 layers: 6 activations, 3x compute"]
+    end
+
+    style NC fill:#FFB6C1
+    style CE fill:#FFB6C1
+    style SQ fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Optimal Checkpointing",
+                        "explanation": "For n layers, checkpointing every **√n** layers gives optimal memory-compute trade-off: O(√n) memory with ~1.5x compute overhead.",
+                        "diagram_data": """graph TB
+    subgraph "Math"
+        Math["n layers, checkpoint every k layers<br/><br/>Memory: O(n/k + k)<br/>Recompute: O(n/k × k) = O(n)<br/><br/>Minimize n/k + k:<br/>Optimal k = √n"]
+    end
+
+    subgraph "Example: 36 Layers"
+        Ex["√36 = 6<br/>Checkpoint every 6 layers<br/><br/>Store: 6 checkpoints<br/>Max segment: 6 layers<br/>Memory: 6 + 6 = 12 units<br/>vs 36 units without"]
+    end
+
+    subgraph "Memory Reduction"
+        Red["36 layers: 3x reduction<br/>100 layers: 10x reduction<br/>1000 layers: 30x reduction"]
+    end
+
+    Math --> Ex --> Red
+
+    style Red fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Selective Checkpointing",
+                        "explanation": "Not all layers need checkpointing equally. **Attention layers** typically use more memory than FFN layers.",
+                        "diagram_data": """graph TB
+    subgraph "Transformer Block Memory"
+        Attn["Self-Attention:<br/>• Q, K, V projections<br/>• Attention scores (N²)<br/>• High memory!"]
+        FFN["Feed-Forward:<br/>• Linear projections<br/>• Lower memory"]
+    end
+
+    subgraph "Smart Checkpointing"
+        Smart["Checkpoint attention layers<br/>Keep FFN activations<br/><br/>Or: Use FlashAttention<br/>(built-in recomputation)"]
+    end
+
+    subgraph "HuggingFace Strategy"
+        HF["Full: checkpoint everything<br/>Selective: checkpoint attention only<br/>None: no checkpointing"]
+    end
+
+    Attn --> Smart
+    FFN --> Smart
+
+    style Attn fill:#FFB6C1
+    style Smart fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "PyTorch Implementation",
+                        "explanation": "PyTorch provides `checkpoint` and `checkpoint_sequential` for easy gradient checkpointing.",
+                        "diagram_data": """graph TB
+    subgraph "Basic API"
+        Basic["from torch.utils.checkpoint import checkpoint<br/><br/>def forward(self, x):<br/>    # Checkpoint a function<br/>    x = checkpoint(self.layer1, x)<br/>    x = checkpoint(self.layer2, x)<br/>    return x"]
+    end
+
+    subgraph "Sequential API"
+        Seq["from torch.utils.checkpoint import checkpoint_sequential<br/><br/>layers = nn.Sequential(layer1, layer2, ..., layerN)<br/><br/># Checkpoint every 'segments' layers<br/>output = checkpoint_sequential(layers, segments=4, input)"]
+    end
+
+    subgraph "Important"
+        Imp["Use use_reentrant=False (PyTorch 2.0+)<br/>Avoids subtle bugs with autograd"]
+    end
+
+    style Basic fill:#ADD8E6
+    style Imp fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "HuggingFace Integration",
+                        "explanation": "HuggingFace Transformers has built-in gradient checkpointing support.",
+                        "diagram_data": """graph TB
+    subgraph "Training Arguments"
+        Args["training_args = TrainingArguments(<br/>    gradient_checkpointing=True,<br/>    ...<br/>)"]
+    end
+
+    subgraph "Model Config"
+        Config["model = AutoModelForCausalLM.from_pretrained(<br/>    'model_name'<br/>)<br/>model.gradient_checkpointing_enable()"]
+    end
+
+    subgraph "Manual Toggle"
+        Toggle["# Enable<br/>model.gradient_checkpointing_enable()<br/><br/># Disable<br/>model.gradient_checkpointing_disable()<br/><br/># Check<br/>model.is_gradient_checkpointing"]
+    end
+
+    style Args fill:#90EE90
+    style Config fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Combining with Other Techniques",
+                        "explanation": "Gradient checkpointing works well with other memory optimization techniques.",
+                        "diagram_data": """graph TB
+    subgraph "Memory Reduction Stack"
+        GC["Gradient Checkpointing<br/>~3x memory reduction"]
+        MP["Mixed Precision (FP16/BF16)<br/>~2x memory reduction"]
+        FA["FlashAttention<br/>O(N) vs O(N²) attention"]
+        ZeRO["ZeRO/FSDP<br/>Shard optimizer states"]
+    end
+
+    subgraph "Combined Effect"
+        Comb["All combined:<br/>10-20x memory reduction!<br/><br/>Train 70B model on 8×A100<br/>instead of 64×A100"]
+    end
+
+    subgraph "Order of Application"
+        Order["1. Mixed Precision (free speedup)<br/>2. FlashAttention (faster + less memory)<br/>3. Gradient Checkpointing (if needed)<br/>4. FSDP/ZeRO (multi-GPU)"]
+    end
+
+    GC --> Comb
+    MP --> Comb
+    FA --> Comb
+    ZeRO --> Comb
+
+    style Comb fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "When to Use Checkpointing",
+                        "explanation": "Gradient checkpointing has trade-offs. Use it when memory is the bottleneck.",
+                        "diagram_data": """graph TB
+    subgraph "Use When"
+        Use1["✓ Running out of GPU memory"]
+        Use2["✓ Want larger batch sizes"]
+        Use3["✓ Training very deep models"]
+        Use4["✓ Can tolerate slower training"]
+    end
+
+    subgraph "Avoid When"
+        Avoid1["✗ Memory is not the bottleneck"]
+        Avoid2["✗ Training speed is critical"]
+        Avoid3["✗ Can use more GPUs instead"]
+    end
+
+    subgraph "Typical Slowdown"
+        Slow["~20-35% slower training<br/>But enables training<br/>that otherwise wouldn't fit!"]
+    end
+
+    subgraph "Decision"
+        Dec["OOM with batch=1?<br/>→ Must use checkpointing<br/><br/>OOM with batch=8?<br/>→ Checkpoint or reduce batch"]
+    end
+
+    style Use1 fill:#90EE90
+    style Slow fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 11,
+                        "title": "Debugging Tips",
+                        "explanation": "Common issues and solutions when using gradient checkpointing.",
+                        "diagram_data": """graph TB
+    subgraph "Issue: NaN Gradients"
+        NaN["Sometimes see NaN with checkpointing<br/><br/>Fix: Use use_reentrant=False<br/>checkpoint(fn, x, use_reentrant=False)"]
+    end
+
+    subgraph "Issue: Different Results"
+        Diff["Results differ with/without checkpointing<br/><br/>Cause: Dropout uses different random state<br/>Fix: deterministic=True or seed carefully"]
+    end
+
+    subgraph "Issue: Slow Performance"
+        Slow["Checkpointing slower than expected<br/><br/>Check: Are you recomputing expensive ops?<br/>Try: Selective checkpointing"]
+    end
+
+    subgraph "Best Practice"
+        BP["# PyTorch 2.0+ recommended<br/>checkpoint(fn, x, use_reentrant=False)"]
+    end
+
+    style NaN fill:#FFB6C1
+    style BP fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 12,
+                        "title": "Advanced: CPU Offloading",
+                        "explanation": "Extreme memory savings: offload activations to CPU RAM, reload during backward.",
+                        "diagram_data": """graph TB
+    subgraph "Activation Offloading"
+        Off["Store checkpointed activations on CPU<br/>Move back to GPU for backward<br/><br/>Even more memory savings<br/>But much slower (PCIe bandwidth)"]
+    end
+
+    subgraph "When Useful"
+        When["• Single GPU, must fit huge model<br/>• Very long sequences<br/>• Willing to trade speed for capability"]
+    end
+
+    subgraph "DeepSpeed"
+        DS["DeepSpeed activation checkpointing:<br/><br/>ds_config = {<br/>  'activation_checkpointing': {<br/>    'partition_activations': True,<br/>    'cpu_checkpointing': True,<br/>    'contiguous_memory_optimization': True<br/>  }<br/>}"]
+    end
+
+    Off --> When
+    When --> DS
+
+    style Off fill:#ADD8E6
+    style DS fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 13,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of gradient checkpointing.",
+                        "diagram_data": """graph TB
+    subgraph "Key Concept"
+        KC["Don't store all activations<br/>Recompute during backward<br/>Trade compute for memory"]
+    end
+
+    subgraph "Memory Savings"
+        MS["Checkpoint every √n layers:<br/>O(n) → O(√n) memory<br/>~30% compute overhead"]
+    end
+
+    subgraph "PyTorch Code"
+        Code["from torch.utils.checkpoint import checkpoint<br/>output = checkpoint(layer, input, use_reentrant=False)"]
+    end
+
+    subgraph "When to Use"
+        When["OOM errors<br/>Want larger batch<br/>Training deep models"]
+    end
+
+    subgraph "Combine With"
+        Comb["Mixed precision<br/>FlashAttention<br/>FSDP/ZeRO"]
+    end
+
+    style KC fill:#ADD8E6
+    style MS fill:#90EE90
+    style Code fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_gradient_descent_visual(self):
+        """Seed gradient descent variants visual topic."""
+        subject = self.get_or_create_subject(
+            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="gradient-descent-variants",
+            defaults={
+                "title": "Gradient Descent Variants: SGD to Adam",
+                "description": "Understand batch, mini-batch, SGD, momentum, RMSprop, and Adam optimizers",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "optimization", "gradient-descent", "adam", "sgd", "momentum"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Gradient Descent?",
+                        "explanation": "**Gradient descent** finds the minimum of a function by iteratively moving in the direction of steepest descent (negative gradient).\n\n`θ = θ - α × ∇L(θ)`\n\nwhere α is the learning rate and ∇L is the gradient of the loss.",
+                        "diagram_data": """graph TB
+    subgraph "Intuition"
+        Ball["Imagine a ball rolling downhill<br/>It follows the steepest path<br/>Eventually settles at the bottom"]
+    end
+    subgraph "Update Rule"
+        Rule["θ_new = θ_old - learning_rate × gradient<br/><br/>• Gradient points uphill<br/>• Negative gradient points downhill<br/>• Learning rate controls step size"]
+    end
+    subgraph "Goal"
+        Goal["Find θ that minimizes Loss(θ)"]
+    end
+    style Rule fill:#ADD8E6
+    style Goal fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Batch Gradient Descent",
+                        "explanation": "**Batch GD** computes the gradient using the **entire dataset** before each update. Accurate but slow for large datasets.",
+                        "diagram_data": """graph TB
+    subgraph "Batch Gradient Descent"
+        Data["Full Dataset<br/>N samples"]
+        Grad["Compute gradient over ALL N samples<br/>∇L = (1/N) Σ ∇L_i"]
+        Update["Single weight update"]
+    end
+    Data --> Grad --> Update
+    subgraph "Pros"
+        P1["✓ Stable convergence"]
+        P2["✓ Guaranteed to find minimum (convex)"]
+    end
+    subgraph "Cons"
+        C1["✗ Very slow for large datasets"]
+        C2["✗ Requires all data in memory"]
+        C3["✗ Can't escape local minima"]
+    end
+    style Grad fill:#ADD8E6
+    style C1 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Stochastic Gradient Descent (SGD)",
+                        "explanation": "**SGD** updates weights after each **single sample**. Fast but noisy.",
+                        "diagram_data": """graph TB
+    subgraph "Stochastic GD"
+        Sample["One sample"]
+        Grad["Compute gradient for 1 sample<br/>∇L = ∇L_i"]
+        Update["Weight update"]
+        Loop["Repeat for each sample"]
+    end
+    Sample --> Grad --> Update --> Loop --> Sample
+    subgraph "Pros"
+        P1["✓ Fast updates"]
+        P2["✓ Can escape local minima (noise helps)"]
+        P3["✓ Online learning possible"]
+    end
+    subgraph "Cons"
+        C1["✗ Very noisy gradients"]
+        C2["✗ May not converge smoothly"]
+        C3["✗ Can't leverage vectorization"]
+    end
+    style Grad fill:#90EE90
+    style C1 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Mini-Batch Gradient Descent",
+                        "explanation": "**Mini-batch GD** is the practical middle ground: compute gradient on a **small batch** (32-512 samples). Best of both worlds!",
+                        "diagram_data": """graph TB
+    subgraph "Mini-Batch GD"
+        Batch["Mini-batch<br/>32-512 samples"]
+        Grad["Gradient over batch<br/>∇L = (1/B) Σ ∇L_i"]
+        Update["Weight update"]
+    end
+    Batch --> Grad --> Update
+    subgraph "Why It Works"
+        W1["Batch size 32-512 typical"]
+        W2["Leverages GPU parallelism"]
+        W3["Noise helps generalization"]
+        W4["Stable enough to converge"]
+    end
+    subgraph "This is what everyone uses!"
+        Use["When people say 'SGD' in deep learning<br/>they usually mean mini-batch GD"]
+    end
+    style Use fill:#90EE90
+    style Grad fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "The Problem with Vanilla SGD",
+                        "explanation": "Vanilla SGD struggles with:\n- Ravines (different curvature in different directions)\n- Saddle points\n- Choosing the right learning rate",
+                        "diagram_data": """graph TB
+    subgraph "Ravine Problem"
+        Rav["Loss surface is steep in one direction<br/>flat in another<br/><br/>SGD oscillates across ravine<br/>while making slow progress along it"]
+    end
+    subgraph "Learning Rate Dilemma"
+        LR["Too high: Overshoots, diverges<br/>Too low: Very slow convergence<br/><br/>Different params may need different LRs!"]
+    end
+    subgraph "Solutions"
+        Sol["1. Momentum: Smooth out oscillations<br/>2. Adaptive LR: Per-parameter rates<br/>3. Both: Adam!"]
+    end
+    Rav --> Sol
+    LR --> Sol
+    style Rav fill:#FFB6C1
+    style Sol fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Momentum",
+                        "explanation": "**Momentum** adds a velocity term that accumulates past gradients. Like a ball rolling downhill, it builds up speed in consistent directions.",
+                        "diagram_data": """graph TB
+    subgraph "Momentum Update"
+        V["v = β × v + ∇L(θ)<br/><br/>θ = θ - α × v"]
+        Explain["v: velocity (accumulated gradient)<br/>β: momentum coefficient (typically 0.9)<br/>α: learning rate"]
+    end
+    subgraph "Effect"
+        E1["Accelerates in consistent direction"]
+        E2["Dampens oscillations"]
+        E3["Helps escape local minima"]
+    end
+    subgraph "Visualization"
+        Vis["Without momentum: zig-zag path<br/>With momentum: smoother, faster path"]
+    end
+    V --> Explain
+    style V fill:#90EE90
+    style Vis fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "RMSprop",
+                        "explanation": "**RMSprop** adapts the learning rate for each parameter based on the magnitude of recent gradients.",
+                        "diagram_data": """graph TB
+    subgraph "RMSprop Update"
+        S["s = β × s + (1-β) × (∇L)²<br/><br/>θ = θ - α × ∇L / √(s + ε)"]
+        Explain["s: running average of squared gradients<br/>β: decay rate (typically 0.9)<br/>ε: small constant for stability"]
+    end
+    subgraph "Effect"
+        E1["Large gradients → smaller effective LR"]
+        E2["Small gradients → larger effective LR"]
+        E3["Adapts to each parameter's scale"]
+    end
+    subgraph "Key Insight"
+        Key["Dividing by √s normalizes the update<br/>Parameters with large gradients<br/>get smaller updates (and vice versa)"]
+    end
+    style S fill:#90EE90
+    style Key fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Adam: The Default Choice",
+                        "explanation": "**Adam** (Adaptive Moment Estimation) combines momentum AND adaptive learning rates. It's the most popular optimizer.",
+                        "diagram_data": """graph TB
+    subgraph "Adam = Momentum + RMSprop"
+        M["m = β₁ × m + (1-β₁) × ∇L<br/>(momentum term)"]
+        V["v = β₂ × v + (1-β₂) × (∇L)²<br/>(RMSprop term)"]
+        Update["θ = θ - α × m̂ / √(v̂ + ε)"]
+    end
+    subgraph "Bias Correction"
+        Bias["m̂ = m / (1 - β₁ᵗ)<br/>v̂ = v / (1 - β₂ᵗ)<br/><br/>Corrects initialization bias"]
+    end
+    subgraph "Default Hyperparameters"
+        HP["β₁ = 0.9<br/>β₂ = 0.999<br/>ε = 1e-8<br/>α = 0.001 (or 3e-4 for transformers)"]
+    end
+    M --> Update
+    V --> Update
+    style Update fill:#90EE90
+    style HP fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "AdamW: Adam with Decoupled Weight Decay",
+                        "explanation": "**AdamW** fixes a subtle bug in Adam's weight decay. It's now the standard for training transformers.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        Prob["Adam + L2 regularization<br/>doesn't work as intended<br/><br/>L2 penalty gets scaled by<br/>adaptive learning rate"]
+    end
+    subgraph "AdamW Solution"
+        Sol["Decouple weight decay from gradient<br/><br/>θ = θ - α × (m̂/√(v̂+ε) + λ×θ)<br/><br/>Weight decay applied directly,<br/>not through gradient"]
+    end
+    subgraph "In Practice"
+        Prac["Use AdamW for transformers<br/>Default in HuggingFace, PyTorch"]
+    end
+    Prob --> Sol --> Prac
+    style Sol fill:#90EE90
+    style Prac fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Learning Rate Selection",
+                        "explanation": "The learning rate is the most important hyperparameter. Too high = divergence, too low = slow training.",
+                        "diagram_data": """graph TB
+    subgraph "Learning Rate Effects"
+        High["Too High (0.1+)<br/>Loss explodes, NaN"]
+        Good["Just Right<br/>Smooth decrease"]
+        Low["Too Low (1e-6)<br/>Barely moves"]
+    end
+    subgraph "Finding Good LR"
+        LRF["LR Range Test:<br/>1. Start with tiny LR<br/>2. Increase exponentially<br/>3. Plot loss vs LR<br/>4. Pick LR where loss drops fastest"]
+    end
+    subgraph "Typical Values"
+        Typ["SGD: 0.01 - 0.1<br/>Adam: 0.001 - 0.0001<br/>Fine-tuning: 1e-5 - 5e-5"]
+    end
+    style Good fill:#90EE90
+    style High fill:#FFB6C1
+    style Low fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 10,
+                        "title": "Optimizer Comparison",
+                        "explanation": "When to use which optimizer.",
+                        "diagram_data": """graph TB
+    subgraph "SGD + Momentum"
+        SGD["✓ Often better final accuracy<br/>✓ Better generalization<br/>✗ Requires careful LR tuning<br/>✗ Slower convergence<br/><br/>Use for: CNNs, final fine-tuning"]
+    end
+    subgraph "Adam/AdamW"
+        Adam["✓ Fast convergence<br/>✓ Works with default HPs<br/>✓ Handles sparse gradients<br/>✗ May generalize worse<br/><br/>Use for: Transformers, RNNs, prototyping"]
+    end
+    subgraph "Quick Guide"
+        Guide["Starting out? → Adam<br/>Transformers? → AdamW<br/>CNNs, want best accuracy? → SGD+Momentum<br/>Unsure? → Adam, then try SGD"]
+    end
+    style Adam fill:#90EE90
+    style Guide fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_cross_validation_visual(self):
+        """Seed cross-validation visual topic."""
+        subject = self.get_or_create_subject(
+            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cross-validation",
+            defaults={
+                "title": "Cross-Validation: Reliable Model Evaluation",
+                "description": "Master K-fold, stratified, time series CV, and train/val/test splits",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 10,
+                "tags": ["ml", "cross-validation", "evaluation", "k-fold", "validation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Cross-Validation?",
+                        "explanation": "A single train/test split can give misleading results. **Cross-validation** gives a more reliable estimate of model performance by testing on multiple different splits.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P1["Single split might be lucky/unlucky"]
+        P2["Small test set = high variance"]
+        P3["Wastes data for training"]
+    end
+    subgraph "The Solution"
+        S1["Multiple train/test splits"]
+        S2["Average performance across splits"]
+        S3["More reliable estimate"]
+    end
+    P1 --> S1
+    P2 --> S2
+    P3 --> S3
+    style S1 fill:#90EE90
+    style S2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Train/Validation/Test Split",
+                        "explanation": "The fundamental data split for ML: **Train** to learn, **Validation** to tune hyperparameters, **Test** for final evaluation.",
+                        "diagram_data": """graph LR
+    subgraph "Data Split"
+        Data["Full Dataset"]
+        Train["Training Set<br/>60-80%"]
+        Val["Validation Set<br/>10-20%"]
+        Test["Test Set<br/>10-20%"]
+    end
+    Data --> Train
+    Data --> Val
+    Data --> Test
+    subgraph "Purpose"
+        TrainP["Train: Fit model parameters"]
+        ValP["Val: Tune hyperparameters"]
+        TestP["Test: Final unbiased evaluation<br/>Only use ONCE!"]
+    end
+    style Train fill:#90EE90
+    style Val fill:#ADD8E6
+    style Test fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "K-Fold Cross-Validation",
+                        "explanation": "**K-Fold CV** splits data into K parts. Each part takes a turn as the validation set while the rest are used for training.",
+                        "diagram_data": """graph TB
+    subgraph "5-Fold CV"
+        F1["Fold 1: [VAL][Train][Train][Train][Train]"]
+        F2["Fold 2: [Train][VAL][Train][Train][Train]"]
+        F3["Fold 3: [Train][Train][VAL][Train][Train]"]
+        F4["Fold 4: [Train][Train][Train][VAL][Train]"]
+        F5["Fold 5: [Train][Train][Train][Train][VAL]"]
+    end
+    subgraph "Result"
+        R["5 scores → Average ± Std<br/>e.g., Accuracy: 0.85 ± 0.02"]
+    end
+    F1 --> R
+    F2 --> R
+    F3 --> R
+    F4 --> R
+    F5 --> R
+    style R fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Choosing K",
+                        "explanation": "Common choices for K and their tradeoffs.",
+                        "diagram_data": """graph TB
+    subgraph "K = 5"
+        K5["Most common default<br/>Good balance<br/>5 model trainings"]
+    end
+    subgraph "K = 10"
+        K10["Lower variance<br/>More compute<br/>Good for smaller datasets"]
+    end
+    subgraph "K = N (Leave-One-Out)"
+        LOO["N model trainings<br/>Lowest bias, highest variance<br/>Very expensive"]
+    end
+    subgraph "Recommendation"
+        Rec["K=5: Large datasets, expensive models<br/>K=10: Medium datasets<br/>LOO: Very small datasets only"]
+    end
+    style K5 fill:#90EE90
+    style Rec fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Stratified K-Fold",
+                        "explanation": "**Stratified K-Fold** maintains the class distribution in each fold. Essential for imbalanced datasets!",
+                        "diagram_data": """graph TB
+    subgraph "Imbalanced Data"
+        Data["90% Class A, 10% Class B"]
+    end
+    subgraph "Regular K-Fold Problem"
+        Prob["Some folds might have 0% Class B!<br/>Bad validation estimate"]
+    end
+    subgraph "Stratified K-Fold"
+        Strat["Each fold has ~90% A, ~10% B<br/>Preserves class proportions"]
+    end
+    Data --> Prob
+    Data --> Strat
+    subgraph "Code"
+        Code["from sklearn.model_selection import StratifiedKFold<br/>skf = StratifiedKFold(n_splits=5)<br/>for train_idx, val_idx in skf.split(X, y):"]
+    end
+    style Prob fill:#FFB6C1
+    style Strat fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Time Series CV",
+                        "explanation": "For time series data, you can't randomly shuffle! Use **expanding window** or **sliding window** CV.",
+                        "diagram_data": """graph TB
+    subgraph "Why Different?"
+        Why["Can't use future data to predict past!<br/>Random splits would leak information"]
+    end
+    subgraph "Expanding Window"
+        E1["[Train      ] [Val]"]
+        E2["[Train          ] [Val]"]
+        E3["[Train              ] [Val]"]
+    end
+    subgraph "Sliding Window"
+        S1["[Train] [Val]"]
+        S2["   [Train] [Val]"]
+        S3["      [Train] [Val]"]
+    end
+    subgraph "Code"
+        Code["from sklearn.model_selection import TimeSeriesSplit<br/>tscv = TimeSeriesSplit(n_splits=5)"]
+    end
+    style Why fill:#FFB6C1
+    style E3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Nested Cross-Validation",
+                        "explanation": "**Nested CV** uses an outer loop for evaluation and inner loop for hyperparameter tuning. Gives unbiased performance estimate.",
+                        "diagram_data": """graph TB
+    subgraph "Outer Loop (Evaluation)"
+        O1["Fold 1: Train(2,3,4,5) → Test(1)"]
+        O2["Fold 2: Train(1,3,4,5) → Test(2)"]
+        O3["..."]
+    end
+    subgraph "Inner Loop (HP Tuning)"
+        I1["For each outer train set:<br/>Run K-fold CV to find best HPs"]
+    end
+    subgraph "Process"
+        P1["1. Outer split"]
+        P2["2. Inner CV to tune HPs"]
+        P3["3. Train with best HPs"]
+        P4["4. Evaluate on outer test"]
+        P5["5. Repeat for each outer fold"]
+    end
+    O1 --> I1
+    P1 --> P2 --> P3 --> P4 --> P5
+    style I1 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Group K-Fold",
+                        "explanation": "When samples belong to groups (e.g., multiple samples per patient), ensure all samples from a group stay together.",
+                        "diagram_data": """graph TB
+    subgraph "Problem: Data Leakage"
+        Prob["Patient 1 in train AND test<br/>Model memorizes patient-specific patterns<br/>Overly optimistic performance"]
+    end
+    subgraph "Solution: GroupKFold"
+        Sol["All samples from Patient 1<br/>go to same fold<br/>No leakage between train/test"]
+    end
+    subgraph "Code"
+        Code["from sklearn.model_selection import GroupKFold<br/>gkf = GroupKFold(n_splits=5)<br/>for train_idx, val_idx in gkf.split(X, y, groups=patient_ids):"]
+    end
+    Prob --> Sol
+    style Prob fill:#FFB6C1
+    style Sol fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Common Mistakes",
+                        "explanation": "Avoid these cross-validation pitfalls.",
+                        "diagram_data": """graph TB
+    subgraph "Mistake 1: Data Leakage"
+        M1["Preprocessing before splitting<br/>e.g., StandardScaler on full data"]
+        F1["Fix: Fit scaler on train only"]
+    end
+    subgraph "Mistake 2: Ignoring Groups"
+        M2["Related samples in train and test"]
+        F2["Fix: Use GroupKFold"]
+    end
+    subgraph "Mistake 3: Wrong CV for Time Series"
+        M3["Random shuffle with temporal data"]
+        F3["Fix: Use TimeSeriesSplit"]
+    end
+    subgraph "Mistake 4: HP Tuning on Test"
+        M4["Using test set to select hyperparameters"]
+        F4["Fix: Use validation set or nested CV"]
+    end
+    style M1 fill:#FFB6C1
+    style M2 fill:#FFB6C1
+    style F1 fill:#90EE90
+    style F2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of cross-validation strategies.",
+                        "diagram_data": """graph TB
+    subgraph "Choose Your CV"
+        C1["Classification → StratifiedKFold"]
+        C2["Regression → KFold"]
+        C3["Time Series → TimeSeriesSplit"]
+        C4["Grouped Data → GroupKFold"]
+        C5["HP Tuning + Eval → Nested CV"]
+    end
+    subgraph "sklearn Code"
+        Code["from sklearn.model_selection import cross_val_score<br/>scores = cross_val_score(model, X, y, cv=5)<br/>print(f'{scores.mean():.3f} ± {scores.std():.3f}')"]
+    end
+    subgraph "Best Practices"
+        BP["Always use CV for model selection<br/>Report mean ± std<br/>Keep test set completely separate"]
+    end
+    style C1 fill:#90EE90
+    style Code fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_regularization_visual(self):
+        """Seed regularization techniques visual topic."""
+        subject = self.get_or_create_subject(
+            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="regularization-techniques",
+            defaults={
+                "title": "Regularization: Preventing Overfitting",
+                "description": "Master L1, L2, Elastic Net, dropout, early stopping, and weight decay",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "regularization", "overfitting", "l1", "l2", "dropout"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Overfitting?",
+                        "explanation": "**Overfitting** occurs when a model learns the training data too well, including noise, and fails to generalize to new data.",
+                        "diagram_data": """graph TB
+    subgraph "Underfitting"
+        U["Too simple<br/>High bias<br/>Poor train & test"]
+    end
+    subgraph "Good Fit"
+        G["Just right<br/>Captures pattern<br/>Good generalization"]
+    end
+    subgraph "Overfitting"
+        O["Too complex<br/>High variance<br/>Great train, poor test"]
+    end
+    U --> G --> O
+    subgraph "Signs of Overfitting"
+        S1["Train accuracy: 99%"]
+        S2["Test accuracy: 70%"]
+        S3["Large gap = overfitting"]
+    end
+    style G fill:#90EE90
+    style O fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "How Regularization Helps",
+                        "explanation": "**Regularization** adds a penalty term to the loss function that discourages complex models, pushing towards simpler solutions.",
+                        "diagram_data": """graph TB
+    subgraph "Original Loss"
+        Orig["Loss = Prediction Error"]
+    end
+    subgraph "Regularized Loss"
+        Reg["Loss = Prediction Error + λ × Penalty(weights)"]
+    end
+    subgraph "Effect"
+        E1["Penalty increases with model complexity"]
+        E2["Model trades some training accuracy"]
+        E3["For better generalization"]
+    end
+    Orig --> Reg
+    Reg --> E1 --> E2 --> E3
+    subgraph "λ (Lambda)"
+        L["Controls regularization strength<br/>Higher λ = more regularization"]
+    end
+    style Reg fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "L2 Regularization (Ridge)",
+                        "explanation": "**L2** adds the sum of squared weights to the loss. It shrinks weights toward zero but rarely makes them exactly zero.",
+                        "diagram_data": """graph TB
+    subgraph "L2 Penalty"
+        L2["Penalty = λ × Σ wᵢ²<br/><br/>Loss = MSE + λ × Σ wᵢ²"]
+    end
+    subgraph "Effect on Weights"
+        E["Large weights → large penalty<br/>Shrinks all weights toward zero<br/>But keeps all features"]
+    end
+    subgraph "When to Use"
+        Use["• Many correlated features<br/>• Want to keep all features<br/>• Default choice for neural nets"]
+    end
+    subgraph "Code"
+        Code["sklearn: Ridge(alpha=1.0)<br/>PyTorch: weight_decay in optimizer"]
+    end
+    style L2 fill:#ADD8E6
+    style Use fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "L1 Regularization (Lasso)",
+                        "explanation": "**L1** adds the sum of absolute weights. It can shrink weights to exactly zero, performing feature selection!",
+                        "diagram_data": """graph TB
+    subgraph "L1 Penalty"
+        L1["Penalty = λ × Σ |wᵢ|<br/><br/>Loss = MSE + λ × Σ |wᵢ|"]
+    end
+    subgraph "Effect on Weights"
+        E["Pushes small weights to ZERO<br/>Sparse solutions<br/>Automatic feature selection"]
+    end
+    subgraph "When to Use"
+        Use["• Want feature selection<br/>• Expect many irrelevant features<br/>• Need interpretable model"]
+    end
+    subgraph "L1 vs L2"
+        Comp["L1: Sparse, feature selection<br/>L2: Dense, all features kept"]
+    end
+    style L1 fill:#ADD8E6
+    style Comp fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Elastic Net",
+                        "explanation": "**Elastic Net** combines L1 and L2 regularization. Best of both worlds!",
+                        "diagram_data": """graph TB
+    subgraph "Elastic Net"
+        EN["Penalty = α×λ×Σ|wᵢ| + (1-α)×λ×Σwᵢ²<br/><br/>α: Mix ratio (0=Ridge, 1=Lasso)"]
+    end
+    subgraph "Advantages"
+        A1["Handles correlated features (like L2)"]
+        A2["Can select features (like L1)"]
+        A3["More stable than pure L1"]
+    end
+    subgraph "When to Use"
+        Use["• Many features, some correlated<br/>• Want some feature selection<br/>• Lasso is unstable"]
+    end
+    subgraph "Code"
+        Code["from sklearn.linear_model import ElasticNet<br/>model = ElasticNet(alpha=1.0, l1_ratio=0.5)"]
+    end
+    style EN fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Dropout",
+                        "explanation": "**Dropout** randomly sets neurons to zero during training. It prevents co-adaptation and acts like training an ensemble.",
+                        "diagram_data": """graph TB
+    subgraph "During Training"
+        Train["Randomly drop p% of neurons<br/>Each forward pass uses different subset<br/>Typical p = 0.1 to 0.5"]
+    end
+    subgraph "During Inference"
+        Inf["Use ALL neurons<br/>Scale outputs by (1-p)<br/>Or scale during training"]
+    end
+    subgraph "Why It Works"
+        Why["Prevents co-adaptation<br/>Each neuron must be useful alone<br/>Like training many networks"]
+    end
+    subgraph "Code"
+        Code["nn.Dropout(p=0.5)<br/><br/>model.train()  # dropout active<br/>model.eval()   # dropout disabled"]
+    end
+    style Train fill:#ADD8E6
+    style Code fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Early Stopping",
+                        "explanation": "**Early stopping** monitors validation loss and stops training when it starts increasing. Simple and effective!",
+                        "diagram_data": """graph TB
+    subgraph "Training Curves"
+        TC["Train loss: keeps decreasing<br/>Val loss: decreases, then INCREASES<br/><br/>Stop when val loss increases!"]
+    end
+    subgraph "Implementation"
+        Impl["Track best val loss<br/>Count epochs without improvement<br/>Stop after patience epochs"]
+    end
+    subgraph "Parameters"
+        Params["patience: epochs to wait (5-10)<br/>min_delta: minimum improvement<br/>restore_best_weights: True"]
+    end
+    subgraph "Code"
+        Code["callback = EarlyStopping(<br/>    monitor=val_loss,<br/>    patience=5,<br/>    restore_best_weights=True<br/>)"]
+    end
+    style TC fill:#FFFACD
+    style Code fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Data Augmentation",
+                        "explanation": "**Data augmentation** creates new training samples by transforming existing ones. More data = less overfitting.",
+                        "diagram_data": """graph TB
+    subgraph "Image Augmentation"
+        Img["Flip, rotate, crop, zoom<br/>Color jitter, blur<br/>Cutout, mixup"]
+    end
+    subgraph "Text Augmentation"
+        Txt["Synonym replacement<br/>Back translation<br/>Random insertion/deletion"]
+    end
+    subgraph "Why It Works"
+        Why["More training data<br/>Model sees more variations<br/>Better generalization"]
+    end
+    subgraph "Code"
+        Code["transforms.Compose([<br/>    transforms.RandomHorizontalFlip(),<br/>    transforms.RandomRotation(10),<br/>    transforms.ColorJitter()<br/>])"]
+    end
+    style Img fill:#ADD8E6
+    style Why fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Batch Normalization as Regularization",
+                        "explanation": "**Batch Normalization** normalizes layer inputs. It has a slight regularization effect due to noise in batch statistics.",
+                        "diagram_data": """graph TB
+    subgraph "BatchNorm"
+        BN["Normalize: x̂ = (x - μ_batch) / σ_batch<br/>Scale & shift: y = γx̂ + β"]
+    end
+    subgraph "Regularization Effect"
+        Reg["Batch statistics add noise<br/>Similar effect to dropout<br/>Can often reduce/remove dropout"]
+    end
+    subgraph "Note"
+        Note["Primary purpose: faster training<br/>Regularization is a side effect<br/>Use with small batch sizes carefully"]
+    end
+    style BN fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Comparison & When to Use",
+                        "explanation": "Choose regularization based on your model and problem.",
+                        "diagram_data": """graph TB
+    subgraph "Linear Models"
+        Lin["L2 (Ridge): Default<br/>L1 (Lasso): Feature selection<br/>Elastic Net: Correlated features"]
+    end
+    subgraph "Neural Networks"
+        NN["Weight decay (L2): Always<br/>Dropout: MLPs, attention<br/>Early stopping: Always<br/>Data augmentation: Images, NLP"]
+    end
+    subgraph "Trees"
+        Tree["Max depth, min samples<br/>Pruning<br/>Ensemble methods"]
+    end
+    subgraph "Quick Guide"
+        Guide["Start with L2 + Early stopping<br/>Add dropout for deep nets<br/>Use augmentation for images"]
+    end
+    style Guide fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {"'Created'" if created else 'Updated'}: {topic.title}")
+
+
+    def seed_classification_metrics_visual(self):
+        """Seed classification metrics visual topic."""
+        subject = self.get_or_create_subject(
+            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="classification-metrics",
+            defaults={
+                "title": "Classification Metrics: Beyond Accuracy",
+                "description": "Master precision, recall, F1, ROC-AUC, confusion matrix, and PR curves",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "metrics", "precision", "recall", "f1", "roc-auc"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Accuracy Isn't Enough",
+                        "explanation": "**Accuracy** can be misleading, especially with imbalanced classes. A model predicting 'no fraud' 99% of the time has 99% accuracy but catches 0 fraudsters!",
+                        "diagram_data": """graph TB
+    subgraph "Imbalanced Data"
+        Data["1000 samples<br/>990 negative, 10 positive"]
+    end
+    subgraph "Naive Model"
+        Model["Always predict NEGATIVE<br/>Accuracy = 99%!"]
+    end
+    subgraph "Reality"
+        Real["Catches 0 positives<br/>Useless for fraud detection"]
+    end
+    Data --> Model --> Real
+    style Model fill:#FFB6C1
+    style Real fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Confusion Matrix",
+                        "explanation": "The **confusion matrix** shows all prediction outcomes: true positives, false positives, true negatives, and false negatives.",
+                        "diagram_data": """graph TB
+    subgraph "Confusion Matrix"
+        CM["              Predicted<br/>            Neg    Pos<br/>Actual Neg [ TN  |  FP ]<br/>Actual Pos [ FN  |  TP ]"]
+    end
+    subgraph "Definitions"
+        TP["TP: Correctly predicted positive"]
+        TN["TN: Correctly predicted negative"]
+        FP["FP: Incorrectly predicted positive (Type I)"]
+        FN["FN: Incorrectly predicted negative (Type II)"]
+    end
+    style TP fill:#90EE90
+    style TN fill:#90EE90
+    style FP fill:#FFB6C1
+    style FN fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Precision",
+                        "explanation": "**Precision** answers: Of all positive predictions, how many were correct?\n\n`Precision = TP / (TP + FP)`",
+                        "diagram_data": """graph TB
+    subgraph "Precision"
+        P["Precision = TP / (TP + FP)<br/><br/>Of things I called positive,<br/>how many actually were?"]
+    end
+    subgraph "Example"
+        Ex["Model predicts 100 spam emails<br/>80 were actually spam<br/>Precision = 80/100 = 80%"]
+    end
+    subgraph "When It Matters"
+        When["High cost of false positives<br/>• Spam filter (don't lose real emails)<br/>• Recommender (don't annoy users)"]
+    end
+    style P fill:#ADD8E6
+    style When fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Recall (Sensitivity)",
+                        "explanation": "**Recall** answers: Of all actual positives, how many did we catch?\n\n`Recall = TP / (TP + FN)`",
+                        "diagram_data": """graph TB
+    subgraph "Recall"
+        R["Recall = TP / (TP + FN)<br/><br/>Of all actual positives,<br/>how many did I find?"]
+    end
+    subgraph "Example"
+        Ex["100 actual fraud cases<br/>Model caught 70<br/>Recall = 70/100 = 70%"]
+    end
+    subgraph "When It Matters"
+        When["High cost of false negatives<br/>• Fraud detection (catch all fraud)<br/>• Disease screening (don't miss cases)"]
+    end
+    style R fill:#ADD8E6
+    style When fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Precision vs Recall Trade-off",
+                        "explanation": "There's an inherent trade-off: increasing precision typically decreases recall and vice versa.",
+                        "diagram_data": """graph TB
+    subgraph "High Threshold"
+        HT["Only predict positive when very confident<br/>High precision, low recall<br/>Few false positives, many false negatives"]
+    end
+    subgraph "Low Threshold"
+        LT["Predict positive more liberally<br/>Low precision, high recall<br/>Many false positives, few false negatives"]
+    end
+    subgraph "Trade-off"
+        Trade["Can't maximize both!<br/>Choose based on business needs"]
+    end
+    HT --> Trade
+    LT --> Trade
+    style Trade fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "F1 Score",
+                        "explanation": "**F1 Score** is the harmonic mean of precision and recall. Use when you need a single balanced metric.",
+                        "diagram_data": """graph TB
+    subgraph "F1 Formula"
+        F1["F1 = 2 × (Precision × Recall) / (Precision + Recall)<br/><br/>Harmonic mean penalizes extremes"]
+    end
+    subgraph "Example"
+        Ex["Precision = 80%, Recall = 60%<br/>F1 = 2 × 0.8 × 0.6 / (0.8 + 0.6)<br/>F1 = 0.685 or 68.5%"]
+    end
+    subgraph "When to Use"
+        When["• Imbalanced classes<br/>• Care about both precision and recall<br/>• Need single number for comparison"]
+    end
+    style F1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "ROC Curve",
+                        "explanation": "The **ROC curve** plots True Positive Rate vs False Positive Rate at different thresholds.",
+                        "diagram_data": """graph TB
+    subgraph "Axes"
+        Y["Y-axis: TPR = TP/(TP+FN) = Recall"]
+        X["X-axis: FPR = FP/(FP+TN)"]
+    end
+    subgraph "Interpretation"
+        I1["Top-left corner: Perfect classifier"]
+        I2["Diagonal: Random guessing"]
+        I3["Curve above diagonal: Better than random"]
+    end
+    subgraph "AUC"
+        AUC["Area Under Curve (AUC)<br/>1.0 = Perfect<br/>0.5 = Random<br/>< 0.5 = Worse than random"]
+    end
+    style AUC fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "PR Curve",
+                        "explanation": "The **Precision-Recall curve** is better than ROC for imbalanced datasets.",
+                        "diagram_data": """graph TB
+    subgraph "PR Curve"
+        PR["Y-axis: Precision<br/>X-axis: Recall<br/>Plots P vs R at different thresholds"]
+    end
+    subgraph "When to Use"
+        When["Imbalanced data where<br/>negative class is much larger<br/><br/>ROC can be misleading<br/>PR focuses on positive class"]
+    end
+    subgraph "Interpretation"
+        Int["Top-right corner: Perfect<br/>Higher curve = better model<br/>AP (Average Precision) = AUC of PR curve"]
+    end
+    style When fill:#FFFACD
+    style Int fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Multi-class Metrics",
+                        "explanation": "For multi-class problems, metrics are computed per-class then averaged.",
+                        "diagram_data": """graph TB
+    subgraph "Averaging Methods"
+        Macro["Macro: Average per-class metrics<br/>Treats all classes equally"]
+        Micro["Micro: Aggregate TP/FP/FN, then compute<br/>Weights by class frequency"]
+        Weight["Weighted: Macro weighted by support<br/>Accounts for class imbalance"]
+    end
+    subgraph "When to Use"
+        M_Use["Macro: All classes equally important"]
+        Mi_Use["Micro: Overall performance matters"]
+        W_Use["Weighted: Imbalanced classes"]
+    end
+    subgraph "Code"
+        Code["f1_score(y_true, y_pred, average='macro')<br/>f1_score(y_true, y_pred, average='weighted')"]
+    end
+    style Weight fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Choosing the Right Metric",
+                        "explanation": "Choose metrics based on your problem and business needs.",
+                        "diagram_data": """graph TB
+    subgraph "Balanced Classes"
+        Bal["Accuracy often fine<br/>F1 for safety"]
+    end
+    subgraph "Imbalanced Classes"
+        Imb["ROC-AUC or PR-AUC<br/>F1, Precision, Recall"]
+    end
+    subgraph "Business Priority"
+        FP_Cost["FP costly → Precision<br/>(spam: don't lose real mail)"]
+        FN_Cost["FN costly → Recall<br/>(fraud: catch all fraud)"]
+        Both["Both matter → F1"]
+    end
+    subgraph "Quick Guide"
+        Guide["Balanced → Accuracy or F1<br/>Imbalanced → PR-AUC or F1<br/>Ranking → ROC-AUC<br/>Always: Look at confusion matrix"]
+    end
+    style Guide fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_ensemble_methods_visual(self):
+        """Seed ensemble methods visual topic."""
+        subject = self.get_or_create_subject(
+            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="ensemble-methods",
+            defaults={
+                "title": "Ensemble Methods: Bagging, Boosting, Stacking",
+                "description": "Combine multiple models for better predictions than any single model",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "ensemble", "bagging", "boosting", "random-forest", "xgboost"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Ensemble?",
+                        "explanation": "**Ensemble methods** combine multiple models to get better predictions. The wisdom of crowds often beats any individual expert!",
+                        "diagram_data": """graph TB
+    subgraph "Single Model"
+        SM["One model<br/>One prediction<br/>One set of errors"]
+    end
+    subgraph "Ensemble"
+        E1["Model 1"]
+        E2["Model 2"]
+        E3["Model 3"]
+        Combine["Combine predictions<br/>Errors cancel out"]
+    end
+    E1 --> Combine
+    E2 --> Combine
+    E3 --> Combine
+    subgraph "Benefits"
+        B1["Lower variance"]
+        B2["Better generalization"]
+        B3["More robust"]
+    end
+    style Combine fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Three Main Approaches",
+                        "explanation": "Ensembles differ in how they train models and combine predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Bagging"
+        Bag["Train models in PARALLEL<br/>On different data samples<br/>Average predictions"]
+    end
+    subgraph "Boosting"
+        Boost["Train models SEQUENTIALLY<br/>Each fixes previous errors<br/>Weighted combination"]
+    end
+    subgraph "Stacking"
+        Stack["Train diverse models<br/>Use another model to combine<br/>Learn optimal weights"]
+    end
+    subgraph "Key Difference"
+        Diff["Bagging: Reduce variance<br/>Boosting: Reduce bias<br/>Stacking: Best of both"]
+    end
+    style Bag fill:#ADD8E6
+    style Boost fill:#90EE90
+    style Stack fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Bagging (Bootstrap Aggregating)",
+                        "explanation": "**Bagging** trains each model on a bootstrap sample (random sample with replacement) of the training data.",
+                        "diagram_data": """graph TB
+    subgraph "Training Data"
+        Data["N samples"]
+    end
+    subgraph "Bootstrap Samples"
+        B1["Sample 1: N samples<br/>(with replacement)"]
+        B2["Sample 2: N samples"]
+        B3["Sample 3: N samples"]
+    end
+    Data --> B1
+    Data --> B2
+    Data --> B3
+    subgraph "Train Models"
+        M1["Model 1"]
+        M2["Model 2"]
+        M3["Model 3"]
+    end
+    B1 --> M1
+    B2 --> M2
+    B3 --> M3
+    subgraph "Combine"
+        Avg["Classification: Vote<br/>Regression: Average"]
+    end
+    M1 --> Avg
+    M2 --> Avg
+    M3 --> Avg
+    style Avg fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Random Forest",
+                        "explanation": "**Random Forest** = Bagging + Random feature selection. Each tree sees different samples AND different features.",
+                        "diagram_data": """graph TB
+    subgraph "Random Forest"
+        RF["1. Bootstrap sample of rows<br/>2. Random subset of features<br/>3. Build decision tree<br/>4. Repeat for many trees<br/>5. Average/vote predictions"]
+    end
+    subgraph "Why Random Features?"
+        Why["Decorrelates trees<br/>Different trees make different errors<br/>Better ensemble effect"]
+    end
+    subgraph "Hyperparameters"
+        HP["n_estimators: 100-1000 trees<br/>max_features: sqrt(n) for clf<br/>max_depth: None or limit"]
+    end
+    subgraph "Strengths"
+        Str["Robust, hard to overfit<br/>Handles missing values<br/>Feature importance built-in"]
+    end
+    style RF fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Boosting Overview",
+                        "explanation": "**Boosting** trains models sequentially, each focusing on mistakes of previous models.",
+                        "diagram_data": """graph TB
+    subgraph "Boosting Process"
+        M1["Model 1: Train on data"]
+        E1["Find errors"]
+        W1["Increase weight of misclassified"]
+        M2["Model 2: Focus on errors"]
+        E2["Find new errors"]
+        M3["Model 3: Focus on remaining errors"]
+    end
+    M1 --> E1 --> W1 --> M2 --> E2 --> M3
+    subgraph "Final Prediction"
+        Final["Weighted sum of all models<br/>Better models get higher weight"]
+    end
+    M1 --> Final
+    M2 --> Final
+    M3 --> Final
+    style Final fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "AdaBoost",
+                        "explanation": "**AdaBoost** adjusts sample weights to focus on hard examples.",
+                        "diagram_data": """graph TB
+    subgraph "AdaBoost Algorithm"
+        S1["1. Initialize equal sample weights"]
+        S2["2. Train weak learner (e.g., stump)"]
+        S3["3. Calculate learner weight (α)"]
+        S4["4. Update sample weights<br/>Increase for misclassified"]
+        S5["5. Repeat T times"]
+        S6["6. Final: Σ αₜ × hₜ(x)"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    subgraph "Key Idea"
+        Key["Hard examples get more attention<br/>Each learner complements previous"]
+    end
+    style S4 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Gradient Boosting",
+                        "explanation": "**Gradient Boosting** fits each new model to the residual errors (gradients) of the previous ensemble.",
+                        "diagram_data": """graph TB
+    subgraph "Gradient Boosting"
+        S1["1. Start with simple prediction (mean)"]
+        S2["2. Compute residuals: y - ŷ"]
+        S3["3. Fit tree to residuals"]
+        S4["4. Update: ŷ = ŷ + lr × tree"]
+        S5["5. Repeat"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    subgraph "Implementations"
+        Impl["XGBoost: Fast, regularized<br/>LightGBM: Faster, leaf-wise<br/>CatBoost: Handles categoricals"]
+    end
+    subgraph "Why Gradient?"
+        Why["Residuals = negative gradient of MSE<br/>Works for any loss function"]
+    end
+    style Impl fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "XGBoost/LightGBM",
+                        "explanation": "**XGBoost** and **LightGBM** are highly optimized gradient boosting libraries that dominate tabular data competitions.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost Features"
+        X1["L1/L2 regularization"]
+        X2["Parallel tree construction"]
+        X3["Built-in cross-validation"]
+        X4["Handles missing values"]
+    end
+    subgraph "LightGBM Features"
+        L1["Faster training (leaf-wise)"]
+        L2["Lower memory usage"]
+        L3["Native categorical support"]
+        L4["GOSS: Gradient-based sampling"]
+    end
+    subgraph "Key Hyperparameters"
+        HP["learning_rate: 0.01-0.1<br/>n_estimators: 100-1000<br/>max_depth: 3-10<br/>min_child_weight/samples"]
+    end
+    style X1 fill:#ADD8E6
+    style L1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Stacking",
+                        "explanation": "**Stacking** trains a meta-model to optimally combine base model predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Level 0: Base Models"
+        B1["Random Forest"]
+        B2["XGBoost"]
+        B3["Neural Net"]
+        B4["SVM"]
+    end
+    subgraph "Generate Meta-Features"
+        Meta["Use cross-validation predictions<br/>as features for meta-model"]
+    end
+    B1 --> Meta
+    B2 --> Meta
+    B3 --> Meta
+    B4 --> Meta
+    subgraph "Level 1: Meta-Model"
+        M1["Logistic Regression<br/>or another model"]
+        Final["Final Prediction"]
+    end
+    Meta --> M1 --> Final
+    style M1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Bagging vs Boosting",
+                        "explanation": "When to use which ensemble approach.",
+                        "diagram_data": """graph TB
+    subgraph "Bagging (Random Forest)"
+        BagWhen["• High variance models (trees)<br/>• Overfitting is a concern<br/>• Parallel training needed<br/>• Robust, less tuning"]
+    end
+    subgraph "Boosting (XGBoost)"
+        BoostWhen["• High bias models<br/>• Need best performance<br/>• Careful tuning available<br/>• Tabular data competitions"]
+    end
+    subgraph "Quick Guide"
+        Guide["Start: Random Forest (robust)<br/>Optimize: XGBoost/LightGBM<br/>Kaggle: Stack everything"]
+    end
+    style BagWhen fill:#ADD8E6
+    style BoostWhen fill:#90EE90
+    style Guide fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_dimensionality_reduction_visual(self):
+        """Seed dimensionality reduction visual topic."""
+        subject = self.get_or_create_subject(
+            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="dimensionality-reduction",
+            defaults={
+                "title": "Dimensionality Reduction: PCA, t-SNE, UMAP",
+                "description": "Reduce features while preserving important information for visualization and modeling",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "pca", "tsne", "umap", "dimensionality-reduction", "visualization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Reduce Dimensions?",
+                        "explanation": "High-dimensional data is hard to visualize, slow to process, and prone to the **curse of dimensionality**.",
+                        "diagram_data": """graph TB
+    subgraph "Problems with High Dimensions"
+        P1["Can't visualize > 3D"]
+        P2["Slow training, high memory"]
+        P3["Sparse data in high-D space"]
+        P4["Many features are redundant"]
+    end
+    subgraph "Solutions"
+        S1["Visualization: 1000D → 2D"]
+        S2["Faster ML: 1000D → 50D"]
+        S3["Noise reduction"]
+        S4["Feature compression"]
+    end
+    P1 --> S1
+    P2 --> S2
+    style S1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Two Types of Reduction",
+                        "explanation": "Dimensionality reduction techniques fall into two categories: **linear** (PCA) and **non-linear** (t-SNE, UMAP).",
+                        "diagram_data": """graph TB
+    subgraph "Linear Methods"
+        Lin["PCA, LDA, SVD<br/>Project onto hyperplanes<br/>Fast, interpretable<br/>Good for preprocessing"]
+    end
+    subgraph "Non-Linear Methods"
+        NonLin["t-SNE, UMAP, Isomap<br/>Preserve local structure<br/>Better visualizations<br/>Slower, less interpretable"]
+    end
+    subgraph "When to Use"
+        Use["Preprocessing/ML: PCA<br/>Visualization: UMAP or t-SNE"]
+    end
+    style Lin fill:#ADD8E6
+    style NonLin fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "PCA: Principal Component Analysis",
+                        "explanation": "**PCA** finds directions (principal components) of maximum variance. It projects data onto these directions.",
+                        "diagram_data": """graph TB
+    subgraph "PCA Idea"
+        Idea["1. Find direction of max variance (PC1)<br/>2. Find perpendicular direction (PC2)<br/>3. Continue for more PCs<br/>4. Keep top K components"]
+    end
+    subgraph "Properties"
+        P1["Linear transformation"]
+        P2["PCs are orthogonal"]
+        P3["Ordered by variance explained"]
+        P4["First few PCs capture most info"]
+    end
+    subgraph "Example"
+        Ex["100 features → 10 PCs<br/>explains 95% of variance"]
+    end
+    style Idea fill:#ADD8E6
+    style Ex fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "PCA: How Many Components?",
+                        "explanation": "Choose the number of components based on **explained variance ratio**.",
+                        "diagram_data": """graph TB
+    subgraph "Scree Plot"
+        Scree["Plot variance explained by each PC<br/>Look for 'elbow' point"]
+    end
+    subgraph "Cumulative Variance"
+        Cum["Sum variance until threshold<br/>Typically keep 90-99%"]
+    end
+    subgraph "Code"
+        Code["pca = PCA(n_components=0.95)  # keep 95%<br/>pca = PCA(n_components=50)   # keep 50<br/><br/>print(pca.explained_variance_ratio_)"]
+    end
+    subgraph "Guidelines"
+        Guide["Visualization: 2-3<br/>ML: keep 90-99% variance<br/>Compression: depends on needs"]
+    end
+    style Cum fill:#90EE90
+    style Code fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "t-SNE",
+                        "explanation": "**t-SNE** (t-Distributed Stochastic Neighbor Embedding) preserves local neighborhoods. Great for visualization!",
+                        "diagram_data": """graph TB
+    subgraph "t-SNE Idea"
+        Idea["1. Compute similarities in high-D<br/>2. Initialize random low-D points<br/>3. Move points to match similarities<br/>4. Optimize with gradient descent"]
+    end
+    subgraph "Key Parameter: Perplexity"
+        Perp["Perplexity ≈ number of neighbors<br/>Typical: 5-50<br/>Try different values!"]
+    end
+    subgraph "Limitations"
+        Lim["Slow for large datasets<br/>Random initialization<br/>Distances not meaningful<br/>Use for visualization only"]
+    end
+    style Idea fill:#ADD8E6
+    style Lim fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "UMAP",
+                        "explanation": "**UMAP** (Uniform Manifold Approximation and Projection) is faster than t-SNE with similar quality.",
+                        "diagram_data": """graph TB
+    subgraph "UMAP Advantages"
+        A1["Much faster than t-SNE"]
+        A2["Preserves global structure better"]
+        A3["Works for larger datasets"]
+        A4["Can embed new points"]
+    end
+    subgraph "Key Parameters"
+        Params["n_neighbors: 5-50 (local vs global)<br/>min_dist: 0-1 (tightness of clusters)"]
+    end
+    subgraph "Code"
+        Code["import umap<br/>reducer = umap.UMAP(n_components=2)<br/>embedding = reducer.fit_transform(X)"]
+    end
+    subgraph "Recommendation"
+        Rec["Generally prefer UMAP over t-SNE<br/>Faster, better global structure"]
+    end
+    style A1 fill:#90EE90
+    style Rec fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "PCA vs t-SNE vs UMAP",
+                        "explanation": "Comparison of the three main techniques.",
+                        "diagram_data": """graph TB
+    subgraph "PCA"
+        PCA["Linear<br/>Fast<br/>Interpretable<br/>Global structure<br/>Good for ML"]
+    end
+    subgraph "t-SNE"
+        TSNE["Non-linear<br/>Slow<br/>Local structure<br/>Great clusters<br/>Visualization only"]
+    end
+    subgraph "UMAP"
+        UMAP["Non-linear<br/>Fast<br/>Local + global<br/>Great clusters<br/>Can embed new data"]
+    end
+    subgraph "Choose"
+        Choose["ML preprocessing: PCA<br/>Visualization: UMAP<br/>Small data viz: t-SNE or UMAP"]
+    end
+    style PCA fill:#ADD8E6
+    style UMAP fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Interpreting Visualizations",
+                        "explanation": "What you can and cannot infer from 2D projections.",
+                        "diagram_data": """graph TB
+    subgraph "Can Interpret"
+        Can["Cluster separation<br/>Relative cluster sizes<br/>Local neighborhoods<br/>Outliers"]
+    end
+    subgraph "Cannot Interpret (t-SNE/UMAP)"
+        Cannot["Distances between clusters<br/>Cluster densities<br/>Global positions<br/>Exact shapes"]
+    end
+    subgraph "Tips"
+        Tips["Color by known labels<br/>Try multiple runs<br/>Vary perplexity/n_neighbors<br/>Don't over-interpret"]
+    end
+    style Cannot fill:#FFB6C1
+    style Tips fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of dimensionality reduction methods.",
+                        "diagram_data": """graph TB
+    subgraph "Method Selection"
+        M1["ML preprocessing → PCA"]
+        M2["Visualization → UMAP"]
+        M3["Small data viz → t-SNE or UMAP"]
+        M4["Interpretability → PCA"]
+    end
+    subgraph "Code Snippets"
+        Code["# PCA<br/>from sklearn.decomposition import PCA<br/>pca = PCA(n_components=50)<br/>X_pca = pca.fit_transform(X)<br/><br/># UMAP<br/>import umap<br/>X_umap = umap.UMAP().fit_transform(X)"]
+    end
+    subgraph "Key Parameters"
+        Params["PCA: n_components<br/>t-SNE: perplexity (5-50)<br/>UMAP: n_neighbors, min_dist"]
+    end
+    style M1 fill:#ADD8E6
+    style M2 fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_transfer_learning_visual(self):
+        """Seed transfer learning visual topic."""
+        subject = self.get_or_create_subject(
+            "Machine Learning Fundamentals", "ml-fundamentals", "Data Science & ML"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="transfer-learning",
+            defaults={
+                "title": "Transfer Learning: Fine-tuning Pre-trained Models",
+                "description": "Leverage pre-trained models for your tasks - when to freeze layers, how to fine-tune",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "transfer-learning", "fine-tuning", "pretrained", "deep-learning"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Transfer Learning?",
+                        "explanation": "**Transfer learning** uses knowledge from one task to help with another. Instead of training from scratch, start with a pre-trained model!",
+                        "diagram_data": """graph TB
+    subgraph "Without Transfer Learning"
+        W1["Train from random weights"]
+        W2["Need millions of samples"]
+        W3["Days/weeks of training"]
+        W4["Expensive GPUs"]
+    end
+    subgraph "With Transfer Learning"
+        T1["Start with pretrained model"]
+        T2["Need thousands of samples"]
+        T3["Hours of training"]
+        T4["Works on single GPU"]
+    end
+    W1 --> W2 --> W3 --> W4
+    T1 --> T2 --> T3 --> T4
+    style W4 fill:#FFB6C1
+    style T4 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Does It Work?",
+                        "explanation": "Neural networks learn hierarchical features. Early layers learn general features that transfer across tasks.",
+                        "diagram_data": """graph TB
+    subgraph "CNN Feature Hierarchy"
+        L1["Layer 1: Edges, colors"]
+        L2["Layer 2: Textures, patterns"]
+        L3["Layer 3: Parts (eyes, wheels)"]
+        L4["Layer 4: Objects (faces, cars)"]
+        L5["Layer 5: Task-specific"]
+    end
+    L1 --> L2 --> L3 --> L4 --> L5
+    subgraph "Transferability"
+        T1["Early layers: Very transferable"]
+        T2["Middle layers: Somewhat transferable"]
+        T3["Late layers: Task-specific"]
+    end
+    style L1 fill:#90EE90
+    style L2 fill:#90EE90
+    style L5 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Two Main Approaches",
+                        "explanation": "**Feature extraction** (freeze backbone) vs **Fine-tuning** (update all weights).",
+                        "diagram_data": """graph TB
+    subgraph "Feature Extraction"
+        FE1["Freeze pretrained layers"]
+        FE2["Only train new classifier"]
+        FE3["Fast, works with small data"]
+    end
+    subgraph "Fine-tuning"
+        FT1["Unfreeze some/all layers"]
+        FT2["Train entire network"]
+        FT3["Better accuracy, needs more data"]
+    end
+    subgraph "When to Use"
+        W1["Small data → Feature extraction"]
+        W2["More data → Fine-tune last layers"]
+        W3["Lots of data → Fine-tune all"]
+    end
+    FE1 --> FE2 --> FE3
+    FT1 --> FT2 --> FT3
+    style FE3 fill:#ADD8E6
+    style FT3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Feature Extraction",
+                        "explanation": "Use pretrained model as a fixed feature extractor. Only train a new classification head.",
+                        "diagram_data": """graph TB
+    subgraph "Pretrained Model"
+        Backbone["ResNet/ViT backbone<br/>FROZEN (no gradient updates)"]
+    end
+    subgraph "New Head"
+        Head["New classifier layers<br/>TRAINED on your data"]
+    end
+    subgraph "Code"
+        Code["# Freeze backbone<br/>for param in model.backbone.parameters():<br/>    param.requires_grad = False<br/><br/># Replace classifier<br/>model.fc = nn.Linear(2048, num_classes)"]
+    end
+    Backbone --> Head
+    subgraph "Benefits"
+        Ben["Fast training<br/>Works with 100s of samples<br/>No overfitting risk"]
+    end
+    style Backbone fill:#ADD8E6
+    style Head fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Fine-tuning Strategy",
+                        "explanation": "Gradually unfreeze layers from top to bottom. Use lower learning rates for pretrained layers.",
+                        "diagram_data": """graph TB
+    subgraph "Progressive Unfreezing"
+        S1["1. Train only new head (1-2 epochs)"]
+        S2["2. Unfreeze last block (1-2 epochs)"]
+        S3["3. Unfreeze more blocks"]
+        S4["4. Optional: Unfreeze all"]
+    end
+    S1 --> S2 --> S3 --> S4
+    subgraph "Learning Rate Strategy"
+        LR["New layers: 1e-3 to 1e-4<br/>Pretrained: 1e-5 to 1e-6<br/>10-100x smaller for pretrained!"]
+    end
+    subgraph "Why Lower LR?"
+        Why["Pretrained weights are good!<br/>Don't destroy useful features<br/>Small adjustments only"]
+    end
+    style LR fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Discriminative Learning Rates",
+                        "explanation": "Use different learning rates for different layers. Lower rates for earlier (more general) layers.",
+                        "diagram_data": """graph TB
+    subgraph "Layer Groups"
+        G1["Early layers: lr × 0.01"]
+        G2["Middle layers: lr × 0.1"]
+        G3["Late layers: lr × 1.0"]
+        G4["New head: lr × 1.0"]
+    end
+    subgraph "Implementation"
+        Code["optimizer = Adam([<br/>    {'params': model.layer1.parameters(), 'lr': 1e-6},<br/>    {'params': model.layer4.parameters(), 'lr': 1e-5},<br/>    {'params': model.fc.parameters(), 'lr': 1e-3},<br/>])"]
+    end
+    G1 --> G2 --> G3 --> G4
+    style G1 fill:#ADD8E6
+    style G4 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Popular Pretrained Models",
+                        "explanation": "Common pretrained models for different domains.",
+                        "diagram_data": """graph TB
+    subgraph "Computer Vision"
+        CV["ResNet, EfficientNet, ViT<br/>Pretrained on ImageNet<br/>torchvision.models"]
+    end
+    subgraph "NLP"
+        NLP["BERT, RoBERTa, GPT<br/>Pretrained on large text corpora<br/>HuggingFace transformers"]
+    end
+    subgraph "Audio"
+        Audio["Wav2Vec, Whisper<br/>Speech recognition<br/>HuggingFace"]
+    end
+    subgraph "Multimodal"
+        Multi["CLIP, LLaVA<br/>Image + text<br/>OpenAI, HuggingFace"]
+    end
+    style CV fill:#ADD8E6
+    style NLP fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Domain Similarity",
+                        "explanation": "Transfer works best when source and target domains are similar.",
+                        "diagram_data": """graph TB
+    subgraph "High Transfer"
+        H1["ImageNet → Medical images<br/>(both natural images)"]
+        H2["English BERT → Spanish<br/>(similar languages)"]
+    end
+    subgraph "Medium Transfer"
+        M1["ImageNet → Satellite images<br/>(different viewpoint)"]
+        M2["BERT → Legal text<br/>(specialized domain)"]
+    end
+    subgraph "Low Transfer"
+        L1["ImageNet → Spectrograms<br/>(different modality)"]
+        L2["English BERT → Code<br/>(different structure)"]
+    end
+    subgraph "Rule"
+        Rule["Similar domain → More layers transfer<br/>Different domain → Only early layers"]
+    end
+    style H1 fill:#90EE90
+    style L1 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Common Mistakes",
+                        "explanation": "Avoid these transfer learning pitfalls.",
+                        "diagram_data": """graph TB
+    subgraph "Mistake 1"
+        M1["Using same high LR for all layers<br/>Destroys pretrained features"]
+        F1["Fix: Lower LR for pretrained layers"]
+    end
+    subgraph "Mistake 2"
+        M2["Fine-tuning with tiny dataset<br/>Overfits immediately"]
+        F2["Fix: Use feature extraction instead"]
+    end
+    subgraph "Mistake 3"
+        M3["Wrong input preprocessing<br/>Model expects specific normalization"]
+        F3["Fix: Use same transforms as pretraining"]
+    end
+    subgraph "Mistake 4"
+        M4["Forgetting to set model.eval()<br/>BatchNorm/Dropout behave wrong"]
+        F4["Fix: Always eval() for inference"]
+    end
+    style M1 fill:#FFB6C1
+    style F1 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 9,
+                        "title": "Quick Reference",
+                        "explanation": "Transfer learning decision guide.",
+                        "diagram_data": """graph TB
+    subgraph "Data Size Guide"
+        D1["< 1K samples: Feature extraction"]
+        D2["1K-10K: Fine-tune top layers"]
+        D3["10K+: Fine-tune most/all layers"]
+    end
+    subgraph "Checklist"
+        C1["1. Match input preprocessing"]
+        C2["2. Replace final layer"]
+        C3["3. Freeze initially"]
+        C4["4. Use lower LR for pretrained"]
+        C5["5. Gradually unfreeze"]
+    end
+    subgraph "Code Pattern"
+        Code["model = torchvision.models.resnet50(pretrained=True)<br/>model.fc = nn.Linear(2048, num_classes)<br/>for param in model.parameters():<br/>    param.requires_grad = False<br/>model.fc.requires_grad = True"]
+    end
+    style D1 fill:#ADD8E6
+    style D3 fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pyspark_cluster_architecture_visual(self):
+        """Seed PySpark Cluster Architecture visual topic."""
+        subject = self.get_or_create_subject("PySpark", "pyspark", "Big Data")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="spark-cluster-architecture",
+            defaults={
+                "title": "Spark Cluster Architecture",
+                "description": "Understand how Driver, Executors, and Cluster Manager work together in a Spark cluster",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 8,
+                "tags": ["spark", "architecture", "cluster", "driver", "executor"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Big Picture",
+                        "explanation": "A Spark cluster consists of three main components: the **Driver Program** (your application), the **Cluster Manager** (resource allocator), and **Executors** (workers that run tasks). Understanding this architecture is essential for debugging, tuning, and scaling Spark applications.",
+                        "diagram_data": """graph TB
+    subgraph "Spark Cluster"
+        Driver["Driver Program<br/>(Your Application)"]
+        CM["Cluster Manager<br/>(YARN/Mesos/K8s/Standalone)"]
+        subgraph "Worker Nodes"
+            E1["Executor 1"]
+            E2["Executor 2"]
+            E3["Executor 3"]
+        end
+    end
+    Driver <--> CM
+    CM --> E1
+    CM --> E2
+    CM --> E3
+    Driver <--> E1
+    Driver <--> E2
+    Driver <--> E3
+    style Driver fill:#4CAF50,color:white
+    style CM fill:#2196F3,color:white
+    style E1 fill:#FF9800
+    style E2 fill:#FF9800
+    style E3 fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Driver Program",
+                        "explanation": "The **Driver** is the heart of your Spark application. It runs your `main()` function, creates the **SparkContext/SparkSession**, defines transformations and actions on RDDs/DataFrames, and schedules tasks on executors. The driver maintains all the metadata about your application.",
+                        "diagram_data": """graph TB
+    subgraph "Driver Program"
+        Main["main() function"]
+        SC["SparkSession/<br/>SparkContext"]
+        DAG["DAG Scheduler<br/>(Builds execution plan)"]
+        TS["Task Scheduler<br/>(Assigns tasks to executors)"]
+        BC["Block Manager Master<br/>(Tracks data location)"]
+    end
+    Main --> SC
+    SC --> DAG
+    DAG --> TS
+    TS --> BC
+    User["Your Code:<br/>df.filter().groupBy().count()"] --> Main
+    style Main fill:#4CAF50,color:white
+    style SC fill:#81C784
+    style DAG fill:#A5D6A7
+    style TS fill:#C8E6C9
+    style User fill:#E8F5E9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Cluster Manager",
+                        "explanation": "The **Cluster Manager** is responsible for allocating resources across applications. Spark supports multiple cluster managers: **YARN** (Hadoop), **Mesos**, **Kubernetes**, and **Standalone**. It negotiates resources and launches executors on worker nodes.",
+                        "diagram_data": """graph TB
+    subgraph "Cluster Manager Options"
+        YARN["YARN<br/>Hadoop integration<br/>Resource sharing<br/>Enterprise-ready"]
+        K8s["Kubernetes<br/>Container native<br/>Cloud friendly<br/>Auto-scaling"]
+        Mesos["Mesos<br/>Fine-grained sharing<br/>Multi-framework"]
+        SA["Standalone<br/>Simple setup<br/>Built-in<br/>Good for testing"]
+    end
+    Driver["Driver"] --> |"Request Resources"| CM["Cluster Manager"]
+    CM --> |"Allocate"| YARN
+    CM --> |"Allocate"| K8s
+    CM --> |"Allocate"| Mesos
+    CM --> |"Allocate"| SA
+    style YARN fill:#2196F3,color:white
+    style K8s fill:#326CE5,color:white
+    style Mesos fill:#9C27B0,color:white
+    style SA fill:#FF9800,color:white
+    style CM fill:#607D8B,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Executors - The Workers",
+                        "explanation": "**Executors** are JVM processes launched on worker nodes. Each executor runs **tasks** (units of work) and stores data for caching. Executors have a fixed number of **cores** (slots for parallel tasks) and **memory** for processing and storage.",
+                        "diagram_data": """graph TB
+    subgraph "Executor JVM Process"
+        subgraph "Task Slots - Cores"
+            T1["Task 1<br/>Processing partition 0"]
+            T2["Task 2<br/>Processing partition 1"]
+            T3["Task 3<br/>Processing partition 2"]
+            T4["Task 4<br/>Idle"]
+        end
+        subgraph "Memory"
+            EM["Execution Memory<br/>(Shuffles, Joins, Sorts)"]
+            SM["Storage Memory<br/>(Cached RDDs/DataFrames)"]
+        end
+        BM["Block Manager<br/>(Data storage)"]
+    end
+    Driver["Driver"] --> |"Send Tasks"| T1
+    Driver --> |"Send Tasks"| T2
+    Driver --> |"Send Tasks"| T3
+    T1 --> EM
+    T2 --> EM
+    SM --> BM
+    style T1 fill:#4CAF50
+    style T2 fill:#4CAF50
+    style T3 fill:#4CAF50
+    style T4 fill:#E0E0E0
+    style EM fill:#FF9800
+    style SM fill:#2196F3""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Communication Flow",
+                        "explanation": "Here's how a typical Spark job flows: **1)** Driver submits app to Cluster Manager, **2)** CM allocates executors on workers, **3)** Driver sends tasks to executors, **4)** Executors run tasks and return results, **5)** Executors can communicate for shuffles.",
+                        "diagram_data": """sequenceDiagram
+    participant D as Driver
+    participant CM as Cluster Manager
+    participant W1 as Worker 1
+    participant W2 as Worker 2
+    participant E1 as Executor 1
+    participant E2 as Executor 2
+
+    D->>CM: 1. Submit Application
+    CM->>W1: 2. Launch Executor
+    CM->>W2: 2. Launch Executor
+    W1->>E1: Start JVM
+    W2->>E2: Start JVM
+    E1->>D: 3. Register
+    E2->>D: 3. Register
+    D->>E1: 4. Send Tasks
+    D->>E2: 4. Send Tasks
+    E1->>E2: 5. Shuffle Data
+    E1->>D: 6. Return Results
+    E2->>D: 6. Return Results""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Key Configuration Parameters",
+                        "explanation": "Understanding these config parameters is crucial for tuning Spark applications. The Driver needs enough memory for collecting results; Executors need balanced cores and memory for efficient task execution.",
+                        "diagram_data": """graph TB
+    subgraph "Driver Config"
+        DM["spark.driver.memory<br/>Default: 1g<br/>Increase for large collects"]
+        DC["spark.driver.cores<br/>Default: 1<br/>Usually 1 is enough"]
+    end
+    subgraph "Executor Config"
+        EM["spark.executor.memory<br/>Default: 1g<br/>4-8g typical"]
+        EC["spark.executor.cores<br/>Default: 1<br/>4-5 cores optimal"]
+        EN["spark.executor.instances<br/>Number of executors"]
+    end
+    subgraph "Memory Breakdown"
+        Total["Executor Memory"] --> |"60%"| Exec["Execution + Storage"]
+        Total --> |"40%"| Over["Reserved + Overhead"]
+        Exec --> |"Unified"| UM["Shared pool for<br/>shuffle and cache"]
+    end
+    style DM fill:#4CAF50,color:white
+    style EM fill:#FF9800
+    style EC fill:#FF9800
+    style EN fill:#FF9800
+    style UM fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Cluster vs Client Mode",
+                        "explanation": "Spark can run in **cluster mode** (driver runs on cluster) or **client mode** (driver runs on your machine). Use cluster mode for production and client mode for interactive development.",
+                        "diagram_data": """graph TB
+    subgraph "Client Mode"
+        direction TB
+        YM1["Your Machine"]
+        D1["Driver runs here<br/>Good for spark-shell, notebooks"]
+        CL1["Cluster"]
+        E1["Executors"]
+        YM1 --> D1
+        D1 <--> CL1
+        CL1 --> E1
+    end
+    subgraph "Cluster Mode"
+        direction TB
+        YM2["Your Machine"]
+        Sub2["Submits job"]
+        CL2["Cluster"]
+        D2["Driver runs on cluster<br/>Good for production"]
+        E2["Executors"]
+        YM2 --> Sub2
+        Sub2 --> CL2
+        CL2 --> D2
+        D2 --> E2
+    end
+    style D1 fill:#4CAF50,color:white
+    style D2 fill:#4CAF50,color:white
+    style YM1 fill:#E3F2FD
+    style YM2 fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Fault Tolerance",
+                        "explanation": "Spark handles failures gracefully. If an **executor fails**, its tasks are rescheduled on other executors. If the **driver fails** in cluster mode, the entire application fails (use checkpointing for recovery). RDD lineage enables recomputation of lost partitions.",
+                        "diagram_data": """graph TB
+    subgraph "Executor Failure"
+        EF["Executor 2 dies"]
+        TS["Task Scheduler detects failure"]
+        RE["Reschedule tasks<br/>on Executor 1 and 3"]
+        RD["Recompute lost partitions<br/>using RDD lineage"]
+    end
+    EF --> TS --> RE --> RD
+    subgraph "Driver Failure"
+        DF["Driver dies"]
+        AF["Application fails"]
+        CP["Recovery options:<br/>Checkpointing<br/>Spark Streaming recovery"]
+    end
+    DF --> AF --> CP
+    style EF fill:#FFCDD2
+    style DF fill:#FFCDD2
+    style RE fill:#C8E6C9
+    style CP fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pyspark_job_stage_task_visual(self):
+        """Seed PySpark Job - Stage - Task Breakdown visual topic."""
+        subject = self.get_or_create_subject("PySpark", "pyspark", "Big Data")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="spark-job-stage-task",
+            defaults={
+                "title": "Job to Stage to Task Breakdown",
+                "description": "Learn how Spark decomposes your code into Jobs, Stages, and Tasks for distributed execution",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["spark", "job", "stage", "task", "DAG", "execution"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Execution Hierarchy",
+                        "explanation": "When you run Spark code, it gets broken down into a hierarchy: **Application** to **Jobs** to **Stages** to **Tasks**. Understanding this hierarchy is key to debugging and optimizing Spark applications.",
+                        "diagram_data": """graph TB
+    App["Application<br/>(SparkSession)"]
+    App --> J1["Job 1"]
+    App --> J2["Job 2"]
+    J1 --> S1["Stage 1"]
+    J1 --> S2["Stage 2"]
+    J2 --> S3["Stage 3"]
+    S1 --> T1["Task 1.1"]
+    S1 --> T2["Task 1.2"]
+    S1 --> T3["Task 1.3"]
+    S2 --> T4["Task 2.1"]
+    S2 --> T5["Task 2.2"]
+    style App fill:#4CAF50,color:white
+    style J1 fill:#2196F3,color:white
+    style J2 fill:#2196F3,color:white
+    style S1 fill:#FF9800
+    style S2 fill:#FF9800
+    style S3 fill:#FF9800
+    style T1 fill:#E1BEE7
+    style T2 fill:#E1BEE7
+    style T3 fill:#E1BEE7
+    style T4 fill:#E1BEE7
+    style T5 fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "What Triggers a Job?",
+                        "explanation": "A **Job** is triggered by an **action** - an operation that returns a value to the driver or writes to external storage. Common actions include: `count()`, `collect()`, `save()`, `show()`, `take()`. Each action creates one job.",
+                        "diagram_data": """graph LR
+    subgraph "Actions = Jobs"
+        A1["df.count()"] --> J1["Job 1"]
+        A2["df.collect()"] --> J2["Job 2"]
+        A3["df.write.parquet()"] --> J3["Job 3"]
+        A4["df.show()"] --> J4["Job 4"]
+    end
+    subgraph "NOT Actions - Lazy"
+        T1["df.filter()"] --> X1["No job"]
+        T2["df.select()"] --> X2["No job"]
+        T3["df.groupBy()"] --> X3["No job"]
+    end
+    style A1 fill:#4CAF50,color:white
+    style A2 fill:#4CAF50,color:white
+    style A3 fill:#4CAF50,color:white
+    style A4 fill:#4CAF50,color:white
+    style T1 fill:#E0E0E0
+    style T2 fill:#E0E0E0
+    style T3 fill:#E0E0E0""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Stages: Divided by Shuffles",
+                        "explanation": "Within a job, **stages** are divided by **shuffle boundaries**. A shuffle occurs when data needs to be redistributed across partitions (e.g., `groupBy`, `join`, `repartition`). Operations that don't require shuffles stay in the same stage.",
+                        "diagram_data": """graph TB
+    subgraph "Stage 1 - No Shuffle"
+        Read["Read Data"] --> Filter["filter()"]
+        Filter --> Select["select()"]
+        Select --> Map["map()"]
+    end
+    Shuffle1["SHUFFLE<br/>groupByKey()"]
+    subgraph "Stage 2"
+        Agg["aggregate()"]
+    end
+    Shuffle2["SHUFFLE<br/>join()"]
+    subgraph "Stage 3"
+        Join["join result"]
+        Join --> Write["write()"]
+    end
+    Map --> Shuffle1
+    Shuffle1 --> Agg
+    Agg --> Shuffle2
+    Shuffle2 --> Join
+    style Shuffle1 fill:#FF5722,color:white
+    style Shuffle2 fill:#FF5722,color:white
+    style Read fill:#4CAF50
+    style Write fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Tasks: One Per Partition",
+                        "explanation": "A **task** is the smallest unit of work. Each stage runs one task per partition. If your DataFrame has 100 partitions, each stage will have 100 tasks. Tasks run in parallel across executor cores.",
+                        "diagram_data": """graph TB
+    subgraph "Stage 1: 4 Partitions = 4 Tasks"
+        P1["Partition 0"] --> T1["Task 0"]
+        P2["Partition 1"] --> T2["Task 1"]
+        P3["Partition 2"] --> T3["Task 2"]
+        P4["Partition 3"] --> T4["Task 3"]
+    end
+    subgraph "Parallel Execution"
+        T1 --> E1["Executor 1<br/>Core 1"]
+        T2 --> E1C2["Executor 1<br/>Core 2"]
+        T3 --> E2["Executor 2<br/>Core 1"]
+        T4 --> E2C2["Executor 2<br/>Core 2"]
+    end
+    style P1 fill:#E3F2FD
+    style P2 fill:#E3F2FD
+    style P3 fill:#E3F2FD
+    style P4 fill:#E3F2FD
+    style T1 fill:#4CAF50
+    style T2 fill:#4CAF50
+    style T3 fill:#4CAF50
+    style T4 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Example: Word Count Job",
+                        "explanation": "Let's trace a word count job through the hierarchy. The code `textFile.flatMap().map().reduceByKey().collect()` creates one job (collect is the action), two stages (reduceByKey causes a shuffle), and tasks equal to partition count.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        Code["words = sc.textFile file<br/>.flatMap lambda x: x.split<br/>.map lambda x: x, 1<br/>.reduceByKey lambda a,b: a+b<br/>.collect"]
+    end
+    subgraph "Job 1 triggered by collect"
+        subgraph "Stage 1: Read and Map"
+            S1T["textFile - flatMap - map"]
+            S1P["4 partitions = 4 tasks"]
+        end
+        SH["SHUFFLE<br/>reduceByKey"]
+        subgraph "Stage 2: Reduce"
+            S2T["reduceByKey"]
+            S2P["4 partitions = 4 tasks"]
+        end
+    end
+    Code --> S1T
+    S1T --> SH
+    SH --> S2T
+    S2T --> |"collect()"| Driver["Results to Driver"]
+    style Code fill:#FFF9C4
+    style SH fill:#FF5722,color:white
+    style Driver fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "The DAG Scheduler",
+                        "explanation": "The **DAG Scheduler** builds a Directed Acyclic Graph of stages. It identifies shuffle boundaries, creates stages, and determines the optimal execution order. Stages with no dependencies can run in parallel.",
+                        "diagram_data": """graph TD
+    subgraph "DAG Scheduler Process"
+        A["Action called<br/>(e.g., collect)"]
+        B["Build RDD/DataFrame lineage"]
+        C["Identify shuffle boundaries"]
+        D["Create stages"]
+        E["Determine dependencies"]
+        F["Submit to Task Scheduler"]
+    end
+    A --> B --> C --> D --> E --> F
+    subgraph "Example DAG"
+        S1["Stage 1<br/>Read + Filter"]
+        S2["Stage 2<br/>Read + Map"]
+        S3["Stage 3<br/>Join"]
+        S4["Stage 4<br/>Aggregate + Write"]
+        S1 --> S3
+        S2 --> S3
+        S3 --> S4
+    end
+    style A fill:#4CAF50,color:white
+    style S1 fill:#2196F3
+    style S2 fill:#2196F3
+    style S3 fill:#FF9800
+    style S4 fill:#E91E63,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "The Task Scheduler",
+                        "explanation": "The **Task Scheduler** assigns tasks to executors. It considers **data locality** (running tasks where data lives) and **speculative execution** (re-launching slow tasks). Tasks are assigned to executor cores.",
+                        "diagram_data": """graph TB
+    subgraph "Task Scheduler"
+        TQ["Task Queue"]
+        LS["Locality Scheduling<br/>1. PROCESS_LOCAL same JVM<br/>2. NODE_LOCAL same node<br/>3. RACK_LOCAL same rack<br/>4. ANY anywhere"]
+        SE["Speculative Execution<br/>Re-run slow tasks"]
+    end
+    TQ --> LS
+    LS --> E1["Executor 1"]
+    LS --> E2["Executor 2"]
+    LS --> E3["Executor 3"]
+    SE -.-> |"Slow task?"| E3
+    subgraph "Best Case"
+        Data["Data on Node 1"]
+        Task["Task runs on Node 1"]
+        Data --> Task
+        Fast["Fast! No network transfer"]
+    end
+    style LS fill:#4CAF50,color:white
+    style SE fill:#FFC107
+    style Fast fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Viewing in Spark UI",
+                        "explanation": "The Spark UI (port 4040) shows all jobs, stages, and tasks. Use it to identify bottlenecks, shuffle sizes, and stragglers. The **DAG Visualization** shows stage dependencies graphically.",
+                        "diagram_data": """graph TB
+    subgraph "Spark UI - Jobs Tab"
+        J["Jobs<br/>Status: Succeeded/Failed/Running<br/>Duration, Stages per job"]
+    end
+    subgraph "Spark UI - Stages Tab"
+        S["Stages<br/>Input/Output size<br/>Shuffle Read/Write<br/>Tasks: Succeeded/Failed"]
+    end
+    subgraph "Spark UI - Tasks"
+        T["Task Details<br/>Duration per task<br/>GC time<br/>Shuffle spill<br/>Data locality"]
+    end
+    J --> S --> T
+    subgraph "What to Look For"
+        L1["Stragglers: One task much slower"]
+        L2["Shuffle spill: Data does not fit in memory"]
+        L3["Skew: Uneven partition sizes"]
+        L4["Data locality: Most tasks PROCESS_LOCAL"]
+    end
+    style L1 fill:#FFCDD2
+    style L2 fill:#FFCDD2
+    style L3 fill:#FFCDD2
+    style L4 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pyspark_lazy_evaluation_visual(self):
+        """Seed PySpark Lazy Evaluation visual topic."""
+        subject = self.get_or_create_subject("PySpark", "pyspark", "Big Data")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="spark-lazy-evaluation",
+            defaults={
+                "title": "Lazy Evaluation in Action",
+                "description": "Understand how Spark's lazy evaluation optimizes execution by waiting for actions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 7,
+                "tags": ["spark", "lazy evaluation", "transformations", "actions", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Lazy Evaluation?",
+                        "explanation": "In Spark, **transformations** (like `filter`, `map`, `select`) don't execute immediately. Instead, Spark builds a **logical plan** and waits until an **action** (like `count`, `collect`, `show`) is called. This enables powerful optimizations.",
+                        "diagram_data": """graph LR
+    subgraph "Eager Execution - Not Spark"
+        E1["filter()"] --> |"Execute now"| E2["Data filtered"]
+        E2 --> E3["map()"]
+        E3 --> |"Execute now"| E4["Data mapped"]
+    end
+    subgraph "Lazy Execution - Spark"
+        L1["filter()"] --> |"Add to plan"| L2["Plan: filter"]
+        L2 --> L3["map()"]
+        L3 --> |"Add to plan"| L4["Plan: filter then map"]
+        L4 --> L5["count()"]
+        L5 --> |"Execute ALL"| L6["Results!"]
+    end
+    style E2 fill:#FFCDD2
+    style E4 fill:#FFCDD2
+    style L5 fill:#4CAF50,color:white
+    style L6 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Transformations vs Actions",
+                        "explanation": "**Transformations** return a new RDD/DataFrame and are lazy. **Actions** trigger execution and return values or write data. Knowing the difference is crucial for understanding when Spark actually does work.",
+                        "diagram_data": """graph TB
+    subgraph "Transformations - Lazy"
+        T1["filter - narrow"]
+        T2["map - narrow"]
+        T3["select - narrow"]
+        T4["withColumn - narrow"]
+        T5["groupBy - wide"]
+        T6["join - wide"]
+        T7["repartition - wide"]
+    end
+    subgraph "Actions - Trigger Execution"
+        A1["count returns number"]
+        A2["collect returns array"]
+        A3["take n returns array"]
+        A4["show prints"]
+        A5["write.parquet creates files"]
+        A6["foreach side effects"]
+    end
+    T1 --> |"Add to plan"| Plan["Logical Plan"]
+    T5 --> |"Add to plan"| Plan
+    Plan --> |"Action triggers"| A1
+    style T1 fill:#E3F2FD
+    style T5 fill:#BBDEFB
+    style A1 fill:#4CAF50,color:white
+    style Plan fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Building the Execution Plan",
+                        "explanation": "As you chain transformations, Spark builds a **DAG (Directed Acyclic Graph)** of operations. Nothing runs yet! The DAG represents what *will* happen, not what *has* happened.",
+                        "diagram_data": """graph TB
+    subgraph "Your Code"
+        C1["df = spark.read.parquet data"]
+        C2["df2 = df.filter col age > 21"]
+        C3["df3 = df2.select name, age"]
+        C4["df4 = df3.withColumn senior, col age > 65"]
+    end
+    subgraph "What Spark Has - Logical Plan"
+        P1["Scan parquet"]
+        P2["Filter: age > 21"]
+        P3["Project: name, age"]
+        P4["Add column: senior"]
+        P1 --> P2 --> P3 --> P4
+    end
+    subgraph "What Has Run"
+        Nothing["Nothing!<br/>No data read<br/>No computation done"]
+    end
+    C1 --> P1
+    C2 --> P2
+    C3 --> P3
+    C4 --> P4
+    style Nothing fill:#FFCDD2
+    style P4 fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Action Triggers Execution",
+                        "explanation": "When you call an action like `count()`, Spark's **Catalyst optimizer** takes the logical plan, optimizes it, creates a physical plan, and finally executes. All the chained transformations run together.",
+                        "diagram_data": """graph TB
+    subgraph "Before Action"
+        LP["Logical Plan<br/>Your transformations"]
+    end
+    Action["df4.count()"]
+    subgraph "Optimization"
+        Cat["Catalyst Optimizer"]
+        O1["Predicate pushdown"]
+        O2["Column pruning"]
+        O3["Join reordering"]
+    end
+    subgraph "Execution"
+        PP["Physical Plan"]
+        Tasks["Generate Tasks"]
+        Run["Run on Executors"]
+        Result["Return Result: 42"]
+    end
+    LP --> Action
+    Action --> Cat
+    Cat --> O1
+    Cat --> O2
+    Cat --> O3
+    O1 --> PP
+    O2 --> PP
+    O3 --> PP
+    PP --> Tasks --> Run --> Result
+    style Action fill:#4CAF50,color:white
+    style Cat fill:#2196F3,color:white
+    style Result fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Optimization: Predicate Pushdown",
+                        "explanation": "Because Spark sees the whole plan before executing, it can optimize. **Predicate pushdown** moves filters earlier to read less data. If you filter after joining, Spark may push the filter before the join!",
+                        "diagram_data": """graph TB
+    subgraph "What You Wrote"
+        W1["Read all columns"]
+        W2["Join"]
+        W3["Filter: status = active"]
+    end
+    W1 --> W2 --> W3
+    subgraph "What Spark Does - Optimized"
+        O1["Read + Filter: status = active<br/>Pushed down to scan"]
+        O2["Join<br/>Less data!"]
+    end
+    O1 --> O2
+    style W3 fill:#FFCDD2
+    style O1 fill:#C8E6C9
+    style O2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Optimization: Column Pruning",
+                        "explanation": "**Column pruning** eliminates columns you don't need. If you only select 3 columns but the source has 100, Spark reads only those 3 (especially effective with columnar formats like Parquet).",
+                        "diagram_data": """graph TB
+    subgraph "What You Wrote"
+        W1["df = spark.read.parquet wide_table<br/>100 columns"]
+        W2["df.select name, email, age"]
+        W3["df.show()"]
+    end
+    subgraph "What Spark Does"
+        O1["Read ONLY 3 columns from Parquet<br/>name, email, age"]
+        O2["Show results"]
+    end
+    subgraph "Savings"
+        S1["97 columns never read"]
+        S2["97 percent less I/O"]
+        S3["97 percent less memory"]
+    end
+    style O1 fill:#C8E6C9
+    style S1 fill:#FFCDD2
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Multiple Actions = Multiple Executions",
+                        "explanation": "Each action triggers a new execution of the DAG. If you call `count()` then `show()`, Spark runs everything twice! Use `cache()` or `persist()` to avoid recomputation when you need multiple actions.",
+                        "diagram_data": """graph TB
+    subgraph "Without Cache"
+        R1["read + transform"] --> A1["count()"]
+        R2["read + transform AGAIN"] --> A2["show()"]
+        R3["read + transform AGAIN"] --> A3["write()"]
+        Waste["3x computation!"]
+    end
+    subgraph "With Cache"
+        R4["read + transform"] --> C["cache()"]
+        C --> |"Stored in memory"| A4["count() - fast!"]
+        C --> A5["show() - fast!"]
+        C --> A6["write() - fast!"]
+        Win["1x computation"]
+    end
+    style Waste fill:#FFCDD2
+    style Win fill:#C8E6C9
+    style C fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Key Takeaways",
+                        "explanation": "Lazy evaluation is a superpower, not a limitation. It enables whole-program optimization that's impossible with eager execution. Master this concept to write efficient Spark code.",
+                        "diagram_data": """graph TB
+    subgraph "Benefits of Lazy Evaluation"
+        B1["Optimization<br/>Catalyst optimizes entire plan"]
+        B2["Efficiency<br/>Only read/compute what is needed"]
+        B3["Flexibility<br/>Build complex pipelines"]
+        B4["Fault Tolerance<br/>Lineage for recomputation"]
+    end
+    subgraph "Tips"
+        T1["1. Chain transformations freely"]
+        T2["2. Use cache for reused data"]
+        T3["3. Call explain to see the plan"]
+        T4["4. Actions: count, collect, show, write"]
+    end
+    subgraph "Debug"
+        D["df.explain True<br/>Shows all optimization stages"]
+    end
+    style B1 fill:#C8E6C9
+    style B2 fill:#C8E6C9
+    style B3 fill:#C8E6C9
+    style B4 fill:#C8E6C9
+    style D fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pyspark_partitioning_visual(self):
+        """Seed PySpark Partitioning Strategies visual topic."""
+        subject = self.get_or_create_subject("PySpark", "pyspark", "Big Data")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="spark-partitioning",
+            defaults={
+                "title": "Partitioning Strategies",
+                "description": "Learn how data is distributed across partitions using Hash and Range partitioning",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["spark", "partitioning", "hash", "range", "distribution"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Partitioning?",
+                        "explanation": "**Partitioning** is how Spark divides data across multiple nodes for parallel processing. Each partition is processed by one task. Good partitioning = even distribution = efficient parallel execution.",
+                        "diagram_data": """graph TB
+    subgraph "DataFrame: 12 Million Rows"
+        Data["Full Dataset"]
+    end
+    Data --> |"Partitioned"| P1["Partition 0<br/>3M rows"]
+    Data --> P2["Partition 1<br/>3M rows"]
+    Data --> P3["Partition 2<br/>3M rows"]
+    Data --> P4["Partition 3<br/>3M rows"]
+    P1 --> T1["Task 0<br/>Executor 1"]
+    P2 --> T2["Task 1<br/>Executor 1"]
+    P3 --> T3["Task 2<br/>Executor 2"]
+    P4 --> T4["Task 3<br/>Executor 2"]
+    style Data fill:#E3F2FD
+    style P1 fill:#4CAF50
+    style P2 fill:#4CAF50
+    style P3 fill:#4CAF50
+    style P4 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Default Partitioning",
+                        "explanation": "When you read data, the number of partitions depends on the source. HDFS files: 1 partition per block (128MB default). Local files: based on `spark.default.parallelism`. You can control this with `repartition()` or `coalesce()`.",
+                        "diagram_data": """graph TB
+    subgraph "Reading from HDFS"
+        HDFS["HDFS File: 512MB"]
+        HDFS --> |"128MB blocks"| B1["Block 1"]
+        HDFS --> B2["Block 2"]
+        HDFS --> B3["Block 3"]
+        HDFS --> B4["Block 4"]
+        B1 --> P1["Partition 1"]
+        B2 --> P2["Partition 2"]
+        B3 --> P3["Partition 3"]
+        B4 --> P4["Partition 4"]
+    end
+    subgraph "Configuration"
+        C1["spark.default.parallelism<br/>Default partitions for shuffles"]
+        C2["spark.sql.shuffle.partitions<br/>Default: 200 often too high!"]
+    end
+    style HDFS fill:#2196F3,color:white
+    style P1 fill:#4CAF50
+    style P2 fill:#4CAF50
+    style P3 fill:#4CAF50
+    style P4 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Hash Partitioning",
+                        "explanation": "**Hash partitioning** uses a hash function on a key to determine which partition a record goes to: `partition = hash(key) % numPartitions`. This ensures all records with the same key end up in the same partition.",
+                        "diagram_data": """graph TB
+    subgraph "Hash Partitioning - 4 partitions"
+        K1["user_id: 101"] --> |"hash 101 mod 4 = 1"| P1["Partition 1"]
+        K2["user_id: 102"] --> |"hash 102 mod 4 = 2"| P2["Partition 2"]
+        K3["user_id: 103"] --> |"hash 103 mod 4 = 3"| P3["Partition 3"]
+        K4["user_id: 104"] --> |"hash 104 mod 4 = 0"| P0["Partition 0"]
+        K5["user_id: 201"] --> |"hash 201 mod 4 = 1"| P1
+        K6["user_id: 205"] --> |"hash 205 mod 4 = 1"| P1
+    end
+    subgraph "Result"
+        R["Same key = Same partition<br/>Good for: groupBy, join"]
+    end
+    style P0 fill:#4CAF50
+    style P1 fill:#4CAF50
+    style P2 fill:#4CAF50
+    style P3 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Range Partitioning",
+                        "explanation": "**Range partitioning** divides data based on key ranges. Records with keys in the same range go to the same partition. This is used for sorted data and is essential for efficient range queries.",
+                        "diagram_data": """graph TB
+    subgraph "Range Partitioning by Age"
+        D["All Users"]
+        D --> |"age 0-25"| P0["Partition 0<br/>Young users"]
+        D --> |"age 26-50"| P1["Partition 1<br/>Adults"]
+        D --> |"age 51-75"| P2["Partition 2<br/>Middle-aged"]
+        D --> |"age 76-100"| P3["Partition 3<br/>Seniors"]
+    end
+    subgraph "Boundaries"
+        B["Boundaries: 25, 50, 75<br/>Determined by sampling data"]
+    end
+    subgraph "Good For"
+        G1["Range queries: WHERE age BETWEEN 30 AND 40"]
+        G2["Sorted output: ORDER BY age"]
+        G3["Merge joins on sorted data"]
+    end
+    style P0 fill:#4CAF50
+    style P1 fill:#4CAF50
+    style P2 fill:#4CAF50
+    style P3 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Hash vs Range Comparison",
+                        "explanation": "Choose the right partitioning strategy based on your query patterns. **Hash** is better for equality joins and groupBy. **Range** is better for range queries and sorted output.",
+                        "diagram_data": """graph TB
+    subgraph "Hash Partitioning"
+        H1["Good: Equality operations<br/>groupBy, join on key"]
+        H2["Good: Uniform distribution<br/>usually"]
+        H3["Bad: Range queries scan all partitions"]
+        H4["Bad: Sorted output requires shuffle"]
+    end
+    subgraph "Range Partitioning"
+        R1["Good: Range queries<br/>Only scan relevant partitions"]
+        R2["Good: Sorted output<br/>No extra shuffle needed"]
+        R3["Bad: Can be skewed<br/>If data is not uniform"]
+        R4["Bad: Requires sampling to find boundaries"]
+    end
+    style H1 fill:#C8E6C9
+    style H2 fill:#C8E6C9
+    style H3 fill:#FFCDD2
+    style H4 fill:#FFCDD2
+    style R1 fill:#C8E6C9
+    style R2 fill:#C8E6C9
+    style R3 fill:#FFCDD2
+    style R4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "repartition vs coalesce",
+                        "explanation": "`repartition(n)` reshuffles data to create exactly n partitions (expensive, full shuffle). `coalesce(n)` reduces partitions without a full shuffle (efficient, only combines). Use `coalesce` when reducing partitions, `repartition` when increasing or rebalancing.",
+                        "diagram_data": """graph TB
+    subgraph "repartition 4 - Full Shuffle"
+        R1["8 Partitions"]
+        R1 --> |"Full shuffle"| R2["4 Partitions<br/>Evenly distributed"]
+        R3["Can increase OR decrease"]
+        R4["Expensive: moves all data"]
+    end
+    subgraph "coalesce 4 - No Shuffle"
+        C1["8 Partitions"]
+        C1 --> |"Combine locally"| C2["4 Partitions<br/>May be uneven"]
+        C3["Can only DECREASE"]
+        C4["Cheap: no data movement"]
+    end
+    subgraph "When to Use"
+        W1["repartition: After filter that shrinks data"]
+        W2["coalesce: Before write to reduce files"]
+        W3["repartition col: Partition by column for joins"]
+    end
+    style R4 fill:#FFCDD2
+    style C4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Partition Pruning",
+                        "explanation": "When data is partitioned on disk (e.g., Parquet files partitioned by date), Spark can skip entire partitions that don't match filter predicates. This is called **partition pruning** and can dramatically speed up queries.",
+                        "diagram_data": """graph TB
+    subgraph "Data Partitioned by Date"
+        Root["sales/"]
+        Root --> D1["date=2024-01-01/"]
+        Root --> D2["date=2024-01-02/"]
+        Root --> D3["date=2024-01-03/"]
+        Root --> D4["..."]
+        Root --> D5["date=2024-12-31/"]
+    end
+    subgraph "Query"
+        Q["SELECT * FROM sales<br/>WHERE date = 2024-01-02"]
+    end
+    subgraph "Partition Pruning"
+        D1 --> |"Skipped"| Skip1["Not read"]
+        D2 --> |"Read"| Read["Only this partition!"]
+        D3 --> |"Skipped"| Skip2["Not read"]
+        D5 --> |"Skipped"| Skip3["Not read"]
+    end
+    Q --> D2
+    style D2 fill:#4CAF50,color:white
+    style D1 fill:#E0E0E0
+    style D3 fill:#E0E0E0
+    style D5 fill:#E0E0E0""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Choosing the Right Number of Partitions",
+                        "explanation": "The optimal partition count balances parallelism and overhead. Too few = underutilized cores. Too many = scheduling overhead. Rule of thumb: **2-4x your total cores**, with **~128MB per partition**.",
+                        "diagram_data": """graph TB
+    subgraph "Too Few Partitions"
+        TF1["4 partitions, 100 cores"]
+        TF2["96 cores idle!"]
+        TF3["Tasks take forever"]
+    end
+    subgraph "Too Many Partitions"
+        TM1["10,000 partitions"]
+        TM2["Scheduling overhead"]
+        TM3["Too many small tasks"]
+        TM4["Driver overwhelmed"]
+    end
+    subgraph "Just Right"
+        JR1["Partitions = 2-4x cores"]
+        JR2["~128MB per partition"]
+        JR3["Adjust based on data size"]
+    end
+    subgraph "Formula"
+        F["Recommended partitions =<br/>max total_cores x 2,<br/>data_size_gb / 0.128"]
+    end
+    style TF2 fill:#FFCDD2
+    style TM2 fill:#FFCDD2
+    style JR1 fill:#C8E6C9
+    style JR2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pyspark_shuffle_visual(self):
+        """Seed PySpark Shuffle Operation visual topic."""
+        subject = self.get_or_create_subject("PySpark", "pyspark", "Big Data")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="spark-shuffle-operation",
+            defaults={
+                "title": "Shuffle Operation Deep Dive",
+                "description": "Understand how shuffle operations redistribute data between partitions during groupBy and join",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["spark", "shuffle", "groupBy", "join", "network", "performance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is a Shuffle?",
+                        "explanation": "A **shuffle** is Spark's mechanism for redistributing data across partitions. It's triggered when data needs to be reorganized by key (groupBy, join, reduceByKey). Shuffles are expensive because they require disk I/O and network transfer.",
+                        "diagram_data": """graph TB
+    subgraph "Before Shuffle"
+        P1["Partition 1<br/>A:1, B:2, C:3"]
+        P2["Partition 2<br/>A:4, B:5, D:6"]
+        P3["Partition 3<br/>B:7, C:8, D:9"]
+    end
+    subgraph "Shuffle Required"
+        SH["groupByKey<br/>Must group all As together,<br/>all Bs together, etc."]
+    end
+    subgraph "After Shuffle"
+        R1["Partition 1<br/>A:1, A:4"]
+        R2["Partition 2<br/>B:2, B:5, B:7"]
+        R3["Partition 3<br/>C:3, C:8, D:6, D:9"]
+    end
+    P1 --> SH
+    P2 --> SH
+    P3 --> SH
+    SH --> R1
+    SH --> R2
+    SH --> R3
+    style SH fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Shuffles are Expensive",
+                        "explanation": "Shuffles are the most expensive operation in Spark because they involve: **1)** Writing data to disk, **2)** Transferring data over network, **3)** Reading and merging on the target partition. This is why minimizing shuffles is key to Spark performance.",
+                        "diagram_data": """graph TB
+    subgraph "Shuffle Cost"
+        C1["1. Serialize data"]
+        C2["2. Write to local disk<br/>Shuffle files"]
+        C3["3. Transfer over network<br/>Often the bottleneck!"]
+        C4["4. Read on target executor"]
+        C5["5. Deserialize data"]
+        C6["6. Merge and sort"]
+    end
+    C1 --> C2 --> C3 --> C4 --> C5 --> C6
+    subgraph "Impact"
+        I1["Slow: Disk + Network I/O"]
+        I2["Disk space for shuffle files"]
+        I3["GC pressure from serialization"]
+        I4["Can cause OOM if data does not fit"]
+    end
+    style C3 fill:#FF5722,color:white
+    style I1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Shuffle Process - Step by Step",
+                        "explanation": "Let's trace a shuffle through `reduceByKey`. The **map side** writes shuffle files partitioned by target partition. The **reduce side** fetches and combines these files.",
+                        "diagram_data": """sequenceDiagram
+    participant M1 as Map Task 1
+    participant M2 as Map Task 2
+    participant SM as Shuffle Manager
+    participant R1 as Reduce Task 1
+    participant R2 as Reduce Task 2
+
+    Note over M1,M2: Map Side - Write
+    M1->>SM: Write partition 1 data to file_1_1
+    M1->>SM: Write partition 2 data to file_1_2
+    M2->>SM: Write partition 1 data to file_2_1
+    M2->>SM: Write partition 2 data to file_2_2
+
+    Note over R1,R2: Reduce Side - Read
+    R1->>SM: Fetch file_1_1, file_2_1
+    SM->>R1: Send data
+    R1->>R1: Merge and reduce
+    R2->>SM: Fetch file_1_2, file_2_2
+    SM->>R2: Send data
+    R2->>R2: Merge and reduce""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Shuffle in groupByKey",
+                        "explanation": "`groupByKey()` shuffles ALL values for each key to a single partition. This can be memory-intensive because all values must fit in memory before processing. Prefer `reduceByKey` which pre-aggregates on the map side.",
+                        "diagram_data": """graph TB
+    subgraph "groupByKey - All data shuffled"
+        GB1["Partition 1: A,1 B,2"]
+        GB2["Partition 2: A,3 A,4"]
+        GB3["Partition 3: B,5 B,6"]
+        GBS["SHUFFLE"]
+        GBR1["Partition 1: A, 1,3,4"]
+        GBR2["Partition 2: B, 2,5,6"]
+    end
+    GB1 --> GBS
+    GB2 --> GBS
+    GB3 --> GBS
+    GBS --> GBR1
+    GBS --> GBR2
+    subgraph "reduceByKey - Pre-aggregate first"
+        RB1["Partition 1: A,1 B,2"]
+        RB2["Partition 2: A,7"]
+        RB3["Partition 3: B,11"]
+        Pre["Local combine first!"]
+        RBS["Smaller shuffle"]
+        RBR1["Partition 1: A, 8"]
+        RBR2["Partition 2: B, 13"]
+    end
+    style GBS fill:#FF5722,color:white
+    style RBS fill:#FFC107
+    style Pre fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Shuffle in Joins",
+                        "explanation": "When joining two DataFrames, both must be shuffled so matching keys end up on the same partition. This is a **shuffle join** (also called sort-merge join). Both sides are partitioned by the join key.",
+                        "diagram_data": """graph TB
+    subgraph "DataFrame A"
+        A1["P1: 1,a 2,b"]
+        A2["P2: 3,c 4,d"]
+    end
+    subgraph "DataFrame B"
+        B1["P1: 1,x 3,y"]
+        B2["P2: 2,z 4,w"]
+    end
+    subgraph "Shuffle Both Sides"
+        SH["Both shuffled by join key"]
+    end
+    subgraph "After Shuffle - Colocated"
+        R1["P1: A 1,a B 1,x"]
+        R2["P2: A 2,b B 2,z"]
+        R3["P3: A 3,c B 3,y"]
+        R4["P4: A 4,d B 4,w"]
+    end
+    A1 --> SH
+    A2 --> SH
+    B1 --> SH
+    B2 --> SH
+    SH --> R1
+    SH --> R2
+    SH --> R3
+    SH --> R4
+    style SH fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Avoiding Shuffles: Broadcast Join",
+                        "explanation": "If one DataFrame is small enough to fit in memory, use a **broadcast join**. The small table is sent to all executors, eliminating the shuffle of the large table entirely!",
+                        "diagram_data": """graph TB
+    subgraph "Shuffle Join - Both Shuffled"
+        SJ1["Large Table A<br/>1TB - Shuffled"]
+        SJ2["Small Table B<br/>100MB - Shuffled"]
+        SJS["Both shuffle"]
+    end
+    subgraph "Broadcast Join - No Shuffle!"
+        BJ1["Large Table A<br/>1TB - NOT shuffled"]
+        BJ2["Small Table B<br/>100MB - Broadcast"]
+        BJB["Sent to all executors"]
+        BJR["Join happens locally<br/>on each partition"]
+    end
+    BJ2 --> BJB --> BJR
+    BJ1 --> BJR
+    subgraph "Code"
+        Code["from pyspark.sql.functions import broadcast<br/>df_large.join broadcast df_small, key"]
+    end
+    style SJS fill:#FF5722,color:white
+    style BJB fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Shuffle Configuration",
+                        "explanation": "Key configurations to tune shuffle performance. `spark.sql.shuffle.partitions` controls output partitions (default 200 is often wrong!). Shuffle compression and buffer sizes affect I/O efficiency.",
+                        "diagram_data": """graph TB
+    subgraph "Key Configurations"
+        C1["spark.sql.shuffle.partitions = 200<br/>Default for SQL shuffles<br/>Often too high or low!"]
+        C2["spark.shuffle.compress = true<br/>Compress shuffle data<br/>Reduces network I/O"]
+        C3["spark.shuffle.spill.compress = true<br/>Compress spilled data<br/>Saves disk space"]
+        C4["spark.reducer.maxSizeInFlight = 48m<br/>Buffer size for fetching<br/>Increase for fast networks"]
+    end
+    subgraph "Tuning Tips"
+        T1["Partitions = 2-3x cores"]
+        T2["Target ~128MB per partition"]
+        T3["Monitor shuffle spill in UI"]
+        T4["Consider repartition before wide ops"]
+    end
+    style C1 fill:#FFF9C4
+    style T1 fill:#C8E6C9
+    style T2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Monitoring Shuffles in Spark UI",
+                        "explanation": "The Spark UI shows shuffle metrics for each stage. Watch **Shuffle Read/Write** sizes, **Shuffle Spill** (data that didn't fit in memory), and **Task Duration** distribution to identify shuffle bottlenecks.",
+                        "diagram_data": """graph TB
+    subgraph "Spark UI - Stage Details"
+        M1["Shuffle Write: 50GB<br/>Data written by map tasks"]
+        M2["Shuffle Read: 50GB<br/>Data read by reduce tasks"]
+        M3["Shuffle Spill Memory: 10GB<br/>Data spilled to disk"]
+        M4["Shuffle Spill Disk: 8GB<br/>Compressed on disk"]
+    end
+    subgraph "Warning Signs"
+        W1["High spill: Need more memory"]
+        W2["Uneven task times: Data skew"]
+        W3["Slow tasks: Network bottleneck"]
+    end
+    subgraph "Solutions"
+        S1["Increase executor memory"]
+        S2["Use salting for skewed keys"]
+        S3["Reduce partition count"]
+        S4["Use broadcast joins"]
+    end
+    style M3 fill:#FFCDD2
+    style W1 fill:#FFCDD2
+    style S1 fill:#C8E6C9
+    style S4 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pyspark_wide_narrow_transformations_visual(self):
+        """Seed PySpark Wide vs Narrow Transformations visual topic."""
+        subject = self.get_or_create_subject("PySpark", "pyspark", "Big Data")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="spark-wide-narrow-transformations",
+            defaults={
+                "title": "Wide vs Narrow Transformations",
+                "description": "Learn which operations cause shuffles and how to minimize them for better performance",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["spark", "transformations", "wide", "narrow", "shuffle", "performance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Types of Transformations",
+                        "explanation": "Spark transformations are either **narrow** (no shuffle, partition-local) or **wide** (require shuffle, data moves between partitions). Understanding this distinction is crucial for performance optimization.",
+                        "diagram_data": """graph TB
+    subgraph "Narrow Transformations"
+        N1["Each output partition<br/>depends on ONE input partition"]
+        NP1["Partition 1"] --> NT1["Transform"]
+        NP2["Partition 2"] --> NT2["Transform"]
+        NP3["Partition 3"] --> NT3["Transform"]
+        NT1 --> NR1["Output 1"]
+        NT2 --> NR2["Output 2"]
+        NT3 --> NR3["Output 3"]
+    end
+    subgraph "Wide Transformations"
+        W1["Each output partition<br/>depends on MULTIPLE input partitions"]
+        WP1["Partition 1"] --> WS["Shuffle"]
+        WP2["Partition 2"] --> WS
+        WP3["Partition 3"] --> WS
+        WS --> WR1["Output 1"]
+        WS --> WR2["Output 2"]
+    end
+    style NR1 fill:#C8E6C9
+    style NR2 fill:#C8E6C9
+    style NR3 fill:#C8E6C9
+    style WS fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Narrow Transformations - The Fast Ones",
+                        "explanation": "**Narrow transformations** operate on individual partitions without data movement. They're fast because each task works independently on its partition. No network I/O, no waiting for other partitions.",
+                        "diagram_data": """graph TB
+    subgraph "Narrow Transformations"
+        M["map / flatMap"]
+        F["filter"]
+        S["select"]
+        W["withColumn"]
+        U["union"]
+        C["coalesce"]
+        MP["mapPartitions"]
+    end
+    subgraph "Data Flow - No Shuffle"
+        P1["Partition 1<br/>1,2,3"] --> |"filter x > 1"| R1["2,3"]
+        P2["Partition 2<br/>4,5,6"] --> |"filter x > 1"| R2["4,5,6"]
+        P3["Partition 3<br/>0,1,7"] --> |"filter x > 1"| R3["7"]
+    end
+    subgraph "Benefits"
+        B1["No network transfer"]
+        B2["No disk I/O"]
+        B3["Pipeline within same task"]
+        B4["Can run in same stage"]
+    end
+    style M fill:#C8E6C9
+    style F fill:#C8E6C9
+    style S fill:#C8E6C9
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Wide Transformations - The Expensive Ones",
+                        "explanation": "**Wide transformations** require data from multiple input partitions to compute each output partition. This means data must be shuffled across the network, creating a stage boundary.",
+                        "diagram_data": """graph TB
+    subgraph "Wide Transformations"
+        G["groupByKey / groupBy"]
+        R["reduceByKey"]
+        A["aggregateByKey"]
+        J["join / cogroup"]
+        RP["repartition"]
+        S["sortByKey / sort"]
+        D["distinct"]
+    end
+    subgraph "Data Flow - Shuffle Required"
+        P1["P1: A,1 B,2"]
+        P2["P2: A,3 B,4"]
+        P3["P3: A,5 C,6"]
+        SH["SHUFFLE"]
+        R1["P1: A,1,3,5"]
+        R2["P2: B,2,4"]
+        R3["P3: C,6"]
+    end
+    P1 --> SH
+    P2 --> SH
+    P3 --> SH
+    SH --> R1
+    SH --> R2
+    SH --> R3
+    style G fill:#FFCDD2
+    style R fill:#FFCDD2
+    style J fill:#FFCDD2
+    style SH fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Stage Boundaries",
+                        "explanation": "Wide transformations create **stage boundaries**. All narrow transformations before a wide one run in Stage 1, then shuffle happens, then Stage 2 begins. This is visible in Spark UI.",
+                        "diagram_data": """graph LR
+    subgraph "Stage 1"
+        A["read"] --> B["filter"]
+        B --> C["select"]
+        C --> D["withColumn"]
+    end
+    E["groupBy<br/>Wide Transform"]
+    subgraph "Stage 2"
+        F["agg"] --> G["filter"]
+        G --> H["select"]
+    end
+    I["sort<br/>Wide Transform"]
+    subgraph "Stage 3"
+        J["write"]
+    end
+    D --> E --> F
+    H --> I --> J
+    style E fill:#FF5722,color:white
+    style I fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Pipelining Within Stages",
+                        "explanation": "Within a stage, narrow transformations are **pipelined** - they execute in a single pass without materializing intermediate results. This is extremely efficient! Wide transforms break this pipeline.",
+                        "diagram_data": """graph TB
+    subgraph "Pipelined - One Stage - Fast!"
+        Read["Read row"] --> F["Filter"]
+        F --> S["Select"]
+        S --> M["Map"]
+        M --> Write["Write to shuffle"]
+        Note1["All in memory,<br/>single pass per row!"]
+    end
+    subgraph "NOT Pipelined - Multiple Stages"
+        S1["Stage 1:<br/>Read - Filter - Select"]
+        SH["Shuffle to disk and network"]
+        S2["Stage 2:<br/>Aggregate"]
+        SH2["Shuffle again"]
+        S3["Stage 3:<br/>Sort - Write"]
+        S1 --> SH --> S2 --> SH2 --> S3
+    end
+    style Note1 fill:#C8E6C9
+    style SH fill:#FF5722,color:white
+    style SH2 fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Strategies to Minimize Shuffles",
+                        "explanation": "Reducing shuffles is one of the best ways to speed up Spark jobs. Here are key strategies: pre-aggregation, broadcast joins, and partition alignment.",
+                        "diagram_data": """graph TB
+    subgraph "1. Pre-aggregate"
+        PA1["reduceByKey vs groupByKey"]
+        PA2["Combine locally first"]
+        PA3["Less data shuffled!"]
+    end
+    subgraph "2. Broadcast small tables"
+        BC1["broadcast df_small"]
+        BC2["Small table to all executors"]
+        BC3["No shuffle for big table!"]
+    end
+    subgraph "3. Partition alignment"
+        AL1["repartition col both DFs<br/>before join"]
+        AL2["Same partitioning = no shuffle"]
+    end
+    subgraph "4. Filter early"
+        FE1["Filter before join/group"]
+        FE2["Less data to shuffle"]
+    end
+    style PA3 fill:#C8E6C9
+    style BC3 fill:#C8E6C9
+    style AL2 fill:#C8E6C9
+    style FE2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Quick Reference Table",
+                        "explanation": "Here's a handy reference for common operations. Remember: narrow = fast (same stage), wide = shuffle (new stage).",
+                        "diagram_data": """graph TB
+    subgraph "Narrow - No Shuffle"
+        N1["map, flatMap, mapPartitions"]
+        N2["filter, where"]
+        N3["select, withColumn, drop"]
+        N4["union, sample"]
+        N5["coalesce reduce only"]
+    end
+    subgraph "Wide - Causes Shuffle"
+        W1["groupByKey, reduceByKey"]
+        W2["groupBy.agg"]
+        W3["join, leftOuterJoin"]
+        W4["distinct, dropDuplicates"]
+        W5["sort, orderBy"]
+        W6["repartition"]
+    end
+    subgraph "Tips"
+        T1["Chain narrow transforms freely"]
+        T2["Think twice before wide transforms"]
+        T3["Check UI for shuffle sizes"]
+    end
+    style N1 fill:#C8E6C9
+    style N2 fill:#C8E6C9
+    style N3 fill:#C8E6C9
+    style W1 fill:#FFCDD2
+    style W2 fill:#FFCDD2
+    style W3 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pyspark_data_skew_visual(self):
+        """Seed PySpark Data Skew Problem visual topic."""
+        subject = self.get_or_create_subject("PySpark", "pyspark", "Big Data")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="spark-data-skew",
+            defaults={
+                "title": "Data Skew: The Silent Performance Killer",
+                "description": "Understand how uneven data distribution causes bottlenecks and learn strategies to fix it",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 10,
+                "tags": ["spark", "skew", "performance", "salting", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Data Skew?",
+                        "explanation": "**Data skew** occurs when data is unevenly distributed across partitions. One partition might have millions of rows while others have thousands. This creates a bottleneck because Spark must wait for the slowest task.",
+                        "diagram_data": """graph TB
+    subgraph "Ideal Distribution"
+        I1["Partition 1<br/>1M rows"]
+        I2["Partition 2<br/>1M rows"]
+        I3["Partition 3<br/>1M rows"]
+        I4["Partition 4<br/>1M rows"]
+        IT["All finish same time"]
+    end
+    subgraph "Skewed Distribution"
+        S1["Partition 1<br/>100K rows"]
+        S2["Partition 2<br/>3.7M rows!"]
+        S3["Partition 3<br/>100K rows"]
+        S4["Partition 4<br/>100K rows"]
+        ST["Waiting for P2..."]
+    end
+    style S2 fill:#FF5722,color:white
+    style IT fill:#C8E6C9
+    style ST fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Common Causes of Skew",
+                        "explanation": "Skew typically happens with **hot keys** - values that appear much more frequently than others. Examples: null values, default categories like 'unknown', popular users in social data, or 'US' in country fields.",
+                        "diagram_data": """graph TB
+    subgraph "Example: User Activity Data"
+        U1["User A: 50 actions"]
+        U2["User B: 100 actions"]
+        U3["Bot Account: 5,000,000 actions"]
+        U4["User D: 75 actions"]
+    end
+    subgraph "After groupBy user_id"
+        P1["Partition for A,B,D: 225 rows"]
+        P2["Partition for Bot: 5,000,000 rows"]
+    end
+    subgraph "Real-World Hot Keys"
+        H1["NULL values"]
+        H2["unknown / other categories"]
+        H3["Top 0.1 percent users - power users"]
+        H4["Popular products"]
+        H5["Default values"]
+    end
+    style U3 fill:#FF5722,color:white
+    style P2 fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "How to Detect Skew",
+                        "explanation": "Look for these warning signs in Spark UI: one task takes much longer than others, shuffle read/write sizes are uneven, or you see 'stragglers'. Also check data distribution directly with `groupBy().count()`.",
+                        "diagram_data": """graph TB
+    subgraph "Spark UI Warning Signs"
+        W1["Task Duration"]
+        W2["Task 1: 5 seconds"]
+        W3["Task 2: 5 seconds"]
+        W4["Task 3: 300 seconds"]
+        W5["Task 4: 5 seconds"]
+    end
+    subgraph "Check Data Distribution"
+        Code["df.groupBy key<br/>  .count<br/>  .orderBy desc count<br/>  .show"]
+        Result["key   | count<br/>------|-------<br/>NULL  | 5000000<br/>US    | 1000000<br/>UK    | 50000<br/>..."]
+    end
+    subgraph "Metrics to Watch"
+        M1["Shuffle Read Size per task"]
+        M2["Input Records per task"]
+        M3["GC Time - high = OOM risk"]
+    end
+    style W4 fill:#FF5722,color:white
+    style Result fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Solution 1: Salting",
+                        "explanation": "**Salting** artificially increases key cardinality by appending a random number. This distributes hot keys across multiple partitions. After aggregation, remove the salt and combine results.",
+                        "diagram_data": """graph TB
+    subgraph "Before Salting"
+        B1["All US rows go to 1 partition"]
+        B2["Partition 1: US, US, US, US...<br/>1 million rows"]
+    end
+    subgraph "With Salting - salt 0-9"
+        S1["Add salt: US becomes US_0, US_1, ... US_9"]
+        S2["P1: US_0 100K"]
+        S3["P2: US_1 100K"]
+        S4["P3: US_2 100K"]
+        S5["... distributed across 10 partitions"]
+    end
+    subgraph "Code Pattern"
+        Code["# Add salt<br/>df = df.withColumn salt, rand * 10 cast int<br/>df = df.withColumn salted_key, concat col key, lit _, col salt<br/><br/># Aggregate with salted key<br/>result = df.groupBy salted_key .agg ...<br/><br/># Remove salt and combine<br/>result = result.withColumn key, split salted_key, _ index 0<br/>final = result.groupBy key .agg sum ..."]
+    end
+    style B2 fill:#FF5722,color:white
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9
+    style S4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Solution 2: Broadcast Join for Skewed Keys",
+                        "explanation": "For skewed joins, separate the hot keys and handle them differently. Broadcast join the hot keys (no shuffle!) and regular join the rest, then union the results.",
+                        "diagram_data": """graph TB
+    subgraph "Split Approach"
+        Big["Large Table"]
+        Small["Small Table"]
+        Big --> |"filter hot keys"| Hot["Hot Keys - broadcast join"]
+        Big --> |"filter normal keys"| Normal["Normal Keys - shuffle join"]
+        Hot --> BC["Broadcast Join<br/>No shuffle"]
+        Normal --> SH["Shuffle Join"]
+        Small --> BC
+        Small --> SH
+        BC --> Union["UNION"]
+        SH --> Union
+    end
+    subgraph "Code Pattern"
+        Code["hot_keys = US, NULL, unknown<br/><br/># Split<br/>df_hot = df_big.filter col key .isin hot_keys<br/>df_normal = df_big.filter ~col key .isin hot_keys<br/><br/># Join separately<br/>result_hot = df_hot.join broadcast df_small, key<br/>result_normal = df_normal.join df_small, key<br/><br/># Combine<br/>result = result_hot.union result_normal"]
+    end
+    style BC fill:#C8E6C9
+    style SH fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Solution 3: Adaptive Query Execution - AQE",
+                        "explanation": "Spark 3.0+ includes **Adaptive Query Execution** which automatically handles skew! Enable it with `spark.sql.adaptive.enabled=true`. AQE detects skewed partitions and splits them automatically.",
+                        "diagram_data": """graph TB
+    subgraph "AQE Skew Handling"
+        D["Detect skewed partition<br/>during execution"]
+        S["Split into smaller partitions"]
+        P["Process in parallel"]
+    end
+    D --> S --> P
+    subgraph "Configuration"
+        C1["spark.sql.adaptive.enabled = true"]
+        C2["spark.sql.adaptive.skewJoin.enabled = true"]
+        C3["spark.sql.adaptive.skewJoin.skewedPartitionFactor = 5<br/>partition is skewed if 5x median"]
+        C4["spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes = 256MB"]
+    end
+    subgraph "Benefits"
+        B1["Automatic - no code changes"]
+        B2["Dynamic based on actual data"]
+        B3["Also optimizes partition count"]
+    end
+    style C1 fill:#4CAF50,color:white
+    style C2 fill:#4CAF50,color:white
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Solution 4: Handle Nulls Separately",
+                        "explanation": "NULL values are a common source of skew. Handle them separately by filtering out nulls, processing them without a shuffle, and unioning the results back.",
+                        "diagram_data": """graph TB
+    subgraph "Problem: NULL Skew"
+        P1["df.groupBy category .agg ..."]
+        P2["90 percent of rows have NULL category"]
+        P3["One partition gets 90 percent of data"]
+    end
+    subgraph "Solution: Separate NULL Handling"
+        S1["Split data"]
+        S2["Non-null: Regular groupBy"]
+        S3["Nulls: Process separately<br/>no groupBy needed!"]
+        S4["Union results"]
+    end
+    subgraph "Code Pattern"
+        Code["# Split<br/>df_with_cat = df.filter col category .isNotNull<br/>df_null_cat = df.filter col category .isNull<br/><br/># Process separately<br/>result1 = df_with_cat.groupBy category .agg ...<br/>result2 = df_null_cat.agg ...<br/>              .withColumn category, lit None<br/><br/># Combine<br/>result = result1.union result2"]
+    end
+    style P3 fill:#FF5722,color:white
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Summary: Skew Fighting Toolkit",
+                        "explanation": "Data skew is a common performance problem with multiple solutions. Start with AQE (easiest), then apply manual techniques for specific cases. Always verify improvement in Spark UI.",
+                        "diagram_data": """graph TB
+    subgraph "Detection"
+        D1["1. Check Spark UI for stragglers"]
+        D2["2. groupBy count to find hot keys"]
+        D3["3. Monitor shuffle read sizes"]
+    end
+    subgraph "Solutions - Try in Order"
+        S1["1. Enable AQE - Spark 3+<br/>Automatic, no code changes"]
+        S2["2. Filter out NULL/default values<br/>Handle separately"]
+        S3["3. Broadcast join small tables<br/>Avoid shuffle entirely"]
+        S4["4. Salting for aggregations<br/>Distribute hot keys"]
+        S5["5. Split + broadcast for skewed joins<br/>Handle hot keys differently"]
+    end
+    subgraph "Verify"
+        V1["Check task times are even"]
+        V2["Shuffle sizes balanced"]
+        V3["Overall job faster"]
+    end
+    style S1 fill:#4CAF50,color:white
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_lightgbm_gradient_boosting_basics_visual(self):
+        """Seed LightGBM Gradient Boosting Basics visual topic."""
+        subject = self.get_or_create_subject("LightGBM", "lightgbm", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="gradient-boosting-basics",
+            defaults={
+                "title": "Gradient Boosting Fundamentals",
+                "description": "Understand how gradient boosting builds an ensemble by sequentially fitting trees to residuals",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 10,
+                "tags": ["lightgbm", "gradient boosting", "ensemble", "residuals", "additive model"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Core Idea",
+                        "explanation": "**Gradient Boosting** builds an ensemble of weak learners (usually decision trees) sequentially. Each new tree learns to correct the mistakes of the previous ensemble. The final prediction is the sum of all trees' predictions.",
+                        "diagram_data": """graph LR
+    subgraph "Gradient Boosting Ensemble"
+        T1["Tree 1"] --> |"+"|  Sum1["Sum"]
+        T2["Tree 2"] --> |"+"| Sum1
+        T3["Tree 3"] --> |"+"| Sum1
+        T4["..."] --> |"+"| Sum1
+        TN["Tree N"] --> |"+"| Sum1
+        Sum1 --> Pred["Final Prediction"]
+    end
+    subgraph "Key Insight"
+        K["Each tree corrects errors<br/>of previous trees"]
+    end
+    style T1 fill:#4CAF50,color:white
+    style T2 fill:#81C784
+    style T3 fill:#A5D6A7
+    style Pred fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Step 1: Initial Prediction",
+                        "explanation": "Start with a simple initial prediction, typically the **mean of target values** for regression or **log-odds** for classification. This is F₀(x) - our baseline before any trees.",
+                        "diagram_data": """graph TB
+    subgraph "Training Data"
+        D["Samples with targets:<br/>y = [3, 7, 5, 9, 6]"]
+    end
+    subgraph "Initial Prediction F0"
+        F0["F₀(x) = mean(y) = 6<br/>Same prediction for all samples"]
+    end
+    subgraph "Initial Errors"
+        E["Errors = y - F₀(x)<br/>= [3-6, 7-6, 5-6, 9-6, 6-6]<br/>= [-3, 1, -1, 3, 0]"]
+    end
+    D --> F0 --> E
+    style F0 fill:#4CAF50,color:white
+    style E fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Step 2: Compute Residuals (Pseudo-Residuals)",
+                        "explanation": "Calculate the **residuals** (errors) between actual values and current predictions. For regression with MSE loss, residuals are simply: `residual = y - current_prediction`. These residuals become the **target for the next tree**.",
+                        "diagram_data": """graph TB
+    subgraph "Current State"
+        CP["Current Prediction: F(x) = 6 for all"]
+        AV["Actual Values: [3, 7, 5, 9, 6]"]
+    end
+    subgraph "Compute Residuals"
+        R1["Sample 1: 3 - 6 = -3"]
+        R2["Sample 2: 7 - 6 = +1"]
+        R3["Sample 3: 5 - 6 = -1"]
+        R4["Sample 4: 9 - 6 = +3"]
+        R5["Sample 5: 6 - 6 = 0"]
+    end
+    subgraph "Why Residuals?"
+        W["Residuals point toward<br/>the direction of improvement!<br/>Negative = prediction too high<br/>Positive = prediction too low"]
+    end
+    CP --> R1
+    CP --> R2
+    CP --> R3
+    CP --> R4
+    CP --> R5
+    style R1 fill:#FFCDD2
+    style R2 fill:#C8E6C9
+    style R3 fill:#FFCDD2
+    style R4 fill:#C8E6C9
+    style R5 fill:#E0E0E0""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Step 3: Fit a Tree to Residuals",
+                        "explanation": "Train a new decision tree to **predict the residuals**, not the original target. This tree learns to predict how much to adjust the current prediction for each sample.",
+                        "diagram_data": """graph TB
+    subgraph "Tree 1 Training"
+        Input["Features X"]
+        Target["Target: Residuals [-3, 1, -1, 3, 0]"]
+        Tree["Decision Tree"]
+        Output["Learns to predict:<br/>Which samples need +/-<br/>adjustments"]
+    end
+    Input --> Tree
+    Target --> Tree
+    Tree --> Output
+    subgraph "Tree Structure Example"
+        Root["feature1 < 5?"]
+        L["Predict: -2<br/>(samples 1,3)"]
+        R["feature2 < 3?"]
+        RL["Predict: +0.5<br/>(samples 2,5)"]
+        RR["Predict: +3<br/>(sample 4)"]
+        Root --> |"Yes"| L
+        Root --> |"No"| R
+        R --> |"Yes"| RL
+        R --> |"No"| RR
+    end
+    style Tree fill:#4CAF50,color:white
+    style Target fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Step 4: Update Predictions with Learning Rate",
+                        "explanation": "Add the tree's predictions to the ensemble, but **scaled by the learning rate** (η). A smaller learning rate means slower learning but better generalization. `F₁(x) = F₀(x) + η × Tree₁(x)`",
+                        "diagram_data": """graph TB
+    subgraph "Update Formula"
+        F["F₁(x) = F₀(x) + η × Tree₁(x)"]
+    end
+    subgraph "Example with η = 0.1"
+        S1["Sample 1: 6 + 0.1 × (-2) = 5.8"]
+        S2["Sample 2: 6 + 0.1 × (+0.5) = 6.05"]
+        S3["Sample 3: 6 + 0.1 × (-2) = 5.8"]
+        S4["Sample 4: 6 + 0.1 × (+3) = 6.3"]
+        S5["Sample 5: 6 + 0.1 × (+0.5) = 6.05"]
+    end
+    subgraph "Why Learning Rate?"
+        LR["Small steps prevent overfitting<br/>Typical values: 0.01 - 0.3<br/>Smaller η = more trees needed"]
+    end
+    F --> S1
+    F --> S2
+    F --> S3
+    F --> S4
+    F --> S5
+    style F fill:#2196F3,color:white
+    style LR fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Step 5: Repeat Until Done",
+                        "explanation": "Repeat steps 2-4: compute new residuals from updated predictions, fit another tree, update predictions. Stop when you reach `n_estimators` trees or early stopping triggers.",
+                        "diagram_data": """graph TB
+    subgraph "Iteration Loop"
+        Start["Current Ensemble F_m"]
+        Res["Compute Residuals<br/>r = y - F_m(x)"]
+        Fit["Fit Tree_{m+1} to residuals"]
+        Update["F_{m+1} = F_m + η × Tree_{m+1}"]
+        Check{"Done?"}
+        End["Final Model"]
+    end
+    Start --> Res --> Fit --> Update --> Check
+    Check --> |"No"| Start
+    Check --> |"Yes"| End
+    subgraph "Stopping Criteria"
+        SC1["n_estimators reached"]
+        SC2["Early stopping: validation<br/>score stopped improving"]
+        SC3["Min improvement threshold"]
+    end
+    style Start fill:#4CAF50,color:white
+    style End fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "The Additive Model",
+                        "explanation": "The final model is an **additive ensemble**: the sum of the initial prediction plus all trees scaled by learning rate. Each tree contributes a small correction.",
+                        "diagram_data": """graph TB
+    subgraph "Final Prediction Formula"
+        Formula["F(x) = F₀(x) + η×T₁(x) + η×T₂(x) + ... + η×Tₙ(x)"]
+    end
+    subgraph "Visual Breakdown"
+        F0["F₀ = 6.0<br/>(baseline)"]
+        T1["+ 0.1 × T₁<br/>= +0.2"]
+        T2["+ 0.1 × T₂<br/>= +0.15"]
+        T3["+ 0.1 × T₃<br/>= +0.1"]
+        TN["+ ... more trees"]
+        Final["= 6.45 + ..."]
+    end
+    F0 --> T1 --> T2 --> T3 --> TN --> Final
+    subgraph "Key Properties"
+        K1["Each tree is weak individually"]
+        K2["Combined they are strong"]
+        K3["Later trees have smaller impact"]
+    end
+    style Formula fill:#4CAF50,color:white
+    style Final fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Why 'Gradient' Boosting?",
+                        "explanation": "The residuals we fit are actually the **negative gradient of the loss function**. For MSE loss, gradient = prediction - actual, so negative gradient = actual - prediction = residual. This connects to gradient descent optimization!",
+                        "diagram_data": """graph TB
+    subgraph "Connection to Gradient Descent"
+        GD["Gradient Descent:<br/>θ = θ - η × ∇Loss"]
+        GB["Gradient Boosting:<br/>F = F + η × Tree(−∇Loss)"]
+    end
+    subgraph "For MSE Loss"
+        MSE["Loss = ½(y - F)²"]
+        Grad["∇Loss = -(y - F) = F - y"]
+        NegGrad["-∇Loss = y - F = residual!"]
+    end
+    MSE --> Grad --> NegGrad
+    subgraph "Generalization"
+        G["Works with any differentiable loss:<br/>• MSE for regression<br/>• Log-loss for classification<br/>• Custom losses"]
+    end
+    style GD fill:#E3F2FD
+    style GB fill:#E3F2FD
+    style NegGrad fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Complete Example",
+                        "explanation": "Let's trace through a complete mini-example showing how predictions improve over 3 iterations.",
+                        "diagram_data": """graph TB
+    subgraph "Data: y = [10, 20, 15]"
+        I0["Iter 0: F₀ = 15 for all<br/>Errors: [-5, 5, 0]"]
+        I1["Iter 1: Tree predicts [-4, 4, 0]<br/>F₁ = 15 + 0.5×[-4,4,0] = [13, 17, 15]<br/>Errors: [-3, 3, 0]"]
+        I2["Iter 2: Tree predicts [-2.5, 2.5, 0]<br/>F₂ = [13,17,15] + 0.5×[-2.5,2.5,0]<br/>= [11.75, 18.25, 15]<br/>Errors: [-1.75, 1.75, 0]"]
+        I3["Iter 3: Continue...<br/>Errors shrink each iteration!"]
+    end
+    I0 --> I1 --> I2 --> I3
+    subgraph "Error Reduction"
+        E0["Iter 0: MSE = 16.67"]
+        E1["Iter 1: MSE = 6.00"]
+        E2["Iter 2: MSE = 2.04"]
+        E3["Converging to 0!"]
+    end
+    style I0 fill:#FFCDD2
+    style I1 fill:#FFE0B2
+    style I2 fill:#FFF9C4
+    style I3 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_lightgbm_leaf_vs_level_wise_visual(self):
+        """Seed LightGBM Leaf-wise vs Level-wise visual topic."""
+        subject = self.get_or_create_subject("LightGBM", "lightgbm", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="leaf-wise-vs-level-wise",
+            defaults={
+                "title": "Leaf-wise vs Level-wise Tree Growth",
+                "description": "Compare LightGBM's leaf-wise strategy with XGBoost's level-wise approach",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["lightgbm", "xgboost", "leaf-wise", "level-wise", "tree growth"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Strategies for Growing Trees",
+                        "explanation": "When building a decision tree, we must decide which leaf to split next. **Level-wise** (XGBoost default) splits all leaves at the current depth. **Leaf-wise** (LightGBM) splits the leaf with the highest gain, regardless of depth.",
+                        "diagram_data": """graph TB
+    subgraph "The Question"
+        Q["Given a tree with multiple leaves,<br/>which leaf should we split next?"]
+    end
+    subgraph "Level-wise - XGBoost"
+        LW["Split ALL leaves at current depth<br/>Then move to next level"]
+    end
+    subgraph "Leaf-wise - LightGBM"
+        LF["Split the ONE leaf with<br/>highest potential gain"]
+    end
+    Q --> LW
+    Q --> LF
+    style LW fill:#FF9800,color:white
+    style LF fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Level-wise Growth (XGBoost)",
+                        "explanation": "**Level-wise** grows the tree horizontally, one level at a time. All nodes at depth d are split before any node at depth d+1. This creates balanced trees but may split nodes with little gain.",
+                        "diagram_data": """graph TB
+    subgraph "Level-wise Growth Steps"
+        subgraph "Step 1: Depth 0"
+            R1["Root<br/>Split!"]
+        end
+        subgraph "Step 2: Depth 1"
+            R2["Root"]
+            R2 --> L2["Left<br/>Split!"]
+            R2 --> R2R["Right<br/>Split!"]
+        end
+        subgraph "Step 3: Depth 2"
+            R3["Root"]
+            R3 --> L3["L"]
+            R3 --> R3R["R"]
+            L3 --> LL["LL<br/>Split!"]
+            L3 --> LR["LR<br/>Split!"]
+            R3R --> RL["RL<br/>Split!"]
+            R3R --> RR["RR<br/>Split!"]
+        end
+    end
+    style R1 fill:#FF9800
+    style L2 fill:#FF9800
+    style R2R fill:#FF9800
+    style LL fill:#FF9800
+    style LR fill:#FF9800
+    style RL fill:#FF9800
+    style RR fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Leaf-wise Growth (LightGBM)",
+                        "explanation": "**Leaf-wise** always splits the leaf with the **maximum gain reduction**, creating asymmetric trees. This is more efficient - why split a leaf with gain=0.1 when another has gain=10?",
+                        "diagram_data": """graph TB
+    subgraph "Leaf-wise Growth Steps"
+        subgraph "Step 1"
+            S1R["Root<br/>gain=10"]
+            S1R --> S1L["Left<br/>gain=8"]
+            S1R --> S1RR["Right<br/>gain=2"]
+            S1Note["Split Left - highest gain!"]
+        end
+        subgraph "Step 2"
+            S2R["Root"]
+            S2R --> S2L["L"]
+            S2R --> S2RR["Right<br/>gain=2"]
+            S2L --> S2LL["LL<br/>gain=5"]
+            S2L --> S2LR["LR<br/>gain=1"]
+            S2Note["Split LL - gain 5 > 2 > 1"]
+        end
+        subgraph "Step 3"
+            S3R["Root"]
+            S3R --> S3L["L"]
+            S3R --> S3RR["Right<br/>gain=2"]
+            S3L --> S3LL["LL"]
+            S3L --> S3LR["LR<br/>gain=1"]
+            S3LL --> S3LLL["LLL<br/>gain=3"]
+            S3LL --> S3LLR["LLR<br/>gain=0.5"]
+            S3Note["Split LLL - gain 3 > 2"]
+        end
+    end
+    style S1L fill:#4CAF50
+    style S2LL fill:#4CAF50
+    style S3LLL fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Visual Comparison",
+                        "explanation": "After the same number of splits, level-wise produces balanced trees while leaf-wise produces deeper, asymmetric trees focused on high-gain regions.",
+                        "diagram_data": """graph TB
+    subgraph "Level-wise: 6 splits"
+        LR["R"]
+        LR --> LL1["L"]
+        LR --> LR1["R"]
+        LL1 --> LL2["L"]
+        LL1 --> LLR["R"]
+        LR1 --> LRL["L"]
+        LR1 --> LRR["R"]
+        LNote["Balanced: max depth = 2<br/>All paths same length"]
+    end
+    subgraph "Leaf-wise: 6 splits"
+        FR["R"]
+        FR --> FL1["L"]
+        FR --> FR1["R"]
+        FL1 --> FL2["L"]
+        FL1 --> FLR["R"]
+        FL2 --> FL3["L"]
+        FL2 --> FLLR["R"]
+        FL3 --> FL4["L"]
+        FL3 --> FLLL["R"]
+        FNote["Asymmetric: max depth = 4<br/>Focused on important region"]
+    end
+    style LNote fill:#FFE0B2
+    style FNote fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Efficiency Comparison",
+                        "explanation": "Leaf-wise achieves lower loss with fewer splits because it prioritizes high-gain splits. Level-wise wastes splits on low-gain leaves just to maintain balance.",
+                        "diagram_data": """graph TB
+    subgraph "Loss Reduction per Split"
+        Chart["Split | Level-wise | Leaf-wise<br/>------|-----------|----------<br/>1     | -10       | -10<br/>2     | -8        | -8<br/>3     | -2        | -5<br/>4     | -6        | -3<br/>5     | -1        | -2<br/>6     | -0.5      | -2"]
+    end
+    subgraph "After 6 Splits"
+        LW["Level-wise<br/>Total reduction: 27.5"]
+        LF["Leaf-wise<br/>Total reduction: 30"]
+        Winner["Leaf-wise: 9% better!"]
+    end
+    style Chart fill:#FFF9C4
+    style LF fill:#4CAF50,color:white
+    style Winner fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "The Overfitting Risk",
+                        "explanation": "Leaf-wise can grow very deep trees, risking **overfitting** on small datasets. LightGBM controls this with `max_depth` and `num_leaves` parameters. Rule: `num_leaves < 2^max_depth`.",
+                        "diagram_data": """graph TB
+    subgraph "Overfitting Risk"
+        Deep["Deep leaf-wise tree"]
+        Deep --> Mem["Memorizes training data"]
+        Mem --> Bad["Poor generalization"]
+    end
+    subgraph "LightGBM Safeguards"
+        NL["num_leaves = 31 (default)<br/>Max leaves in tree"]
+        MD["max_depth = -1 (default)<br/>Set to limit depth"]
+        MG["min_data_in_leaf = 20<br/>Minimum samples per leaf"]
+    end
+    subgraph "Rule of Thumb"
+        Rule["num_leaves should be < 2^max_depth<br/><br/>Example:<br/>max_depth=7 allows 128 leaves<br/>Set num_leaves=100 or less"]
+    end
+    style Bad fill:#FFCDD2
+    style Rule fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "When to Use Each",
+                        "explanation": "Both strategies have their place. Leaf-wise is generally faster and more accurate on large datasets, while level-wise may be safer on small datasets.",
+                        "diagram_data": """graph TB
+    subgraph "Use Leaf-wise - LightGBM"
+        LG1["Large datasets > 10K samples"]
+        LG2["Need fast training"]
+        LG3["High dimensional data"]
+        LG4["Can tune num_leaves carefully"]
+    end
+    subgraph "Use Level-wise - XGBoost"
+        XG1["Small datasets"]
+        XG2["Risk of overfitting is high"]
+        XG3["Want balanced tree structure"]
+        XG4["Ensemble with many shallow trees"]
+    end
+    subgraph "Both Can Work"
+        B1["XGBoost has grow_policy='lossguide'<br/>for leaf-wise"]
+        B2["LightGBM has max_depth<br/>to limit depth"]
+    end
+    style LG1 fill:#4CAF50
+    style LG2 fill:#4CAF50
+    style XG1 fill:#FF9800
+    style XG2 fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Summary Comparison",
+                        "explanation": "A quick reference comparing the two tree growth strategies.",
+                        "diagram_data": """graph TB
+    subgraph "Comparison Table"
+        T["Aspect        | Level-wise     | Leaf-wise<br/>--------------|----------------|------------<br/>Tree shape    | Balanced       | Asymmetric<br/>Split choice  | All at depth   | Max gain leaf<br/>Efficiency    | Lower          | Higher<br/>Overfit risk  | Lower          | Higher<br/>Best for      | Small data     | Large data<br/>Used by       | XGBoost def    | LightGBM<br/>Control param | max_depth      | num_leaves"]
+    end
+    subgraph "Key Takeaway"
+        K["Leaf-wise = smarter splits<br/>but needs careful tuning<br/>to prevent overfitting"]
+    end
+    style T fill:#E3F2FD
+    style K fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_lightgbm_goss_visual(self):
+        """Seed LightGBM GOSS visual topic."""
+        subject = self.get_or_create_subject("LightGBM", "lightgbm", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="goss-gradient-sampling",
+            defaults={
+                "title": "GOSS: Gradient-based One-Side Sampling",
+                "description": "Learn how LightGBM speeds up training by intelligently sampling data based on gradients",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 10,
+                "tags": ["lightgbm", "GOSS", "sampling", "gradients", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Large Datasets are Slow",
+                        "explanation": "Training gradient boosting on millions of rows is slow because we need to scan all data to find the best split. Can we use fewer samples without hurting accuracy?",
+                        "diagram_data": """graph TB
+    subgraph "The Challenge"
+        D["10 million training samples"]
+        S["Each split requires scanning<br/>ALL samples to find best threshold"]
+        T["Trees × Leaves × Samples = SLOW"]
+    end
+    D --> S --> T
+    subgraph "Naive Solution"
+        RS["Random Sampling?"]
+        P["Problem: Lose important samples<br/>that model is struggling with"]
+    end
+    subgraph "Smart Solution"
+        GOSS["GOSS: Sample based on gradients!<br/>Keep samples model struggles with"]
+    end
+    RS --> P
+    style T fill:#FFCDD2
+    style GOSS fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Key Insight: Gradients Tell Us What Matters",
+                        "explanation": "The **gradient magnitude** tells us how much each sample contributes to learning. Large gradient = model is wrong = important for learning. Small gradient = model is correct = less important.",
+                        "diagram_data": """graph TB
+    subgraph "Gradient Meaning"
+        LG["Large Gradient<br/>|grad| > threshold"]
+        LGM["Model prediction is far off<br/>This sample needs attention!"]
+        SG["Small Gradient<br/>|grad| < threshold"]
+        SGM["Model prediction is close<br/>Already learned this pattern"]
+    end
+    LG --> LGM
+    SG --> SGM
+    subgraph "Example"
+        E1["Sample A: y=100, pred=95<br/>grad = 5, small"]
+        E2["Sample B: y=100, pred=20<br/>grad = 80, LARGE"]
+        E3["Sample B matters more<br/>for improving the model!"]
+    end
+    style LGM fill:#FF5722,color:white
+    style SGM fill:#E0E0E0
+    style E2 fill:#FF5722,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "GOSS Algorithm Overview",
+                        "explanation": "GOSS keeps **all large-gradient samples** and **randomly samples small-gradient ones**. This preserves the important training signal while reducing computation.",
+                        "diagram_data": """graph TB
+    subgraph "GOSS Steps"
+        S1["1. Compute gradients for all samples"]
+        S2["2. Sort by absolute gradient"]
+        S3["3. Keep top a% - large gradients"]
+        S4["4. Random sample b% from rest"]
+        S5["5. Upweight the random samples"]
+        S6["6. Train tree on this subset"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    subgraph "Default Values"
+        D["top_rate (a) = 0.2 - keep top 20%<br/>other_rate (b) = 0.1 - sample 10%<br/>Total: ~30% of data used"]
+    end
+    style S3 fill:#FF5722,color:white
+    style S4 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Visual Example",
+                        "explanation": "Let's see GOSS in action with 100 samples. We'll keep the top 20% by gradient and randomly sample 10% from the rest.",
+                        "diagram_data": """graph TB
+    subgraph "Original: 100 Samples"
+        O["Sorted by |gradient|:<br/>Large ←――――――――→ Small"]
+    end
+    subgraph "Step 1: Keep Top 20%"
+        T["Top 20 samples<br/>All kept - highest gradients"]
+    end
+    subgraph "Step 2: Sample 10% from Rest"
+        R["Remaining 80 samples<br/>Randomly pick 8"]
+    end
+    subgraph "Final Training Set"
+        F["28 samples total<br/>20 large-gradient + 8 random<br/>72% data reduction!"]
+    end
+    O --> T
+    O --> R
+    T --> F
+    R --> F
+    style T fill:#FF5722,color:white
+    style R fill:#4CAF50
+    style F fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Why Upweight the Random Samples?",
+                        "explanation": "If we just dropped 72% of samples, we'd bias the split finding. GOSS **upweights** the random samples to compensate, maintaining the correct data distribution.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["Without upweighting:<br/>Small gradients underrepresented<br/>Split decisions biased"]
+    end
+    subgraph "The Solution"
+        S["Multiply random sample gradients<br/>by weight = (1-a)/b"]
+    end
+    subgraph "Example Calculation"
+        E["a = 0.2, b = 0.1<br/>weight = (1-0.2)/0.1 = 8<br/><br/>8 random samples × 8 weight<br/>= same impact as 64 samples"]
+    end
+    subgraph "Effect"
+        EF["Unbiased gradient estimation<br/>while using only 28% of data!"]
+    end
+    P --> S --> E --> EF
+    style EF fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "GOSS Parameters in LightGBM",
+                        "explanation": "Enable GOSS with `boosting_type='goss'` and tune with `top_rate` and `other_rate`. The total sampling rate is `top_rate + other_rate`.",
+                        "diagram_data": """graph TB
+    subgraph "Enable GOSS"
+        Code["params = {<br/>    'boosting_type': 'goss',<br/>    'top_rate': 0.2,<br/>    'other_rate': 0.1,<br/>}"]
+    end
+    subgraph "Parameter Guide"
+        TR["top_rate (default 0.2)<br/>% of large gradient samples to keep<br/>Higher = more accuracy, slower"]
+        OR["other_rate (default 0.1)<br/>% of small gradient samples to keep<br/>Higher = less bias, slower"]
+        Tot["Total rate = top_rate + other_rate<br/>Lower = faster but less accurate"]
+    end
+    subgraph "Tuning Tips"
+        T1["Start with defaults"]
+        T2["Increase rates if underfitting"]
+        T3["Decrease rates for faster training"]
+    end
+    style Code fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "When to Use GOSS",
+                        "explanation": "GOSS shines with large datasets where the training bottleneck is data scanning. It's less useful for small datasets or when you're already memory-bound.",
+                        "diagram_data": """graph TB
+    subgraph "Use GOSS When"
+        Y1["Dataset > 100K samples"]
+        Y2["Training is CPU-bound"]
+        Y3["Need faster iteration"]
+        Y4["Can tolerate slight accuracy drop"]
+    end
+    subgraph "Skip GOSS When"
+        N1["Dataset < 50K samples"]
+        N2["Maximum accuracy needed"]
+        N3["Already using GPU training"]
+        N4["Memory is the bottleneck"]
+    end
+    subgraph "Alternatives"
+        A1["bagging_fraction: Random sample each tree"]
+        A2["feature_fraction: Random features"]
+        A3["Use both with GOSS!"]
+    end
+    style Y1 fill:#C8E6C9
+    style Y2 fill:#C8E6C9
+    style N1 fill:#FFCDD2
+    style N2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "GOSS vs Random Sampling",
+                        "explanation": "GOSS significantly outperforms random sampling because it preserves the samples that contribute most to learning.",
+                        "diagram_data": """graph TB
+    subgraph "Experiment Setup"
+        S["Same dataset, same 30% sample rate"]
+    end
+    subgraph "Random Sampling"
+        RS1["Randomly pick 30% of samples"]
+        RS2["May drop critical samples"]
+        RS3["Accuracy: 85%"]
+    end
+    subgraph "GOSS"
+        G1["Keep top 20% by gradient"]
+        G2["Sample 10% from rest"]
+        G3["Accuracy: 89%"]
+    end
+    subgraph "Why GOSS Wins"
+        W["Large gradient samples contribute<br/>disproportionately to learning<br/>GOSS preserves this signal"]
+    end
+    style RS3 fill:#FFCDD2
+    style G3 fill:#C8E6C9
+    style W fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_lightgbm_efb_visual(self):
+        """Seed LightGBM EFB visual topic."""
+        subject = self.get_or_create_subject("LightGBM", "lightgbm", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="efb-feature-bundling",
+            defaults={
+                "title": "EFB: Exclusive Feature Bundling",
+                "description": "Learn how LightGBM handles sparse features by bundling mutually exclusive features together",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 10,
+                "tags": ["lightgbm", "EFB", "sparse features", "one-hot encoding", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Sparse Feature Problem",
+                        "explanation": "One-hot encoding categorical features creates many sparse columns where most values are 0. Scanning all these features for split points is wasteful when they're mutually exclusive.",
+                        "diagram_data": """graph TB
+    subgraph "One-Hot Encoding Problem"
+        Cat["Category: Color<br/>Values: Red, Blue, Green"]
+        OH["One-Hot Encoded:<br/>is_red | is_blue | is_green<br/>1      | 0       | 0<br/>0      | 1       | 0<br/>0      | 0       | 1"]
+        W["3 features instead of 1!<br/>But only one can be 1 at a time"]
+    end
+    Cat --> OH --> W
+    subgraph "Scale Problem"
+        S["100 category values = 100 features<br/>Each needs split point evaluation<br/>Extremely slow!"]
+    end
+    style W fill:#FFCDD2
+    style S fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Key Insight: Mutually Exclusive Features",
+                        "explanation": "Features are **mutually exclusive** if they never have non-zero values simultaneously. One-hot encoded features are perfectly mutually exclusive - exactly one is 1, rest are 0.",
+                        "diagram_data": """graph TB
+    subgraph "Mutually Exclusive Example"
+        ME["is_red | is_blue | is_green<br/>--------|---------|----------<br/>1       | 0       | 0<br/>0       | 1       | 0<br/>0       | 0       | 1<br/>0       | 1       | 0"]
+        MEE["Never both 1 at same time!"]
+    end
+    subgraph "Not Mutually Exclusive"
+        NME["height | weight<br/>-------|-------<br/>170    | 70<br/>180    | 80<br/>165    | 60"]
+        NMEE["Both can have values simultaneously"]
+    end
+    subgraph "EFB Idea"
+        I["Bundle mutually exclusive features<br/>into a single feature!"]
+    end
+    ME --> MEE --> I
+    style I fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "How EFB Bundles Features",
+                        "explanation": "EFB combines mutually exclusive features into one by using different value ranges for each original feature. Each original feature gets its own 'slot' in the combined feature's value space.",
+                        "diagram_data": """graph TB
+    subgraph "Original Features"
+        F1["is_red: values {0, 1}"]
+        F2["is_blue: values {0, 1}"]
+        F3["is_green: values {0, 1}"]
+    end
+    subgraph "Bundled Feature"
+        B["color_bundle: values {0, 1, 2, 3}<br/>0 = none<br/>1 = red (is_red + 0)<br/>2 = blue (is_blue + 1)<br/>3 = green (is_green + 2)"]
+    end
+    subgraph "Encoding"
+        E["Row 1: is_red=1 → bundle=1<br/>Row 2: is_blue=1 → bundle=2<br/>Row 3: is_green=1 → bundle=3<br/>Row 4: is_blue=1 → bundle=2"]
+    end
+    F1 --> B
+    F2 --> B
+    F3 --> B
+    B --> E
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Offset-Based Encoding",
+                        "explanation": "Each feature in the bundle gets an **offset** to create non-overlapping value ranges. This preserves all information while reducing features.",
+                        "diagram_data": """graph TB
+    subgraph "General Formula"
+        F["bundle_value = feature_value + offset"]
+    end
+    subgraph "Example with 3 Features"
+        O1["Feature A: offset=0, range [0,1]"]
+        O2["Feature B: offset=2, range [2,3]"]
+        O3["Feature C: offset=4, range [4,5]"]
+    end
+    subgraph "Bundle Interpretation"
+        I["bundle=0 → A=0"]
+        I1["bundle=1 → A=1"]
+        I2["bundle=2 → B=0"]
+        I3["bundle=3 → B=1"]
+        I4["bundle=4 → C=0"]
+        I5["bundle=5 → C=1"]
+    end
+    subgraph "Key Property"
+        K["Original splits still work!<br/>Split at bundle < 2 = split on A"]
+    end
+    style K fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Finding Bundles: Graph Coloring",
+                        "explanation": "EFB models feature relationships as a **graph** where edges connect conflicting features (those with simultaneous non-zero values). Features with the same color can be bundled.",
+                        "diagram_data": """graph TB
+    subgraph "Conflict Graph"
+        A["Feature A"]
+        B["Feature B"]
+        C["Feature C"]
+        D["Feature D"]
+        A --- |"conflict"| D
+        B --- |"conflict"| D
+        C --- |"conflict"| D
+    end
+    subgraph "Graph Coloring"
+        G["Color 1: A, B, C - no conflicts"]
+        G2["Color 2: D - conflicts with all"]
+    end
+    subgraph "Resulting Bundles"
+        R["Bundle 1: {A, B, C}"]
+        R2["Bundle 2: {D}"]
+        R3["4 features → 2 bundles"]
+    end
+    style R fill:#4CAF50
+    style R2 fill:#2196F3
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Allowing Small Conflicts",
+                        "explanation": "Perfect mutual exclusivity is rare. EFB allows a small **conflict rate** (default 0) to bundle nearly-exclusive features, trading tiny accuracy for big speedup.",
+                        "diagram_data": """graph TB
+    subgraph "Strict: 0 Conflicts"
+        S0["Only perfectly exclusive features<br/>Fewer bundles possible"]
+    end
+    subgraph "Relaxed: Allow Some Conflicts"
+        SR["max_conflict_rate = 0.01<br/>Allow 1% overlap<br/>More bundling opportunities"]
+    end
+    subgraph "Trade-off"
+        T["More conflicts allowed =<br/>More features bundled =<br/>Faster training<br/>Slightly less accuracy"]
+    end
+    subgraph "Parameter"
+        P["enable_bundle = true (default)<br/>max_conflict_rate = 0 (default)"]
+    end
+    style SR fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Real-World Impact",
+                        "explanation": "EFB dramatically reduces feature count for datasets with many sparse/categorical features. CTR prediction datasets often go from thousands of features to hundreds.",
+                        "diagram_data": """graph TB
+    subgraph "Example: Ad Click Dataset"
+        O["Original: 1000 one-hot features<br/>(categorical: device, browser, location...)"]
+        E["After EFB: 50 bundles"]
+        S["20x fewer features to evaluate!"]
+    end
+    O --> E --> S
+    subgraph "Training Time Impact"
+        T["Before: 10 minutes per tree<br/>After: 30 seconds per tree"]
+    end
+    subgraph "Memory Impact"
+        M["Before: 8GB histogram memory<br/>After: 400MB histogram memory"]
+    end
+    style S fill:#4CAF50,color:white
+    style T fill:#C8E6C9
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "EFB Summary",
+                        "explanation": "EFB is one of the key innovations that makes LightGBM fast on high-dimensional sparse data. It's automatic and usually just works.",
+                        "diagram_data": """graph TB
+    subgraph "EFB Key Points"
+        K1["Bundles mutually exclusive features"]
+        K2["Uses offset encoding to preserve info"]
+        K3["Reduces feature dimension significantly"]
+        K4["Especially effective for one-hot encoding"]
+        K5["Automatic in LightGBM"]
+    end
+    subgraph "Parameters"
+        P1["enable_bundle = true/false"]
+        P2["max_conflict_rate = 0.0"]
+    end
+    subgraph "Best For"
+        B["Categorical features"]
+        B2["Sparse features"]
+        B3["One-hot encoded data"]
+        B4["High-dimensional datasets"]
+    end
+    style K1 fill:#4CAF50
+    style K3 fill:#4CAF50
+    style K5 fill:#4CAF50""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_lightgbm_hyperparameter_tuning_visual(self):
+        """Seed LightGBM Hyperparameter Tuning visual topic."""
+        subject = self.get_or_create_subject("LightGBM", "lightgbm", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="hyperparameter-tuning-guide",
+            defaults={
+                "title": "Hyperparameter Tuning Guide",
+                "description": "Visual guide to LightGBM's key parameters and how to tune them effectively",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["lightgbm", "hyperparameters", "tuning", "num_leaves", "learning_rate"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Parameter Categories",
+                        "explanation": "LightGBM parameters fall into categories: **tree structure**, **training control**, **regularization**, and **speed/efficiency**. Understanding the categories helps organize tuning.",
+                        "diagram_data": """graph TB
+    subgraph "Tree Structure"
+        TS1["num_leaves"]
+        TS2["max_depth"]
+        TS3["min_data_in_leaf"]
+    end
+    subgraph "Training Control"
+        TC1["learning_rate"]
+        TC2["n_estimators"]
+        TC3["early_stopping_rounds"]
+    end
+    subgraph "Regularization"
+        R1["lambda_l1 / reg_alpha"]
+        R2["lambda_l2 / reg_lambda"]
+        R3["min_gain_to_split"]
+    end
+    subgraph "Speed/Efficiency"
+        SE1["feature_fraction"]
+        SE2["bagging_fraction"]
+        SE3["num_threads"]
+    end
+    style TS1 fill:#4CAF50
+    style TC1 fill:#2196F3
+    style R1 fill:#FF9800
+    style SE1 fill:#9C27B0""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "num_leaves - The Most Important Parameter",
+                        "explanation": "`num_leaves` controls tree complexity. It's the **max number of leaves** in each tree. More leaves = more complex model = better fit but higher overfit risk.",
+                        "diagram_data": """graph TB
+    subgraph "num_leaves Effect"
+        Low["num_leaves = 15<br/>Simple trees<br/>May underfit"]
+        Med["num_leaves = 31 (default)<br/>Balanced"]
+        High["num_leaves = 127<br/>Complex trees<br/>May overfit"]
+    end
+    subgraph "Tuning Guide"
+        G1["Start with 31"]
+        G2["Increase if underfitting"]
+        G3["Decrease if overfitting"]
+        G4["Max reasonable: 2^max_depth - 1"]
+    end
+    subgraph "Rule of Thumb"
+        R["For max_depth=7:<br/>num_leaves should be 70-100<br/>Not 127 (= 2^7 - 1)"]
+    end
+    Low --> Med --> High
+    style Med fill:#4CAF50,color:white
+    style R fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "learning_rate and n_estimators Trade-off",
+                        "explanation": "`learning_rate` scales each tree's contribution. Lower rate needs more trees but often achieves better accuracy. These two parameters have an **inverse relationship**.",
+                        "diagram_data": """graph TB
+    subgraph "The Trade-off"
+        T["learning_rate × n_estimators ≈ constant<br/>for similar performance"]
+    end
+    subgraph "Example Equivalents"
+        E1["lr=0.1, trees=1000"]
+        E2["lr=0.05, trees=2000"]
+        E3["lr=0.01, trees=10000"]
+        E4["All achieve similar accuracy!"]
+    end
+    subgraph "Best Practice"
+        B1["1. Set learning_rate low: 0.01-0.05"]
+        B2["2. Set n_estimators high: 10000"]
+        B3["3. Use early_stopping to find optimal trees"]
+        B4["4. For production: increase lr, reduce trees"]
+    end
+    E1 --> E4
+    E2 --> E4
+    E3 --> E4
+    style E3 fill:#C8E6C9
+    style B3 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "min_data_in_leaf - Preventing Tiny Leaves",
+                        "explanation": "`min_data_in_leaf` sets the minimum samples required in a leaf. Higher values prevent overfitting on small subgroups. Critical for small datasets!",
+                        "diagram_data": """graph TB
+    subgraph "min_data_in_leaf Effect"
+        Low["min_data = 1<br/>Leaves can have 1 sample<br/>High overfit risk"]
+        Med["min_data = 20 (default)<br/>Reasonable minimum"]
+        High["min_data = 100<br/>Conservative<br/>Smooth predictions"]
+    end
+    subgraph "Dataset Size Guide"
+        D1["< 10K samples: 50-100"]
+        D2["10K-100K: 20-50"]
+        D3["> 100K: 10-20"]
+    end
+    subgraph "Signs to Increase"
+        S1["Validation loss much worse than training"]
+        S2["Predictions are too spiky"]
+        S3["Model memorizing noise"]
+    end
+    style Low fill:#FFCDD2
+    style Med fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "max_depth - Limiting Tree Depth",
+                        "explanation": "`max_depth` limits how deep trees can grow. Use it alongside num_leaves to control complexity. Set to -1 for no limit (rely on num_leaves only).",
+                        "diagram_data": """graph TB
+    subgraph "max_depth Options"
+        D1["max_depth = -1 (default)<br/>No depth limit<br/>Let num_leaves control"]
+        D2["max_depth = 6-8<br/>Moderate depth<br/>Good for most cases"]
+        D3["max_depth = 3-4<br/>Shallow trees<br/>For high regularization"]
+    end
+    subgraph "Relationship with num_leaves"
+        R["At depth d, max possible leaves = 2^d<br/>depth=6 → max 64 leaves<br/>depth=8 → max 256 leaves<br/><br/>Set num_leaves < 2^max_depth"]
+    end
+    subgraph "When to Set max_depth"
+        W1["Overfitting badly"]
+        W2["Want balanced trees"]
+        W3["Memory constraints"]
+    end
+    style R fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "feature_fraction and bagging_fraction",
+                        "explanation": "These add **randomness** to training. `feature_fraction` samples features per tree. `bagging_fraction` samples rows per tree. Both reduce overfitting and add diversity.",
+                        "diagram_data": """graph TB
+    subgraph "feature_fraction - Column Sampling"
+        FF["feature_fraction = 0.8<br/>Each tree sees 80% of features<br/>Like Random Forest!"]
+    end
+    subgraph "bagging_fraction - Row Sampling"
+        BF["bagging_fraction = 0.8<br/>bagging_freq = 1<br/>Each tree trained on 80% of rows"]
+    end
+    subgraph "Combined Effect"
+        C["Both at 0.8:<br/>Each tree sees 64% of cells<br/>(0.8 × 0.8 = 0.64)"]
+    end
+    subgraph "Tuning Guide"
+        G1["Start with 1.0 (no sampling)"]
+        G2["If overfitting: try 0.8"]
+        G3["Heavy overfit: try 0.5-0.7"]
+        G4["Note: bagging_freq must be > 0"]
+    end
+    style FF fill:#4CAF50
+    style BF fill:#2196F3""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Regularization Parameters",
+                        "explanation": "L1 and L2 regularization penalize leaf values to prevent overfitting. `min_gain_to_split` prevents splits that don't improve much.",
+                        "diagram_data": """graph TB
+    subgraph "lambda_l1 - L1 / Lasso"
+        L1["Penalizes absolute leaf values<br/>Can make some leaves exactly 0<br/>Feature selection effect<br/>Default: 0"]
+    end
+    subgraph "lambda_l2 - L2 / Ridge"
+        L2["Penalizes squared leaf values<br/>Shrinks all leaves toward 0<br/>Smoother predictions<br/>Default: 0"]
+    end
+    subgraph "min_gain_to_split"
+        MG["Minimum gain to make a split<br/>Prevents tiny improvements<br/>Default: 0"]
+    end
+    subgraph "Tuning"
+        T["If overfitting:<br/>Try lambda_l1=0.1, lambda_l2=0.1<br/>Increase gradually: 1, 10, 100"]
+    end
+    style L1 fill:#FF9800
+    style L2 fill:#FF9800
+    style T fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Tuning Strategy - Step by Step",
+                        "explanation": "A systematic approach to tuning LightGBM hyperparameters, from most impactful to least.",
+                        "diagram_data": """graph TB
+    subgraph "Step 1: Baseline"
+        S1["Use defaults<br/>Add early_stopping_rounds=50<br/>Get baseline score"]
+    end
+    subgraph "Step 2: Tune Tree Structure"
+        S2["Grid search num_leaves: [15,31,63,127]<br/>Keep learning_rate=0.1"]
+    end
+    subgraph "Step 3: Tune Learning"
+        S3["Lower learning_rate to 0.01-0.05<br/>Increase n_estimators<br/>Rely on early stopping"]
+    end
+    subgraph "Step 4: Tune Regularization"
+        S4["If still overfitting:<br/>min_data_in_leaf: [20,50,100]<br/>feature_fraction: [0.7,0.8,0.9]"]
+    end
+    subgraph "Step 5: Fine-tune"
+        S5["lambda_l1, lambda_l2<br/>min_gain_to_split<br/>Usually minor impact"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    style S2 fill:#4CAF50,color:white
+    style S3 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Quick Reference Card",
+                        "explanation": "Handy reference for the most important parameters and their typical ranges.",
+                        "diagram_data": """graph TB
+    subgraph "Must-Tune Parameters"
+        M["Parameter        | Default | Range<br/>-----------------|---------|----------------<br/>num_leaves       | 31      | 15-127<br/>learning_rate    | 0.1     | 0.01-0.3<br/>min_data_in_leaf | 20      | 10-100<br/>feature_fraction | 1.0     | 0.5-1.0"]
+    end
+    subgraph "Secondary Parameters"
+        S["max_depth        | -1      | 4-12 or -1<br/>bagging_fraction | 1.0     | 0.5-1.0<br/>lambda_l1        | 0       | 0-100<br/>lambda_l2        | 0       | 0-100"]
+    end
+    subgraph "Golden Rules"
+        G["1. Always use early_stopping<br/>2. Lower lr + more trees = better<br/>3. num_leaves < 2^max_depth<br/>4. Cross-validate, don't guess"]
+    end
+    style M fill:#E3F2FD
+    style G fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_lightgbm_overfitting_prevention_visual(self):
+        """Seed LightGBM Overfitting Prevention visual topic."""
+        subject = self.get_or_create_subject("LightGBM", "lightgbm", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="overfitting-prevention",
+            defaults={
+                "title": "Preventing Overfitting in LightGBM",
+                "description": "Comprehensive guide to detecting and preventing overfitting with early stopping and regularization",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["lightgbm", "overfitting", "early stopping", "regularization", "cross-validation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Overfitting?",
+                        "explanation": "**Overfitting** occurs when your model learns the training data too well, including its noise and peculiarities, failing to generalize to new data.",
+                        "diagram_data": """graph TB
+    subgraph "Learning Curves"
+        LC["Training | Validation<br/>---------|------------<br/>0.95     | 0.85  - OK<br/>0.99     | 0.80  - Overfit!<br/>0.999    | 0.75  - Severe!"]
+    end
+    subgraph "Signs of Overfitting"
+        S1["Training score much higher than validation"]
+        S2["Validation score plateaus then drops"]
+        S3["Model performs poorly on new data"]
+    end
+    subgraph "Causes in LightGBM"
+        C1["Too many leaves"]
+        C2["Too many trees"]
+        C3["Too few samples per leaf"]
+        C4["Learning rate too high"]
+    end
+    style LC fill:#FFCDD2
+    style S1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Early Stopping - Your First Defense",
+                        "explanation": "**Early stopping** monitors validation score during training and stops when it stops improving. This automatically finds the optimal number of trees.",
+                        "diagram_data": """graph TB
+    subgraph "How It Works"
+        H1["Train tree by tree"]
+        H2["Evaluate on validation set after each"]
+        H3["Track best validation score"]
+        H4["Stop if no improvement for N rounds"]
+    end
+    H1 --> H2 --> H3 --> H4
+    subgraph "Code"
+        Code["model = lgb.train(<br/>    params,<br/>    train_set,<br/>    valid_sets=[train_set, valid_set],<br/>    callbacks=[<br/>        lgb.early_stopping(50),<br/>        lgb.log_evaluation(100)<br/>    ]<br/>)"]
+    end
+    subgraph "Tips"
+        T1["Set n_estimators high (10000)"]
+        T2["early_stopping_rounds=50-200"]
+        T3["Model auto-stops at best point"]
+    end
+    style Code fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Reduce Tree Complexity",
+                        "explanation": "Simpler trees generalize better. Control complexity with `num_leaves`, `max_depth`, and `min_data_in_leaf`.",
+                        "diagram_data": """graph TB
+    subgraph "num_leaves Reduction"
+        NL["Default: 31<br/>If overfitting: try 15-20<br/>Fewer leaves = simpler trees"]
+    end
+    subgraph "max_depth Limit"
+        MD["Default: -1 (unlimited)<br/>If overfitting: set to 6-8<br/>Prevents very deep paths"]
+    end
+    subgraph "min_data_in_leaf Increase"
+        ML["Default: 20<br/>If overfitting: try 50-100<br/>No tiny overfit leaves"]
+    end
+    subgraph "Combined Strategy"
+        CS["num_leaves=31, max_depth=6<br/>Only 64 possible leaves (2^6)<br/>but max 31 actual leaves"]
+    end
+    style NL fill:#4CAF50
+    style MD fill:#4CAF50
+    style ML fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Learning Rate and Trees",
+                        "explanation": "A **lower learning rate** with more trees reduces overfitting. Each tree contributes less, making the ensemble more robust.",
+                        "diagram_data": """graph TB
+    subgraph "High Learning Rate"
+        HLR["learning_rate = 0.3<br/>Few trees needed<br/>Each tree has big impact<br/>More prone to overfit"]
+    end
+    subgraph "Low Learning Rate"
+        LLR["learning_rate = 0.01<br/>Many trees needed<br/>Each tree has small impact<br/>More robust, less overfit"]
+    end
+    subgraph "Best Practice"
+        BP1["1. Set learning_rate = 0.01-0.05"]
+        BP2["2. Set n_estimators = 10000+"]
+        BP3["3. Use early_stopping"]
+        BP4["4. Let it find optimal # trees"]
+    end
+    HLR --> |"Better"| LLR
+    style LLR fill:#4CAF50,color:white
+    style BP3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Sampling: Feature and Bagging",
+                        "explanation": "Randomly sampling features and rows adds **diversity** to trees, reducing overfitting. Similar to Random Forest's approach.",
+                        "diagram_data": """graph TB
+    subgraph "feature_fraction"
+        FF["Fraction of features per tree<br/>Default: 1.0 (all features)<br/>Try: 0.7-0.9<br/>Forces trees to be different"]
+    end
+    subgraph "bagging_fraction"
+        BF["Fraction of rows per tree<br/>Default: 1.0 (all rows)<br/>Try: 0.7-0.9<br/>Requires bagging_freq > 0"]
+    end
+    subgraph "Code Example"
+        Code["params = {<br/>    'feature_fraction': 0.8,<br/>    'bagging_fraction': 0.8,<br/>    'bagging_freq': 1<br/>}"]
+    end
+    subgraph "Effect"
+        E["Each tree sees only 64% of data<br/>Creates diverse ensemble<br/>Reduces variance"]
+    end
+    style FF fill:#4CAF50
+    style BF fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "L1 and L2 Regularization",
+                        "explanation": "Regularization penalizes large leaf values, shrinking predictions toward zero. This prevents extreme predictions that often indicate overfitting.",
+                        "diagram_data": """graph TB
+    subgraph "No Regularization"
+        NR["Leaf values can be extreme:<br/>leaf_1 = -50, leaf_2 = +100"]
+    end
+    subgraph "L2 Regularization"
+        L2["lambda_l2 = 1.0<br/>Penalizes sum of squared values<br/>Shrinks all values toward 0<br/>leaf_1 = -5, leaf_2 = +10"]
+    end
+    subgraph "L1 Regularization"
+        L1["lambda_l1 = 1.0<br/>Penalizes sum of absolute values<br/>Can make values exactly 0<br/>Sparse predictions"]
+    end
+    subgraph "Tuning"
+        T["Start with 0 (default)<br/>If overfitting: try 0.1, 1, 10<br/>Often L2 alone is sufficient"]
+    end
+    NR --> |"Add L2"| L2
+    style L2 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "min_gain_to_split and min_child_weight",
+                        "explanation": "These prevent splits that barely improve the model. `min_gain_to_split` requires minimum improvement; `min_child_weight` requires minimum sample weight in children.",
+                        "diagram_data": """graph TB
+    subgraph "min_gain_to_split"
+        MG["Default: 0 (any improvement OK)<br/>Try: 0.01-0.1<br/>Blocks trivial splits"]
+    end
+    subgraph "min_child_weight"
+        MW["Default: 0.001<br/>Sum of hessians in child<br/>Higher = more conservative<br/>Try: 1-10"]
+    end
+    subgraph "Effect"
+        E["Before: 100 splits, many tiny gains"]
+        E2["After: 60 splits, all meaningful"]
+        E3["Simpler, more robust trees"]
+    end
+    E --> E2 --> E3
+    style E3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Cross-Validation Strategy",
+                        "explanation": "Always use cross-validation to tune hyperparameters. Don't tune on a single train/validation split - that risks overfitting to that split.",
+                        "diagram_data": """graph TB
+    subgraph "Bad: Single Split"
+        B1["Train (80%) | Valid (20%)"]
+        B2["Tune params until valid score is high"]
+        B3["Risk: Overfit to that 20%"]
+    end
+    subgraph "Good: K-Fold CV"
+        G1["5-Fold Cross-Validation"]
+        G2["Each fold as validation once"]
+        G3["Average score across folds"]
+        G4["More reliable estimate"]
+    end
+    subgraph "LightGBM CV"
+        Code["lgb.cv(<br/>    params,<br/>    train_set,<br/>    nfold=5,<br/>    callbacks=[lgb.early_stopping(50)],<br/>    return_cvbooster=True<br/>)"]
+    end
+    style B3 fill:#FFCDD2
+    style G4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Anti-Overfitting Checklist",
+                        "explanation": "A systematic checklist to diagnose and fix overfitting in LightGBM models.",
+                        "diagram_data": """graph TB
+    subgraph "Diagnosis"
+        D1["Train score >> Valid score?"]
+        D2["Valid score drops after peak?"]
+        D3["Performance bad on test set?"]
+    end
+    subgraph "Quick Fixes"
+        Q1["1. Add early_stopping (always!)"]
+        Q2["2. Lower learning_rate to 0.01-0.05"]
+        Q3["3. Reduce num_leaves to 15-31"]
+        Q4["4. Increase min_data_in_leaf to 50+"]
+    end
+    subgraph "If Still Overfitting"
+        S1["5. Add feature_fraction = 0.8"]
+        S2["6. Add bagging_fraction = 0.8"]
+        S3["7. Add lambda_l2 = 1-10"]
+        S4["8. Limit max_depth = 6-8"]
+    end
+    subgraph "Nuclear Options"
+        N1["9. Get more training data"]
+        N2["10. Remove noisy features"]
+        N3["11. Use simpler model"]
+    end
+    style Q1 fill:#4CAF50,color:white
+    style Q2 fill:#4CAF50,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_lightgbm_vs_xgboost_catboost_visual(self):
+        """Seed LightGBM vs XGBoost vs CatBoost visual topic."""
+        subject = self.get_or_create_subject("LightGBM", "lightgbm", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="lightgbm-vs-xgboost-catboost",
+            defaults={
+                "title": "LightGBM vs XGBoost vs CatBoost",
+                "description": "Compare the three major gradient boosting libraries: when to use each and their key differences",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["lightgbm", "xgboost", "catboost", "comparison", "gradient boosting"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Big Three",
+                        "explanation": "**XGBoost**, **LightGBM**, and **CatBoost** are the three dominant gradient boosting libraries. All are excellent, but each has unique strengths.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost - 2014"
+        X["The Original Champion<br/>Battle-tested, reliable<br/>Great documentation"]
+    end
+    subgraph "LightGBM - 2017"
+        L["Speed King<br/>Microsoft's answer<br/>Fast on large data"]
+    end
+    subgraph "CatBoost - 2017"
+        C["Category Expert<br/>Yandex's creation<br/>Best categorical handling"]
+    end
+    subgraph "All Share"
+        A["Gradient Boosting core<br/>Regularization options<br/>GPU support<br/>Early stopping"]
+    end
+    style X fill:#FF9800
+    style L fill:#4CAF50
+    style C fill:#2196F3""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Tree Growth Strategy",
+                        "explanation": "The biggest algorithmic difference is how trees are grown. This affects both speed and accuracy.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost"
+        XG["Level-wise (default)<br/>Splits all nodes at same depth<br/>Balanced trees<br/><br/>Has lossguide mode too"]
+    end
+    subgraph "LightGBM"
+        LG["Leaf-wise<br/>Splits best-gain leaf<br/>Asymmetric trees<br/>Faster convergence"]
+    end
+    subgraph "CatBoost"
+        CB["Symmetric (oblivious)<br/>Same split at each depth<br/>Very balanced<br/>Fastest inference"]
+    end
+    subgraph "Implications"
+        I1["XGBoost: Safe, slower"]
+        I2["LightGBM: Fast, needs tuning"]
+        I3["CatBoost: Unique, fast inference"]
+    end
+    style XG fill:#FF9800
+    style LG fill:#4CAF50
+    style CB fill:#2196F3""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Handling Categorical Features",
+                        "explanation": "How each library handles categorical features out of the box. This is where CatBoost really shines.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost"
+        XG["No native support<br/>Must one-hot encode<br/>Or use experimental enable_categorical"]
+    end
+    subgraph "LightGBM"
+        LG["Native support<br/>Optimal split finding<br/>Set categorical_feature param<br/>Better than one-hot"]
+    end
+    subgraph "CatBoost"
+        CB["Best native support<br/>Target encoding built-in<br/>Handles high cardinality<br/>No preprocessing needed!"]
+    end
+    subgraph "Winner"
+        W["CatBoost > LightGBM > XGBoost<br/>for categorical features"]
+    end
+    style XG fill:#FFCDD2
+    style LG fill:#FFF9C4
+    style CB fill:#C8E6C9
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Training Speed",
+                        "explanation": "Speed comparison on large datasets. LightGBM is generally fastest, but the gap varies by data characteristics.",
+                        "diagram_data": """graph TB
+    subgraph "Speed Ranking - Large Data"
+        S1["1. LightGBM - Fastest<br/>Histogram-based, GOSS, EFB"]
+        S2["2. XGBoost - Fast<br/>Histogram mode, GPU"]
+        S3["3. CatBoost - Slower<br/>But most accurate per tree"]
+    end
+    subgraph "Why LightGBM is Fast"
+        L1["Histogram binning (256 bins)"]
+        L2["GOSS: samples by gradient"]
+        L3["EFB: bundles sparse features"]
+        L4["Leaf-wise: fewer splits needed"]
+    end
+    subgraph "Typical Training Times"
+        T["1M rows, 100 features:<br/>LightGBM: 30 seconds<br/>XGBoost: 60 seconds<br/>CatBoost: 90 seconds<br/>(approximate)"]
+    end
+    style S1 fill:#4CAF50,color:white
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Accuracy Out of the Box",
+                        "explanation": "Default accuracy with minimal tuning. CatBoost often wins here due to better defaults and categorical handling.",
+                        "diagram_data": """graph TB
+    subgraph "Default Performance"
+        D1["CatBoost: Often best defaults<br/>Less tuning needed<br/>Great for quick experiments"]
+        D2["XGBoost: Good defaults<br/>Well-understood tuning"]
+        D3["LightGBM: Needs more tuning<br/>Can overfit with defaults"]
+    end
+    subgraph "With Tuning"
+        T1["All three can achieve<br/>similar best accuracy"]
+        T2["Differences < 0.5% typical"]
+        T3["Data matters more than library"]
+    end
+    subgraph "Kaggle Evidence"
+        K["Top solutions use all three<br/>Often ensemble them together<br/>No clear winner"]
+    end
+    style D1 fill:#C8E6C9
+    style K fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Memory Usage",
+                        "explanation": "Memory efficiency varies by implementation. Important for large datasets or resource-constrained environments.",
+                        "diagram_data": """graph TB
+    subgraph "Memory Efficiency"
+        M1["LightGBM: Most efficient<br/>Histogram-based<br/>EFB reduces features"]
+        M2["XGBoost: Moderate<br/>Improved with hist mode"]
+        M3["CatBoost: Higher<br/>Symmetric trees need more"]
+    end
+    subgraph "Tips"
+        T1["LightGBM: Use bin_construct_sample_cnt"]
+        T2["XGBoost: Use tree_method='hist'"]
+        T3["CatBoost: Use max_ctr_complexity"]
+    end
+    subgraph "For Very Large Data"
+        V["LightGBM often the only option<br/>that fits in memory"]
+    end
+    style M1 fill:#4CAF50
+    style V fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "GPU Support",
+                        "explanation": "All three support GPU training, but with different levels of maturity and feature support.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost GPU"
+        XG["Mature GPU support<br/>gpu_hist tree method<br/>Multi-GPU support<br/>Good documentation"]
+    end
+    subgraph "LightGBM GPU"
+        LG["Good GPU support<br/>device='gpu'<br/>OpenCL based<br/>Fast but less flexible"]
+    end
+    subgraph "CatBoost GPU"
+        CB["Excellent GPU support<br/>task_type='GPU'<br/>Best GPU speedup often<br/>Designed for GPU"]
+    end
+    subgraph "GPU Speedup Typical"
+        S["XGBoost: 5-10x<br/>LightGBM: 3-7x<br/>CatBoost: 10-40x"]
+    end
+    style CB fill:#C8E6C9
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "When to Use Each",
+                        "explanation": "Decision guide based on your specific needs and constraints.",
+                        "diagram_data": """graph TB
+    subgraph "Use XGBoost When"
+        X1["Need battle-tested reliability"]
+        X2["Team familiar with it"]
+        X3["Good documentation matters"]
+        X4["Distributed training needed"]
+    end
+    subgraph "Use LightGBM When"
+        L1["Speed is critical"]
+        L2["Very large datasets"]
+        L3["Memory constrained"]
+        L4["Many numeric features"]
+    end
+    subgraph "Use CatBoost When"
+        C1["Many categorical features"]
+        C2["Want minimal tuning"]
+        C3["Need fast inference"]
+        C4["GPU training important"]
+    end
+    style X1 fill:#FF9800
+    style L1 fill:#4CAF50
+    style C1 fill:#2196F3""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Quick Comparison Table",
+                        "explanation": "Summary comparison across all major dimensions.",
+                        "diagram_data": """graph TB
+    subgraph "Comparison Matrix"
+        T["Aspect         | XGBoost | LightGBM | CatBoost<br/>----------------|---------|----------|----------<br/>Speed           | Good    | Best     | Good<br/>Memory          | Medium  | Best     | Higher<br/>Accuracy        | Great   | Great    | Great<br/>Categoricals    | Poor    | Good     | Best<br/>Default params  | Good    | Needs tune| Best<br/>GPU support     | Great   | Good     | Best<br/>Documentation   | Best    | Good     | Good<br/>Tree growth     | Level   | Leaf     | Symmetric"]
+    end
+    subgraph "Bottom Line"
+        B["No clear winner - all excellent<br/>Try all three on your data<br/>Often ensemble for best results"]
+    end
+    style T fill:#E3F2FD
+    style B fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_xgboost_regularized_objective_visual(self):
+        """Seed XGBoost Regularized Objective visual topic."""
+        subject = self.get_or_create_subject("XGBoost", "xgboost", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="regularized-objective",
+            defaults={
+                "title": "XGBoost's Regularized Objective Function",
+                "description": "Understand the mathematical foundation that made XGBoost famous: the regularized loss function",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["xgboost", "objective", "regularization", "gamma", "lambda", "math"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The XGBoost Innovation",
+                        "explanation": "XGBoost's key innovation was adding **explicit regularization** to the objective function. This penalizes complex trees, preventing overfitting and making the algorithm more robust.",
+                        "diagram_data": """graph TB
+    subgraph "Traditional GBDT"
+        T["Minimize: Loss(y, pred)"]
+        T2["No complexity penalty"]
+        T3["Prone to overfitting"]
+    end
+    subgraph "XGBoost"
+        X["Minimize: Loss(y, pred) + Complexity(tree)"]
+        X2["Explicit regularization"]
+        X3["Built-in overfit prevention"]
+    end
+    T --> T2 --> T3
+    X --> X2 --> X3
+    style T3 fill:#FFCDD2
+    style X3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Full Objective Function",
+                        "explanation": "XGBoost minimizes: **Obj = Σ Loss(yᵢ, ŷᵢ) + Σ Ω(fₖ)**. The first term measures prediction error; the second penalizes tree complexity. Both are summed over all samples and all trees.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost Objective"
+        Obj["Obj(θ) = Σᵢ L(yᵢ, ŷᵢ) + Σₖ Ω(fₖ)"]
+    end
+    subgraph "Training Loss"
+        L["L(y, ŷ) = loss function<br/>MSE: (y - ŷ)²<br/>LogLoss: -y·log(ŷ)"]
+    end
+    subgraph "Regularization"
+        O["Ω(f) = γT + ½λΣw²<br/>T = number of leaves<br/>w = leaf weights"]
+    end
+    Obj --> L
+    Obj --> O
+    style Obj fill:#4CAF50,color:white
+    style L fill:#2196F3,color:white
+    style O fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Regularization Term Ω(f)",
+                        "explanation": "The regularization term **Ω(f) = γT + ½λΣwⱼ²** has two parts: γ penalizes the number of leaves (tree complexity), and λ penalizes large leaf weights (prediction magnitude).",
+                        "diagram_data": """graph TB
+    subgraph "Regularization Components"
+        Omega["Ω(f) = γT + ½λ·Σwⱼ²"]
+    end
+    subgraph "γT - Leaf Penalty"
+        G["γ = cost per leaf<br/>T = number of leaves<br/><br/>Higher γ = fewer leaves<br/>Simpler trees"]
+    end
+    subgraph "½λΣw² - Weight Penalty"
+        Lambda["λ = L2 regularization<br/>w = leaf weight values<br/><br/>Higher λ = smaller weights<br/>Smoother predictions"]
+    end
+    Omega --> G
+    Omega --> Lambda
+    style G fill:#FF9800
+    style Lambda fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Understanding γ (gamma)",
+                        "explanation": "**γ (gamma)** is the minimum loss reduction required to make a split. If a split doesn't reduce loss by at least γ, it's pruned. This directly controls tree complexity.",
+                        "diagram_data": """graph TB
+    subgraph "Gamma Effect"
+        G0["γ = 0: Any improvement OK<br/>Many splits, complex trees"]
+        G1["γ = 1: Need gain > 1 to split<br/>Moderate complexity"]
+        G5["γ = 5: Need gain > 5 to split<br/>Only strong splits survive"]
+    end
+    subgraph "Split Decision"
+        SD["If Gain < γ: Don't split (prune)<br/>If Gain ≥ γ: Make the split"]
+    end
+    subgraph "Typical Values"
+        TV["Start with 0<br/>If overfitting: try 0.1, 1, 5, 10<br/>Range: 0 to infinity"]
+    end
+    style G0 fill:#FFCDD2
+    style G1 fill:#FFF9C4
+    style G5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Understanding λ (lambda/reg_lambda)",
+                        "explanation": "**λ (lambda)** is L2 regularization on leaf weights. It shrinks leaf values toward zero, preventing extreme predictions. This is similar to Ridge regression.",
+                        "diagram_data": """graph TB
+    subgraph "Lambda Effect on Leaf Weights"
+        L0["λ = 0: No shrinkage<br/>Leaf weights can be large<br/>w = [-50, 100, -30]"]
+        L1["λ = 1: Moderate shrinkage<br/>Weights pulled toward 0<br/>w = [-10, 20, -6]"]
+        L10["λ = 10: Strong shrinkage<br/>Small leaf weights<br/>w = [-2, 4, -1]"]
+    end
+    subgraph "Mathematical Effect"
+        ME["Optimal leaf weight:<br/>w* = -G / (H + λ)<br/><br/>Larger λ = smaller |w*|"]
+    end
+    subgraph "When to Increase"
+        WI["Overfitting<br/>Extreme predictions<br/>High variance"]
+    end
+    style L0 fill:#FFCDD2
+    style L10 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "The Gain Formula",
+                        "explanation": "XGBoost uses a specific formula to calculate split gain, incorporating regularization. This is derived from second-order Taylor expansion of the loss.",
+                        "diagram_data": """graph TB
+    subgraph "Split Gain Formula"
+        F["Gain = ½[G²ₗ/(Hₗ+λ) + G²ᵣ/(Hᵣ+λ) - (Gₗ+Gᵣ)²/(Hₗ+Hᵣ+λ)] - γ"]
+    end
+    subgraph "Components"
+        G["G = Σ gradients (first derivative)"]
+        H["H = Σ hessians (second derivative)"]
+        LR["L,R = left and right child"]
+    end
+    subgraph "Interpretation"
+        I1["First two terms: gain from split"]
+        I2["Third term: original node score"]
+        I3["- γ: cost of adding a leaf"]
+    end
+    F --> G
+    F --> H
+    style F fill:#E3F2FD
+    style I3 fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Optimal Leaf Weight",
+                        "explanation": "Given the regularized objective, XGBoost derives the **optimal weight** for each leaf analytically. This is more principled than averaging target values.",
+                        "diagram_data": """graph TB
+    subgraph "Optimal Leaf Weight Formula"
+        W["w* = -G / (H + λ)"]
+    end
+    subgraph "For MSE Loss"
+        MSE["G = Σ(pred - y) = sum of residuals<br/>H = number of samples<br/><br/>w* = -Σresiduals / (n + λ)<br/>Like regularized mean!"]
+    end
+    subgraph "Lambda Effect"
+        LE["λ = 0: w* = -G/H (unregularized)<br/>λ > 0: w* shrinks toward 0<br/>λ → ∞: w* → 0"]
+    end
+    subgraph "Benefit"
+        B["Analytical solution<br/>No gradient descent needed<br/>Fast and optimal"]
+    end
+    style W fill:#4CAF50,color:white
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Alpha (L1 Regularization)",
+                        "explanation": "XGBoost also supports **α (alpha/reg_alpha)** for L1 regularization. This can make some leaf weights exactly zero, effectively pruning branches.",
+                        "diagram_data": """graph TB
+    subgraph "Full Regularization"
+        FR["Ω(f) = γT + ½λΣw² + αΣ|w|"]
+    end
+    subgraph "L1 vs L2"
+        L1["α (L1/Lasso):<br/>Can make weights exactly 0<br/>Sparse trees"]
+        L2["λ (L2/Ridge):<br/>Shrinks weights toward 0<br/>But never exactly 0"]
+    end
+    subgraph "Usage"
+        U["Usually λ alone is enough<br/>Add α for very sparse data<br/>Or when feature selection needed"]
+    end
+    style L1 fill:#2196F3
+    style L2 fill:#FF9800""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Parameter Summary",
+                        "explanation": "Quick reference for the regularization parameters and their effects.",
+                        "diagram_data": """graph TB
+    subgraph "Regularization Parameters"
+        P["Parameter | Name      | Effect<br/>----------|-----------|------------------<br/>γ gamma   | min_split | Prunes weak splits<br/>λ lambda  | reg_lambda| Shrinks leaf weights<br/>α alpha   | reg_alpha | Sparse leaf weights"]
+    end
+    subgraph "Tuning Priority"
+        T1["1. Start with defaults (all 0)"]
+        T2["2. If overfitting: increase λ (try 1-10)"]
+        T3["3. Still overfitting: increase γ (try 0.1-5)"]
+        T4["4. For sparsity: add α"]
+    end
+    subgraph "Typical Ranges"
+        R["γ: 0-10<br/>λ: 0-100<br/>α: 0-100"]
+    end
+    style P fill:#E3F2FD
+    style T2 fill:#4CAF50""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_xgboost_approximate_split_finding_visual(self):
+        """Seed XGBoost Approximate Split Finding visual topic."""
+        subject = self.get_or_create_subject("XGBoost", "xgboost", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="approximate-split-finding",
+            defaults={
+                "title": "Approximate Split Finding Algorithm",
+                "description": "Learn how XGBoost uses quantiles and histograms to find splits efficiently on large datasets",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 10,
+                "tags": ["xgboost", "split finding", "quantiles", "histogram", "scalability"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Scalability Challenge",
+                        "explanation": "Finding the best split requires evaluating every possible threshold for every feature. With millions of rows and hundreds of features, this becomes prohibitively slow.",
+                        "diagram_data": """graph TB
+    subgraph "Exact Split Finding"
+        E1["For each feature:"]
+        E2["Sort all values"]
+        E3["Try every unique value as threshold"]
+        E4["Calculate gain for each"]
+        E5["O(n × features × values)"]
+    end
+    E1 --> E2 --> E3 --> E4 --> E5
+    subgraph "Problem"
+        P["1 million rows × 100 features<br/>= Billions of evaluations<br/>Too slow!"]
+    end
+    style E5 fill:#FFCDD2
+    style P fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Approximate Solution",
+                        "explanation": "Instead of trying every threshold, XGBoost proposes **candidate split points** based on feature distribution. Only these candidates are evaluated, dramatically reducing computation.",
+                        "diagram_data": """graph TB
+    subgraph "Approximate Algorithm"
+        A1["1. Find candidate thresholds"]
+        A2["2. Map values to buckets"]
+        A3["3. Accumulate stats per bucket"]
+        A4["4. Evaluate only bucket boundaries"]
+    end
+    A1 --> A2 --> A3 --> A4
+    subgraph "Speedup"
+        S["1 million values → 256 buckets<br/>4000x fewer evaluations!"]
+    end
+    subgraph "Two Variants"
+        V1["Global: candidates chosen once"]
+        V2["Local: recalculate per node"]
+    end
+    style S fill:#C8E6C9
+    style A1 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Weighted Quantile Sketch",
+                        "explanation": "XGBoost uses **weighted quantiles** to find split candidates, where weights are the **hessians** (second derivatives). This focuses splits on samples the model is uncertain about.",
+                        "diagram_data": """graph TB
+    subgraph "Why Weighted?"
+        W["Not all samples equally important<br/>Hessian = confidence/importance<br/>High hessian = model uncertain"]
+    end
+    subgraph "Weighted Quantile"
+        Q["Find thresholds s.t.:<br/>|Σ hᵢ for x < sₖ - Σ hᵢ for x < sₖ₊₁|<br/>≈ ε × Σ all hessians"]
+    end
+    subgraph "Example"
+        E["100 samples, want 10 buckets<br/>Regular: 10 samples per bucket<br/>Weighted: equal hessian sum per bucket<br/>More splits where model struggles!"]
+    end
+    style W fill:#FFF9C4
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Global vs Local Variant",
+                        "explanation": "XGBoost offers two modes: **Global** proposes candidates once before building the tree, **Local** re-proposes after each split. Local is more accurate but slower.",
+                        "diagram_data": """graph TB
+    subgraph "Global Variant"
+        G1["Find quantiles on full data"]
+        G2["Use same buckets for all nodes"]
+        G3["Faster - one-time computation"]
+        G4["Less accurate deep in tree"]
+    end
+    subgraph "Local Variant"
+        L1["Recalculate quantiles at each node"]
+        L2["Adapts to local data distribution"]
+        L3["Slower - repeated computation"]
+        L4["More accurate splits"]
+    end
+    subgraph "XGBoost tree_method"
+        T["'approx': Global variant<br/>'hist': Histogram-based (faster)"]
+    end
+    style G3 fill:#C8E6C9
+    style L4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Histogram-Based Method",
+                        "explanation": "The **histogram** method (tree_method='hist') is even faster. It bins features into fixed buckets and builds histograms of gradient statistics. This is similar to LightGBM.",
+                        "diagram_data": """graph TB
+    subgraph "Histogram Method"
+        H1["Pre-bin all features into 256 buckets"]
+        H2["For each node: sum G,H per bucket"]
+        H3["Scan bucket boundaries for best split"]
+        H4["Use subtraction trick for sibling"]
+    end
+    H1 --> H2 --> H3 --> H4
+    subgraph "Advantages"
+        A1["Cache-friendly memory access"]
+        A2["Integer operations"]
+        A3["Subtraction trick halves work"]
+        A4["256 comparisons vs millions"]
+    end
+    subgraph "Setting"
+        S["tree_method='hist'<br/>max_bin=256 (default)"]
+    end
+    style A4 fill:#C8E6C9
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "The Subtraction Trick",
+                        "explanation": "When building histograms, XGBoost computes the parent's histogram, then only computes the smaller child's histogram. The larger child is found by subtraction!",
+                        "diagram_data": """graph TB
+    subgraph "Without Trick"
+        W1["Parent: sum all samples"]
+        W2["Left child: sum left samples"]
+        W3["Right child: sum right samples"]
+        W4["Work: 2N samples summed"]
+    end
+    subgraph "With Subtraction Trick"
+        S1["Parent: already computed"]
+        S2["Small child: sum (say 30%)"]
+        S3["Large child: Parent - Small"]
+        S4["Work: 0.3N samples summed<br/>70% reduction!"]
+    end
+    style W4 fill:#FFCDD2
+    style S4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "tree_method Options",
+                        "explanation": "XGBoost provides multiple tree building methods. Choose based on your dataset size and hardware.",
+                        "diagram_data": """graph TB
+    subgraph "tree_method Options"
+        E["'exact': Exact split finding<br/>Best for < 10K samples<br/>Most accurate, slowest"]
+        A["'approx': Approximate with quantiles<br/>Good for medium data<br/>Recalculates each tree"]
+        H["'hist': Histogram-based<br/>Best for large data<br/>Fastest CPU method"]
+        G["'gpu_hist': GPU histogram<br/>Requires CUDA<br/>Fastest overall"]
+    end
+    subgraph "Recommendations"
+        R1["< 10K rows: 'exact' or 'hist'"]
+        R2["10K-1M rows: 'hist'"]
+        R3["> 1M rows: 'hist' or 'gpu_hist'"]
+    end
+    style H fill:#4CAF50,color:white
+    style G fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Accuracy vs Speed Trade-off",
+                        "explanation": "More buckets = more accurate but slower. The default 256 buckets is usually sufficient. Rarely need to tune this.",
+                        "diagram_data": """graph TB
+    subgraph "max_bin Effect"
+        B64["max_bin=64: Coarse splits<br/>Fastest, may lose accuracy"]
+        B256["max_bin=256: Default<br/>Good balance"]
+        B1024["max_bin=1024: Fine splits<br/>Slower, diminishing returns"]
+    end
+    subgraph "When to Adjust"
+        A1["Increase if underfitting with 'hist'"]
+        A2["Decrease if memory constrained"]
+        A3["Usually 256 is fine"]
+    end
+    subgraph "Memory Impact"
+        M["More bins = more memory<br/>bins × features × nodes"]
+    end
+    style B256 fill:#4CAF50,color:white
+    style A3 fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_xgboost_sparsity_aware_visual(self):
+        """Seed XGBoost Sparsity-Aware Split Finding visual topic."""
+        subject = self.get_or_create_subject("XGBoost", "xgboost", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="sparsity-aware-split-finding",
+            defaults={
+                "title": "Sparsity-Aware Split Finding",
+                "description": "Discover how XGBoost elegantly handles missing values by learning the optimal default direction",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["xgboost", "missing values", "sparsity", "default direction"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Missing Value Problem",
+                        "explanation": "Real-world data often has missing values. Traditional approaches require imputation before training, but XGBoost handles missing values **natively** during tree building.",
+                        "diagram_data": """graph TB
+    subgraph "Traditional Approach"
+        T1["Impute missing values first"]
+        T2["Mean, median, or model-based"]
+        T3["May introduce bias"]
+        T4["Extra preprocessing step"]
+    end
+    subgraph "XGBoost Approach"
+        X1["Keep missing as-is"]
+        X2["Learn best direction for missing"]
+        X3["Part of tree learning"]
+        X4["No preprocessing needed!"]
+    end
+    style T3 fill:#FFCDD2
+    style X4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Key Insight",
+                        "explanation": "At each split, XGBoost learns a **default direction** for missing values. It tries sending all missing values left, then right, and picks whichever gives better gain.",
+                        "diagram_data": """graph TB
+    subgraph "Split Decision"
+        Node["Node: feature < 5?"]
+        Left["Left: feature < 5"]
+        Right["Right: feature >= 5"]
+        Missing["Missing: which way?"]
+    end
+    Node --> Left
+    Node --> Right
+    Node --> Missing
+    subgraph "XGBoost Learns"
+        L1["Try all missing → Left: Gain = 10"]
+        L2["Try all missing → Right: Gain = 15"]
+        L3["Pick Right! (higher gain)"]
+    end
+    Missing --> L1
+    Missing --> L2
+    L2 --> L3
+    style L3 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Algorithm",
+                        "explanation": "For each candidate split, XGBoost enumerates both directions for missing values and picks the best. This adds minimal overhead since we're already scanning the data.",
+                        "diagram_data": """graph TB
+    subgraph "Sparsity-Aware Split Finding"
+        S1["1. Find best split threshold"]
+        S2["2. Calculate gain with missing → Left"]
+        S3["3. Calculate gain with missing → Right"]
+        S4["4. Store split + best direction"]
+    end
+    S1 --> S2 --> S3 --> S4
+    subgraph "Stored Information"
+        I["Split: feature_3 < 2.5<br/>Default direction: Right<br/>Gain: 15.3"]
+    end
+    subgraph "At Prediction Time"
+        P["If feature_3 is missing:<br/>Go Right (learned default)"]
+    end
+    style I fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Visual Example",
+                        "explanation": "Let's see how XGBoost handles a feature with missing values. The algorithm learns that missing values should go left for this particular split.",
+                        "diagram_data": """graph TB
+    subgraph "Data"
+        D["Feature X | Target<br/>---------|-------<br/>1.0      | 10<br/>2.0      | 12<br/>NaN      | 25<br/>5.0      | 30<br/>NaN      | 28<br/>8.0      | 35"]
+    end
+    subgraph "Try Split: X < 4"
+        Left["Left (X < 4):<br/>1.0→10, 2.0→12<br/>Mean: 11"]
+        Right["Right (X >= 4):<br/>5.0→30, 8.0→35<br/>Mean: 32.5"]
+    end
+    subgraph "Where do NaN go?"
+        NL["NaN → Left:<br/>Targets: 10,12,25,28<br/>Mean: 18.75, High error"]
+        NR["NaN → Right:<br/>Targets: 30,35,25,28<br/>Mean: 29.5, Low error!"]
+    end
+    D --> Left
+    D --> Right
+    NL --> |"Worse"| X1["✗"]
+    NR --> |"Better"| X2["✓ Default: Right"]
+    style X2 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Why This Works Well",
+                        "explanation": "The learned default direction is **data-driven**. Missing values often carry information (not missing at random), and XGBoost exploits this automatically.",
+                        "diagram_data": """graph TB
+    subgraph "Missing Not at Random"
+        M1["Survey: income missing<br/>Often means high income<br/>(people hide wealth)"]
+        M2["Medical: test missing<br/>Often means healthy<br/>(doctor didn't order it)"]
+        M3["XGBoost learns these patterns!"]
+    end
+    subgraph "Advantages"
+        A1["No imputation needed"]
+        A2["Learns informative patterns"]
+        A3["Different direction per split"]
+        A4["Works with any sparsity level"]
+    end
+    style M3 fill:#C8E6C9
+    style A2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Handling Zeros vs Missing",
+                        "explanation": "XGBoost distinguishes between **zero values** and **missing values**. This matters for sparse data like one-hot encoding where 0 is meaningful.",
+                        "diagram_data": """graph TB
+    subgraph "Sparse Matrix"
+        S["In scipy.sparse or DMatrix:<br/>0 = actual zero (stored implicitly)<br/>NaN = truly missing"]
+    end
+    subgraph "XGBoost Behavior"
+        B1["Zeros go through normal split logic"]
+        B2["Only NaN/missing uses default direction"]
+    end
+    subgraph "The missing Parameter"
+        M["DMatrix(data, missing=np.nan)<br/><br/>Can set custom missing value:<br/>missing=-999 treats -999 as missing"]
+    end
+    style M fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Comparison with Other Libraries",
+                        "explanation": "Different libraries handle missing values differently. XGBoost's approach is one of the most elegant.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost"
+        X["Learns default direction<br/>Per-split optimal<br/>No preprocessing"]
+    end
+    subgraph "LightGBM"
+        L["Also learns direction<br/>Similar approach<br/>Can also use NaN directly"]
+    end
+    subgraph "CatBoost"
+        C["Treats as special category<br/>Min/Max mode options<br/>Also native handling"]
+    end
+    subgraph "scikit-learn"
+        S["Most models require imputation<br/>HistGradientBoosting handles NaN<br/>RandomForest needs preprocessing"]
+    end
+    style X fill:#4CAF50
+    style L fill:#4CAF50
+    style C fill:#4CAF50
+    style S fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices",
+                        "explanation": "Tips for working with missing values in XGBoost.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Let XGBoost handle missing naturally"]
+        D2["Check if missing is informative"]
+        D3["Use DMatrix for efficiency"]
+        D4["Set missing param if using special value"]
+    end
+    subgraph "Don't"
+        N1["Don't impute with mean blindly"]
+        N2["Don't fill with 0 if 0 has meaning"]
+        N3["Don't drop rows with missing"]
+    end
+    subgraph "Code Example"
+        C["import xgboost as xgb<br/>dtrain = xgb.DMatrix(X, y)<br/># NaN handled automatically!<br/><br/>model = xgb.train(params, dtrain)"]
+    end
+    style D1 fill:#C8E6C9
+    style N1 fill:#FFCDD2
+    style C fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_xgboost_tree_pruning_visual(self):
+        """Seed XGBoost Tree Pruning Strategy visual topic."""
+        subject = self.get_or_create_subject("XGBoost", "xgboost", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="tree-pruning-strategy",
+            defaults={
+                "title": "XGBoost Tree Pruning Strategy",
+                "description": "Understand XGBoost's depth-first growth with post-pruning using gamma",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["xgboost", "pruning", "gamma", "max_depth", "tree structure"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Pruning Philosophies",
+                        "explanation": "There are two ways to control tree growth: **pre-pruning** (stop early) and **post-pruning** (grow full, then cut back). XGBoost uses a hybrid approach.",
+                        "diagram_data": """graph TB
+    subgraph "Pre-Pruning"
+        Pre1["Stop growing before completion"]
+        Pre2["Check conditions at each split"]
+        Pre3["Examples: min_samples_leaf"]
+        Pre4["Risk: may stop too early"]
+    end
+    subgraph "Post-Pruning"
+        Post1["Grow tree fully first"]
+        Post2["Then prune weak branches"]
+        Post3["Examples: cost-complexity pruning"]
+        Post4["May find splits pre-pruning missed"]
+    end
+    subgraph "XGBoost: Hybrid"
+        X["Grow to max_depth (pre-prune)<br/>Then prune with gamma (post-prune)<br/>Best of both worlds!"]
+    end
+    style X fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "XGBoost's Growth Strategy",
+                        "explanation": "XGBoost grows trees **depth-first** to `max_depth`, then **prunes back** splits that don't provide enough gain (less than γ). This is more thorough than pure pre-pruning.",
+                        "diagram_data": """graph TB
+    subgraph "Step 1: Grow to max_depth"
+        G["Grow full tree<br/>Split even if gain is small<br/>May have weak splits"]
+    end
+    subgraph "Step 2: Prune with gamma"
+        P["Remove splits where gain < γ<br/>Bottom-up pruning<br/>Keep only strong splits"]
+    end
+    G --> P
+    subgraph "Why This Order?"
+        W["A weak parent split might<br/>enable strong child splits!<br/>Post-pruning finds these."]
+    end
+    style W fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Visual Example of Post-Pruning",
+                        "explanation": "See how a tree is grown fully, then pruned based on gain thresholds.",
+                        "diagram_data": """graph TB
+    subgraph "After Growth (max_depth=3)"
+        R["Root<br/>gain=20"]
+        R --> L1["L1<br/>gain=15"]
+        R --> R1["R1<br/>gain=2"]
+        L1 --> L2["L2<br/>gain=8"]
+        L1 --> R2["R2<br/>gain=1"]
+        R1 --> L3["L3<br/>gain=0.5"]
+        R1 --> R3["R3<br/>gain=0.3"]
+    end
+    subgraph "After Pruning (gamma=3)"
+        PR["Root<br/>gain=20 ✓"]
+        PR --> PL1["L1<br/>gain=15 ✓"]
+        PR --> PR1["R1<br/>gain=2 ✗ PRUNED"]
+        PL1 --> PL2["L2<br/>gain=8 ✓"]
+        PL1 --> PR2["R2<br/>gain=1 ✗ PRUNED"]
+    end
+    style R1 fill:#FFCDD2
+    style R2 fill:#FFCDD2
+    style L3 fill:#FFCDD2
+    style R3 fill:#FFCDD2
+    style PR1 fill:#FFCDD2
+    style PR2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "The Gamma Parameter",
+                        "explanation": "**gamma (min_split_loss)** is the minimum gain required to make a split. It's the primary post-pruning control in XGBoost.",
+                        "diagram_data": """graph TB
+    subgraph "Gamma Effect"
+        G0["gamma=0: Keep all splits<br/>No pruning<br/>Complex trees"]
+        G1["gamma=1: Prune gain < 1<br/>Remove weak splits"]
+        G5["gamma=5: Prune gain < 5<br/>Only strong splits survive<br/>Simple trees"]
+    end
+    subgraph "Gain Formula Reminder"
+        F["Gain = improvement - gamma<br/>If Gain < 0: prune"]
+    end
+    subgraph "Tuning"
+        T["Start with 0<br/>Increase if overfitting<br/>Typical range: 0-10"]
+    end
+    style G0 fill:#FFCDD2
+    style G5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "max_depth: The Pre-Pruning Limit",
+                        "explanation": "`max_depth` limits how deep trees can grow. This is pre-pruning - XGBoost won't even try to split beyond this depth.",
+                        "diagram_data": """graph TB
+    subgraph "max_depth Effect"
+        D3["max_depth=3: 8 possible leaves<br/>Quick training<br/>May underfit"]
+        D6["max_depth=6: 64 possible leaves<br/>Default value<br/>Good balance"]
+        D10["max_depth=10: 1024 possible leaves<br/>Slow training<br/>Risk of overfit"]
+    end
+    subgraph "Relationship with num_leaves"
+        R["max_leaves = 2^max_depth<br/>depth=6 → 64 leaves max<br/><br/>XGBoost also has max_leaves<br/>for direct control"]
+    end
+    style D6 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Why Post-Pruning Helps",
+                        "explanation": "Post-pruning can discover valuable splits that pre-pruning would miss. A weak split might enable strong children.",
+                        "diagram_data": """graph TB
+    subgraph "Pre-Pruning Problem"
+        PP1["Split A: gain=0.5<br/>Below threshold, stop!"]
+        PP2["Never see children<br/>that might have gain=10"]
+    end
+    subgraph "Post-Pruning Solution"
+        PS1["Split A: gain=0.5<br/>Grow anyway"]
+        PS2["Child B: gain=10!<br/>Child C: gain=8!"]
+        PS3["Prune A only if children<br/>don't justify it"]
+    end
+    subgraph "Evaluation"
+        E["Total value: 0.5 + 10 + 8 = 18.5<br/>Worth keeping A!"]
+    end
+    style PP2 fill:#FFCDD2
+    style PS2 fill:#C8E6C9
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Other Pre-Pruning Parameters",
+                        "explanation": "XGBoost has additional pre-pruning controls beyond max_depth.",
+                        "diagram_data": """graph TB
+    subgraph "Pre-Pruning Parameters"
+        M1["max_depth: Max tree depth<br/>Default: 6"]
+        M2["min_child_weight: Min hessian sum<br/>Default: 1<br/>Like min_samples but weighted"]
+        M3["max_leaves: Max leaf count<br/>Default: 0 (no limit)"]
+    end
+    subgraph "Post-Pruning Parameters"
+        P1["gamma: Min gain to split<br/>Default: 0"]
+    end
+    subgraph "Combined Strategy"
+        C["1. Grow to max_depth<br/>2. Respect min_child_weight<br/>3. Post-prune with gamma"]
+    end
+    style M1 fill:#2196F3
+    style P1 fill:#FF9800
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Pruning Strategy Summary",
+                        "explanation": "Quick reference for XGBoost's tree pruning approach.",
+                        "diagram_data": """graph TB
+    subgraph "XGBoost Pruning Pipeline"
+        S1["1. Start splitting from root"]
+        S2["2. Stop at max_depth"]
+        S3["3. Stop if min_child_weight violated"]
+        S4["4. After tree built: prune with gamma"]
+    end
+    S1 --> S2 --> S3 --> S4
+    subgraph "Tuning Priority"
+        T1["Overfitting? Increase gamma"]
+        T2["Still overfitting? Reduce max_depth"]
+        T3["Underfitting? Reduce gamma, increase depth"]
+    end
+    subgraph "Typical Values"
+        V["max_depth: 4-10<br/>gamma: 0-5<br/>min_child_weight: 1-10"]
+    end
+    style T1 fill:#4CAF50""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_xgboost_monotonic_constraints_visual(self):
+        """Seed XGBoost Monotonic Constraints visual topic."""
+        subject = self.get_or_create_subject("XGBoost", "xgboost", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="monotonic-constraints",
+            defaults={
+                "title": "Monotonic Constraints in XGBoost",
+                "description": "Learn how to enforce monotonic relationships between features and predictions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["xgboost", "monotonic", "constraints", "interpretability", "domain knowledge"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What are Monotonic Constraints?",
+                        "explanation": "**Monotonic constraints** force the model to learn relationships that only go in one direction. If income should increase credit score, the model can never predict lower score for higher income.",
+                        "diagram_data": """graph TB
+    subgraph "Without Constraint"
+        W["Model can learn any pattern<br/>Score might decrease with income<br/>due to noise in data"]
+    end
+    subgraph "With Monotonic Constraint"
+        M["Model forced to respect:<br/>More income → Higher score<br/>OR<br/>More income → Lower score<br/>(but not both!)"]
+    end
+    subgraph "Why Use?"
+        U1["Domain knowledge"]
+        U2["Regulatory requirements"]
+        U3["Interpretability"]
+        U4["Reduce overfitting to noise"]
+    end
+    style W fill:#FFCDD2
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Types of Monotonic Relationships",
+                        "explanation": "You can specify **increasing** (feature up → prediction up), **decreasing** (feature up → prediction down), or **no constraint** (any relationship allowed).",
+                        "diagram_data": """graph TB
+    subgraph "Increasing (+1)"
+        I["As feature increases,<br/>prediction can only increase<br/>or stay the same"]
+        IE["Example: income → credit score"]
+    end
+    subgraph "Decreasing (-1)"
+        D["As feature increases,<br/>prediction can only decrease<br/>or stay the same"]
+        DE["Example: debt → credit score"]
+    end
+    subgraph "No Constraint (0)"
+        N["Any relationship allowed"]
+        NE["Example: age → purchase amount"]
+    end
+    style I fill:#4CAF50
+    style D fill:#FF5722
+    style N fill:#E0E0E0""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "How It Works in Trees",
+                        "explanation": "XGBoost enforces monotonicity by **constraining split values**. When a feature is split, child nodes must maintain the monotonic relationship.",
+                        "diagram_data": """graph TB
+    subgraph "Unconstrained Split"
+        U1["income < 50K?"]
+        U2["pred: 600"]
+        U3["pred: 650"]
+        U1 --> |"Yes"| U2
+        U1 --> |"No"| U3
+        U4["OK: higher income, higher pred"]
+    end
+    subgraph "Constrained (income +1)"
+        C1["income < 50K?"]
+        C2["pred: 600"]
+        C3["pred: 650"]
+        C1 --> |"Yes"| C2
+        C1 --> |"No"| C3
+        C4["Constraint enforced!<br/>Right child ≥ Left child"]
+    end
+    subgraph "Violation Prevented"
+        V1["income < 50K?"]
+        V2["pred: 700"]
+        V3["pred: 650"]
+        V1 --> |"Yes"| V2
+        V1 --> |"No"| V3
+        V4["BLOCKED! Would violate<br/>increasing constraint"]
+    end
+    style U4 fill:#C8E6C9
+    style C4 fill:#C8E6C9
+    style V4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Setting Constraints in XGBoost",
+                        "explanation": "Specify constraints as a tuple/list matching feature order: +1 (increasing), -1 (decreasing), 0 (none).",
+                        "diagram_data": """graph TB
+    subgraph "Python API"
+        P["# Features: income, debt, age, region<br/>params = {<br/>    'monotone_constraints': '(1,-1,0,0)'<br/>}<br/><br/># Or as list:<br/>params = {<br/>    'monotone_constraints': [1,-1,0,0]<br/>}"]
+    end
+    subgraph "Meaning"
+        M1["income: +1 → must increase score"]
+        M2["debt: -1 → must decrease score"]
+        M3["age: 0 → no constraint"]
+        M4["region: 0 → no constraint"]
+    end
+    subgraph "sklearn API"
+        S["XGBClassifier(<br/>    monotone_constraints=[1,-1,0,0]<br/>)"]
+    end
+    style P fill:#E3F2FD
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Real-World Examples",
+                        "explanation": "Common scenarios where monotonic constraints make sense based on domain knowledge.",
+                        "diagram_data": """graph TB
+    subgraph "Credit Scoring"
+        C1["income: +1 (more income, better)"]
+        C2["debt: -1 (more debt, worse)"]
+        C3["years_employed: +1"]
+        C4["num_late_payments: -1"]
+    end
+    subgraph "Insurance Pricing"
+        I1["age: +1 (older, higher premium)"]
+        I2["no_claims_years: -1 (safer, lower)"]
+        I3["vehicle_value: +1"]
+    end
+    subgraph "House Pricing"
+        H1["sqft: +1 (bigger, pricier)"]
+        H2["crime_rate: -1"]
+        H3["bedrooms: +1"]
+    end
+    style C1 fill:#4CAF50
+    style I2 fill:#FF5722""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Impact on Model Performance",
+                        "explanation": "Monotonic constraints may slightly reduce training accuracy but often improve generalization and always improve interpretability.",
+                        "diagram_data": """graph TB
+    subgraph "Trade-offs"
+        T1["May reduce training accuracy<br/>Can't fit every wiggle in data"]
+        T2["Usually maintains test accuracy<br/>Wiggles were likely noise anyway"]
+        T3["Improves interpretability<br/>Makes sense to stakeholders"]
+        T4["Regulatory compliance<br/>Required in some industries"]
+    end
+    subgraph "When to Use"
+        U1["Clear domain knowledge exists"]
+        U2["Stakeholders need explanations"]
+        U3["Regulated industry"]
+        U4["Noise in training data"]
+    end
+    subgraph "When to Skip"
+        S1["Relationship truly non-monotonic"]
+        S2["Pure prediction, no interpretation"]
+        S3["Not sure of direction"]
+    end
+    style T3 fill:#C8E6C9
+    style S1 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Visualizing the Effect",
+                        "explanation": "Partial dependence plots clearly show the monotonic relationship.",
+                        "diagram_data": """graph TB
+    subgraph "Without Constraint"
+        W["Prediction<br/>↑          ╱╲<br/>│       ╱    ╲_<br/>│    ╱╲╱<br/>│  ╱<br/>└──────────→ Income<br/>Non-monotonic wiggles"]
+    end
+    subgraph "With Constraint (+1)"
+        M["Prediction<br/>↑              ___<br/>│          ___╱<br/>│      ___╱<br/>│  ___╱<br/>└──────────→ Income<br/>Smooth increasing only"]
+    end
+    subgraph "Diagnostic"
+        D["Use SHAP or PDPs to verify<br/>monotonicity is maintained"]
+    end
+    style W fill:#FFCDD2
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices",
+                        "explanation": "Tips for effectively using monotonic constraints.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Start unconstrained, check relationships"]
+        D2["Add constraints based on domain knowledge"]
+        D3["Verify with partial dependence plots"]
+        D4["Document reasoning for each constraint"]
+    end
+    subgraph "Don't"
+        N1["Don't guess directions"]
+        N2["Don't constrain all features"]
+        N3["Don't ignore large accuracy drops"]
+    end
+    subgraph "Debugging"
+        B["If accuracy drops significantly:<br/>1. Check if constraint is correct<br/>2. Maybe relationship isn't monotonic<br/>3. Try removing that constraint"]
+    end
+    style D2 fill:#4CAF50
+    style N1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_xgboost_parameter_map_visual(self):
+        """Seed XGBoost Parameter Map visual topic."""
+        subject = self.get_or_create_subject("XGBoost", "xgboost", "ML Frameworks")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="parameter-map",
+            defaults={
+                "title": "XGBoost Parameter Map & Quick Reference",
+                "description": "Visual guide to XGBoost's parameters with naming conventions across APIs",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 10,
+                "tags": ["xgboost", "parameters", "reference", "api", "tuning"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Parameter Naming Confusion",
+                        "explanation": "XGBoost has two APIs with **different parameter names** for the same thing. The native API uses one set; the sklearn API uses another. Let's map them!",
+                        "diagram_data": """graph TB
+    subgraph "Native API"
+        N["xgb.train(params, dtrain)<br/>Uses: eta, max_depth, etc."]
+    end
+    subgraph "Sklearn API"
+        S["XGBClassifier(**params)<br/>Uses: learning_rate, max_depth, etc."]
+    end
+    subgraph "Common Confusion"
+        C["eta = learning_rate<br/>Same parameter, different name!"]
+    end
+    N --> C
+    S --> C
+    style C fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Learning Parameters",
+                        "explanation": "Parameters that control the learning process: learning rate, number of rounds, and objective function.",
+                        "diagram_data": """graph TB
+    subgraph "Learning Parameters"
+        T["Native       | sklearn         | Default | Range<br/>-------------|-----------------|---------|-------<br/>eta          | learning_rate   | 0.3     | 0.01-0.3<br/>num_boost_round| n_estimators | 100     | 100-10000<br/>objective    | objective       | varies  | -"]
+    end
+    subgraph "Tips"
+        T1["Lower eta → more rounds needed"]
+        T2["Use early stopping to find optimal rounds"]
+    end
+    subgraph "Common Objectives"
+        O["binary:logistic - Binary classification<br/>multi:softmax - Multiclass<br/>reg:squarederror - Regression"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Tree Structure Parameters",
+                        "explanation": "Parameters controlling tree complexity: depth, leaves, and child weight.",
+                        "diagram_data": """graph TB
+    subgraph "Tree Structure"
+        T["Native         | sklearn          | Default | Range<br/>---------------|------------------|---------|-------<br/>max_depth      | max_depth        | 6       | 3-12<br/>max_leaves     | max_leaves       | 0       | 0-256<br/>min_child_weight| min_child_weight| 1       | 1-10<br/>max_bin        | max_bin          | 256     | 64-512"]
+    end
+    subgraph "Relationships"
+        R["max_leaves=0 means use max_depth<br/>More depth/leaves = more complex<br/>Higher min_child_weight = simpler"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Regularization Parameters",
+                        "explanation": "Parameters for preventing overfitting through regularization penalties.",
+                        "diagram_data": """graph TB
+    subgraph "Regularization"
+        T["Native    | sklearn     | Default | Effect<br/>----------|-------------|---------|----------------<br/>gamma     | gamma       | 0       | Min split gain<br/>lambda    | reg_lambda  | 1       | L2 on weights<br/>alpha     | reg_alpha   | 0       | L1 on weights"]
+    end
+    subgraph "Tuning Priority"
+        P1["1. gamma: prune weak splits"]
+        P2["2. reg_lambda: shrink weights"]
+        P3["3. reg_alpha: sparsity (rarely needed)"]
+    end
+    subgraph "Start Values"
+        S["gamma: 0 → 0.1 → 1 → 5<br/>lambda: 1 → 10 → 100<br/>alpha: usually keep at 0"]
+    end
+    style T fill:#E3F2FD
+    style P1 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Sampling Parameters",
+                        "explanation": "Parameters for subsampling rows and columns to add randomness and prevent overfitting.",
+                        "diagram_data": """graph TB
+    subgraph "Sampling Parameters"
+        T["Native           | sklearn         | Default | Meaning<br/>-----------------|-----------------|---------|------------------<br/>subsample        | subsample       | 1       | Row sample per tree<br/>colsample_bytree | colsample_bytree| 1       | Col sample per tree<br/>colsample_bylevel| colsample_bylevel| 1     | Col sample per depth<br/>colsample_bynode | colsample_bynode| 1      | Col sample per node"]
+    end
+    subgraph "Common Settings"
+        S["subsample: 0.8<br/>colsample_bytree: 0.8<br/>(80% rows, 80% columns per tree)"]
+    end
+    subgraph "Note"
+        N["Values < 1 add randomness<br/>Like Random Forest's bagging"]
+    end
+    style T fill:#E3F2FD
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Speed Parameters",
+                        "explanation": "Parameters affecting training speed and method.",
+                        "diagram_data": """graph TB
+    subgraph "Speed Parameters"
+        T["Native        | sklearn       | Default | Options<br/>--------------|---------------|---------|--------<br/>tree_method   | tree_method   | auto    | exact/approx/hist/gpu_hist<br/>n_jobs        | n_jobs        | 1       | -1 for all cores<br/>predictor     | predictor     | auto    | cpu/gpu"]
+    end
+    subgraph "tree_method Guide"
+        G["auto: Let XGBoost decide<br/>exact: Best for small data<br/>hist: Best for large data (CPU)<br/>gpu_hist: Best for GPU"]
+    end
+    subgraph "GPU Settings"
+        GPU["tree_method='gpu_hist'<br/>predictor='gpu_predictor'<br/>gpu_id=0"]
+    end
+    style G fill:#FFF9C4
+    style GPU fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Early Stopping",
+                        "explanation": "How to set up early stopping in both APIs.",
+                        "diagram_data": """graph TB
+    subgraph "Native API"
+        N["xgb.train(<br/>    params,<br/>    dtrain,<br/>    num_boost_round=10000,<br/>    evals=[(dvalid, 'valid')],<br/>    early_stopping_rounds=50<br/>)"]
+    end
+    subgraph "Sklearn API"
+        S["model.fit(<br/>    X_train, y_train,<br/>    eval_set=[(X_valid, y_valid)],<br/>    early_stopping_rounds=50,<br/>    verbose=100<br/>)"]
+    end
+    subgraph "After Training"
+        A["Native: model.best_iteration<br/>Sklearn: model.best_iteration"]
+    end
+    style N fill:#E3F2FD
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Quick Tuning Recipe",
+                        "explanation": "A practical step-by-step tuning approach.",
+                        "diagram_data": """graph TB
+    subgraph "Step 1: Baseline"
+        S1["learning_rate=0.1<br/>max_depth=6<br/>n_estimators=1000<br/>early_stopping_rounds=50"]
+    end
+    subgraph "Step 2: Tree Structure"
+        S2["Grid search:<br/>max_depth: [4,6,8]<br/>min_child_weight: [1,3,5]"]
+    end
+    subgraph "Step 3: Sampling"
+        S3["subsample: [0.7,0.8,0.9]<br/>colsample_bytree: [0.7,0.8,0.9]"]
+    end
+    subgraph "Step 4: Regularization"
+        S4["gamma: [0,0.1,0.5]<br/>reg_lambda: [1,5,10]"]
+    end
+    subgraph "Step 5: Learning Rate"
+        S5["Lower learning_rate to 0.01<br/>Increase n_estimators<br/>Let early stopping find optimum"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    style S1 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Complete Reference Card",
+                        "explanation": "All-in-one parameter reference.",
+                        "diagram_data": """graph TB
+    subgraph "Most Important Parameters"
+        T["Parameter        | Start  | If Overfitting<br/>-----------------|--------|---------------<br/>learning_rate    | 0.1    | Decrease<br/>max_depth        | 6      | Decrease<br/>n_estimators     | 1000   | Use early stop<br/>min_child_weight | 1      | Increase<br/>subsample        | 1      | Decrease to 0.8<br/>colsample_bytree | 1      | Decrease to 0.8<br/>gamma            | 0      | Increase<br/>reg_lambda       | 1      | Increase"]
+    end
+    subgraph "Remember"
+        R["1. Always use early stopping<br/>2. Lower LR = more trees = better<br/>3. Tune tree params before regularization"]
+    end
+    style T fill:#E3F2FD
+    style R fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ============================================================
+    # MLflow Visualizations
+    # ============================================================
+
+    def seed_mlflow_architecture_overview_visual(self):
+        """Seed MLflow Architecture Overview visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="architecture-overview",
+            defaults={
+                "title": "MLflow Architecture Overview",
+                "description": "Understand MLflow's four core components and how they work together",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 8,
+                "tags": ["mlflow", "architecture", "mlops", "components", "overview"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is MLflow?",
+                        "explanation": "**MLflow** is an open-source platform for managing the end-to-end machine learning lifecycle. It helps you track experiments, package code, deploy models, and manage the model registry.",
+                        "diagram_data": """graph TB
+    subgraph "The ML Lifecycle Problem"
+        P1["Experiment chaos<br/>Which hyperparameters worked?"]
+        P2["Reproducibility<br/>Can't recreate results"]
+        P3["Deployment complexity<br/>How to serve models?"]
+        P4["Model management<br/>Which version is in production?"]
+    end
+    subgraph "MLflow Solution"
+        M["MLflow: One platform<br/>for the entire ML lifecycle"]
+    end
+    P1 --> M
+    P2 --> M
+    P3 --> M
+    P4 --> M
+    style M fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Four Core Components",
+                        "explanation": "MLflow consists of four main components, each addressing a specific part of the ML lifecycle. They can be used independently or together.",
+                        "diagram_data": """graph TB
+    subgraph "MLflow Components"
+        T["MLflow Tracking<br/>Log experiments & results"]
+        P["MLflow Projects<br/>Package ML code"]
+        M["MLflow Models<br/>Deploy to any platform"]
+        R["Model Registry<br/>Centralized model store"]
+    end
+    subgraph "Usage"
+        U["Use one, some, or all<br/>based on your needs"]
+    end
+    T --> U
+    P --> U
+    M --> U
+    R --> U
+    style T fill:#2196F3,color:white
+    style P fill:#FF9800,color:white
+    style M fill:#9C27B0,color:white
+    style R fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "MLflow Tracking",
+                        "explanation": "**MLflow Tracking** records experiments: parameters, metrics, artifacts, and code versions. Query and compare runs via UI or API.",
+                        "diagram_data": """graph TB
+    subgraph "What You Log"
+        L1["Parameters: learning_rate=0.01"]
+        L2["Metrics: accuracy=0.95, loss=0.12"]
+        L3["Artifacts: model.pkl, plots.png"]
+        L4["Source: git commit, code version"]
+    end
+    subgraph "How You Log"
+        C["mlflow.log_param('lr', 0.01)<br/>mlflow.log_metric('acc', 0.95)<br/>mlflow.log_artifact('model.pkl')"]
+    end
+    subgraph "Where It Goes"
+        S["Tracking Server<br/>(local files or remote DB)"]
+        UI["MLflow UI<br/>Compare experiments"]
+    end
+    L1 --> C
+    L2 --> C
+    L3 --> C
+    L4 --> C
+    C --> S --> UI
+    style S fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "MLflow Projects",
+                        "explanation": "**MLflow Projects** package ML code in a reusable, reproducible format. Define dependencies and entry points in a single file.",
+                        "diagram_data": """graph TB
+    subgraph "Project Structure"
+        F1["MLproject file<br/>Defines environment & entry points"]
+        F2["conda.yaml<br/>Dependencies"]
+        F3["train.py<br/>Your ML code"]
+    end
+    subgraph "MLproject File"
+        MP["name: my-project<br/>conda_env: conda.yaml<br/>entry_points:<br/>  main:<br/>    parameters:<br/>      alpha: float<br/>    command: python train.py --alpha {alpha}"]
+    end
+    subgraph "Run Anywhere"
+        R["mlflow run . -P alpha=0.5<br/>mlflow run git://github.com/..."]
+    end
+    F1 --> MP --> R
+    style MP fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "MLflow Models",
+                        "explanation": "**MLflow Models** provides a standard format for packaging models that can be deployed to diverse platforms.",
+                        "diagram_data": """graph TB
+    subgraph "Model Flavors"
+        FL["sklearn, pytorch, tensorflow<br/>keras, xgboost, lightgbm<br/>spark, custom python function"]
+    end
+    subgraph "MLmodel File"
+        MF["Describes model:<br/>- Flavor (sklearn, pytorch)<br/>- Signature (input/output)<br/>- Dependencies"]
+    end
+    subgraph "Deploy To"
+        D1["REST API (mlflow models serve)"]
+        D2["Docker container"]
+        D3["AWS SageMaker"]
+        D4["Azure ML"]
+        D5["Databricks"]
+        D6["Kubernetes"]
+    end
+    FL --> MF
+    MF --> D1
+    MF --> D2
+    MF --> D3
+    MF --> D4
+    MF --> D5
+    MF --> D6
+    style MF fill:#9C27B0,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Model Registry",
+                        "explanation": "**Model Registry** is a centralized hub for managing model versions, stages (Staging, Production), and transitions.",
+                        "diagram_data": """graph TB
+    subgraph "Register Models"
+        R["mlflow.register_model(<br/>    'runs:/abc123/model',<br/>    'MyModel'<br/>)"]
+    end
+    subgraph "Model Stages"
+        S1["None<br/>(just registered)"]
+        S2["Staging<br/>(testing)"]
+        S3["Production<br/>(serving)"]
+        S4["Archived<br/>(retired)"]
+    end
+    subgraph "Version Control"
+        V["Version 1 → Staging<br/>Version 2 → Production<br/>Version 3 → None"]
+    end
+    R --> S1
+    S1 --> S2 --> S3 --> S4
+    style S3 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "How Components Work Together",
+                        "explanation": "A typical workflow uses all components together: track experiments, package code, deploy models, and manage versions.",
+                        "diagram_data": """graph LR
+    subgraph "1. Develop"
+        D["Write code<br/>Track experiments"]
+    end
+    subgraph "2. Package"
+        P["MLflow Project<br/>Reproducible runs"]
+    end
+    subgraph "3. Train"
+        T["Run training<br/>Log to Tracking"]
+    end
+    subgraph "4. Register"
+        R["Best model to<br/>Model Registry"]
+    end
+    subgraph "5. Deploy"
+        DP["MLflow Models<br/>to production"]
+    end
+    D --> P --> T --> R --> DP
+    style D fill:#2196F3,color:white
+    style P fill:#FF9800,color:white
+    style T fill:#2196F3,color:white
+    style R fill:#4CAF50,color:white
+    style DP fill:#9C27B0,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Quick Start Example",
+                        "explanation": "Here's the simplest way to start using MLflow Tracking in your code.",
+                        "diagram_data": """graph TB
+    subgraph "Minimal Example"
+        C["import mlflow<br/><br/>mlflow.set_experiment('my-experiment')<br/><br/>with mlflow.start_run():<br/>    mlflow.log_param('alpha', 0.5)<br/>    # train model...<br/>    mlflow.log_metric('rmse', 0.89)<br/>    mlflow.sklearn.log_model(model, 'model')"]
+    end
+    subgraph "View Results"
+        V["mlflow ui<br/>→ http://localhost:5000"]
+    end
+    subgraph "What You Get"
+        G["Experiment with all runs<br/>Compare metrics<br/>Download artifacts"]
+    end
+    C --> V --> G
+    style C fill:#E3F2FD
+    style G fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mlflow_experiment_tracking_visual(self):
+        """Seed MLflow Experiment Tracking Flow visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="experiment-tracking",
+            defaults={
+                "title": "MLflow Experiment Tracking Flow",
+                "description": "Master the experiment and run hierarchy with logging best practices",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 10,
+                "tags": ["mlflow", "tracking", "experiments", "runs", "logging"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Experiments and Runs",
+                        "explanation": "MLflow organizes tracking data into **Experiments** (containers) and **Runs** (individual training executions). Each run belongs to one experiment.",
+                        "diagram_data": """graph TB
+    subgraph "Hierarchy"
+        E["Experiment<br/>'fraud-detection-model'"]
+        R1["Run 1: lr=0.01"]
+        R2["Run 2: lr=0.001"]
+        R3["Run 3: lr=0.1"]
+    end
+    E --> R1
+    E --> R2
+    E --> R3
+    subgraph "Each Run Contains"
+        C1["Parameters"]
+        C2["Metrics"]
+        C3["Artifacts"]
+        C4["Tags"]
+        C5["Source code info"]
+    end
+    R1 --> C1
+    R1 --> C2
+    R1 --> C3
+    R1 --> C4
+    R1 --> C5
+    style E fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Creating Experiments",
+                        "explanation": "Set or create an experiment before starting runs. If you don't specify one, MLflow uses 'Default'.",
+                        "diagram_data": """graph TB
+    subgraph "Option 1: Set Experiment"
+        S["mlflow.set_experiment('my-exp')<br/><br/># Creates if doesn't exist<br/># All subsequent runs go here"]
+    end
+    subgraph "Option 2: Create Explicitly"
+        C["exp_id = mlflow.create_experiment(<br/>    'my-exp',<br/>    artifact_location='s3://bucket/path',<br/>    tags={'team': 'ml'}<br/>)"]
+    end
+    subgraph "Option 3: Environment Variable"
+        E["export MLFLOW_EXPERIMENT_NAME=my-exp<br/># or<br/>export MLFLOW_EXPERIMENT_ID=123"]
+    end
+    style S fill:#E3F2FD
+    style C fill:#E3F2FD
+    style E fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Starting and Ending Runs",
+                        "explanation": "A **run** captures one execution of your training code. Use context manager or explicit start/end.",
+                        "diagram_data": """graph TB
+    subgraph "Recommended: Context Manager"
+        CM["with mlflow.start_run():<br/>    mlflow.log_param('lr', 0.01)<br/>    # train...<br/>    mlflow.log_metric('acc', 0.95)<br/># Run automatically ends"]
+    end
+    subgraph "Alternative: Manual"
+        M1["run = mlflow.start_run()"]
+        M2["# do stuff..."]
+        M3["mlflow.end_run()  # Don't forget!"]
+    end
+    subgraph "Run Naming"
+        N["with mlflow.start_run(run_name='experiment-v2'):<br/>    # Named runs are easier to find"]
+    end
+    M1 --> M2 --> M3
+    style CM fill:#C8E6C9
+    style M3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Logging Parameters",
+                        "explanation": "**Parameters** are input settings (hyperparameters, data paths, etc.). Log them at the start of your run.",
+                        "diagram_data": """graph TB
+    subgraph "Single Parameter"
+        S["mlflow.log_param('learning_rate', 0.01)<br/>mlflow.log_param('batch_size', 32)<br/>mlflow.log_param('model_type', 'RandomForest')"]
+    end
+    subgraph "Multiple Parameters"
+        M["params = {<br/>    'learning_rate': 0.01,<br/>    'batch_size': 32,<br/>    'epochs': 100<br/>}<br/>mlflow.log_params(params)"]
+    end
+    subgraph "Best Practices"
+        B1["Log ALL hyperparameters"]
+        B2["Include data version/path"]
+        B3["Log random seeds"]
+        B4["Use consistent naming"]
+    end
+    style M fill:#E3F2FD
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Logging Metrics",
+                        "explanation": "**Metrics** are output measurements (accuracy, loss, etc.). Log them during and after training.",
+                        "diagram_data": """graph TB
+    subgraph "Single Metric"
+        S["mlflow.log_metric('accuracy', 0.95)<br/>mlflow.log_metric('f1_score', 0.92)"]
+    end
+    subgraph "Multiple Metrics"
+        M["mlflow.log_metrics({<br/>    'accuracy': 0.95,<br/>    'precision': 0.93,<br/>    'recall': 0.91<br/>})"]
+    end
+    subgraph "Metrics Over Time"
+        T["for epoch in range(100):<br/>    loss = train_epoch()<br/>    mlflow.log_metric('loss', loss, step=epoch)<br/><br/># Creates a time series!"]
+    end
+    subgraph "View in UI"
+        V["MLflow UI shows charts<br/>for step-based metrics"]
+    end
+    T --> V
+    style T fill:#E3F2FD
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Logging Artifacts",
+                        "explanation": "**Artifacts** are output files: models, plots, data files, anything you want to save with the run.",
+                        "diagram_data": """graph TB
+    subgraph "Log Single File"
+        F["mlflow.log_artifact('model.pkl')<br/>mlflow.log_artifact('confusion_matrix.png')"]
+    end
+    subgraph "Log Directory"
+        D["mlflow.log_artifacts('output_dir/')<br/># Logs all files in directory"]
+    end
+    subgraph "Log with Subdirectory"
+        S["mlflow.log_artifact(<br/>    'plot.png',<br/>    artifact_path='figures'<br/>)<br/># Creates figures/plot.png"]
+    end
+    subgraph "Common Artifacts"
+        A1["Trained models"]
+        A2["Plots and visualizations"]
+        A3["Predictions CSV"]
+        A4["Feature importance"]
+        A5["Config files"]
+    end
+    style D fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Using Tags",
+                        "explanation": "**Tags** add searchable metadata to runs. Use them for filtering and organization.",
+                        "diagram_data": """graph TB
+    subgraph "Setting Tags"
+        S["mlflow.set_tag('model_type', 'xgboost')<br/>mlflow.set_tag('dataset', 'v2.1')<br/>mlflow.set_tag('team', 'fraud-detection')"]
+    end
+    subgraph "Multiple Tags"
+        M["mlflow.set_tags({<br/>    'model_type': 'xgboost',<br/>    'feature_set': 'v3',<br/>    'priority': 'high'<br/>})"]
+    end
+    subgraph "Use Cases"
+        U1["Filter runs in UI"]
+        U2["Group by team/project"]
+        U3["Mark experimental vs production"]
+        U4["Track data versions"]
+    end
+    subgraph "Search by Tag"
+        SR["mlflow.search_runs(<br/>    filter_string=\"tags.team='fraud-detection'\"<br/>)"]
+    end
+    style M fill:#E3F2FD
+    style SR fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Complete Tracking Example",
+                        "explanation": "Putting it all together: a complete training script with MLflow tracking.",
+                        "diagram_data": """graph TB
+    subgraph "Full Example"
+        C["import mlflow<br/>from sklearn.ensemble import RandomForestClassifier<br/><br/>mlflow.set_experiment('customer-churn')<br/><br/>with mlflow.start_run(run_name='rf-baseline'):<br/>    # Log parameters<br/>    params = {'n_estimators': 100, 'max_depth': 10}<br/>    mlflow.log_params(params)<br/>    mlflow.set_tag('model_type', 'random_forest')<br/><br/>    # Train<br/>    model = RandomForestClassifier(**params)<br/>    model.fit(X_train, y_train)<br/><br/>    # Log metrics<br/>    acc = model.score(X_test, y_test)<br/>    mlflow.log_metric('accuracy', acc)<br/><br/>    # Log model<br/>    mlflow.sklearn.log_model(model, 'model')"]
+    end
+    subgraph "Result"
+        R["Run with params, metrics, model<br/>all linked and versioned"]
+    end
+    C --> R
+    style C fill:#E3F2FD
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Querying Runs",
+                        "explanation": "Search and compare runs programmatically using the MLflow API.",
+                        "diagram_data": """graph TB
+    subgraph "Search Runs"
+        S["# Get all runs from experiment<br/>runs = mlflow.search_runs(<br/>    experiment_names=['customer-churn']<br/>)<br/><br/># Filter by metric<br/>runs = mlflow.search_runs(<br/>    filter_string='metrics.accuracy > 0.9'<br/>)<br/><br/># Filter by parameter<br/>runs = mlflow.search_runs(<br/>    filter_string=\"params.model_type = 'xgboost'\"<br/>)"]
+    end
+    subgraph "Get Best Run"
+        B["best = mlflow.search_runs(<br/>    order_by=['metrics.accuracy DESC'],<br/>    max_results=1<br/>)"]
+    end
+    subgraph "Load Run Data"
+        L["run = mlflow.get_run(run_id)<br/>params = run.data.params<br/>metrics = run.data.metrics"]
+    end
+    style S fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mlflow_run_lifecycle_visual(self):
+        """Seed MLflow Run Lifecycle visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="run-lifecycle",
+            defaults={
+                "title": "MLflow Run Lifecycle",
+                "description": "Understand run states, nested runs, and parent-child relationships",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["mlflow", "runs", "lifecycle", "nested", "states"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Run States",
+                        "explanation": "An MLflow run goes through different states during its lifecycle. Understanding these helps with debugging and monitoring.",
+                        "diagram_data": """graph LR
+    subgraph "Run States"
+        R["RUNNING<br/>Active execution"]
+        F["FINISHED<br/>Completed successfully"]
+        FL["FAILED<br/>Error occurred"]
+        K["KILLED<br/>Manually terminated"]
+    end
+    R --> |"Success"| F
+    R --> |"Error"| FL
+    R --> |"Terminated"| K
+    style R fill:#2196F3,color:white
+    style F fill:#4CAF50,color:white
+    style FL fill:#F44336,color:white
+    style K fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Run Lifecycle Flow",
+                        "explanation": "A run starts when you call `start_run()` and ends when the context exits or you call `end_run()`.",
+                        "diagram_data": """graph TB
+    subgraph "Lifecycle"
+        S["mlflow.start_run()"]
+        R["RUNNING<br/>- Log params<br/>- Log metrics<br/>- Log artifacts"]
+        E["mlflow.end_run()"]
+        D["FINISHED / FAILED"]
+    end
+    S --> R
+    R --> E
+    E --> D
+    subgraph "With Context Manager"
+        CM["with mlflow.start_run():<br/>    # RUNNING<br/>    do_stuff()<br/># Auto end_run() here"]
+    end
+    subgraph "Without Context Manager"
+        NC["run = mlflow.start_run()<br/># RUNNING<br/>do_stuff()<br/>mlflow.end_run()  # Don't forget!"]
+    end
+    style CM fill:#C8E6C9
+    style NC fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Active Run",
+                        "explanation": "MLflow tracks the **active run** - the run that receives all logging calls. Only one run can be active at a time (per thread).",
+                        "diagram_data": """graph TB
+    subgraph "Active Run Concept"
+        A["mlflow.active_run()<br/>Returns current active run or None"]
+    end
+    subgraph "Example"
+        E["with mlflow.start_run():<br/>    run = mlflow.active_run()<br/>    print(run.info.run_id)  # abc123<br/>    <br/>    mlflow.log_metric('x', 1)  # Goes to abc123<br/><br/>mlflow.active_run()  # None - no active run"]
+    end
+    subgraph "Important"
+        I["All mlflow.log_* calls go to<br/>the currently active run"]
+    end
+    style A fill:#E3F2FD
+    style I fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Nested Runs",
+                        "explanation": "**Nested runs** create parent-child relationships. Great for hyperparameter tuning where each config is a child of the main experiment.",
+                        "diagram_data": """graph TB
+    subgraph "Nested Run Structure"
+        P["Parent Run<br/>'hyperparameter-search'"]
+        C1["Child Run 1<br/>lr=0.01"]
+        C2["Child Run 2<br/>lr=0.001"]
+        C3["Child Run 3<br/>lr=0.1"]
+    end
+    P --> C1
+    P --> C2
+    P --> C3
+    subgraph "Use Cases"
+        U1["Hyperparameter tuning"]
+        U2["Cross-validation folds"]
+        U3["Ensemble model training"]
+        U4["Multi-stage pipelines"]
+    end
+    style P fill:#4CAF50,color:white
+    style C1 fill:#81C784
+    style C2 fill:#81C784
+    style C3 fill:#81C784""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Creating Nested Runs",
+                        "explanation": "Use `nested=True` to create child runs within a parent run context.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        C["with mlflow.start_run(run_name='hp-search') as parent:<br/>    mlflow.log_param('search_space', 'grid')<br/>    <br/>    for lr in [0.01, 0.001, 0.1]:<br/>        with mlflow.start_run(<br/>            run_name=f'lr-{lr}',<br/>            nested=True  # KEY!<br/>        ) as child:<br/>            mlflow.log_param('lr', lr)<br/>            acc = train_model(lr)<br/>            mlflow.log_metric('accuracy', acc)"]
+    end
+    subgraph "Result in UI"
+        R["Parent: hp-search<br/>├── Child: lr-0.01 (acc=0.92)<br/>├── Child: lr-0.001 (acc=0.89)<br/>└── Child: lr-0.1 (acc=0.88)"]
+    end
+    C --> R
+    style C fill:#E3F2FD
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Resuming Runs",
+                        "explanation": "You can resume an existing run by passing its run_id. Useful for long-running experiments or adding data later.",
+                        "diagram_data": """graph TB
+    subgraph "Resume a Run"
+        R["# Get run_id from previous run<br/>run_id = 'abc123def456'<br/><br/># Resume it<br/>with mlflow.start_run(run_id=run_id):<br/>    # Continue logging to same run<br/>    mlflow.log_metric('final_accuracy', 0.97)<br/>    mlflow.log_artifact('final_model.pkl')"]
+    end
+    subgraph "Use Cases"
+        U1["Add final metrics after validation"]
+        U2["Log artifacts computed later"]
+        U3["Fix missing parameters"]
+        U4["Resume interrupted training"]
+    end
+    subgraph "Note"
+        N["Run must be in FINISHED state<br/>to resume (not RUNNING)"]
+    end
+    style R fill:#E3F2FD
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Run Information",
+                        "explanation": "Each run has metadata accessible via `run.info` and data via `run.data`.",
+                        "diagram_data": """graph TB
+    subgraph "run.info"
+        I1["run_id: Unique identifier"]
+        I2["experiment_id: Parent experiment"]
+        I3["status: RUNNING/FINISHED/etc"]
+        I4["start_time: When started"]
+        I5["end_time: When ended"]
+        I6["artifact_uri: Where artifacts stored"]
+    end
+    subgraph "run.data"
+        D1["params: Dict of parameters"]
+        D2["metrics: Dict of latest metrics"]
+        D3["tags: Dict of tags"]
+    end
+    subgraph "Access Example"
+        E["run = mlflow.get_run(run_id)<br/>print(run.info.status)<br/>print(run.data.params['lr'])<br/>print(run.data.metrics['accuracy'])"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Run Context Best Practices",
+                        "explanation": "Guidelines for managing run lifecycle effectively.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Always use context managers"]
+        D2["Name your runs meaningfully"]
+        D3["Use nested runs for HP tuning"]
+        D4["Log early and often"]
+        D5["Set tags for organization"]
+    end
+    subgraph "Don't"
+        N1["Don't forget end_run()"]
+        N2["Don't create runs in loops<br/>without nested=True"]
+        N3["Don't resume RUNNING runs"]
+    end
+    subgraph "Error Handling"
+        E["with mlflow.start_run():<br/>    try:<br/>        train()<br/>    except Exception as e:<br/>        mlflow.set_tag('error', str(e))<br/>        raise  # Run ends as FAILED"]
+    end
+    style D1 fill:#C8E6C9
+    style N1 fill:#FFCDD2
+    style E fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mlflow_artifact_organization_visual(self):
+        """Seed MLflow Artifact Organization visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="artifact-organization",
+            defaults={
+                "title": "MLflow Artifact Organization",
+                "description": "Learn artifact storage patterns, paths, and retrieval strategies",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["mlflow", "artifacts", "storage", "organization", "files"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What are Artifacts?",
+                        "explanation": "**Artifacts** are any files produced by your ML run: trained models, plots, data files, configs, etc. MLflow stores them alongside run metadata.",
+                        "diagram_data": """graph TB
+    subgraph "Common Artifacts"
+        A1["Trained models (.pkl, .h5, .pt)"]
+        A2["Visualizations (.png, .html)"]
+        A3["Data samples (.csv, .parquet)"]
+        A4["Configuration files (.yaml, .json)"]
+        A5["Evaluation reports (.txt, .md)"]
+        A6["Feature importance plots"]
+    end
+    subgraph "Why Use Artifacts?"
+        W1["Version control outputs"]
+        W2["Reproduce results"]
+        W3["Share with team"]
+        W4["Deploy models"]
+    end
+    style A1 fill:#4CAF50
+    style A6 fill:#2196F3""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Artifact Storage Locations",
+                        "explanation": "Artifacts are stored based on your tracking server configuration. Can be local filesystem or cloud storage.",
+                        "diagram_data": """graph TB
+    subgraph "Local Storage"
+        L["./mlruns/<experiment_id>/<run_id>/artifacts/<br/><br/>Default when using local tracking"]
+    end
+    subgraph "Remote Storage"
+        R1["s3://bucket/mlflow/artifacts/..."]
+        R2["gs://bucket/mlflow/artifacts/..."]
+        R3["azure://container/mlflow/..."]
+        R4["dbfs:/databricks/mlflow/..."]
+    end
+    subgraph "Configuration"
+        C["# Set artifact location per experiment<br/>mlflow.create_experiment(<br/>    'my-exp',<br/>    artifact_location='s3://my-bucket/exp1'<br/>)<br/><br/># Or set default for tracking server<br/>mlflow server --default-artifact-root s3://..."]
+    end
+    style L fill:#E3F2FD
+    style C fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Logging Artifacts",
+                        "explanation": "Use `log_artifact()` for single files and `log_artifacts()` for directories.",
+                        "diagram_data": """graph TB
+    subgraph "Single File"
+        S["# Log a file<br/>mlflow.log_artifact('model.pkl')<br/><br/># File goes to: artifacts/model.pkl"]
+    end
+    subgraph "Directory"
+        D["# Log all files in a directory<br/>mlflow.log_artifacts('output/')<br/><br/># Contents go to: artifacts/<br/># (preserves directory structure)"]
+    end
+    subgraph "With Subdirectory"
+        SD["# Organize into subdirectories<br/>mlflow.log_artifact(<br/>    'plot.png',<br/>    artifact_path='figures'<br/>)<br/><br/># Goes to: artifacts/figures/plot.png"]
+    end
+    subgraph "Result"
+        R["artifacts/<br/>├── model.pkl<br/>├── figures/<br/>│   └── plot.png<br/>└── data/<br/>    └── predictions.csv"]
+    end
+    style SD fill:#C8E6C9
+    style R fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Organizing Artifacts by Type",
+                        "explanation": "Use artifact_path to organize artifacts into logical subdirectories.",
+                        "diagram_data": """graph TB
+    subgraph "Recommended Structure"
+        RS["with mlflow.start_run():<br/>    # Models<br/>    mlflow.log_artifact('model.pkl', 'model')<br/>    <br/>    # Figures<br/>    mlflow.log_artifact('confusion.png', 'figures')<br/>    mlflow.log_artifact('roc.png', 'figures')<br/>    <br/>    # Data<br/>    mlflow.log_artifact('predictions.csv', 'data')<br/>    <br/>    # Config<br/>    mlflow.log_artifact('config.yaml', 'config')"]
+    end
+    subgraph "Result"
+        R["artifacts/<br/>├── model/<br/>│   └── model.pkl<br/>├── figures/<br/>│   ├── confusion.png<br/>│   └── roc.png<br/>├── data/<br/>│   └── predictions.csv<br/>└── config/<br/>    └── config.yaml"]
+    end
+    RS --> R
+    style RS fill:#E3F2FD
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Logging Models as Artifacts",
+                        "explanation": "MLflow has special methods for logging models that include metadata and enable easy deployment.",
+                        "diagram_data": """graph TB
+    subgraph "Generic Artifact"
+        G["mlflow.log_artifact('model.pkl')<br/><br/>Just saves the file<br/>No metadata, hard to load"]
+    end
+    subgraph "MLflow Model"
+        M["mlflow.sklearn.log_model(<br/>    model, 'model'<br/>)<br/><br/>Saves: MLmodel, conda.yaml,<br/>model.pkl, requirements.txt"]
+    end
+    subgraph "MLflow Model Contents"
+        C["artifacts/model/<br/>├── MLmodel          # Metadata<br/>├── conda.yaml       # Environment<br/>├── model.pkl        # Actual model<br/>├── python_env.yaml  # Python version<br/>└── requirements.txt # Pip requirements"]
+    end
+    subgraph "Benefit"
+        B["Easy to load and deploy!<br/>mlflow.sklearn.load_model(model_uri)"]
+    end
+    M --> C --> B
+    style G fill:#FFCDD2
+    style M fill:#C8E6C9
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Retrieving Artifacts",
+                        "explanation": "Download artifacts from runs using artifact URIs or the API.",
+                        "diagram_data": """graph TB
+    subgraph "Artifact URI"
+        U["# Format: runs:/<run_id>/artifact_path<br/>uri = 'runs:/abc123/model'<br/>uri = 'runs:/abc123/figures/roc.png'"]
+    end
+    subgraph "Download Artifacts"
+        D["# Download to local path<br/>local_path = mlflow.artifacts.download_artifacts(<br/>    run_id='abc123',<br/>    artifact_path='model'<br/>)<br/># Returns: /tmp/xxx/model/"]
+    end
+    subgraph "Load Model Directly"
+        L["# Load MLflow model<br/>model = mlflow.sklearn.load_model(<br/>    'runs:/abc123/model'<br/>)<br/><br/># Use model immediately<br/>predictions = model.predict(X)"]
+    end
+    subgraph "From UI"
+        UI["MLflow UI → Run → Artifacts tab<br/>→ Click to download any file"]
+    end
+    style L fill:#C8E6C9
+    style U fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Artifact URI Formats",
+                        "explanation": "Understanding different artifact URI formats for various storage backends.",
+                        "diagram_data": """graph TB
+    subgraph "URI Formats"
+        F1["runs:/<run_id>/<path><br/>Most common, relative to run"]
+        F2["mlflow-artifacts:/<exp_id>/<run_id>/<path><br/>Full path with experiment"]
+        F3["s3://bucket/path/...<br/>Direct S3 path"]
+        F4["models:/<model_name>/<version><br/>From Model Registry"]
+    end
+    subgraph "Examples"
+        E1["runs:/abc123/model"]
+        E2["runs:/abc123/figures/plot.png"]
+        E3["models:/FraudDetector/Production"]
+        E4["models:/FraudDetector/1"]
+    end
+    subgraph "Get URI from Run"
+        G["run = mlflow.get_run(run_id)<br/>artifact_uri = run.info.artifact_uri<br/># s3://bucket/exp/run/artifacts"]
+    end
+    style F1 fill:#C8E6C9
+    style F4 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Artifact Best Practices",
+                        "explanation": "Guidelines for effective artifact management.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use artifact_path for organization"]
+        D2["Log models with mlflow.<flavor>.log_model"]
+        D3["Log config files for reproducibility"]
+        D4["Use meaningful file names"]
+        D5["Log sample predictions"]
+    end
+    subgraph "Don't"
+        N1["Don't log huge datasets"]
+        N2["Don't log temporary files"]
+        N3["Don't log sensitive data"]
+        N4["Don't skip model signature"]
+    end
+    subgraph "Storage Tips"
+        T["Large artifacts → Use cloud storage<br/>Frequent access → Cache locally<br/>Models → Always use log_model()"]
+    end
+    style D2 fill:#C8E6C9
+    style N1 fill:#FFCDD2
+    style T fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mlflow_model_registry_visual(self):
+        """Seed MLflow Model Registry Lifecycle visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="model-registry",
+            defaults={
+                "title": "MLflow Model Registry Lifecycle",
+                "description": "Master model versioning, staging, and production transitions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["mlflow", "registry", "versioning", "staging", "production", "deployment"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is the Model Registry?",
+                        "explanation": "The **Model Registry** is a centralized store for managing ML models: versioning, staging, and deployment tracking.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P1["Which model version is in production?"]
+        P2["Who approved this model?"]
+        P3["What's the history of changes?"]
+        P4["Which version should I roll back to?"]
+    end
+    subgraph "Solution: Model Registry"
+        R["Centralized model hub<br/>- Version control<br/>- Stage management<br/>- Transition history<br/>- Annotations"]
+    end
+    P1 --> R
+    P2 --> R
+    P3 --> R
+    P4 --> R
+    style R fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Registry Concepts",
+                        "explanation": "The registry organizes models by **Registered Model** (the name) containing multiple **Versions**, each in a **Stage**.",
+                        "diagram_data": """graph TB
+    subgraph "Hierarchy"
+        RM["Registered Model<br/>'FraudDetector'"]
+        V1["Version 1"]
+        V2["Version 2"]
+        V3["Version 3"]
+    end
+    RM --> V1
+    RM --> V2
+    RM --> V3
+    subgraph "Stages"
+        S1["None - Just registered"]
+        S2["Staging - Testing"]
+        S3["Production - Live"]
+        S4["Archived - Retired"]
+    end
+    V1 --> S4
+    V2 --> S3
+    V3 --> S2
+    style RM fill:#2196F3,color:white
+    style V2 fill:#4CAF50,color:white
+    style V3 fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Registering a Model",
+                        "explanation": "Register models from a run's artifacts or directly during training.",
+                        "diagram_data": """graph TB
+    subgraph "Method 1: During Training"
+        M1["with mlflow.start_run():<br/>    # Train model...<br/>    mlflow.sklearn.log_model(<br/>        model,<br/>        'model',<br/>        registered_model_name='FraudDetector'<br/>    )"]
+    end
+    subgraph "Method 2: After Training"
+        M2["# Register from existing run<br/>result = mlflow.register_model(<br/>    'runs:/abc123/model',<br/>    'FraudDetector'<br/>)<br/><br/>print(result.version)  # 1, 2, 3..."]
+    end
+    subgraph "Result"
+        R["Creates:<br/>- Registered Model (if new name)<br/>- New Version (always)<br/>- Stage: None"]
+    end
+    M1 --> R
+    M2 --> R
+    style M1 fill:#E3F2FD
+    style M2 fill:#E3F2FD
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Model Stages Explained",
+                        "explanation": "Stages indicate where a model version is in the deployment lifecycle.",
+                        "diagram_data": """graph LR
+    subgraph "Stage Progression"
+        N["None<br/>Just registered"]
+        S["Staging<br/>Testing/validation"]
+        P["Production<br/>Serving live traffic"]
+        A["Archived<br/>Retired"]
+    end
+    N --> |"Promote"| S
+    S --> |"Approve"| P
+    P --> |"Replace"| A
+    S --> |"Reject"| A
+    subgraph "Rules"
+        R1["Multiple versions can be in Staging"]
+        R2["Only ONE version in Production"]
+        R3["Archived = soft delete"]
+    end
+    style N fill:#E0E0E0
+    style S fill:#FF9800,color:white
+    style P fill:#4CAF50,color:white
+    style A fill:#9E9E9E,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Transitioning Stages",
+                        "explanation": "Move models between stages using the API or UI.",
+                        "diagram_data": """graph TB
+    subgraph "Python API"
+        C["from mlflow import MlflowClient<br/>client = MlflowClient()<br/><br/># Promote to Staging<br/>client.transition_model_version_stage(<br/>    name='FraudDetector',<br/>    version=3,<br/>    stage='Staging'<br/>)<br/><br/># Promote to Production<br/>client.transition_model_version_stage(<br/>    name='FraudDetector',<br/>    version=3,<br/>    stage='Production'<br/>)"]
+    end
+    subgraph "Archive Old Version"
+        A["# When promoting new version to Production<br/># old Production version auto-archived?<br/># No! You must do it manually<br/>client.transition_model_version_stage(<br/>    name='FraudDetector',<br/>    version=2,<br/>    stage='Archived'<br/>)"]
+    end
+    style C fill:#E3F2FD
+    style A fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Loading Registered Models",
+                        "explanation": "Load models from the registry by name and version or stage.",
+                        "diagram_data": """graph TB
+    subgraph "By Version Number"
+        V["model = mlflow.sklearn.load_model(<br/>    'models:/FraudDetector/3'<br/>)"]
+    end
+    subgraph "By Stage"
+        S["# Load Production model<br/>model = mlflow.sklearn.load_model(<br/>    'models:/FraudDetector/Production'<br/>)<br/><br/># Load Staging model<br/>model = mlflow.sklearn.load_model(<br/>    'models:/FraudDetector/Staging'<br/>)"]
+    end
+    subgraph "Best Practice"
+        B["In production code, use stage name:<br/>'models:/FraudDetector/Production'<br/><br/>Promotes new version → code auto-uses it!"]
+    end
+    style S fill:#C8E6C9
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Model Version Metadata",
+                        "explanation": "Add descriptions and tags to model versions for documentation and searchability.",
+                        "diagram_data": """graph TB
+    subgraph "Add Description"
+        D["client.update_model_version(<br/>    name='FraudDetector',<br/>    version=3,<br/>    description='<br/>        XGBoost model trained on 2024 Q1 data.<br/>        F1 score: 0.92. Approved by ML team.<br/>    '<br/>)"]
+    end
+    subgraph "Add Tags"
+        T["client.set_model_version_tag(<br/>    name='FraudDetector',<br/>    version=3,<br/>    key='approved_by',<br/>    value='alice@company.com'<br/>)<br/><br/>client.set_model_version_tag(<br/>    name='FraudDetector',<br/>    version=3,<br/>    key='training_data',<br/>    value='2024-Q1'<br/>)"]
+    end
+    subgraph "Registered Model Tags"
+        RM["client.set_registered_model_tag(<br/>    name='FraudDetector',<br/>    key='team',<br/>    value='fraud-detection'<br/>)"]
+    end
+    style D fill:#E3F2FD
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Querying the Registry",
+                        "explanation": "Search and list registered models and versions programmatically.",
+                        "diagram_data": """graph TB
+    subgraph "List All Models"
+        L["client = MlflowClient()<br/><br/># List all registered models<br/>for rm in client.search_registered_models():<br/>    print(rm.name)"]
+    end
+    subgraph "Get Model Details"
+        G["# Get specific model<br/>model = client.get_registered_model('FraudDetector')<br/>print(model.latest_versions)<br/><br/># Get specific version<br/>version = client.get_model_version(<br/>    name='FraudDetector',<br/>    version=3<br/>)<br/>print(version.current_stage)"]
+    end
+    subgraph "Search by Tag"
+        S["# Find models by tag<br/>models = client.search_registered_models(<br/>    filter_string=\"tags.team='fraud-detection'\"<br/>)"]
+    end
+    style G fill:#E3F2FD
+    style S fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Complete Registry Workflow",
+                        "explanation": "End-to-end workflow from training to production deployment.",
+                        "diagram_data": """graph TB
+    subgraph "1. Train & Register"
+        T["with mlflow.start_run():<br/>    model = train_model()<br/>    mlflow.sklearn.log_model(<br/>        model, 'model',<br/>        registered_model_name='FraudDetector'<br/>    )"]
+    end
+    subgraph "2. Validate in Staging"
+        V["client.transition_model_version_stage(<br/>    'FraudDetector', version=3, stage='Staging'<br/>)<br/><br/># Run validation tests<br/>model = mlflow.sklearn.load_model(<br/>    'models:/FraudDetector/Staging'<br/>)<br/>validate(model)"]
+    end
+    subgraph "3. Promote to Production"
+        P["# Archive old production<br/>client.transition_model_version_stage(<br/>    'FraudDetector', version=2, stage='Archived'<br/>)<br/><br/># Promote new version<br/>client.transition_model_version_stage(<br/>    'FraudDetector', version=3, stage='Production'<br/>)"]
+    end
+    subgraph "4. Serve"
+        S["# Production code always loads 'Production'<br/>model = mlflow.sklearn.load_model(<br/>    'models:/FraudDetector/Production'<br/>)"]
+    end
+    T --> V --> P --> S
+    style T fill:#2196F3,color:white
+    style V fill:#FF9800,color:white
+    style P fill:#4CAF50,color:white
+    style S fill:#9C27B0,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mlflow_tracking_server_visual(self):
+        """Seed MLflow Tracking Server Architecture visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="tracking-server",
+            defaults={
+                "title": "MLflow Tracking Server Architecture",
+                "description": "Understand backend store, artifact store, and deployment scenarios",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["mlflow", "tracking", "server", "backend", "artifacts", "deployment"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Tracking Server Components",
+                        "explanation": "The MLflow Tracking Server has two storage components: **Backend Store** for metadata and **Artifact Store** for files.",
+                        "diagram_data": """graph TB
+    subgraph "Tracking Server"
+        TS["MLflow Tracking Server"]
+    end
+    subgraph "Backend Store"
+        BS["Stores metadata:<br/>- Experiments<br/>- Runs<br/>- Parameters<br/>- Metrics<br/>- Tags"]
+    end
+    subgraph "Artifact Store"
+        AS["Stores files:<br/>- Models<br/>- Plots<br/>- Data files<br/>- Any artifacts"]
+    end
+    TS --> BS
+    TS --> AS
+    subgraph "Options"
+        O1["Backend: File, SQLite, PostgreSQL, MySQL"]
+        O2["Artifacts: Local, S3, GCS, Azure, DBFS"]
+    end
+    style TS fill:#4CAF50,color:white
+    style BS fill:#2196F3,color:white
+    style AS fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Scenario 1: Local Mode (No Server)",
+                        "explanation": "Simplest setup: no server, everything stored locally. Good for individual experimentation.",
+                        "diagram_data": """graph TB
+    subgraph "Your Code"
+        C["import mlflow<br/>mlflow.log_param('lr', 0.01)<br/>mlflow.log_metric('acc', 0.95)"]
+    end
+    subgraph "Local Storage"
+        L["./mlruns/<br/>├── 0/  (default experiment)<br/>│   └── <run_id>/<br/>│       ├── meta.yaml<br/>│       ├── params/<br/>│       ├── metrics/<br/>│       └── artifacts/"]
+    end
+    subgraph "Local UI"
+        U["mlflow ui<br/>→ Reads from ./mlruns"]
+    end
+    C --> L
+    L --> U
+    subgraph "Pros/Cons"
+        P["✓ No setup required<br/>✓ Good for learning<br/>✗ Not shareable<br/>✗ No central server"]
+    end
+    style L fill:#E3F2FD
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Scenario 2: Tracking Server with SQLite",
+                        "explanation": "Run a tracking server with SQLite backend. Shareable but still single-file database.",
+                        "diagram_data": """graph TB
+    subgraph "Start Server"
+        S["mlflow server \\<br/>    --backend-store-uri sqlite:///mlflow.db \\<br/>    --default-artifact-root ./mlartifacts \\<br/>    --host 0.0.0.0"]
+    end
+    subgraph "Client Code"
+        C["import mlflow<br/>mlflow.set_tracking_uri('http://server:5000')<br/><br/>with mlflow.start_run():<br/>    mlflow.log_metric('acc', 0.95)"]
+    end
+    subgraph "Storage"
+        DB["mlflow.db<br/>(SQLite)"]
+        AR["./mlartifacts/<br/>(local files)"]
+    end
+    C --> S
+    S --> DB
+    S --> AR
+    subgraph "Pros/Cons"
+        P["✓ Shareable via network<br/>✓ UI at server:5000<br/>✗ SQLite doesn't scale<br/>✗ Artifacts still local"]
+    end
+    style S fill:#4CAF50,color:white
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Scenario 3: Production Setup",
+                        "explanation": "Production-grade: PostgreSQL backend + S3 artifacts. Scales for teams.",
+                        "diagram_data": """graph TB
+    subgraph "Start Server"
+        S["mlflow server \\<br/>    --backend-store-uri postgresql://user:pass@host/mlflow \\<br/>    --default-artifact-root s3://my-bucket/mlartifacts \\<br/>    --host 0.0.0.0"]
+    end
+    subgraph "Clients"
+        C1["Data Scientist 1"]
+        C2["Data Scientist 2"]
+        C3["Training Pipeline"]
+    end
+    subgraph "Backend"
+        PG["PostgreSQL<br/>Experiments, runs, metrics"]
+    end
+    subgraph "Artifacts"
+        S3["S3 Bucket<br/>Models, plots, files"]
+    end
+    C1 --> S
+    C2 --> S
+    C3 --> S
+    S --> PG
+    S --> S3
+    subgraph "Pros"
+        P["✓ Scales to large teams<br/>✓ Reliable database<br/>✓ Durable artifact storage<br/>✓ Load balanceable"]
+    end
+    style S fill:#4CAF50,color:white
+    style PG fill:#2196F3,color:white
+    style S3 fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Scenario 4: Proxied Artifact Access",
+                        "explanation": "Server proxies artifact requests. Clients don't need direct cloud access.",
+                        "diagram_data": """graph TB
+    subgraph "Without Proxy"
+        WO["Client needs S3 credentials<br/>Uploads directly to S3<br/>Security concern!"]
+    end
+    subgraph "With Proxy"
+        S["mlflow server \\<br/>    --serve-artifacts \\<br/>    --artifacts-destination s3://bucket"]
+        C["Client"]
+        P["Server proxies<br/>artifact uploads"]
+        S3["S3"]
+    end
+    C --> P
+    P --> S3
+    subgraph "Benefits"
+        B["✓ Clients don't need cloud creds<br/>✓ Centralized access control<br/>✓ Server handles auth"]
+    end
+    style WO fill:#FFCDD2
+    style P fill:#C8E6C9
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Client Configuration",
+                        "explanation": "How clients connect to the tracking server.",
+                        "diagram_data": """graph TB
+    subgraph "Option 1: In Code"
+        C1["import mlflow<br/>mlflow.set_tracking_uri('http://server:5000')"]
+    end
+    subgraph "Option 2: Environment Variable"
+        C2["export MLFLOW_TRACKING_URI=http://server:5000<br/><br/># Code uses it automatically<br/>import mlflow<br/>mlflow.log_metric('acc', 0.95)"]
+    end
+    subgraph "Option 3: Config File"
+        C3["~/.mlflow/config<br/><br/>[mlflow]<br/>tracking_uri = http://server:5000"]
+    end
+    subgraph "Priority"
+        P["1. set_tracking_uri() in code<br/>2. MLFLOW_TRACKING_URI env var<br/>3. Config file"]
+    end
+    style C2 fill:#C8E6C9
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Database Schema",
+                        "explanation": "Key tables in the MLflow backend store database.",
+                        "diagram_data": """graph TB
+    subgraph "Main Tables"
+        E["experiments<br/>- experiment_id<br/>- name<br/>- artifact_location"]
+        R["runs<br/>- run_uuid<br/>- experiment_id<br/>- status<br/>- start_time"]
+        P["params<br/>- run_uuid<br/>- key<br/>- value"]
+        M["metrics<br/>- run_uuid<br/>- key<br/>- value<br/>- step"]
+        T["tags<br/>- run_uuid<br/>- key<br/>- value"]
+    end
+    E --> R
+    R --> P
+    R --> M
+    R --> T
+    subgraph "Registry Tables"
+        RM["registered_models<br/>- name<br/>- description"]
+        MV["model_versions<br/>- name<br/>- version<br/>- current_stage"]
+    end
+    RM --> MV
+    style E fill:#4CAF50,color:white
+    style R fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "High Availability Setup",
+                        "explanation": "Scaling MLflow for enterprise use with load balancing and replication.",
+                        "diagram_data": """graph TB
+    subgraph "Load Balancer"
+        LB["NGINX / ALB"]
+    end
+    subgraph "MLflow Servers"
+        S1["MLflow Server 1"]
+        S2["MLflow Server 2"]
+        S3["MLflow Server 3"]
+    end
+    subgraph "Backend"
+        PG["PostgreSQL<br/>(with replica)"]
+    end
+    subgraph "Artifacts"
+        S3B["S3 / GCS<br/>(durable by default)"]
+    end
+    LB --> S1
+    LB --> S2
+    LB --> S3
+    S1 --> PG
+    S2 --> PG
+    S3 --> PG
+    S1 --> S3B
+    S2 --> S3B
+    S3 --> S3B
+    subgraph "Benefits"
+        B["✓ No single point of failure<br/>✓ Horizontal scaling<br/>✓ Zero-downtime deploys"]
+    end
+    style LB fill:#9C27B0,color:white
+    style PG fill:#2196F3,color:white
+    style S3B fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Deployment Checklist",
+                        "explanation": "Key considerations when deploying MLflow tracking server.",
+                        "diagram_data": """graph TB
+    subgraph "Must Have"
+        M1["PostgreSQL/MySQL (not SQLite)"]
+        M2["Cloud artifact storage (S3/GCS)"]
+        M3["HTTPS for client connections"]
+        M4["Authentication (basic/OAuth)"]
+    end
+    subgraph "Should Have"
+        S1["Load balancer for HA"]
+        S2["Database backups"]
+        S3["Artifact lifecycle policies"]
+        S4["Monitoring & alerts"]
+    end
+    subgraph "Nice to Have"
+        N1["Artifact proxying"]
+        N2["SSO integration"]
+        N3["Custom UI branding"]
+    end
+    style M1 fill:#4CAF50
+    style M4 fill:#4CAF50
+    style S1 fill:#2196F3
+    style N1 fill:#E0E0E0""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mlflow_autologging_visual(self):
+        """Seed MLflow Auto-logging Deep Dive visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="autologging",
+            defaults={
+                "title": "MLflow Auto-logging Deep Dive",
+                "description": "Automatic experiment tracking for popular ML frameworks",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 8,
+                "tags": ["mlflow", "autolog", "tracking", "sklearn", "pytorch", "tensorflow"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Auto-logging?",
+                        "explanation": "**Auto-logging** automatically captures parameters, metrics, and models without explicit log calls. Just enable it and train!",
+                        "diagram_data": """graph TB
+    subgraph "Without Autolog"
+        W["mlflow.log_param('n_estimators', 100)<br/>mlflow.log_param('max_depth', 10)<br/>model.fit(X, y)<br/>mlflow.log_metric('accuracy', acc)<br/>mlflow.sklearn.log_model(model, 'model')<br/><br/>Lots of manual logging!"]
+    end
+    subgraph "With Autolog"
+        A["mlflow.autolog()  # That's it!<br/>model.fit(X, y)<br/><br/>Params, metrics, model logged automatically!"]
+    end
+    W --> |"vs"| A
+    style W fill:#FFCDD2
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Enabling Autolog",
+                        "explanation": "Call `mlflow.autolog()` before training. It auto-detects the framework you're using.",
+                        "diagram_data": """graph TB
+    subgraph "Universal Autolog"
+        U["import mlflow<br/>mlflow.autolog()  # Works for all frameworks<br/><br/># Now train any model<br/>from sklearn.ensemble import RandomForestClassifier<br/>model = RandomForestClassifier()<br/>model.fit(X, y)  # Auto-logged!"]
+    end
+    subgraph "Framework-Specific"
+        F["# More control per framework<br/>mlflow.sklearn.autolog()<br/>mlflow.pytorch.autolog()<br/>mlflow.tensorflow.autolog()<br/>mlflow.xgboost.autolog()<br/>mlflow.lightgbm.autolog()"]
+    end
+    subgraph "When to Use Each"
+        W["Universal: Quick start, multiple frameworks<br/>Specific: Custom settings per framework"]
+    end
+    style U fill:#C8E6C9
+    style F fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "What Gets Logged (sklearn)",
+                        "explanation": "For scikit-learn, autolog captures estimator parameters, training metrics, and the model itself.",
+                        "diagram_data": """graph TB
+    subgraph "Parameters (auto-logged)"
+        P1["n_estimators: 100"]
+        P2["max_depth: 10"]
+        P3["min_samples_split: 2"]
+        P4["All estimator params!"]
+    end
+    subgraph "Metrics (auto-logged)"
+        M1["training_score"]
+        M2["training_accuracy (classification)"]
+        M3["training_f1_score"]
+        M4["training_precision/recall"]
+    end
+    subgraph "Artifacts (auto-logged)"
+        A1["Model (sklearn format)"]
+        A2["Model signature"]
+        A3["requirements.txt"]
+    end
+    subgraph "Tags"
+        T["estimator_name: RandomForestClassifier<br/>estimator_class: sklearn.ensemble..."]
+    end
+    style P4 fill:#E3F2FD
+    style A1 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Autolog Options",
+                        "explanation": "Customize autolog behavior with various options.",
+                        "diagram_data": """graph TB
+    subgraph "Common Options"
+        O["mlflow.autolog(<br/>    log_models=True,       # Log model artifacts<br/>    log_input_examples=True,  # Log sample input<br/>    log_model_signatures=True,  # Log input/output schema<br/>    log_datasets=True,     # Log dataset info<br/>    disable=False,         # Enable/disable<br/>    exclusive=False,       # Only autolog, no manual<br/>    silent=False           # Suppress warnings<br/>)"]
+    end
+    subgraph "Framework-Specific Options"
+        F["mlflow.pytorch.autolog(<br/>    log_every_n_epoch=1,   # Metric frequency<br/>    log_every_n_step=None  # Per-step logging<br/>)"]
+    end
+    subgraph "Disable Temporarily"
+        D["mlflow.autolog(disable=True)<br/># Autolog disabled<br/>mlflow.autolog(disable=False)<br/># Autolog re-enabled"]
+    end
+    style O fill:#E3F2FD
+    style F fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Supported Frameworks",
+                        "explanation": "MLflow autolog supports most popular ML frameworks.",
+                        "diagram_data": """graph TB
+    subgraph "Full Support"
+        F1["sklearn - All estimators"]
+        F2["XGBoost - xgb.train, XGBClassifier"]
+        F3["LightGBM - lgb.train, LGBMClassifier"]
+        F4["PyTorch - via Lightning"]
+        F5["TensorFlow/Keras - model.fit()"]
+        F6["Spark MLlib - Pipelines"]
+    end
+    subgraph "Also Supported"
+        A1["CatBoost"]
+        A2["Fastai"]
+        A3["Gluon"]
+        A4["statsmodels"]
+        A5["Prophet"]
+    end
+    subgraph "Check Support"
+        C["import mlflow<br/>print(mlflow.utils.autologging_utils.AUTOLOGGING_INTEGRATIONS)"]
+    end
+    style F1 fill:#4CAF50
+    style F2 fill:#4CAF50
+    style F5 fill:#4CAF50""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Autolog with Deep Learning",
+                        "explanation": "For PyTorch Lightning and TensorFlow/Keras, autolog captures epoch-level metrics.",
+                        "diagram_data": """graph TB
+    subgraph "PyTorch Lightning"
+        PT["import mlflow<br/>mlflow.pytorch.autolog()<br/><br/>trainer = pl.Trainer(max_epochs=10)<br/>trainer.fit(model, dataloader)<br/><br/>Logged: loss per epoch, model checkpoint"]
+    end
+    subgraph "TensorFlow/Keras"
+        TF["import mlflow<br/>mlflow.tensorflow.autolog()<br/><br/>model.fit(X, y, epochs=10, validation_split=0.2)<br/><br/>Logged: loss, accuracy per epoch,<br/>model in SavedModel format"]
+    end
+    subgraph "What's Logged"
+        W["- Training loss/metrics per epoch<br/>- Validation metrics per epoch<br/>- Model architecture<br/>- Optimizer config<br/>- Best model checkpoint"]
+    end
+    style PT fill:#E3F2FD
+    style TF fill:#E3F2FD
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Combining Autolog with Manual Logging",
+                        "explanation": "Autolog and manual logging work together. Add extra metrics or artifacts as needed.",
+                        "diagram_data": """graph TB
+    subgraph "Combined Approach"
+        C["mlflow.autolog()  # Auto captures params, model<br/><br/>with mlflow.start_run():<br/>    model = RandomForestClassifier(n_estimators=100)<br/>    model.fit(X_train, y_train)<br/>    <br/>    # Add custom metrics<br/>    y_pred = model.predict(X_test)<br/>    mlflow.log_metric('test_accuracy', accuracy(y_test, y_pred))<br/>    mlflow.log_metric('test_f1', f1_score(y_test, y_pred))<br/>    <br/>    # Add custom artifacts<br/>    mlflow.log_artifact('feature_importance.png')"]
+    end
+    subgraph "Result"
+        R["Auto-logged:<br/>- All RF parameters<br/>- Training metrics<br/>- Model artifact<br/><br/>Manually added:<br/>- Test metrics<br/>- Custom plots"]
+    end
+    C --> R
+    style C fill:#E3F2FD
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices",
+                        "explanation": "Tips for effective use of MLflow autologging.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Enable autolog early in script"]
+        D2["Use exclusive=False for flexibility"]
+        D3["Add test metrics manually"]
+        D4["Log input examples for deployment"]
+        D5["Check what's logged in UI"]
+    end
+    subgraph "Don't"
+        N1["Don't rely only on training metrics"]
+        N2["Don't forget to log test/val metrics"]
+        N3["Don't disable model logging<br/>(unless disk is concern)"]
+    end
+    subgraph "Pro Tip"
+        T["# Start of every training script<br/>import mlflow<br/>mlflow.autolog(<br/>    log_input_examples=True,<br/>    log_model_signatures=True<br/>)"]
+    end
+    style D1 fill:#C8E6C9
+    style N1 fill:#FFCDD2
+    style T fill:#4CAF50,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_mlflow_hyperparameter_tuning_visual(self):
+        """Seed MLflow Hyperparameter Tuning Integration visual topic."""
+        subject = self.get_or_create_subject("MLflow", "mlflow", "MLOps")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="hyperparameter-tuning",
+            defaults={
+                "title": "MLflow + Hyperparameter Tuning",
+                "description": "Integrate MLflow with Optuna, Ray Tune, and other HP tuning frameworks",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["mlflow", "hyperparameter", "tuning", "optuna", "ray", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Track HP Tuning?",
+                        "explanation": "Hyperparameter tuning generates many training runs. MLflow helps organize, compare, and select the best configuration.",
+                        "diagram_data": """graph TB
+    subgraph "Without MLflow"
+        P1["100 HP combinations tried"]
+        P2["Which one was best?"]
+        P3["What were its parameters?"]
+        P4["Lost in notebooks..."]
+    end
+    subgraph "With MLflow"
+        M1["100 runs logged"]
+        M2["Sort by metric in UI"]
+        M3["Compare top 5 visually"]
+        M4["Deploy best with one click"]
+    end
+    P1 --> P4
+    M1 --> M2 --> M3 --> M4
+    style P4 fill:#FFCDD2
+    style M4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Pattern: Nested Runs for HP Search",
+                        "explanation": "Use **nested runs** to organize HP tuning: parent run for the search, child runs for each trial.",
+                        "diagram_data": """graph TB
+    subgraph "Structure"
+        P["Parent Run<br/>'grid-search-rf'<br/>search_space, best_params"]
+        C1["Child: lr=0.01, depth=5<br/>accuracy=0.89"]
+        C2["Child: lr=0.01, depth=10<br/>accuracy=0.92"]
+        C3["Child: lr=0.1, depth=5<br/>accuracy=0.87"]
+        C4["Child: lr=0.1, depth=10<br/>accuracy=0.91"]
+    end
+    P --> C1
+    P --> C2
+    P --> C3
+    P --> C4
+    subgraph "Benefits"
+        B["- Grouped in UI<br/>- Compare children easily<br/>- Parent stores summary"]
+    end
+    style P fill:#4CAF50,color:white
+    style C2 fill:#81C784""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Manual HP Tuning with MLflow",
+                        "explanation": "Basic pattern for logging grid/random search manually.",
+                        "diagram_data": """graph TB
+    subgraph "Code Pattern"
+        C["import mlflow<br/>from sklearn.model_selection import ParameterGrid<br/><br/>param_grid = {'n_estimators': [50, 100], 'max_depth': [5, 10]}<br/><br/>with mlflow.start_run(run_name='grid-search') as parent:<br/>    mlflow.log_param('search_type', 'grid')<br/>    best_acc, best_params = 0, None<br/>    <br/>    for params in ParameterGrid(param_grid):<br/>        with mlflow.start_run(nested=True) as child:<br/>            mlflow.log_params(params)<br/>            model = RandomForestClassifier(**params)<br/>            model.fit(X_train, y_train)<br/>            acc = model.score(X_test, y_test)<br/>            mlflow.log_metric('accuracy', acc)<br/>            if acc > best_acc:<br/>                best_acc, best_params = acc, params<br/>    <br/>    mlflow.log_params({f'best_{k}': v for k, v in best_params.items()})<br/>    mlflow.log_metric('best_accuracy', best_acc)"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Integration with Optuna",
+                        "explanation": "Optuna has built-in MLflow integration via `MLflowCallback`.",
+                        "diagram_data": """graph TB
+    subgraph "Optuna + MLflow"
+        C["import mlflow<br/>import optuna<br/>from optuna.integration.mlflow import MLflowCallback<br/><br/>def objective(trial):<br/>    lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)<br/>    depth = trial.suggest_int('max_depth', 3, 10)<br/>    <br/>    model = XGBClassifier(learning_rate=lr, max_depth=depth)<br/>    model.fit(X_train, y_train)<br/>    return model.score(X_test, y_test)<br/><br/>mlflow_callback = MLflowCallback(<br/>    tracking_uri='http://localhost:5000',<br/>    metric_name='accuracy'<br/>)<br/><br/>study = optuna.create_study(direction='maximize')<br/>study.optimize(objective, n_trials=50, callbacks=[mlflow_callback])"]
+    end
+    subgraph "What Gets Logged"
+        W["Each trial becomes a run with:<br/>- All suggested parameters<br/>- Objective value as metric<br/>- Trial number tag"]
+    end
+    style C fill:#E3F2FD
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Integration with Ray Tune",
+                        "explanation": "Ray Tune supports MLflow via `MLflowLoggerCallback`.",
+                        "diagram_data": """graph TB
+    subgraph "Ray Tune + MLflow"
+        C["from ray import tune<br/>from ray.tune.integration.mlflow import MLflowLoggerCallback<br/><br/>def trainable(config):<br/>    model = XGBClassifier(**config)<br/>    model.fit(X_train, y_train)<br/>    acc = model.score(X_test, y_test)<br/>    tune.report(accuracy=acc)<br/><br/>analysis = tune.run(<br/>    trainable,<br/>    config={<br/>        'learning_rate': tune.loguniform(1e-4, 1e-1),<br/>        'max_depth': tune.randint(3, 10)<br/>    },<br/>    num_samples=50,<br/>    callbacks=[MLflowLoggerCallback(<br/>        tracking_uri='http://localhost:5000',<br/>        experiment_name='ray-tune-xgb'<br/>    )]<br/>)"]
+    end
+    subgraph "Features"
+        F["- Each trial = one MLflow run<br/>- Intermediate metrics logged<br/>- Ray trial info as tags"]
+    end
+    style C fill:#E3F2FD
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Selecting Best Model",
+                        "explanation": "After HP tuning, find and register the best model.",
+                        "diagram_data": """graph TB
+    subgraph "Find Best Run"
+        F["import mlflow<br/><br/># Search child runs, sort by metric<br/>runs = mlflow.search_runs(<br/>    filter_string=\"tags.mlflow.parentRunId = 'parent_run_id'\",<br/>    order_by=['metrics.accuracy DESC'],<br/>    max_results=1<br/>)<br/><br/>best_run_id = runs.iloc[0].run_id<br/>best_accuracy = runs.iloc[0]['metrics.accuracy']"]
+    end
+    subgraph "Register Best Model"
+        R["# Register from best run<br/>mlflow.register_model(<br/>    f'runs:/{best_run_id}/model',<br/>    'MyBestModel'<br/>)"]
+    end
+    subgraph "Or Use UI"
+        U["MLflow UI → Parent run → Child runs<br/>→ Sort by accuracy → Register best"]
+    end
+    F --> R
+    style F fill:#E3F2FD
+    style R fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Comparing HP Runs in UI",
+                        "explanation": "MLflow UI features for analyzing HP tuning results.",
+                        "diagram_data": """graph TB
+    subgraph "UI Features"
+        F1["Parallel Coordinates Plot<br/>Visualize param → metric relationships"]
+        F2["Scatter Plot<br/>Any two metrics/params"]
+        F3["Table View<br/>Sort, filter, select columns"]
+        F4["Compare View<br/>Side-by-side run details"]
+    end
+    subgraph "Workflow"
+        W1["1. Filter runs by parent"]
+        W2["2. Add metric columns"]
+        W3["3. Sort by target metric"]
+        W4["4. Compare top N"]
+        W5["5. Register best"]
+    end
+    W1 --> W2 --> W3 --> W4 --> W5
+    style F1 fill:#2196F3,color:white
+    style W5 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices for HP Tuning",
+                        "explanation": "Tips for effective HP tuning with MLflow.",
+                        "diagram_data": """graph TB
+    subgraph "Organization"
+        O1["One experiment per HP search"]
+        O2["Use nested runs (parent + children)"]
+        O3["Name parent with search method"]
+        O4["Tag runs with purpose"]
+    end
+    subgraph "Logging"
+        L1["Log all HP values (not just tuned ones)"]
+        L2["Log search space in parent"]
+        L3["Log both train and val metrics"]
+        L4["Log early stopping epoch"]
+    end
+    subgraph "After Tuning"
+        A1["Log best params to parent"]
+        A2["Register best model immediately"]
+        A3["Document why best was chosen"]
+    end
+    style O2 fill:#C8E6C9
+    style A2 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Complete Example",
+                        "explanation": "End-to-end HP tuning with MLflow tracking.",
+                        "diagram_data": """graph TB
+    subgraph "Full Code"
+        C["import mlflow<br/>import optuna<br/><br/>mlflow.set_experiment('xgb-hp-tuning')<br/><br/>def objective(trial):<br/>    with mlflow.start_run(nested=True):<br/>        params = {<br/>            'learning_rate': trial.suggest_float('lr', 1e-3, 0.3, log=True),<br/>            'max_depth': trial.suggest_int('depth', 3, 10),<br/>            'n_estimators': trial.suggest_int('n_est', 50, 500)<br/>        }<br/>        mlflow.log_params(params)<br/>        <br/>        model = XGBClassifier(**params)<br/>        model.fit(X_train, y_train)<br/>        acc = model.score(X_val, y_val)<br/>        <br/>        mlflow.log_metric('val_accuracy', acc)<br/>        mlflow.xgboost.log_model(model, 'model')<br/>        return acc<br/><br/>with mlflow.start_run(run_name='optuna-search'):<br/>    study = optuna.create_study(direction='maximize')<br/>    study.optimize(objective, n_trials=100)<br/>    <br/>    mlflow.log_params({f'best_{k}': v for k, v in study.best_params.items()})<br/>    mlflow.log_metric('best_val_accuracy', study.best_value)"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ============================================================
+    # Statistics Visualizations
+    # ============================================================
+
+    def seed_statistics_clt_visual(self):
+        """Seed Central Limit Theorem visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="central-limit-theorem",
+            defaults={
+                "title": "Central Limit Theorem",
+                "description": "Why sample means become normal, regardless of population distribution",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["statistics", "clt", "sampling", "normal distribution", "inference"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Magic of the CLT",
+                        "explanation": "The **Central Limit Theorem** states that the distribution of sample means approaches a normal distribution as sample size increases, *regardless* of the population's original distribution.",
+                        "diagram_data": """graph TB
+    subgraph "Population (Any Shape!)"
+        P1["Uniform"]
+        P2["Exponential"]
+        P3["Bimodal"]
+        P4["Skewed"]
+    end
+    subgraph "Take Many Samples"
+        S["Draw samples of size n<br/>Calculate mean of each"]
+    end
+    subgraph "Distribution of Sample Means"
+        N["Always approaches<br/>NORMAL distribution!"]
+    end
+    P1 --> S
+    P2 --> S
+    P3 --> S
+    P4 --> S
+    S --> N
+    style N fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Does This Matter?",
+                        "explanation": "The CLT is the foundation of statistical inference. It allows us to make probabilistic statements about population parameters using sample statistics.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        PR["We want to know population mean μ<br/>But we can only observe samples"]
+    end
+    subgraph "CLT Solution"
+        S1["Sample means are normally distributed"]
+        S2["Centered at true population mean μ"]
+        S3["Standard error = σ/√n"]
+    end
+    subgraph "This Enables"
+        E1["Confidence intervals"]
+        E2["Hypothesis testing"]
+        E3["Statistical inference"]
+    end
+    PR --> S1 --> S2 --> S3
+    S3 --> E1
+    S3 --> E2
+    S3 --> E3
+    style S1 fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The CLT Formula",
+                        "explanation": "As n increases, the sampling distribution of x̄ approaches N(μ, σ²/n).",
+                        "diagram_data": """graph TB
+    subgraph "Population"
+        POP["Mean: μ<br/>Std Dev: σ<br/>Any distribution"]
+    end
+    subgraph "Sampling Distribution of x̄"
+        SD["Mean: μ (same as population)<br/>Std Dev: σ/√n (Standard Error)<br/>Shape: Normal (for large n)"]
+    end
+    subgraph "Key Insight"
+        K["As n increases:<br/>• SE decreases (more precise)<br/>• Shape becomes more normal"]
+    end
+    POP --> SD
+    SD --> K
+    style SD fill:#E3F2FD
+    style K fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "How Large is 'Large Enough'?",
+                        "explanation": "The rule of thumb is n ≥ 30, but it depends on how non-normal the population is.",
+                        "diagram_data": """graph TB
+    subgraph "Sample Size Guidelines"
+        G1["Normal population: n = 1 is enough"]
+        G2["Symmetric population: n ≥ 15"]
+        G3["Moderately skewed: n ≥ 30"]
+        G4["Highly skewed: n ≥ 50+"]
+    end
+    subgraph "Visual"
+        V["n=5:  Still looks like population<br/>n=10: Starting to normalize<br/>n=30: Approximately normal<br/>n=100: Very normal"]
+    end
+    style G3 fill:#4CAF50,color:white
+    style V fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Standard Error Explained",
+                        "explanation": "The **Standard Error (SE)** measures how much sample means vary from the true mean. It decreases with larger samples.",
+                        "diagram_data": """graph TB
+    subgraph "Standard Error Formula"
+        F["SE = σ / √n"]
+    end
+    subgraph "Example: σ = 10"
+        E1["n = 4:   SE = 10/2 = 5"]
+        E2["n = 25:  SE = 10/5 = 2"]
+        E3["n = 100: SE = 10/10 = 1"]
+        E4["n = 400: SE = 10/20 = 0.5"]
+    end
+    subgraph "Diminishing Returns"
+        D["To halve SE, must quadruple n<br/>n: 25 → 100 → 400 → 1600"]
+    end
+    F --> E1
+    E1 --> E2 --> E3 --> E4
+    E4 --> D
+    style F fill:#2196F3,color:white
+    style D fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "CLT in Action: Simulation",
+                        "explanation": "Watch how the distribution of sample means becomes normal as we take more samples.",
+                        "diagram_data": """graph TB
+    subgraph "Step 1: Population"
+        P["Exponential distribution<br/>(highly right-skewed)"]
+    end
+    subgraph "Step 2: Draw Samples"
+        S["Draw 1000 samples<br/>Each of size n=30<br/>Calculate mean of each"]
+    end
+    subgraph "Step 3: Plot Means"
+        M["1000 sample means<br/>Form a histogram"]
+    end
+    subgraph "Result"
+        R["Histogram is bell-shaped!<br/>Centered at population mean<br/>Width = SE = σ/√30"]
+    end
+    P --> S --> M --> R
+    style P fill:#FF9800
+    style R fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Practical Applications",
+                        "explanation": "The CLT enables most of statistical inference in practice.",
+                        "diagram_data": """graph TB
+    subgraph "Confidence Intervals"
+        CI["x̄ ± z*(σ/√n)<br/>Works because x̄ is normal"]
+    end
+    subgraph "Hypothesis Testing"
+        HT["z = (x̄ - μ₀)/(σ/√n)<br/>Compare to normal distribution"]
+    end
+    subgraph "Quality Control"
+        QC["Monitor process means<br/>Control charts assume normality"]
+    end
+    subgraph "Polling"
+        PO["Survey results ± margin of error<br/>Based on CLT"]
+    end
+    style CI fill:#2196F3,color:white
+    style HT fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "CLT Assumptions & Limitations",
+                        "explanation": "The CLT requires certain conditions to hold.",
+                        "diagram_data": """graph TB
+    subgraph "Requirements"
+        R1["Random sampling"]
+        R2["Independent observations"]
+        R3["Finite variance (σ² < ∞)"]
+        R4["Large enough n"]
+    end
+    subgraph "Does NOT Apply When"
+        N1["Heavy-tailed distributions<br/>(infinite variance)"]
+        N2["Dependent observations<br/>(time series)"]
+        N3["Small samples from<br/>highly skewed populations"]
+    end
+    subgraph "Alternatives"
+        A["Bootstrap methods<br/>Non-parametric tests"]
+    end
+    style R1 fill:#C8E6C9
+    style N1 fill:#FFCDD2
+    style A fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_distributions_visual(self):
+        """Seed Probability Distributions Overview visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="probability-distributions",
+            defaults={
+                "title": "Probability Distributions Overview",
+                "description": "Normal, binomial, Poisson, exponential - when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 12,
+                "tags": ["statistics", "distributions", "probability", "normal", "binomial"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Types of Distributions",
+                        "explanation": "Probability distributions describe how likely different outcomes are. They come in two main types based on the variable type.",
+                        "diagram_data": """graph TB
+    subgraph "Discrete"
+        D["Countable outcomes<br/>0, 1, 2, 3, ..."]
+        D1["Binomial"]
+        D2["Poisson"]
+        D3["Geometric"]
+    end
+    subgraph "Continuous"
+        C["Any value in range<br/>1.5, 2.718, π, ..."]
+        C1["Normal"]
+        C2["Exponential"]
+        C3["Uniform"]
+    end
+    D --> D1
+    D --> D2
+    D --> D3
+    C --> C1
+    C --> C2
+    C --> C3
+    style D fill:#2196F3,color:white
+    style C fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Normal (Gaussian) Distribution",
+                        "explanation": "The bell curve. Most common in nature due to CLT. Defined by mean (μ) and standard deviation (σ).",
+                        "diagram_data": """graph TB
+    subgraph "Normal Distribution"
+        N["N(μ, σ²)<br/>Symmetric bell curve<br/>68-95-99.7 rule"]
+    end
+    subgraph "When to Use"
+        W1["Heights, weights, IQ scores"]
+        W2["Measurement errors"]
+        W3["Sum of many small effects"]
+        W4["Sample means (via CLT)"]
+    end
+    subgraph "Key Properties"
+        K1["Mean = Median = Mode"]
+        K2["Tails extend to ±∞"]
+        K3["~68% within 1σ of mean"]
+        K4["~95% within 2σ of mean"]
+    end
+    N --> W1
+    N --> W2
+    N --> W3
+    N --> W4
+    style N fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Binomial Distribution",
+                        "explanation": "Count of successes in n independent yes/no trials, each with probability p.",
+                        "diagram_data": """graph TB
+    subgraph "Binomial Distribution"
+        B["B(n, p)<br/>n trials, p = P(success)"]
+    end
+    subgraph "Requirements"
+        R1["Fixed number of trials (n)"]
+        R2["Each trial: success or failure"]
+        R3["Constant probability (p)"]
+        R4["Independent trials"]
+    end
+    subgraph "Examples"
+        E1["Coin flips: heads in 10 flips"]
+        E2["Defects: faulty items in batch of 100"]
+        E3["Clicks: conversions from 1000 views"]
+    end
+    subgraph "Parameters"
+        P["Mean = np<br/>Variance = np(1-p)"]
+    end
+    B --> R1
+    R4 --> E1
+    style B fill:#2196F3,color:white
+    style P fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Poisson Distribution",
+                        "explanation": "Count of events in a fixed interval when events occur at a constant average rate.",
+                        "diagram_data": """graph TB
+    subgraph "Poisson Distribution"
+        P["Pois(λ)<br/>λ = average rate"]
+    end
+    subgraph "Requirements"
+        R1["Events occur independently"]
+        R2["Average rate is constant"]
+        R3["Two events can't happen<br/>at exact same instant"]
+    end
+    subgraph "Examples"
+        E1["Calls to call center per hour"]
+        E2["Typos per page"]
+        E3["Customers arriving per minute"]
+        E4["Accidents per month"]
+    end
+    subgraph "Properties"
+        PR["Mean = λ<br/>Variance = λ<br/>(Mean equals Variance!)"]
+    end
+    P --> R1
+    R3 --> E1
+    style P fill:#FF9800,color:white
+    style PR fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Exponential Distribution",
+                        "explanation": "Time between events in a Poisson process. The continuous counterpart to Poisson.",
+                        "diagram_data": """graph TB
+    subgraph "Exponential Distribution"
+        E["Exp(λ)<br/>λ = rate parameter"]
+    end
+    subgraph "What It Models"
+        W1["Time until next event"]
+        W2["Lifetime of components"]
+        W3["Wait time in queue"]
+    end
+    subgraph "Key Property: Memoryless"
+        M["P(X > s+t | X > s) = P(X > t)<br/><br/>'Past doesn't affect future'<br/>If you've waited 5 min, expected<br/>additional wait is still the same"]
+    end
+    subgraph "Parameters"
+        P["Mean = 1/λ<br/>Variance = 1/λ²"]
+    end
+    E --> W1
+    E --> W2
+    E --> W3
+    style E fill:#9C27B0,color:white
+    style M fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Choosing the Right Distribution",
+                        "explanation": "A decision tree for selecting the appropriate distribution.",
+                        "diagram_data": """graph TB
+    Q1["What type of variable?"]
+    Q1 --> |"Discrete"| Q2["Counting what?"]
+    Q1 --> |"Continuous"| Q3["What phenomenon?"]
+
+    Q2 --> |"Successes in n trials"| B["Binomial"]
+    Q2 --> |"Events in interval"| P["Poisson"]
+    Q2 --> |"Trials until success"| G["Geometric"]
+
+    Q3 --> |"Natural measurements"| N["Normal"]
+    Q3 --> |"Time between events"| E["Exponential"]
+    Q3 --> |"Equal likelihood"| U["Uniform"]
+
+    style B fill:#2196F3,color:white
+    style P fill:#FF9800,color:white
+    style N fill:#4CAF50,color:white
+    style E fill:#9C27B0,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Relationships Between Distributions",
+                        "explanation": "Many distributions are related through limits and special cases.",
+                        "diagram_data": """graph TB
+    subgraph "Approximations"
+        A1["Binomial → Normal<br/>when n large, p not extreme"]
+        A2["Binomial → Poisson<br/>when n large, p small, np moderate"]
+        A3["Poisson → Normal<br/>when λ large"]
+    end
+    subgraph "Connections"
+        C1["Exponential: time between Poisson events"]
+        C2["Gamma: sum of Exponentials"]
+        C3["Chi-square: sum of squared Normals"]
+    end
+    subgraph "Rule of Thumb"
+        R["Binomial ≈ Normal if np ≥ 10 and n(1-p) ≥ 10<br/>Binomial ≈ Poisson if n ≥ 20 and p ≤ 0.05<br/>Poisson ≈ Normal if λ ≥ 10"]
+    end
+    style A1 fill:#E3F2FD
+    style R fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Quick Reference Card",
+                        "explanation": "Summary of key distributions and their use cases.",
+                        "diagram_data": """graph TB
+    subgraph "Distribution | Use When | Parameters"
+        T["Normal    | Continuous, symmetric data        | μ, σ<br/>Binomial  | Count successes in n trials      | n, p<br/>Poisson   | Count events in fixed interval   | λ<br/>Exponential| Time until next event            | λ<br/>Uniform   | All outcomes equally likely      | a, b<br/>Geometric | Trials until first success       | p"]
+    end
+    subgraph "ML Applications"
+        M1["Normal: Linear regression errors"]
+        M2["Binomial: Classification outcomes"]
+        M3["Poisson: Count predictions"]
+        M4["Exponential: Survival analysis"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_hypothesis_testing_visual(self):
+        """Seed Hypothesis Testing Framework visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="hypothesis-testing",
+            defaults={
+                "title": "Hypothesis Testing Framework",
+                "description": "Null/alternative hypotheses, p-values, Type I/II errors",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["statistics", "hypothesis testing", "p-value", "significance", "errors"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Hypothesis Testing Question",
+                        "explanation": "Hypothesis testing answers: 'Is this observed effect real, or could it be due to random chance?'",
+                        "diagram_data": """graph TB
+    subgraph "The Scenario"
+        S["You observe something in your data<br/>e.g., Treatment group improved by 5%"]
+    end
+    subgraph "The Question"
+        Q["Is this real improvement?<br/>Or just random variation?"]
+    end
+    subgraph "Hypothesis Testing"
+        H["A formal framework to decide<br/>using probability theory"]
+    end
+    S --> Q --> H
+    style Q fill:#FFF9C4
+    style H fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Two Hypotheses",
+                        "explanation": "We always test two competing claims: the null hypothesis (H₀) and alternative hypothesis (H₁ or Hₐ).",
+                        "diagram_data": """graph TB
+    subgraph "Null Hypothesis H₀"
+        N["The 'nothing special' hypothesis<br/>No effect, no difference<br/>Status quo is true"]
+    end
+    subgraph "Alternative Hypothesis H₁"
+        A["What you want to prove<br/>There IS an effect<br/>Something interesting happened"]
+    end
+    subgraph "Examples"
+        E1["H₀: Drug has no effect (μ = 0)"]
+        E2["H₁: Drug has an effect (μ ≠ 0)"]
+    end
+    subgraph "Key Insight"
+        K["We assume H₀ is true<br/>Then ask: How likely is our data?"]
+    end
+    style N fill:#E0E0E0
+    style A fill:#4CAF50,color:white
+    style K fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The P-Value Explained",
+                        "explanation": "The **p-value** is the probability of observing data as extreme as ours, *assuming H₀ is true*.",
+                        "diagram_data": """graph TB
+    subgraph "P-Value Definition"
+        D["P(observing this data | H₀ is true)"]
+    end
+    subgraph "Interpretation"
+        I1["Small p-value (e.g., 0.01)"]
+        I2["Data is unlikely under H₀"]
+        I3["Evidence against H₀"]
+    end
+    subgraph "NOT What P-Value Means"
+        N1["NOT: P(H₀ is true)"]
+        N2["NOT: P(results are due to chance)"]
+        N3["NOT: Effect size or importance"]
+    end
+    D --> I1 --> I2 --> I3
+    style D fill:#2196F3,color:white
+    style N1 fill:#FFCDD2
+    style N2 fill:#FFCDD2
+    style N3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Significance Level (α)",
+                        "explanation": "We set a threshold α (commonly 0.05) before the test. If p < α, we reject H₀.",
+                        "diagram_data": """graph TB
+    subgraph "Decision Rule"
+        R["If p-value < α: Reject H₀<br/>If p-value ≥ α: Fail to reject H₀"]
+    end
+    subgraph "Common α Values"
+        A1["α = 0.05 (5%) - Standard"]
+        A2["α = 0.01 (1%) - Stringent"]
+        A3["α = 0.10 (10%) - Lenient"]
+    end
+    subgraph "Example"
+        E["α = 0.05, p-value = 0.03<br/>0.03 < 0.05 → Reject H₀<br/>'Statistically significant'"]
+    end
+    subgraph "Warning"
+        W["α must be set BEFORE<br/>looking at the data!"]
+    end
+    style A1 fill:#4CAF50,color:white
+    style E fill:#C8E6C9
+    style W fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Type I and Type II Errors",
+                        "explanation": "Two types of mistakes we can make in hypothesis testing.",
+                        "diagram_data": """graph TB
+    subgraph "Reality vs Decision"
+        T["                | H₀ True    | H₀ False<br/>----------------|------------|------------<br/>Reject H₀       | Type I (α) | Correct ✓<br/>Fail to Reject  | Correct ✓  | Type II (β)"]
+    end
+    subgraph "Type I Error (α)"
+        T1["False Positive<br/>Reject H₀ when it's true<br/>See effect that doesn't exist"]
+    end
+    subgraph "Type II Error (β)"
+        T2["False Negative<br/>Fail to reject H₀ when it's false<br/>Miss real effect"]
+    end
+    subgraph "Power = 1 - β"
+        P["Probability of correctly<br/>detecting a real effect"]
+    end
+    style T1 fill:#FFCDD2
+    style T2 fill:#FFE0B2
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "The Testing Procedure",
+                        "explanation": "Step-by-step process for conducting a hypothesis test.",
+                        "diagram_data": """graph TB
+    S1["1. State hypotheses<br/>H₀ and H₁"]
+    S2["2. Choose α<br/>(usually 0.05)"]
+    S3["3. Collect data<br/>Calculate test statistic"]
+    S4["4. Find p-value<br/>From test statistic"]
+    S5["5. Make decision<br/>Compare p to α"]
+    S6["6. State conclusion<br/>In context"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    style S1 fill:#E3F2FD
+    style S5 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "One-Tailed vs Two-Tailed Tests",
+                        "explanation": "The direction of your alternative hypothesis determines the type of test.",
+                        "diagram_data": """graph TB
+    subgraph "Two-Tailed"
+        TT["H₁: μ ≠ μ₀<br/>Effect could be + or -<br/>Reject if too high OR too low"]
+    end
+    subgraph "One-Tailed (Right)"
+        RT["H₁: μ > μ₀<br/>Only interested in increase<br/>Reject if too high"]
+    end
+    subgraph "One-Tailed (Left)"
+        LT["H₁: μ < μ₀<br/>Only interested in decrease<br/>Reject if too low"]
+    end
+    subgraph "When to Use"
+        W["Two-tailed: Default choice<br/>One-tailed: Only if direction<br/>specified BEFORE seeing data"]
+    end
+    style TT fill:#4CAF50,color:white
+    style W fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Common Misconceptions",
+                        "explanation": "Avoiding the most frequent misunderstandings about hypothesis testing.",
+                        "diagram_data": """graph TB
+    subgraph "Wrong"
+        W1["p = 0.03 means 3% chance H₀ is true"]
+        W2["Not significant = H₀ is true"]
+        W3["Significant = Important effect"]
+        W4["p = 0.049 vs p = 0.051 are very different"]
+    end
+    subgraph "Right"
+        R1["p = 0.03 means 3% chance of this data if H₀ true"]
+        R2["Not significant = Insufficient evidence against H₀"]
+        R3["Significance ≠ practical importance"]
+        R4["p-values near α are borderline; report actual values"]
+    end
+    W1 --> R1
+    W2 --> R2
+    W3 --> R3
+    W4 --> R4
+    style W1 fill:#FFCDD2
+    style R1 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_confidence_intervals_visual(self):
+        """Seed Confidence Intervals visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="confidence-intervals",
+            defaults={
+                "title": "Confidence Intervals",
+                "description": "What they actually mean, how width relates to sample size",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["statistics", "confidence intervals", "estimation", "inference"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Point vs Interval Estimates",
+                        "explanation": "A **confidence interval** gives a range of plausible values for a parameter, not just a single point estimate.",
+                        "diagram_data": """graph TB
+    subgraph "Point Estimate"
+        P["Sample mean x̄ = 52.3<br/>Single best guess<br/>But how precise?"]
+    end
+    subgraph "Interval Estimate"
+        I["95% CI: [48.1, 56.5]<br/>Range of plausible values<br/>Quantifies uncertainty"]
+    end
+    subgraph "Why Intervals?"
+        W["Point estimates are never exactly right<br/>Intervals show the uncertainty"]
+    end
+    P --> I
+    style P fill:#FFF9C4
+    style I fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "What 95% Confidence Means",
+                        "explanation": "The confidence level describes the procedure, not any single interval.",
+                        "diagram_data": """graph TB
+    subgraph "The Procedure"
+        P["If we repeated sampling many times<br/>And computed a 95% CI each time<br/>95% of those CIs would contain μ"]
+    end
+    subgraph "NOT What It Means"
+        N["95% probability μ is in THIS interval<br/>(μ is fixed, it's either in or not)"]
+    end
+    subgraph "Analogy"
+        A["Like a net that catches fish 95% of the time<br/>Once you cast it, the fish is either caught or not<br/>But the net is reliable 95% of the time"]
+    end
+    style P fill:#C8E6C9
+    style N fill:#FFCDD2
+    style A fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "CI Formula for Means",
+                        "explanation": "The confidence interval for a population mean combines the sample mean, margin of error, and critical value.",
+                        "diagram_data": """graph TB
+    subgraph "Formula"
+        F["CI = x̄ ± (critical value) × (standard error)<br/>CI = x̄ ± z* × (σ/√n)"]
+    end
+    subgraph "Components"
+        C1["x̄ = sample mean (center)"]
+        C2["z* = critical value (1.96 for 95%)"]
+        C3["σ/√n = standard error"]
+        C4["z* × σ/√n = margin of error"]
+    end
+    subgraph "Common Critical Values"
+        CV["90% CI: z* = 1.645<br/>95% CI: z* = 1.960<br/>99% CI: z* = 2.576"]
+    end
+    F --> C1
+    F --> C2
+    F --> C3
+    style F fill:#2196F3,color:white
+    style CV fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "What Affects CI Width?",
+                        "explanation": "Three factors determine how wide your confidence interval will be.",
+                        "diagram_data": """graph TB
+    subgraph "Wider CI"
+        W1["Higher confidence level (99% > 95%)"]
+        W2["Larger standard deviation (σ)"]
+        W3["Smaller sample size (n)"]
+    end
+    subgraph "Narrower CI"
+        N1["Lower confidence level (90% < 95%)"]
+        N2["Smaller standard deviation (σ)"]
+        N3["Larger sample size (n)"]
+    end
+    subgraph "Key Trade-off"
+        T["Higher confidence → Wider interval<br/>More certain but less precise"]
+    end
+    style W1 fill:#FFE0B2
+    style N3 fill:#C8E6C9
+    style T fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Sample Size Effect",
+                        "explanation": "Larger samples give narrower (more precise) confidence intervals.",
+                        "diagram_data": """graph TB
+    subgraph "Example: σ = 10, x̄ = 50, 95% CI"
+        E1["n = 25:  50 ± 1.96×(10/5) = [46.1, 53.9]"]
+        E2["n = 100: 50 ± 1.96×(10/10) = [48.0, 52.0]"]
+        E3["n = 400: 50 ± 1.96×(10/20) = [49.0, 51.0]"]
+    end
+    subgraph "The Pattern"
+        P["Width ∝ 1/√n<br/>To halve the width:<br/>Quadruple the sample size"]
+    end
+    subgraph "Diminishing Returns"
+        D["n: 25 → 100 → 400 → 1600<br/>Width: 7.8 → 3.9 → 2.0 → 1.0"]
+    end
+    style E3 fill:#C8E6C9
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "CI vs Hypothesis Testing",
+                        "explanation": "Confidence intervals and hypothesis tests are two sides of the same coin.",
+                        "diagram_data": """graph TB
+    subgraph "Connection"
+        C["95% CI excludes μ₀ ↔ p < 0.05 for H₀: μ = μ₀"]
+    end
+    subgraph "Example"
+        E["H₀: μ = 100<br/>95% CI: [102, 108]<br/>100 not in CI → Reject H₀ at α = 0.05"]
+    end
+    subgraph "CI Advantages"
+        A1["Shows effect SIZE, not just significance"]
+        A2["Shows direction of effect"]
+        A3["Shows precision of estimate"]
+        A4["More informative than p-value alone"]
+    end
+    C --> E
+    style C fill:#2196F3,color:white
+    style A1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Interpreting CIs Correctly",
+                        "explanation": "Best practices for reporting and understanding confidence intervals.",
+                        "diagram_data": """graph TB
+    subgraph "Good Interpretation"
+        G1["We are 95% confident that the<br/>true mean is between 48.1 and 56.5"]
+        G2["The procedure generates intervals<br/>that capture μ 95% of the time"]
+    end
+    subgraph "Bad Interpretation"
+        B1["There's 95% probability μ<br/>is in this specific interval"]
+        B2["95% of the data falls<br/>in this interval"]
+    end
+    subgraph "Reporting"
+        R["Mean = 52.3, 95% CI [48.1, 56.5]<br/>or: 52.3 (95% CI: 48.1-56.5)"]
+    end
+    style G1 fill:#C8E6C9
+    style B1 fill:#FFCDD2
+    style R fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "CIs for Different Parameters",
+                        "explanation": "Confidence intervals exist for many different statistics.",
+                        "diagram_data": """graph TB
+    subgraph "Common CIs"
+        C1["Mean: x̄ ± t × (s/√n)"]
+        C2["Proportion: p̂ ± z × √(p̂(1-p̂)/n)"]
+        C3["Difference in means: (x̄₁-x̄₂) ± t × SE"]
+        C4["Regression coefficients: β̂ ± t × SE(β̂)"]
+    end
+    subgraph "Note"
+        N["Use t-distribution when σ unknown<br/>(almost always in practice)"]
+    end
+    subgraph "For Proportions"
+        P["Rule of thumb: Need np ≥ 10<br/>and n(1-p) ≥ 10"]
+    end
+    style C1 fill:#E3F2FD
+    style N fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_ttest_visual(self):
+        """Seed t-Test Family visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="t-test-family",
+            defaults={
+                "title": "t-Test Family",
+                "description": "One-sample, two-sample, paired - when to use which",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["statistics", "t-test", "hypothesis testing", "means"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is a t-Test?",
+                        "explanation": "The **t-test** compares means when the population standard deviation is unknown (almost always). It uses the t-distribution instead of the normal distribution.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use t-Test"
+        W1["Comparing means"]
+        W2["σ (population SD) unknown"]
+        W3["Sample size not huge"]
+    end
+    subgraph "Why t, not z?"
+        T["t-distribution accounts for<br/>extra uncertainty from<br/>estimating σ with s"]
+    end
+    subgraph "t vs Normal"
+        N["t: heavier tails, wider<br/>As n→∞, t→Normal"]
+    end
+    W1 --> T
+    W2 --> T
+    T --> N
+    style T fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Three Types of t-Tests",
+                        "explanation": "Choose based on your research question and data structure.",
+                        "diagram_data": """graph TB
+    subgraph "One-Sample t-Test"
+        O["Compare sample mean to<br/>a known/hypothesized value<br/>H₀: μ = μ₀"]
+    end
+    subgraph "Two-Sample t-Test"
+        T["Compare means of two<br/>independent groups<br/>H₀: μ₁ = μ₂"]
+    end
+    subgraph "Paired t-Test"
+        P["Compare means of two<br/>related measurements<br/>H₀: μ_diff = 0"]
+    end
+    subgraph "Decision"
+        D["How many groups?<br/>Are observations paired?"]
+    end
+    D --> O
+    D --> T
+    D --> P
+    style O fill:#4CAF50,color:white
+    style T fill:#2196F3,color:white
+    style P fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "One-Sample t-Test",
+                        "explanation": "Test whether a sample mean differs from a known or hypothesized value.",
+                        "diagram_data": """graph TB
+    subgraph "Use When"
+        U["One group of measurements<br/>Testing against known standard"]
+    end
+    subgraph "Examples"
+        E1["Is average IQ of students ≠ 100?"]
+        E2["Does machine produce 500g on average?"]
+        E3["Is mean response time < 2 seconds?"]
+    end
+    subgraph "Formula"
+        F["t = (x̄ - μ₀) / (s/√n)<br/>df = n - 1"]
+    end
+    subgraph "Python"
+        P["from scipy import stats<br/>stats.ttest_1samp(data, popmean=100)"]
+    end
+    U --> E1
+    style F fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Two-Sample (Independent) t-Test",
+                        "explanation": "Compare means of two separate, unrelated groups.",
+                        "diagram_data": """graph TB
+    subgraph "Use When"
+        U["Two independent groups<br/>Different subjects in each"]
+    end
+    subgraph "Examples"
+        E1["Treatment vs Control group"]
+        E2["Male vs Female scores"]
+        E3["Method A vs Method B"]
+    end
+    subgraph "Assumptions"
+        A1["Independent samples"]
+        A2["Normal distribution (or large n)"]
+        A3["Equal variances? (see Welch's)"]
+    end
+    subgraph "Python"
+        P["# Equal variances<br/>stats.ttest_ind(group1, group2)<br/><br/># Unequal variances (Welch's)<br/>stats.ttest_ind(group1, group2, equal_var=False)"]
+    end
+    style A3 fill:#FFF9C4
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Paired t-Test",
+                        "explanation": "Compare two related measurements on the same subjects.",
+                        "diagram_data": """graph TB
+    subgraph "Use When"
+        U["Same subjects measured twice<br/>Natural pairing exists"]
+    end
+    subgraph "Examples"
+        E1["Before vs After treatment"]
+        E2["Left eye vs Right eye"]
+        E3["Monday vs Friday performance"]
+    end
+    subgraph "Key Insight"
+        K["Actually a one-sample t-test<br/>on the DIFFERENCES<br/>H₀: μ_diff = 0"]
+    end
+    subgraph "Python"
+        P["stats.ttest_rel(before, after)<br/><br/># Or equivalently:<br/>diffs = after - before<br/>stats.ttest_1samp(diffs, 0)"]
+    end
+    style K fill:#FFF9C4
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Choosing the Right t-Test",
+                        "explanation": "Decision tree for selecting your t-test.",
+                        "diagram_data": """graph TB
+    Q1["How many groups?"]
+    Q1 --> |"One"| ONE["One-Sample t-Test<br/>Compare to known value"]
+    Q1 --> |"Two"| Q2["Are measurements paired?"]
+    Q2 --> |"Yes"| PAIR["Paired t-Test<br/>Same subjects, two times"]
+    Q2 --> |"No"| Q3["Equal variances?"]
+    Q3 --> |"Yes"| IND["Student's t-Test<br/>Two independent groups"]
+    Q3 --> |"No/Unsure"| WELCH["Welch's t-Test<br/>Safer choice"]
+    style ONE fill:#4CAF50,color:white
+    style PAIR fill:#FF9800,color:white
+    style IND fill:#2196F3,color:white
+    style WELCH fill:#9C27B0,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Assumptions & Violations",
+                        "explanation": "What can go wrong and how to handle it.",
+                        "diagram_data": """graph TB
+    subgraph "Assumptions"
+        A1["1. Independence"]
+        A2["2. Normality (or large n)"]
+        A3["3. Equal variances (two-sample)"]
+    end
+    subgraph "If Violated"
+        V1["Non-independence: Need different test"]
+        V2["Non-normal: Use Mann-Whitney or larger n"]
+        V3["Unequal variances: Use Welch's t-test"]
+    end
+    subgraph "Robustness"
+        R["t-test is robust to mild<br/>normality violations<br/>especially with n > 30"]
+    end
+    A1 --> V1
+    A2 --> V2
+    A3 --> V3
+    style V3 fill:#C8E6C9
+    style R fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Effect Size: Cohen's d",
+                        "explanation": "Statistical significance doesn't tell you the practical importance. Effect size does.",
+                        "diagram_data": """graph TB
+    subgraph "Cohen's d"
+        F["d = (x̄₁ - x̄₂) / pooled_SD<br/><br/>Standardized difference"]
+    end
+    subgraph "Interpretation"
+        I1["d = 0.2: Small effect"]
+        I2["d = 0.5: Medium effect"]
+        I3["d = 0.8: Large effect"]
+    end
+    subgraph "Why Report Both?"
+        W["p = 0.001 with d = 0.1<br/>Statistically significant but<br/>practically meaningless<br/><br/>Always report effect size!"]
+    end
+    style F fill:#E3F2FD
+    style W fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_anova_visual(self):
+        """Seed ANOVA visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="anova",
+            defaults={
+                "title": "ANOVA: Comparing Multiple Groups",
+                "description": "One-way, two-way, post-hoc tests",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["statistics", "anova", "hypothesis testing", "multiple groups"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Not Multiple t-Tests?",
+                        "explanation": "When comparing 3+ groups, running multiple t-tests inflates Type I error rate.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["3 groups → 3 pairwise comparisons<br/>4 groups → 6 comparisons<br/>5 groups → 10 comparisons"]
+    end
+    subgraph "Error Inflation"
+        E["Each test: α = 0.05<br/>3 tests: P(at least one Type I) ≈ 0.14<br/>10 tests: P(at least one Type I) ≈ 0.40"]
+    end
+    subgraph "Solution: ANOVA"
+        A["Single test: Are ANY means different?<br/>Controls overall Type I error at α"]
+    end
+    P --> E --> A
+    style E fill:#FFCDD2
+    style A fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "ANOVA Logic",
+                        "explanation": "ANOVA compares variation BETWEEN groups to variation WITHIN groups.",
+                        "diagram_data": """graph TB
+    subgraph "The Question"
+        Q["Are group means different enough<br/>relative to within-group variation?"]
+    end
+    subgraph "Two Sources of Variance"
+        B["Between-group variance<br/>Differences in group means"]
+        W["Within-group variance<br/>Individual differences within groups"]
+    end
+    subgraph "F-Statistic"
+        F["F = Between-group variance / Within-group variance<br/><br/>Large F → Groups likely different"]
+    end
+    Q --> B
+    Q --> W
+    B --> F
+    W --> F
+    style F fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "One-Way ANOVA",
+                        "explanation": "Compare means across groups defined by ONE factor.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["One independent variable (factor)<br/>with 3+ levels (groups)"]
+    end
+    subgraph "Examples"
+        E1["Drug dosage: Low, Medium, High"]
+        E2["Teaching method: A, B, C, D"]
+        E3["Region: North, South, East, West"]
+    end
+    subgraph "Hypotheses"
+        H["H₀: μ₁ = μ₂ = μ₃ = ... = μₖ<br/>H₁: At least one mean differs"]
+    end
+    subgraph "Python"
+        P["from scipy import stats<br/>f_stat, p_val = stats.f_oneway(<br/>    group1, group2, group3<br/>)"]
+    end
+    style H fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "The ANOVA Table",
+                        "explanation": "ANOVA results are presented in a standard table format.",
+                        "diagram_data": """graph TB
+    subgraph "ANOVA Table"
+        T["Source    | SS      | df    | MS        | F<br/>----------|---------|-------|-----------|-------<br/>Between   | SS_B    | k-1   | SS_B/(k-1)| MS_B/MS_W<br/>Within    | SS_W    | N-k   | SS_W/(N-k)|<br/>Total     | SS_T    | N-1   |           |"]
+    end
+    subgraph "Terms"
+        T1["SS = Sum of Squares"]
+        T2["df = degrees of freedom"]
+        T3["MS = Mean Square = SS/df"]
+        T4["k = number of groups"]
+        T5["N = total sample size"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Two-Way ANOVA",
+                        "explanation": "Analyze effects of TWO factors and their interaction.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["Two independent variables<br/>Each with 2+ levels"]
+    end
+    subgraph "Example"
+        E["Factor A: Drug (Placebo, Drug1, Drug2)<br/>Factor B: Gender (Male, Female)<br/>Outcome: Blood pressure"]
+    end
+    subgraph "Effects Tested"
+        E1["Main effect of A"]
+        E2["Main effect of B"]
+        E3["Interaction A×B"]
+    end
+    subgraph "Interaction"
+        I["Does the effect of A<br/>depend on level of B?"]
+    end
+    E1 --> I
+    E2 --> I
+    style E3 fill:#FF9800,color:white
+    style I fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Post-Hoc Tests",
+                        "explanation": "If ANOVA is significant, which specific groups differ?",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["ANOVA says: 'Something differs'<br/>But which pairs?"]
+    end
+    subgraph "Common Post-Hoc Tests"
+        T1["Tukey's HSD<br/>Most common, controls familywise α"]
+        T2["Bonferroni<br/>Conservative, simple adjustment"]
+        T3["Scheffé<br/>Most conservative"]
+        T4["Dunnett<br/>Compare all to control group"]
+    end
+    subgraph "Python"
+        PY["from statsmodels.stats.multicomp import pairwise_tukeyhsd<br/>tukey = pairwise_tukeyhsd(data, groups)<br/>print(tukey)"]
+    end
+    style T1 fill:#4CAF50,color:white
+    style PY fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "ANOVA Assumptions",
+                        "explanation": "Check these before trusting your results.",
+                        "diagram_data": """graph TB
+    subgraph "Assumptions"
+        A1["1. Independence<br/>Observations are independent"]
+        A2["2. Normality<br/>Data in each group is normal"]
+        A3["3. Homogeneity of Variance<br/>Equal variances across groups"]
+    end
+    subgraph "How to Check"
+        C1["Study design ensures independence"]
+        C2["Shapiro-Wilk test, Q-Q plots"]
+        C3["Levene's test, Bartlett's test"]
+    end
+    subgraph "If Violated"
+        V["Non-normal → Kruskal-Wallis<br/>Unequal variance → Welch's ANOVA"]
+    end
+    A1 --> C1
+    A2 --> C2
+    A3 --> C3
+    style V fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Effect Size: η² (Eta-squared)",
+                        "explanation": "Measure the proportion of variance explained by group membership.",
+                        "diagram_data": """graph TB
+    subgraph "Formula"
+        F["η² = SS_between / SS_total<br/><br/>Proportion of variance explained"]
+    end
+    subgraph "Interpretation"
+        I1["η² = 0.01: Small effect"]
+        I2["η² = 0.06: Medium effect"]
+        I3["η² = 0.14: Large effect"]
+    end
+    subgraph "Example"
+        E["η² = 0.25<br/>25% of outcome variance<br/>is explained by group membership"]
+    end
+    subgraph "Note"
+        N["ω² (omega-squared) is less biased<br/>but η² is more common"]
+    end
+    style F fill:#E3F2FD
+    style E fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_chi_square_visual(self):
+        """Seed Chi-Square Tests visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="chi-square-tests",
+            defaults={
+                "title": "Chi-Square Tests",
+                "description": "Goodness of fit vs independence tests",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["statistics", "chi-square", "categorical", "independence"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Chi-Square Tests Overview",
+                        "explanation": "Chi-square (χ²) tests are used for **categorical data**. They compare observed frequencies to expected frequencies.",
+                        "diagram_data": """graph TB
+    subgraph "Two Main Types"
+        G["Goodness of Fit<br/>Does data match a distribution?"]
+        I["Test of Independence<br/>Are two variables related?"]
+    end
+    subgraph "Data Type"
+        D["Both work with COUNTS<br/>(categorical data)"]
+    end
+    subgraph "Common Uses"
+        U1["Survey responses"]
+        U2["Classification outcomes"]
+        U3["A/B test conversions"]
+    end
+    G --> D
+    I --> D
+    style G fill:#4CAF50,color:white
+    style I fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Chi-Square Statistic",
+                        "explanation": "The χ² statistic measures how much observed counts deviate from expected counts.",
+                        "diagram_data": """graph TB
+    subgraph "Formula"
+        F["χ² = Σ (Observed - Expected)² / Expected<br/><br/>Sum over all categories"]
+    end
+    subgraph "Interpretation"
+        I1["χ² = 0: Perfect match to expected"]
+        I2["χ² small: Close to expected"]
+        I3["χ² large: Far from expected"]
+    end
+    subgraph "Decision"
+        D["Compare to χ² distribution<br/>with appropriate df<br/>Get p-value"]
+    end
+    F --> I1
+    I3 --> D
+    style F fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Goodness of Fit Test",
+                        "explanation": "Test whether observed frequencies match an expected distribution.",
+                        "diagram_data": """graph TB
+    subgraph "Question"
+        Q["Does my data follow a<br/>hypothesized distribution?"]
+    end
+    subgraph "Example: Fair Die"
+        E["Roll die 60 times<br/>Expected: 10 each face<br/>Observed: 8,12,9,11,10,10<br/>Is it fair?"]
+    end
+    subgraph "Hypotheses"
+        H["H₀: Distribution matches expected<br/>H₁: Distribution doesn't match"]
+    end
+    subgraph "Python"
+        P["from scipy.stats import chisquare<br/>observed = [8, 12, 9, 11, 10, 10]<br/>stat, pval = chisquare(observed)<br/># assumes equal expected by default"]
+    end
+    style E fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Test of Independence",
+                        "explanation": "Test whether two categorical variables are related or independent.",
+                        "diagram_data": """graph TB
+    subgraph "Question"
+        Q["Are these two categorical<br/>variables related?"]
+    end
+    subgraph "Contingency Table"
+        T["              | Outcome A | Outcome B<br/>--------------|-----------|----------<br/>Group 1       |    30     |    20<br/>Group 2       |    25     |    25"]
+    end
+    subgraph "Hypotheses"
+        H["H₀: Variables are independent<br/>H₁: Variables are related"]
+    end
+    subgraph "Python"
+        P["from scipy.stats import chi2_contingency<br/>table = [[30, 20], [25, 25]]<br/>chi2, pval, dof, expected = chi2_contingency(table)"]
+    end
+    style T fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Expected Frequencies",
+                        "explanation": "For independence test, expected counts are calculated assuming no relationship.",
+                        "diagram_data": """graph TB
+    subgraph "Formula"
+        F["Expected = (Row Total × Column Total) / Grand Total"]
+    end
+    subgraph "Example"
+        E["              | Click | No Click | Total<br/>--------------|-------|----------|------<br/>Version A     |  40   |   60     | 100<br/>Version B     |  30   |   70     | 100<br/>Total         |  70   |  130     | 200<br/><br/>Expected(A,Click) = 100×70/200 = 35"]
+    end
+    subgraph "Interpretation"
+        I["If independent, expect 35 clicks for A<br/>Observed: 40<br/>Is 40 vs 35 significant?"]
+    end
+    style F fill:#2196F3,color:white
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Degrees of Freedom",
+                        "explanation": "The df determines which χ² distribution to use.",
+                        "diagram_data": """graph TB
+    subgraph "Goodness of Fit"
+        G["df = k - 1<br/>k = number of categories"]
+    end
+    subgraph "Independence Test"
+        I["df = (r - 1) × (c - 1)<br/>r = rows, c = columns"]
+    end
+    subgraph "Example"
+        E1["3 categories: df = 2"]
+        E2["2×3 table: df = 1×2 = 2"]
+        E3["4×5 table: df = 3×4 = 12"]
+    end
+    style G fill:#4CAF50,color:white
+    style I fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Assumptions & Rules",
+                        "explanation": "Chi-square tests have important requirements.",
+                        "diagram_data": """graph TB
+    subgraph "Requirements"
+        R1["Random sample"]
+        R2["Independent observations"]
+        R3["Mutually exclusive categories"]
+        R4["Expected counts ≥ 5 (usually)"]
+    end
+    subgraph "If Expected < 5"
+        V1["Combine categories"]
+        V2["Use Fisher's Exact Test (2×2)"]
+        V3["Use simulation-based methods"]
+    end
+    subgraph "Warning"
+        W["Chi-square uses COUNTS<br/>Never use percentages!"]
+    end
+    R4 --> V1
+    R4 --> V2
+    style R4 fill:#FFF9C4
+    style W fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Effect Size: Cramér's V",
+                        "explanation": "Measure the strength of association between categorical variables.",
+                        "diagram_data": """graph TB
+    subgraph "Formula"
+        F["V = √(χ²/(n × min(r-1, c-1)))"]
+    end
+    subgraph "Interpretation"
+        I1["V = 0: No association"]
+        I2["V = 0.1: Small"]
+        I3["V = 0.3: Medium"]
+        I4["V = 0.5: Large"]
+        I5["V = 1: Perfect association"]
+    end
+    subgraph "When to Use"
+        W["Always report with χ² test<br/>Especially for significant results"]
+    end
+    style F fill:#E3F2FD
+    style I4 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_nonparametric_visual(self):
+        """Seed Non-Parametric Tests visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="non-parametric-tests",
+            defaults={
+                "title": "Non-Parametric Tests",
+                "description": "Mann-Whitney, Wilcoxon, Kruskal-Wallis - when parametric assumptions fail",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["statistics", "non-parametric", "mann-whitney", "wilcoxon", "kruskal-wallis"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Parametric vs Non-Parametric",
+                        "explanation": "Non-parametric tests make fewer assumptions about the data distribution.",
+                        "diagram_data": """graph TB
+    subgraph "Parametric Tests"
+        P1["Assume specific distribution<br/>(usually normal)"]
+        P2["t-test, ANOVA, etc."]
+        P3["More powerful IF assumptions met"]
+    end
+    subgraph "Non-Parametric Tests"
+        N1["Distribution-free<br/>(fewer assumptions)"]
+        N2["Work with ranks, not values"]
+        N3["Robust to outliers"]
+    end
+    subgraph "When to Use Non-Parametric"
+        W1["Non-normal data"]
+        W2["Ordinal data (rankings)"]
+        W3["Small samples"]
+        W4["Outliers present"]
+    end
+    style P3 fill:#4CAF50,color:white
+    style N3 fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Rank-Based Approach",
+                        "explanation": "Most non-parametric tests convert data to ranks, reducing impact of extreme values.",
+                        "diagram_data": """graph TB
+    subgraph "Original Data"
+        D["Group A: 2, 5, 100<br/>Group B: 3, 4, 6"]
+    end
+    subgraph "Ranked Data"
+        R["Combined & Ranked:<br/>2→1, 3→2, 4→3, 5→4, 6→5, 100→6<br/><br/>Group A ranks: 1, 4, 6<br/>Group B ranks: 2, 3, 5"]
+    end
+    subgraph "Benefit"
+        B["Outlier (100) becomes just '6'<br/>No longer dominates the analysis"]
+    end
+    D --> R --> B
+    style R fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Mann-Whitney U Test",
+                        "explanation": "Non-parametric alternative to independent two-sample t-test.",
+                        "diagram_data": """graph TB
+    subgraph "Use When"
+        U["Two independent groups<br/>Can't assume normality<br/>Ordinal or continuous data"]
+    end
+    subgraph "Tests"
+        T["H₀: Distributions are equal<br/>H₁: One tends to have larger values"]
+    end
+    subgraph "Python"
+        P["from scipy.stats import mannwhitneyu<br/>stat, pval = mannwhitneyu(group1, group2)"]
+    end
+    subgraph "Also Known As"
+        A["Wilcoxon rank-sum test<br/>(different from signed-rank!)"]
+    end
+    style U fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Wilcoxon Signed-Rank Test",
+                        "explanation": "Non-parametric alternative to paired t-test.",
+                        "diagram_data": """graph TB
+    subgraph "Use When"
+        U["Paired/matched samples<br/>Before-after measurements<br/>Can't assume normal differences"]
+    end
+    subgraph "How It Works"
+        H["1. Calculate differences<br/>2. Rank absolute differences<br/>3. Sum ranks of + and - separately<br/>4. Compare sums"]
+    end
+    subgraph "Python"
+        P["from scipy.stats import wilcoxon<br/>stat, pval = wilcoxon(before, after)"]
+    end
+    subgraph "Related"
+        R["Sign test: Even simpler<br/>Just counts + vs - signs"]
+    end
+    style H fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Kruskal-Wallis Test",
+                        "explanation": "Non-parametric alternative to one-way ANOVA.",
+                        "diagram_data": """graph TB
+    subgraph "Use When"
+        U["3+ independent groups<br/>Can't assume normality<br/>Comparing distributions"]
+    end
+    subgraph "Tests"
+        T["H₀: All groups have same distribution<br/>H₁: At least one differs"]
+    end
+    subgraph "Python"
+        P["from scipy.stats import kruskal<br/>stat, pval = kruskal(g1, g2, g3)"]
+    end
+    subgraph "Post-Hoc"
+        PH["If significant, use:<br/>Dunn's test for pairwise comparisons"]
+    end
+    style U fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Quick Reference: Which Test?",
+                        "explanation": "Choosing between parametric and non-parametric alternatives.",
+                        "diagram_data": """graph TB
+    subgraph "Parametric → Non-Parametric"
+        T1["One-sample t-test → Wilcoxon signed-rank"]
+        T2["Two-sample t-test → Mann-Whitney U"]
+        T3["Paired t-test → Wilcoxon signed-rank"]
+        T4["One-way ANOVA → Kruskal-Wallis"]
+        T5["Repeated measures → Friedman test"]
+    end
+    subgraph "Decision Rule"
+        D["Check normality (Shapiro-Wilk)<br/>If p < 0.05, use non-parametric<br/>Or if n < 30 and visibly skewed"]
+    end
+    style D fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Trade-offs",
+                        "explanation": "Understanding the pros and cons of non-parametric tests.",
+                        "diagram_data": """graph TB
+    subgraph "Advantages"
+        A1["No normality assumption"]
+        A2["Robust to outliers"]
+        A3["Work with ordinal data"]
+        A4["Work with small samples"]
+    end
+    subgraph "Disadvantages"
+        D1["Less statistical power<br/>(need larger n for same power)"]
+        D2["Less informative<br/>(compare medians, not means)"]
+        D3["Harder to construct CIs"]
+    end
+    subgraph "Rule of Thumb"
+        R["If normality is reasonable:<br/>Use parametric (more power)<br/><br/>If clearly violated:<br/>Use non-parametric (valid results)"]
+    end
+    style A1 fill:#C8E6C9
+    style D1 fill:#FFCDD2
+    style R fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Effect Sizes for Non-Parametric Tests",
+                        "explanation": "Reporting effect sizes with non-parametric tests.",
+                        "diagram_data": """graph TB
+    subgraph "Mann-Whitney"
+        M["r = Z / √N<br/>or rank-biserial correlation"]
+    end
+    subgraph "Wilcoxon"
+        W["r = Z / √N"]
+    end
+    subgraph "Interpretation"
+        I["r = 0.1: Small<br/>r = 0.3: Medium<br/>r = 0.5: Large"]
+    end
+    subgraph "Always Report"
+        A["Test statistic (U, W, or H)<br/>p-value<br/>Effect size<br/>Sample sizes"]
+    end
+    style I fill:#E3F2FD
+    style A fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_mle_visual(self):
+        """Seed Maximum Likelihood Estimation visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="maximum-likelihood-estimation",
+            defaults={
+                "title": "Maximum Likelihood Estimation",
+                "description": "How MLE works, connection to loss functions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["statistics", "mle", "estimation", "likelihood", "loss functions"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The MLE Question",
+                        "explanation": "**Maximum Likelihood Estimation** finds parameter values that make the observed data most probable.",
+                        "diagram_data": """graph TB
+    subgraph "The Setup"
+        S["We have data: x₁, x₂, ..., xₙ<br/>We assume a distribution with parameter θ"]
+    end
+    subgraph "The Question"
+        Q["What value of θ makes this<br/>data most likely to occur?"]
+    end
+    subgraph "MLE Answer"
+        A["θ̂_MLE = argmax P(data | θ)<br/>Find θ that maximizes likelihood"]
+    end
+    S --> Q --> A
+    style Q fill:#FFF9C4
+    style A fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Likelihood vs Probability",
+                        "explanation": "Likelihood and probability use the same formula but ask different questions.",
+                        "diagram_data": """graph TB
+    subgraph "Probability"
+        P["P(data | θ)<br/>θ is FIXED<br/>What data might we see?"]
+    end
+    subgraph "Likelihood"
+        L["L(θ | data)<br/>Data is FIXED<br/>Which θ explains it best?"]
+    end
+    subgraph "Key Insight"
+        K["Same formula, different perspective!<br/>L(θ | data) = P(data | θ)<br/>but we vary θ, not data"]
+    end
+    P --> K
+    L --> K
+    style K fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Likelihood Function",
+                        "explanation": "For independent observations, the likelihood is the product of individual probabilities.",
+                        "diagram_data": """graph TB
+    subgraph "Likelihood"
+        L["L(θ) = P(x₁|θ) × P(x₂|θ) × ... × P(xₙ|θ)<br/>= ∏ P(xᵢ|θ)"]
+    end
+    subgraph "Log-Likelihood"
+        LL["ℓ(θ) = log L(θ) = Σ log P(xᵢ|θ)<br/><br/>Products → Sums (easier!)"]
+    end
+    subgraph "Why Log?"
+        W1["Products of small numbers → underflow"]
+        W2["Sums are numerically stable"]
+        W3["Same maximum (log is monotonic)"]
+    end
+    L --> LL
+    style LL fill:#4CAF50,color:white
+    style W3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "MLE Example: Coin Flip",
+                        "explanation": "Estimate the probability of heads from observed flips.",
+                        "diagram_data": """graph TB
+    subgraph "Data"
+        D["10 flips: H H T H H H T H H H<br/>7 heads, 3 tails"]
+    end
+    subgraph "Model"
+        M["Binomial: P(k heads | p) = C(n,k) pᵏ (1-p)ⁿ⁻ᵏ"]
+    end
+    subgraph "Likelihood"
+        L["L(p) = p⁷ × (1-p)³"]
+    end
+    subgraph "Maximize"
+        MAX["Take derivative, set to 0:<br/>d/dp [7 log p + 3 log(1-p)] = 0<br/>p̂ = 7/10 = 0.7"]
+    end
+    D --> M --> L --> MAX
+    style MAX fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "MLE for Normal Distribution",
+                        "explanation": "The MLE for normal parameters gives familiar formulas.",
+                        "diagram_data": """graph TB
+    subgraph "Model"
+        M["X ~ N(μ, σ²)"]
+    end
+    subgraph "Log-Likelihood"
+        L["ℓ(μ,σ²) = -n/2 log(2πσ²) - 1/(2σ²) Σ(xᵢ-μ)²"]
+    end
+    subgraph "MLE Solutions"
+        S1["μ̂ = x̄ = (1/n) Σ xᵢ"]
+        S2["σ̂² = (1/n) Σ (xᵢ-x̄)²"]
+    end
+    subgraph "Note"
+        N["MLE for σ² is biased!<br/>Unbiased version divides by (n-1)"]
+    end
+    M --> L --> S1
+    L --> S2
+    style S1 fill:#C8E6C9
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "MLE and Loss Functions",
+                        "explanation": "Many ML loss functions are derived from MLE via negative log-likelihood.",
+                        "diagram_data": """graph TB
+    subgraph "Connection"
+        C["Maximize likelihood<br/>= Minimize negative log-likelihood<br/>= Minimize a loss function"]
+    end
+    subgraph "Examples"
+        E1["Normal → MSE Loss<br/>-log N(y|ŷ,σ²) ∝ (y-ŷ)²"]
+        E2["Bernoulli → Binary Cross-Entropy<br/>-log Bernoulli(y|p) = BCE"]
+        E3["Categorical → Cross-Entropy<br/>-log Categorical(y|p) = CE"]
+    end
+    subgraph "Insight"
+        I["Training neural nets with BCE<br/>IS doing MLE!"]
+    end
+    C --> E1
+    C --> E2
+    C --> E3
+    E2 --> I
+    style I fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Properties of MLE",
+                        "explanation": "Why MLE is so widely used - it has excellent theoretical properties.",
+                        "diagram_data": """graph TB
+    subgraph "Asymptotic Properties"
+        A1["Consistent: θ̂ → θ as n → ∞"]
+        A2["Asymptotically normal"]
+        A3["Asymptotically efficient<br/>(lowest variance among consistent estimators)"]
+    end
+    subgraph "Practical Benefits"
+        B1["Usually has closed-form solution"]
+        B2["If not, gradient descent works"]
+        B3["Standard errors available"]
+    end
+    subgraph "Limitations"
+        L1["Can overfit with small n"]
+        L2["Point estimate (no uncertainty)"]
+        L3["Sensitive to model specification"]
+    end
+    style A3 fill:#C8E6C9
+    style L1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "MLE in Practice",
+                        "explanation": "How MLE is computed in real applications.",
+                        "diagram_data": """graph TB
+    subgraph "Closed Form"
+        CF["Some distributions have<br/>analytical MLE solutions<br/>(Normal, Exponential, Binomial)"]
+    end
+    subgraph "Numerical Optimization"
+        NO["Most cases: gradient descent<br/>on negative log-likelihood<br/><br/>scipy.optimize.minimize<br/>or torch/tensorflow"]
+    end
+    subgraph "Example: Logistic Regression"
+        LR["No closed form!<br/>Use iterative optimization<br/>sklearn uses L-BFGS or SAG"]
+    end
+    subgraph "Tips"
+        T["Use log-likelihood (numerical stability)<br/>Check convergence<br/>Try multiple starting points"]
+    end
+    style NO fill:#2196F3,color:white
+    style T fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_bayesian_vs_frequentist_visual(self):
+        """Seed Bayesian vs Frequentist visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="bayesian-vs-frequentist",
+            defaults={
+                "title": "Bayesian vs Frequentist",
+                "description": "Prior, posterior, likelihood - the Bayesian workflow",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["statistics", "bayesian", "frequentist", "prior", "posterior"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Philosophies of Probability",
+                        "explanation": "Frequentist and Bayesian statistics have fundamentally different interpretations of probability.",
+                        "diagram_data": """graph TB
+    subgraph "Frequentist"
+        F1["Probability = Long-run frequency"]
+        F2["Parameters are FIXED but unknown"]
+        F3["Data is random"]
+        F4["No prior beliefs allowed"]
+    end
+    subgraph "Bayesian"
+        B1["Probability = Degree of belief"]
+        B2["Parameters have distributions"]
+        B3["Data is fixed (once observed)"]
+        B4["Prior beliefs are explicit"]
+    end
+    style F2 fill:#2196F3,color:white
+    style B2 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Bayes' Theorem",
+                        "explanation": "The foundation of Bayesian inference: update beliefs with data.",
+                        "diagram_data": """graph TB
+    subgraph "Bayes' Theorem"
+        B["P(θ|data) = P(data|θ) × P(θ) / P(data)"]
+    end
+    subgraph "Components"
+        C1["P(θ|data) = Posterior<br/>What we believe AFTER seeing data"]
+        C2["P(data|θ) = Likelihood<br/>How likely is data given θ"]
+        C3["P(θ) = Prior<br/>What we believed BEFORE data"]
+        C4["P(data) = Evidence<br/>Normalizing constant"]
+    end
+    subgraph "Intuition"
+        I["Posterior ∝ Likelihood × Prior"]
+    end
+    B --> C1
+    B --> C2
+    B --> C3
+    B --> C4
+    style I fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Bayesian Workflow",
+                        "explanation": "How Bayesian analysis proceeds from prior to posterior.",
+                        "diagram_data": """graph LR
+    P["Prior P(θ)<br/>Initial belief"]
+    D["Data<br/>Observations"]
+    L["Likelihood P(data|θ)<br/>Data generating process"]
+    POST["Posterior P(θ|data)<br/>Updated belief"]
+    P --> POST
+    D --> L --> POST
+    subgraph "Then"
+        T1["Make predictions"]
+        T2["Summarize posterior<br/>(mean, credible interval)"]
+        T3["Use as prior for more data"]
+    end
+    POST --> T1
+    POST --> T2
+    POST --> T3
+    style P fill:#FF9800,color:white
+    style POST fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Priors: Types and Choices",
+                        "explanation": "The prior encodes your beliefs before seeing data.",
+                        "diagram_data": """graph TB
+    subgraph "Informative Prior"
+        I["Based on domain knowledge<br/>Previous studies<br/>Expert opinion"]
+    end
+    subgraph "Weakly Informative"
+        W["Regularizing effect<br/>Rules out implausible values<br/>e.g., Normal(0, 10)"]
+    end
+    subgraph "Non-Informative / Flat"
+        N["Uniform over range<br/>'Let the data speak'<br/>Can cause problems"]
+    end
+    subgraph "Conjugate Prior"
+        C["Mathematically convenient<br/>Posterior same family as prior<br/>e.g., Beta-Binomial"]
+    end
+    style W fill:#4CAF50,color:white
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Credible vs Confidence Intervals",
+                        "explanation": "Bayesian credible intervals have the interpretation people think confidence intervals have!",
+                        "diagram_data": """graph TB
+    subgraph "Confidence Interval (Frequentist)"
+        CI["95% of such intervals<br/>would contain true θ<br/><br/>Can't say: '95% prob θ in interval'"]
+    end
+    subgraph "Credible Interval (Bayesian)"
+        CR["95% posterior probability<br/>that θ is in interval<br/><br/>CAN say: '95% prob θ in interval'"]
+    end
+    subgraph "Why Different?"
+        W["Frequentist: θ is fixed<br/>Bayesian: θ has distribution"]
+    end
+    CI --> W
+    CR --> W
+    style CI fill:#2196F3,color:white
+    style CR fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Example: Coin Flipping",
+                        "explanation": "Compare frequentist MLE vs Bayesian posterior for estimating coin bias.",
+                        "diagram_data": """graph TB
+    subgraph "Data"
+        D["7 heads in 10 flips"]
+    end
+    subgraph "Frequentist (MLE)"
+        F["p̂ = 7/10 = 0.7<br/>Point estimate<br/>95% CI: [0.35, 0.93]"]
+    end
+    subgraph "Bayesian"
+        B["Prior: Beta(1,1) = Uniform<br/>Posterior: Beta(8, 4)<br/>Mean: 0.67<br/>95% Credible: [0.38, 0.89]"]
+    end
+    subgraph "With Strong Prior"
+        S["Prior: Beta(10,10) (believe fair)<br/>Posterior: Beta(17, 13)<br/>Mean: 0.57<br/>(pulled toward 0.5)"]
+    end
+    D --> F
+    D --> B
+    D --> S
+    style F fill:#2196F3,color:white
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "When to Use Which?",
+                        "explanation": "Practical guidance on choosing between approaches.",
+                        "diagram_data": """graph TB
+    subgraph "Use Frequentist When"
+        F1["Large samples"]
+        F2["No prior information"]
+        F3["Need reproducibility / objectivity"]
+        F4["Regulatory requirements"]
+    end
+    subgraph "Use Bayesian When"
+        B1["Small samples + prior knowledge"]
+        B2["Want probability statements"]
+        B3["Incorporating expert knowledge"]
+        B4["Complex hierarchical models"]
+        B5["Sequential updating"]
+    end
+    subgraph "In Practice"
+        P["Many modern methods blend both<br/>e.g., regularization ≈ priors"]
+    end
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Bayesian in ML",
+                        "explanation": "How Bayesian thinking appears in machine learning.",
+                        "diagram_data": """graph TB
+    subgraph "Direct Applications"
+        D1["Bayesian Neural Networks"]
+        D2["Gaussian Processes"]
+        D3["Bayesian Optimization"]
+        D4["Probabilistic Programming (PyMC, Stan)"]
+    end
+    subgraph "Implicit Bayesian Ideas"
+        I1["L2 regularization = Gaussian prior"]
+        I2["L1 regularization = Laplace prior"]
+        I3["Dropout ≈ Bayesian approximation"]
+        I4["Ensemble methods ≈ posterior sampling"]
+    end
+    subgraph "Key Benefit"
+        K["Uncertainty quantification!<br/>Know when model is uncertain"]
+    end
+    style K fill:#4CAF50,color:white
+    style I1 fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_correlation_causation_visual(self):
+        """Seed Correlation vs Causation visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="correlation-vs-causation",
+            defaults={
+                "title": "Correlation vs Causation",
+                "description": "Simpson's paradox, confounding variables",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["statistics", "correlation", "causation", "confounding", "simpson"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Classic Warning",
+                        "explanation": "Correlation does not imply causation - but what does this actually mean?",
+                        "diagram_data": """graph TB
+    subgraph "Correlation"
+        C["X and Y move together<br/>When X increases, Y tends to increase<br/>(or decrease)"]
+    end
+    subgraph "Causation"
+        CA["X actually CAUSES Y<br/>Changing X would change Y"]
+    end
+    subgraph "The Gap"
+        G["Correlation: We observe a relationship<br/>Causation: We know the mechanism<br/><br/>Correlation is necessary but<br/>NOT sufficient for causation"]
+    end
+    C --> G
+    CA --> G
+    style G fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Correlation ≠ Causation",
+                        "explanation": "There are multiple reasons two variables can be correlated without one causing the other.",
+                        "diagram_data": """graph TB
+    subgraph "Possible Explanations"
+        E1["X causes Y<br/>(what we hope)"]
+        E2["Y causes X<br/>(reverse causation)"]
+        E3["Z causes both X and Y<br/>(confounding)"]
+        E4["Pure coincidence<br/>(spurious correlation)"]
+    end
+    subgraph "Example: Ice cream & Drowning"
+        EX["Ice cream sales ↑ → Drownings ↑<br/><br/>Confounder: Hot weather<br/>causes both!"]
+    end
+    E3 --> EX
+    style E3 fill:#FF9800,color:white
+    style EX fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Confounding Variables",
+                        "explanation": "A **confounder** is a third variable that influences both X and Y, creating a spurious association.",
+                        "diagram_data": """graph TB
+    subgraph "Confounded"
+        Z["Confounder Z"]
+        X["X (apparent cause)"]
+        Y["Y (outcome)"]
+        Z --> X
+        Z --> Y
+        X -.->|"Spurious"| Y
+    end
+    subgraph "Examples"
+        E1["Coffee → Heart disease?<br/>Confounder: Smoking"]
+        E2["Education → Income?<br/>Confounder: Family wealth"]
+        E3["Hospital → Death?<br/>Confounder: Severity of illness"]
+    end
+    style Z fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Simpson's Paradox",
+                        "explanation": "A trend in aggregated data can reverse when data is separated into groups!",
+                        "diagram_data": """graph TB
+    subgraph "Aggregated Data"
+        A["Treatment A: 80/100 survive (80%)<br/>Treatment B: 75/100 survive (75%)<br/><br/>A looks better!"]
+    end
+    subgraph "Separated by Severity"
+        S1["Mild cases:<br/>A: 70/80 (87.5%)<br/>B: 5/5 (100%)"]
+        S2["Severe cases:<br/>A: 10/20 (50%)<br/>B: 70/95 (74%)"]
+    end
+    subgraph "Truth"
+        T["B is better for BOTH groups!<br/>But A got more mild cases<br/>(selection bias)"]
+    end
+    A --> S1
+    A --> S2
+    S1 --> T
+    S2 --> T
+    style A fill:#FFCDD2
+    style T fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Establishing Causation",
+                        "explanation": "How can we actually determine if X causes Y?",
+                        "diagram_data": """graph TB
+    subgraph "Gold Standard: RCT"
+        R["Randomized Controlled Trial<br/>Random assignment breaks confounding"]
+    end
+    subgraph "Observational Methods"
+        O1["Control for confounders<br/>(regression, matching)"]
+        O2["Instrumental variables"]
+        O3["Regression discontinuity"]
+        O4["Difference-in-differences"]
+    end
+    subgraph "Bradford Hill Criteria"
+        B["Strength, Consistency, Specificity<br/>Temporality, Biological gradient<br/>Plausibility, Coherence, Experiment"]
+    end
+    style R fill:#4CAF50,color:white
+    style O1 fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Controlling for Confounders",
+                        "explanation": "Statistical techniques to account for confounding variables.",
+                        "diagram_data": """graph TB
+    subgraph "Stratification"
+        S["Analyze within subgroups<br/>e.g., compare within age groups"]
+    end
+    subgraph "Matching"
+        M["Match treated/control on confounders<br/>e.g., propensity score matching"]
+    end
+    subgraph "Regression"
+        R["Include confounders as covariates<br/>Estimates 'adjusted' effect"]
+    end
+    subgraph "Warning"
+        W["Can only control for<br/>MEASURED confounders<br/>Unmeasured confounding remains!"]
+    end
+    style W fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Causal Diagrams (DAGs)",
+                        "explanation": "Directed Acyclic Graphs help visualize causal relationships.",
+                        "diagram_data": """graph TB
+    subgraph "Simple Causation"
+        X1["X"] --> Y1["Y"]
+    end
+    subgraph "Confounding"
+        Z2["Z"] --> X2["X"]
+        Z2 --> Y2["Y"]
+    end
+    subgraph "Mediation"
+        X3["X"] --> M3["M"] --> Y3["Y"]
+    end
+    subgraph "Collider"
+        X4["X"] --> C4["C"]
+        Y4["Y"] --> C4
+    end
+    subgraph "Rules"
+        R["Control for confounders<br/>Don't control for colliders<br/>Don't control for mediators<br/>(if want total effect)"]
+    end
+    style Z2 fill:#FF9800
+    style R fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "In ML: Correlation is Often Fine",
+                        "explanation": "For prediction, correlation suffices. For intervention, causation matters.",
+                        "diagram_data": """graph TB
+    subgraph "Prediction Tasks"
+        P["Correlation is enough!<br/>Don't need to know WHY<br/>Just predict accurately"]
+    end
+    subgraph "Intervention Tasks"
+        I["Need causal knowledge<br/>What happens if we DO X?<br/>Correlation can mislead"]
+    end
+    subgraph "Examples"
+        E1["Predict churn: use correlates ✓"]
+        E2["Reduce churn: need causes<br/>Don't just correlate!"]
+    end
+    subgraph "Modern ML"
+        M["Causal ML is growing field<br/>DoWhy, CausalML libraries"]
+    end
+    style P fill:#4CAF50,color:white
+    style I fill:#2196F3,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_statistics_ab_testing_visual(self):
+        """Seed A/B Testing Deep Dive visual topic."""
+        subject = self.get_or_create_subject(
+            "Statistics & Probability", "statistics", "Foundations"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="ab-testing",
+            defaults={
+                "title": "A/B Testing Deep Dive",
+                "description": "Sample size calculation, statistical power, early stopping",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["statistics", "ab testing", "experimentation", "power", "sample size"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "A/B Testing Basics",
+                        "explanation": "A/B testing is a randomized experiment comparing two versions to measure which performs better.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        U["Users arrive"]
+        A["Version A (Control)"]
+        B["Version B (Treatment)"]
+        U --> |"Random 50%"| A
+        U --> |"Random 50%"| B
+    end
+    subgraph "Measure"
+        M["Compare conversion rates<br/>or other metrics"]
+    end
+    subgraph "Question"
+        Q["Is the difference<br/>statistically significant?"]
+    end
+    A --> M
+    B --> M
+    M --> Q
+    style A fill:#2196F3,color:white
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Hypothesis Test",
+                        "explanation": "A/B testing is fundamentally a two-sample hypothesis test.",
+                        "diagram_data": """graph TB
+    subgraph "Hypotheses"
+        H0["H₀: pₐ = pᵦ<br/>No difference"]
+        H1["H₁: pₐ ≠ pᵦ<br/>There IS a difference"]
+    end
+    subgraph "Test Statistic"
+        Z["z = (p̂ₐ - p̂ᵦ) / SE<br/><br/>SE = √(p̂(1-p̂)(1/nₐ + 1/nᵦ))"]
+    end
+    subgraph "Decision"
+        D["If |z| > 1.96: Reject H₀<br/>(for α = 0.05, two-tailed)"]
+    end
+    H0 --> Z --> D
+    style Z fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Sample Size Calculation",
+                        "explanation": "Before running a test, calculate how many users you need.",
+                        "diagram_data": """graph TB
+    subgraph "Inputs"
+        I1["Baseline rate (p₁): e.g., 10%"]
+        I2["Minimum detectable effect (MDE):<br/>e.g., 1% absolute (10% → 11%)"]
+        I3["Significance level α: typically 0.05"]
+        I4["Power (1-β): typically 0.80"]
+    end
+    subgraph "Formula"
+        F["n ≈ 16 × p(1-p) / MDE²<br/>(per group, for 80% power, α=0.05)"]
+    end
+    subgraph "Example"
+        E["p = 0.10, MDE = 0.01<br/>n = 16 × 0.10 × 0.90 / 0.01²<br/>n = 14,400 per group!"]
+    end
+    I1 --> F
+    I2 --> F
+    F --> E
+    style E fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Statistical Power",
+                        "explanation": "**Power** is the probability of detecting a real effect when it exists.",
+                        "diagram_data": """graph TB
+    subgraph "Definition"
+        D["Power = 1 - β<br/>= P(Reject H₀ | H₁ is true)<br/>= P(detect real effect)"]
+    end
+    subgraph "Factors Affecting Power"
+        F1["↑ Sample size → ↑ Power"]
+        F2["↑ Effect size → ↑ Power"]
+        F3["↑ α (significance level) → ↑ Power"]
+        F4["↓ Variance → ↑ Power"]
+    end
+    subgraph "Typical Target"
+        T["Power = 80% is standard<br/>90% for important decisions"]
+    end
+    style D fill:#2196F3,color:white
+    style T fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "The Peeking Problem",
+                        "explanation": "Looking at results multiple times inflates your false positive rate!",
+                        "diagram_data": """graph TB
+    subgraph "The Temptation"
+        T["Check results daily<br/>Stop when significant"]
+    end
+    subgraph "The Problem"
+        P["Each peek is a test<br/>Multiple testing increases<br/>Type I error dramatically"]
+    end
+    subgraph "Example"
+        E["5 peeks at α=0.05 each<br/>Actual α ≈ 0.14!<br/>(not 0.05)"]
+    end
+    subgraph "Solutions"
+        S1["Pre-set sample size, don't peek"]
+        S2["Sequential testing methods"]
+        S3["Use proper stopping rules"]
+    end
+    T --> P --> E
+    style P fill:#FFCDD2
+    style S1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Multiple Testing Correction",
+                        "explanation": "Testing multiple variants or metrics requires adjusting significance levels.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["Test 20 metrics at α=0.05<br/>Expected false positives: 1<br/>Even with no real effects!"]
+    end
+    subgraph "Bonferroni Correction"
+        B["α_adjusted = α / n_tests<br/>0.05 / 20 = 0.0025<br/>Conservative"]
+    end
+    subgraph "FDR Control"
+        F["Benjamini-Hochberg procedure<br/>Controls false discovery rate<br/>Less conservative"]
+    end
+    subgraph "Best Practice"
+        BP["Define PRIMARY metric<br/>Others are exploratory"]
+    end
+    style P fill:#FFCDD2
+    style BP fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Common Pitfalls",
+                        "explanation": "Mistakes that invalidate A/B test results.",
+                        "diagram_data": """graph TB
+    subgraph "Randomization Issues"
+        R1["Non-random assignment"]
+        R2["Sample ratio mismatch"]
+        R3["Cookie/device conflicts"]
+    end
+    subgraph "Analysis Issues"
+        A1["Peeking at results"]
+        A2["Stopping early"]
+        A3["Post-hoc metric selection"]
+        A4["Simpson's paradox in segments"]
+    end
+    subgraph "Design Issues"
+        D1["Insufficient sample size"]
+        D2["Contamination between groups"]
+        D3["Novelty/learning effects"]
+    end
+    style A2 fill:#FFCDD2
+    style D1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Beyond Basic A/B",
+                        "explanation": "Advanced experimentation techniques.",
+                        "diagram_data": """graph TB
+    subgraph "Multi-Armed Bandits"
+        M["Dynamically allocate traffic<br/>to better variants<br/>Balances explore/exploit"]
+    end
+    subgraph "Bayesian A/B Testing"
+        B["P(B > A | data)<br/>Direct probability statements<br/>Intuitive stopping rules"]
+    end
+    subgraph "Sequential Testing"
+        S["Continuously monitor<br/>with valid stopping rules<br/>e.g., SPRT, GST"]
+    end
+    subgraph "Factorial Designs"
+        F["Test multiple factors<br/>simultaneously<br/>Detect interactions"]
+    end
+    style B fill:#4CAF50,color:white
+    style M fill:#2196F3,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ============================================================
+    # Python Logging Visualizations
+    # ============================================================
+
+    def seed_logging_hierarchy_visual(self):
+        """Seed Logging Hierarchy & Flow visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-hierarchy",
+            defaults={
+                "title": "Logging Hierarchy & Flow",
+                "description": "Loggers, handlers, formatters, filters - how they connect",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "logging", "handlers", "formatters", "architecture"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Four Components",
+                        "explanation": "Python's logging module has four main components that work together to process log messages.",
+                        "diagram_data": """graph TB
+    subgraph "Components"
+        L["Logger<br/>Entry point for logging"]
+        H["Handler<br/>Where to send logs"]
+        F["Formatter<br/>How to format logs"]
+        FI["Filter<br/>Which logs to process"]
+    end
+    subgraph "Relationships"
+        L --> H
+        H --> F
+        L -.-> FI
+        H -.-> FI
+    end
+    style L fill:#4CAF50,color:white
+    style H fill:#2196F3,color:white
+    style F fill:#FF9800,color:white
+    style FI fill:#9C27B0,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Log Message Flow",
+                        "explanation": "When you call `logger.info()`, the message flows through multiple stages before output.",
+                        "diagram_data": """graph LR
+    subgraph "1. Create"
+        C["logger.info('message')"]
+    end
+    subgraph "2. Logger Level Check"
+        LC["Is INFO >= logger.level?"]
+    end
+    subgraph "3. Logger Filter"
+        LF["Pass logger filters?"]
+    end
+    subgraph "4. Handler Level Check"
+        HC["Is INFO >= handler.level?"]
+    end
+    subgraph "5. Handler Filter"
+        HF["Pass handler filters?"]
+    end
+    subgraph "6. Format & Emit"
+        FE["Format message<br/>Write to destination"]
+    end
+    C --> LC
+    LC -->|"Yes"| LF
+    LC -->|"No"| X1["Discard"]
+    LF -->|"Yes"| HC
+    LF -->|"No"| X2["Discard"]
+    HC -->|"Yes"| HF
+    HF -->|"Yes"| FE
+    style FE fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Loggers",
+                        "explanation": "**Loggers** are the entry point. You get them by name, and they form a hierarchy.",
+                        "diagram_data": """graph TB
+    subgraph "Getting a Logger"
+        G["logger = logging.getLogger('myapp.module')<br/><br/>Same name = same logger (singleton)"]
+    end
+    subgraph "Logger Methods"
+        M1["logger.debug('...')"]
+        M2["logger.info('...')"]
+        M3["logger.warning('...')"]
+        M4["logger.error('...')"]
+        M5["logger.critical('...')"]
+        M6["logger.exception('...')  # includes traceback"]
+    end
+    subgraph "Logger Properties"
+        P1["level: minimum level to process"]
+        P2["handlers: list of handlers"]
+        P3["propagate: pass to parent?"]
+    end
+    style G fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Handlers",
+                        "explanation": "**Handlers** determine WHERE log messages go. A logger can have multiple handlers.",
+                        "diagram_data": """graph TB
+    subgraph "One Logger, Multiple Handlers"
+        L["Logger"]
+        H1["StreamHandler<br/>(console)"]
+        H2["FileHandler<br/>(app.log)"]
+        H3["SMTPHandler<br/>(email errors)"]
+    end
+    L --> H1
+    L --> H2
+    L --> H3
+    subgraph "Each Handler Can Have"
+        P1["Its own level"]
+        P2["Its own formatter"]
+        P3["Its own filters"]
+    end
+    subgraph "Example"
+        E["Console: DEBUG and above<br/>File: INFO and above<br/>Email: ERROR and above"]
+    end
+    style L fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Formatters",
+                        "explanation": "**Formatters** control HOW log messages appear. Each handler has one formatter.",
+                        "diagram_data": """graph TB
+    subgraph "Format String"
+        F["formatter = logging.Formatter(<br/>    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'<br/>)"]
+    end
+    subgraph "Common Attributes"
+        A1["%(asctime)s    - Timestamp"]
+        A2["%(name)s       - Logger name"]
+        A3["%(levelname)s  - Level (INFO, ERROR)"]
+        A4["%(message)s    - The log message"]
+        A5["%(filename)s   - Source file"]
+        A6["%(lineno)d     - Line number"]
+        A7["%(funcName)s   - Function name"]
+    end
+    subgraph "Output"
+        O["2024-01-15 10:30:45 - myapp.db - ERROR - Connection failed"]
+    end
+    F --> O
+    style F fill:#E3F2FD
+    style O fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Filters",
+                        "explanation": "**Filters** provide fine-grained control over which records are processed.",
+                        "diagram_data": """graph TB
+    subgraph "Filter Attachment"
+        L["Logger"] -.-> F1["Filter 1"]
+        H["Handler"] -.-> F2["Filter 2"]
+    end
+    subgraph "Custom Filter"
+        CF["class MyFilter(logging.Filter):<br/>    def filter(self, record):<br/>        # Return True to process<br/>        # Return False to drop<br/>        return 'secret' not in record.msg"]
+    end
+    subgraph "Use Cases"
+        U1["Filter by logger name"]
+        U2["Filter by message content"]
+        U3["Add extra fields to record"]
+        U4["Rate limiting"]
+    end
+    style CF fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Putting It Together",
+                        "explanation": "Complete example setting up logging with all components.",
+                        "diagram_data": """graph TB
+    subgraph "Setup Code"
+        C["import logging<br/><br/># Create logger<br/>logger = logging.getLogger('myapp')<br/>logger.setLevel(logging.DEBUG)<br/><br/># Create handler<br/>handler = logging.StreamHandler()<br/>handler.setLevel(logging.INFO)<br/><br/># Create formatter<br/>formatter = logging.Formatter('%(name)s - %(message)s')<br/>handler.setFormatter(formatter)<br/><br/># Add handler to logger<br/>logger.addHandler(handler)"]
+    end
+    subgraph "Usage"
+        U["logger.info('Hello')  # Output: myapp - Hello<br/>logger.debug('Hidden')  # No output (handler level)"]
+    end
+    C --> U
+    style C fill:#E3F2FD
+    style U fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Complete Flow Diagram",
+                        "explanation": "The full picture of how a log message is processed.",
+                        "diagram_data": """graph TB
+    subgraph "Your Code"
+        LOG["logger.error('Failed')"]
+    end
+    subgraph "Logger Processing"
+        L1["Logger level check"]
+        L2["Logger filters"]
+        L3["Propagate to parent?"]
+    end
+    subgraph "Handler Processing"
+        H1["Handler level check"]
+        H2["Handler filters"]
+        H3["Format with Formatter"]
+        H4["Emit to destination"]
+    end
+    LOG --> L1 --> L2 --> H1
+    L2 --> L3
+    H1 --> H2 --> H3 --> H4
+    subgraph "Destinations"
+        D1["Console"]
+        D2["File"]
+        D3["Network"]
+    end
+    H4 --> D1
+    H4 --> D2
+    H4 --> D3
+    style LOG fill:#4CAF50,color:white
+    style H4 fill:#2196F3,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_levels_visual(self):
+        """Seed Log Levels Explained visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="log-levels",
+            defaults={
+                "title": "Log Levels Explained",
+                "description": "DEBUG, INFO, WARNING, ERROR, CRITICAL - when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 8,
+                "tags": ["python", "logging", "levels", "debug", "error"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Five Standard Levels",
+                        "explanation": "Python logging has five built-in levels, each with a numeric value. Lower values are more verbose.",
+                        "diagram_data": """graph TB
+    subgraph "Levels (Low to High)"
+        D["DEBUG (10)<br/>Detailed diagnostic info"]
+        I["INFO (20)<br/>Confirmation things work"]
+        W["WARNING (30)<br/>Something unexpected"]
+        E["ERROR (40)<br/>Serious problem"]
+        C["CRITICAL (50)<br/>Program may crash"]
+    end
+    D --> I --> W --> E --> C
+    style D fill:#E3F2FD
+    style I fill:#C8E6C9
+    style W fill:#FFF9C4
+    style E fill:#FFCDD2
+    style C fill:#F44336,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "DEBUG Level",
+                        "explanation": "**DEBUG** is for detailed information useful during development and debugging.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use DEBUG"
+        U1["Variable values during execution"]
+        U2["Function entry/exit"]
+        U3["Loop iterations"]
+        U4["SQL queries being executed"]
+        U5["API request/response details"]
+    end
+    subgraph "Examples"
+        E["logger.debug(f'Processing user {user_id}')<br/>logger.debug(f'Query: {sql}')<br/>logger.debug(f'Response: {response.json()}')"]
+    end
+    subgraph "Note"
+        N["Usually disabled in production<br/>Can be very verbose"]
+    end
+    style E fill:#E3F2FD
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "INFO Level",
+                        "explanation": "**INFO** confirms that things are working as expected. Good for tracking normal flow.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use INFO"
+        U1["Service started/stopped"]
+        U2["Configuration loaded"]
+        U3["User logged in"]
+        U4["Task completed successfully"]
+        U5["Batch job progress"]
+    end
+    subgraph "Examples"
+        E["logger.info('Server started on port 8080')<br/>logger.info(f'Loaded {len(records)} records')<br/>logger.info('Daily backup completed')"]
+    end
+    subgraph "Rule of Thumb"
+        R["If you'd want to see it in<br/>production logs, use INFO"]
+    end
+    style E fill:#C8E6C9
+    style R fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "WARNING Level",
+                        "explanation": "**WARNING** indicates something unexpected happened, but the program can continue.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use WARNING"
+        U1["Deprecated API usage"]
+        U2["Fallback to default value"]
+        U3["Retry after failure"]
+        U4["Resource running low"]
+        U5["Configuration issue (non-fatal)"]
+    end
+    subgraph "Examples"
+        E["logger.warning('Config not found, using defaults')<br/>logger.warning(f'Disk space low: {percent}%')<br/>logger.warning('API rate limit approaching')"]
+    end
+    subgraph "Key Point"
+        K["Something to investigate<br/>but not immediately critical"]
+    end
+    style E fill:#FFF9C4
+    style K fill:#FF9800,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "ERROR Level",
+                        "explanation": "**ERROR** means a serious problem occurred. Some functionality is not working.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use ERROR"
+        U1["Failed to complete operation"]
+        U2["Database connection lost"]
+        U3["API call failed (after retries)"]
+        U4["File not found (when expected)"]
+        U5["Permission denied"]
+    end
+    subgraph "Examples"
+        E["logger.error('Failed to save user data')<br/>logger.error(f'API returned {status_code}')<br/>logger.exception('Database query failed')  # with traceback"]
+    end
+    subgraph "Best Practice"
+        B["Use logger.exception() in except blocks<br/>It auto-includes the traceback"]
+    end
+    style E fill:#FFCDD2
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "CRITICAL Level",
+                        "explanation": "**CRITICAL** means the program itself may be unable to continue running.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use CRITICAL"
+        U1["Application cannot start"]
+        U2["Essential service unavailable"]
+        U3["Data corruption detected"]
+        U4["Security breach detected"]
+        U5["Unrecoverable state"]
+    end
+    subgraph "Examples"
+        E["logger.critical('Cannot connect to database')<br/>logger.critical('Out of memory')<br/>logger.critical('License expired')"]
+    end
+    subgraph "Note"
+        N["Rarely used<br/>Often followed by sys.exit()"]
+    end
+    style E fill:#F44336,color:white
+    style N fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Level Filtering",
+                        "explanation": "Setting a level means: process this level AND all higher severity levels.",
+                        "diagram_data": """graph TB
+    subgraph "Logger Level = WARNING"
+        A["DEBUG ❌ (10 < 30)"]
+        B["INFO ❌ (20 < 30)"]
+        C["WARNING ✓ (30 >= 30)"]
+        D["ERROR ✓ (40 >= 30)"]
+        E["CRITICAL ✓ (50 >= 30)"]
+    end
+    subgraph "Common Configurations"
+        C1["Development: DEBUG"]
+        C2["Staging: DEBUG or INFO"]
+        C3["Production: INFO or WARNING"]
+    end
+    subgraph "Code"
+        CD["logger.setLevel(logging.WARNING)<br/># Only WARNING, ERROR, CRITICAL logged"]
+    end
+    style C fill:#4CAF50
+    style D fill:#4CAF50
+    style E fill:#4CAF50
+    style A fill:#FFCDD2
+    style B fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Quick Reference",
+                        "explanation": "Decision guide for choosing the right level.",
+                        "diagram_data": """graph TB
+    subgraph "Level Selection Guide"
+        T["Level    | When to Use<br/>---------|------------------------------------------<br/>DEBUG    | Detailed info for debugging<br/>INFO     | Normal operation confirmation<br/>WARNING  | Unexpected but handled situation<br/>ERROR    | Operation failed, needs attention<br/>CRITICAL | System failure, may crash"]
+    end
+    subgraph "Questions to Ask"
+        Q1["Will devs need this for debugging? → DEBUG"]
+        Q2["Is this normal operation? → INFO"]
+        Q3["Is something wrong but handled? → WARNING"]
+        Q4["Did an operation fail? → ERROR"]
+        Q5["Can the system continue? → ERROR vs CRITICAL"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_inheritance_visual(self):
+        """Seed Logger Inheritance visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logger-inheritance",
+            defaults={
+                "title": "Logger Inheritance",
+                "description": "Parent-child logger relationships, propagation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["python", "logging", "inheritance", "hierarchy", "propagation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Logger Hierarchy",
+                        "explanation": "Loggers form a tree hierarchy based on their names, separated by dots.",
+                        "diagram_data": """graph TB
+    subgraph "Logger Tree"
+        R["root (unnamed)"]
+        A["myapp"]
+        B["myapp.db"]
+        C["myapp.api"]
+        D["myapp.api.users"]
+        E["myapp.api.orders"]
+    end
+    R --> A
+    A --> B
+    A --> C
+    C --> D
+    C --> E
+    subgraph "Name Pattern"
+        N["parent.child.grandchild"]
+    end
+    style R fill:#4CAF50,color:white
+    style A fill:#81C784""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Root Logger",
+                        "explanation": "The **root logger** is at the top of the hierarchy. It's what `logging.info()` uses directly.",
+                        "diagram_data": """graph TB
+    subgraph "Getting Root Logger"
+        G1["logging.getLogger()  # No name = root"]
+        G2["logging.getLogger('')  # Empty string = root"]
+    end
+    subgraph "Using Root Directly"
+        U["logging.info('message')  # Uses root logger<br/>logging.warning('warning')  # Uses root logger"]
+    end
+    subgraph "vs Named Logger"
+        N["logger = logging.getLogger('myapp')<br/>logger.info('message')  # Uses 'myapp' logger"]
+    end
+    subgraph "Best Practice"
+        B["Use named loggers in libraries/modules<br/>Root logger is for simple scripts only"]
+    end
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Propagation: How It Works",
+                        "explanation": "By default, log messages **propagate** up to parent loggers for handling.",
+                        "diagram_data": """graph TB
+    subgraph "Propagation Flow"
+        LOG["myapp.api.users logs ERROR"]
+        L1["myapp.api.users<br/>(no handlers)"]
+        L2["myapp.api<br/>(no handlers)"]
+        L3["myapp<br/>(has FileHandler)"]
+        L4["root<br/>(has StreamHandler)"]
+    end
+    LOG --> L1
+    L1 -->|"propagate"| L2
+    L2 -->|"propagate"| L3
+    L3 -->|"propagate"| L4
+    subgraph "Result"
+        R["Message handled by BOTH:<br/>- myapp's FileHandler<br/>- root's StreamHandler"]
+    end
+    style L3 fill:#2196F3,color:white
+    style L4 fill:#4CAF50,color:white
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Effective Level",
+                        "explanation": "A logger without an explicit level inherits its **effective level** from ancestors.",
+                        "diagram_data": """graph TB
+    subgraph "Level Inheritance"
+        R["root<br/>level=WARNING"]
+        A["myapp<br/>level=DEBUG"]
+        B["myapp.db<br/>level=NOTSET"]
+        C["myapp.api<br/>level=NOTSET"]
+    end
+    R --> A --> B
+    A --> C
+    subgraph "Effective Levels"
+        E1["root: WARNING"]
+        E2["myapp: DEBUG (explicit)"]
+        E3["myapp.db: DEBUG (inherited from myapp)"]
+        E4["myapp.api: DEBUG (inherited from myapp)"]
+    end
+    subgraph "NOTSET"
+        N["level=NOTSET (0) means:<br/>'Look at my parent's level'"]
+    end
+    style A fill:#4CAF50,color:white
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Controlling Propagation",
+                        "explanation": "Set `propagate=False` to prevent messages from bubbling up.",
+                        "diagram_data": """graph TB
+    subgraph "Default (propagate=True)"
+        D["logger.propagate = True<br/>Messages go to parent handlers too"]
+    end
+    subgraph "Disabled (propagate=False)"
+        P["logger.propagate = False<br/>Messages only handled locally"]
+    end
+    subgraph "Use Cases for False"
+        U1["Prevent duplicate logs"]
+        U2["Isolate library logging"]
+        U3["Separate log destinations"]
+    end
+    subgraph "Example"
+        E["logger = logging.getLogger('myapp.api')<br/>logger.propagate = False<br/>logger.addHandler(my_handler)<br/># Messages won't go to root"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Pattern: Module Loggers",
+                        "explanation": "Best practice is to create a logger per module using `__name__`.",
+                        "diagram_data": """graph TB
+    subgraph "In Each Module"
+        M["# myapp/api/users.py<br/>import logging<br/>logger = logging.getLogger(__name__)<br/># __name__ = 'myapp.api.users'"]
+    end
+    subgraph "Benefits"
+        B1["Automatic hierarchy from package structure"]
+        B2["Easy to filter by module"]
+        B3["Clear log message origin"]
+    end
+    subgraph "Configure at Top Level"
+        C["# In main.py or config<br/>logging.getLogger('myapp').setLevel(logging.DEBUG)<br/>logging.getLogger('myapp.api').setLevel(logging.INFO)"]
+    end
+    style M fill:#E3F2FD
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Avoiding Duplicate Logs",
+                        "explanation": "A common issue: seeing the same message twice due to multiple handlers.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["Message logged twice!<br/>2024-01-15 ERROR myapp - Failed<br/>2024-01-15 ERROR myapp - Failed"]
+    end
+    subgraph "Cause"
+        C["Both 'myapp' and root have handlers<br/>Message propagates from myapp → root<br/>Both handlers emit it"]
+    end
+    subgraph "Solutions"
+        S1["Option 1: propagate=False<br/>logger.propagate = False"]
+        S2["Option 2: Only configure root<br/>Don't add handlers to child loggers"]
+        S3["Option 3: Don't use basicConfig<br/>if configuring loggers manually"]
+    end
+    style P fill:#FFCDD2
+    style S1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Library Logging Best Practice",
+                        "explanation": "When writing a library, follow these guidelines.",
+                        "diagram_data": """graph TB
+    subgraph "Library Code"
+        L["# mylibrary/__init__.py<br/>import logging<br/>logging.getLogger(__name__).addHandler(<br/>    logging.NullHandler()<br/>)"]
+    end
+    subgraph "Why NullHandler?"
+        W1["Prevents 'No handler found' warning"]
+        W2["Library doesn't configure logging"]
+        W3["Application decides how to log"]
+    end
+    subgraph "Application Configures"
+        A["# In the application<br/>logging.getLogger('mylibrary').setLevel(logging.WARNING)"]
+    end
+    subgraph "Rule"
+        R["Libraries: Create loggers, add NullHandler<br/>Applications: Configure handlers"]
+    end
+    style L fill:#E3F2FD
+    style R fill:#4CAF50,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_configuration_visual(self):
+        """Seed Configuration Methods visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-configuration",
+            defaults={
+                "title": "Configuration Methods",
+                "description": "basicConfig, dictConfig, fileConfig - when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "logging", "configuration", "dictConfig", "basicConfig"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Configuration Options",
+                        "explanation": "Python logging offers three main ways to configure logging, each suited for different scenarios.",
+                        "diagram_data": """graph TB
+    subgraph "Configuration Methods"
+        BC["basicConfig()<br/>Simple, quick setup"]
+        DC["dictConfig()<br/>Dictionary-based, flexible"]
+        FC["fileConfig()<br/>INI file-based"]
+    end
+    subgraph "Complexity"
+        S["Simple Scripts"] --> BC
+        M["Medium Projects"] --> DC
+        L["Legacy/External Config"] --> FC
+    end
+    style DC fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "basicConfig() - Quick Start",
+                        "explanation": "**basicConfig()** is the simplest way to set up logging. Perfect for scripts and quick debugging.",
+                        "diagram_data": """graph TB
+    subgraph "Basic Usage"
+        B1["import logging<br/>logging.basicConfig(level=logging.INFO)<br/>logging.info('Hello!')"]
+    end
+    subgraph "Common Parameters"
+        P1["level=logging.DEBUG"]
+        P2["format='%(levelname)s - %(message)s'"]
+        P3["filename='app.log'"]
+        P4["datefmt='%Y-%m-%d %H:%M:%S'"]
+        P5["handlers=[handler1, handler2]"]
+    end
+    subgraph "Important Note"
+        N["Only works ONCE!<br/>Must call before any logging<br/>Subsequent calls are ignored"]
+    end
+    style B1 fill:#E3F2FD
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "basicConfig() Examples",
+                        "explanation": "Common basicConfig patterns for different use cases.",
+                        "diagram_data": """graph TB
+    subgraph "Console + File"
+        CF["logging.basicConfig(<br/>    level=logging.DEBUG,<br/>    format='%(asctime)s %(levelname)s %(message)s',<br/>    handlers=[<br/>        logging.FileHandler('app.log'),<br/>        logging.StreamHandler()<br/>    ]<br/>)"]
+    end
+    subgraph "File Only"
+        FO["logging.basicConfig(<br/>    filename='app.log',<br/>    level=logging.INFO,<br/>    format='%(asctime)s - %(message)s'<br/>)"]
+    end
+    subgraph "Limitations"
+        L1["Can't configure per-logger settings"]
+        L2["Can't modify after first logging call"]
+        L3["No filter support"]
+    end
+    style CF fill:#E3F2FD
+    style L1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "dictConfig() - Recommended",
+                        "explanation": "**dictConfig()** uses a dictionary to define the complete logging configuration. This is the recommended approach for most projects.",
+                        "diagram_data": """graph TB
+    subgraph "Structure"
+        D["LOGGING_CONFIG = {<br/>    'version': 1,<br/>    'disable_existing_loggers': False,<br/>    'formatters': {...},<br/>    'handlers': {...},<br/>    'loggers': {...},<br/>    'root': {...}<br/>}"]
+    end
+    subgraph "Usage"
+        U["from logging.config import dictConfig<br/>dictConfig(LOGGING_CONFIG)"]
+    end
+    subgraph "Benefits"
+        B1["Full control over all components"]
+        B2["Easy to store as JSON/YAML"]
+        B3["Can reconfigure at runtime"]
+        B4["Supports incremental config"]
+    end
+    style D fill:#E3F2FD
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "dictConfig() Full Example",
+                        "explanation": "A complete dictConfig example with multiple handlers and loggers.",
+                        "diagram_data": """graph TB
+    subgraph "Complete Config"
+        C["LOGGING = {<br/>    'version': 1,<br/>    'formatters': {<br/>        'detailed': {'format': '%(asctime)s %(name)s %(levelname)s %(message)s'},<br/>        'simple': {'format': '%(levelname)s %(message)s'}<br/>    },<br/>    'handlers': {<br/>        'console': {'class': 'logging.StreamHandler', 'formatter': 'simple'},<br/>        'file': {'class': 'logging.FileHandler', 'filename': 'app.log', 'formatter': 'detailed'}<br/>    },<br/>    'loggers': {<br/>        'myapp': {'level': 'DEBUG', 'handlers': ['console', 'file']}<br/>    },<br/>    'root': {'level': 'WARNING', 'handlers': ['console']}<br/>}"]
+    end
+    subgraph "Key Fields"
+        K1["version: Always 1 (schema version)"]
+        K2["disable_existing_loggers: Usually False"]
+        K3["formatters: Define output formats"]
+        K4["handlers: Define destinations"]
+        K5["loggers: Configure named loggers"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Django Logging Example",
+                        "explanation": "Django uses dictConfig internally. Here's a typical Django logging setup.",
+                        "diagram_data": """graph TB
+    subgraph "settings.py"
+        S["LOGGING = {<br/>    'version': 1,<br/>    'disable_existing_loggers': False,<br/>    'handlers': {<br/>        'console': {'class': 'logging.StreamHandler'},<br/>        'file': {'class': 'logging.FileHandler', 'filename': 'debug.log'}<br/>    },<br/>    'loggers': {<br/>        'django': {'handlers': ['console'], 'level': 'INFO'},<br/>        'django.db.backends': {'handlers': ['file'], 'level': 'DEBUG'},<br/>        'myapp': {'handlers': ['console', 'file'], 'level': 'DEBUG'}<br/>    }<br/>}"]
+    end
+    subgraph "Common Django Loggers"
+        D1["django - General Django"]
+        D2["django.request - HTTP requests"]
+        D3["django.db.backends - SQL queries"]
+        D4["django.security - Security warnings"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "fileConfig() - INI Files",
+                        "explanation": "**fileConfig()** reads configuration from an INI-style file. Less common but useful for external configuration.",
+                        "diagram_data": """graph TB
+    subgraph "logging.conf"
+        F["[loggers]<br/>keys=root,myapp<br/><br/>[handlers]<br/>keys=consoleHandler<br/><br/>[formatters]<br/>keys=simpleFormatter<br/><br/>[logger_myapp]<br/>level=DEBUG<br/>handlers=consoleHandler<br/>qualname=myapp<br/><br/>[handler_consoleHandler]<br/>class=StreamHandler<br/>formatter=simpleFormatter<br/><br/>[formatter_simpleFormatter]<br/>format=%(levelname)s - %(message)s"]
+    end
+    subgraph "Usage"
+        U["from logging.config import fileConfig<br/>fileConfig('logging.conf')"]
+    end
+    subgraph "When to Use"
+        W["External config management<br/>Non-Python config systems<br/>Legacy compatibility"]
+    end
+    style F fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "YAML Configuration",
+                        "explanation": "A popular approach: store dictConfig in YAML for readability.",
+                        "diagram_data": """graph TB
+    subgraph "logging.yaml"
+        Y["version: 1<br/>formatters:<br/>  simple:<br/>    format: '%(levelname)s - %(message)s'<br/>handlers:<br/>  console:<br/>    class: logging.StreamHandler<br/>    formatter: simple<br/>loggers:<br/>  myapp:<br/>    level: DEBUG<br/>    handlers: [console]"]
+    end
+    subgraph "Load and Apply"
+        L["import yaml<br/>from logging.config import dictConfig<br/><br/>with open('logging.yaml') as f:<br/>    config = yaml.safe_load(f)<br/>dictConfig(config)"]
+    end
+    subgraph "Benefits"
+        B1["Human-readable"]
+        B2["Easy to version control"]
+        B3["Comments supported"]
+    end
+    style Y fill:#E3F2FD
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Configuration Decision Guide",
+                        "explanation": "Choose the right configuration method for your needs.",
+                        "diagram_data": """graph TB
+    subgraph "Quick Script?"
+        Q["basicConfig()"]
+    end
+    subgraph "Real Application?"
+        R["dictConfig()"]
+    end
+    subgraph "External Config File?"
+        E["YAML + dictConfig()"]
+    end
+    subgraph "Legacy System?"
+        L["fileConfig()"]
+    end
+    subgraph "Summary"
+        S["Scripts → basicConfig<br/>Applications → dictConfig<br/>Config files → YAML/JSON + dictConfig<br/>Legacy → fileConfig"]
+    end
+    style R fill:#4CAF50,color:white
+    style S fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_handlers_visual(self):
+        """Seed Handler Types visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-handlers",
+            defaults={
+                "title": "Handler Types",
+                "description": "StreamHandler, FileHandler, RotatingFileHandler, and more",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "logging", "handlers", "rotation", "output"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Handlers?",
+                        "explanation": "Handlers determine **where** log messages go. Each handler sends logs to a different destination.",
+                        "diagram_data": """graph TB
+    subgraph "Logger"
+        L["Logger receives message"]
+    end
+    subgraph "Handlers"
+        H1["StreamHandler<br/>(console)"]
+        H2["FileHandler<br/>(file)"]
+        H3["SMTPHandler<br/>(email)"]
+        H4["HTTPHandler<br/>(web server)"]
+    end
+    L --> H1
+    L --> H2
+    L --> H3
+    L --> H4
+    subgraph "One Logger, Many Handlers"
+        N["A logger can have<br/>multiple handlers"]
+    end
+    style L fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "StreamHandler",
+                        "explanation": "**StreamHandler** writes to a stream - usually stdout or stderr (console).",
+                        "diagram_data": """graph TB
+    subgraph "StreamHandler"
+        S["logging.StreamHandler()"]
+    end
+    subgraph "Default"
+        D["Writes to sys.stderr"]
+    end
+    subgraph "Custom Stream"
+        C["import sys<br/>handler = logging.StreamHandler(sys.stdout)"]
+    end
+    subgraph "Use Cases"
+        U1["Development/debugging"]
+        U2["Docker containers (stdout)"]
+        U3["Real-time monitoring"]
+    end
+    style S fill:#2196F3,color:white
+    style U2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "FileHandler",
+                        "explanation": "**FileHandler** writes logs to a file. Simple but watch out for large files!",
+                        "diagram_data": """graph TB
+    subgraph "FileHandler"
+        F["logging.FileHandler('app.log')"]
+    end
+    subgraph "Parameters"
+        P1["filename - Path to log file"]
+        P2["mode - 'a' (append) or 'w' (write)"]
+        P3["encoding - Usually 'utf-8'"]
+        P4["delay - True = don't open until first log"]
+    end
+    subgraph "Example"
+        E["handler = logging.FileHandler(<br/>    'logs/app.log',<br/>    mode='a',<br/>    encoding='utf-8'<br/>)"]
+    end
+    subgraph "Warning"
+        W["Files can grow infinitely!<br/>Use RotatingFileHandler instead"]
+    end
+    style F fill:#2196F3,color:white
+    style W fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "RotatingFileHandler",
+                        "explanation": "**RotatingFileHandler** rotates logs when they reach a certain size. Essential for production!",
+                        "diagram_data": """graph TB
+    subgraph "RotatingFileHandler"
+        R["from logging.handlers import RotatingFileHandler<br/><br/>handler = RotatingFileHandler(<br/>    'app.log',<br/>    maxBytes=5*1024*1024,  # 5MB<br/>    backupCount=5<br/>)"]
+    end
+    subgraph "File Rotation"
+        F1["app.log (current)"]
+        F2["app.log.1 (previous)"]
+        F3["app.log.2 (older)"]
+        F4["app.log.3 (older)"]
+        F5["app.log.4 (oldest, then deleted)"]
+    end
+    F1 --> F2 --> F3 --> F4 --> F5
+    subgraph "Benefits"
+        B["Prevents disk full<br/>Keeps recent history<br/>Old logs auto-deleted"]
+    end
+    style R fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "TimedRotatingFileHandler",
+                        "explanation": "**TimedRotatingFileHandler** rotates logs based on time - daily, hourly, etc.",
+                        "diagram_data": """graph TB
+    subgraph "TimedRotatingFileHandler"
+        T["from logging.handlers import TimedRotatingFileHandler<br/><br/>handler = TimedRotatingFileHandler(<br/>    'app.log',<br/>    when='midnight',<br/>    interval=1,<br/>    backupCount=30<br/>)"]
+    end
+    subgraph "When Options"
+        W1["'S' - Seconds"]
+        W2["'M' - Minutes"]
+        W3["'H' - Hours"]
+        W4["'D' - Days"]
+        W5["'midnight' - Roll at midnight"]
+        W6["'W0'-'W6' - Weekday (Mon=0)"]
+    end
+    subgraph "Result"
+        R["app.log<br/>app.log.2024-01-15<br/>app.log.2024-01-14<br/>app.log.2024-01-13"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "WatchedFileHandler",
+                        "explanation": "**WatchedFileHandler** detects when the log file is rotated by external tools (like logrotate).",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["External tool (logrotate) moves app.log<br/>FileHandler keeps writing to old file descriptor"]
+    end
+    subgraph "Solution"
+        S["WatchedFileHandler checks inode<br/>Reopens file if it was rotated"]
+    end
+    subgraph "Usage"
+        U["from logging.handlers import WatchedFileHandler<br/><br/>handler = WatchedFileHandler('app.log')"]
+    end
+    subgraph "Use Case"
+        UC["Unix systems with logrotate<br/>Containerized apps with sidecar log rotation"]
+    end
+    style S fill:#C8E6C9
+    style P fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "SocketHandler & HTTPHandler",
+                        "explanation": "Send logs over the network to remote servers.",
+                        "diagram_data": """graph TB
+    subgraph "SocketHandler"
+        S["logging.handlers.SocketHandler(<br/>    'logserver.example.com',<br/>    9000  # port<br/>)"]
+    end
+    subgraph "HTTPHandler"
+        H["logging.handlers.HTTPHandler(<br/>    'logserver.example.com',<br/>    '/log/endpoint',<br/>    method='POST'<br/>)"]
+    end
+    subgraph "Use Cases"
+        U1["Centralized logging"]
+        U2["Log aggregation systems"]
+        U3["Distributed applications"]
+    end
+    subgraph "Production"
+        P["Often use specialized libraries:<br/>python-logstash, watchtower (AWS)"]
+    end
+    style U1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "QueueHandler (Thread-safe)",
+                        "explanation": "**QueueHandler** enables non-blocking logging - critical for high-performance applications.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["Logging to slow handler<br/>(file, network) blocks your code"]
+    end
+    subgraph "Solution: QueueHandler"
+        Q["import queue<br/>from logging.handlers import QueueHandler, QueueListener<br/><br/>log_queue = queue.Queue()<br/>queue_handler = QueueHandler(log_queue)<br/><br/># Listener processes queue in background<br/>listener = QueueListener(log_queue, file_handler)<br/>listener.start()"]
+    end
+    subgraph "Flow"
+        F1["Logger"] --> F2["QueueHandler"]
+        F2 --> F3["Queue"]
+        F3 --> F4["QueueListener"]
+        F4 --> F5["FileHandler"]
+    end
+    subgraph "Benefits"
+        B["Non-blocking logging<br/>Better performance<br/>Batch processing"]
+    end
+    style Q fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Handler Quick Reference",
+                        "explanation": "Choose the right handler for your needs.",
+                        "diagram_data": """graph TB
+    subgraph "Handler Selection"
+        T["Handler             | Use Case<br/>--------------------|---------------------------<br/>StreamHandler       | Console output, containers<br/>FileHandler         | Simple file logging (small)<br/>RotatingFileHandler | Production file logging<br/>TimedRotating...    | Daily/hourly log files<br/>WatchedFileHandler  | With external logrotate<br/>SocketHandler       | Remote TCP logging<br/>HTTPHandler         | REST API endpoints<br/>QueueHandler        | Non-blocking, async<br/>SMTPHandler         | Email alerts<br/>SysLogHandler       | System syslog<br/>NullHandler         | Libraries (suppress)"]
+    end
+    subgraph "Production Recommendation"
+        R["RotatingFileHandler +<br/>StreamHandler +<br/>QueueHandler for high traffic"]
+    end
+    style T fill:#E3F2FD
+    style R fill:#4CAF50,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_formatters_visual(self):
+        """Seed Formatters Deep Dive visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-formatters",
+            defaults={
+                "title": "Formatters Deep Dive",
+                "description": "Format strings, LogRecord attributes, custom formatters",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["python", "logging", "formatters", "format-string", "output"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Formatters?",
+                        "explanation": "Formatters control **how** log messages look. They convert LogRecord objects into text strings.",
+                        "diagram_data": """graph LR
+    subgraph "Flow"
+        LR["LogRecord<br/>(name, level, msg, ...)"]
+        F["Formatter"]
+        T["Formatted Text<br/>'2024-01-15 ERROR myapp - Failed'"]
+    end
+    LR --> F --> T
+    subgraph "Formatter's Job"
+        J["Convert LogRecord attributes<br/>into readable text output"]
+    end
+    style F fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Basic Format String",
+                        "explanation": "Format strings use `%(attribute)s` syntax to include LogRecord attributes.",
+                        "diagram_data": """graph TB
+    subgraph "Simple Format"
+        S["'%(levelname)s - %(message)s'<br/>→ 'ERROR - Connection failed'"]
+    end
+    subgraph "Detailed Format"
+        D["'%(asctime)s %(name)s %(levelname)s %(message)s'<br/>→ '2024-01-15 10:30:45 myapp ERROR Connection failed'"]
+    end
+    subgraph "With Module Info"
+        M["'%(asctime)s [%(filename)s:%(lineno)d] %(message)s'<br/>→ '2024-01-15 10:30:45 [api.py:42] Connection failed'"]
+    end
+    subgraph "Usage"
+        U["formatter = logging.Formatter(<br/>    '%(asctime)s %(levelname)s %(message)s'<br/>)"]
+    end
+    style U fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "LogRecord Attributes",
+                        "explanation": "Every LogRecord has these attributes available for formatting.",
+                        "diagram_data": """graph TB
+    subgraph "Core Attributes"
+        C1["%(name)s - Logger name"]
+        C2["%(levelname)s - Level (DEBUG, INFO...)"]
+        C3["%(levelno)d - Level number (10, 20...)"]
+        C4["%(message)s - The log message"]
+    end
+    subgraph "Time Attributes"
+        T1["%(asctime)s - Timestamp string"]
+        T2["%(created)f - Unix timestamp"]
+        T3["%(relativeCreated)d - ms since logging loaded"]
+    end
+    subgraph "Location Attributes"
+        L1["%(filename)s - Source filename"]
+        L2["%(funcName)s - Function name"]
+        L3["%(lineno)d - Line number"]
+        L4["%(module)s - Module name"]
+        L5["%(pathname)s - Full file path"]
+    end
+    subgraph "Process/Thread"
+        P1["%(process)d - Process ID"]
+        P2["%(processName)s - Process name"]
+        P3["%(thread)d - Thread ID"]
+        P4["%(threadName)s - Thread name"]
+    end""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Date/Time Formatting",
+                        "explanation": "Customize timestamp format with the `datefmt` parameter.",
+                        "diagram_data": """graph TB
+    subgraph "Default Format"
+        D["'2024-01-15 10:30:45,123'<br/>(includes milliseconds)"]
+    end
+    subgraph "Custom datefmt"
+        C["formatter = logging.Formatter(<br/>    '%(asctime)s %(message)s',<br/>    datefmt='%Y-%m-%d %H:%M:%S'<br/>)<br/>→ '2024-01-15 10:30:45 Message'"]
+    end
+    subgraph "Common Patterns"
+        P1["%Y-%m-%d %H:%M:%S - ISO-ish"]
+        P2["%d/%b/%Y %H:%M:%S - Apache style"]
+        P3["%H:%M:%S - Time only"]
+        P4["%Y%m%d_%H%M%S - Sortable"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Style Parameter (Python 3.2+)",
+                        "explanation": "Python supports three format string styles: `%`, `{`, and `$`.",
+                        "diagram_data": """graph TB
+    subgraph "Percent Style (Default)"
+        P["'%(levelname)s - %(message)s'<br/>style='%'"]
+    end
+    subgraph "Brace Style"
+        B["'{levelname} - {message}'<br/>style='{'"]
+    end
+    subgraph "Dollar Style"
+        D["'$levelname - $message'<br/>style='$'"]
+    end
+    subgraph "Example"
+        E["logging.Formatter(<br/>    '{asctime} {levelname} {message}',<br/>    style='{'<br/>)"]
+    end
+    subgraph "Note"
+        N["Brace style is cleaner but<br/>% style is more compatible"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Custom Formatters",
+                        "explanation": "Subclass `logging.Formatter` for advanced customization.",
+                        "diagram_data": """graph TB
+    subgraph "Custom Formatter Class"
+        C["class ColorFormatter(logging.Formatter):<br/>    COLORS = {<br/>        'DEBUG': '\\033[36m',  # cyan<br/>        'INFO': '\\033[32m',   # green<br/>        'WARNING': '\\033[33m', # yellow<br/>        'ERROR': '\\033[31m',  # red<br/>    }<br/><br/>    def format(self, record):<br/>        color = self.COLORS.get(record.levelname, '')<br/>        record.levelname = f'{color}{record.levelname}\\033[0m'<br/>        return super().format(record)"]
+    end
+    subgraph "Methods to Override"
+        M1["format(record) - Main formatting"]
+        M2["formatTime(record, datefmt)"]
+        M3["formatException(exc_info)"]
+        M4["formatStack(stack_info)"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "JSON Formatter Example",
+                        "explanation": "Create a JSON formatter for structured logging.",
+                        "diagram_data": """graph TB
+    subgraph "JSON Formatter"
+        J["import json<br/>from datetime import datetime<br/><br/>class JSONFormatter(logging.Formatter):<br/>    def format(self, record):<br/>        log_obj = {<br/>            'timestamp': datetime.utcnow().isoformat(),<br/>            'level': record.levelname,<br/>            'logger': record.name,<br/>            'message': record.getMessage(),<br/>            'module': record.module,<br/>            'line': record.lineno<br/>        }<br/>        if record.exc_info:<br/>            log_obj['exception'] = self.formatException(record.exc_info)<br/>        return json.dumps(log_obj)"]
+    end
+    subgraph "Output"
+        O["{\"timestamp\": \"2024-01-15T10:30:45\",<br/>\"level\": \"ERROR\",<br/>\"logger\": \"myapp\",<br/>\"message\": \"Connection failed\"}"]
+    end
+    style J fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Formatter Best Practices",
+                        "explanation": "Guidelines for effective log formatting.",
+                        "diagram_data": """graph TB
+    subgraph "Development"
+        D["Include: timestamp, level, file:line, message<br/>'%(asctime)s %(levelname)s [%(filename)s:%(lineno)d] %(message)s'"]
+    end
+    subgraph "Production"
+        P["Include: timestamp, level, logger, request_id, message<br/>Consider JSON for log aggregation"]
+    end
+    subgraph "Tips"
+        T1["Always include timestamp"]
+        T2["Include source location for debugging"]
+        T3["Use consistent format across handlers"]
+        T4["Add context (request_id, user_id)"]
+    end
+    subgraph "Anti-patterns"
+        A1["Too much info → noise"]
+        A2["No timestamp → can't correlate"]
+        A3["No level → can't filter"]
+    end
+    style T1 fill:#C8E6C9
+    style A1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_structured_visual(self):
+        """Seed Structured Logging visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="structured-logging",
+            defaults={
+                "title": "Structured Logging",
+                "description": "JSON logging, extra fields, contextvars for request tracking",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["python", "logging", "structured", "json", "context", "observability"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Structured Logging?",
+                        "explanation": "Traditional text logs are hard to parse and analyze. Structured logging outputs machine-readable formats (usually JSON).",
+                        "diagram_data": """graph TB
+    subgraph "Traditional Log"
+        T["2024-01-15 10:30:45 ERROR User 123 failed to login from 192.168.1.1"]
+    end
+    subgraph "Problems"
+        P1["Hard to parse programmatically"]
+        P2["Inconsistent formats"]
+        P3["Can't query fields easily"]
+    end
+    subgraph "Structured Log"
+        S["{<br/>  \"timestamp\": \"2024-01-15T10:30:45Z\",<br/>  \"level\": \"ERROR\",<br/>  \"event\": \"login_failed\",<br/>  \"user_id\": 123,<br/>  \"ip\": \"192.168.1.1\"<br/>}"]
+    end
+    subgraph "Benefits"
+        B1["Easy to parse"]
+        B2["Queryable fields"]
+        B3["Works with log aggregators"]
+    end
+    style T fill:#FFCDD2
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The 'extra' Parameter",
+                        "explanation": "Add custom fields to log records using the `extra` parameter.",
+                        "diagram_data": """graph TB
+    subgraph "Using extra"
+        E["logger.info(<br/>    'User logged in',<br/>    extra={<br/>        'user_id': 123,<br/>        'ip_address': '192.168.1.1',<br/>        'browser': 'Chrome'<br/>    }<br/>)"]
+    end
+    subgraph "Accessing in Formatter"
+        F["'%(user_id)s from %(ip_address)s: %(message)s'<br/>→ '123 from 192.168.1.1: User logged in'"]
+    end
+    subgraph "Gotcha"
+        G["extra keys become LogRecord attributes<br/>They MUST be in format string<br/>or you'll get KeyError"]
+    end
+    style E fill:#E3F2FD
+    style G fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "LoggerAdapter for Context",
+                        "explanation": "**LoggerAdapter** automatically adds context to all log calls.",
+                        "diagram_data": """graph TB
+    subgraph "LoggerAdapter"
+        L["class RequestAdapter(logging.LoggerAdapter):<br/>    def process(self, msg, kwargs):<br/>        # Add request_id to every log<br/>        extra = kwargs.setdefault('extra', {})<br/>        extra['request_id'] = self.extra['request_id']<br/>        return msg, kwargs"]
+    end
+    subgraph "Usage"
+        U["logger = logging.getLogger(__name__)<br/>adapter = RequestAdapter(logger, {'request_id': 'abc-123'})<br/><br/>adapter.info('Processing started')<br/>adapter.error('Validation failed')<br/># All logs include request_id='abc-123'"]
+    end
+    subgraph "Benefits"
+        B["Don't need to pass extra every time<br/>Context travels with the adapter"]
+    end
+    style L fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "contextvars for Request Tracking",
+                        "explanation": "Use `contextvars` to track request context across async code.",
+                        "diagram_data": """graph TB
+    subgraph "Context Variable"
+        C["import contextvars<br/><br/>request_id_var = contextvars.ContextVar('request_id', default=None)"]
+    end
+    subgraph "Set in Middleware"
+        M["async def middleware(request, call_next):<br/>    request_id = str(uuid.uuid4())<br/>    request_id_var.set(request_id)<br/>    response = await call_next(request)<br/>    return response"]
+    end
+    subgraph "Access in Filter"
+        F["class ContextFilter(logging.Filter):<br/>    def filter(self, record):<br/>        record.request_id = request_id_var.get()<br/>        return True"]
+    end
+    subgraph "Benefits"
+        B["Works across async boundaries<br/>No need to pass context manually<br/>Thread-safe"]
+    end
+    style C fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "structlog Library",
+                        "explanation": "**structlog** is the most popular library for structured logging in Python.",
+                        "diagram_data": """graph TB
+    subgraph "Install"
+        I["pip install structlog"]
+    end
+    subgraph "Basic Usage"
+        B["import structlog<br/><br/>logger = structlog.get_logger()<br/>logger.info('user_logged_in', user_id=123, ip='192.168.1.1')"]
+    end
+    subgraph "Output (JSON)"
+        O["{\"event\": \"user_logged_in\",<br/>\"user_id\": 123,<br/>\"ip\": \"192.168.1.1\",<br/>\"timestamp\": \"2024-01-15T10:30:45Z\"}"]
+    end
+    subgraph "Features"
+        F1["Automatic JSON output"]
+        F2["Processors pipeline"]
+        F3["Bound loggers (context)"]
+        F4["stdlib integration"]
+    end
+    style B fill:#E3F2FD
+    style F1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "structlog Configuration",
+                        "explanation": "Configure structlog with processors for your needs.",
+                        "diagram_data": """graph TB
+    subgraph "Configuration"
+        C["import structlog<br/><br/>structlog.configure(<br/>    processors=[<br/>        structlog.stdlib.add_log_level,<br/>        structlog.stdlib.add_logger_name,<br/>        structlog.processors.TimeStamper(fmt='iso'),<br/>        structlog.processors.StackInfoRenderer(),<br/>        structlog.processors.format_exc_info,<br/>        structlog.processors.JSONRenderer()<br/>    ],<br/>    wrapper_class=structlog.stdlib.BoundLogger,<br/>    context_class=dict,<br/>    logger_factory=structlog.stdlib.LoggerFactory(),<br/>)"]
+    end
+    subgraph "Processors"
+        P1["Add timestamps"]
+        P2["Add log level"]
+        P3["Format exceptions"]
+        P4["Render to JSON"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Bound Loggers in structlog",
+                        "explanation": "Bind context that persists across multiple log calls.",
+                        "diagram_data": """graph TB
+    subgraph "Binding Context"
+        B["logger = structlog.get_logger()<br/><br/># Bind context for this request<br/>log = logger.bind(request_id='abc-123', user_id=42)<br/><br/>log.info('processing_started')<br/>log.info('validation_passed')<br/>log.info('processing_complete')<br/># All logs have request_id and user_id"]
+    end
+    subgraph "New Context"
+        N["# Add more context<br/>log = log.bind(order_id=999)<br/>log.info('order_created')<br/># Has request_id, user_id, AND order_id"]
+    end
+    subgraph "Unbind"
+        U["log = log.unbind('order_id')<br/># Back to just request_id and user_id"]
+    end
+    style B fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "python-json-logger",
+                        "explanation": "A simpler alternative: **python-json-logger** adds JSON output to stdlib logging.",
+                        "diagram_data": """graph TB
+    subgraph "Install"
+        I["pip install python-json-logger"]
+    end
+    subgraph "Usage"
+        U["from pythonjsonlogger import jsonlogger<br/><br/>handler = logging.StreamHandler()<br/>formatter = jsonlogger.JsonFormatter(<br/>    '%(timestamp)s %(level)s %(name)s %(message)s'<br/>)<br/>handler.setFormatter(formatter)<br/><br/>logger = logging.getLogger()<br/>logger.addHandler(handler)<br/>logger.info('Hello', extra={'user_id': 123})"]
+    end
+    subgraph "Output"
+        O["{\"timestamp\": \"2024-01-15 10:30:45\",<br/>\"level\": \"INFO\",<br/>\"message\": \"Hello\",<br/>\"user_id\": 123}"]
+    end
+    style U fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for effective structured logging.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use consistent field names"]
+        D2["Include correlation IDs (request_id)"]
+        D3["Log events, not sentences"]
+        D4["Use appropriate types (int, not '123')"]
+        D5["Include timestamp in UTC"]
+    end
+    subgraph "Don't"
+        DN1["Log sensitive data (passwords, tokens)"]
+        DN2["Log huge objects"]
+        DN3["Use inconsistent naming"]
+    end
+    subgraph "Field Naming"
+        F["user_id not userId (consistency)<br/>request_id not req_id (clarity)<br/>duration_ms not duration (explicit unit)"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_ml_pipelines_visual(self):
+        """Seed Logging in ML Pipelines visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-ml-pipelines",
+            defaults={
+                "title": "Logging in ML Pipelines",
+                "description": "Experiment tracking, metric logging, model artifacts",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["python", "logging", "ml", "mlops", "experiment-tracking", "metrics"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "ML Logging Requirements",
+                        "explanation": "ML pipelines have unique logging needs beyond traditional applications.",
+                        "diagram_data": """graph TB
+    subgraph "Traditional App Logging"
+        T1["Events & errors"]
+        T2["Request tracing"]
+        T3["Performance metrics"]
+    end
+    subgraph "ML Pipeline Logging"
+        M1["Hyperparameters"]
+        M2["Training metrics (loss, accuracy)"]
+        M3["Model artifacts"]
+        M4["Data versions"]
+        M5["Experiment comparisons"]
+        M6["Reproducibility info"]
+    end
+    subgraph "Why Different?"
+        W["ML needs to COMPARE runs<br/>Not just debug them"]
+    end
+    style W fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Logging Hyperparameters",
+                        "explanation": "Track all hyperparameters to reproduce experiments.",
+                        "diagram_data": """graph TB
+    subgraph "What to Log"
+        H1["Model architecture (layers, units)"]
+        H2["Training config (lr, batch_size, epochs)"]
+        H3["Data preprocessing params"]
+        H4["Random seeds"]
+        H5["Environment (Python, library versions)"]
+    end
+    subgraph "Basic Python Logging"
+        P["params = {<br/>    'learning_rate': 0.001,<br/>    'batch_size': 32,<br/>    'epochs': 100<br/>}<br/>logger.info('Training started', extra=params)"]
+    end
+    subgraph "Better: Use MLflow"
+        M["import mlflow<br/><br/>mlflow.log_params(params)<br/># Stored in experiment tracker"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Logging Training Metrics",
+                        "explanation": "Track metrics during training for analysis and early stopping.",
+                        "diagram_data": """graph TB
+    subgraph "Per-Epoch Logging"
+        E["for epoch in range(epochs):<br/>    loss = train_epoch(model, data)<br/>    val_acc = evaluate(model, val_data)<br/>    <br/>    logger.info(f'Epoch {epoch}',<br/>        extra={'loss': loss, 'val_acc': val_acc})<br/>    <br/>    mlflow.log_metrics({<br/>        'loss': loss,<br/>        'val_accuracy': val_acc<br/>    }, step=epoch)"]
+    end
+    subgraph "Key Metrics"
+        K1["Training loss"]
+        K2["Validation loss"]
+        K3["Validation accuracy/F1/AUC"]
+        K4["Learning rate (if scheduling)"]
+        K5["Gradient norms (debugging)"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Integrating with MLflow",
+                        "explanation": "MLflow provides specialized logging for ML experiments.",
+                        "diagram_data": """graph TB
+    subgraph "MLflow Logging Types"
+        L1["mlflow.log_param() - Single param"]
+        L2["mlflow.log_params() - Dict of params"]
+        L3["mlflow.log_metric() - Single metric"]
+        L4["mlflow.log_metrics() - Dict of metrics"]
+        L5["mlflow.log_artifact() - Files"]
+        L6["mlflow.log_model() - Model serialization"]
+    end
+    subgraph "Example"
+        E["with mlflow.start_run():<br/>    mlflow.log_params({'lr': 0.01, 'epochs': 50})<br/>    <br/>    for epoch in range(50):<br/>        # ... training ...<br/>        mlflow.log_metric('loss', loss, step=epoch)<br/>    <br/>    mlflow.log_artifact('plots/loss_curve.png')<br/>    mlflow.sklearn.log_model(model, 'model')"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Combining Python Logging + MLflow",
+                        "explanation": "Use both: Python logging for debugging, MLflow for experiment tracking.",
+                        "diagram_data": """graph TB
+    subgraph "Separate Concerns"
+        PL["Python Logging<br/>• Debug messages<br/>• Error tracing<br/>• System events"]
+        ML["MLflow<br/>• Hyperparameters<br/>• Metrics<br/>• Artifacts<br/>• Comparisons"]
+    end
+    subgraph "Example Setup"
+        E["import logging<br/>import mlflow<br/><br/>logger = logging.getLogger(__name__)<br/><br/>with mlflow.start_run():<br/>    logger.info('Starting training run')<br/>    mlflow.log_params(config)<br/>    <br/>    try:<br/>        train(model)<br/>        mlflow.log_metrics({'final_acc': acc})<br/>        logger.info('Training complete')<br/>    except Exception as e:<br/>        logger.exception('Training failed')<br/>        mlflow.set_tag('status', 'failed')"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Logging Data Information",
+                        "explanation": "Track data characteristics for reproducibility and debugging.",
+                        "diagram_data": """graph TB
+    subgraph "Data Logging"
+        D1["Dataset version/hash"]
+        D2["Number of samples (train/val/test)"]
+        D3["Feature statistics"]
+        D4["Class distribution"]
+        D5["Data quality issues found"]
+    end
+    subgraph "Example"
+        E["def log_data_info(df, name='dataset'):<br/>    info = {<br/>        f'{name}_rows': len(df),<br/>        f'{name}_cols': len(df.columns),<br/>        f'{name}_missing': df.isna().sum().sum(),<br/>        f'{name}_hash': hash_dataframe(df)<br/>    }<br/>    mlflow.log_params(info)<br/>    logger.info(f'Loaded {name}', extra=info)"]
+    end
+    subgraph "Why?"
+        W["Data changes → different results<br/>Track data to explain differences"]
+    end
+    style E fill:#E3F2FD
+    style W fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Logging Model Artifacts",
+                        "explanation": "Save model files, plots, and other outputs for later analysis.",
+                        "diagram_data": """graph TB
+    subgraph "Artifacts to Log"
+        A1["Trained model weights"]
+        A2["Training curves plot"]
+        A3["Confusion matrix"]
+        A4["Feature importance"]
+        A5["Sample predictions"]
+        A6["Config/requirements files"]
+    end
+    subgraph "MLflow Artifacts"
+        M["# Save model<br/>mlflow.sklearn.log_model(model, 'model')<br/><br/># Save plots<br/>fig.savefig('/tmp/curve.png')<br/>mlflow.log_artifact('/tmp/curve.png', 'plots')<br/><br/># Save directory<br/>mlflow.log_artifacts('output_dir/', 'results')"]
+    end
+    subgraph "Retrieve Later"
+        R["run = mlflow.get_run(run_id)<br/>model = mlflow.sklearn.load_model(f'runs:/{run_id}/model')"]
+    end
+    style M fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Framework-Specific Logging",
+                        "explanation": "Deep learning frameworks have built-in logging integrations.",
+                        "diagram_data": """graph TB
+    subgraph "PyTorch + TensorBoard"
+        PT["from torch.utils.tensorboard import SummaryWriter<br/><br/>writer = SummaryWriter('runs/exp1')<br/>writer.add_scalar('loss', loss, epoch)<br/>writer.add_histogram('weights', model.fc.weight, epoch)<br/>writer.add_image('samples', img_grid, epoch)"]
+    end
+    subgraph "Keras Callbacks"
+        K["from tensorflow.keras.callbacks import TensorBoard, CSVLogger<br/><br/>model.fit(X, y, callbacks=[<br/>    TensorBoard(log_dir='./logs'),<br/>    CSVLogger('training.csv'),<br/>    mlflow.keras.MlflowCallback()<br/>])"]
+    end
+    subgraph "Auto-logging"
+        A["mlflow.sklearn.autolog()<br/>mlflow.pytorch.autolog()<br/>mlflow.tensorflow.autolog()<br/># Automatically logs params, metrics, model"]
+    end
+    style A fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for effective ML logging.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Log ALL hyperparameters"]
+        D2["Use experiment tracking tools"]
+        D3["Version your data"]
+        D4["Log environment info"]
+        D5["Save model checkpoints"]
+    end
+    subgraph "Don't"
+        DN1["Log every batch (too much noise)"]
+        DN2["Store models in Python logs"]
+        DN3["Ignore failed runs (log them!)"]
+    end
+    subgraph "Tools"
+        T["MLflow - Open source, self-hosted<br/>Weights & Biases - Cloud service<br/>Neptune - Cloud service<br/>TensorBoard - Visualization"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_antipatterns_visual(self):
+        """Seed Common Anti-Patterns visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-antipatterns",
+            defaults={
+                "title": "Common Anti-Patterns",
+                "description": "Common logging mistakes and how to avoid them",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "logging", "antipatterns", "best-practices", "debugging"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Anti-Pattern: Using print()",
+                        "explanation": "The most common mistake: using `print()` instead of logging.",
+                        "diagram_data": """graph TB
+    subgraph "BAD: print()"
+        B["print('Debug: user_id =', user_id)<br/>print('Error occurred!')<br/>print(f'Processing {item}')"]
+    end
+    subgraph "Problems"
+        P1["Can't disable in production"]
+        P2["No log levels"]
+        P3["No timestamps"]
+        P4["Goes to stdout, hard to capture"]
+    end
+    subgraph "GOOD: logging"
+        G["logger.debug('user_id=%s', user_id)<br/>logger.error('Error occurred!')<br/>logger.info('Processing %s', item)"]
+    end
+    subgraph "Benefits"
+        BN["Configurable levels<br/>Structured output<br/>Multiple destinations"]
+    end
+    style B fill:#FFCDD2
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Anti-Pattern: String Formatting in Log Calls",
+                        "explanation": "Format strings are evaluated even if the log level is disabled!",
+                        "diagram_data": """graph TB
+    subgraph "BAD: Eager Formatting"
+        B["logger.debug(f'User data: {expensive_call()}')<br/>logger.debug('Data: ' + str(large_object))<br/>logger.debug('User: %s' % user.to_dict())"]
+    end
+    subgraph "Problem"
+        P["Even if DEBUG is disabled,<br/>the formatting/function call<br/>STILL HAPPENS"]
+    end
+    subgraph "GOOD: Lazy Formatting"
+        G["logger.debug('User data: %s', expensive_call)<br/>logger.debug('Data: %s', large_object)<br/>logger.debug('User: %s', user)"]
+    end
+    subgraph "Why It Works"
+        W["Logger only formats if<br/>the level is enabled"]
+    end
+    style B fill:#FFCDD2
+    style G fill:#C8E6C9
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Anti-Pattern: Catching and Silencing Exceptions",
+                        "explanation": "Logging an error but hiding important information.",
+                        "diagram_data": """graph TB
+    subgraph "BAD: Lost Information"
+        B1["try:<br/>    process()<br/>except Exception:<br/>    logger.error('Something went wrong')"]
+        B2["try:<br/>    process()<br/>except Exception as e:<br/>    logger.error(str(e))  # Loses traceback"]
+    end
+    subgraph "GOOD: Full Context"
+        G["try:<br/>    process()<br/>except Exception:<br/>    logger.exception('Failed to process')<br/>    # Automatically includes traceback!"]
+    end
+    subgraph "Alternative"
+        A["logger.error('Failed', exc_info=True)"]
+    end
+    style B1 fill:#FFCDD2
+    style B2 fill:#FFCDD2
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Anti-Pattern: Root Logger Abuse",
+                        "explanation": "Using the root logger directly instead of named loggers.",
+                        "diagram_data": """graph TB
+    subgraph "BAD: Root Logger"
+        B["import logging<br/>logging.info('Processing...')  # Uses root<br/>logging.error('Failed!')  # Uses root"]
+    end
+    subgraph "Problems"
+        P1["Can't filter by module"]
+        P2["Can't set different levels"]
+        P3["Hard to identify log source"]
+    end
+    subgraph "GOOD: Named Logger"
+        G["import logging<br/>logger = logging.getLogger(__name__)<br/>logger.info('Processing...')<br/>logger.error('Failed!')"]
+    end
+    subgraph "Benefits"
+        BN["logger.name = 'myapp.module'<br/>Filter: myapp.* = DEBUG<br/>Third-party libs = WARNING"]
+    end
+    style B fill:#FFCDD2
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Anti-Pattern: Logging Sensitive Data",
+                        "explanation": "Accidentally logging passwords, tokens, or personal data.",
+                        "diagram_data": """graph TB
+    subgraph "BAD: Sensitive Data"
+        B["logger.info(f'Login: {username}:{password}')<br/>logger.debug(f'Request: {request.headers}')<br/>logger.info(f'User profile: {user.__dict__}')"]
+    end
+    subgraph "Problems"
+        P1["Security breach"]
+        P2["Compliance violations (GDPR)"]
+        P3["Log files become sensitive"]
+    end
+    subgraph "GOOD: Sanitize"
+        G["logger.info(f'Login attempt: {username}')<br/>logger.debug(f'Request to: {request.path}')<br/>logger.info(f'User: id={user.id}, role={user.role}')"]
+    end
+    subgraph "Tools"
+        T["Create sanitize_log() helper<br/>Mask patterns: credit cards, SSN<br/>Audit log statements"]
+    end
+    style B fill:#FFCDD2
+    style G fill:#C8E6C9
+    style P1 fill:#F44336,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Anti-Pattern: Too Much or Too Little",
+                        "explanation": "Extremes in logging: either flooding logs or not logging enough.",
+                        "diagram_data": """graph TB
+    subgraph "Too Much"
+        TM["for item in million_items:<br/>    logger.debug(f'Processing {item}')<br/><br/>Problems:<br/>- Huge log files<br/>- Performance impact<br/>- Hard to find real issues"]
+    end
+    subgraph "Too Little"
+        TL["def complex_process():<br/>    # 500 lines of code<br/>    # No logging<br/>    return result<br/><br/>Problems:<br/>- Can't debug production<br/>- No visibility"]
+    end
+    subgraph "Just Right"
+        JR["logger.info('Starting batch of %d items', len(items))<br/>for i, item in enumerate(items):<br/>    if i % 1000 == 0:<br/>        logger.debug('Progress: %d/%d', i, len(items))<br/>logger.info('Batch complete')"]
+    end
+    style TM fill:#FFCDD2
+    style TL fill:#FFCDD2
+    style JR fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Anti-Pattern: Not Using Appropriate Levels",
+                        "explanation": "Using wrong log levels makes filtering useless.",
+                        "diagram_data": """graph TB
+    subgraph "BAD Examples"
+        B1["logger.error('Starting server')  # Not an error!"]
+        B2["logger.debug('CRITICAL: Database down!')  # Wrong level"]
+        B3["logger.info('x=5, y=10, z=15')  # Debug noise"]
+    end
+    subgraph "Level Guidelines"
+        G1["DEBUG: Developer needs to see"]
+        G2["INFO: Operations should know"]
+        G3["WARNING: Something unexpected"]
+        G4["ERROR: Something failed"]
+        G5["CRITICAL: System is failing"]
+    end
+    subgraph "GOOD Examples"
+        GE1["logger.info('Starting server on port %d', port)"]
+        GE2["logger.critical('Database connection failed!')"]
+        GE3["logger.debug('Variables: x=%d, y=%d, z=%d', x, y, z)"]
+    end
+    style B1 fill:#FFCDD2
+    style GE1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Anti-Pattern: Duplicate Log Handlers",
+                        "explanation": "Accidentally adding multiple handlers leads to duplicate logs.",
+                        "diagram_data": """graph TB
+    subgraph "The Bug"
+        B["def setup_logging():<br/>    handler = logging.StreamHandler()<br/>    logging.getLogger().addHandler(handler)<br/><br/># Called multiple times!<br/>setup_logging()  # 1 handler<br/>setup_logging()  # 2 handlers<br/>setup_logging()  # 3 handlers<br/># Same message logged 3 times!"]
+    end
+    subgraph "Fix 1: Check First"
+        F1["if not logger.handlers:<br/>    logger.addHandler(handler)"]
+    end
+    subgraph "Fix 2: Clear First"
+        F2["logger.handlers.clear()<br/>logger.addHandler(handler)"]
+    end
+    subgraph "Fix 3: Use dictConfig"
+        F3["dictConfig() replaces config<br/>Not additive like addHandler()"]
+    end
+    style B fill:#FFCDD2
+    style F3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Anti-Pattern Checklist",
+                        "explanation": "Quick reference to avoid common mistakes.",
+                        "diagram_data": """graph TB
+    subgraph "Checklist"
+        C["✗ Using print() instead of logging<br/>✗ Eager string formatting in log calls<br/>✗ Swallowing exceptions without traceback<br/>✗ Using root logger in libraries<br/>✗ Logging sensitive data<br/>✗ Logging too much (every iteration)<br/>✗ Wrong log levels<br/>✗ Duplicate handlers<br/>✗ Not testing logging configuration"]
+    end
+    subgraph "Best Practices"
+        BP["✓ Use named loggers (__name__)<br/>✓ Lazy formatting (logger.info('%s', x))<br/>✓ logger.exception() in except blocks<br/>✓ Use dictConfig for configuration<br/>✓ Sanitize sensitive data<br/>✓ Log at appropriate levels<br/>✓ Test your logging in dev"]
+    end
+    style C fill:#FFCDD2
+    style BP fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_logging_performance_visual(self):
+        """Seed Performance Considerations visual topic."""
+        subject = self.get_or_create_subject(
+            "Python logging", "python-logging", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-performance",
+            defaults={
+                "title": "Performance Considerations",
+                "description": "Optimizing logging for high-throughput applications",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "logging", "performance", "optimization", "async"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Logging Has Cost",
+                        "explanation": "Every log call has overhead. In high-throughput apps, this matters.",
+                        "diagram_data": """graph TB
+    subgraph "Log Call Overhead"
+        O1["1. Check if level enabled"]
+        O2["2. Create LogRecord object"]
+        O3["3. Format the message"]
+        O4["4. Write to handler (I/O!)"]
+    end
+    subgraph "I/O is Slowest"
+        IO["File write: ~1ms<br/>Network: ~10-100ms<br/>Console: ~0.1ms"]
+    end
+    subgraph "Impact"
+        I["1M log calls with file I/O<br/>= ~1000 seconds of waiting!"]
+    end
+    style IO fill:#FFF9C4
+    style I fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Lazy Evaluation is Critical",
+                        "explanation": "Never format strings before passing to logger.",
+                        "diagram_data": """graph TB
+    subgraph "SLOW: Eager"
+        S["# Always formats, even if DEBUG disabled<br/>logger.debug(f'Data: {expensive_serialize(obj)}')<br/>logger.debug('User: ' + user.to_json())"]
+    end
+    subgraph "FAST: Lazy"
+        F["# Only formats if DEBUG enabled<br/>logger.debug('Data: %s', obj)<br/>logger.debug('User: %r', user)"]
+    end
+    subgraph "Why?"
+        W["Level check happens FIRST<br/>If disabled, formatting SKIPPED"]
+    end
+    subgraph "Benchmark"
+        B["Disabled DEBUG with eager: 1.5μs/call<br/>Disabled DEBUG with lazy: 0.1μs/call<br/>15x faster!"]
+    end
+    style S fill:#FFCDD2
+    style F fill:#C8E6C9
+    style B fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "isEnabledFor() Check",
+                        "explanation": "For expensive operations, check if level is enabled first.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use"
+        W["When log message requires<br/>expensive computation"]
+    end
+    subgraph "Pattern"
+        P["if logger.isEnabledFor(logging.DEBUG):<br/>    # Only runs if DEBUG enabled<br/>    stats = compute_expensive_stats()<br/>    logger.debug('Stats: %s', stats)"]
+    end
+    subgraph "Alternative"
+        A["# For simple cases, lazy eval is enough<br/>logger.debug('Value: %s', obj)  # obj.__str__ only if needed"]
+    end
+    subgraph "Note"
+        N["Don't overuse - adds complexity<br/>Only for truly expensive operations"]
+    end
+    style P fill:#E3F2FD
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Async Logging with QueueHandler",
+                        "explanation": "Move I/O off the main thread with asynchronous logging.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["Synchronous file write<br/>blocks your application"]
+    end
+    subgraph "Solution: QueueHandler"
+        S["import queue<br/>from logging.handlers import QueueHandler, QueueListener<br/><br/>log_queue = queue.Queue(-1)  # Unlimited<br/><br/># Main thread logs to queue (fast)<br/>queue_handler = QueueHandler(log_queue)<br/>logger.addHandler(queue_handler)<br/><br/># Background thread writes to file (slow)<br/>file_handler = logging.FileHandler('app.log')<br/>listener = QueueListener(log_queue, file_handler)<br/>listener.start()"]
+    end
+    subgraph "Result"
+        R["Log call: <1μs (queue put)<br/>File I/O: background thread<br/>No blocking!"]
+    end
+    style P fill:#FFCDD2
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Buffered Logging",
+                        "explanation": "Batch multiple log records before writing to reduce I/O.",
+                        "diagram_data": """graph TB
+    subgraph "MemoryHandler"
+        M["from logging.handlers import MemoryHandler<br/><br/># Buffer up to 100 records<br/>memory_handler = MemoryHandler(<br/>    capacity=100,<br/>    flushLevel=logging.ERROR,  # Flush on ERROR<br/>    target=file_handler<br/>)"]
+    end
+    subgraph "How It Works"
+        H1["Buffers log records in memory"]
+        H2["Flushes when capacity reached"]
+        H3["Flushes immediately on ERROR+"]
+        H4["Reduces I/O operations"]
+    end
+    subgraph "Trade-off"
+        T["+ Fewer I/O operations<br/>- May lose logs on crash<br/>- Slightly delayed output"]
+    end
+    style M fill:#E3F2FD
+    style T fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Sampling and Rate Limiting",
+                        "explanation": "Don't log every event in high-volume scenarios.",
+                        "diagram_data": """graph TB
+    subgraph "Sampling"
+        S["import random<br/><br/>def sampled_log(logger, level, msg, sample_rate=0.01):<br/>    if random.random() < sample_rate:<br/>        logger.log(level, msg + ' (sampled 1%)')"]
+    end
+    subgraph "Rate Limiting"
+        R["from functools import lru_cache<br/>import time<br/><br/>@lru_cache(maxsize=1000)<br/>def should_log(key, interval=60):<br/>    return time.time()  # Returns same value for interval<br/><br/>def rate_limited_log(logger, key, msg):<br/>    if should_log(key):  # Once per key per interval<br/>        logger.warning(msg)"]
+    end
+    subgraph "Use Cases"
+        U["High-volume request logging<br/>Repeated error suppression<br/>Metric collection"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Reduce LogRecord Creation",
+                        "explanation": "LogRecord creation has overhead. Minimize unnecessary records.",
+                        "diagram_data": """graph TB
+    subgraph "LogRecord Overhead"
+        O["Each log call creates:<br/>- LogRecord object<br/>- Captures stack frame<br/>- Gets thread/process info<br/>~1-2μs per call"]
+    end
+    subgraph "Optimization 1"
+        O1["# Batch log instead of per-item<br/><br/># BAD<br/>for item in items:<br/>    logger.debug('Processing %s', item)<br/><br/># GOOD<br/>logger.debug('Processing %d items', len(items))"]
+    end
+    subgraph "Optimization 2"
+        O2["# Aggregate metrics<br/><br/># Instead of logging each request time<br/>metrics.append(response_time)<br/><br/># Log summary periodically<br/>logger.info('Avg response: %dms', avg(metrics))"]
+    end
+    style O fill:#FFF9C4
+    style O1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Production Configuration",
+                        "explanation": "Optimize logging configuration for production workloads.",
+                        "diagram_data": """graph TB
+    subgraph "Development"
+        D["Level: DEBUG<br/>Format: Detailed with file:line<br/>Handler: StreamHandler<br/>No sampling"]
+    end
+    subgraph "Production"
+        P["Level: INFO or WARNING<br/>Format: JSON (for parsing)<br/>Handler: QueueHandler → File<br/>Rotation: TimedRotating/size-based<br/>Consider sampling"]
+    end
+    subgraph "Config Example"
+        C["LOGGING = {<br/>    'loggers': {<br/>        'myapp': {'level': 'INFO'},<br/>        'myapp.requests': {'level': 'WARNING'},  # High volume<br/>    },<br/>    'handlers': {<br/>        'async_file': {<br/>            'class': 'logging.handlers.QueueHandler',<br/>            ...<br/>        }<br/>    }<br/>}"]
+    end
+    style D fill:#E3F2FD
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Performance Checklist",
+                        "explanation": "Quick reference for high-performance logging.",
+                        "diagram_data": """graph TB
+    subgraph "Always Do"
+        A1["✓ Use lazy formatting (%s, not f-string)"]
+        A2["✓ Set appropriate levels per logger"]
+        A3["✓ Use QueueHandler for I/O-bound handlers"]
+        A4["✓ Rotate logs to manage file size"]
+    end
+    subgraph "Consider"
+        C1["Use isEnabledFor() for expensive operations"]
+        C2["Sample high-volume logs"]
+        C3["Buffer with MemoryHandler"]
+        C4["Aggregate instead of per-event logging"]
+    end
+    subgraph "Benchmark"
+        B["Measure your specific workload<br/>Profile before optimizing<br/>Log volume × cost per log = impact"]
+    end
+    style A1 fill:#C8E6C9
+    style B fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ============================================================
+    # Async Programming Visualizations
+    # ============================================================
+
+    def seed_async_event_loop_visual(self):
+        """Seed Event Loop Fundamentals visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="event-loop-fundamentals",
+            defaults={
+                "title": "Event Loop Fundamentals",
+                "description": "How the event loop schedules and runs coroutines",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["python", "asyncio", "event-loop", "concurrency", "coroutines"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is an Event Loop?",
+                        "explanation": "The event loop is the **heart** of asyncio. It's a single-threaded loop that manages and runs asynchronous tasks.",
+                        "diagram_data": """graph TB
+    subgraph "Event Loop"
+        EL["Event Loop<br/>(Single Thread)"]
+    end
+    subgraph "Tasks Queue"
+        T1["Task 1"]
+        T2["Task 2"]
+        T3["Task 3"]
+    end
+    subgraph "I/O Waiting"
+        IO1["Network Read"]
+        IO2["File Write"]
+        IO3["Timer"]
+    end
+    EL --> T1
+    EL --> T2
+    EL --> T3
+    IO1 -.-> EL
+    IO2 -.-> EL
+    IO3 -.-> EL
+    subgraph "Key Insight"
+        K["One thread juggles many tasks<br/>by switching when tasks wait for I/O"]
+    end
+    style EL fill:#4CAF50,color:white
+    style K fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Event Loop Cycle",
+                        "explanation": "The event loop continuously cycles through: check for ready tasks, run them until they await, then check for completed I/O.",
+                        "diagram_data": """graph TB
+    subgraph "Loop Cycle"
+        A["1. Check ready tasks"] --> B["2. Run task until await"]
+        B --> C["3. Task yields control"]
+        C --> D["4. Check I/O completions"]
+        D --> E["5. Wake up waiting tasks"]
+        E --> A
+    end
+    subgraph "Example"
+        EX["Task A runs → hits await fetch()<br/>Loop switches to Task B<br/>Task B runs → hits await sleep()<br/>Network response arrives<br/>Loop wakes Task A to continue"]
+    end
+    style A fill:#4CAF50,color:white
+    style EX fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Getting the Event Loop",
+                        "explanation": "Different ways to access and run the event loop.",
+                        "diagram_data": """graph TB
+    subgraph "Modern Way (Python 3.7+)"
+        M["asyncio.run(main())<br/># Creates loop, runs, closes"]
+    end
+    subgraph "Get Current Loop"
+        G["loop = asyncio.get_event_loop()<br/>loop = asyncio.get_running_loop()  # Inside async"]
+    end
+    subgraph "Manual Control (Advanced)"
+        A["loop = asyncio.new_event_loop()<br/>asyncio.set_event_loop(loop)<br/>try:<br/>    loop.run_until_complete(main())<br/>finally:<br/>    loop.close()"]
+    end
+    subgraph "Best Practice"
+        B["Use asyncio.run() for entry point<br/>Use get_running_loop() inside coroutines"]
+    end
+    style M fill:#4CAF50,color:white
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Event Loop Internals",
+                        "explanation": "Under the hood, the event loop uses OS-level I/O multiplexing (select, epoll, kqueue).",
+                        "diagram_data": """graph TB
+    subgraph "Event Loop Components"
+        S["Selector<br/>(epoll/kqueue/select)"]
+        RQ["Ready Queue<br/>(tasks to run)"]
+        SC["Scheduled Callbacks<br/>(timers, delays)"]
+    end
+    subgraph "OS Integration"
+        OS["Operating System"]
+        FD["File Descriptors<br/>(sockets, pipes)"]
+    end
+    S --> OS
+    OS --> FD
+    FD -.->|"ready"| S
+    S -->|"wake up"| RQ
+    subgraph "How It Works"
+        H["1. Register sockets with selector<br/>2. selector.select() blocks efficiently<br/>3. OS notifies when I/O ready<br/>4. Loop wakes relevant tasks"]
+    end
+    style S fill:#2196F3,color:white
+    style H fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Running Tasks",
+                        "explanation": "Tasks are the unit of work in asyncio. The event loop schedules and runs them.",
+                        "diagram_data": """graph TB
+    subgraph "Creating Tasks"
+        C1["task = asyncio.create_task(coro())<br/># Schedules coroutine to run"]
+        C2["task = loop.create_task(coro())<br/># Same, explicit loop"]
+    end
+    subgraph "Task States"
+        S1["PENDING"] --> S2["RUNNING"]
+        S2 --> S3["DONE"]
+        S2 --> S4["CANCELLED"]
+    end
+    subgraph "Example"
+        E["async def main():<br/>    task1 = asyncio.create_task(fetch_data())<br/>    task2 = asyncio.create_task(process_data())<br/>    # Both run concurrently!<br/>    result1 = await task1<br/>    result2 = await task2"]
+    end
+    style C1 fill:#E3F2FD
+    style S2 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Scheduling Callbacks",
+                        "explanation": "The event loop can schedule regular functions (not coroutines) to run.",
+                        "diagram_data": """graph TB
+    subgraph "Immediate Callback"
+        I["loop.call_soon(callback, arg1, arg2)<br/># Run in next iteration"]
+    end
+    subgraph "Delayed Callback"
+        D["loop.call_later(delay, callback, arg)<br/># Run after delay seconds"]
+    end
+    subgraph "Scheduled Callback"
+        S["loop.call_at(when, callback, arg)<br/># Run at specific loop time"]
+    end
+    subgraph "Thread-Safe"
+        T["loop.call_soon_threadsafe(callback)<br/># Call from another thread"]
+    end
+    subgraph "Note"
+        N["Callbacks are regular functions<br/>For coroutines, use create_task()"]
+    end
+    style I fill:#E3F2FD
+    style N fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Event Loop Methods",
+                        "explanation": "Key methods available on the event loop object.",
+                        "diagram_data": """graph TB
+    subgraph "Running"
+        R1["run_until_complete(future)"]
+        R2["run_forever()"]
+        R3["stop()"]
+        R4["is_running()"]
+        R5["is_closed()"]
+    end
+    subgraph "Tasks"
+        T1["create_task(coro)"]
+        T2["create_future()"]
+    end
+    subgraph "I/O"
+        IO1["add_reader(fd, callback)"]
+        IO2["add_writer(fd, callback)"]
+        IO3["remove_reader(fd)"]
+    end
+    subgraph "Network"
+        N1["create_connection()"]
+        N2["create_server()"]
+        N3["create_unix_connection()"]
+    end
+    subgraph "Subprocesses"
+        S1["subprocess_exec()"]
+        S2["subprocess_shell()"]
+    end
+    style R1 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Debug Mode",
+                        "explanation": "Enable debug mode to catch common async mistakes.",
+                        "diagram_data": """graph TB
+    subgraph "Enable Debug Mode"
+        E1["asyncio.run(main(), debug=True)"]
+        E2["PYTHONASYNCIODEBUG=1 python app.py"]
+        E3["loop.set_debug(True)"]
+    end
+    subgraph "What It Catches"
+        C1["Coroutines not awaited"]
+        C2["Callbacks taking too long"]
+        C3["Resource warnings"]
+        C4["Slow I/O operations"]
+    end
+    subgraph "Slow Callback Warning"
+        W["WARNING: Executing <callback> took 0.200s<br/># Anything > 0.1s is flagged"]
+    end
+    subgraph "Best Practice"
+        B["Always develop with debug=True<br/>Disable in production"]
+    end
+    style E1 fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Event Loop Lifecycle",
+                        "explanation": "Complete lifecycle from creation to cleanup.",
+                        "diagram_data": """graph TB
+    subgraph "Lifecycle"
+        A["Create Loop"] --> B["Run Tasks"]
+        B --> C["Handle Signals"]
+        C --> D["Shutdown"]
+        D --> E["Close Loop"]
+    end
+    subgraph "Proper Shutdown"
+        S["async def shutdown(loop):<br/>    tasks = asyncio.all_tasks(loop)<br/>    for task in tasks:<br/>        task.cancel()<br/>    await asyncio.gather(*tasks, return_exceptions=True)<br/>    loop.stop()"]
+    end
+    subgraph "asyncio.run() Does This"
+        AR["1. Creates new event loop<br/>2. Runs the coroutine<br/>3. Cancels remaining tasks<br/>4. Closes the loop<br/># All handled automatically!"]
+    end
+    style AR fill:#4CAF50,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_concurrency_models_visual(self):
+        """Seed Coroutines vs Threads vs Processes visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="concurrency-models",
+            defaults={
+                "title": "Coroutines vs Threads vs Processes",
+                "description": "Comparing Python's concurrency models",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "threading", "multiprocessing", "concurrency"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Three Concurrency Models",
+                        "explanation": "Python offers three main ways to run code concurrently: asyncio (coroutines), threading, and multiprocessing.",
+                        "diagram_data": """graph TB
+    subgraph "asyncio"
+        A["Single thread<br/>Cooperative multitasking<br/>Best for I/O-bound"]
+    end
+    subgraph "threading"
+        T["Multiple threads<br/>Preemptive multitasking<br/>Limited by GIL"]
+    end
+    subgraph "multiprocessing"
+        M["Multiple processes<br/>True parallelism<br/>Best for CPU-bound"]
+    end
+    subgraph "Key Question"
+        Q["Is your code waiting (I/O)<br/>or computing (CPU)?"]
+    end
+    Q -->|"I/O-bound"| A
+    Q -->|"Legacy/blocking"| T
+    Q -->|"CPU-bound"| M
+    style A fill:#4CAF50,color:white
+    style Q fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The GIL Problem",
+                        "explanation": "Python's Global Interpreter Lock (GIL) prevents true parallel execution of Python bytecode in threads.",
+                        "diagram_data": """graph TB
+    subgraph "GIL (Global Interpreter Lock)"
+        G["Only ONE thread can execute<br/>Python bytecode at a time"]
+    end
+    subgraph "Threads with GIL"
+        T1["Thread 1: Run"] --> T2["Thread 1: Wait for GIL"]
+        T3["Thread 2: Wait"] --> T4["Thread 2: Run"]
+    end
+    subgraph "Consequences"
+        C1["Threads don't speed up CPU work"]
+        C2["Threads still help with I/O"]
+        C3["Multiprocessing bypasses GIL"]
+    end
+    subgraph "GIL Releases"
+        R["GIL released during:<br/>- I/O operations<br/>- time.sleep()<br/>- C extensions"]
+    end
+    style G fill:#F44336,color:white
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Memory & Overhead Comparison",
+                        "explanation": "Each model has different resource requirements.",
+                        "diagram_data": """graph TB
+    subgraph "Coroutines (asyncio)"
+        A["Memory: ~1KB per coroutine<br/>Creation: ~1μs<br/>Context switch: ~100ns<br/>Can have 100,000+ concurrent"]
+    end
+    subgraph "Threads"
+        T["Memory: ~1MB per thread (stack)<br/>Creation: ~1ms<br/>Context switch: ~10μs<br/>Practical limit: 1000s"]
+    end
+    subgraph "Processes"
+        P["Memory: Full process copy<br/>Creation: ~100ms<br/>Context switch: ~1ms<br/>Limited by CPU cores"]
+    end
+    subgraph "Scale"
+        S["10K connections?<br/>asyncio: Easy<br/>threading: Difficult<br/>multiprocessing: Impossible"]
+    end
+    style A fill:#4CAF50,color:white
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "I/O-Bound: asyncio Wins",
+                        "explanation": "For I/O-bound tasks (network, files), asyncio is most efficient.",
+                        "diagram_data": """graph TB
+    subgraph "Scenario: 1000 HTTP Requests"
+        SC["Each request: 100ms network wait"]
+    end
+    subgraph "Threading Approach"
+        T["1000 threads = 1GB+ memory<br/>OS scheduler overhead<br/>GIL contention"]
+    end
+    subgraph "asyncio Approach"
+        A["1000 coroutines = ~1MB<br/>Single thread<br/>No lock contention<br/>Clean cooperative switching"]
+    end
+    subgraph "Code Comparison"
+        C1["# Threading<br/>with ThreadPoolExecutor(1000) as e:<br/>    results = e.map(fetch, urls)"]
+        C2["# asyncio<br/>async with aiohttp.ClientSession() as s:<br/>    results = await asyncio.gather(<br/>        *[fetch(s, url) for url in urls]<br/>    )"]
+    end
+    style A fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "CPU-Bound: Multiprocessing Wins",
+                        "explanation": "For CPU-intensive tasks, only multiprocessing provides true parallelism.",
+                        "diagram_data": """graph TB
+    subgraph "Scenario: Image Processing"
+        SC["Process 100 images<br/>Each takes 1 second CPU time"]
+    end
+    subgraph "asyncio"
+        A["Still single thread<br/>100 seconds total<br/>❌ No speedup"]
+    end
+    subgraph "threading"
+        T["GIL blocks parallel execution<br/>~100 seconds total<br/>❌ No speedup"]
+    end
+    subgraph "multiprocessing"
+        M["4 cores = 4 parallel workers<br/>~25 seconds total<br/>✓ Real speedup!"]
+    end
+    subgraph "Code"
+        C["from multiprocessing import Pool<br/><br/>with Pool(4) as p:<br/>    results = p.map(process_image, images)"]
+    end
+    style M fill:#4CAF50,color:white
+    style A fill:#FFCDD2
+    style T fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Hybrid Approach",
+                        "explanation": "Combine models for complex workloads: asyncio for I/O, multiprocessing for CPU.",
+                        "diagram_data": """graph TB
+    subgraph "Common Pattern"
+        EL["Event Loop<br/>(asyncio)"]
+        PP["Process Pool<br/>(CPU work)"]
+    end
+    EL -->|"offload CPU work"| PP
+    PP -->|"return results"| EL
+    subgraph "Code"
+        C["async def main():<br/>    loop = asyncio.get_running_loop()<br/>    with ProcessPoolExecutor() as pool:<br/>        # I/O work in event loop<br/>        data = await fetch_data()<br/>        <br/>        # CPU work in process pool<br/>        result = await loop.run_in_executor(<br/>            pool, cpu_intensive, data<br/>        )"]
+    end
+    subgraph "Best of Both"
+        B["asyncio handles 10K connections<br/>Process pool handles CPU bursts"]
+    end
+    style C fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Decision Matrix",
+                        "explanation": "How to choose the right concurrency model.",
+                        "diagram_data": """graph TB
+    subgraph "Use asyncio When"
+        A1["Many concurrent I/O operations"]
+        A2["Network servers/clients"]
+        A3["Web scraping"]
+        A4["Database queries"]
+        A5["Modern codebase"]
+    end
+    subgraph "Use threading When"
+        T1["Calling blocking libraries"]
+        T2["Legacy code integration"]
+        T3["Simple parallelism needed"]
+        T4["GUI applications"]
+    end
+    subgraph "Use multiprocessing When"
+        M1["CPU-intensive calculations"]
+        M2["Data processing/ML"]
+        M3["Image/video processing"]
+        M4["Need true parallelism"]
+    end
+    style A1 fill:#C8E6C9
+    style M1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Performance Comparison",
+                        "explanation": "Real-world performance characteristics.",
+                        "diagram_data": """graph TB
+    subgraph "Benchmark: 10,000 HTTP Requests"
+        B["Target: API that responds in 100ms"]
+    end
+    subgraph "Results"
+        R1["Sequential: 1000 seconds"]
+        R2["Threading (100 workers): 100 seconds"]
+        R3["asyncio: 10 seconds"]
+    end
+    subgraph "Benchmark: Matrix Multiplication"
+        BM["1000x1000 matrices, 100 times"]
+    end
+    subgraph "Results"
+        RM1["Sequential: 100 seconds"]
+        RM2["Threading: 100 seconds (GIL)"]
+        RM3["Multiprocessing (4 cores): 25 seconds"]
+    end
+    style R3 fill:#4CAF50,color:white
+    style RM3 fill:#4CAF50,color:white
+    style R1 fill:#FFCDD2
+    style RM2 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_await_internals_visual(self):
+        """Seed async/await Under the Hood visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="async-await-internals",
+            defaults={
+                "title": "async/await Under the Hood",
+                "description": "What happens when you await",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["python", "asyncio", "coroutines", "await", "internals"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Coroutines Are Generators",
+                        "explanation": "Under the hood, `async def` creates a coroutine object, which is built on Python's generator machinery.",
+                        "diagram_data": """graph TB
+    subgraph "Generator (Old Style)"
+        G["def gen():<br/>    yield 1<br/>    yield 2"]
+    end
+    subgraph "Coroutine (Async)"
+        C["async def coro():<br/>    await something()<br/>    return result"]
+    end
+    subgraph "Key Insight"
+        K["Both can pause and resume<br/>yield pauses generators<br/>await pauses coroutines"]
+    end
+    subgraph "Evolution"
+        E["Python 3.4: yield from<br/>Python 3.5: async/await<br/>Coroutines = special generators"]
+    end
+    style K fill:#E3F2FD
+    style C fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "What async def Creates",
+                        "explanation": "Calling an async function doesn't run it - it creates a coroutine object.",
+                        "diagram_data": """graph TB
+    subgraph "Regular Function"
+        RF["def regular():<br/>    return 42<br/><br/>result = regular()  # Runs immediately<br/># result = 42"]
+    end
+    subgraph "Async Function"
+        AF["async def async_func():<br/>    return 42<br/><br/>coro = async_func()  # Creates coroutine<br/># coro = <coroutine object>"]
+    end
+    subgraph "To Actually Run It"
+        R["result = await coro  # Inside async context<br/># OR<br/>result = asyncio.run(coro)  # Entry point"]
+    end
+    subgraph "Common Mistake"
+        M["async_func()  # Creates coroutine but never runs!<br/># RuntimeWarning: coroutine never awaited"]
+    end
+    style AF fill:#E3F2FD
+    style M fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Awaitable Protocol",
+                        "explanation": "An object is awaitable if it has `__await__` method. This includes coroutines, Tasks, and Futures.",
+                        "diagram_data": """graph TB
+    subgraph "Awaitable Types"
+        C["Coroutine<br/>(from async def)"]
+        T["Task<br/>(scheduled coroutine)"]
+        F["Future<br/>(placeholder for result)"]
+    end
+    subgraph "__await__ Method"
+        A["class Awaitable:<br/>    def __await__(self):<br/>        yield  # Pause point<br/>        return self.result"]
+    end
+    subgraph "What await Does"
+        W["1. Calls obj.__await__()<br/>2. Gets iterator<br/>3. Yields control to event loop<br/>4. Resumes when ready"]
+    end
+    C --> A
+    T --> A
+    F --> A
+    style A fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Await Execution Flow",
+                        "explanation": "Step-by-step: what happens when `await` is executed.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        CODE["async def fetch():<br/>    result = await http_get(url)<br/>    return result"]
+    end
+    subgraph "Step 1"
+        S1["await encounters http_get coroutine"]
+    end
+    subgraph "Step 2"
+        S2["Coroutine yields to event loop<br/>'I need to wait for network I/O'"]
+    end
+    subgraph "Step 3"
+        S3["Event loop runs other tasks<br/>Registers socket for read"]
+    end
+    subgraph "Step 4"
+        S4["Network data arrives<br/>Event loop resumes coroutine"]
+    end
+    subgraph "Step 5"
+        S5["await returns the result<br/>Coroutine continues"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    style S2 fill:#FFF9C4
+    style S4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Coroutine State Machine",
+                        "explanation": "A coroutine is a state machine that remembers where it paused.",
+                        "diagram_data": """graph TB
+    subgraph "Coroutine States"
+        S1["CORO_CREATED<br/>(just created)"]
+        S2["CORO_RUNNING<br/>(executing)"]
+        S3["CORO_SUSPENDED<br/>(at await)"]
+        S4["CORO_CLOSED<br/>(finished)"]
+    end
+    S1 -->|"first send()"| S2
+    S2 -->|"hits await"| S3
+    S3 -->|"resumed"| S2
+    S2 -->|"return/exception"| S4
+    subgraph "Inspect State"
+        I["import inspect<br/>inspect.getcoroutinestate(coro)<br/># Returns: 'CORO_SUSPENDED'"]
+    end
+    style S3 fill:#FFF9C4
+    style S4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Futures and Promises",
+                        "explanation": "A Future is a container for a result that doesn't exist yet.",
+                        "diagram_data": """graph TB
+    subgraph "Future"
+        F["asyncio.Future()<br/>Placeholder for eventual result"]
+    end
+    subgraph "States"
+        S1["Pending<br/>(waiting for result)"]
+        S2["Done<br/>(has result or exception)"]
+        S3["Cancelled"]
+    end
+    S1 --> S2
+    S1 --> S3
+    subgraph "Methods"
+        M1["future.result() - Get result"]
+        M2["future.set_result(val) - Set result"]
+        M3["future.done() - Check if done"]
+        M4["future.add_done_callback(fn)"]
+    end
+    subgraph "Await on Future"
+        A["result = await future<br/># Suspends until future is done<br/># Then returns the result"]
+    end
+    style F fill:#2196F3,color:white
+    style A fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Task Wraps Coroutine",
+                        "explanation": "A Task is a Future that wraps a coroutine and schedules it to run.",
+                        "diagram_data": """graph TB
+    subgraph "Coroutine Alone"
+        C["coro = fetch_data()<br/># Does nothing until awaited"]
+    end
+    subgraph "Task"
+        T["task = asyncio.create_task(fetch_data())<br/># Scheduled to run immediately!"]
+    end
+    subgraph "Task = Future + Coroutine"
+        TF["Task inherits from Future<br/>+ Drives coroutine execution<br/>+ Catches exceptions<br/>+ Handles cancellation"]
+    end
+    subgraph "Key Difference"
+        K["Coroutine: Lazy, needs await<br/>Task: Eager, starts running now"]
+    end
+    C --> T
+    style T fill:#4CAF50,color:white
+    style K fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Bytecode View",
+                        "explanation": "How Python compiles async/await to bytecode.",
+                        "diagram_data": """graph TB
+    subgraph "Source"
+        S["async def example():<br/>    x = await fetch()<br/>    return x + 1"]
+    end
+    subgraph "Simplified Bytecode"
+        B["GET_AWAITABLE<br/>LOAD_CONST None<br/>YIELD_FROM       # Pause here<br/>STORE_FAST x<br/>..."]
+    end
+    subgraph "Key Instructions"
+        K1["GET_AWAITABLE: Get __await__ iterator"]
+        K2["YIELD_FROM: Delegate to sub-iterator"]
+        K3["SEND: Resume with value"]
+    end
+    subgraph "Insight"
+        I["await is syntactic sugar for<br/>yield from coroutine.__await__()"]
+    end
+    style B fill:#E3F2FD
+    style I fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Custom Awaitable",
+                        "explanation": "Create your own awaitable object.",
+                        "diagram_data": """graph TB
+    subgraph "Custom Awaitable Class"
+        C["class AsyncTimer:<br/>    def __init__(self, delay):<br/>        self.delay = delay<br/>    <br/>    def __await__(self):<br/>        yield from asyncio.sleep(self.delay).__await__()<br/>        return 'Done!'<br/><br/># Usage<br/>result = await AsyncTimer(1.0)"]
+    end
+    subgraph "Simpler: async def"
+        S["async def async_timer(delay):<br/>    await asyncio.sleep(delay)<br/>    return 'Done!'<br/><br/># Usually prefer this!"]
+    end
+    subgraph "When Custom Awaitable?"
+        W["Need __await__ for special cases<br/>Library integration<br/>Advanced control flow"]
+    end
+    style S fill:#4CAF50,color:white
+    style C fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_task_lifecycle_visual(self):
+        """Seed Task Lifecycle visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="task-lifecycle",
+            defaults={
+                "title": "Task Lifecycle",
+                "description": "Creating, running, cancelling asyncio tasks",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "tasks", "lifecycle", "cancellation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Task States",
+                        "explanation": "A Task moves through several states during its lifecycle.",
+                        "diagram_data": """graph LR
+    subgraph "Task Lifecycle"
+        A["Created<br/>(Pending)"] --> B["Running"]
+        B --> C["Suspended<br/>(await)"]
+        C --> B
+        B --> D["Done"]
+        A --> E["Cancelled"]
+        B --> E
+        C --> E
+    end
+    subgraph "Done States"
+        D1["Success<br/>(has result)"]
+        D2["Failed<br/>(has exception)"]
+    end
+    D --> D1
+    D --> D2
+    style A fill:#FFF9C4
+    style D fill:#4CAF50,color:white
+    style E fill:#F44336,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Creating Tasks",
+                        "explanation": "Different ways to create and schedule tasks.",
+                        "diagram_data": """graph TB
+    subgraph "Recommended (Python 3.7+)"
+        R["task = asyncio.create_task(coro())<br/># Name for debugging (3.8+)<br/>task = asyncio.create_task(coro(), name='fetch')"]
+    end
+    subgraph "Using ensure_future"
+        E["task = asyncio.ensure_future(coro())<br/># Works with futures too<br/># Less explicit than create_task"]
+    end
+    subgraph "Direct Task Constructor"
+        D["loop = asyncio.get_running_loop()<br/>task = loop.create_task(coro())"]
+    end
+    subgraph "Key Point"
+        K["Task starts running immediately<br/>after creation (in next loop iteration)"]
+    end
+    style R fill:#4CAF50,color:white
+    style K fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Task vs Coroutine",
+                        "explanation": "Understanding when tasks run vs when coroutines run.",
+                        "diagram_data": """graph TB
+    subgraph "Coroutine (Lazy)"
+        C["coro = fetch()  # Nothing happens<br/>await coro       # Now it runs"]
+    end
+    subgraph "Task (Eager)"
+        T["task = asyncio.create_task(fetch())<br/># Already scheduled!<br/>result = await task  # Wait for completion"]
+    end
+    subgraph "Concurrency Difference"
+        CD1["# Sequential (one at a time)<br/>a = await fetch_a()<br/>b = await fetch_b()"]
+        CD2["# Concurrent (both running)<br/>task_a = asyncio.create_task(fetch_a())<br/>task_b = asyncio.create_task(fetch_b())<br/>a = await task_a<br/>b = await task_b"]
+    end
+    style T fill:#4CAF50,color:white
+    style CD2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Getting Task Results",
+                        "explanation": "How to retrieve the result or exception from a completed task.",
+                        "diagram_data": """graph TB
+    subgraph "Await the Task"
+        A["result = await task<br/># Waits until done, returns result"]
+    end
+    subgraph "Check Without Waiting"
+        C["if task.done():<br/>    result = task.result()  # May raise<br/>    exc = task.exception()  # Or get exception"]
+    end
+    subgraph "Callback on Completion"
+        CB["def handle_result(task):<br/>    if task.exception():<br/>        print(f'Failed: {task.exception()}')<br/>    else:<br/>        print(f'Result: {task.result()}')<br/><br/>task.add_done_callback(handle_result)"]
+    end
+    subgraph "Warning"
+        W["task.result() raises InvalidStateError<br/>if task is not done yet"]
+    end
+    style A fill:#4CAF50,color:white
+    style W fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Cancelling Tasks",
+                        "explanation": "How to cancel a running task and handle cancellation.",
+                        "diagram_data": """graph TB
+    subgraph "Cancel a Task"
+        C["task.cancel()<br/># Requests cancellation<br/># Doesn't immediately stop!"]
+    end
+    subgraph "What Happens"
+        W1["1. CancelledError raised at await point"]
+        W2["2. Task can catch and ignore/cleanup"]
+        W3["3. Task.cancelled() returns True"]
+    end
+    subgraph "Handle Cancellation"
+        H["async def my_task():<br/>    try:<br/>        await long_operation()<br/>    except asyncio.CancelledError:<br/>        print('Cleaning up...')<br/>        raise  # Re-raise to confirm cancel"]
+    end
+    subgraph "Check Status"
+        S["task.cancelled()  # Was it cancelled?<br/>task.done()       # Is it finished?"]
+    end
+    style C fill:#F44336,color:white
+    style H fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Cancellation Best Practices",
+                        "explanation": "Properly handling cancellation in your code.",
+                        "diagram_data": """graph TB
+    subgraph "BAD: Swallowing Cancel"
+        B["async def bad_task():<br/>    try:<br/>        await operation()<br/>    except asyncio.CancelledError:<br/>        pass  # Silently ignores!<br/>    # Task appears to complete normally"]
+    end
+    subgraph "GOOD: Cleanup and Re-raise"
+        G["async def good_task():<br/>    try:<br/>        await operation()<br/>    except asyncio.CancelledError:<br/>        await cleanup()  # Clean up<br/>        raise  # Propagate cancellation"]
+    end
+    subgraph "BETTER: Finally Block"
+        BT["async def better_task():<br/>    try:<br/>        await operation()<br/>    finally:<br/>        await cleanup()  # Always runs"]
+    end
+    style B fill:#FFCDD2
+    style G fill:#C8E6C9
+    style BT fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Task Groups (Python 3.11+)",
+                        "explanation": "TaskGroup provides structured concurrency - automatic cleanup on failure.",
+                        "diagram_data": """graph TB
+    subgraph "TaskGroup"
+        TG["async with asyncio.TaskGroup() as tg:<br/>    task1 = tg.create_task(fetch_a())<br/>    task2 = tg.create_task(fetch_b())<br/>    task3 = tg.create_task(fetch_c())<br/># All tasks complete or all cancelled"]
+    end
+    subgraph "Benefits"
+        B1["Automatic cancellation on error"]
+        B2["No orphaned tasks"]
+        B3["ExceptionGroup for multiple errors"]
+        B4["Clean structured concurrency"]
+    end
+    subgraph "If One Fails"
+        F["Task 2 raises exception →<br/>Task 1, 3 automatically cancelled →<br/>TaskGroup raises ExceptionGroup"]
+    end
+    style TG fill:#4CAF50,color:white
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Getting All Tasks",
+                        "explanation": "Inspecting and managing all running tasks.",
+                        "diagram_data": """graph TB
+    subgraph "List All Tasks"
+        L["tasks = asyncio.all_tasks()<br/># Returns set of all tasks<br/><br/>current = asyncio.current_task()<br/># The currently running task"]
+    end
+    subgraph "Cancel All Tasks"
+        C["for task in asyncio.all_tasks():<br/>    if task is not asyncio.current_task():<br/>        task.cancel()"]
+    end
+    subgraph "Wait for All"
+        W["tasks = asyncio.all_tasks()<br/>await asyncio.gather(*tasks, return_exceptions=True)"]
+    end
+    subgraph "Debugging"
+        D["for task in asyncio.all_tasks():<br/>    print(f'{task.get_name()}: {task.get_coro()}')"]
+    end
+    style L fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Task Patterns",
+                        "explanation": "Common patterns for working with tasks.",
+                        "diagram_data": """graph TB
+    subgraph "Fire and Forget"
+        FF["task = asyncio.create_task(background_job())<br/># Add callback to log errors<br/>task.add_done_callback(log_if_exception)"]
+    end
+    subgraph "Timeout"
+        TO["try:<br/>    result = await asyncio.wait_for(task, timeout=5.0)<br/>except asyncio.TimeoutError:<br/>    print('Task timed out')"]
+    end
+    subgraph "Shield from Cancellation"
+        S["result = await asyncio.shield(important_task())<br/># Task continues even if outer is cancelled"]
+    end
+    subgraph "Wait for First"
+        WF["done, pending = await asyncio.wait(<br/>    tasks, return_when=asyncio.FIRST_COMPLETED<br/>)"]
+    end
+    style FF fill:#E3F2FD
+    style TO fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_gather_wait_visual(self):
+        """Seed asyncio.gather vs asyncio.wait visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="gather-vs-wait",
+            defaults={
+                "title": "asyncio.gather vs asyncio.wait",
+                "description": "Running multiple coroutines concurrently",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "gather", "wait", "concurrency"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Ways to Wait",
+                        "explanation": "asyncio provides two main functions for running multiple coroutines: `gather` and `wait`.",
+                        "diagram_data": """graph TB
+    subgraph "asyncio.gather"
+        G["Simple, returns results in order<br/>Best for 'run all, get all results'"]
+    end
+    subgraph "asyncio.wait"
+        W["Flexible, returns task sets<br/>Best for 'wait for first/any/timeout'"]
+    end
+    subgraph "Quick Guide"
+        Q["Need results in order? → gather<br/>Need to handle completion? → wait<br/>Need timeout? → wait_for or wait"]
+    end
+    style G fill:#4CAF50,color:white
+    style W fill:#2196F3,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "asyncio.gather Basics",
+                        "explanation": "gather runs multiple awaitables and returns their results as a list.",
+                        "diagram_data": """graph TB
+    subgraph "Basic Usage"
+        B["results = await asyncio.gather(<br/>    fetch_user(1),<br/>    fetch_user(2),<br/>    fetch_user(3),<br/>)<br/># results = [user1, user2, user3]"]
+    end
+    subgraph "Key Features"
+        K1["Results in same order as inputs"]
+        K2["All run concurrently"]
+        K3["Returns when ALL complete"]
+    end
+    subgraph "Unpacking"
+        U["user1, user2, user3 = await asyncio.gather(<br/>    fetch_user(1),<br/>    fetch_user(2),<br/>    fetch_user(3),<br/>)"]
+    end
+    style B fill:#E3F2FD
+    style K1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "gather: Exception Handling",
+                        "explanation": "By default, gather fails fast. Use `return_exceptions=True` to collect all results.",
+                        "diagram_data": """graph TB
+    subgraph "Default (Fail Fast)"
+        D["try:<br/>    results = await asyncio.gather(a(), b(), c())<br/>except Exception as e:<br/>    # First exception stops everything<br/>    # Other tasks still running!"]
+    end
+    subgraph "return_exceptions=True"
+        R["results = await asyncio.gather(<br/>    a(), b(), c(),<br/>    return_exceptions=True<br/>)<br/># results = [result_a, ValueError(...), result_c]<br/># Exceptions are returned, not raised"]
+    end
+    subgraph "Check Results"
+        C["for result in results:<br/>    if isinstance(result, Exception):<br/>        handle_error(result)<br/>    else:<br/>        process(result)"]
+    end
+    style R fill:#4CAF50,color:white
+    style D fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "asyncio.wait Basics",
+                        "explanation": "wait returns two sets: done tasks and pending tasks.",
+                        "diagram_data": """graph TB
+    subgraph "Basic Usage"
+        B["tasks = [asyncio.create_task(c) for c in coros]<br/><br/>done, pending = await asyncio.wait(tasks)"]
+    end
+    subgraph "Returns"
+        R1["done: Set of completed tasks"]
+        R2["pending: Set of still-running tasks"]
+    end
+    subgraph "Get Results"
+        G["for task in done:<br/>    try:<br/>        result = task.result()<br/>    except Exception as e:<br/>        handle_error(e)"]
+    end
+    subgraph "Important"
+        I["wait() requires Task objects<br/>Not bare coroutines!"]
+    end
+    style B fill:#E3F2FD
+    style I fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "wait: return_when Options",
+                        "explanation": "Control when wait() returns with the `return_when` parameter.",
+                        "diagram_data": """graph TB
+    subgraph "ALL_COMPLETED (default)"
+        AC["done, pending = await asyncio.wait(<br/>    tasks,<br/>    return_when=asyncio.ALL_COMPLETED<br/>)<br/># Wait until ALL tasks done"]
+    end
+    subgraph "FIRST_COMPLETED"
+        FC["done, pending = await asyncio.wait(<br/>    tasks,<br/>    return_when=asyncio.FIRST_COMPLETED<br/>)<br/># Return when ANY task completes"]
+    end
+    subgraph "FIRST_EXCEPTION"
+        FE["done, pending = await asyncio.wait(<br/>    tasks,<br/>    return_when=asyncio.FIRST_EXCEPTION<br/>)<br/># Return on first exception (or all done)"]
+    end
+    style FC fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "wait with Timeout",
+                        "explanation": "Set a timeout for wait() - incomplete tasks go to pending.",
+                        "diagram_data": """graph TB
+    subgraph "Timeout Example"
+        T["done, pending = await asyncio.wait(<br/>    tasks,<br/>    timeout=5.0<br/>)<br/><br/># After 5 seconds:<br/># done = tasks that completed<br/># pending = tasks still running"]
+    end
+    subgraph "Handle Pending"
+        H["# Cancel tasks that didn't finish<br/>for task in pending:<br/>    task.cancel()<br/><br/># Or let them continue in background"]
+    end
+    subgraph "Pattern: Race with Timeout"
+        P["done, pending = await asyncio.wait(<br/>    tasks,<br/>    timeout=10.0,<br/>    return_when=asyncio.FIRST_COMPLETED<br/>)"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "asyncio.wait_for",
+                        "explanation": "For single coroutine with timeout, use wait_for.",
+                        "diagram_data": """graph TB
+    subgraph "wait_for"
+        W["try:<br/>    result = await asyncio.wait_for(<br/>        slow_operation(),<br/>        timeout=5.0<br/>    )<br/>except asyncio.TimeoutError:<br/>    print('Operation timed out')"]
+    end
+    subgraph "Key Difference"
+        K["wait_for: Single awaitable + timeout<br/>wait: Multiple tasks + flexible"]
+    end
+    subgraph "Timeout Behavior"
+        T["On timeout:<br/>- Task is CANCELLED<br/>- TimeoutError raised<br/>- Task doesn't continue"]
+    end
+    subgraph "Shield from Cancel"
+        S["# Don't cancel on timeout<br/>await asyncio.wait_for(<br/>    asyncio.shield(important()),<br/>    timeout=5.0<br/>)"]
+    end
+    style W fill:#E3F2FD
+    style T fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Common Patterns",
+                        "explanation": "Practical patterns using gather and wait.",
+                        "diagram_data": """graph TB
+    subgraph "Parallel API Calls"
+        P["users = await asyncio.gather(*[<br/>    fetch_user(id) for id in user_ids<br/>])"]
+    end
+    subgraph "Race: First Result"
+        R["tasks = [get_from_cache(), get_from_db()]<br/>done, pending = await asyncio.wait(<br/>    tasks, return_when=FIRST_COMPLETED<br/>)<br/>result = done.pop().result()<br/>for t in pending: t.cancel()"]
+    end
+    subgraph "Batch with Progress"
+        B["tasks = [asyncio.create_task(work(i)) for i in items]<br/>while tasks:<br/>    done, tasks = await asyncio.wait(<br/>        tasks, return_when=FIRST_COMPLETED<br/>    )<br/>    for t in done:<br/>        print(f'Completed: {t.result()}')"]
+    end
+    style P fill:#E3F2FD
+    style R fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Comparison Summary",
+                        "explanation": "When to use each function.",
+                        "diagram_data": """graph TB
+    subgraph "Use gather When"
+        G1["Need results in order"]
+        G2["All tasks must complete"]
+        G3["Simple 'run all' pattern"]
+        G4["Don't need to handle tasks individually"]
+    end
+    subgraph "Use wait When"
+        W1["Need flexible completion conditions"]
+        W2["Want to process as they complete"]
+        W3["Need timeout with pending handling"]
+        W4["Building complex coordination"]
+    end
+    subgraph "Use wait_for When"
+        WF["Single operation with timeout"]
+    end
+    subgraph "Use TaskGroup When"
+        TG["Python 3.11+<br/>Automatic cancellation on error<br/>Structured concurrency"]
+    end
+    style G1 fill:#C8E6C9
+    style W1 fill:#C8E6C9
+    style TG fill:#4CAF50,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_semaphores_visual(self):
+        """Seed Semaphores & Rate Limiting visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="semaphores-rate-limiting",
+            defaults={
+                "title": "Semaphores & Rate Limiting",
+                "description": "Controlling concurrency with asyncio primitives",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "semaphore", "rate-limiting", "throttling"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Limit Concurrency?",
+                        "explanation": "Sometimes you need to limit how many tasks run simultaneously.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["1000 URLs to fetch<br/>Launch all at once?<br/>→ Server overwhelmed<br/>→ Connection limits<br/>→ Memory exhaustion"]
+    end
+    subgraph "Solution"
+        S["Limit to 10 concurrent<br/>→ Server happy<br/>→ Connections available<br/>→ Memory stable"]
+    end
+    subgraph "Tools"
+        T1["Semaphore - Limit concurrent access"]
+        T2["BoundedSemaphore - Stricter limits"]
+        T3["Rate limiters - X per second"]
+    end
+    style P fill:#FFCDD2
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Semaphore Basics",
+                        "explanation": "A semaphore limits how many tasks can hold it at once.",
+                        "diagram_data": """graph TB
+    subgraph "Semaphore"
+        SE["sem = asyncio.Semaphore(3)<br/># Only 3 tasks can hold at once"]
+    end
+    subgraph "Usage"
+        U["async with sem:<br/>    # Only 3 here at a time<br/>    await do_work()"]
+    end
+    subgraph "Visualization"
+        V["Task 1: [holds sem] working...<br/>Task 2: [holds sem] working...<br/>Task 3: [holds sem] working...<br/>Task 4: [waiting...]<br/>Task 5: [waiting...]"]
+    end
+    subgraph "When Task Finishes"
+        W["Task 1 exits → sem released<br/>Task 4 acquires → starts working"]
+    end
+    style SE fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Semaphore Pattern",
+                        "explanation": "Common pattern: limit concurrent HTTP requests.",
+                        "diagram_data": """graph TB
+    subgraph "Pattern"
+        P["sem = asyncio.Semaphore(10)  # Max 10 concurrent<br/><br/>async def fetch_limited(url):<br/>    async with sem:  # Wait for slot<br/>        return await fetch(url)<br/><br/># All 1000 scheduled, but only 10 run at once<br/>results = await asyncio.gather(*[<br/>    fetch_limited(url) for url in urls<br/>])"]
+    end
+    subgraph "Flow"
+        F1["1000 tasks created"]
+        F2["10 acquire semaphore"]
+        F3["990 wait"]
+        F4["As each finishes, next acquires"]
+    end
+    F1 --> F2 --> F3 --> F4
+    style P fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "BoundedSemaphore",
+                        "explanation": "BoundedSemaphore prevents releasing more than acquired.",
+                        "diagram_data": """graph TB
+    subgraph "Regular Semaphore"
+        R["sem = Semaphore(3)<br/>sem.release()  # Now it's 4!<br/>sem.release()  # Now it's 5!<br/># No error, limit exceeded"]
+    end
+    subgraph "BoundedSemaphore"
+        B["sem = BoundedSemaphore(3)<br/>sem.release()  # ValueError!<br/># Can't release without acquire"]
+    end
+    subgraph "When to Use"
+        W["BoundedSemaphore: Strict resource pools<br/>Semaphore: When extra releases OK"]
+    end
+    subgraph "Best Practice"
+        BP["Use 'async with' - auto releases<br/>No manual release() needed"]
+    end
+    style B fill:#4CAF50,color:white
+    style BP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Rate Limiter: Token Bucket",
+                        "explanation": "Semaphore limits concurrent tasks. Rate limiter limits tasks per time period.",
+                        "diagram_data": """graph TB
+    subgraph "Difference"
+        D["Semaphore: Max 10 at once<br/>Rate Limiter: Max 100 per second"]
+    end
+    subgraph "Token Bucket Algorithm"
+        TB["class RateLimiter:<br/>    def __init__(self, rate, per):<br/>        self.rate = rate  # tokens<br/>        self.per = per    # per X seconds<br/>        self.tokens = rate<br/>        self.updated_at = time.monotonic()<br/><br/>    async def acquire(self):<br/>        while self.tokens < 1:<br/>            self.add_tokens()<br/>            await asyncio.sleep(0.1)<br/>        self.tokens -= 1"]
+    end
+    style D fill:#E3F2FD
+    style TB fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Simple Rate Limiter",
+                        "explanation": "A practical rate limiter implementation.",
+                        "diagram_data": """graph TB
+    subgraph "Implementation"
+        I["class RateLimiter:<br/>    def __init__(self, calls_per_second):<br/>        self.period = 1.0 / calls_per_second<br/>        self.last_call = 0<br/>        self.lock = asyncio.Lock()<br/><br/>    async def __aenter__(self):<br/>        async with self.lock:<br/>            now = time.monotonic()<br/>            wait = self.last_call + self.period - now<br/>            if wait > 0:<br/>                await asyncio.sleep(wait)<br/>            self.last_call = time.monotonic()<br/><br/>    async def __aexit__(self, *args): pass"]
+    end
+    subgraph "Usage"
+        U["limiter = RateLimiter(10)  # 10/second<br/><br/>async def fetch_rate_limited(url):<br/>    async with limiter:<br/>        return await fetch(url)"]
+    end
+    style I fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Combining Semaphore + Rate Limit",
+                        "explanation": "Often you need both: limit concurrent AND limit rate.",
+                        "diagram_data": """graph TB
+    subgraph "Both Limits"
+        B["sem = asyncio.Semaphore(10)  # Max 10 concurrent<br/>limiter = RateLimiter(100)     # Max 100/second<br/><br/>async def fetch_controlled(url):<br/>    async with sem:       # Wait for concurrency slot<br/>        async with limiter:  # Wait for rate slot<br/>            return await fetch(url)"]
+    end
+    subgraph "Why Both?"
+        W["Semaphore: Don't overwhelm connections<br/>Rate Limit: Don't overwhelm server"]
+    end
+    subgraph "Example"
+        E["API allows 100 req/sec but only 10 connections<br/>→ Need both limits"]
+    end
+    style B fill:#E3F2FD
+    style E fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Lock vs Semaphore",
+                        "explanation": "Lock is a special case of Semaphore with count=1.",
+                        "diagram_data": """graph TB
+    subgraph "Lock"
+        L["lock = asyncio.Lock()<br/># Only ONE task at a time<br/>async with lock:<br/>    # Exclusive access"]
+    end
+    subgraph "Semaphore(1)"
+        S["sem = asyncio.Semaphore(1)<br/># Same as Lock, but allows<br/># release without acquire"]
+    end
+    subgraph "Use Lock For"
+        UL["Protecting shared state<br/>Exclusive resource access<br/>Critical sections"]
+    end
+    subgraph "Use Semaphore For"
+        US["Connection pools<br/>Throttling<br/>Resource limits"]
+    end
+    style L fill:#2196F3,color:white
+    style S fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for effective concurrency control.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use 'async with' for auto-release"]
+        D2["Create semaphore ONCE, reuse"]
+        D3["Set limits based on server capacity"]
+        D4["Monitor for bottlenecks"]
+    end
+    subgraph "Don't"
+        DN1["Create new semaphore per request"]
+        DN2["Set limits too high (defeats purpose)"]
+        DN3["Forget to handle timeout"]
+    end
+    subgraph "Timeout Pattern"
+        T["try:<br/>    async with asyncio.timeout(5):<br/>        async with sem:<br/>            await work()<br/>except asyncio.TimeoutError:<br/>    print('Could not acquire in time')"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_producer_consumer_visual(self):
+        """Seed Producer-Consumer Pattern visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="producer-consumer",
+            defaults={
+                "title": "Producer-Consumer Pattern",
+                "description": "Using asyncio.Queue for work distribution",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "queue", "producer-consumer", "patterns"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Producer-Consumer Pattern",
+                        "explanation": "Producers create work items. Consumers process them. Queue connects them.",
+                        "diagram_data": """graph LR
+    subgraph "Producers"
+        P1["Producer 1"]
+        P2["Producer 2"]
+    end
+    subgraph "Queue"
+        Q["asyncio.Queue"]
+    end
+    subgraph "Consumers"
+        C1["Consumer 1"]
+        C2["Consumer 2"]
+        C3["Consumer 3"]
+    end
+    P1 --> Q
+    P2 --> Q
+    Q --> C1
+    Q --> C2
+    Q --> C3
+    subgraph "Benefits"
+        B["Decouple production from consumption<br/>Handle rate differences<br/>Distribute work to multiple workers"]
+    end
+    style Q fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "asyncio.Queue Basics",
+                        "explanation": "asyncio.Queue is an async-safe FIFO queue.",
+                        "diagram_data": """graph TB
+    subgraph "Create Queue"
+        C["queue = asyncio.Queue()  # Unlimited<br/>queue = asyncio.Queue(maxsize=100)  # Bounded"]
+    end
+    subgraph "Producer"
+        P["await queue.put(item)  # Add item<br/># Blocks if queue full (bounded)"]
+    end
+    subgraph "Consumer"
+        CO["item = await queue.get()  # Get item<br/># Blocks if queue empty<br/>queue.task_done()  # Mark processed"]
+    end
+    subgraph "Methods"
+        M["queue.qsize()  # Current size<br/>queue.empty()  # Is empty?<br/>queue.full()   # Is full?"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Basic Producer-Consumer",
+                        "explanation": "Simple example with one producer and one consumer.",
+                        "diagram_data": """graph TB
+    subgraph "Producer"
+        P["async def producer(queue):<br/>    for i in range(10):<br/>        await queue.put(f'item-{i}')<br/>        print(f'Produced item-{i}')<br/>    await queue.put(None)  # Signal done"]
+    end
+    subgraph "Consumer"
+        C["async def consumer(queue):<br/>    while True:<br/>        item = await queue.get()<br/>        if item is None:<br/>            break<br/>        print(f'Consumed {item}')<br/>        queue.task_done()"]
+    end
+    subgraph "Main"
+        M["async def main():<br/>    queue = asyncio.Queue()<br/>    await asyncio.gather(<br/>        producer(queue),<br/>        consumer(queue)<br/>    )"]
+    end
+    style P fill:#E3F2FD
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Multiple Workers",
+                        "explanation": "Scale by adding more consumer workers.",
+                        "diagram_data": """graph TB
+    subgraph "Worker Pool"
+        W["async def worker(name, queue):<br/>    while True:<br/>        item = await queue.get()<br/>        try:<br/>            await process(item)<br/>        finally:<br/>            queue.task_done()"]
+    end
+    subgraph "Create Workers"
+        C["async def main():<br/>    queue = asyncio.Queue()<br/>    <br/>    # Create 5 workers<br/>    workers = [<br/>        asyncio.create_task(worker(f'w-{i}', queue))<br/>        for i in range(5)<br/>    ]<br/>    <br/>    # Add work<br/>    for item in items:<br/>        await queue.put(item)<br/>    <br/>    # Wait for completion<br/>    await queue.join()  # Wait until all done<br/>    <br/>    # Cancel workers<br/>    for w in workers:<br/>        w.cancel()"]
+    end
+    style W fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "queue.join() Pattern",
+                        "explanation": "join() waits until all items are processed (task_done called).",
+                        "diagram_data": """graph TB
+    subgraph "The Pattern"
+        P["# Producer adds items<br/>for item in items:<br/>    await queue.put(item)<br/><br/># Wait for ALL items processed<br/>await queue.join()<br/><br/># Now we know everything is done"]
+    end
+    subgraph "How It Works"
+        H1["put() increments internal counter"]
+        H2["task_done() decrements counter"]
+        H3["join() waits for counter = 0"]
+    end
+    subgraph "Critical"
+        C["MUST call task_done() for every get()<br/>Or join() hangs forever!"]
+    end
+    H1 --> H2 --> H3
+    style C fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Bounded Queue Backpressure",
+                        "explanation": "Bounded queues provide backpressure - slow producers when consumers can't keep up.",
+                        "diagram_data": """graph TB
+    subgraph "Unbounded Queue Problem"
+        U["queue = asyncio.Queue()<br/># Fast producer + slow consumer<br/># = Memory grows forever!"]
+    end
+    subgraph "Bounded Queue Solution"
+        B["queue = asyncio.Queue(maxsize=100)<br/># put() blocks when full<br/># Producer slows down automatically"]
+    end
+    subgraph "Non-blocking Put"
+        N["try:<br/>    queue.put_nowait(item)<br/>except asyncio.QueueFull:<br/>    # Queue full, handle it<br/>    drop_or_wait()"]
+    end
+    style U fill:#FFCDD2
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Priority Queue",
+                        "explanation": "Process high-priority items first with PriorityQueue.",
+                        "diagram_data": """graph TB
+    subgraph "PriorityQueue"
+        P["queue = asyncio.PriorityQueue()<br/><br/># Items sorted by first element<br/>await queue.put((1, 'urgent'))<br/>await queue.put((10, 'low priority'))<br/>await queue.put((5, 'medium'))<br/><br/>item = await queue.get()  # (1, 'urgent')"]
+    end
+    subgraph "With Dataclass"
+        D["@dataclass(order=True)<br/>class Task:<br/>    priority: int<br/>    name: str = field(compare=False)<br/><br/>await queue.put(Task(1, 'urgent'))"]
+    end
+    subgraph "Use Cases"
+        U["Job schedulers<br/>Request prioritization<br/>Event handling"]
+    end
+    style P fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "LIFO Queue (Stack)",
+                        "explanation": "Last-in-first-out processing with LifoQueue.",
+                        "diagram_data": """graph TB
+    subgraph "LifoQueue"
+        L["queue = asyncio.LifoQueue()<br/><br/>await queue.put('first')<br/>await queue.put('second')<br/>await queue.put('third')<br/><br/>await queue.get()  # 'third'<br/>await queue.get()  # 'second'<br/>await queue.get()  # 'first'"]
+    end
+    subgraph "Use Cases"
+        U["Depth-first traversal<br/>Undo stacks<br/>Most-recent processing"]
+    end
+    subgraph "Queue Types"
+        T["Queue - FIFO (default)<br/>PriorityQueue - By priority<br/>LifoQueue - LIFO/Stack"]
+    end
+    style L fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Real-World Pattern",
+                        "explanation": "Complete example: URL crawler with worker pool.",
+                        "diagram_data": """graph TB
+    subgraph "Crawler"
+        C["async def crawl(start_url, max_workers=10):<br/>    queue = asyncio.Queue()<br/>    seen = set()<br/>    results = []<br/><br/>    async def worker():<br/>        while True:<br/>            url = await queue.get()<br/>            try:<br/>                links = await fetch_and_parse(url)<br/>                for link in links:<br/>                    if link not in seen:<br/>                        seen.add(link)<br/>                        await queue.put(link)<br/>            finally:<br/>                queue.task_done()<br/><br/>    workers = [asyncio.create_task(worker()) for _ in range(max_workers)]<br/>    await queue.put(start_url)<br/>    await queue.join()<br/>    for w in workers: w.cancel()"]
+    end
+    subgraph "Features"
+        F["Bounded concurrency<br/>Automatic work distribution<br/>Graceful shutdown"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_timeouts_visual(self):
+        """Seed Timeouts & Cancellation visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="timeouts-cancellation",
+            defaults={
+                "title": "Timeouts & Cancellation",
+                "description": "Handling async operations safely with timeouts",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "timeout", "cancellation", "error-handling"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Timeouts Matter",
+                        "explanation": "Without timeouts, async code can hang forever waiting for I/O.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["result = await fetch(url)<br/># What if server never responds?<br/># Your program hangs forever!"]
+    end
+    subgraph "Solution"
+        S["result = await asyncio.wait_for(<br/>    fetch(url),<br/>    timeout=5.0<br/>)<br/># Raises TimeoutError after 5s"]
+    end
+    subgraph "Timeout Scenarios"
+        T1["Slow server"]
+        T2["Network issues"]
+        T3["Deadlocks"]
+        T4["Infinite loops"]
+    end
+    style P fill:#FFCDD2
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "asyncio.wait_for",
+                        "explanation": "The primary way to add timeout to a single operation.",
+                        "diagram_data": """graph TB
+    subgraph "Basic Usage"
+        B["try:<br/>    result = await asyncio.wait_for(<br/>        operation(),<br/>        timeout=10.0<br/>    )<br/>except asyncio.TimeoutError:<br/>    print('Operation timed out')"]
+    end
+    subgraph "What Happens on Timeout"
+        W1["1. TimeoutError raised"]
+        W2["2. Inner task is CANCELLED"]
+        W3["3. CancelledError propagates inside"]
+    end
+    subgraph "Important"
+        I["The operation is STOPPED<br/>not just ignored!"]
+    end
+    W1 --> W2 --> W3
+    style B fill:#E3F2FD
+    style I fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "asyncio.timeout (Python 3.11+)",
+                        "explanation": "Context manager for scoped timeouts.",
+                        "diagram_data": """graph TB
+    subgraph "timeout Context Manager"
+        T["async with asyncio.timeout(5.0):<br/>    await step1()<br/>    await step2()<br/>    await step3()<br/># Total must complete in 5s"]
+    end
+    subgraph "vs wait_for"
+        V["wait_for: Single operation<br/>timeout: Multiple operations"]
+    end
+    subgraph "Handling"
+        H["try:<br/>    async with asyncio.timeout(5.0):<br/>        await work()<br/>except asyncio.TimeoutError:<br/>    print('Timed out')"]
+    end
+    subgraph "Check Time Remaining"
+        C["async with asyncio.timeout(10) as cm:<br/>    await step1()<br/>    remaining = cm.when() - asyncio.get_event_loop().time()"]
+    end
+    style T fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "asyncio.timeout_at",
+                        "explanation": "Set absolute deadline instead of relative timeout.",
+                        "diagram_data": """graph TB
+    subgraph "Absolute Deadline"
+        A["loop = asyncio.get_event_loop()<br/>deadline = loop.time() + 30  # 30s from now<br/><br/>async with asyncio.timeout_at(deadline):<br/>    await operation1()<br/>    await operation2()<br/># Both must finish by deadline"]
+    end
+    subgraph "Use Case"
+        U["Request has SLA: respond in 30s<br/>Multiple steps share the budget"]
+    end
+    subgraph "Reschedule"
+        R["async with asyncio.timeout(10) as cm:<br/>    await step1()<br/>    cm.reschedule(cm.when() + 5)  # Add 5s"]
+    end
+    style A fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Shield from Cancellation",
+                        "explanation": "Protect important operations from cancellation.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["On timeout, operation is cancelled<br/>What if we need to finish it?"]
+    end
+    subgraph "asyncio.shield"
+        S["try:<br/>    result = await asyncio.wait_for(<br/>        asyncio.shield(important_db_write()),<br/>        timeout=5.0<br/>    )<br/>except asyncio.TimeoutError:<br/>    # TimeoutError raised<br/>    # BUT db_write continues in background!"]
+    end
+    subgraph "Caution"
+        C["Shielded task keeps running<br/>You may need to track it<br/>Results might be lost"]
+    end
+    style S fill:#E3F2FD
+    style C fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Task Cancellation",
+                        "explanation": "How to cancel running tasks programmatically.",
+                        "diagram_data": """graph TB
+    subgraph "Cancel a Task"
+        C["task = asyncio.create_task(work())<br/><br/># Later...<br/>task.cancel()  # Request cancellation<br/><br/>try:<br/>    await task<br/>except asyncio.CancelledError:<br/>    print('Task was cancelled')"]
+    end
+    subgraph "Cancel with Message (3.9+)"
+        M["task.cancel('User requested stop')"]
+    end
+    subgraph "Check State"
+        S["task.cancelled()  # Was cancelled?<br/>task.done()       # Is finished?"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Handling CancelledError",
+                        "explanation": "Properly handle cancellation in your async functions.",
+                        "diagram_data": """graph TB
+    subgraph "BAD: Swallow Cancel"
+        B["async def bad():<br/>    try:<br/>        await work()<br/>    except asyncio.CancelledError:<br/>        pass  # Silently ignores!"]
+    end
+    subgraph "GOOD: Cleanup and Re-raise"
+        G["async def good():<br/>    try:<br/>        await work()<br/>    except asyncio.CancelledError:<br/>        await cleanup()<br/>        raise  # Re-raise!"]
+    end
+    subgraph "BEST: Finally"
+        BE["async def best():<br/>    try:<br/>        await work()<br/>    finally:<br/>        await cleanup()  # Always runs"]
+    end
+    style B fill:#FFCDD2
+    style G fill:#C8E6C9
+    style BE fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Graceful Shutdown",
+                        "explanation": "Cancel all tasks cleanly when shutting down.",
+                        "diagram_data": """graph TB
+    subgraph "Shutdown Pattern"
+        S["async def shutdown():<br/>    # Get all running tasks<br/>    tasks = [t for t in asyncio.all_tasks()<br/>             if t is not asyncio.current_task()]<br/>    <br/>    # Cancel all<br/>    for task in tasks:<br/>        task.cancel()<br/>    <br/>    # Wait for cancellation<br/>    await asyncio.gather(*tasks, return_exceptions=True)<br/>    <br/>    # Now safe to close loop"]
+    end
+    subgraph "Signal Handling"
+        SH["loop = asyncio.get_event_loop()<br/>for sig in (SIGTERM, SIGINT):<br/>    loop.add_signal_handler(<br/>        sig,<br/>        lambda: asyncio.create_task(shutdown())<br/>    )"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Timeout Patterns Summary",
+                        "explanation": "Quick reference for different timeout scenarios.",
+                        "diagram_data": """graph TB
+    subgraph "Single Operation"
+        S["await asyncio.wait_for(op(), timeout=5)"]
+    end
+    subgraph "Multiple Operations"
+        M["async with asyncio.timeout(10):<br/>    await op1()<br/>    await op2()"]
+    end
+    subgraph "Absolute Deadline"
+        A["async with asyncio.timeout_at(deadline):<br/>    await work()"]
+    end
+    subgraph "Protect from Cancel"
+        P["await asyncio.shield(critical())"]
+    end
+    subgraph "Best Practices"
+        BP["Always use timeouts for I/O<br/>Handle TimeoutError explicitly<br/>Clean up in finally blocks<br/>Re-raise CancelledError after cleanup"]
+    end
+    style BP fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_http_requests_visual(self):
+        """Seed Async HTTP Requests visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="async-http-requests",
+            defaults={
+                "title": "Async HTTP Requests",
+                "description": "aiohttp, httpx patterns for async HTTP clients",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "aiohttp", "httpx", "http", "api"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Async HTTP?",
+                        "explanation": "requests library blocks. For concurrent HTTP calls, use async libraries.",
+                        "diagram_data": """graph TB
+    subgraph "Sync (requests)"
+        S["import requests<br/>for url in urls:<br/>    r = requests.get(url)  # Blocks!<br/>    # Wait... wait... wait...<br/># 100 URLs × 100ms = 10 seconds"]
+    end
+    subgraph "Async (aiohttp/httpx)"
+        A["async with aiohttp.ClientSession() as s:<br/>    tasks = [s.get(url) for url in urls]<br/>    responses = await asyncio.gather(*tasks)<br/># 100 URLs concurrent = ~100ms"]
+    end
+    subgraph "Speedup"
+        SP["100x faster for I/O-bound work!"]
+    end
+    style S fill:#FFCDD2
+    style A fill:#C8E6C9
+    style SP fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Library Comparison",
+                        "explanation": "Two main async HTTP libraries: aiohttp and httpx.",
+                        "diagram_data": """graph TB
+    subgraph "aiohttp"
+        A1["Mature, battle-tested"]
+        A2["Async-only"]
+        A3["Fast, lower memory"]
+        A4["Server + client"]
+    end
+    subgraph "httpx"
+        H1["Modern, requests-like API"]
+        H2["Sync AND async"]
+        H3["HTTP/2 support"]
+        H4["Easy migration from requests"]
+    end
+    subgraph "Choose"
+        C["New project: httpx (easier API)<br/>High-performance: aiohttp<br/>HTTP/2 needed: httpx"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "aiohttp Basics",
+                        "explanation": "Using aiohttp for async HTTP requests.",
+                        "diagram_data": """graph TB
+    subgraph "Session Pattern"
+        S["async with aiohttp.ClientSession() as session:<br/>    # GET<br/>    async with session.get(url) as resp:<br/>        data = await resp.json()<br/>    <br/>    # POST<br/>    async with session.post(url, json=payload) as resp:<br/>        result = await resp.text()"]
+    end
+    subgraph "Important"
+        I["ALWAYS use ClientSession context manager<br/>Reuse session for multiple requests<br/>Session manages connection pool"]
+    end
+    subgraph "Single Request"
+        SR["async with aiohttp.request('GET', url) as r:<br/>    data = await r.json()"]
+    end
+    style S fill:#E3F2FD
+    style I fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "httpx Basics",
+                        "explanation": "Using httpx for async HTTP - familiar requests-like API.",
+                        "diagram_data": """graph TB
+    subgraph "Async Client"
+        A["async with httpx.AsyncClient() as client:<br/>    # GET<br/>    r = await client.get(url)<br/>    data = r.json()<br/>    <br/>    # POST<br/>    r = await client.post(url, json=payload)<br/>    result = r.text"]
+    end
+    subgraph "Sync Client (Fallback)"
+        S["# Can also use synchronously<br/>r = httpx.get(url)<br/>data = r.json()"]
+    end
+    subgraph "Migration from requests"
+        M["# requests<br/>r = requests.get(url)<br/><br/># httpx (async)<br/>r = await client.get(url)<br/># Same .json(), .text, .status_code"]
+    end
+    style A fill:#E3F2FD
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Concurrent Requests",
+                        "explanation": "The main benefit: making many requests at once.",
+                        "diagram_data": """graph TB
+    subgraph "aiohttp Pattern"
+        A["async def fetch_all(urls):<br/>    async with aiohttp.ClientSession() as session:<br/>        async def fetch(url):<br/>            async with session.get(url) as r:<br/>                return await r.json()<br/>        <br/>        return await asyncio.gather(*[<br/>            fetch(url) for url in urls<br/>        ])"]
+    end
+    subgraph "httpx Pattern"
+        H["async def fetch_all(urls):<br/>    async with httpx.AsyncClient() as client:<br/>        tasks = [client.get(url) for url in urls]<br/>        responses = await asyncio.gather(*tasks)<br/>        return [r.json() for r in responses]"]
+    end
+    style A fill:#E3F2FD
+    style H fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Rate Limiting Requests",
+                        "explanation": "Don't overwhelm the server - use semaphores.",
+                        "diagram_data": """graph TB
+    subgraph "Limited Concurrency"
+        L["async def fetch_all(urls, max_concurrent=10):<br/>    sem = asyncio.Semaphore(max_concurrent)<br/>    <br/>    async def fetch(session, url):<br/>        async with sem:<br/>            async with session.get(url) as r:<br/>                return await r.json()<br/>    <br/>    async with aiohttp.ClientSession() as session:<br/>        return await asyncio.gather(*[<br/>            fetch(session, url) for url in urls<br/>        ])"]
+    end
+    subgraph "Why?"
+        W["Server rate limits<br/>Connection pool limits<br/>Memory management"]
+    end
+    style L fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Error Handling & Retries",
+                        "explanation": "Handle network errors and implement retry logic.",
+                        "diagram_data": """graph TB
+    subgraph "Error Handling"
+        E["async def safe_fetch(client, url):<br/>    try:<br/>        r = await client.get(url, timeout=10)<br/>        r.raise_for_status()<br/>        return r.json()<br/>    except httpx.TimeoutException:<br/>        return {'error': 'timeout'}<br/>    except httpx.HTTPStatusError as e:<br/>        return {'error': str(e.response.status_code)}"]
+    end
+    subgraph "Retry Pattern"
+        R["async def fetch_with_retry(client, url, retries=3):<br/>    for i in range(retries):<br/>        try:<br/>            r = await client.get(url)<br/>            r.raise_for_status()<br/>            return r.json()<br/>        except (httpx.HTTPError, httpx.TimeoutException):<br/>            if i == retries - 1:<br/>                raise<br/>            await asyncio.sleep(2 ** i)  # Backoff"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Connection Pooling",
+                        "explanation": "Sessions maintain connection pools for efficiency.",
+                        "diagram_data": """graph TB
+    subgraph "Connection Pool"
+        CP["async with aiohttp.ClientSession(<br/>    connector=aiohttp.TCPConnector(<br/>        limit=100,           # Total connections<br/>        limit_per_host=10,   # Per host<br/>        ttl_dns_cache=300,   # DNS cache TTL<br/>    )<br/>) as session:<br/>    # All requests reuse connections"]
+    end
+    subgraph "httpx Limits"
+        H["async with httpx.AsyncClient(<br/>    limits=httpx.Limits(<br/>        max_connections=100,<br/>        max_keepalive_connections=20<br/>    )<br/>) as client:<br/>    pass"]
+    end
+    subgraph "Benefits"
+        B["TCP handshake reuse<br/>TLS session reuse<br/>Lower latency"]
+    end
+    style CP fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for async HTTP clients.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Reuse session/client across requests"]
+        D2["Use connection limits"]
+        D3["Set timeouts"]
+        D4["Handle errors gracefully"]
+        D5["Use context managers"]
+    end
+    subgraph "Don't"
+        DN1["Create new session per request"]
+        DN2["Ignore rate limits"]
+        DN3["Forget to close sessions"]
+        DN4["Block the event loop"]
+    end
+    subgraph "Pattern"
+        P["# At app startup<br/>app.state.client = httpx.AsyncClient()<br/><br/># In handlers<br/>r = await app.state.client.get(url)<br/><br/># At shutdown<br/>await app.state.client.aclose()"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_database_visual(self):
+        """Seed Async Database Access visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="async-database",
+            defaults={
+                "title": "Async Database Access",
+                "description": "Connection pools, transactions with asyncpg, databases",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["python", "asyncio", "database", "asyncpg", "sqlalchemy", "connection-pool"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Async Database?",
+                        "explanation": "Database I/O can block. Async drivers let other tasks run while waiting.",
+                        "diagram_data": """graph TB
+    subgraph "Sync Database"
+        S["result = db.execute(query)  # Blocks<br/># Thread waits 10ms for DB<br/># Can't do anything else"]
+    end
+    subgraph "Async Database"
+        A["result = await db.execute(query)  # Yields<br/># Event loop runs other tasks<br/># Returns when DB responds"]
+    end
+    subgraph "Benefits"
+        B["Handle more requests per server<br/>Better resource utilization<br/>Required for async web frameworks"]
+    end
+    style S fill:#FFCDD2
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Async Database Libraries",
+                        "explanation": "Main async database libraries in Python.",
+                        "diagram_data": """graph TB
+    subgraph "PostgreSQL"
+        P1["asyncpg - Fastest, native"]
+        P2["psycopg3 - Async mode"]
+        P3["aiopg - asyncio wrapper"]
+    end
+    subgraph "MySQL"
+        M["aiomysql"]
+    end
+    subgraph "SQLite"
+        S["aiosqlite"]
+    end
+    subgraph "ORMs"
+        O1["SQLAlchemy 2.0 - async support"]
+        O2["Tortoise ORM - async-first"]
+        O3["databases - async core"]
+    end
+    style P1 fill:#4CAF50,color:white
+    style O1 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "asyncpg Basics",
+                        "explanation": "asyncpg is the fastest PostgreSQL driver for Python.",
+                        "diagram_data": """graph TB
+    subgraph "Connection"
+        C["conn = await asyncpg.connect(<br/>    user='user',<br/>    password='pass',<br/>    database='mydb',<br/>    host='localhost'<br/>)"]
+    end
+    subgraph "Queries"
+        Q["# Fetch multiple rows<br/>rows = await conn.fetch('SELECT * FROM users')<br/><br/># Fetch one row<br/>row = await conn.fetchrow('SELECT * FROM users WHERE id=$1', 1)<br/><br/># Fetch single value<br/>count = await conn.fetchval('SELECT COUNT(*) FROM users')"]
+    end
+    subgraph "Close"
+        CL["await conn.close()"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Connection Pools",
+                        "explanation": "Pools maintain reusable connections for efficiency.",
+                        "diagram_data": """graph TB
+    subgraph "Create Pool"
+        C["pool = await asyncpg.create_pool(<br/>    user='user',<br/>    password='pass',<br/>    database='mydb',<br/>    min_size=5,   # Min connections<br/>    max_size=20,  # Max connections<br/>)"]
+    end
+    subgraph "Use Pool"
+        U["# Acquire connection<br/>async with pool.acquire() as conn:<br/>    rows = await conn.fetch('SELECT * FROM users')<br/><br/># Or execute directly<br/>rows = await pool.fetch('SELECT * FROM users')"]
+    end
+    subgraph "Lifecycle"
+        L["# App startup<br/>app.state.pool = await asyncpg.create_pool(...)<br/><br/># App shutdown<br/>await app.state.pool.close()"]
+    end
+    style U fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Transactions",
+                        "explanation": "Handle transactions with async context managers.",
+                        "diagram_data": """graph TB
+    subgraph "asyncpg Transaction"
+        A["async with conn.transaction():<br/>    await conn.execute(<br/>        'INSERT INTO orders VALUES($1, $2)', id, amount<br/>    )<br/>    await conn.execute(<br/>        'UPDATE inventory SET qty = qty - $1', amount<br/>    )<br/># Auto-commit on success, rollback on exception"]
+    end
+    subgraph "Savepoints"
+        S["async with conn.transaction():<br/>    await conn.execute('INSERT INTO main...')<br/>    <br/>    async with conn.transaction():<br/>        # This is a savepoint<br/>        await conn.execute('INSERT INTO detail...')"]
+    end
+    subgraph "Manual Control"
+        M["tr = conn.transaction()<br/>await tr.start()<br/>try:<br/>    await conn.execute(...)<br/>    await tr.commit()<br/>except:<br/>    await tr.rollback()<br/>    raise"]
+    end
+    style A fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "SQLAlchemy 2.0 Async",
+                        "explanation": "SQLAlchemy now supports async natively.",
+                        "diagram_data": """graph TB
+    subgraph "Engine"
+        E["from sqlalchemy.ext.asyncio import create_async_engine<br/><br/>engine = create_async_engine(<br/>    'postgresql+asyncpg://user:pass@localhost/db'<br/>)"]
+    end
+    subgraph "Session"
+        S["from sqlalchemy.ext.asyncio import AsyncSession<br/><br/>async with AsyncSession(engine) as session:<br/>    result = await session.execute(select(User))<br/>    users = result.scalars().all()"]
+    end
+    subgraph "Session Maker"
+        SM["from sqlalchemy.orm import sessionmaker<br/><br/>async_session = sessionmaker(<br/>    engine, class_=AsyncSession, expire_on_commit=False<br/>)<br/><br/>async with async_session() as session:<br/>    ..."]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "databases Library",
+                        "explanation": "Simple async database access with query builder.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["from databases import Database<br/><br/>db = Database('postgresql://user:pass@localhost/db')<br/>await db.connect()"]
+    end
+    subgraph "Queries"
+        Q["# Select<br/>rows = await db.fetch_all('SELECT * FROM users')<br/>row = await db.fetch_one('SELECT * FROM users WHERE id=:id', {'id': 1})<br/><br/># Insert<br/>await db.execute('INSERT INTO users(name) VALUES(:name)', {'name': 'John'})<br/><br/># With SQLAlchemy core<br/>query = users.select().where(users.c.id == 1)<br/>row = await db.fetch_one(query)"]
+    end
+    subgraph "Transactions"
+        T["async with db.transaction():<br/>    await db.execute(...)<br/>    await db.execute(...)"]
+    end
+    style Q fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "FastAPI Integration",
+                        "explanation": "Pattern for using async DB with FastAPI.",
+                        "diagram_data": """graph TB
+    subgraph "Dependency"
+        D["async def get_db():<br/>    async with AsyncSession(engine) as session:<br/>        yield session<br/><br/>@app.get('/users')<br/>async def get_users(db: AsyncSession = Depends(get_db)):<br/>    result = await db.execute(select(User))<br/>    return result.scalars().all()"]
+    end
+    subgraph "Lifespan Events"
+        L["@asynccontextmanager<br/>async def lifespan(app: FastAPI):<br/>    # Startup<br/>    app.state.pool = await asyncpg.create_pool(...)<br/>    yield<br/>    # Shutdown<br/>    await app.state.pool.close()<br/><br/>app = FastAPI(lifespan=lifespan)"]
+    end
+    style D fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for async database access.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use connection pools"]
+        D2["Close connections properly"]
+        D3["Use transactions for multi-step ops"]
+        D4["Handle connection errors"]
+        D5["Set connection timeouts"]
+    end
+    subgraph "Don't"
+        DN1["Create connection per request"]
+        DN2["Leave connections open"]
+        DN3["Mix sync and async drivers"]
+        DN4["Ignore pool exhaustion"]
+    end
+    subgraph "Pool Sizing"
+        P["Connections = (cores * 2) + effective_spindle_count<br/>For SSD: ~10-20 connections usually enough<br/>Monitor pool wait times"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_websocket_visual(self):
+        """Seed WebSocket Communication visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="websocket-communication",
+            defaults={
+                "title": "WebSocket Communication",
+                "description": "Bidirectional async messaging with websockets",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["python", "asyncio", "websocket", "real-time", "bidirectional"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "HTTP vs WebSocket",
+                        "explanation": "WebSocket provides full-duplex, persistent connections.",
+                        "diagram_data": """graph TB
+    subgraph "HTTP"
+        H1["Client → Request → Server"]
+        H2["Server → Response → Client"]
+        H3["Connection closes"]
+        H4["Repeat for each request"]
+    end
+    subgraph "WebSocket"
+        W1["Client ↔ Server"]
+        W2["Persistent connection"]
+        W3["Both can send anytime"]
+        W4["Low overhead"]
+    end
+    subgraph "Use Cases"
+        U["Chat applications<br/>Live dashboards<br/>Gaming<br/>Real-time updates"]
+    end
+    style W1 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "websockets Library",
+                        "explanation": "The standard library for async WebSocket in Python.",
+                        "diagram_data": """graph TB
+    subgraph "Install"
+        I["pip install websockets"]
+    end
+    subgraph "Server"
+        S["import websockets<br/><br/>async def handler(websocket):<br/>    async for message in websocket:<br/>        response = f'Echo: {message}'<br/>        await websocket.send(response)<br/><br/>async def main():<br/>    async with websockets.serve(handler, 'localhost', 8765):<br/>        await asyncio.Future()  # Run forever<br/><br/>asyncio.run(main())"]
+    end
+    subgraph "Client"
+        C["async with websockets.connect('ws://localhost:8765') as ws:<br/>    await ws.send('Hello')<br/>    response = await ws.recv()<br/>    print(response)  # 'Echo: Hello'"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Message Loop Pattern",
+                        "explanation": "Handle messages in an async for loop.",
+                        "diagram_data": """graph TB
+    subgraph "Server Handler"
+        S["async def handler(websocket):<br/>    try:<br/>        async for message in websocket:<br/>            data = json.loads(message)<br/>            response = process(data)<br/>            await websocket.send(json.dumps(response))<br/>    except websockets.ConnectionClosed:<br/>        print('Client disconnected')"]
+    end
+    subgraph "Client Loop"
+        C["async def client():<br/>    async with websockets.connect(uri) as ws:<br/>        # Send and receive in parallel<br/>        await asyncio.gather(<br/>            send_messages(ws),<br/>            receive_messages(ws)<br/>        )"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Broadcast Pattern",
+                        "explanation": "Send messages to all connected clients.",
+                        "diagram_data": """graph TB
+    subgraph "Track Connections"
+        T["connected = set()<br/><br/>async def handler(websocket):<br/>    connected.add(websocket)<br/>    try:<br/>        async for message in websocket:<br/>            # Broadcast to all<br/>            websockets.broadcast(connected, message)<br/>    finally:<br/>        connected.remove(websocket)"]
+    end
+    subgraph "Alternative"
+        A["# Manual broadcast<br/>async def broadcast(message):<br/>    for ws in connected:<br/>        try:<br/>            await ws.send(message)<br/>        except websockets.ConnectionClosed:<br/>            pass"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "FastAPI WebSocket",
+                        "explanation": "Using WebSocket with FastAPI.",
+                        "diagram_data": """graph TB
+    subgraph "FastAPI Handler"
+        F["from fastapi import FastAPI, WebSocket<br/><br/>app = FastAPI()<br/><br/>@app.websocket('/ws')<br/>async def websocket_endpoint(websocket: WebSocket):<br/>    await websocket.accept()<br/>    try:<br/>        while True:<br/>            data = await websocket.receive_text()<br/>            await websocket.send_text(f'Echo: {data}')<br/>    except WebSocketDisconnect:<br/>        print('Client disconnected')"]
+    end
+    subgraph "Connection Manager"
+        CM["class ConnectionManager:<br/>    def __init__(self):<br/>        self.connections: list[WebSocket] = []<br/>    <br/>    async def connect(self, ws: WebSocket):<br/>        await ws.accept()<br/>        self.connections.append(ws)<br/>    <br/>    async def broadcast(self, message: str):<br/>        for conn in self.connections:<br/>            await conn.send_text(message)"]
+    end
+    style F fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Ping/Pong & Keepalive",
+                        "explanation": "Keep connections alive and detect disconnects.",
+                        "diagram_data": """graph TB
+    subgraph "Built-in Ping/Pong"
+        B["# websockets handles ping/pong automatically<br/># Default: ping every 20 seconds<br/><br/>async with websockets.serve(<br/>    handler, 'localhost', 8765,<br/>    ping_interval=20,<br/>    ping_timeout=10<br/>):<br/>    pass"]
+    end
+    subgraph "Manual Ping"
+        M["pong = await websocket.ping()<br/>await pong  # Wait for pong response"]
+    end
+    subgraph "Connection Health"
+        H["# websockets auto-closes dead connections<br/># Handler receives ConnectionClosed<br/># on ping timeout or network error"]
+    end
+    style B fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Structured Messages",
+                        "explanation": "Use JSON for structured message protocols.",
+                        "diagram_data": """graph TB
+    subgraph "Message Protocol"
+        M["# Define message types<br/>{'type': 'join', 'room': 'general'}<br/>{'type': 'message', 'text': 'Hello'}<br/>{'type': 'leave'}"]
+    end
+    subgraph "Handler"
+        H["async def handler(websocket):<br/>    async for raw in websocket:<br/>        msg = json.loads(raw)<br/>        <br/>        if msg['type'] == 'join':<br/>            await join_room(websocket, msg['room'])<br/>        elif msg['type'] == 'message':<br/>            await broadcast_message(msg)<br/>        elif msg['type'] == 'leave':<br/>            break"]
+    end
+    subgraph "Pydantic Validation"
+        P["class Message(BaseModel):<br/>    type: Literal['join', 'message', 'leave']<br/>    data: dict<br/><br/>msg = Message.model_validate_json(raw)"]
+    end
+    style H fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Pub/Sub Pattern",
+                        "explanation": "Implement channels/rooms for targeted messaging.",
+                        "diagram_data": """graph TB
+    subgraph "Room Manager"
+        R["rooms: dict[str, set[WebSocket]] = defaultdict(set)<br/><br/>async def join_room(ws, room):<br/>    rooms[room].add(ws)<br/><br/>async def leave_room(ws, room):<br/>    rooms[room].discard(ws)<br/><br/>async def broadcast_to_room(room, message):<br/>    for ws in rooms[room]:<br/>        await ws.send(message)"]
+    end
+    subgraph "Redis Pub/Sub"
+        RD["# For multi-server deployment<br/>import aioredis<br/><br/>async def subscribe():<br/>    redis = await aioredis.from_url('redis://localhost')<br/>    pubsub = redis.pubsub()<br/>    await pubsub.subscribe('channel')<br/>    async for message in pubsub.listen():<br/>        await broadcast(message['data'])"]
+    end
+    style R fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for WebSocket applications.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Handle disconnections gracefully"]
+        D2["Use ping/pong for health checks"]
+        D3["Validate incoming messages"]
+        D4["Implement reconnection logic"]
+        D5["Rate limit messages"]
+    end
+    subgraph "Don't"
+        DN1["Trust client messages blindly"]
+        DN2["Store sensitive data in connection"]
+        DN3["Block in message handlers"]
+        DN4["Forget to clean up on disconnect"]
+    end
+    subgraph "Scaling"
+        S["Single server: in-memory state<br/>Multiple servers: Redis pub/sub<br/>Load balancer: sticky sessions"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_async_antipatterns_visual(self):
+        """Seed Common Async Anti-Patterns visual topic."""
+        subject = self.get_or_create_subject(
+            "Async Programming", "async_programming", "Python"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="async-antipatterns",
+            defaults={
+                "title": "Common Async Anti-Patterns",
+                "description": "Blocking the event loop, forgotten awaits, and other mistakes",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["python", "asyncio", "antipatterns", "debugging", "best-practices"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Cardinal Sin: Blocking",
+                        "explanation": "Never call blocking functions in async code - it freezes the entire event loop.",
+                        "diagram_data": """graph TB
+    subgraph "BLOCKING (Bad)"
+        B["async def bad():<br/>    time.sleep(5)  # Blocks everything!<br/>    requests.get(url)  # Blocks!<br/>    open('file').read()  # Blocks!"]
+    end
+    subgraph "What Happens"
+        W["All other tasks STOP<br/>Event loop frozen<br/>Server unresponsive"]
+    end
+    subgraph "NON-BLOCKING (Good)"
+        G["async def good():<br/>    await asyncio.sleep(5)<br/>    await httpx.get(url)<br/>    await aiofiles.open('file')"]
+    end
+    style B fill:#F44336,color:white
+    style G fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Forgotten await",
+                        "explanation": "Calling async function without await creates coroutine but doesn't run it.",
+                        "diagram_data": """graph TB
+    subgraph "Bug"
+        B["async def process():<br/>    fetch_data()  # Missing await!<br/>    # RuntimeWarning: coroutine 'fetch_data' never awaited<br/>    # Data NOT fetched!"]
+    end
+    subgraph "Fix"
+        F["async def process():<br/>    await fetch_data()  # Correct!<br/>    data = await fetch_data()  # Even better"]
+    end
+    subgraph "Debugging"
+        D["# Enable warnings<br/>import warnings<br/>warnings.filterwarnings('error', category=RuntimeWarning)<br/><br/># Or use debug mode<br/>asyncio.run(main(), debug=True)"]
+    end
+    style B fill:#FFCDD2
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Creating Tasks But Never Awaiting",
+                        "explanation": "Created tasks need to be awaited or they may be garbage collected.",
+                        "diagram_data": """graph TB
+    subgraph "Bug"
+        B["async def bad():<br/>    asyncio.create_task(background_job())<br/>    # Task might be garbage collected!<br/>    # Or exception goes unhandled"]
+    end
+    subgraph "Fix 1: Keep Reference"
+        F1["tasks = set()<br/><br/>async def good():<br/>    task = asyncio.create_task(background_job())<br/>    tasks.add(task)<br/>    task.add_done_callback(tasks.discard)"]
+    end
+    subgraph "Fix 2: Await Later"
+        F2["async def good():<br/>    task = asyncio.create_task(job())<br/>    # ... do other work ...<br/>    await task  # Wait for completion"]
+    end
+    style B fill:#FFCDD2
+    style F1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Sequential Instead of Concurrent",
+                        "explanation": "Awaiting in sequence when tasks could run concurrently.",
+                        "diagram_data": """graph TB
+    subgraph "Sequential (Slow)"
+        S["async def slow():<br/>    a = await fetch_a()  # 100ms<br/>    b = await fetch_b()  # 100ms<br/>    c = await fetch_c()  # 100ms<br/>    # Total: 300ms"]
+    end
+    subgraph "Concurrent (Fast)"
+        C["async def fast():<br/>    a, b, c = await asyncio.gather(<br/>        fetch_a(),<br/>        fetch_b(),<br/>        fetch_c()<br/>    )<br/>    # Total: 100ms"]
+    end
+    subgraph "When Sequential is OK"
+        W["When b depends on a<br/>When order matters<br/>When rate-limiting"]
+    end
+    style S fill:#FFCDD2
+    style C fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Sync Code in Async Functions",
+                        "explanation": "Using sync libraries in async code blocks the loop.",
+                        "diagram_data": """graph TB
+    subgraph "Common Mistakes"
+        M1["requests.get(url)  # Use httpx/aiohttp"]
+        M2["psycopg2.connect()  # Use asyncpg"]
+        M3["time.sleep(5)  # Use asyncio.sleep"]
+        M4["open().read()  # Use aiofiles"]
+        M5["subprocess.run()  # Use asyncio.subprocess"]
+    end
+    subgraph "If You Must Use Sync"
+        S["# Run in thread pool<br/>loop = asyncio.get_running_loop()<br/>result = await loop.run_in_executor(<br/>    None,  # Default ThreadPoolExecutor<br/>    sync_function,<br/>    arg1, arg2<br/>)"]
+    end
+    style M1 fill:#FFCDD2
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Improper Exception Handling",
+                        "explanation": "Exceptions in async code can be tricky to handle.",
+                        "diagram_data": """graph TB
+    subgraph "Lost Exception"
+        L["task = asyncio.create_task(buggy())<br/># Exception happens but nobody sees it!"]
+    end
+    subgraph "gather Hides Errors"
+        G["results = await asyncio.gather(*tasks)<br/># One exception = all fail, others cancelled"]
+    end
+    subgraph "Better"
+        B["# Option 1: return_exceptions<br/>results = await asyncio.gather(*tasks, return_exceptions=True)<br/>for r in results:<br/>    if isinstance(r, Exception):<br/>        handle_error(r)<br/><br/># Option 2: Done callback<br/>task.add_done_callback(log_exception)"]
+    end
+    style L fill:#FFCDD2
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Resource Leaks",
+                        "explanation": "Not closing async resources properly.",
+                        "diagram_data": """graph TB
+    subgraph "Leak"
+        L["session = aiohttp.ClientSession()<br/># ... use session ...<br/># Never closed! Connections leak"]
+    end
+    subgraph "Fix: Context Manager"
+        F["async with aiohttp.ClientSession() as session:<br/>    # ... use session ...<br/># Automatically closed"]
+    end
+    subgraph "Common Resources"
+        R["ClientSession (aiohttp/httpx)<br/>Database connections<br/>File handles<br/>WebSocket connections"]
+    end
+    style L fill:#FFCDD2
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Mixing asyncio.run()",
+                        "explanation": "Don't call asyncio.run() from inside async code.",
+                        "diagram_data": """graph TB
+    subgraph "Bug"
+        B["async def handler():<br/>    asyncio.run(other_coro())  # ERROR!<br/>    # RuntimeError: cannot run nested event loops"]
+    end
+    subgraph "Fix"
+        F["async def handler():<br/>    await other_coro()  # Just await it!"]
+    end
+    subgraph "Rules"
+        R["asyncio.run(): Only at top level<br/>await: Inside async functions<br/>create_task(): Schedule without waiting"]
+    end
+    style B fill:#FFCDD2
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Anti-Pattern Checklist",
+                        "explanation": "Quick reference to avoid common mistakes.",
+                        "diagram_data": """graph TB
+    subgraph "Avoid"
+        A1["✗ time.sleep() → asyncio.sleep()"]
+        A2["✗ requests → httpx/aiohttp"]
+        A3["✗ Forgotten await"]
+        A4["✗ Sequential when concurrent possible"]
+        A5["✗ Blocking file I/O → aiofiles"]
+        A6["✗ Unhandled task exceptions"]
+        A7["✗ Resource leaks"]
+        A8["✗ Nested asyncio.run()"]
+    end
+    subgraph "Debugging Tools"
+        D["asyncio.run(main(), debug=True)<br/>PYTHONASYNCIODEBUG=1<br/>warnings.filterwarnings('error')"]
+    end
+    style A1 fill:#FFCDD2
+    style D fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ============================================================
+    # ML Explainability Visualizations
+    # ============================================================
+
+    def seed_explainability_shap_visual(self):
+        """Seed SHAP Values Explained visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="shap-values",
+            defaults={
+                "title": "SHAP Values Explained",
+                "description": "Shapley values, force plots, summary plots",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 15,
+                "tags": ["ml", "explainability", "shap", "shapley", "feature-attribution"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is SHAP?",
+                        "explanation": "SHAP (SHapley Additive exPlanations) uses game theory to explain model predictions.",
+                        "diagram_data": """graph TB
+    subgraph "The Question"
+        Q["How much did each feature<br/>contribute to this prediction?"]
+    end
+    subgraph "SHAP Answer"
+        S["Prediction = Base Value + Σ SHAP values<br/><br/>Example: House Price = $200k<br/>Base (avg): $180k<br/>+$30k (size)<br/>-$15k (age)<br/>+$5k (location)"]
+    end
+    subgraph "Key Properties"
+        P1["Local accuracy: Sums to prediction"]
+        P2["Consistency: Same contribution = same value"]
+        P3["Missingness: Missing features = 0"]
+    end
+    style S fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Shapley Values from Game Theory",
+                        "explanation": "SHAP is based on Shapley values - how to fairly distribute a payout among players.",
+                        "diagram_data": """graph TB
+    subgraph "Game Theory Analogy"
+        G["Players = Features<br/>Payout = Prediction<br/>Coalition = Feature subset"]
+    end
+    subgraph "The Idea"
+        I["What's the average contribution of a feature<br/>across ALL possible feature orderings?"]
+    end
+    subgraph "Calculation"
+        C["For feature i:<br/>SHAP(i) = Average of:<br/>  f({features before i} ∪ {i}) - f({features before i})<br/>  across all orderings"]
+    end
+    subgraph "Complexity"
+        X["2^n subsets to consider<br/>Exact: O(2^n) - expensive!<br/>Approximations needed"]
+    end
+    style I fill:#E3F2FD
+    style X fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "SHAP Explainer Types",
+                        "explanation": "Different explainers for different model types.",
+                        "diagram_data": """graph TB
+    subgraph "TreeExplainer"
+        T["For tree models<br/>XGBoost, LightGBM, Random Forest<br/>Fast, exact computation"]
+    end
+    subgraph "DeepExplainer"
+        D["For deep learning<br/>Neural networks<br/>Uses DeepLIFT algorithm"]
+    end
+    subgraph "KernelExplainer"
+        K["Model-agnostic<br/>Works with ANY model<br/>Slower, approximate"]
+    end
+    subgraph "LinearExplainer"
+        L["For linear models<br/>Exact, very fast"]
+    end
+    subgraph "Choose"
+        CH["Tree model? → TreeExplainer<br/>Neural net? → DeepExplainer<br/>Other? → KernelExplainer"]
+    end
+    style T fill:#4CAF50,color:white
+    style CH fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Computing SHAP Values",
+                        "explanation": "Basic usage of the SHAP library.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["import shap<br/><br/># Train your model<br/>model = xgb.XGBClassifier()<br/>model.fit(X_train, y_train)"]
+    end
+    subgraph "Create Explainer"
+        E["# For tree models<br/>explainer = shap.TreeExplainer(model)<br/><br/># For any model<br/>explainer = shap.KernelExplainer(model.predict, X_train)"]
+    end
+    subgraph "Compute Values"
+        C["# For one sample<br/>shap_values = explainer.shap_values(X_test[0:1])<br/><br/># For multiple samples<br/>shap_values = explainer.shap_values(X_test)"]
+    end
+    subgraph "Output Shape"
+        O["shap_values.shape = (n_samples, n_features)<br/>Each value = feature's contribution"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Force Plot: Single Prediction",
+                        "explanation": "Visualize how features push prediction from base value.",
+                        "diagram_data": """graph TB
+    subgraph "Force Plot"
+        F["shap.force_plot(<br/>    explainer.expected_value,<br/>    shap_values[0],<br/>    X_test.iloc[0]<br/>)"]
+    end
+    subgraph "Reading the Plot"
+        R["Base value (average) in center<br/>Red features push prediction UP<br/>Blue features push prediction DOWN<br/>Width = magnitude of effect"]
+    end
+    subgraph "Example"
+        E["Base: 0.5 (50% probability)<br/>age=65 → +0.15 (red)<br/>income=high → +0.10 (red)<br/>history=bad → -0.20 (blue)<br/>Final: 0.55 (55%)"]
+    end
+    style F fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Summary Plot: Global View",
+                        "explanation": "See feature importance across all predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Summary Plot"
+        S["shap.summary_plot(shap_values, X_test)"]
+    end
+    subgraph "Beeswarm Plot"
+        B["Each dot = one prediction<br/>Y-axis = features (sorted by importance)<br/>X-axis = SHAP value<br/>Color = feature value (high/low)"]
+    end
+    subgraph "What to Look For"
+        W1["Wide spread = high importance"]
+        W2["Color pattern = relationship"]
+        W3["Red right = high value → high pred"]
+        W4["Blue right = low value → high pred"]
+    end
+    subgraph "Bar Version"
+        BR["shap.summary_plot(shap_values, X_test, plot_type='bar')<br/># Shows mean |SHAP| per feature"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Dependence Plot",
+                        "explanation": "How one feature affects predictions, with interactions.",
+                        "diagram_data": """graph TB
+    subgraph "Dependence Plot"
+        D["shap.dependence_plot(<br/>    'feature_name',<br/>    shap_values,<br/>    X_test<br/>)"]
+    end
+    subgraph "Reading It"
+        R["X-axis = Feature value<br/>Y-axis = SHAP value<br/>Color = Interacting feature"]
+    end
+    subgraph "Example Insight"
+        E["Age dependence plot shows:<br/>- SHAP increases with age<br/>- But colored by income:<br/>  High income (red) = steeper increase"]
+    end
+    subgraph "Interaction Effects"
+        I["shap.dependence_plot('age', shap_values, X_test,<br/>    interaction_index='income')"]
+    end
+    style D fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Waterfall Plot",
+                        "explanation": "Step-by-step breakdown for one prediction.",
+                        "diagram_data": """graph TB
+    subgraph "Waterfall Plot"
+        W["shap.plots.waterfall(shap_values[0])"]
+    end
+    subgraph "Shows"
+        S["E[f(x)] = 0.35 (base)<br/>────────────────<br/>age = +0.12<br/>income = +0.08<br/>history = -0.05<br/>... other features ...<br/>────────────────<br/>f(x) = 0.55 (final)"]
+    end
+    subgraph "Benefits"
+        B["Clear feature-by-feature breakdown<br/>Easy to explain to stakeholders<br/>Shows cumulative effect"]
+    end
+    style W fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "SHAP Best Practices",
+                        "explanation": "Tips for using SHAP effectively.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use TreeExplainer for tree models (fast)"]
+        D2["Sample background data for KernelExplainer"]
+        D3["Check that SHAP values sum to prediction"]
+        D4["Use multiple plot types for insights"]
+    end
+    subgraph "Don't"
+        DN1["Compare SHAP values across models"]
+        DN2["Assume causation from SHAP"]
+        DN3["Use on untrained/bad models"]
+    end
+    subgraph "Performance Tips"
+        P["# For large datasets<br/>background = shap.sample(X_train, 100)<br/>explainer = shap.KernelExplainer(model, background)"]
+    end
+    style D1 fill:#C8E6C9
+    style DN2 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_lime_visual(self):
+        """Seed LIME visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="lime-explanations",
+            defaults={
+                "title": "LIME: Local Interpretable Explanations",
+                "description": "How LIME approximates complex models locally",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "explainability", "lime", "local", "interpretability"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is LIME?",
+                        "explanation": "LIME (Local Interpretable Model-agnostic Explanations) explains predictions by approximating the model locally.",
+                        "diagram_data": """graph TB
+    subgraph "The Idea"
+        I["Complex model = Black box globally<br/>But near one point, can be approximated<br/>by a simple, interpretable model"]
+    end
+    subgraph "LIME Approach"
+        L["1. Pick a prediction to explain<br/>2. Generate nearby samples<br/>3. Get model predictions for them<br/>4. Fit simple model (linear) locally<br/>5. Use simple model to explain"]
+    end
+    subgraph "Result"
+        R["'For THIS prediction,<br/>feature A increased probability by 20%'"]
+    end
+    style I fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "How LIME Works",
+                        "explanation": "Step-by-step process of generating a LIME explanation.",
+                        "diagram_data": """graph TB
+    subgraph "Step 1: Sample Point"
+        S1["x = instance to explain<br/>f(x) = model's prediction"]
+    end
+    subgraph "Step 2: Perturb"
+        S2["Generate Z = perturbed samples<br/>around x (add noise, mask features)"]
+    end
+    subgraph "Step 3: Predict"
+        S3["Get f(z) for each z in Z<br/>These are the 'labels'"]
+    end
+    subgraph "Step 4: Weight"
+        S4["Weight samples by distance to x<br/>Closer = higher weight"]
+    end
+    subgraph "Step 5: Fit"
+        S5["Fit interpretable model g<br/>(linear, decision tree)<br/>to weighted (Z, f(Z))"]
+    end
+    subgraph "Step 6: Explain"
+        S6["Use coefficients of g<br/>as feature importances"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    style S5 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "LIME for Tabular Data",
+                        "explanation": "Using LIME on structured data.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["from lime.lime_tabular import LimeTabularExplainer<br/><br/>explainer = LimeTabularExplainer(<br/>    X_train.values,<br/>    feature_names=X_train.columns,<br/>    class_names=['No', 'Yes'],<br/>    mode='classification'<br/>)"]
+    end
+    subgraph "Explain Instance"
+        E["exp = explainer.explain_instance(<br/>    X_test.iloc[0].values,<br/>    model.predict_proba,<br/>    num_features=10<br/>)<br/><br/>exp.show_in_notebook()"]
+    end
+    subgraph "Output"
+        O["Feature contributions:<br/>age > 50: +0.25<br/>income < 30k: -0.15<br/>employed = True: +0.10"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "LIME for Text",
+                        "explanation": "Explaining text classification predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["from lime.lime_text import LimeTextExplainer<br/><br/>explainer = LimeTextExplainer(<br/>    class_names=['negative', 'positive']<br/>)"]
+    end
+    subgraph "Explain"
+        E["exp = explainer.explain_instance(<br/>    'This movie was absolutely terrible',<br/>    classifier.predict_proba,<br/>    num_features=6<br/>)"]
+    end
+    subgraph "Result"
+        R["Words highlighted:<br/>'terrible' → negative (strong)<br/>'absolutely' → negative (moderate)<br/>'movie' → neutral"]
+    end
+    subgraph "How It Works"
+        H["Randomly removes words<br/>Checks prediction change<br/>Words that flip prediction = important"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "LIME for Images",
+                        "explanation": "Explaining image classification predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["from lime import lime_image<br/><br/>explainer = lime_image.LimeImageExplainer()"]
+    end
+    subgraph "Explain"
+        E["exp = explainer.explain_instance(<br/>    image,<br/>    classifier.predict,<br/>    top_labels=3,<br/>    hide_color=0,<br/>    num_samples=1000<br/>)"]
+    end
+    subgraph "Visualization"
+        V["temp, mask = exp.get_image_and_mask(<br/>    label=predicted_class,<br/>    positive_only=True<br/>)<br/># Shows superpixels that support prediction"]
+    end
+    subgraph "How It Works"
+        H["Segments image into superpixels<br/>Randomly masks superpixels<br/>Checks prediction change"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "LIME Parameters",
+                        "explanation": "Key parameters that affect LIME explanations.",
+                        "diagram_data": """graph TB
+    subgraph "num_samples"
+        NS["Number of perturbed samples<br/>More = more stable, slower<br/>Default: 5000"]
+    end
+    subgraph "num_features"
+        NF["Features in explanation<br/>Top K most important<br/>Default: 10"]
+    end
+    subgraph "kernel_width"
+        KW["How local is 'local'?<br/>Smaller = more local<br/>Affects sample weights"]
+    end
+    subgraph "discretize_continuous"
+        DC["Bin continuous features?<br/>True: 'age > 50' style<br/>False: 'age = 0.23' coefficient"]
+    end
+    style NS fill:#E3F2FD
+    style KW fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "LIME vs SHAP",
+                        "explanation": "When to use LIME vs SHAP.",
+                        "diagram_data": """graph TB
+    subgraph "LIME"
+        L1["✓ Faster for single explanations"]
+        L2["✓ Works with any model"]
+        L3["✓ Good for text/images"]
+        L4["✗ Less consistent (random sampling)"]
+        L5["✗ Sensitive to parameters"]
+    end
+    subgraph "SHAP"
+        S1["✓ Theoretically grounded"]
+        S2["✓ Consistent across runs"]
+        S3["✓ Great global summaries"]
+        S4["✗ Slower for some models"]
+        S5["✗ Harder for text/images"]
+    end
+    subgraph "Choose"
+        C["Quick local explanation? → LIME<br/>Tree model? → SHAP (TreeExplainer)<br/>Need consistency? → SHAP<br/>Text/image? → LIME"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "LIME Limitations",
+                        "explanation": "Understanding LIME's weaknesses.",
+                        "diagram_data": """graph TB
+    subgraph "Stability Issues"
+        S["Run LIME twice on same instance<br/>May get different explanations!<br/>Due to random sampling"]
+    end
+    subgraph "Locality Definition"
+        L["What is 'local'?<br/>kernel_width affects this<br/>Wrong setting = bad explanations"]
+    end
+    subgraph "Linear Assumption"
+        LA["Fits linear model locally<br/>If true boundary is curved<br/>Explanation may be misleading"]
+    end
+    subgraph "Mitigations"
+        M["Increase num_samples<br/>Run multiple times, average<br/>Validate with domain knowledge"]
+    end
+    style S fill:#FFCDD2
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "LIME Best Practices",
+                        "explanation": "Tips for reliable LIME explanations.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use sufficient num_samples (>1000)"]
+        D2["Test stability (run multiple times)"]
+        D3["Validate against domain knowledge"]
+        D4["Use discretize for interpretability"]
+    end
+    subgraph "Don't"
+        DN1["Trust single run blindly"]
+        DN2["Use tiny kernel_width"]
+        DN3["Explain bad models"]
+    end
+    subgraph "Production Pattern"
+        P["# Run 5 times, check consistency<br/>explanations = [explain(x) for _ in range(5)]<br/>if consistent(explanations):<br/>    return average(explanations)<br/>else:<br/>    flag_for_review()"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_feature_importance_visual(self):
+        """Seed Feature Importance Methods visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="feature-importance",
+            defaults={
+                "title": "Feature Importance Methods",
+                "description": "Permutation, impurity-based, drop-column comparison",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "explainability", "feature-importance", "permutation", "interpretation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Types of Feature Importance",
+                        "explanation": "Different methods to measure which features matter most.",
+                        "diagram_data": """graph TB
+    subgraph "Three Main Approaches"
+        I["Impurity-Based<br/>(tree models only)"]
+        P["Permutation Importance<br/>(model-agnostic)"]
+        D["Drop-Column<br/>(most expensive)"]
+    end
+    subgraph "Key Difference"
+        K["Impurity: How features split data<br/>Permutation: How shuffling hurts accuracy<br/>Drop: How removing feature hurts model"]
+    end
+    I --> K
+    P --> K
+    D --> K
+    style P fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Impurity-Based Importance",
+                        "explanation": "Built into tree models - measures how much each feature reduces impurity.",
+                        "diagram_data": """graph TB
+    subgraph "How It Works"
+        H["For each tree node split:<br/>- Calculate impurity reduction<br/>- Attribute to splitting feature<br/>- Sum across all nodes & trees"]
+    end
+    subgraph "Code"
+        C["# Built into sklearn<br/>model = RandomForestClassifier().fit(X, y)<br/>importances = model.feature_importances_<br/><br/># Plot<br/>pd.Series(importances, index=X.columns)<br/>    .sort_values().plot(kind='barh')"]
+    end
+    subgraph "Advantages"
+        A["Free (computed during training)<br/>Fast<br/>Works with any tree model"]
+    end
+    subgraph "Disadvantages"
+        D["Biased toward high-cardinality<br/>Doesn't work on test set<br/>Can be misleading with correlated features"]
+    end
+    style C fill:#E3F2FD
+    style D fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Permutation Importance",
+                        "explanation": "Shuffle a feature's values and measure performance drop.",
+                        "diagram_data": """graph TB
+    subgraph "Algorithm"
+        A1["1. Get baseline score on test set"]
+        A2["2. For each feature:"]
+        A3["   - Shuffle feature values"]
+        A4["   - Measure new score"]
+        A5["   - Importance = baseline - new"]
+        A6["3. Repeat for stability"]
+    end
+    A1 --> A2 --> A3 --> A4 --> A5 --> A6
+    subgraph "Intuition"
+        I["If feature matters:<br/>Shuffling breaks relationship<br/>Score drops significantly"]
+    end
+    style A5 fill:#4CAF50,color:white
+    style I fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Permutation Importance Code",
+                        "explanation": "Using sklearn's permutation importance.",
+                        "diagram_data": """graph TB
+    subgraph "sklearn Implementation"
+        S["from sklearn.inspection import permutation_importance<br/><br/>result = permutation_importance(<br/>    model, X_test, y_test,<br/>    n_repeats=10,<br/>    random_state=42,<br/>    scoring='accuracy'<br/>)<br/><br/>importances = result.importances_mean"]
+    end
+    subgraph "Plot"
+        P["sorted_idx = importances.argsort()<br/>plt.barh(X.columns[sorted_idx], importances[sorted_idx])<br/>plt.xlabel('Permutation Importance')"]
+    end
+    subgraph "With Confidence"
+        C["# result.importances has shape (n_features, n_repeats)<br/>plt.boxplot(result.importances.T)"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Drop-Column Importance",
+                        "explanation": "Remove feature entirely and retrain - most accurate but expensive.",
+                        "diagram_data": """graph TB
+    subgraph "Algorithm"
+        A["1. Train model on all features, get score<br/>2. For each feature:<br/>   - Remove it from data<br/>   - Retrain model<br/>   - Get new score<br/>3. Importance = original - new score"]
+    end
+    subgraph "Code"
+        C["baseline = cross_val_score(model, X, y).mean()<br/><br/>importances = {}<br/>for col in X.columns:<br/>    X_drop = X.drop(columns=[col])<br/>    score = cross_val_score(model, X_drop, y).mean()<br/>    importances[col] = baseline - score"]
+    end
+    subgraph "Trade-off"
+        T["Most accurate importance<br/>But: n_features × training time<br/>Often impractical"]
+    end
+    style A fill:#E3F2FD
+    style T fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Correlated Features Problem",
+                        "explanation": "Feature importance can be misleading with correlated features.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["Features A and B are correlated (r=0.95)<br/>Both equally important in reality<br/>But importance may show:<br/>A = 0.8, B = 0.1"]
+    end
+    subgraph "Why?"
+        W["Impurity: One feature does the work<br/>Permutation: Shuffling A, B compensates<br/>Drop: Removing A, B fills in"]
+    end
+    subgraph "Solutions"
+        S1["Remove correlated features first"]
+        S2["Use grouped permutation"]
+        S3["Use SHAP (handles it better)"]
+        S4["Domain knowledge"]
+    end
+    style P fill:#FFCDD2
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Comparison Summary",
+                        "explanation": "When to use which method.",
+                        "diagram_data": """graph TB
+    subgraph "Impurity-Based"
+        I["Speed: ⚡ Instant<br/>Model: Trees only<br/>Correlated: ❌ Misleading<br/>Use: Quick exploration"]
+    end
+    subgraph "Permutation"
+        P["Speed: 🔄 Moderate<br/>Model: Any<br/>Correlated: ⚠️ Can mislead<br/>Use: General purpose"]
+    end
+    subgraph "Drop-Column"
+        D["Speed: 🐢 Slow<br/>Model: Any<br/>Correlated: ✓ Most accurate<br/>Use: Critical decisions"]
+    end
+    subgraph "Recommendation"
+        R["Start: Permutation importance<br/>Verify: SHAP for detailed view<br/>Production: Monitor with permutation"]
+    end
+    style P fill:#4CAF50,color:white
+    style R fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices",
+                        "explanation": "Tips for reliable feature importance analysis.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use test set for permutation importance"]
+        D2["Run multiple repeats for stability"]
+        D3["Check for correlated features first"]
+        D4["Combine with SHAP for full picture"]
+        D5["Validate with domain experts"]
+    end
+    subgraph "Don't"
+        DN1["Trust impurity importance blindly"]
+        DN2["Ignore negative importance values"]
+        DN3["Use on overfit models"]
+    end
+    subgraph "Negative Importance?"
+        N["Feature hurts model!<br/>Adding noise helps generalization<br/>Sign of overfitting or bad feature"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_pdp_visual(self):
+        """Seed Partial Dependence Plots visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="partial-dependence-plots",
+            defaults={
+                "title": "Partial Dependence Plots (PDP)",
+                "description": "Marginal effect of features on predictions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["ml", "explainability", "pdp", "ice", "marginal-effect"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is PDP?",
+                        "explanation": "Partial Dependence Plots show the **marginal effect** of a feature on predictions.",
+                        "diagram_data": """graph TB
+    subgraph "The Question"
+        Q["How does changing feature X<br/>affect the average prediction?"]
+    end
+    subgraph "PDP Answer"
+        A["For each value of X:<br/>- Set all samples to that value<br/>- Get predictions<br/>- Average them<br/>Plot average vs X values"]
+    end
+    subgraph "Example"
+        E["PDP for 'age' shows:<br/>As age increases 20→60,<br/>average prediction increases 0.2→0.7"]
+    end
+    style A fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "How PDP Works",
+                        "explanation": "Step-by-step calculation of partial dependence.",
+                        "diagram_data": """graph TB
+    subgraph "Algorithm"
+        A1["1. Choose feature and grid of values"]
+        A2["2. For each grid value v:"]
+        A3["   a. Set feature = v for ALL samples"]
+        A4["   b. Get model predictions"]
+        A5["   c. Average predictions"]
+        A6["3. Plot (v, avg_prediction)"]
+    end
+    A1 --> A2 --> A3 --> A4 --> A5 --> A6
+    subgraph "Example"
+        E["Grid: age = [20, 30, 40, 50, 60]<br/>For age=40:<br/>  Set all 1000 samples age=40<br/>  Get predictions<br/>  Average = 0.45"]
+    end
+    style A5 fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Creating PDPs in Python",
+                        "explanation": "Using sklearn's PartialDependenceDisplay.",
+                        "diagram_data": """graph TB
+    subgraph "sklearn Method"
+        S["from sklearn.inspection import PartialDependenceDisplay<br/><br/># Single feature<br/>PartialDependenceDisplay.from_estimator(<br/>    model, X_train, features=['age']<br/>)<br/>plt.show()"]
+    end
+    subgraph "Multiple Features"
+        M["PartialDependenceDisplay.from_estimator(<br/>    model, X_train,<br/>    features=['age', 'income', 'years_employed']<br/>)"]
+    end
+    subgraph "2D PDP"
+        D["# Interaction between two features<br/>PartialDependenceDisplay.from_estimator(<br/>    model, X_train,<br/>    features=[('age', 'income')]<br/>)"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "ICE Plots",
+                        "explanation": "Individual Conditional Expectation - PDP for each sample.",
+                        "diagram_data": """graph TB
+    subgraph "ICE vs PDP"
+        I["ICE: One line per sample<br/>PDP: Average of all ICE lines"]
+    end
+    subgraph "Code"
+        C["PartialDependenceDisplay.from_estimator(<br/>    model, X_train, features=['age'],<br/>    kind='both'  # ICE + PDP<br/>)"]
+    end
+    subgraph "Why ICE?"
+        W["PDP averages can hide heterogeneity<br/>ICE shows if effect varies by sample"]
+    end
+    subgraph "Example"
+        E["PDP: flat line (no avg effect)<br/>ICE: half going up, half going down<br/>→ Interaction with another feature!"]
+    end
+    style W fill:#FFF9C4
+    style I fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Reading PDP/ICE Plots",
+                        "explanation": "How to interpret the visualizations.",
+                        "diagram_data": """graph TB
+    subgraph "Positive Slope"
+        P["↗ As feature increases<br/>prediction increases"]
+    end
+    subgraph "Negative Slope"
+        N["↘ As feature increases<br/>prediction decreases"]
+    end
+    subgraph "Flat Line"
+        F["─ Feature has no effect<br/>on average prediction"]
+    end
+    subgraph "Non-linear"
+        NL["∿ Threshold effects<br/>Saturation<br/>Complex relationships"]
+    end
+    subgraph "Spread ICE Lines"
+        S["Wide spread = heterogeneous effect<br/>Tight = consistent across samples"]
+    end
+    style NL fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "2D Partial Dependence",
+                        "explanation": "Visualize interaction between two features.",
+                        "diagram_data": """graph TB
+    subgraph "2D PDP"
+        D["Contour plot or heatmap<br/>X-axis: Feature 1 values<br/>Y-axis: Feature 2 values<br/>Color: Average prediction"]
+    end
+    subgraph "Code"
+        C["PartialDependenceDisplay.from_estimator(<br/>    model, X_train,<br/>    features=[('age', 'income')],<br/>    kind='average'<br/>)"]
+    end
+    subgraph "Interpretation"
+        I["Parallel contours = no interaction<br/>Non-parallel = interaction exists<br/>'Effect of age depends on income'"]
+    end
+    style D fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "PDP Limitations",
+                        "explanation": "When PDPs can be misleading.",
+                        "diagram_data": """graph TB
+    subgraph "Assumes Independence"
+        A["PDP assumes features are independent<br/>Sets feature to values that may be<br/>impossible in reality"]
+    end
+    subgraph "Example"
+        E["Age=25, Retired=True<br/>Doesn't exist in real data<br/>But PDP evaluates it"]
+    end
+    subgraph "Heterogeneity Hidden"
+        H["Averaging hides different effects<br/>for different subgroups<br/>→ Use ICE plots"]
+    end
+    subgraph "Solutions"
+        S["Check feature correlations<br/>Use ICE for heterogeneity<br/>ALE plots (handle correlations)"]
+    end
+    style A fill:#FFCDD2
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Accumulated Local Effects (ALE)",
+                        "explanation": "Alternative to PDP that handles correlated features.",
+                        "diagram_data": """graph TB
+    subgraph "ALE vs PDP"
+        A["ALE: Averages local effects<br/>PDP: Sets features globally"]
+    end
+    subgraph "ALE Algorithm"
+        AL["For each interval of feature X:<br/>- Use only samples in that range<br/>- Compute local effect<br/>- Accumulate effects"]
+    end
+    subgraph "Benefits"
+        B["Handles correlated features<br/>More realistic scenarios<br/>Faster computation"]
+    end
+    subgraph "Library"
+        L["# alibi library<br/>from alibi.explainers import ALE<br/>ale = ALE(model.predict)<br/>ale.explain(X_train)"]
+    end
+    style AL fill:#E3F2FD
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Tips for effective PDP analysis.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Check feature correlations first"]
+        D2["Use ICE + PDP together"]
+        D3["Look at 2D for interactions"]
+        D4["Use ALE for correlated features"]
+    end
+    subgraph "Don't"
+        DN1["Trust PDP with high correlations"]
+        DN2["Ignore spread in ICE plots"]
+        DN3["Over-interpret extrapolated regions"]
+    end
+    subgraph "Workflow"
+        W["1. Permutation importance → top features<br/>2. PDP/ICE → understand relationships<br/>3. 2D PDP → check interactions<br/>4. SHAP → individual explanations"]
+    end
+    style D2 fill:#C8E6C9
+    style W fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_tree_based_visual(self):
+        """Seed Tree-Based Explainability visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="tree-explainability",
+            defaults={
+                "title": "Tree-Based Explainability",
+                "description": "Decision paths, tree SHAP, feature splits",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["ml", "explainability", "trees", "decision-path", "random-forest"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Trees Are Interpretable",
+                        "explanation": "Decision trees are inherently interpretable - you can follow the logic.",
+                        "diagram_data": """graph TB
+    subgraph "Decision Tree"
+        R["Age > 50?"]
+        R -->|Yes| A["Income > 80k?"]
+        R -->|No| B["Student?"]
+        A -->|Yes| C["Approve ✓"]
+        A -->|No| D["Deny ✗"]
+        B -->|Yes| E["Deny ✗"]
+        B -->|No| F["Approve ✓"]
+    end
+    subgraph "Explanation"
+        EX["'Denied because:<br/>Age ≤ 50 AND Student = Yes'<br/><br/>Clear, human-readable rules!"]
+    end
+    style EX fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Decision Path Extraction",
+                        "explanation": "Get the exact path through the tree for a prediction.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        C["from sklearn.tree import DecisionTreeClassifier<br/><br/>model = DecisionTreeClassifier()<br/>model.fit(X, y)<br/><br/># Get decision path for sample<br/>path = model.decision_path(X_test[0:1])<br/><br/># path is sparse matrix<br/># Non-zero entries = nodes visited"]
+    end
+    subgraph "Extract Rules"
+        E["feature = model.tree_.feature<br/>threshold = model.tree_.threshold<br/><br/>node_indices = path.indices<br/>for node in node_indices:<br/>    if feature[node] != -2:  # Not leaf<br/>        print(f'{feature_names[feature[node]]}<br/>              {'<=' if going_left else '>'}<br/>              {threshold[node]}')"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Visualizing Decision Trees",
+                        "explanation": "Multiple ways to visualize tree structure.",
+                        "diagram_data": """graph TB
+    subgraph "plot_tree"
+        P["from sklearn.tree import plot_tree<br/><br/>plt.figure(figsize=(20, 10))<br/>plot_tree(model,<br/>    feature_names=X.columns,<br/>    class_names=['No', 'Yes'],<br/>    filled=True,<br/>    rounded=True<br/>)<br/>plt.show()"]
+    end
+    subgraph "export_graphviz"
+        G["from sklearn.tree import export_graphviz<br/>import graphviz<br/><br/>dot = export_graphviz(model, ...)<br/>graphviz.Source(dot)"]
+    end
+    subgraph "dtreeviz"
+        D["from dtreeviz.trees import dtreeviz<br/><br/>viz = dtreeviz(model, X, y, ...)<br/>viz.view()  # Beautiful viz!"]
+    end
+    style D fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Tree SHAP",
+                        "explanation": "SHAP has a fast, exact algorithm for tree-based models.",
+                        "diagram_data": """graph TB
+    subgraph "TreeExplainer"
+        T["import shap<br/><br/># Fast, exact SHAP for trees<br/>explainer = shap.TreeExplainer(model)<br/>shap_values = explainer.shap_values(X_test)"]
+    end
+    subgraph "How It Works"
+        H["Exploits tree structure<br/>Computes exact Shapley values<br/>O(TLD²) instead of O(2^M)"]
+    end
+    subgraph "Supported Models"
+        S["XGBoost, LightGBM, CatBoost<br/>RandomForest, GradientBoosting<br/>Any sklearn tree ensemble"]
+    end
+    subgraph "Speed"
+        SP["1000x faster than KernelSHAP<br/>Exact, not approximate"]
+    end
+    style T fill:#E3F2FD
+    style SP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Feature Contributions per Prediction",
+                        "explanation": "Show how each feature contributed to a specific prediction.",
+                        "diagram_data": """graph TB
+    subgraph "treeinterpreter Library"
+        T["from treeinterpreter import treeinterpreter as ti<br/><br/>prediction, bias, contributions = ti.predict(<br/>    model, X_test[0:1]<br/>)<br/><br/># bias = base prediction (mean)<br/># contributions = per-feature effects"]
+    end
+    subgraph "Breakdown"
+        B["Base (mean): 0.45<br/>+ age contribution: +0.15<br/>+ income contribution: -0.05<br/>+ ... other features ...<br/>= Final prediction: 0.60"]
+    end
+    subgraph "Works With"
+        W["RandomForest<br/>ExtraTrees<br/>GradientBoosting"]
+    end
+    style T fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Random Forest: Aggregated Explanations",
+                        "explanation": "Explaining ensemble predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Challenge"
+        C["Random Forest = 100s of trees<br/>Each tree gives different path<br/>How to explain ensemble?"]
+    end
+    subgraph "Approaches"
+        A1["1. Feature importance (aggregate)"]
+        A2["2. SHAP values (aggregate)"]
+        A3["3. Sample individual trees"]
+        A4["4. Prototype trees"]
+    end
+    subgraph "Simplified Trees"
+        S["from sklearn.tree import DecisionTreeClassifier<br/><br/># Train single tree to mimic RF<br/>rf_preds = rf_model.predict(X)<br/>simple_tree = DecisionTreeClassifier(max_depth=5)<br/>simple_tree.fit(X, rf_preds)<br/><br/># Interpretable approximation!"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Feature Interaction in Trees",
+                        "explanation": "Detecting feature interactions from tree structure.",
+                        "diagram_data": """graph TB
+    subgraph "Interaction Detection"
+        I["If feature A often splits<br/>after feature B splits,<br/>they interact"]
+    end
+    subgraph "SHAP Interaction Values"
+        S["interaction_values = explainer.shap_interaction_values(X)<br/># Shape: (n_samples, n_features, n_features)<br/><br/>shap.summary_plot(interaction_values, X)"]
+    end
+    subgraph "Reading Interactions"
+        R["Diagonal: Main effects<br/>Off-diagonal: Interactions<br/>High value = strong interaction"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices for Tree Explainability",
+                        "explanation": "Tips for explaining tree-based models.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use TreeExplainer for SHAP (fast)"]
+        D2["Visualize shallow trees directly"]
+        D3["Use decision paths for individual preds"]
+        D4["Create surrogate trees for deep models"]
+    end
+    subgraph "Don't"
+        DN1["Try to visualize 100+ tree ensemble"]
+        DN2["Ignore interaction effects"]
+        DN3["Assume single tree = ensemble behavior"]
+    end
+    subgraph "Workflow"
+        W["1. SHAP summary plot → global view<br/>2. Decision path → individual explanation<br/>3. Surrogate tree → simplified rules"]
+    end
+    style D1 fill:#C8E6C9
+    style W fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_attention_visual(self):
+        """Seed Attention Visualization visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="attention-visualization",
+            defaults={
+                "title": "Attention Visualization",
+                "description": "Transformer attention weights interpretation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "explainability", "attention", "transformers", "nlp"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Attention as Explanation",
+                        "explanation": "Attention weights show which parts of input the model focuses on.",
+                        "diagram_data": """graph TB
+    subgraph "The Idea"
+        I["Attention = soft alignment<br/>High weight = 'model looked here'"]
+    end
+    subgraph "Example"
+        E["Input: 'The movie was terrible'<br/>Sentiment: Negative<br/><br/>Attention on 'terrible': 0.7<br/>Attention on 'movie': 0.2<br/>Attention on 'The', 'was': 0.1"]
+    end
+    subgraph "Caution"
+        C["Attention ≠ Explanation<br/>High attention doesn't mean<br/>causal importance"]
+    end
+    style I fill:#4CAF50,color:white
+    style C fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Extracting Attention Weights",
+                        "explanation": "Getting attention weights from transformer models.",
+                        "diagram_data": """graph TB
+    subgraph "HuggingFace"
+        H["from transformers import AutoModel<br/><br/>model = AutoModel.from_pretrained('bert-base-uncased')<br/>outputs = model(**inputs, output_attentions=True)<br/><br/>attentions = outputs.attentions<br/># Tuple of (batch, heads, seq, seq) per layer"]
+    end
+    subgraph "Shape"
+        S["len(attentions) = num_layers (12)<br/>attentions[0].shape = (1, 12, seq_len, seq_len)<br/><br/>Each layer has 12 attention heads<br/>Each head has seq×seq attention matrix"]
+    end
+    style H fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Visualizing Attention",
+                        "explanation": "Tools for attention visualization.",
+                        "diagram_data": """graph TB
+    subgraph "BertViz"
+        B["from bertviz import head_view, model_view<br/><br/># Interactive attention visualization<br/>head_view(attention, tokens)<br/>model_view(attention, tokens)"]
+    end
+    subgraph "Manual Heatmap"
+        M["import seaborn as sns<br/><br/>attention = attentions[layer][0, head].detach()<br/>sns.heatmap(attention, xticklabels=tokens,<br/>            yticklabels=tokens)"]
+    end
+    subgraph "Aggregate Heads"
+        A["# Average across heads<br/>avg_attention = attentions[layer].mean(dim=1)<br/><br/># Or max<br/>max_attention = attentions[layer].max(dim=1)"]
+    end
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Attention Rollout",
+                        "explanation": "Propagate attention through layers for better explanation.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["Raw attention is layer-specific<br/>Doesn't show full picture<br/>Information flows through layers"]
+    end
+    subgraph "Attention Rollout"
+        AR["For each layer:<br/>  attention = attention + residual<br/>  attention = attention @ previous_attention<br/><br/>Accumulated attention through network"]
+    end
+    subgraph "Code"
+        C["def attention_rollout(attentions):<br/>    result = torch.eye(attentions[0].shape[-1])<br/>    for attention in attentions:<br/>        attention = attention.mean(dim=1)  # avg heads<br/>        attention = attention + torch.eye(attention.shape[-1])<br/>        attention = attention / attention.sum(dim=-1, keepdim=True)<br/>        result = attention @ result<br/>    return result"]
+    end
+    style AR fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Attention for Text Classification",
+                        "explanation": "Which tokens influenced the classification?",
+                        "diagram_data": """graph TB
+    subgraph "CLS Token Attention"
+        C["# For classification, look at [CLS] attention<br/>cls_attention = attentions[-1][0, :, 0, :]<br/># Shape: (n_heads, seq_len)<br/><br/># Which tokens does [CLS] attend to?<br/>token_importance = cls_attention.mean(dim=0)"]
+    end
+    subgraph "Visualization"
+        V["for token, score in zip(tokens, token_importance):<br/>    color = score_to_color(score)<br/>    print(f'{token}', color=color)"]
+    end
+    subgraph "Example Output"
+        E["The [0.1] movie [0.2] was [0.1] terrible [0.6]<br/>                               ^^^^^^^^<br/>                               Most attended"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Attention in Vision Transformers",
+                        "explanation": "Visualizing what ViT attends to in images.",
+                        "diagram_data": """graph TB
+    subgraph "ViT Attention"
+        V["Image → patches → tokens<br/>Attention shows patch relationships"]
+    end
+    subgraph "Code"
+        C["from transformers import ViTModel<br/><br/>outputs = model(images, output_attentions=True)<br/>attentions = outputs.attentions[-1]  # Last layer<br/><br/># CLS token attention to patches<br/>cls_attn = attentions[0, :, 0, 1:]  # Skip CLS itself<br/>cls_attn = cls_attn.mean(0)  # Average heads<br/>cls_attn = cls_attn.reshape(14, 14)  # Patch grid"]
+    end
+    subgraph "Overlay on Image"
+        O["# Resize attention to image size<br/>attn_map = resize(cls_attn, image_size)<br/>plt.imshow(image)<br/>plt.imshow(attn_map, alpha=0.5, cmap='hot')"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Limitations of Attention",
+                        "explanation": "Why attention isn't always a good explanation.",
+                        "diagram_data": """graph TB
+    subgraph "Attention ≠ Importance"
+        A["Studies show attention doesn't<br/>correlate with feature importance<br/>(Jain & Wallace 2019)"]
+    end
+    subgraph "Problems"
+        P1["High attention on unimportant tokens"]
+        P2["Different heads contradict"]
+        P3["Attention can be manipulated"]
+        P4["Doesn't show what's computed"]
+    end
+    subgraph "Better Alternatives"
+        B["Integrated Gradients"]
+        B2["Attention Rollout"]
+        B3["SHAP for transformers"]
+        B4["Probing classifiers"]
+    end
+    style A fill:#FFCDD2
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for attention-based explanations.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use attention as one signal among many"]
+        D2["Combine with gradient methods"]
+        D3["Use attention rollout over raw"]
+        D4["Validate with perturbation tests"]
+    end
+    subgraph "Don't"
+        DN1["Treat attention as ground truth"]
+        DN2["Ignore other explanation methods"]
+        DN3["Over-interpret single heads"]
+    end
+    subgraph "Tools"
+        T["BertViz - Interactive viz<br/>Captum - Integrated gradients<br/>ecco - LM analysis<br/>transformers-interpret"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_gradients_visual(self):
+        """Seed Gradient-Based Methods visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="gradient-methods",
+            defaults={
+                "title": "Gradient-Based Methods",
+                "description": "Saliency maps, Integrated Gradients, GradCAM",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "explainability", "gradients", "saliency", "gradcam", "deep-learning"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Gradient-Based Explanations",
+                        "explanation": "Use gradients to understand what inputs affect the output.",
+                        "diagram_data": """graph TB
+    subgraph "The Idea"
+        I["Gradient ∂y/∂x tells us:<br/>How much does output y change<br/>if we change input x?"]
+    end
+    subgraph "High Gradient"
+        H["= Small change in pixel/word<br/>  causes big change in prediction<br/>= Important!"]
+    end
+    subgraph "Methods"
+        M1["Vanilla Gradients (Saliency)"]
+        M2["Integrated Gradients"]
+        M3["GradCAM"]
+        M4["SmoothGrad"]
+    end
+    style I fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Vanilla Gradients (Saliency Maps)",
+                        "explanation": "Simplest method: compute gradient of output w.r.t. input.",
+                        "diagram_data": """graph TB
+    subgraph "Algorithm"
+        A["1. Forward pass: y = f(x)<br/>2. Backward pass: ∂y/∂x<br/>3. Visualize gradient magnitude"]
+    end
+    subgraph "Code"
+        C["x.requires_grad_(True)<br/>output = model(x)<br/>output[0, target_class].backward()<br/><br/>saliency = x.grad.abs().max(dim=1)[0]<br/>plt.imshow(saliency, cmap='hot')"]
+    end
+    subgraph "Problems"
+        P["Noisy gradients<br/>Saturated neurons = zero gradient<br/>Doesn't satisfy axioms"]
+    end
+    style C fill:#E3F2FD
+    style P fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Integrated Gradients",
+                        "explanation": "Accumulate gradients along path from baseline to input.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["Gradient at one point isn't enough<br/>Need to understand full path"]
+    end
+    subgraph "Integrated Gradients"
+        IG["IG(x) = (x - x') × ∫ ∂f(x' + α(x-x'))/∂x dα<br/><br/>Where:<br/>x' = baseline (black image, zero text)<br/>α = interpolation from 0 to 1"]
+    end
+    subgraph "Properties"
+        PR1["Sensitivity: Non-zero if feature matters"]
+        PR2["Implementation Invariance"]
+        PR3["Completeness: Attributions sum to output - baseline"]
+    end
+    style IG fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Integrated Gradients Code",
+                        "explanation": "Implementing Integrated Gradients with Captum.",
+                        "diagram_data": """graph TB
+    subgraph "Captum Library"
+        C["from captum.attr import IntegratedGradients<br/><br/>ig = IntegratedGradients(model)<br/>attributions = ig.attribute(<br/>    input,<br/>    target=predicted_class,<br/>    baselines=baseline,  # e.g., black image<br/>    n_steps=50<br/>)"]
+    end
+    subgraph "Visualize"
+        V["from captum.attr import visualization as viz<br/><br/>viz.visualize_image_attr(<br/>    attributions.squeeze().permute(1,2,0).numpy(),<br/>    original_image,<br/>    method='blended_heat_map'<br/>)"]
+    end
+    subgraph "For Text"
+        T["# Attribute to embeddings<br/>ig = LayerIntegratedGradients(model, model.embedding)<br/>attributions = ig.attribute(input_ids, target=label)"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "GradCAM",
+                        "explanation": "Gradient-weighted Class Activation Mapping for CNNs.",
+                        "diagram_data": """graph TB
+    subgraph "How GradCAM Works"
+        G["1. Get activations from conv layer<br/>2. Compute gradients of output w.r.t activations<br/>3. Global average pool gradients → weights<br/>4. Weighted sum of activations<br/>5. ReLU → keep positive"]
+    end
+    subgraph "Formula"
+        F["CAM = ReLU(Σ αk × Ak)<br/>where αk = global_avg_pool(∂y/∂Ak)"]
+    end
+    subgraph "Result"
+        R["Coarse heatmap showing<br/>which image regions matter<br/>for the predicted class"]
+    end
+    style G fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "GradCAM Code",
+                        "explanation": "Implementing GradCAM for image models.",
+                        "diagram_data": """graph TB
+    subgraph "Using Captum"
+        C["from captum.attr import LayerGradCam<br/><br/>gradcam = LayerGradCam(model, model.layer4[-1])<br/>attributions = gradcam.attribute(<br/>    input,<br/>    target=predicted_class<br/>)<br/><br/># Upsample to input size<br/>upsampled = F.interpolate(attributions, input.shape[2:])"]
+    end
+    subgraph "Overlay"
+        O["heatmap = upsampled.squeeze().cpu().numpy()<br/>heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min())<br/><br/>plt.imshow(original_image)<br/>plt.imshow(heatmap, alpha=0.5, cmap='jet')"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "SmoothGrad",
+                        "explanation": "Reduce noise by averaging gradients over noisy inputs.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        P["Vanilla gradients are noisy<br/>Small input changes → big gradient changes"]
+    end
+    subgraph "SmoothGrad"
+        S["1. Add Gaussian noise to input N times<br/>2. Compute gradient for each<br/>3. Average the gradients<br/><br/>SmoothGrad = (1/n) Σ ∂f(x + noise)/∂x"]
+    end
+    subgraph "Code"
+        C["from captum.attr import NoiseTunnel, Saliency<br/><br/>saliency = Saliency(model)<br/>nt = NoiseTunnel(saliency)<br/><br/>smoothgrad = nt.attribute(<br/>    input, target=class,<br/>    nt_type='smoothgrad',<br/>    nt_samples=50,<br/>    stdevs=0.2<br/>)"]
+    end
+    style S fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Comparison of Methods",
+                        "explanation": "When to use which gradient method.",
+                        "diagram_data": """graph TB
+    subgraph "Vanilla Gradient"
+        V["+ Fast, simple<br/>- Noisy, misleading"]
+    end
+    subgraph "Integrated Gradients"
+        IG["+ Theoretically sound<br/>+ Works for any model<br/>- Needs baseline choice<br/>- Slower (n_steps)"]
+    end
+    subgraph "GradCAM"
+        GC["+ Visual, interpretable<br/>+ Class-specific<br/>- CNNs only<br/>- Coarse resolution"]
+    end
+    subgraph "SmoothGrad"
+        SG["+ Cleaner than vanilla<br/>- Even slower<br/>- Parameter choice"]
+    end
+    subgraph "Recommendation"
+        R["Images: GradCAM + IG<br/>Text: IG + attention<br/>Any model: IG"]
+    end
+    style R fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Tips for gradient-based explanations.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use Integrated Gradients over vanilla"]
+        D2["Choose meaningful baselines"]
+        D3["Combine with other methods"]
+        D4["Validate explanations make sense"]
+    end
+    subgraph "Don't"
+        DN1["Trust vanilla gradients alone"]
+        DN2["Ignore baseline sensitivity"]
+        DN3["Over-interpret noise"]
+    end
+    subgraph "Baseline Choices"
+        B["Images: Black image, blurred image<br/>Text: Padding token, mask token<br/>Tabular: Mean values, zeros"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_global_local_visual(self):
+        """Seed Global vs Local Explanations visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="global-vs-local",
+            defaults={
+                "title": "Global vs Local Explanations",
+                "description": "Model-wide vs individual prediction explanations",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["ml", "explainability", "global", "local", "interpretation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Types of Explanations",
+                        "explanation": "Global explains the model; Local explains individual predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Global Explanation"
+        G["How does the model work overall?<br/>What patterns did it learn?<br/>Which features matter most?"]
+    end
+    subgraph "Local Explanation"
+        L["Why THIS prediction?<br/>What influenced THIS outcome?<br/>How would changes affect THIS case?"]
+    end
+    subgraph "Both Needed"
+        B["Global: Trust the model<br/>Local: Trust this decision"]
+    end
+    style G fill:#2196F3,color:white
+    style L fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Global Explanation Methods",
+                        "explanation": "Methods that explain the entire model.",
+                        "diagram_data": """graph TB
+    subgraph "Feature Importance"
+        FI["Permutation importance<br/>Impurity-based<br/>SHAP summary plot"]
+    end
+    subgraph "Partial Dependence"
+        PD["PDP plots<br/>ALE plots<br/>Feature interactions"]
+    end
+    subgraph "Model Structure"
+        MS["Decision tree visualization<br/>Rule extraction<br/>Prototype examples"]
+    end
+    subgraph "Global Surrogate"
+        GS["Train interpretable model<br/>to mimic the black box"]
+    end
+    style FI fill:#E3F2FD
+    style GS fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Local Explanation Methods",
+                        "explanation": "Methods that explain single predictions.",
+                        "diagram_data": """graph TB
+    subgraph "Attribution Methods"
+        A["SHAP values (per prediction)<br/>LIME<br/>Integrated Gradients"]
+    end
+    subgraph "Example-Based"
+        E["Similar training examples<br/>Counterfactuals<br/>Influential instances"]
+    end
+    subgraph "Rule-Based"
+        R["Decision path (trees)<br/>Anchor explanations"]
+    end
+    subgraph "Visual"
+        V["Attention weights<br/>Saliency maps<br/>GradCAM"]
+    end
+    style A fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "SHAP: Both Global and Local",
+                        "explanation": "SHAP uniquely provides both perspectives.",
+                        "diagram_data": """graph TB
+    subgraph "Local (per prediction)"
+        L["shap_values[i] = feature contributions<br/>for sample i<br/><br/>shap.force_plot(expected, shap_values[0], X[0])"]
+    end
+    subgraph "Global (aggregate)"
+        G["shap.summary_plot(shap_values, X)<br/><br/>Shows importance across ALL samples<br/>+ direction of effect"]
+    end
+    subgraph "Bridge"
+        B["Local → Global:<br/>Aggregate local explanations<br/>= Global understanding"]
+    end
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "When to Use Which",
+                        "explanation": "Choosing the right level of explanation.",
+                        "diagram_data": """graph TB
+    subgraph "Use Global When"
+        UG["Model validation<br/>Feature engineering<br/>Debugging overall behavior<br/>Stakeholder buy-in"]
+    end
+    subgraph "Use Local When"
+        UL["Individual decisions<br/>Regulatory compliance<br/>User-facing explanations<br/>Debugging specific failures"]
+    end
+    subgraph "Use Both When"
+        UB["High-stakes applications<br/>Healthcare, finance<br/>Building trust"]
+    end
+    style UB fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Global Surrogate Models",
+                        "explanation": "Train simple model to explain complex one.",
+                        "diagram_data": """graph TB
+    subgraph "Approach"
+        A["1. Get predictions from black box<br/>2. Train interpretable model on these<br/>3. Explain the surrogate"]
+    end
+    subgraph "Code"
+        C["# Black box predictions<br/>black_box_preds = complex_model.predict(X)<br/><br/># Train surrogate<br/>surrogate = DecisionTreeClassifier(max_depth=5)<br/>surrogate.fit(X, black_box_preds)<br/><br/># Explain surrogate (it's a tree!)<br/>plot_tree(surrogate)"]
+    end
+    subgraph "Trade-off"
+        T["Fidelity: How well does surrogate match?<br/>Interpretability: How simple?<br/>Must balance both!"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Consistency Between Levels",
+                        "explanation": "Local explanations should be consistent with global.",
+                        "diagram_data": """graph TB
+    subgraph "Consistency Check"
+        C["If global says 'age is important'<br/>Local explanations should show<br/>age affecting predictions"]
+    end
+    subgraph "Red Flag"
+        R["Global: 'income is #1 feature'<br/>Local: income rarely in top 5<br/><br/>→ Investigate! Something's wrong"]
+    end
+    subgraph "Validation"
+        V["1. Get global feature importance<br/>2. Check top features appear in locals<br/>3. Verify directions match"]
+    end
+    style R fill:#FFCDD2
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for comprehensive explainability.",
+                        "diagram_data": """graph TB
+    subgraph "Workflow"
+        W["1. Start with global view<br/>2. Identify important features<br/>3. Dig into local for edge cases<br/>4. Verify consistency"]
+    end
+    subgraph "Communication"
+        C["Data scientists: Both levels<br/>Business: Global + key locals<br/>End users: Local only<br/>Regulators: Both + methodology"]
+    end
+    subgraph "Tools"
+        T["SHAP: Best for both<br/>LIME: Local focus<br/>PDP/ALE: Global focus<br/>Trees: Inherent interpretability"]
+    end
+    style W fill:#E3F2FD
+    style T fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_counterfactual_visual(self):
+        """Seed Counterfactual Explanations visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="counterfactual-explanations",
+            defaults={
+                "title": "Counterfactual Explanations",
+                "description": "'What if' scenarios and minimal changes for different outcomes",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["ml", "explainability", "counterfactual", "what-if", "actionable"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Counterfactuals?",
+                        "explanation": "Counterfactuals answer: 'What minimal change would give a different prediction?'",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        O["Loan denied<br/>Income: $40k<br/>Credit: 650<br/>Debt: $20k"]
+    end
+    subgraph "Counterfactual"
+        C["Loan APPROVED<br/>Income: $40k ✓<br/>Credit: 700 (+50)<br/>Debt: $20k ✓"]
+    end
+    subgraph "Insight"
+        I["'If your credit score was 700<br/>instead of 650, you would<br/>have been approved.'"]
+    end
+    O --> C
+    style C fill:#4CAF50,color:white
+    style I fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Counterfactuals?",
+                        "explanation": "Counterfactuals are intuitive and actionable.",
+                        "diagram_data": """graph TB
+    subgraph "Benefits"
+        B1["Human-friendly explanations"]
+        B2["Actionable insights"]
+        B3["No model internals needed"]
+        B4["Contrastive reasoning"]
+    end
+    subgraph "vs Other Methods"
+        V["SHAP: 'Credit hurt by 15%'<br/>CF: 'Increase credit by 50 points'<br/><br/>CF gives ACTIONS, not weights"]
+    end
+    subgraph "Use Cases"
+        U["Loan decisions<br/>Insurance claims<br/>Medical diagnosis<br/>College admissions"]
+    end
+    style V fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Finding Counterfactuals",
+                        "explanation": "Optimization problem: minimal change that flips prediction.",
+                        "diagram_data": """graph TB
+    subgraph "Objective"
+        O["minimize: distance(x, x')<br/>subject to: f(x') ≠ f(x)"]
+    end
+    subgraph "Constraints"
+        C1["Minimal change (small distance)"]
+        C2["Realistic values (in distribution)"]
+        C3["Actionable (can't change age)"]
+        C4["Sparse (few features changed)"]
+    end
+    subgraph "Methods"
+        M1["Gradient-based search"]
+        M2["Genetic algorithms"]
+        M3["Mixed-integer programming"]
+        M4["Prototype-based"]
+    end
+    style O fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "DiCE Library",
+                        "explanation": "Diverse Counterfactual Explanations - popular library.",
+                        "diagram_data": """graph TB
+    subgraph "Setup"
+        S["import dice_ml<br/><br/>d = dice_ml.Data(<br/>    dataframe=df,<br/>    continuous_features=['age', 'income'],<br/>    outcome_name='approved'<br/>)<br/><br/>m = dice_ml.Model(model=clf, backend='sklearn')"]
+    end
+    subgraph "Generate"
+        G["exp = dice_ml.Dice(d, m)<br/>cf = exp.generate_counterfactuals(<br/>    query_instance,<br/>    total_CFs=5,<br/>    desired_class='approved'<br/>)<br/>cf.visualize_as_dataframe()"]
+    end
+    subgraph "Output"
+        O["5 diverse ways to get approved<br/>Each with minimal changes<br/>e.g., +$5k income OR +50 credit"]
+    end
+    style G fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Diversity in Counterfactuals",
+                        "explanation": "Multiple diverse counterfactuals are more useful than one.",
+                        "diagram_data": """graph TB
+    subgraph "Why Diverse?"
+        W["One path may be impossible<br/>User has choices<br/>Different tradeoffs"]
+    end
+    subgraph "Example"
+        E["CF1: Increase income by $10k<br/>CF2: Increase credit by 50<br/>CF3: Decrease debt by $5k<br/>CF4: Small changes to all three"]
+    end
+    subgraph "DiCE Diversity"
+        D["exp.generate_counterfactuals(<br/>    query,<br/>    total_CFs=5,<br/>    diversity_weight=1.0  # Higher = more diverse<br/>)"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Actionable Counterfactuals",
+                        "explanation": "Constrain changes to features user can actually change.",
+                        "diagram_data": """graph TB
+    subgraph "Immutable Features"
+        I["Age - can't change<br/>Race - can't change<br/>Historical events - can't change"]
+    end
+    subgraph "Actionable Features"
+        A["Income - can get raise<br/>Education - can get degree<br/>Credit score - can improve"]
+    end
+    subgraph "DiCE Constraints"
+        D["exp.generate_counterfactuals(<br/>    query,<br/>    features_to_vary=['income', 'credit'],<br/>    permitted_range={'income': [40000, 100000]}<br/>)"]
+    end
+    subgraph "Directional"
+        DR["# Only allow increases<br/>permitted_range={'credit': [current, 850]}"]
+    end
+    style D fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Alibi Library",
+                        "explanation": "Alternative counterfactual explanation library.",
+                        "diagram_data": """graph TB
+    subgraph "Counterfactual Prototypes"
+        CP["from alibi.explainers import CounterfactualProto<br/><br/>cf = CounterfactualProto(<br/>    predict_fn,<br/>    shape=(1, n_features),<br/>    use_kdtree=True<br/>)<br/>cf.fit(X_train)<br/><br/>explanation = cf.explain(instance)"]
+    end
+    subgraph "Benefits"
+        B["Uses prototypes from training data<br/>More realistic counterfactuals<br/>Works with autoencoders"]
+    end
+    subgraph "Other Methods"
+        O["CounterfactualRL - reinforcement learning<br/>CEM - contrastive explanations"]
+    end
+    style CP fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Evaluating Counterfactuals",
+                        "explanation": "Metrics for counterfactual quality.",
+                        "diagram_data": """graph TB
+    subgraph "Validity"
+        V["Does it actually flip the prediction?<br/>cf_model.predict(cf) ≠ original_pred"]
+    end
+    subgraph "Proximity"
+        P["How different from original?<br/>L1, L2 distance<br/>Smaller = better"]
+    end
+    subgraph "Sparsity"
+        S["How many features changed?<br/>Fewer = easier to understand"]
+    end
+    subgraph "Actionability"
+        A["Are changes realistic?<br/>In-distribution?<br/>Mutable features only?"]
+    end
+    subgraph "Diversity"
+        D["Multiple different paths?<br/>Options for the user?"]
+    end
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for effective counterfactual explanations.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Generate multiple diverse CFs"]
+        D2["Respect immutable features"]
+        D3["Check CFs are in-distribution"]
+        D4["Make CFs actionable"]
+    end
+    subgraph "Don't"
+        DN1["Generate single CF only"]
+        DN2["Ignore domain constraints"]
+        DN3["Accept out-of-distribution CFs"]
+    end
+    subgraph "Communication"
+        C["'To get approved, you could either:<br/>- Increase credit score by 50, OR<br/>- Increase income by $10k, OR<br/>- Pay off $5k of debt'"]
+    end
+    style D1 fill:#C8E6C9
+    style C fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_production_visual(self):
+        """Seed Explainability in Production visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="explainability-production",
+            defaults={
+                "title": "Explainability in Production",
+                "description": "Logging, monitoring, dashboards for explanations",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "explainability", "production", "monitoring", "mlops"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Production Challenges",
+                        "explanation": "Explainability in production is harder than in notebooks.",
+                        "diagram_data": """graph TB
+    subgraph "Notebook"
+        N["Single prediction<br/>Interactive exploration<br/>Unlimited compute<br/>Developer audience"]
+    end
+    subgraph "Production"
+        P["Millions of predictions<br/>Low latency required<br/>Limited compute<br/>Various audiences"]
+    end
+    subgraph "Challenges"
+        C1["Real-time explanations"]
+        C2["Storage for explanations"]
+        C3["Aggregation & monitoring"]
+        C4["User-facing interfaces"]
+    end
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Architecture Overview",
+                        "explanation": "Components for production explainability.",
+                        "diagram_data": """graph LR
+    subgraph "Inference"
+        M["Model"] --> P["Prediction"]
+        M --> E["Explainer"]
+        E --> EX["Explanation"]
+    end
+    subgraph "Storage"
+        P --> DB[(Prediction Store)]
+        EX --> DB
+    end
+    subgraph "Monitoring"
+        DB --> D["Dashboard"]
+        DB --> A["Alerts"]
+    end
+    subgraph "Serving"
+        EX --> API["API Response"]
+        EX --> UI["User Interface"]
+    end
+    style E fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Real-Time vs Batch Explanations",
+                        "explanation": "Two strategies for generating explanations.",
+                        "diagram_data": """graph TB
+    subgraph "Real-Time"
+        RT["Generate with each prediction<br/>+ Always available<br/>- Adds latency<br/>- Higher compute cost"]
+    end
+    subgraph "Batch"
+        B["Generate async/offline<br/>+ No latency impact<br/>+ Can use expensive methods<br/>- Delayed availability"]
+    end
+    subgraph "Hybrid"
+        H["Fast method real-time (importance)<br/>Detailed method on-demand<br/>Batch for monitoring"]
+    end
+    subgraph "Choose"
+        C["User-facing? → Real-time<br/>Debugging? → On-demand<br/>Monitoring? → Batch"]
+    end
+    style H fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Fast Explanation Methods",
+                        "explanation": "Methods suitable for real-time use.",
+                        "diagram_data": """graph TB
+    subgraph "Fast Methods"
+        F1["TreeSHAP (~1ms per prediction)"]
+        F2["Feature importance from trees"]
+        F3["Pre-computed SHAP (lookup)"]
+        F4["Attention weights"]
+    end
+    subgraph "Slow Methods"
+        S1["KernelSHAP (~100ms+)"]
+        S2["LIME (~100ms+)"]
+        S3["Integrated Gradients"]
+    end
+    subgraph "Optimization"
+        O["Pre-compute for common inputs<br/>Cache recent explanations<br/>Use approximate methods<br/>Limit features shown"]
+    end
+    style F1 fill:#C8E6C9
+    style S1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Logging Explanations",
+                        "explanation": "Store explanations for audit and analysis.",
+                        "diagram_data": """graph TB
+    subgraph "What to Log"
+        W1["Prediction ID & timestamp"]
+        W2["Input features"]
+        W3["Prediction output"]
+        W4["Top N feature contributions"]
+        W5["Model version"]
+    end
+    subgraph "Schema"
+        S["{<br/>  'prediction_id': 'abc123',<br/>  'timestamp': '2024-01-15T10:30:00Z',<br/>  'model_version': 'v2.3.1',<br/>  'prediction': 0.85,<br/>  'top_features': [<br/>    {'name': 'income', 'contribution': 0.25},<br/>    {'name': 'credit', 'contribution': 0.15}<br/>  ]<br/>}"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Monitoring Explanations",
+                        "explanation": "Track explanation patterns over time.",
+                        "diagram_data": """graph TB
+    subgraph "Metrics to Track"
+        M1["Feature importance distribution"]
+        M2["Top features per class"]
+        M3["Explanation stability"]
+        M4["Outlier explanations"]
+    end
+    subgraph "Drift Detection"
+        D["If important features shift,<br/>model behavior may have changed<br/>even if accuracy is stable"]
+    end
+    subgraph "Alerts"
+        A["Alert if:<br/>- New feature becomes #1<br/>- Feature importance flips sign<br/>- Explanations become unstable"]
+    end
+    style D fill:#FFF9C4
+    style A fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "User-Facing Explanations",
+                        "explanation": "Presenting explanations to end users.",
+                        "diagram_data": """graph TB
+    subgraph "Simplify"
+        S["Don't show SHAP values<br/>Show: 'Your income helped your score'<br/>Use: Icons, colors, plain language"]
+    end
+    subgraph "Levels of Detail"
+        L1["Summary: 'Based mainly on income'"]
+        L2["Details: Top 3 factors with direction"]
+        L3["Deep dive: Full feature breakdown"]
+    end
+    subgraph "UI Components"
+        U["Traffic light indicators<br/>Progress bars for factors<br/>Comparison to approved cases<br/>Suggested actions"]
+    end
+    style S fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "MLflow for Explanations",
+                        "explanation": "Using MLflow to track and serve explanations.",
+                        "diagram_data": """graph TB
+    subgraph "Log Explanations"
+        L["with mlflow.start_run():<br/>    mlflow.log_param('explainer', 'TreeSHAP')<br/>    mlflow.log_artifact('shap_values.npy')<br/>    mlflow.log_figure(fig, 'summary_plot.png')"]
+    end
+    subgraph "Custom Model"
+        C["class ExplainableModel(mlflow.pyfunc.PythonModel):<br/>    def predict(self, context, data):<br/>        pred = self.model.predict(data)<br/>        exp = self.explainer.shap_values(data)<br/>        return {'prediction': pred, 'explanation': exp}"]
+    end
+    subgraph "Serve"
+        S["# Serve model with explanations<br/>mlflow models serve -m 'models:/MyModel/1'"]
+    end
+    style C fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for production explainability.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Start with fast methods (TreeSHAP)"]
+        D2["Log explanations with predictions"]
+        D3["Monitor explanation drift"]
+        D4["Simplify for end users"]
+        D5["Provide detail levels"]
+    end
+    subgraph "Don't"
+        DN1["Block predictions on slow explanations"]
+        DN2["Show raw SHAP to users"]
+        DN3["Ignore explanation storage costs"]
+    end
+    subgraph "Checklist"
+        C["□ Can explain within latency SLA?<br/>□ Explanations logged & queryable?<br/>□ Monitoring in place?<br/>□ User-friendly presentation?<br/>□ Audit trail complete?"]
+    end
+    style D1 fill:#C8E6C9
+    style C fill:#E3F2FD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_faithfulness_visual(self):
+        """Seed Faithfulness vs Interpretability visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="faithfulness-interpretability",
+            defaults={
+                "title": "Faithfulness vs Interpretability",
+                "description": "Trade-offs in explanation quality",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 10,
+                "tags": ["ml", "explainability", "faithfulness", "interpretability", "evaluation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Properties of Explanations",
+                        "explanation": "Good explanations need to be both faithful AND interpretable.",
+                        "diagram_data": """graph TB
+    subgraph "Faithfulness"
+        F["Does explanation accurately<br/>reflect model behavior?<br/><br/>'Is it TRUE?'"]
+    end
+    subgraph "Interpretability"
+        I["Can humans understand<br/>the explanation?<br/><br/>'Is it USEFUL?'"]
+    end
+    subgraph "The Tension"
+        T["Most faithful: model itself<br/>Most interpretable: 'always sunny'<br/>Need balance!"]
+    end
+    style F fill:#2196F3,color:white
+    style I fill:#4CAF50,color:white
+    style T fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Faithfulness Spectrum",
+                        "explanation": "Different levels of faithfulness to the original model.",
+                        "diagram_data": """graph TB
+    subgraph "High Faithfulness"
+        HF["Exact SHAP values<br/>Integrated Gradients<br/>Decision paths"]
+    end
+    subgraph "Medium Faithfulness"
+        MF["LIME (local approximation)<br/>Surrogate models<br/>Attention weights"]
+    end
+    subgraph "Low Faithfulness"
+        LF["Post-hoc rationalizations<br/>Unvalidated heuristics<br/>Human-written rules"]
+    end
+    subgraph "Risk"
+        R["Low faithfulness = misleading!<br/>User thinks X caused prediction<br/>but actually Y did"]
+    end
+    style HF fill:#4CAF50,color:white
+    style LF fill:#FFCDD2
+    style R fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Interpretability Spectrum",
+                        "explanation": "How easy is the explanation to understand?",
+                        "diagram_data": """graph TB
+    subgraph "Highly Interpretable"
+        HI["'Denied because income < $50k'<br/>Simple rules<br/>Counterfactuals"]
+    end
+    subgraph "Moderate"
+        M["'Top factors: income (-), credit (+)'<br/>Feature importance<br/>Partial plots"]
+    end
+    subgraph "Technical"
+        T["SHAP waterfall plots<br/>Attention heatmaps<br/>Saliency maps"]
+    end
+    subgraph "Opaque"
+        O["Raw weights<br/>Embedding vectors<br/>Gradient tensors"]
+    end
+    style HI fill:#4CAF50,color:white
+    style O fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Measuring Faithfulness",
+                        "explanation": "How to evaluate if explanations are faithful.",
+                        "diagram_data": """graph TB
+    subgraph "Perturbation Tests"
+        PT["Remove 'important' features<br/>Prediction should change!<br/>Remove 'unimportant' features<br/>Prediction should stay same"]
+    end
+    subgraph "Fidelity Metrics"
+        FM["For surrogate models:<br/>How well does surrogate match<br/>original on test data?"]
+    end
+    subgraph "Consistency"
+        C["Similar inputs should get<br/>similar explanations<br/>Run multiple times: stable?"]
+    end
+    subgraph "Completeness"
+        CO["Do attributions sum to<br/>prediction - baseline?<br/>(SHAP guarantees this)"]
+    end
+    style PT fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Evaluating Interpretability",
+                        "explanation": "How to measure if explanations are understandable.",
+                        "diagram_data": """graph TB
+    subgraph "User Studies"
+        US["Show explanations to users<br/>Can they predict model behavior?<br/>Do they trust correctly?"]
+    end
+    subgraph "Proxy Metrics"
+        PM["Explanation size (fewer = simpler)<br/>Vocabulary (common words = clearer)<br/>Visual complexity"]
+    end
+    subgraph "Task Performance"
+        TP["Can user correct model mistakes?<br/>Can user identify biases?<br/>Decision quality improves?"]
+    end
+    subgraph "Audience Matters"
+        A["ML expert: technical OK<br/>Domain expert: feature names<br/>End user: plain language"]
+    end
+    style US fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Trade-off Examples",
+                        "explanation": "Concrete examples of the faithfulness-interpretability trade-off.",
+                        "diagram_data": """graph TB
+    subgraph "Faithful but Complex"
+        FC["100-feature SHAP explanation<br/>Accurate but overwhelming<br/>User ignores most of it"]
+    end
+    subgraph "Simple but Unfaithful"
+        SU["'Denied due to credit score'<br/>Easy to understand<br/>But actually 5 factors mattered"]
+    end
+    subgraph "Balanced"
+        B["'Top 3 factors: credit (40%),<br/>income (30%), debt (20%)'<br/>Faithful enough + understandable"]
+    end
+    style FC fill:#FFF9C4
+    style SU fill:#FFCDD2
+    style B fill:#4CAF50,color:white""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Strategies for Balance",
+                        "explanation": "Techniques to achieve both properties.",
+                        "diagram_data": """graph TB
+    subgraph "Hierarchical Explanations"
+        H["Level 1: Simple summary<br/>Level 2: Top features<br/>Level 3: Full SHAP"]
+    end
+    subgraph "Faithful Simplification"
+        FS["Compute full SHAP<br/>Show only top K<br/>Aggregate similar features"]
+    end
+    subgraph "Validation"
+        V["Simple explanation with<br/>fidelity check:<br/>'This explains 85% of decision'"]
+    end
+    subgraph "User Control"
+        UC["Let user choose detail level<br/>Progressive disclosure<br/>Drill-down capability"]
+    end
+    style H fill:#E3F2FD
+    style FS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for balancing faithfulness and interpretability.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Start with faithful method (SHAP)"]
+        D2["Simplify presentation, not computation"]
+        D3["Validate simplified explanations"]
+        D4["Match complexity to audience"]
+        D5["Provide detail on demand"]
+    end
+    subgraph "Don't"
+        DN1["Sacrifice faithfulness for simplicity"]
+        DN2["Assume attention = importance"]
+        DN3["Skip validation of explanations"]
+    end
+    subgraph "Report"
+        R["Always report:<br/>- Method used<br/>- Faithfulness metric<br/>- Limitations"]
+    end
+    style D1 fill:#C8E6C9
+    style DN1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_explainability_regulatory_visual(self):
+        """Seed Regulatory Requirements visual topic."""
+        subject = self.get_or_create_subject(
+            "ML Explainability", "explainability", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="regulatory-requirements",
+            defaults={
+                "title": "Regulatory Requirements",
+                "description": "GDPR 'right to explanation', model cards, compliance",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["ml", "explainability", "regulation", "gdpr", "compliance", "governance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Regulation Matters",
+                        "explanation": "ML systems face increasing regulatory scrutiny.",
+                        "diagram_data": """graph TB
+    subgraph "High-Stakes Domains"
+        H["Credit decisions<br/>Hiring/Employment<br/>Healthcare<br/>Criminal justice<br/>Insurance"]
+    end
+    subgraph "Concerns"
+        C["Discrimination<br/>Privacy violations<br/>Lack of accountability<br/>Opaque decisions"]
+    end
+    subgraph "Response"
+        R["GDPR (EU)<br/>CCPA (California)<br/>ECOA (US Credit)<br/>AI Act (EU upcoming)"]
+    end
+    style H fill:#FFF9C4
+    style R fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "GDPR and Explanations",
+                        "explanation": "The EU's General Data Protection Regulation and the 'right to explanation'.",
+                        "diagram_data": """graph TB
+    subgraph "Article 22"
+        A22["Right not to be subject to<br/>automated decision-making<br/>with legal/significant effects"]
+    end
+    subgraph "Recital 71"
+        R71["Right to obtain human intervention<br/>Right to express point of view<br/>Right to obtain EXPLANATION<br/>and challenge decision"]
+    end
+    subgraph "Debate"
+        D["Is there a legal 'right to explanation'?<br/>Lawyers disagree<br/>But best practice: explain anyway"]
+    end
+    style R71 fill:#4CAF50,color:white
+    style D fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "What GDPR Requires",
+                        "explanation": "Practical requirements from GDPR for ML systems.",
+                        "diagram_data": """graph TB
+    subgraph "Transparency"
+        T["Inform users automated decisions exist<br/>Explain logic involved<br/>Describe significance & consequences"]
+    end
+    subgraph "Rights"
+        R["Human review option<br/>Ability to contest decision<br/>Access to personal data used"]
+    end
+    subgraph "Documentation"
+        D["Data Protection Impact Assessment<br/>Processing records<br/>Consent/legal basis documentation"]
+    end
+    subgraph "In Practice"
+        P["'You were denied because of X, Y, Z'<br/>'You can appeal to human reviewer'<br/>'Here's the data we used'"]
+    end
+    style P fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "US Regulatory Landscape",
+                        "explanation": "US regulations affecting ML explainability.",
+                        "diagram_data": """graph TB
+    subgraph "ECOA (Credit)"
+        E["Equal Credit Opportunity Act<br/>Must provide 'principal reasons'<br/>for adverse credit decisions<br/>Specific factor disclosures required"]
+    end
+    subgraph "FCRA"
+        F["Fair Credit Reporting Act<br/>Accuracy requirements<br/>Dispute rights<br/>Adverse action notices"]
+    end
+    subgraph "Emerging"
+        EM["NYC Local Law 144 (hiring)<br/>State AI laws<br/>FTC enforcement actions"]
+    end
+    subgraph "Sector-Specific"
+        S["Healthcare: FDA guidance<br/>Finance: OCC, Fed guidance<br/>Insurance: State regulations"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "EU AI Act",
+                        "explanation": "Upcoming comprehensive AI regulation in EU.",
+                        "diagram_data": """graph TB
+    subgraph "Risk Categories"
+        R1["Unacceptable: Banned<br/>(social scoring, manipulation)"]
+        R2["High-Risk: Heavy regulation<br/>(credit, hiring, healthcare)"]
+        R3["Limited: Transparency only<br/>(chatbots, deepfakes)"]
+        R4["Minimal: No requirements<br/>(spam filters, games)"]
+    end
+    subgraph "High-Risk Requirements"
+        HR["Risk management<br/>Data governance<br/>Technical documentation<br/>Transparency to users<br/>Human oversight<br/>Accuracy & robustness"]
+    end
+    subgraph "Explainability"
+        E["Must provide 'sufficient transparency'<br/>to understand AI system outputs<br/>and their implications"]
+    end
+    style HR fill:#FFF9C4
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Model Cards",
+                        "explanation": "Standardized documentation for ML models.",
+                        "diagram_data": """graph TB
+    subgraph "What's a Model Card?"
+        W["Standardized documentation<br/>Published with model<br/>Explains capabilities & limitations"]
+    end
+    subgraph "Sections"
+        S1["Model details (architecture, training)"]
+        S2["Intended use & limitations"]
+        S3["Performance metrics by group"]
+        S4["Ethical considerations"]
+        S5["Training & evaluation data"]
+    end
+    subgraph "Example"
+        E["Model: Loan Approval v2.1<br/>Use: Pre-screening, not final decision<br/>Accuracy: 85% overall, 82% for age>60<br/>Not for: Amounts over $500k<br/>Fairness: Tested for age, gender bias"]
+    end
+    style E fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Datasheets for Datasets",
+                        "explanation": "Documentation for training data.",
+                        "diagram_data": """graph TB
+    subgraph "Purpose"
+        P["Document data used to train models<br/>Enable informed model use<br/>Support accountability"]
+    end
+    subgraph "Contents"
+        C1["Motivation & creation process"]
+        C2["Data composition & statistics"]
+        C3["Collection methods & sources"]
+        C4["Preprocessing & labeling"]
+        C5["Uses & limitations"]
+        C6["Distribution & maintenance"]
+    end
+    subgraph "Why It Matters"
+        W["Garbage in → garbage out<br/>Bias in data → bias in model<br/>Documentation enables audits"]
+    end
+    style C1 fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Compliance Checklist",
+                        "explanation": "Practical steps for regulatory compliance.",
+                        "diagram_data": """graph TB
+    subgraph "Before Deployment"
+        B1["□ Risk assessment completed"]
+        B2["□ Model card created"]
+        B3["□ Data documentation ready"]
+        B4["□ Bias testing performed"]
+        B5["□ Explanation capability built"]
+    end
+    subgraph "At Deployment"
+        D1["□ Users informed of AI use"]
+        D2["□ Explanation provided with decisions"]
+        D3["□ Appeal process available"]
+        D4["□ Human oversight enabled"]
+    end
+    subgraph "Ongoing"
+        O1["□ Monitor for drift/bias"]
+        O2["□ Log decisions & explanations"]
+        O3["□ Handle appeals"]
+        O4["□ Update documentation"]
+    end
+    style B5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 8,
+                        "title": "Best Practices",
+                        "explanation": "Guidelines for regulatory-compliant ML.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Document everything"]
+        D2["Test for bias explicitly"]
+        D3["Provide clear explanations"]
+        D4["Enable human review"]
+        D5["Keep audit trails"]
+    end
+    subgraph "Don't"
+        DN1["Deploy without documentation"]
+        DN2["Ignore protected attributes"]
+        DN3["Make irreversible decisions"]
+        DN4["Assume compliance = checkbox"]
+    end
+    subgraph "Principle"
+        P["'If you can't explain it,<br/>don't deploy it'<br/><br/>Explainability is not optional<br/>for high-stakes decisions"]
+    end
+    style D1 fill:#C8E6C9
+    style P fill:#4CAF50,color:white""",
                     },
                 ],
             },
