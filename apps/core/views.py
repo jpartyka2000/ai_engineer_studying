@@ -15,10 +15,13 @@ class HomeView(TemplateView):
         """Add subjects grouped by category to the context."""
         context = super().get_context_data(**kwargs)
 
-        # Get all active subjects with question counts
+        # Get all active subjects with question and visual counts
         subjects = (
             Subject.objects.filter(is_active=True)
-            .annotate(question_count=Count("questions"))
+            .annotate(
+                question_count=Count("questions", distinct=True),
+                visual_count=Count("visual_topics", distinct=True),
+            )
             .order_by("category", "name")
         )
 

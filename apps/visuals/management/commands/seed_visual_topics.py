@@ -138,6 +138,149 @@ class Command(BaseCommand):
         self.seed_explainability_faithfulness_visual()
         self.seed_explainability_regulatory_visual()
 
+        # Testing visuals
+        self.seed_testing_pyramid_visual()
+        self.seed_testing_tdd_cycle_visual()
+        self.seed_testing_fixtures_lifecycle_visual()
+        self.seed_testing_doubles_visual()
+        self.seed_testing_dependency_injection_visual()
+        self.seed_testing_mocking_apis_visual()
+        self.seed_testing_ml_pipeline_visual()
+        self.seed_testing_data_drift_visual()
+        self.seed_testing_cross_validation_visual()
+        self.seed_testing_coverage_types_visual()
+        self.seed_testing_mutation_visual()
+        self.seed_testing_ci_pipeline_visual()
+        self.seed_testing_parallel_execution_visual()
+
+        # Docker & Containerization visuals
+        self.seed_docker_container_vs_vm_visual()
+        self.seed_docker_image_layers_visual()
+        self.seed_docker_container_lifecycle_visual()
+        self.seed_docker_dockerfile_build_visual()
+        self.seed_docker_network_types_visual()
+        self.seed_docker_container_communication_visual()
+        self.seed_docker_volume_types_visual()
+        self.seed_docker_compose_graph_visual()
+        self.seed_docker_orchestration_basics_visual()
+        self.seed_docker_health_checks_visual()
+        self.seed_docker_image_security_visual()
+        self.seed_docker_multistage_builds_visual()
+        self.seed_docker_container_isolation_visual()
+        self.seed_docker_cicd_pipeline_visual()
+        self.seed_docker_logging_monitoring_visual()
+
+        # Pydantic visuals
+        self.seed_pydantic_basemodel_anatomy_visual()
+        self.seed_pydantic_validation_flow_visual()
+        self.seed_pydantic_type_coercion_visual()
+        self.seed_pydantic_field_types_visual()
+        self.seed_pydantic_validation_error_visual()
+        self.seed_pydantic_validator_types_visual()
+        self.seed_pydantic_custom_validators_visual()
+        self.seed_pydantic_model_inheritance_visual()
+        self.seed_pydantic_nested_models_visual()
+        self.seed_pydantic_generics_visual()
+        self.seed_pydantic_serialization_visual()
+        self.seed_pydantic_model_config_visual()
+        self.seed_pydantic_json_schema_visual()
+        self.seed_pydantic_discriminated_unions_visual()
+        self.seed_pydantic_v1_to_v2_visual()
+
+        # SQL visuals
+        self.seed_sql_join_algorithms_visual()
+        self.seed_sql_index_structures_visual()
+        self.seed_sql_clustered_vs_nonclustered_visual()
+        self.seed_sql_index_scan_vs_seek_visual()
+        self.seed_sql_execution_plan_visual()
+        self.seed_sql_subquery_join_cte_visual()
+        self.seed_sql_window_functions_visual()
+        self.seed_sql_isolation_levels_visual()
+        self.seed_sql_acid_properties_visual()
+        self.seed_sql_normalization_visual()
+        self.seed_sql_deadlock_detection_visual()
+        self.seed_sql_groupby_vs_partitionby_visual()
+        self.seed_sql_having_vs_where_visual()
+
+        # NumPy visuals
+        self.seed_numpy_memory_layout_visual()
+        self.seed_numpy_broadcasting_visual()
+        self.seed_numpy_axis_parameter_visual()
+        self.seed_numpy_indexing_visual()
+        self.seed_numpy_boolean_masking_visual()
+        self.seed_numpy_where_vs_boolean_visual()
+        self.seed_numpy_reshape_visual()
+        self.seed_numpy_concatenate_stack_visual()
+        self.seed_numpy_expand_squeeze_visual()
+        self.seed_numpy_vectorization_visual()
+        self.seed_numpy_views_copies_visual()
+        self.seed_numpy_memory_order_visual()
+        self.seed_numpy_matrix_multiplication_visual()
+        self.seed_numpy_reduction_operations_visual()
+        self.seed_numpy_einsum_visual()
+
+        # Reinforcement Learning visuals
+        self.seed_rl_agent_environment_visual()
+        self.seed_rl_mdp_components_visual()
+        self.seed_rl_policy_vs_value_visual()
+        self.seed_rl_exploration_exploitation_visual()
+        self.seed_rl_bellman_equations_visual()
+        self.seed_rl_q_learning_visual()
+        self.seed_rl_sarsa_vs_qlearning_visual()
+        self.seed_rl_dqn_visual()
+        self.seed_rl_policy_gradient_visual()
+        self.seed_rl_reinforce_visual()
+        self.seed_rl_actor_critic_visual()
+        self.seed_rl_a2c_a3c_visual()
+        self.seed_rl_ppo_visual()
+        self.seed_rl_reward_shaping_visual()
+        self.seed_rl_multi_agent_visual()
+
+        # Linux visuals
+        self.seed_linux_process_states_visual()
+        self.seed_linux_fork_exec_visual()
+        self.seed_linux_virtual_memory_visual()
+        self.seed_linux_memory_layout_visual()
+        self.seed_linux_inode_visual()
+        self.seed_linux_file_descriptors_visual()
+        self.seed_linux_permissions_visual()
+        self.seed_linux_directory_tree_visual()
+        self.seed_linux_io_redirection_visual()
+        self.seed_linux_signals_visual()
+        self.seed_linux_tcpip_stack_visual()
+        self.seed_linux_sockets_visual()
+        self.seed_linux_systemd_visual()
+        self.seed_linux_cron_visual()
+        self.seed_linux_environment_variables_visual()
+
+        # Package Management visuals
+        self.seed_pkg_pip_conda_poetry_visual()
+        self.seed_pkg_virtual_environments_visual()
+        self.seed_pkg_dependency_resolution_visual()
+        self.seed_pkg_requirements_vs_pyproject_visual()
+        self.seed_pkg_installation_flow_visual()
+        self.seed_pkg_conda_architecture_visual()
+        self.seed_pkg_conda_pip_interop_visual()
+        self.seed_pkg_pyproject_structure_visual()
+        self.seed_pkg_lock_files_visual()
+        self.seed_pkg_editable_installs_visual()
+        self.seed_pkg_apt_yum_visual()
+        self.seed_pkg_docker_packages_visual()
+        self.seed_pkg_pinning_strategies_visual()
+        self.seed_pkg_security_scanning_visual()
+        self.seed_pkg_monorepo_polyrepo_visual()
+
+        # Git visuals (new)
+        self.seed_git_object_model_visual()
+        self.seed_git_three_trees_visual()
+        self.seed_git_commit_graph_visual()
+        self.seed_git_branch_visualization_visual()
+        self.seed_git_merge_vs_rebase_visual()
+        self.seed_git_ff_vs_3way_visual()
+        self.seed_git_revert_visual()
+        self.seed_git_stash_visual()
+        self.seed_git_remote_tracking_visual()
+
         self.stdout.write(self.style.SUCCESS("Successfully seeded visual topics!"))
 
     def enable_visuals_for_all_subjects(self):
@@ -23801,6 +23944,15471 @@ class Command(BaseCommand):
     end
     style D1 fill:#C8E6C9
     style P fill:#4CAF50,color:white""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_pyramid_visual(self):
+        """Seed Test Pyramid visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="test-pyramid",
+            defaults={
+                "title": "Test Pyramid",
+                "description": "Understanding the layers of testing: unit, integration, and end-to-end tests with their tradeoffs",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["testing", "test-pyramid", "unit-tests", "integration-tests", "e2e"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Testing Challenge",
+                        "explanation": "How should we balance different types of tests? Too many slow tests = slow feedback. Too few tests = bugs in production. The **Test Pyramid** provides a proven strategy.",
+                        "diagram_data": """graph TB
+    subgraph "The Question"
+        Q["How many of each test type<br/>should we write?"]
+    end
+    subgraph "Considerations"
+        C1["Speed of feedback"]
+        C2["Cost to write/maintain"]
+        C3["Confidence in correctness"]
+        C4["Debugging difficulty"]
+    end
+    Q --> C1
+    Q --> C2
+    Q --> C3
+    Q --> C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Unit Tests - The Foundation",
+                        "explanation": "**Unit tests** form the base of the pyramid. They test individual functions/classes in isolation. They're fast (milliseconds), cheap to write, and easy to debug. You should have the MOST of these.",
+                        "diagram_data": """graph TB
+    subgraph "Unit Tests"
+        U1["test_calculate_tax()"]
+        U2["test_validate_email()"]
+        U3["test_parse_json()"]
+        U4["test_sort_users()"]
+        U5["...hundreds more"]
+    end
+    subgraph "Characteristics"
+        C1["Fast: < 10ms each"]
+        C2["Isolated: no DB, no network"]
+        C3["Precise: pinpoint failures"]
+        C4["Cheap: easy to write"]
+    end
+    style U1 fill:#C8E6C9
+    style U2 fill:#C8E6C9
+    style U3 fill:#C8E6C9
+    style U4 fill:#C8E6C9
+    style U5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Integration Tests - The Middle Layer",
+                        "explanation": "**Integration tests** verify that components work together correctly. They test real database queries, API calls between services, or module interactions. Slower but catch interface bugs.",
+                        "diagram_data": """graph TB
+    subgraph "Integration Tests"
+        I1["test_user_service_creates_in_db()"]
+        I2["test_api_returns_valid_json()"]
+        I3["test_cache_syncs_with_db()"]
+    end
+    subgraph "What They Test"
+        W1["Service to Database"]
+        W2["Service to Service"]
+        W3["API to Business Logic"]
+    end
+    subgraph "Characteristics"
+        C1["Slower: 100ms - 1s"]
+        C2["Tests real connections"]
+        C3["Harder to debug"]
+        C4["More expensive"]
+    end
+    style I1 fill:#FFF9C4
+    style I2 fill:#FFF9C4
+    style I3 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "E2E Tests - The Peak",
+                        "explanation": "**End-to-end tests** simulate real user journeys through the entire application. They catch integration issues but are slow, flaky, and expensive. Use sparingly for critical paths only.",
+                        "diagram_data": """graph TB
+    subgraph "E2E Tests"
+        E1["test_user_can_complete_checkout()"]
+        E2["test_login_to_dashboard_flow()"]
+    end
+    subgraph "What They Cover"
+        W["Browser to Frontend to API to DB to External Services"]
+    end
+    subgraph "Characteristics"
+        C1["Slow: 10s - minutes"]
+        C2["Flaky: timing issues"]
+        C3["Hard to debug"]
+        C4["Very expensive"]
+    end
+    style E1 fill:#FFCDD2
+    style E2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "The Complete Pyramid",
+                        "explanation": "The pyramid shape shows the ideal distribution: **many unit tests** at the base, **fewer integration tests** in the middle, and **minimal E2E tests** at the top.",
+                        "diagram_data": """graph TB
+    subgraph pyramid [" "]
+        E2E["E2E Tests<br/>~5-10 percent<br/>Critical paths only"]
+        INT["Integration Tests<br/>~20-30 percent<br/>Component boundaries"]
+        UNIT["Unit Tests<br/>~60-70 percent<br/>All business logic"]
+    end
+    E2E --> INT
+    INT --> UNIT
+    style E2E fill:#FFCDD2
+    style INT fill:#FFF9C4
+    style UNIT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Speed vs Confidence Tradeoff",
+                        "explanation": "Moving up the pyramid increases confidence but decreases speed. The pyramid shape optimizes this tradeoff: fast feedback from unit tests, confidence from integration tests, and validation from E2E tests.",
+                        "diagram_data": """graph LR
+    subgraph "Speed"
+        S1["Unit: Very Fast"]
+        S2["Integration: Medium"]
+        S3["E2E: Slow"]
+    end
+    subgraph "Confidence"
+        C1["Unit: Low-Med"]
+        C2["Integration: Medium"]
+        C3["E2E: High"]
+    end
+    subgraph "Cost"
+        CO1["Unit: Low"]
+        CO2["Integration: Medium"]
+        CO3["E2E: High"]
+    end""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Anti-Pattern: Ice Cream Cone",
+                        "explanation": "The **ice cream cone** anti-pattern inverts the pyramid: too many E2E tests, few unit tests. This leads to slow CI, flaky tests, and difficult debugging. Refactor toward the pyramid!",
+                        "diagram_data": """graph TB
+    subgraph bad ["Ice Cream Cone - Bad"]
+        BE["Many E2E Tests<br/>Slow, Flaky"]
+        BI["Some Integration"]
+        BU["Few Unit Tests"]
+    end
+    subgraph good ["Pyramid - Good"]
+        GE["Few E2E"]
+        GI["Some Integration"]
+        GU["Many Unit Tests<br/>Fast, Reliable"]
+    end
+    style BE fill:#FFCDD2
+    style BU fill:#FFCDD2
+    style GE fill:#C8E6C9
+    style GU fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 7,
+                        "title": "Practical Guidelines",
+                        "explanation": "Apply the pyramid to your codebase with these rules of thumb. The exact ratios vary by project, but the shape should always be a pyramid.",
+                        "diagram_data": """graph TB
+    subgraph "Guidelines"
+        G1["Unit: Test every function<br/>with business logic"]
+        G2["Integration: Test every<br/>service boundary"]
+        G3["E2E: Test only critical<br/>user journeys 3-5 max"]
+    end
+    subgraph "Red Flags"
+        R1["CI takes more than 10 min"]
+        R2["Tests fail randomly"]
+        R3["Cannot find bug location"]
+        R4["Afraid to refactor"]
+    end
+    style G1 fill:#C8E6C9
+    style G2 fill:#FFF9C4
+    style G3 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_tdd_cycle_visual(self):
+        """Seed TDD Cycle visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="tdd-cycle",
+            defaults={
+                "title": "Test-Driven Development (TDD) Cycle",
+                "description": "The Red-Green-Refactor cycle for writing tests before code",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["testing", "tdd", "red-green-refactor", "methodology"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is TDD?",
+                        "explanation": "**Test-Driven Development** is a discipline where you write tests BEFORE writing production code. It follows a strict cycle: Red, Green, Refactor.",
+                        "diagram_data": """graph LR
+    subgraph "Traditional"
+        T1["Write Code"] --> T2["Write Tests"] --> T3["Fix Bugs"]
+    end
+    subgraph "TDD"
+        D1["Write Test"] --> D2["Write Code"] --> D3["Refactor"] --> D1
+    end
+    style D1 fill:#FFCDD2
+    style D2 fill:#C8E6C9
+    style D3 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "RED - Write a Failing Test",
+                        "explanation": "Start by writing a test for functionality that doesn't exist yet. The test MUST fail. This proves the test is actually testing something.",
+                        "diagram_data": """graph TB
+    W["Write test for new feature"] --> R["Run test"] --> F["Test FAILS"]
+    style F fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "GREEN - Make It Pass",
+                        "explanation": "Write the MINIMUM code needed to make the test pass. Don't optimize or add features. Just make it work.",
+                        "diagram_data": """graph TB
+    W["Write minimal code"] --> R["Run test"] --> P["Test PASSES"]
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "REFACTOR - Clean Up",
+                        "explanation": "Now that tests pass, safely improve the code. Remove duplication, improve names, simplify logic. Tests ensure you don't break anything.",
+                        "diagram_data": """graph TB
+    I["Identify improvements"] --> C["Clean up code"] --> R["Run tests"] --> P["Still PASSES"]
+    style P fill:#C8E6C9
+    style I fill:#BBDEFB
+    style C fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "The Complete Cycle",
+                        "explanation": "TDD is a continuous cycle. After refactoring, write the next failing test and repeat. Each cycle should be minutes, not hours.",
+                        "diagram_data": """graph LR
+    RED["RED<br/>Write failing test"] --> GREEN["GREEN<br/>Make it pass"] --> REFACTOR["REFACTOR<br/>Clean up"] --> RED
+    style RED fill:#FFCDD2
+    style GREEN fill:#C8E6C9
+    style REFACTOR fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Benefits of TDD",
+                        "explanation": "TDD provides multiple benefits beyond just having tests: better design, documentation, and confidence to refactor.",
+                        "diagram_data": """graph TB
+    B1["100% coverage by definition"]
+    B2["Better design - testable = modular"]
+    B3["Living documentation"]
+    B4["Confidence to refactor"]
+    B5["Fewer bugs in production"]
+    style B1 fill:#C8E6C9
+    style B2 fill:#C8E6C9
+    style B3 fill:#C8E6C9
+    style B4 fill:#C8E6C9
+    style B5 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_fixtures_lifecycle_visual(self):
+        """Seed Test Fixtures Lifecycle visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="fixtures-lifecycle",
+            defaults={
+                "title": "Test Fixtures and Setup/Teardown",
+                "description": "Understanding when setup, test, and teardown execute in test frameworks",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["testing", "fixtures", "setup", "teardown", "pytest"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Test Fixtures?",
+                        "explanation": "**Fixtures** are the setup and teardown code that prepares the test environment. They create test data, initialize connections, and clean up afterward.",
+                        "diagram_data": """graph TB
+    subgraph "Without Fixtures"
+        T1["Test 1: create user, test, delete"]
+        T2["Test 2: create user, test, delete"]
+        T3["Test 3: create user, test, delete"]
+    end
+    subgraph "With Fixtures"
+        F["Fixture: create user"]
+        FT1["Test 1: test logic only"]
+        FT2["Test 2: test logic only"]
+        C["Cleanup: delete user"]
+    end
+    style T1 fill:#FFCDD2
+    style F fill:#C8E6C9
+    style C fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Fixture Scopes",
+                        "explanation": "Fixtures run at different scopes: **function** (per test), **class** (per class), **module** (per file), **session** (entire run). Wider scopes are faster but share state.",
+                        "diagram_data": """graph TB
+    subgraph "Session"
+        SS["Session Setup"]
+        subgraph "Module"
+            MS["Module Setup"]
+            subgraph "Function"
+                FS["Setup"] --> T["Test"] --> FT["Teardown"]
+            end
+            MT["Module Teardown"]
+        end
+        ST["Session Teardown"]
+    end""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Function Scope - Most Common",
+                        "explanation": "**Function scope** fixtures run before and after each test function. This ensures complete isolation - each test starts fresh.",
+                        "diagram_data": """graph LR
+    subgraph "test_one"
+        S1["Setup"] --> T1["Test"] --> D1["Teardown"]
+    end
+    subgraph "test_two"
+        S2["Setup"] --> T2["Test"] --> D2["Teardown"]
+    end
+    D1 --> S2
+    style S1 fill:#C8E6C9
+    style S2 fill:#C8E6C9
+    style D1 fill:#FFCDD2
+    style D2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Yield for Teardown",
+                        "explanation": "Use **yield** to run teardown code after the test. Code before yield is setup, code after is teardown.",
+                        "diagram_data": """graph TB
+    subgraph "Fixture with yield"
+        S["resource = create()"]
+        Y["yield resource"]
+        T["resource.cleanup()"]
+    end
+    S --> Y --> T
+    style S fill:#C8E6C9
+    style T fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Fixture Dependencies",
+                        "explanation": "Fixtures can depend on other fixtures. Pytest resolves these automatically, running fixtures in the correct order.",
+                        "diagram_data": """graph TB
+    DB["db_connection"] --> USER["user"] --> TOKEN["auth_token"] --> CLIENT["api_client"]
+    CLIENT --> TEST["test function"]
+    style DB fill:#BBDEFB
+    style USER fill:#C8E6C9
+    style TOKEN fill:#FFF9C4
+    style CLIENT fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_doubles_visual(self):
+        """Seed Test Doubles visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="test-doubles",
+            defaults={
+                "title": "Mock vs Stub vs Fake vs Spy",
+                "description": "Understanding the different types of test doubles and when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["testing", "mocks", "stubs", "fakes", "spies", "test-doubles"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Test Doubles?",
+                        "explanation": "**Test doubles** replace real dependencies with controlled substitutes. They let you test in isolation without databases, APIs, or other external systems.",
+                        "diagram_data": """graph LR
+    subgraph "Production"
+        Code --> RealDB[(Real Database)]
+        Code --> RealAPI[Real API]
+    end
+    subgraph "Testing"
+        TestCode --> FakeDB["Test Double"]
+        TestCode --> MockAPI["Test Double"]
+    end
+    style FakeDB fill:#C8E6C9
+    style MockAPI fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Stub - Returns Canned Answers",
+                        "explanation": "A **stub** provides pre-programmed responses. It doesn't verify how it was called - it just returns what you told it to return.",
+                        "diagram_data": """graph TB
+    subgraph "Stub Example"
+        S["stub.get_user(1)"]
+        R["Always returns User(id=1, name='Test')"]
+    end
+    S --> R
+    subgraph "Use When"
+        U1["You need specific return values"]
+        U2["You don't care HOW it's called"]
+        U3["Testing happy path scenarios"]
+    end
+    style S fill:#FFF9C4
+    style R fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Mock - Verifies Behavior",
+                        "explanation": "A **mock** records how it was called and lets you assert on those calls. Use mocks when the interaction itself is what you're testing.",
+                        "diagram_data": """graph TB
+    subgraph "Mock Example"
+        C["code.send_email(user)"]
+        M["mock_email.send.assert_called_with(user.email, subject, body)"]
+    end
+    C --> M
+    subgraph "Use When"
+        U1["Verifying side effects"]
+        U2["Checking method was called correctly"]
+        U3["Testing error handling paths"]
+    end
+    style C fill:#BBDEFB
+    style M fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Fake - Working Implementation",
+                        "explanation": "A **fake** is a working but simplified implementation. Examples: in-memory database, local file system instead of S3.",
+                        "diagram_data": """graph TB
+    subgraph "Real"
+        R["PostgreSQL Database"]
+    end
+    subgraph "Fake"
+        F["In-memory dict/SQLite"]
+    end
+    subgraph "Properties"
+        P1["Actually works"]
+        P2["Simpler/faster than real"]
+        P3["Good for integration tests"]
+    end
+    R -.-> F
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Spy - Wraps Real Object",
+                        "explanation": "A **spy** wraps a real object, recording calls while still using the real implementation. Useful when you want real behavior but need to verify calls.",
+                        "diagram_data": """graph TB
+    subgraph "Spy"
+        CALL["spy.process(data)"]
+        REAL["Calls REAL method"]
+        RECORD["Records the call"]
+        ASSERT["spy.process.assert_called_once()"]
+    end
+    CALL --> REAL
+    CALL --> RECORD
+    RECORD --> ASSERT
+    style REAL fill:#C8E6C9
+    style RECORD fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Comparison Table",
+                        "explanation": "Choose the right test double based on what you need to test.",
+                        "diagram_data": """graph TB
+    subgraph "When to Use What"
+        STUB["STUB<br/>Need specific return value<br/>Don't care about calls"]
+        MOCK["MOCK<br/>Verify interactions<br/>Check call arguments"]
+        FAKE["FAKE<br/>Need working implementation<br/>Integration tests"]
+        SPY["SPY<br/>Real behavior + verification<br/>Partial mocking"]
+    end
+    style STUB fill:#FFF9C4
+    style MOCK fill:#BBDEFB
+    style FAKE fill:#C8E6C9
+    style SPY fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Python unittest.mock Example",
+                        "explanation": "Python's unittest.mock provides Mock objects that can be stubs, mocks, or spies depending on how you use them.",
+                        "diagram_data": """graph TB
+    subgraph "Mock as Stub"
+        S["mock.return_value = 42"]
+    end
+    subgraph "Mock as Mock"
+        M["mock.assert_called_with(args)"]
+    end
+    subgraph "Mock as Spy"
+        SP["@patch wraps=real_func"]
+    end
+    style S fill:#FFF9C4
+    style M fill:#BBDEFB
+    style SP fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_dependency_injection_visual(self):
+        """Seed Dependency Injection for Testing visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="dependency-injection-testing",
+            defaults={
+                "title": "Dependency Injection for Testing",
+                "description": "How dependency injection makes code testable by allowing mock injection",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["testing", "dependency-injection", "di", "mocking", "design-patterns"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Hard to Test Code",
+                        "explanation": "When code creates its own dependencies, you can't replace them with test doubles. This makes testing difficult or impossible.",
+                        "diagram_data": """graph TB
+    subgraph "Hard to Test"
+        UC["class UserService:<br/>    def __init__:<br/>        self.db = PostgresDB()"]
+        P["Creates real DB connection!<br/>Cannot inject mock"]
+    end
+    UC --> P
+    style UC fill:#FFCDD2
+    style P fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Solution: Inject Dependencies",
+                        "explanation": "**Dependency Injection** passes dependencies from outside instead of creating them inside. This lets tests inject mocks/fakes.",
+                        "diagram_data": """graph TB
+    subgraph "Easy to Test"
+        UC["class UserService:<br/>    def __init__(self, db):<br/>        self.db = db"]
+        P["Accepts any DB implementation!<br/>Real in prod, mock in test"]
+    end
+    UC --> P
+    style UC fill:#C8E6C9
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Before vs After",
+                        "explanation": "Compare tightly coupled code (hard to test) vs loosely coupled code (easy to test).",
+                        "diagram_data": """graph LR
+    subgraph "Before: Tight Coupling"
+        B1["Service"] --> B2["new Database()"]
+        B3["Cannot replace DB"]
+    end
+    subgraph "After: Loose Coupling"
+        A1["Service"] --> A2["db interface"]
+        A3["RealDB"] --> A2
+        A4["MockDB"] --> A2
+    end
+    style B1 fill:#FFCDD2
+    style A1 fill:#C8E6C9
+    style A4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Testing with DI",
+                        "explanation": "In tests, inject mock objects. In production, inject real implementations. Same code, different dependencies.",
+                        "diagram_data": """graph TB
+    subgraph "Production"
+        PS["UserService(RealDB())"]
+    end
+    subgraph "Testing"
+        TS["UserService(MockDB())"]
+    end
+    subgraph "Same UserService Class"
+        USC["Works with any DB<br/>that has same interface"]
+    end
+    PS --> USC
+    TS --> USC
+    style TS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "DI Patterns",
+                        "explanation": "Three common ways to inject dependencies: constructor, method parameter, or property setter.",
+                        "diagram_data": """graph TB
+    subgraph "Constructor Injection"
+        C["def __init__(self, db):"]
+    end
+    subgraph "Method Injection"
+        M["def query(self, db):"]
+    end
+    subgraph "Setter Injection"
+        S["service.db = mock_db"]
+    end
+    style C fill:#C8E6C9
+    style M fill:#FFF9C4
+    style S fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_mocking_apis_visual(self):
+        """Seed Mocking External APIs visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="mocking-external-apis",
+            defaults={
+                "title": "Mocking External APIs",
+                "description": "Techniques for testing code that calls external APIs without making real requests",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["testing", "mocking", "apis", "http", "responses"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Mock External APIs?",
+                        "explanation": "Real API calls in tests are slow, flaky, expensive, and may have rate limits. Mocking gives you fast, reliable, free tests.",
+                        "diagram_data": """graph TB
+    subgraph "Problems with Real APIs"
+        P1["Slow: network latency"]
+        P2["Flaky: network failures"]
+        P3["Costly: API charges"]
+        P4["Limited: rate limits"]
+        P5["Unreliable: external downtime"]
+    end
+    subgraph "Benefits of Mocking"
+        B1["Fast: instant responses"]
+        B2["Reliable: no network"]
+        B3["Free: no API charges"]
+        B4["Controllable: test edge cases"]
+    end
+    style P1 fill:#FFCDD2
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Where to Mock",
+                        "explanation": "You can mock at different layers: HTTP level (intercept requests), client level (mock SDK), or service level (mock your wrapper).",
+                        "diagram_data": """graph TB
+    subgraph "Your Code"
+        SVC["Your Service"]
+        CLIENT["API Client/SDK"]
+        HTTP["HTTP Library"]
+    end
+    subgraph "External"
+        API["External API"]
+    end
+    SVC --> CLIENT --> HTTP --> API
+    M1["Mock here: Service level"] -.-> SVC
+    M2["Mock here: Client level"] -.-> CLIENT
+    M3["Mock here: HTTP level"] -.-> HTTP
+    style M3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "HTTP Level Mocking",
+                        "explanation": "Libraries like `responses` or `httpx_mock` intercept HTTP requests before they leave your machine. This tests the full integration path.",
+                        "diagram_data": """graph LR
+    subgraph "Test"
+        T["Test Code"]
+        SVC["Service"]
+        CLIENT["HTTP Client"]
+    end
+    subgraph "Mock Layer"
+        MOCK["responses/httpx_mock<br/>Intercepts request<br/>Returns fake response"]
+    end
+    T --> SVC --> CLIENT --> MOCK
+    style MOCK fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Testing Error Scenarios",
+                        "explanation": "Mocking lets you test error cases that are hard to trigger with real APIs: timeouts, rate limits, server errors.",
+                        "diagram_data": """graph TB
+    subgraph "Scenarios to Test"
+        S1["200 OK - normal response"]
+        S2["404 Not Found"]
+        S3["429 Rate Limited"]
+        S4["500 Server Error"]
+        S5["Timeout after 30s"]
+        S6["Invalid JSON response"]
+    end
+    style S1 fill:#C8E6C9
+    style S2 fill:#FFF9C4
+    style S3 fill:#FFF9C4
+    style S4 fill:#FFCDD2
+    style S5 fill:#FFCDD2
+    style S6 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Recording and Playback",
+                        "explanation": "Tools like VCR.py record real API responses once, then replay them in future tests. Best of both worlds.",
+                        "diagram_data": """graph TB
+    subgraph "First Run"
+        F1["Make real API call"]
+        F2["Record response to file"]
+    end
+    subgraph "Future Runs"
+        R1["Load recorded response"]
+        R2["No network call needed"]
+    end
+    F1 --> F2
+    R1 --> R2
+    style F1 fill:#FFF9C4
+    style R2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_ml_pipeline_visual(self):
+        """Seed ML Model Testing Pipeline visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="ml-testing-pipeline",
+            defaults={
+                "title": "ML Model Testing Pipeline",
+                "description": "Comprehensive testing strategy for machine learning models from data to production",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["testing", "ml", "machine-learning", "model-validation", "mlops"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "ML Testing is Different",
+                        "explanation": "Traditional software has deterministic outputs. ML models have probabilistic behavior, making testing more complex. We need multiple testing strategies.",
+                        "diagram_data": """graph TB
+    subgraph "Traditional Software"
+        T1["Input A"] --> T2["Always Output B"]
+    end
+    subgraph "ML Model"
+        M1["Input A"] --> M2["Output B with 85% confidence<br/>Could also be C or D"]
+    end
+    style T2 fill:#C8E6C9
+    style M2 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Data Validation",
+                        "explanation": "First, validate your training and inference data. Bad data leads to bad models. Test for schema, ranges, distributions, and missing values.",
+                        "diagram_data": """graph TB
+    subgraph "Data Tests"
+        D1["Schema validation"]
+        D2["No null in required fields"]
+        D3["Values in expected range"]
+        D4["Distribution matches expected"]
+        D5["No data leakage"]
+    end
+    style D1 fill:#BBDEFB
+    style D5 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Unit Tests for ML Code",
+                        "explanation": "Test your feature engineering, preprocessing, and model code like regular software. These should be deterministic.",
+                        "diagram_data": """graph TB
+    subgraph "Unit Tests"
+        U1["Feature transformations"]
+        U2["Preprocessing functions"]
+        U3["Custom loss functions"]
+        U4["Metric calculations"]
+        U5["Data loaders"]
+    end
+    style U1 fill:#C8E6C9
+    style U2 fill:#C8E6C9
+    style U3 fill:#C8E6C9
+    style U4 fill:#C8E6C9
+    style U5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Model Validation",
+                        "explanation": "Test model performance on held-out data. Set minimum thresholds for accuracy, precision, recall, etc. Fail CI if model underperforms.",
+                        "diagram_data": """graph TB
+    subgraph "Model Tests"
+        M1["Accuracy > 0.85"]
+        M2["Precision > 0.80"]
+        M3["Recall > 0.75"]
+        M4["No class has < 70% accuracy"]
+        M5["Latency < 100ms"]
+    end
+    M1 --> PASS["Pass/Fail CI"]
+    M2 --> PASS
+    M3 --> PASS
+    style M1 fill:#C8E6C9
+    style PASS fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Integration Tests",
+                        "explanation": "Test the full pipeline: data ingestion, preprocessing, inference, and post-processing. Ensure components work together.",
+                        "diagram_data": """graph LR
+    DATA["Raw Data"] --> PREP["Preprocessing"]
+    PREP --> MODEL["Model Inference"]
+    MODEL --> POST["Post-processing"]
+    POST --> OUTPUT["Final Output"]
+    style DATA fill:#BBDEFB
+    style OUTPUT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "A/B Testing in Production",
+                        "explanation": "The final test: compare new model vs current model with real users. Statistical significance required before full rollout.",
+                        "diagram_data": """graph TB
+    subgraph "Production A/B Test"
+        TRAFFIC["User Traffic"]
+        A["Model A: Control<br/>50% of users"]
+        B["Model B: Candidate<br/>50% of users"]
+        METRICS["Compare Metrics"]
+        DECISION["Statistically Significant?"]
+    end
+    TRAFFIC --> A
+    TRAFFIC --> B
+    A --> METRICS
+    B --> METRICS
+    METRICS --> DECISION
+    style DECISION fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Complete ML Testing Pipeline",
+                        "explanation": "All testing stages in order. Each gate must pass before proceeding to the next.",
+                        "diagram_data": """graph LR
+    DV["Data<br/>Validation"] --> UT["Unit<br/>Tests"]
+    UT --> MV["Model<br/>Validation"]
+    MV --> IT["Integration<br/>Tests"]
+    IT --> ST["Staging<br/>Tests"]
+    ST --> AB["A/B<br/>Test"]
+    style DV fill:#BBDEFB
+    style UT fill:#C8E6C9
+    style MV fill:#FFF9C4
+    style IT fill:#E1BEE7
+    style ST fill:#FFE0B2
+    style AB fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_data_drift_visual(self):
+        """Seed Data Drift Detection visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="data-drift-detection",
+            defaults={
+                "title": "Data Drift Detection",
+                "description": "Detecting when production data distribution differs from training data",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["testing", "ml", "data-drift", "monitoring", "mlops"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Data Drift?",
+                        "explanation": "**Data drift** occurs when production data differs from training data. This causes model performance to degrade silently.",
+                        "diagram_data": """graph TB
+    subgraph "Training Time"
+        TD["Training Data<br/>Distribution A"]
+    end
+    subgraph "Production"
+        PD["Production Data<br/>Distribution B"]
+    end
+    TD --> MODEL["Model trained on A"]
+    PD --> MODEL
+    MODEL --> PROBLEM["Poor predictions!<br/>Model expects A, gets B"]
+    style PROBLEM fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Types of Drift",
+                        "explanation": "There are multiple types of drift: covariate (input features change), concept (relationship changes), or label (target distribution changes).",
+                        "diagram_data": """graph TB
+    subgraph "Covariate Drift"
+        C1["Input features change<br/>Age: 25-40 to 18-65"]
+    end
+    subgraph "Concept Drift"
+        C2["X to Y relationship changes<br/>Buying patterns shift"]
+    end
+    subgraph "Label Drift"
+        C3["Target distribution changes<br/>More positive cases"]
+    end
+    style C1 fill:#BBDEFB
+    style C2 fill:#FFF9C4
+    style C3 fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Statistical Tests",
+                        "explanation": "Use statistical tests to detect drift: KS test, Chi-squared, PSI. Compare training distribution to production batches.",
+                        "diagram_data": """graph TB
+    subgraph "Detection Methods"
+        KS["Kolmogorov-Smirnov<br/>Continuous features"]
+        CHI["Chi-Squared<br/>Categorical features"]
+        PSI["Population Stability Index<br/>Binned comparison"]
+    end
+    KS --> ALERT["Alert if p-value < 0.05"]
+    CHI --> ALERT
+    PSI --> ALERT
+    style ALERT fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Monitoring Pipeline",
+                        "explanation": "Set up continuous monitoring to detect drift early. Compare each batch or window of production data against reference.",
+                        "diagram_data": """graph LR
+    PROD["Production<br/>Data"] --> SAMPLE["Sample<br/>Batch"]
+    SAMPLE --> COMPARE["Compare to<br/>Reference"]
+    COMPARE --> CHECK{"Drift<br/>Detected?"}
+    CHECK -->|Yes| ALERT["Alert Team"]
+    CHECK -->|No| LOG["Log Metrics"]
+    style ALERT fill:#FFCDD2
+    style LOG fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Response to Drift",
+                        "explanation": "When drift is detected: investigate cause, retrain if needed, or update monitoring thresholds if drift is expected.",
+                        "diagram_data": """graph TB
+    DRIFT["Drift Detected"] --> INVESTIGATE["Investigate Cause"]
+    INVESTIGATE --> REAL{"Real<br/>Change?"}
+    REAL -->|Yes| RETRAIN["Retrain Model"]
+    REAL -->|No| FIX["Fix Data Pipeline"]
+    RETRAIN --> DEPLOY["Deploy New Model"]
+    style DRIFT fill:#FFCDD2
+    style DEPLOY fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_cross_validation_visual(self):
+        """Seed Cross-Validation Folds visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cross-validation-folds",
+            defaults={
+                "title": "Cross-Validation Folds",
+                "description": "How K-fold cross-validation rotates data through train/test splits",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["testing", "ml", "cross-validation", "model-evaluation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem with Single Split",
+                        "explanation": "A single train/test split can be lucky or unlucky. Results depend heavily on which data ends up in test set.",
+                        "diagram_data": """graph TB
+    DATA["Full Dataset"] --> SPLIT["Random 80/20 Split"]
+    SPLIT --> TRAIN["Train: 80%"]
+    SPLIT --> TEST["Test: 20%"]
+    TEST --> Q["Got 92% accuracy...<br/>But was test set easy or hard?"]
+    style Q fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "K-Fold Cross-Validation",
+                        "explanation": "Split data into K equal folds. Train on K-1 folds, test on 1 fold. Rotate K times so every fold is tested once.",
+                        "diagram_data": """graph TB
+    DATA["Dataset"] --> F1["Fold 1"]
+    DATA --> F2["Fold 2"]
+    DATA --> F3["Fold 3"]
+    DATA --> F4["Fold 4"]
+    DATA --> F5["Fold 5"]
+    F1 --> R["Each fold takes turn<br/>as test set"]
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "5-Fold Example: Iteration 1",
+                        "explanation": "First iteration: Fold 1 is test, Folds 2-5 are training.",
+                        "diagram_data": """graph LR
+    F1["Fold 1<br/>TEST"]
+    F2["Fold 2<br/>TRAIN"]
+    F3["Fold 3<br/>TRAIN"]
+    F4["Fold 4<br/>TRAIN"]
+    F5["Fold 5<br/>TRAIN"]
+    style F1 fill:#FFCDD2
+    style F2 fill:#C8E6C9
+    style F3 fill:#C8E6C9
+    style F4 fill:#C8E6C9
+    style F5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "5-Fold Example: Iteration 2",
+                        "explanation": "Second iteration: Fold 2 is test, others are training.",
+                        "diagram_data": """graph LR
+    F1["Fold 1<br/>TRAIN"]
+    F2["Fold 2<br/>TEST"]
+    F3["Fold 3<br/>TRAIN"]
+    F4["Fold 4<br/>TRAIN"]
+    F5["Fold 5<br/>TRAIN"]
+    style F2 fill:#FFCDD2
+    style F1 fill:#C8E6C9
+    style F3 fill:#C8E6C9
+    style F4 fill:#C8E6C9
+    style F5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Final Score",
+                        "explanation": "Average scores across all K iterations. This gives a more robust estimate of model performance.",
+                        "diagram_data": """graph TB
+    I1["Iter 1: 91%"]
+    I2["Iter 2: 89%"]
+    I3["Iter 3: 93%"]
+    I4["Iter 4: 88%"]
+    I5["Iter 5: 90%"]
+    AVG["Average: 90.2%<br/>Std Dev: 1.9%"]
+    I1 --> AVG
+    I2 --> AVG
+    I3 --> AVG
+    I4 --> AVG
+    I5 --> AVG
+    style AVG fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_coverage_types_visual(self):
+        """Seed Code Coverage Types visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="coverage-types",
+            defaults={
+                "title": "Code Coverage Types",
+                "description": "Understanding line, branch, and path coverage with examples",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["testing", "coverage", "line-coverage", "branch-coverage"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Code Coverage?",
+                        "explanation": "**Code coverage** measures what percentage of your code is executed by tests. Higher coverage generally means more thorough testing.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        L1["Line 1: x = input()"]
+        L2["Line 2: if x > 0:"]
+        L3["Line 3:   return positive"]
+        L4["Line 4: return negative"]
+    end
+    subgraph "Test"
+        T["test(x=5)<br/>Executes: L1, L2, L3"]
+    end
+    T --> COV["Coverage: 75%<br/>3 of 4 lines"]
+    style COV fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Line Coverage",
+                        "explanation": "**Line coverage** measures which lines of code were executed. Simple but can miss edge cases in conditionals.",
+                        "diagram_data": """graph TB
+    subgraph "Code"
+        L1["Line 1: executed"]
+        L2["Line 2: executed"]
+        L3["Line 3: NOT executed"]
+    end
+    RESULT["Line Coverage: 66%<br/>2 of 3 lines"]
+    style L1 fill:#C8E6C9
+    style L2 fill:#C8E6C9
+    style L3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Branch Coverage",
+                        "explanation": "**Branch coverage** measures which branches (if/else paths) were taken. More thorough than line coverage.",
+                        "diagram_data": """graph TB
+    IF{"if x > 0"}
+    IF -->|True| POS["return positive"]
+    IF -->|False| NEG["return negative"]
+    subgraph "Test 1 only"
+        T1["x=5: takes True branch<br/>Branch coverage: 50%"]
+    end
+    subgraph "Both tests"
+        T2["x=5: True, x=-1: False<br/>Branch coverage: 100%"]
+    end
+    style T1 fill:#FFF9C4
+    style T2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Path Coverage",
+                        "explanation": "**Path coverage** measures all possible execution paths through code. Most thorough but can explode combinatorially.",
+                        "diagram_data": """graph TB
+    IF1{"Condition A"} -->|T| IF2A{"Condition B"}
+    IF1 -->|F| IF2B{"Condition B"}
+    IF2A -->|T| P1["Path 1: T,T"]
+    IF2A -->|F| P2["Path 2: T,F"]
+    IF2B -->|T| P3["Path 3: F,T"]
+    IF2B -->|F| P4["Path 4: F,F"]
+    PATHS["4 paths for 2 conditions<br/>n conditions = 2^n paths"]
+    style PATHS fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Coverage Comparison",
+                        "explanation": "Higher coverage types are more thorough but harder to achieve. Most teams target branch coverage.",
+                        "diagram_data": """graph TB
+    subgraph "Coverage Types"
+        LINE["Line: Which lines ran?<br/>Easy to achieve"]
+        BRANCH["Branch: Which paths taken?<br/>Good balance"]
+        PATH["Path: All combinations?<br/>Often impractical"]
+    end
+    LINE --> BRANCH --> PATH
+    style LINE fill:#C8E6C9
+    style BRANCH fill:#FFF9C4
+    style PATH fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Coverage Limitations",
+                        "explanation": "100% coverage does not mean bug-free. Coverage shows what ran, not whether assertions are correct.",
+                        "diagram_data": """graph TB
+    subgraph "False Confidence"
+        CODE["def add(a, b): return a * b"]
+        TEST["def test: add(2, 3)  # No assert!"]
+        COV["100% Line Coverage"]
+        BUG["Still has a bug!"]
+    end
+    CODE --> TEST --> COV --> BUG
+    style COV fill:#FFCDD2
+    style BUG fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_mutation_visual(self):
+        """Seed Mutation Testing visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="mutation-testing",
+            defaults={
+                "title": "Mutation Testing",
+                "description": "How mutation testing finds weak tests by injecting bugs",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["testing", "mutation-testing", "test-quality", "mutants"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Weak Tests",
+                        "explanation": "Tests can have 100% coverage but still miss bugs. Mutation testing checks if your tests actually catch errors.",
+                        "diagram_data": """graph TB
+    subgraph "The Question"
+        Q["Your tests pass...<br/>But would they catch a real bug?"]
+    end
+    subgraph "Mutation Testing"
+        M["Inject fake bugs (mutants)<br/>See if tests catch them"]
+    end
+    Q --> M
+    style Q fill:#FFF9C4
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "How It Works",
+                        "explanation": "Create mutants (code with small changes), run tests against each mutant. If tests fail, mutant is 'killed'. If tests pass, mutant 'survived' (your tests are weak).",
+                        "diagram_data": """graph TB
+    ORIG["Original Code"] --> MUT["Create Mutants"]
+    MUT --> M1["Mutant 1: + to -"]
+    MUT --> M2["Mutant 2: > to >="]
+    MUT --> M3["Mutant 3: True to False"]
+    M1 --> RUN["Run Tests"]
+    M2 --> RUN
+    M3 --> RUN
+    RUN --> RESULT{"Tests Fail?"}
+    RESULT -->|Yes| KILLED["Mutant Killed"]
+    RESULT -->|No| SURVIVED["Mutant Survived!"]
+    style KILLED fill:#C8E6C9
+    style SURVIVED fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Common Mutation Operators",
+                        "explanation": "Mutants are created using operators that make small, realistic changes to code.",
+                        "diagram_data": """graph TB
+    subgraph "Mutation Operators"
+        OP1["Arithmetic: + to -, * to /"]
+        OP2["Relational: > to >=, == to !="]
+        OP3["Logical: and to or, True to False"]
+        OP4["Delete: remove statement"]
+        OP5["Constant: 0 to 1, empty to value"]
+    end
+    style OP1 fill:#BBDEFB
+    style OP2 fill:#C8E6C9
+    style OP3 fill:#FFF9C4
+    style OP4 fill:#E1BEE7
+    style OP5 fill:#FFE0B2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Mutation Score",
+                        "explanation": "Mutation score = killed mutants / total mutants. A higher score means more effective tests.",
+                        "diagram_data": """graph TB
+    TOTAL["100 Mutants Created"]
+    KILLED["85 Killed by tests"]
+    SURVIVED["15 Survived"]
+    SCORE["Mutation Score: 85%"]
+    TOTAL --> KILLED
+    TOTAL --> SURVIVED
+    KILLED --> SCORE
+    style SCORE fill:#FFF9C4
+    style SURVIVED fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Improving Tests",
+                        "explanation": "Surviving mutants show exactly where tests are weak. Add tests to kill each survivor.",
+                        "diagram_data": """graph TB
+    SURV["Survived: x > 0 to x >= 0"]
+    ANALYZE["Test never checks x=0!"]
+    FIX["Add test: assert func(0) == expected"]
+    RERUN["Re-run mutation testing"]
+    KILLED["Now mutant is killed"]
+    SURV --> ANALYZE --> FIX --> RERUN --> KILLED
+    style FIX fill:#C8E6C9
+    style KILLED fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_ci_pipeline_visual(self):
+        """Seed CI Test Pipeline visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="ci-test-pipeline",
+            defaults={
+                "title": "Test Pipeline Stages",
+                "description": "How tests flow through a CI/CD pipeline from lint to deploy",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["testing", "ci-cd", "pipeline", "devops", "automation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "CI Pipeline Overview",
+                        "explanation": "A CI pipeline runs tests automatically on every push. Tests are organized in stages, with fast tests first.",
+                        "diagram_data": """graph LR
+    PUSH["Git Push"] --> LINT["Lint"]
+    LINT --> UNIT["Unit Tests"]
+    UNIT --> INT["Integration"]
+    INT --> E2E["E2E Tests"]
+    E2E --> DEPLOY["Deploy"]
+    style PUSH fill:#BBDEFB
+    style DEPLOY fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Stage 1: Lint and Format",
+                        "explanation": "First, check code style and formatting. Fast to run, catches obvious issues immediately. Fail fast on style violations.",
+                        "diagram_data": """graph TB
+    subgraph "Lint Stage - Seconds"
+        L1["ruff check ."]
+        L2["ruff format --check ."]
+        L3["mypy type checking"]
+    end
+    L1 --> PASS{"Pass?"}
+    L2 --> PASS
+    L3 --> PASS
+    PASS -->|No| FAIL["Fail Early"]
+    PASS -->|Yes| NEXT["Continue"]
+    style FAIL fill:#FFCDD2
+    style NEXT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Stage 2: Unit Tests",
+                        "explanation": "Run fast, isolated unit tests. These should complete in under a minute. Catch logic errors quickly.",
+                        "diagram_data": """graph TB
+    subgraph "Unit Test Stage - 1 min"
+        U1["pytest tests/unit/"]
+        U2["Coverage check >= 80%"]
+    end
+    U1 --> PASS{"All Pass?"}
+    U2 --> PASS
+    PASS -->|No| FAIL["Fail - Fix Logic"]
+    PASS -->|Yes| NEXT["Continue"]
+    style FAIL fill:#FFCDD2
+    style NEXT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Stage 3: Integration Tests",
+                        "explanation": "Test components working together. Involves databases, APIs, caches. Slower but catches integration bugs.",
+                        "diagram_data": """graph TB
+    subgraph "Integration Stage - 5 min"
+        I1["Start test containers"]
+        I2["Run migrations"]
+        I3["pytest tests/integration/"]
+        I4["Stop containers"]
+    end
+    I1 --> I2 --> I3 --> I4
+    I3 --> PASS{"Pass?"}
+    style I1 fill:#BBDEFB
+    style I3 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Stage 4: E2E Tests",
+                        "explanation": "Full end-to-end tests with browser automation. Slowest stage, run only on main branch or before deploy.",
+                        "diagram_data": """graph TB
+    subgraph "E2E Stage - 10 min"
+        E1["Deploy to staging"]
+        E2["Run Playwright/Selenium"]
+        E3["Test critical user journeys"]
+    end
+    E1 --> E2 --> E3
+    E3 --> PASS{"Pass?"}
+    PASS -->|Yes| DEPLOY["Ready to Deploy"]
+    style E1 fill:#E1BEE7
+    style DEPLOY fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Pipeline Gates",
+                        "explanation": "Each stage is a gate. Failure in any stage stops the pipeline. This prevents bad code from reaching production.",
+                        "diagram_data": """graph LR
+    L["Lint"] -->|Pass| U["Unit"]
+    U -->|Pass| I["Integration"]
+    I -->|Pass| E["E2E"]
+    E -->|Pass| D["Deploy"]
+    L -->|Fail| X1["Stop"]
+    U -->|Fail| X2["Stop"]
+    I -->|Fail| X3["Stop"]
+    E -->|Fail| X4["Stop"]
+    style X1 fill:#FFCDD2
+    style X2 fill:#FFCDD2
+    style X3 fill:#FFCDD2
+    style X4 fill:#FFCDD2
+    style D fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_testing_parallel_execution_visual(self):
+        """Seed Parallel Test Execution visual topic."""
+        subject = self.get_or_create_subject("Testing", "testing", "Software Engineering")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="parallel-test-execution",
+            defaults={
+                "title": "Parallel Test Execution",
+                "description": "Speeding up tests by running them in parallel across multiple workers",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["testing", "parallel", "performance", "pytest-xdist", "ci"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Slow Test Suites",
+                        "explanation": "As test suites grow, they take longer to run. A 20-minute test suite blocks developers and slows CI.",
+                        "diagram_data": """graph TB
+    subgraph "Sequential Execution"
+        T1["Test 1: 2s"]
+        T2["Test 2: 3s"]
+        T3["Test 3: 2s"]
+        T4["Test 4: 3s"]
+    end
+    T1 --> T2 --> T3 --> T4 --> TOTAL["Total: 10 seconds"]
+    style TOTAL fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Solution: Run in Parallel",
+                        "explanation": "Distribute tests across multiple workers (processes/machines). Total time approaches longest single test, not sum of all.",
+                        "diagram_data": """graph TB
+    subgraph "Worker 1"
+        W1T1["Test 1: 2s"]
+        W1T2["Test 3: 2s"]
+    end
+    subgraph "Worker 2"
+        W2T1["Test 2: 3s"]
+        W2T2["Test 4: 3s"]
+    end
+    W1T1 --> W1T2
+    W2T1 --> W2T2
+    W1T2 --> TOTAL["Total: 6 seconds"]
+    W2T2 --> TOTAL
+    style TOTAL fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Test Sharding",
+                        "explanation": "Tests are divided into shards (groups) assigned to different workers. Good sharding balances work evenly.",
+                        "diagram_data": """graph TB
+    TESTS["100 Tests"] --> SHARD["Shard by time/count"]
+    SHARD --> S1["Shard 1: 25 tests"]
+    SHARD --> S2["Shard 2: 25 tests"]
+    SHARD --> S3["Shard 3: 25 tests"]
+    SHARD --> S4["Shard 4: 25 tests"]
+    S1 --> W1["Worker 1"]
+    S2 --> W2["Worker 2"]
+    S3 --> W3["Worker 3"]
+    S4 --> W4["Worker 4"]
+    style SHARD fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "pytest-xdist",
+                        "explanation": "pytest-xdist is the standard tool for parallel pytest execution. Use -n auto to use all CPU cores.",
+                        "diagram_data": """graph TB
+    subgraph "Commands"
+        C1["pytest -n auto<br/>Use all CPU cores"]
+        C2["pytest -n 4<br/>Use 4 workers"]
+        C3["pytest -n 8<br/>Use 8 workers"]
+    end
+    subgraph "Load Balancing"
+        LB["Tests distributed<br/>dynamically as workers<br/>become available"]
+    end
+    style C1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Test Isolation Requirements",
+                        "explanation": "Parallel tests must be isolated. They cannot share state, files, or database rows without conflicts.",
+                        "diagram_data": """graph TB
+    subgraph "Problems"
+        P1["Shared database state"]
+        P2["Same temp files"]
+        P3["Global variables"]
+        P4["Port conflicts"]
+    end
+    subgraph "Solutions"
+        S1["Per-worker DB schemas"]
+        S2["Unique file names"]
+        S3["No global state"]
+        S4["Dynamic port allocation"]
+    end
+    P1 --> S1
+    P2 --> S2
+    P3 --> S3
+    P4 --> S4
+    style P1 fill:#FFCDD2
+    style S1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "CI Parallelization",
+                        "explanation": "In CI, you can parallelize across multiple machines, not just cores. This scales to thousands of tests.",
+                        "diagram_data": """graph TB
+    subgraph "CI Matrix"
+        M1["Machine 1<br/>Tests 1-250"]
+        M2["Machine 2<br/>Tests 251-500"]
+        M3["Machine 3<br/>Tests 501-750"]
+        M4["Machine 4<br/>Tests 751-1000"]
+    end
+    M1 --> RESULTS["Aggregate Results"]
+    M2 --> RESULTS
+    M3 --> RESULTS
+    M4 --> RESULTS
+    RESULTS --> REPORT["Final Report"]
+    style REPORT fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_container_vs_vm_visual(self):
+        """Seed Container vs VM Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="container-vs-vm",
+            defaults={
+                "title": "Container vs VM Architecture",
+                "description": "Comparing container and virtual machine architectures and their tradeoffs",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["docker", "containers", "vms", "virtualization", "architecture"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Isolation Problem",
+                        "explanation": "Applications need isolation from each other. Two main approaches: **Virtual Machines** (hardware-level) and **Containers** (OS-level).",
+                        "diagram_data": """graph TB
+    subgraph "The Goal"
+        G["Run multiple isolated apps<br/>on the same hardware"]
+    end
+    subgraph "Approaches"
+        VM["Virtual Machines<br/>Hardware virtualization"]
+        CT["Containers<br/>OS virtualization"]
+    end
+    G --> VM
+    G --> CT""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Virtual Machine Architecture",
+                        "explanation": "VMs run on a **hypervisor** that emulates hardware. Each VM has its own full OS kernel, making them heavy but completely isolated.",
+                        "diagram_data": """graph TB
+    subgraph "Virtual Machines"
+        subgraph "VM 1"
+            A1["App A"]
+            L1["Libraries"]
+            OS1["Guest OS<br/>Full Linux Kernel"]
+        end
+        subgraph "VM 2"
+            A2["App B"]
+            L2["Libraries"]
+            OS2["Guest OS<br/>Full Windows"]
+        end
+        HV["Hypervisor<br/>VMware / KVM / Hyper-V"]
+        HW["Hardware"]
+    end
+    A1 --> L1 --> OS1 --> HV
+    A2 --> L2 --> OS2 --> HV
+    HV --> HW
+    style OS1 fill:#FFCDD2
+    style OS2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Container Architecture",
+                        "explanation": "Containers share the host OS kernel. The **container runtime** (Docker) provides isolation using Linux namespaces and cgroups. Much lighter than VMs.",
+                        "diagram_data": """graph TB
+    subgraph "Containers"
+        subgraph "Container 1"
+            CA1["App A"]
+            CL1["Libraries"]
+        end
+        subgraph "Container 2"
+            CA2["App B"]
+            CL2["Libraries"]
+        end
+        DR["Container Runtime<br/>Docker Engine"]
+        HOS["Host OS<br/>Shared Linux Kernel"]
+        CHW["Hardware"]
+    end
+    CA1 --> CL1 --> DR
+    CA2 --> CL2 --> DR
+    DR --> HOS --> CHW
+    style HOS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Side-by-Side Comparison",
+                        "explanation": "The key difference: VMs virtualize hardware, containers virtualize the OS. Containers share the kernel, making them faster and smaller.",
+                        "diagram_data": """graph TB
+    subgraph "VM Stack"
+        VA["App"] --> VL["Libs"] --> VOS["Guest OS"] --> VHV["Hypervisor"] --> VHW["Hardware"]
+    end
+    subgraph "Container Stack"
+        CA["App"] --> CL["Libs"] --> CDR["Runtime"] --> COS["Host OS"] --> CHW["Hardware"]
+    end
+    style VOS fill:#FFCDD2
+    style CDR fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Resource Comparison",
+                        "explanation": "Containers are dramatically more efficient: faster startup, less memory, smaller disk footprint.",
+                        "diagram_data": """graph TB
+    subgraph "VMs"
+        VM1["Startup: Minutes"]
+        VM2["Memory: GBs per VM"]
+        VM3["Disk: GBs per image"]
+        VM4["Density: 10s per host"]
+    end
+    subgraph "Containers"
+        C1["Startup: Seconds"]
+        C2["Memory: MBs per container"]
+        C3["Disk: MBs per image"]
+        C4["Density: 100s per host"]
+    end
+    style VM1 fill:#FFCDD2
+    style C1 fill:#C8E6C9
+    style C4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Isolation Comparison",
+                        "explanation": "VMs have stronger isolation (separate kernels). Containers have weaker isolation but are improving with technologies like gVisor and Kata Containers.",
+                        "diagram_data": """graph TB
+    subgraph "VM Isolation"
+        VI["Complete isolation<br/>Separate kernel<br/>Hardware-level security"]
+    end
+    subgraph "Container Isolation"
+        CI["Process isolation<br/>Shared kernel<br/>Namespace boundaries"]
+    end
+    subgraph "Enhanced Container Isolation"
+        ECI["gVisor: user-space kernel<br/>Kata: lightweight VMs<br/>Firecracker: microVMs"]
+    end
+    VI --> STRONG["Stronger"]
+    CI --> GOOD["Good enough for most"]
+    ECI --> BETTER["Better isolation"]
+    style VI fill:#C8E6C9
+    style CI fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "When to Use Each",
+                        "explanation": "Use VMs for strong isolation, different OS kernels, or legacy apps. Use containers for microservices, CI/CD, and cloud-native apps.",
+                        "diagram_data": """graph TB
+    subgraph "Use VMs When"
+        V1["Running Windows on Linux host"]
+        V2["Strong security isolation needed"]
+        V3["Legacy applications"]
+        V4["Different kernel versions"]
+    end
+    subgraph "Use Containers When"
+        C1["Microservices architecture"]
+        C2["CI/CD pipelines"]
+        C3["Cloud-native apps"]
+        C4["High density needed"]
+        C5["Fast scaling required"]
+    end
+    style C1 fill:#C8E6C9
+    style C5 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_image_layers_visual(self):
+        """Seed Docker Image Layers visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="image-layers",
+            defaults={
+                "title": "Docker Image Layers",
+                "description": "How Docker images are built from layers, caching, and why order matters",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "images", "layers", "caching", "dockerfile"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Images are Layered",
+                        "explanation": "A Docker image is not a single file - it's a stack of **read-only layers**. Each layer represents a change from the previous layer.",
+                        "diagram_data": """graph TB
+    subgraph "Docker Image"
+        L4["Layer 4: COPY app code"]
+        L3["Layer 3: RUN pip install"]
+        L2["Layer 2: RUN apt-get update"]
+        L1["Layer 1: Base OS (Ubuntu)"]
+    end
+    L4 --> L3 --> L2 --> L1
+    style L1 fill:#BBDEFB
+    style L4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Dockerfile Creates Layers",
+                        "explanation": "Each instruction in a Dockerfile creates a new layer. The layer contains only the changes (delta) from the previous layer.",
+                        "diagram_data": """graph LR
+    subgraph "Dockerfile"
+        D1["FROM ubuntu:22.04"]
+        D2["RUN apt-get update"]
+        D3["RUN pip install flask"]
+        D4["COPY . /app"]
+    end
+    subgraph "Layers"
+        L1["Layer 1"]
+        L2["Layer 2"]
+        L3["Layer 3"]
+        L4["Layer 4"]
+    end
+    D1 --> L1
+    D2 --> L2
+    D3 --> L3
+    D4 --> L4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Layer Sharing",
+                        "explanation": "Multiple images can share the same base layers. This saves disk space and speeds up pulls. Only unique layers need to be downloaded.",
+                        "diagram_data": """graph TB
+    subgraph "Image A"
+        A3["App A code"]
+        A2["Flask"]
+    end
+    subgraph "Image B"
+        B3["App B code"]
+        B2["Flask"]
+    end
+    subgraph "Shared Layers"
+        S2["pip install flask"]
+        S1["Ubuntu base"]
+    end
+    A3 --> A2 --> S2
+    B3 --> B2 --> S2
+    S2 --> S1
+    style S1 fill:#C8E6C9
+    style S2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Build Cache",
+                        "explanation": "Docker caches each layer. If a layer hasn't changed, Docker reuses the cached version. Cache invalidation propagates down - one changed layer invalidates all following layers.",
+                        "diagram_data": """graph TB
+    subgraph "First Build"
+        F1["Layer 1: Built"]
+        F2["Layer 2: Built"]
+        F3["Layer 3: Built"]
+        F4["Layer 4: Built"]
+    end
+    subgraph "Second Build - Code Changed"
+        S1["Layer 1: CACHED"]
+        S2["Layer 2: CACHED"]
+        S3["Layer 3: CACHED"]
+        S4["Layer 4: REBUILT"]
+    end
+    style S1 fill:#C8E6C9
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9
+    style S4 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Order Matters!",
+                        "explanation": "Put frequently changing instructions (like COPY code) LAST. Put stable instructions (like installing dependencies) FIRST. This maximizes cache hits.",
+                        "diagram_data": """graph TB
+    subgraph "BAD Order"
+        B1["FROM python"]
+        B2["COPY . /app"]
+        B3["RUN pip install -r requirements.txt"]
+        BN["Code change = reinstall deps!"]
+    end
+    subgraph "GOOD Order"
+        G1["FROM python"]
+        G2["COPY requirements.txt ."]
+        G3["RUN pip install -r requirements.txt"]
+        G4["COPY . /app"]
+        GN["Code change = only rebuild last layer"]
+    end
+    style B2 fill:#FFCDD2
+    style BN fill:#FFCDD2
+    style G4 fill:#C8E6C9
+    style GN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Container Layer",
+                        "explanation": "When a container runs, Docker adds a thin **writable layer** on top. All changes happen in this layer. The image layers remain read-only.",
+                        "diagram_data": """graph TB
+    subgraph "Running Container"
+        WL["Writable Container Layer<br/>All changes go here"]
+        IL4["Image Layer 4 (read-only)"]
+        IL3["Image Layer 3 (read-only)"]
+        IL2["Image Layer 2 (read-only)"]
+        IL1["Image Layer 1 (read-only)"]
+    end
+    WL --> IL4 --> IL3 --> IL2 --> IL1
+    style WL fill:#FFF9C4
+    style IL1 fill:#E3F2FD
+    style IL2 fill:#E3F2FD
+    style IL3 fill:#E3F2FD
+    style IL4 fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Inspecting Layers",
+                        "explanation": "Use `docker history` to see layers and their sizes. Identify large layers and optimize them.",
+                        "diagram_data": """graph TB
+    subgraph "docker history myimage"
+        H1["abc123  2MB   COPY . /app"]
+        H2["def456  150MB RUN pip install"]
+        H3["ghi789  200MB RUN apt-get"]
+        H4["jkl012  75MB  Ubuntu base"]
+    end
+    TIP["Tip: Combine RUN commands<br/>to reduce layer count"]
+    style H2 fill:#FFCDD2
+    style H3 fill:#FFCDD2
+    style TIP fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_container_lifecycle_visual(self):
+        """Seed Container Lifecycle visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="container-lifecycle",
+            defaults={
+                "title": "Container Lifecycle",
+                "description": "Container states and transitions from creation to removal",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["docker", "containers", "lifecycle", "states", "commands"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Container States",
+                        "explanation": "A container goes through several states during its lifecycle: **created**, **running**, **paused**, **stopped**, and eventually **removed**.",
+                        "diagram_data": """graph LR
+    CREATED["Created"] --> RUNNING["Running"]
+    RUNNING --> PAUSED["Paused"]
+    PAUSED --> RUNNING
+    RUNNING --> STOPPED["Stopped"]
+    STOPPED --> RUNNING
+    STOPPED --> REMOVED["Removed"]
+    CREATED --> REMOVED
+    style RUNNING fill:#C8E6C9
+    style REMOVED fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Create a Container",
+                        "explanation": "`docker create` creates a container from an image but doesn't start it. The container exists but no process is running.",
+                        "diagram_data": """graph TB
+    IMG["Image"] --> CREATE["docker create"]
+    CREATE --> CONTAINER["Container<br/>State: CREATED"]
+    NOTE["Container exists<br/>Filesystem ready<br/>Not running yet"]
+    CONTAINER --> NOTE
+    style CONTAINER fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Start and Run",
+                        "explanation": "`docker start` starts a created container. `docker run` combines create + start in one command. The container's main process is now executing.",
+                        "diagram_data": """graph TB
+    subgraph "Two Ways to Run"
+        W1["docker create + docker start"]
+        W2["docker run (create + start)"]
+    end
+    W1 --> RUNNING["Container<br/>State: RUNNING"]
+    W2 --> RUNNING
+    NOTE["Main process (PID 1) executing<br/>Container is live"]
+    RUNNING --> NOTE
+    style RUNNING fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Pause and Unpause",
+                        "explanation": "`docker pause` freezes all processes using cgroups. The container still exists and uses memory, but processes don't execute. `docker unpause` resumes.",
+                        "diagram_data": """graph LR
+    RUNNING["Running"] -->|"docker pause"| PAUSED["Paused"]
+    PAUSED -->|"docker unpause"| RUNNING
+    NOTE["Processes frozen<br/>Memory preserved<br/>No CPU usage"]
+    PAUSED --> NOTE
+    style PAUSED fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Stop a Container",
+                        "explanation": "`docker stop` sends SIGTERM, waits (default 10s), then SIGKILL. `docker kill` sends SIGKILL immediately. Container moves to stopped state.",
+                        "diagram_data": """graph TB
+    RUNNING["Running"] -->|"docker stop"| GRACEFUL["SIGTERM sent<br/>Wait 10 seconds"]
+    GRACEFUL --> STOPPED["Stopped"]
+    RUNNING -->|"docker kill"| IMMEDIATE["SIGKILL sent"]
+    IMMEDIATE --> STOPPED
+    style STOPPED fill:#FFCDD2
+    style GRACEFUL fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Restart and Remove",
+                        "explanation": "`docker restart` stops then starts a container. `docker rm` removes a stopped container. Use `docker rm -f` to force remove a running container.",
+                        "diagram_data": """graph TB
+    STOPPED["Stopped"] -->|"docker start"| RUNNING["Running"]
+    STOPPED -->|"docker rm"| REMOVED["Removed"]
+    RUNNING -->|"docker restart"| RUNNING
+    RUNNING -->|"docker rm -f"| REMOVED
+    style REMOVED fill:#FFCDD2
+    style RUNNING fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Complete Lifecycle",
+                        "explanation": "The full lifecycle with all commands that trigger state transitions.",
+                        "diagram_data": """graph TB
+    IMG["Image"] -->|create| CREATED["Created"]
+    CREATED -->|start| RUNNING["Running"]
+    RUNNING -->|pause| PAUSED["Paused"]
+    PAUSED -->|unpause| RUNNING
+    RUNNING -->|stop/kill| STOPPED["Stopped"]
+    STOPPED -->|start| RUNNING
+    STOPPED -->|rm| REMOVED["Removed"]
+    CREATED -->|rm| REMOVED
+    style IMG fill:#BBDEFB
+    style RUNNING fill:#C8E6C9
+    style REMOVED fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_dockerfile_build_visual(self):
+        """Seed Dockerfile Build Process visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="dockerfile-build-process",
+            defaults={
+                "title": "Dockerfile Build Process",
+                "description": "Step-by-step instruction execution, layer creation, and build context",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "dockerfile", "build", "layers", "context"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Build Command",
+                        "explanation": "`docker build` reads a Dockerfile and creates an image. The build context (files in the directory) is sent to the Docker daemon.",
+                        "diagram_data": """graph LR
+    CMD["docker build -t myapp ."]
+    CTX["Build Context<br/>All files in directory"]
+    DF["Dockerfile"]
+    DAEMON["Docker Daemon"]
+    CMD --> CTX
+    CMD --> DF
+    CTX --> DAEMON
+    DF --> DAEMON
+    DAEMON --> IMG["Image: myapp"]
+    style IMG fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Build Context",
+                        "explanation": "The build context is the set of files available during build. Large contexts slow down builds. Use `.dockerignore` to exclude files.",
+                        "diagram_data": """graph TB
+    subgraph "Project Directory"
+        APP["app/"]
+        TESTS["tests/"]
+        GIT[".git/"]
+        NODE["node_modules/"]
+        DF["Dockerfile"]
+    end
+    subgraph ".dockerignore"
+        IGN[".git<br/>node_modules<br/>tests"]
+    end
+    subgraph "Build Context"
+        SENT["app/<br/>Dockerfile"]
+    end
+    APP --> SENT
+    DF --> SENT
+    style GIT fill:#FFCDD2
+    style NODE fill:#FFCDD2
+    style SENT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Instruction Execution",
+                        "explanation": "Docker executes each instruction in order. Each instruction creates an intermediate container, runs the command, then commits as a new layer.",
+                        "diagram_data": """graph TB
+    subgraph "For Each Instruction"
+        I1["1. Create temp container<br/>from previous layer"]
+        I2["2. Execute instruction<br/>in container"]
+        I3["3. Commit container<br/>as new layer"]
+        I4["4. Remove temp container"]
+    end
+    I1 --> I2 --> I3 --> I4
+    I4 --> NEXT["Next instruction"]
+    style I3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Common Instructions",
+                        "explanation": "Key Dockerfile instructions and what layers they create.",
+                        "diagram_data": """graph TB
+    subgraph "Instructions"
+        FROM["FROM: Set base image"]
+        RUN["RUN: Execute command, creates layer"]
+        COPY["COPY: Copy files, creates layer"]
+        ENV["ENV: Set environment variable"]
+        EXPOSE["EXPOSE: Document port (metadata)"]
+        CMD["CMD: Default command (metadata)"]
+    end
+    RUN --> LAYER["Creates Layer"]
+    COPY --> LAYER
+    FROM --> LAYER
+    ENV --> META["Metadata Only"]
+    EXPOSE --> META
+    CMD --> META
+    style LAYER fill:#FFF9C4
+    style META fill:#E3F2FD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Build Example",
+                        "explanation": "A complete build showing each step and resulting layers.",
+                        "diagram_data": """graph TB
+    subgraph "Dockerfile"
+        D1["FROM python:3.11"]
+        D2["WORKDIR /app"]
+        D3["COPY requirements.txt ."]
+        D4["RUN pip install -r requirements.txt"]
+        D5["COPY . ."]
+        D6["CMD python app.py"]
+    end
+    subgraph "Layers Created"
+        L1["Layer 1: Python base"]
+        L2["Layer 2: Set workdir"]
+        L3["Layer 3: requirements.txt"]
+        L4["Layer 4: Dependencies"]
+        L5["Layer 5: App code"]
+        L6["Metadata: CMD"]
+    end
+    D1 --> L1
+    D4 --> L4
+    D5 --> L5
+    style L4 fill:#FFCDD2
+    style L5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Build Cache in Action",
+                        "explanation": "When rebuilding, Docker checks if each instruction has changed. Unchanged instructions use cached layers.",
+                        "diagram_data": """graph TB
+    subgraph "Rebuild After Code Change"
+        S1["FROM python:3.11 - CACHED"]
+        S2["COPY requirements.txt - CACHED"]
+        S3["RUN pip install - CACHED"]
+        S4["COPY . . - REBUILDING"]
+        S5["CMD - REBUILDING"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    style S1 fill:#C8E6C9
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9
+    style S4 fill:#FFF9C4
+    style S5 fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_network_types_visual(self):
+        """Seed Docker Network Types visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="network-types",
+            defaults={
+                "title": "Docker Network Types",
+                "description": "Bridge, host, overlay, and none networks - when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "networking", "bridge", "overlay", "host"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Docker Network Drivers",
+                        "explanation": "Docker supports multiple network drivers for different use cases. The default is **bridge**, but **host**, **overlay**, and **none** are also available.",
+                        "diagram_data": """graph TB
+    subgraph "Network Drivers"
+        BRIDGE["bridge<br/>Default, isolated network"]
+        HOST["host<br/>Share host network"]
+        OVERLAY["overlay<br/>Multi-host networking"]
+        NONE["none<br/>No networking"]
+    end
+    style BRIDGE fill:#C8E6C9
+    style OVERLAY fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Bridge Network (Default)",
+                        "explanation": "Containers on a bridge network get private IPs. They can communicate with each other but are isolated from the host network. Port mapping exposes services.",
+                        "diagram_data": """graph TB
+    subgraph "Bridge Network (172.17.0.0/16)"
+        C1["Container A<br/>172.17.0.2"]
+        C2["Container B<br/>172.17.0.3"]
+        BR["docker0 bridge"]
+    end
+    C1 --> BR
+    C2 --> BR
+    BR --> HOST["Host: -p 8080:80"]
+    HOST --> EXT["External Traffic"]
+    style BR fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "User-Defined Bridge",
+                        "explanation": "Custom bridge networks provide automatic DNS resolution between containers. Containers can reach each other by name instead of IP.",
+                        "diagram_data": """graph TB
+    subgraph "my-network (user-defined)"
+        WEB["web container"]
+        DB["db container"]
+        DNS["Automatic DNS<br/>web can reach 'db'<br/>db can reach 'web'"]
+    end
+    WEB --> DNS
+    DB --> DNS
+    style DNS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Host Network",
+                        "explanation": "Container shares the host's network namespace directly. No network isolation, but best performance. Useful for network-intensive applications.",
+                        "diagram_data": """graph TB
+    subgraph "Host Network Mode"
+        C["Container<br/>Uses host IP directly<br/>No port mapping needed"]
+        H["Host Network Stack"]
+    end
+    C --> H
+    H --> NET["Network: eth0<br/>IP: 192.168.1.100"]
+    NOTE["No isolation<br/>Best performance<br/>Port conflicts possible"]
+    style C fill:#FFF9C4
+    style NOTE fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Overlay Network",
+                        "explanation": "Enables communication between containers across multiple Docker hosts. Used with Docker Swarm or Kubernetes for distributed applications.",
+                        "diagram_data": """graph TB
+    subgraph "Host 1"
+        C1["Container A"]
+    end
+    subgraph "Host 2"
+        C2["Container B"]
+    end
+    subgraph "Overlay Network"
+        VXLAN["VXLAN Tunnel<br/>Encrypted traffic"]
+    end
+    C1 --> VXLAN
+    C2 --> VXLAN
+    style VXLAN fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "None Network",
+                        "explanation": "Container has no network access except loopback. Use for maximum isolation or when you'll configure networking manually.",
+                        "diagram_data": """graph TB
+    C["Container<br/>--network none"]
+    LO["Only loopback (127.0.0.1)"]
+    NO["No external access<br/>No container communication"]
+    C --> LO
+    C --> NO
+    style NO fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Choosing a Network",
+                        "explanation": "Quick decision guide for network driver selection.",
+                        "diagram_data": """graph TB
+    Q1{"Multi-host?"} -->|Yes| OVERLAY["Use overlay"]
+    Q1 -->|No| Q2{"Need isolation?"}
+    Q2 -->|Yes| Q3{"Need DNS?"}
+    Q2 -->|No| HOST["Use host"]
+    Q3 -->|Yes| CUSTOM["User-defined bridge"]
+    Q3 -->|No| DEFAULT["Default bridge"]
+    style CUSTOM fill:#C8E6C9
+    style OVERLAY fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_container_communication_visual(self):
+        """Seed Container-to-Container Communication visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="container-communication",
+            defaults={
+                "title": "Container-to-Container Communication",
+                "description": "DNS resolution, network namespaces, and port mapping between containers",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["docker", "networking", "dns", "ports", "communication"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Containers Need to Talk",
+                        "explanation": "In a multi-container app, services need to communicate. Web servers talk to databases, APIs talk to caches. Docker provides several mechanisms.",
+                        "diagram_data": """graph LR
+    WEB["Web App"] --> API["API Server"]
+    API --> DB["Database"]
+    API --> CACHE["Redis Cache"]
+    style WEB fill:#C8E6C9
+    style DB fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Same Network = Direct Communication",
+                        "explanation": "Containers on the same Docker network can communicate directly using container names (DNS) or IP addresses.",
+                        "diagram_data": """graph TB
+    subgraph "my-network"
+        WEB["web<br/>172.18.0.2"]
+        DB["db<br/>172.18.0.3"]
+    end
+    WEB -->|"db:5432 or 172.18.0.3:5432"| DB
+    NOTE["Same network = automatic connectivity"]
+    style NOTE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Docker DNS",
+                        "explanation": "User-defined networks have built-in DNS. Containers can reach each other by name. Docker's embedded DNS server resolves names to IPs.",
+                        "diagram_data": """graph TB
+    WEB["web container"]
+    DNS["Docker DNS Server<br/>127.0.0.11"]
+    DB["db container<br/>172.18.0.3"]
+    WEB -->|"resolve 'db'"| DNS
+    DNS -->|"172.18.0.3"| WEB
+    WEB -->|"connect"| DB
+    style DNS fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Port Mapping to Host",
+                        "explanation": "To expose a container to the host or external world, map container ports to host ports with `-p host:container`.",
+                        "diagram_data": """graph TB
+    EXT["External Client"]
+    HOST["Host<br/>Port 8080"]
+    CONT["Container<br/>Port 80"]
+    EXT -->|"localhost:8080"| HOST
+    HOST -->|"-p 8080:80"| CONT
+    NOTE["docker run -p 8080:80 nginx"]
+    style HOST fill:#FFF9C4
+    style CONT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Container Links (Legacy)",
+                        "explanation": "The old `--link` flag is deprecated. Use user-defined networks instead for automatic DNS and better isolation.",
+                        "diagram_data": """graph TB
+    subgraph "Legacy (Avoid)"
+        L1["--link db:database"]
+        L2["Injects env vars"]
+        L3["Modifies /etc/hosts"]
+    end
+    subgraph "Modern (Preferred)"
+        M1["--network my-network"]
+        M2["Automatic DNS"]
+        M3["Better isolation"]
+    end
+    style L1 fill:#FFCDD2
+    style M1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Network Aliases",
+                        "explanation": "Containers can have multiple DNS names via network aliases. Useful for service discovery patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Container with Aliases"
+        DB["postgres container"]
+        A1["Alias: db"]
+        A2["Alias: database"]
+        A3["Alias: postgres"]
+    end
+    WEB["web"] -->|"any alias works"| DB
+    A1 --> DB
+    A2 --> DB
+    A3 --> DB
+    style DB fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_volume_types_visual(self):
+        """Seed Docker Volume Types visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="volume-types",
+            defaults={
+                "title": "Docker Volume Types",
+                "description": "Named volumes vs bind mounts vs tmpfs - persistence and use cases",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "volumes", "storage", "persistence", "bind-mounts"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Persistence Problem",
+                        "explanation": "Container filesystems are ephemeral - data is lost when the container is removed. Volumes provide persistent storage outside the container lifecycle.",
+                        "diagram_data": """graph TB
+    subgraph "Without Volumes"
+        C1["Container writes data"]
+        C2["Container removed"]
+        C3["Data LOST"]
+    end
+    subgraph "With Volumes"
+        V1["Container writes to volume"]
+        V2["Container removed"]
+        V3["Data PERSISTS"]
+    end
+    C1 --> C2 --> C3
+    V1 --> V2 --> V3
+    style C3 fill:#FFCDD2
+    style V3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Three Types of Mounts",
+                        "explanation": "Docker supports three mount types: **volumes** (Docker-managed), **bind mounts** (host paths), and **tmpfs** (memory-only).",
+                        "diagram_data": """graph TB
+    subgraph "Mount Types"
+        VOL["Volumes<br/>Docker-managed storage"]
+        BIND["Bind Mounts<br/>Host filesystem paths"]
+        TMPFS["tmpfs<br/>Memory only, not persisted"]
+    end
+    style VOL fill:#C8E6C9
+    style BIND fill:#FFF9C4
+    style TMPFS fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Named Volumes",
+                        "explanation": "Volumes are stored in Docker's storage area. Docker manages them completely. Best for production data.",
+                        "diagram_data": """graph TB
+    subgraph "Host"
+        DS["/var/lib/docker/volumes/mydata/_data"]
+    end
+    subgraph "Container"
+        CP["/app/data"]
+    end
+    DS <-->|"volume: mydata"| CP
+    CMD["docker run -v mydata:/app/data"]
+    CMD --> CP
+    style DS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Bind Mounts",
+                        "explanation": "Bind mounts map a specific host path into the container. Great for development - edit code on host, see changes in container.",
+                        "diagram_data": """graph TB
+    subgraph "Host"
+        HP["/home/user/myapp"]
+    end
+    subgraph "Container"
+        CP["/app"]
+    end
+    HP <-->|"bind mount"| CP
+    CMD["docker run -v /home/user/myapp:/app"]
+    CMD --> CP
+    NOTE["Changes sync both ways"]
+    style HP fill:#FFF9C4
+    style NOTE fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "tmpfs Mounts",
+                        "explanation": "tmpfs stores data in memory only. Fast, but data is lost when container stops. Good for sensitive data you don't want on disk.",
+                        "diagram_data": """graph TB
+    subgraph "Container"
+        TMP["/app/temp"]
+    end
+    subgraph "Host Memory"
+        RAM["RAM (not disk)"]
+    end
+    RAM <-->|"tmpfs"| TMP
+    NOTE["Fast, ephemeral<br/>Good for secrets, temp files"]
+    style RAM fill:#BBDEFB
+    style NOTE fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Volume Comparison",
+                        "explanation": "Quick comparison of when to use each type.",
+                        "diagram_data": """graph TB
+    subgraph "Use Volumes When"
+        V1["Production data"]
+        V2["Sharing between containers"]
+        V3["Backup/restore needed"]
+    end
+    subgraph "Use Bind Mounts When"
+        B1["Development workflow"]
+        B2["Config files from host"]
+        B3["Specific host path needed"]
+    end
+    subgraph "Use tmpfs When"
+        T1["Sensitive data"]
+        T2["Temporary files"]
+        T3["Performance critical"]
+    end
+    style V1 fill:#C8E6C9
+    style B1 fill:#FFF9C4
+    style T1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Volume Commands",
+                        "explanation": "Common commands for managing Docker volumes.",
+                        "diagram_data": """graph TB
+    subgraph "Commands"
+        C1["docker volume create mydata"]
+        C2["docker volume ls"]
+        C3["docker volume inspect mydata"]
+        C4["docker volume rm mydata"]
+        C5["docker volume prune"]
+    end
+    C1 --> CREATE["Create named volume"]
+    C2 --> LIST["List all volumes"]
+    C5 --> CLEAN["Remove unused volumes"]
+    style C5 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_compose_graph_visual(self):
+        """Seed Docker Compose Service Graph visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="compose-service-graph",
+            defaults={
+                "title": "Docker Compose Service Graph",
+                "description": "How services, networks, and volumes interconnect in Compose",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "docker-compose", "services", "multi-container"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Docker Compose?",
+                        "explanation": "Docker Compose defines multi-container applications in a YAML file. One command starts all services with their networks and volumes.",
+                        "diagram_data": """graph TB
+    YAML["docker-compose.yml"]
+    CMD["docker compose up"]
+    YAML --> CMD
+    CMD --> S1["Service 1"]
+    CMD --> S2["Service 2"]
+    CMD --> NET["Network"]
+    CMD --> VOL["Volume"]
+    style CMD fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Service Definition",
+                        "explanation": "Each service is a container configuration. Services can depend on each other, share networks, and mount volumes.",
+                        "diagram_data": """graph TB
+    subgraph "docker-compose.yml"
+        S1["web:<br/>  image: nginx<br/>  ports: 80:80"]
+        S2["api:<br/>  build: ./api<br/>  depends_on: db"]
+        S3["db:<br/>  image: postgres<br/>  volumes: data:/var/lib/postgresql"]
+    end
+    style S1 fill:#C8E6C9
+    style S2 fill:#FFF9C4
+    style S3 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Service Dependencies",
+                        "explanation": "`depends_on` controls startup order. The database starts before the API. Note: doesn't wait for the service to be ready, just started.",
+                        "diagram_data": """graph LR
+    DB["db"] -->|"starts first"| API["api"]
+    API -->|"starts second"| WEB["web"]
+    NOTE["depends_on controls order<br/>Use healthchecks for readiness"]
+    style DB fill:#BBDEFB
+    style API fill:#FFF9C4
+    style WEB fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Automatic Networking",
+                        "explanation": "Compose creates a default network for all services. Services can reach each other by service name.",
+                        "diagram_data": """graph TB
+    subgraph "myapp_default network"
+        WEB["web"]
+        API["api"]
+        DB["db"]
+    end
+    WEB -->|"http://api:3000"| API
+    API -->|"postgres://db:5432"| DB
+    NOTE["Service names are DNS names"]
+    style NOTE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Custom Networks",
+                        "explanation": "Define custom networks to isolate groups of services. Services only see others on shared networks.",
+                        "diagram_data": """graph TB
+    subgraph "frontend network"
+        WEB["web"]
+        API["api"]
+    end
+    subgraph "backend network"
+        API2["api"]
+        DB["db"]
+        CACHE["redis"]
+    end
+    WEB --> API
+    API2 --> DB
+    API2 --> CACHE
+    NOTE["web cannot reach db directly"]
+    style NOTE fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Shared Volumes",
+                        "explanation": "Named volumes can be shared between services. Useful for shared data or communication.",
+                        "diagram_data": """graph TB
+    subgraph "Services"
+        APP["app service"]
+        WORKER["worker service"]
+    end
+    subgraph "Shared Volume"
+        VOL["uploads volume"]
+    end
+    APP -->|"write files"| VOL
+    WORKER -->|"process files"| VOL
+    style VOL fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Complete Example",
+                        "explanation": "A typical web application with all components connected.",
+                        "diagram_data": """graph TB
+    subgraph "docker-compose.yml"
+        NGINX["nginx<br/>:80, :443"]
+        APP["app<br/>:3000"]
+        DB["postgres<br/>:5432"]
+        REDIS["redis<br/>:6379"]
+        DBVOL["db_data volume"]
+    end
+    NGINX -->|"proxy"| APP
+    APP --> DB
+    APP --> REDIS
+    DB --> DBVOL
+    style NGINX fill:#C8E6C9
+    style DBVOL fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_orchestration_basics_visual(self):
+        """Seed Container Orchestration Basics visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="orchestration-basics",
+            defaults={
+                "title": "Container Orchestration Basics",
+                "description": "Single host vs swarm vs Kubernetes - scaling concepts",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "kubernetes", "swarm", "orchestration", "scaling"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Orchestration?",
+                        "explanation": "A single host has limits. Orchestration manages containers across multiple hosts, handles failures, and enables scaling.",
+                        "diagram_data": """graph TB
+    subgraph "Single Host Problems"
+        P1["Limited resources"]
+        P2["Single point of failure"]
+        P3["Manual scaling"]
+        P4["No self-healing"]
+    end
+    subgraph "Orchestration Solves"
+        S1["Distribute across hosts"]
+        S2["High availability"]
+        S3["Auto-scaling"]
+        S4["Auto-restart failed containers"]
+    end
+    style P1 fill:#FFCDD2
+    style S1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Single Host (Docker)",
+                        "explanation": "Plain Docker runs containers on one machine. Fine for development, but limited for production.",
+                        "diagram_data": """graph TB
+    subgraph "Single Host"
+        D["Docker Engine"]
+        C1["Container 1"]
+        C2["Container 2"]
+        C3["Container 3"]
+    end
+    D --> C1
+    D --> C2
+    D --> C3
+    NOTE["Simple, but limited<br/>Host fails = all containers fail"]
+    style NOTE fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Docker Swarm",
+                        "explanation": "Swarm is Docker's built-in orchestration. Multiple Docker hosts form a cluster. Simple to set up if you're already using Docker.",
+                        "diagram_data": """graph TB
+    subgraph "Swarm Cluster"
+        MGR["Manager Node"]
+        W1["Worker Node 1"]
+        W2["Worker Node 2"]
+        W3["Worker Node 3"]
+    end
+    MGR -->|"schedule"| W1
+    MGR -->|"schedule"| W2
+    MGR -->|"schedule"| W3
+    NOTE["Built into Docker<br/>Good for simpler deployments"]
+    style MGR fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Kubernetes (K8s)",
+                        "explanation": "Kubernetes is the industry standard orchestrator. More complex but more powerful. Manages containers as Pods across many nodes.",
+                        "diagram_data": """graph TB
+    subgraph "Kubernetes Cluster"
+        CP["Control Plane"]
+        N1["Node 1"]
+        N2["Node 2"]
+        N3["Node 3"]
+    end
+    subgraph "Node 1"
+        P1["Pod"]
+        P2["Pod"]
+    end
+    CP --> N1
+    CP --> N2
+    CP --> N3
+    NOTE["Industry standard<br/>Complex but powerful"]
+    style CP fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Key Orchestration Features",
+                        "explanation": "All orchestrators provide these core capabilities.",
+                        "diagram_data": """graph TB
+    subgraph "Core Features"
+        F1["Service Discovery<br/>Find containers by name"]
+        F2["Load Balancing<br/>Distribute traffic"]
+        F3["Scaling<br/>Add/remove replicas"]
+        F4["Self-Healing<br/>Restart failed containers"]
+        F5["Rolling Updates<br/>Zero-downtime deploys"]
+    end
+    style F1 fill:#C8E6C9
+    style F4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Scaling Comparison",
+                        "explanation": "How scaling works at each level.",
+                        "diagram_data": """graph TB
+    subgraph "Docker (Manual)"
+        D["docker run x3"]
+    end
+    subgraph "Swarm"
+        S["docker service scale web=5"]
+    end
+    subgraph "Kubernetes"
+        K["kubectl scale deployment web --replicas=5"]
+    end
+    D --> DM["Manual, no balancing"]
+    S --> SM["Automatic distribution"]
+    K --> KM["Declarative, auto-healing"]
+    style KM fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "When to Use What",
+                        "explanation": "Choose based on your needs and team expertise.",
+                        "diagram_data": """graph TB
+    subgraph "Docker Only"
+        D1["Development"]
+        D2["Simple apps"]
+        D3["Single server"]
+    end
+    subgraph "Docker Swarm"
+        S1["Small clusters"]
+        S2["Docker-native teams"]
+        S3["Simpler operations"]
+    end
+    subgraph "Kubernetes"
+        K1["Large scale"]
+        K2["Complex apps"]
+        K3["Multi-cloud"]
+        K4["Industry standard"]
+    end
+    style D1 fill:#FFF9C4
+    style K1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_health_checks_visual(self):
+        """Seed Health Checks & Restart Policies visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="health-checks-restart",
+            defaults={
+                "title": "Health Checks and Restart Policies",
+                "description": "Container health monitoring and automatic recovery",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["docker", "healthcheck", "restart", "reliability", "monitoring"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Health Checks?",
+                        "explanation": "A running container isn't always healthy. The process might be running but the app could be stuck, deadlocked, or failing. Health checks verify the app is actually working.",
+                        "diagram_data": """graph TB
+    subgraph "Without Health Check"
+        C1["Container Running"]
+        A1["App Deadlocked"]
+        S1["Docker thinks OK"]
+    end
+    subgraph "With Health Check"
+        C2["Container Running"]
+        A2["App Deadlocked"]
+        H2["Health Check Fails"]
+        S2["Docker knows UNHEALTHY"]
+    end
+    style S1 fill:#FFCDD2
+    style S2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Health Check Definition",
+                        "explanation": "Define a command that tests if your application is healthy. Return 0 for healthy, 1 for unhealthy.",
+                        "diagram_data": """graph TB
+    subgraph "Dockerfile"
+        HC["HEALTHCHECK --interval=30s --timeout=3s<br/>CMD curl -f http://localhost/ || exit 1"]
+    end
+    subgraph "Health States"
+        STARTING["starting"]
+        HEALTHY["healthy"]
+        UNHEALTHY["unhealthy"]
+    end
+    HC --> STARTING -->|"first check passes"| HEALTHY
+    HEALTHY -->|"check fails"| UNHEALTHY
+    UNHEALTHY -->|"check passes"| HEALTHY
+    style HEALTHY fill:#C8E6C9
+    style UNHEALTHY fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Health Check Options",
+                        "explanation": "Configure how often to check, how long to wait, and how many failures before marking unhealthy.",
+                        "diagram_data": """graph TB
+    subgraph "Options"
+        INT["--interval=30s<br/>Time between checks"]
+        TO["--timeout=3s<br/>Max time for check to complete"]
+        SP["--start-period=5s<br/>Grace period at startup"]
+        RET["--retries=3<br/>Failures before unhealthy"]
+    end
+    style INT fill:#BBDEFB
+    style RET fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Restart Policies",
+                        "explanation": "Restart policies tell Docker what to do when a container stops. Options: no, on-failure, always, unless-stopped.",
+                        "diagram_data": """graph TB
+    subgraph "Restart Policies"
+        NO["no<br/>Never restart"]
+        FAIL["on-failure<br/>Restart on non-zero exit"]
+        ALWAYS["always<br/>Always restart"]
+        UNLESS["unless-stopped<br/>Restart unless manually stopped"]
+    end
+    style NO fill:#FFCDD2
+    style ALWAYS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Restart Policy Behavior",
+                        "explanation": "How each policy responds to different scenarios.",
+                        "diagram_data": """graph TB
+    subgraph "Container Exits with Error"
+        E1["no: stays stopped"]
+        E2["on-failure: restarts"]
+        E3["always: restarts"]
+        E4["unless-stopped: restarts"]
+    end
+    subgraph "Docker Daemon Restarts"
+        D1["no: stays stopped"]
+        D2["on-failure: stays stopped"]
+        D3["always: restarts"]
+        D4["unless-stopped: restarts if was running"]
+    end
+    style E2 fill:#C8E6C9
+    style E3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Combining Health + Restart",
+                        "explanation": "Health checks and restart policies work together. Orchestrators use health status to decide when to restart or replace containers.",
+                        "diagram_data": """graph TB
+    HC["Health Check"] -->|"unhealthy"| ORCH["Orchestrator"]
+    ORCH --> STOP["Stop unhealthy container"]
+    STOP --> START["Start replacement"]
+    RP["Restart Policy"] -->|"crash"| RESTART["Auto-restart"]
+    style ORCH fill:#BBDEFB
+    style START fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_image_security_visual(self):
+        """Seed Image Security Layers visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="image-security",
+            defaults={
+                "title": "Image Security Layers",
+                "description": "Base image selection, vulnerability scanning, and minimal images",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "security", "images", "vulnerabilities", "scanning"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Image Security Matters",
+                        "explanation": "Container images can contain vulnerabilities inherited from base images, dependencies, or your code. Security must be built in at every layer.",
+                        "diagram_data": """graph TB
+    subgraph "Attack Surface"
+        BASE["Base OS vulnerabilities"]
+        DEPS["Dependency vulnerabilities"]
+        CODE["Application vulnerabilities"]
+        CONFIG["Misconfigurations"]
+    end
+    style BASE fill:#FFCDD2
+    style DEPS fill:#FFCDD2
+    style CODE fill:#FFCDD2
+    style CONFIG fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Base Image Selection",
+                        "explanation": "Start with minimal, trusted base images. Smaller images have fewer vulnerabilities. Official images are regularly updated.",
+                        "diagram_data": """graph TB
+    subgraph "Base Image Options"
+        FULL["ubuntu:22.04<br/>~77MB, many packages"]
+        SLIM["python:3.11-slim<br/>~150MB, reduced"]
+        ALPINE["python:3.11-alpine<br/>~50MB, minimal"]
+        DISTROLESS["distroless<br/>~20MB, no shell"]
+    end
+    FULL --> MORE["More vulnerabilities"]
+    DISTROLESS --> LESS["Fewer vulnerabilities"]
+    style FULL fill:#FFCDD2
+    style DISTROLESS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Vulnerability Scanning",
+                        "explanation": "Scan images for known vulnerabilities (CVEs). Integrate scanning into CI/CD to catch issues before deployment.",
+                        "diagram_data": """graph LR
+    IMG["Docker Image"] --> SCAN["Scanner<br/>Trivy/Snyk/Grype"]
+    SCAN --> REPORT["Vulnerability Report"]
+    REPORT --> CRIT{"Critical CVEs?"}
+    CRIT -->|Yes| FAIL["Block Deploy"]
+    CRIT -->|No| PASS["Allow Deploy"]
+    style FAIL fill:#FFCDD2
+    style PASS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Reduce Attack Surface",
+                        "explanation": "Remove unnecessary packages, files, and capabilities. Run as non-root user. Keep images minimal.",
+                        "diagram_data": """graph TB
+    subgraph "Best Practices"
+        NR["Run as non-root user"]
+        RM["Remove unnecessary packages"]
+        RO["Read-only filesystem"]
+        NO["No secrets in image"]
+        UP["Keep base images updated"]
+    end
+    style NR fill:#C8E6C9
+    style NO fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Non-Root Containers",
+                        "explanation": "Never run as root. Create a dedicated user in the Dockerfile.",
+                        "diagram_data": """graph TB
+    subgraph "Dockerfile"
+        D1["RUN useradd -r -u 1000 appuser"]
+        D2["USER appuser"]
+        D3["WORKDIR /app"]
+    end
+    subgraph "Result"
+        R["Container runs as appuser<br/>Limited permissions<br/>Cannot modify system files"]
+    end
+    D1 --> D2 --> D3 --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Image Signing",
+                        "explanation": "Sign images to verify authenticity. Ensure images haven't been tampered with between build and deploy.",
+                        "diagram_data": """graph LR
+    BUILD["Build Image"] --> SIGN["Sign with key"]
+    SIGN --> PUSH["Push to Registry"]
+    PUSH --> VERIFY["Verify signature"]
+    VERIFY --> DEPLOY["Deploy"]
+    NOTE["Docker Content Trust<br/>Notary/cosign"]
+    style SIGN fill:#BBDEFB
+    style VERIFY fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_multistage_builds_visual(self):
+        """Seed Multi-Stage Builds visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="multistage-builds",
+            defaults={
+                "title": "Multi-Stage Builds",
+                "description": "Build stage vs runtime stage - reducing final image size",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["docker", "dockerfile", "multi-stage", "optimization", "build"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem",
+                        "explanation": "Build tools and dependencies are needed to build but not to run. A single-stage build includes everything, bloating the final image.",
+                        "diagram_data": """graph TB
+    subgraph "Single Stage Image"
+        BUILD["Build tools (gcc, make)"]
+        DEPS["Build dependencies"]
+        SRC["Source code"]
+        BIN["Application binary"]
+        SIZE["Total: 1.2 GB"]
+    end
+    style BUILD fill:#FFCDD2
+    style DEPS fill:#FFCDD2
+    style SIZE fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Multi-Stage Solution",
+                        "explanation": "Use multiple FROM statements. Build in one stage, copy only artifacts to the final stage. Final image contains only what's needed to run.",
+                        "diagram_data": """graph LR
+    subgraph "Build Stage"
+        B1["FROM golang AS builder"]
+        B2["Install deps"]
+        B3["Compile code"]
+        B4["Binary: myapp"]
+    end
+    subgraph "Runtime Stage"
+        R1["FROM alpine"]
+        R2["COPY --from=builder /myapp"]
+        R3["Final image: 15 MB"]
+    end
+    B4 -->|"copy"| R2
+    style B1 fill:#FFF9C4
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Dockerfile Example",
+                        "explanation": "A typical multi-stage Dockerfile for a Go application.",
+                        "diagram_data": """graph TB
+    subgraph "Dockerfile"
+        S1["# Build stage<br/>FROM golang:1.21 AS builder"]
+        S2["WORKDIR /src"]
+        S3["COPY . ."]
+        S4["RUN go build -o /app"]
+        S5["# Runtime stage<br/>FROM alpine:3.18"]
+        S6["COPY --from=builder /app /app"]
+        S7["CMD ['/app']"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+    style S1 fill:#FFF9C4
+    style S5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Size Comparison",
+                        "explanation": "Multi-stage builds dramatically reduce image size by excluding build-time dependencies.",
+                        "diagram_data": """graph TB
+    subgraph "Single Stage"
+        SS["golang:1.21 base: 800MB<br/>+ deps: 200MB<br/>+ source: 50MB<br/>= 1.05 GB"]
+    end
+    subgraph "Multi-Stage"
+        MS["alpine base: 5MB<br/>+ binary: 10MB<br/>= 15 MB"]
+    end
+    SS --> REDUCTION["70x smaller!"]
+    MS --> REDUCTION
+    style SS fill:#FFCDD2
+    style MS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Multiple Build Stages",
+                        "explanation": "You can have multiple build stages for complex pipelines: build, test, then deploy.",
+                        "diagram_data": """graph LR
+    subgraph "Stage: deps"
+        D["Install dependencies"]
+    end
+    subgraph "Stage: test"
+        T["Run tests"]
+    end
+    subgraph "Stage: build"
+        B["Compile"]
+    end
+    subgraph "Stage: final"
+        F["Runtime only"]
+    end
+    D --> T --> B --> F
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Best Practices",
+                        "explanation": "Tips for effective multi-stage builds.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Use specific stage names"]
+        D2["Copy only necessary files"]
+        D3["Use minimal runtime base"]
+        D4["Order stages for caching"]
+    end
+    subgraph "Avoid"
+        A1["Copying entire directories"]
+        A2["Including test frameworks"]
+        A3["Leaving debug tools"]
+    end
+    style D1 fill:#C8E6C9
+    style D3 fill:#C8E6C9
+    style A1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_container_isolation_visual(self):
+        """Seed Container Isolation visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="container-isolation",
+            defaults={
+                "title": "Container Isolation",
+                "description": "Namespaces, cgroups, and security boundaries",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["docker", "security", "namespaces", "cgroups", "isolation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "How Containers Isolate",
+                        "explanation": "Containers use Linux kernel features for isolation: **namespaces** for visibility and **cgroups** for resource limits.",
+                        "diagram_data": """graph TB
+    subgraph "Isolation Mechanisms"
+        NS["Namespaces<br/>What you can SEE"]
+        CG["Cgroups<br/>What you can USE"]
+        SEC["Seccomp/AppArmor<br/>What you can DO"]
+    end
+    NS --> ISO["Container Isolation"]
+    CG --> ISO
+    SEC --> ISO
+    style ISO fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Namespaces",
+                        "explanation": "Namespaces isolate what a process can see. Each namespace type controls visibility of different resources.",
+                        "diagram_data": """graph TB
+    subgraph "Namespace Types"
+        PID["PID: Process IDs"]
+        NET["NET: Network stack"]
+        MNT["MNT: Filesystem mounts"]
+        UTS["UTS: Hostname"]
+        IPC["IPC: Inter-process comm"]
+        USER["USER: User/Group IDs"]
+    end
+    PID --> EFFECT["Container sees only<br/>its own processes"]
+    NET --> EFFECT2["Container has own<br/>network interfaces"]
+    style PID fill:#BBDEFB
+    style NET fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "PID Namespace Example",
+                        "explanation": "Inside a container, PID 1 is your app. The container can't see host processes. On the host, container processes have different PIDs.",
+                        "diagram_data": """graph TB
+    subgraph "Host View"
+        H1["PID 1: systemd"]
+        H2["PID 1000: dockerd"]
+        H3["PID 2000: container app"]
+    end
+    subgraph "Container View"
+        C1["PID 1: app<br/>Only sees itself"]
+    end
+    H3 -.-> C1
+    style C1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Cgroups (Control Groups)",
+                        "explanation": "Cgroups limit and account for resource usage: CPU, memory, disk I/O, network. Prevents one container from starving others.",
+                        "diagram_data": """graph TB
+    subgraph "Resource Limits"
+        CPU["CPU: --cpus=2"]
+        MEM["Memory: --memory=512m"]
+        IO["Disk I/O: --device-read-bps"]
+        PID["PIDs: --pids-limit=100"]
+    end
+    CPU --> ENFORCE["Kernel enforces limits"]
+    MEM --> ENFORCE
+    ENFORCE --> OOM["Exceed memory = OOM killed"]
+    style OOM fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Security Boundaries",
+                        "explanation": "Additional security layers: seccomp filters syscalls, AppArmor/SELinux restrict access, capabilities limit root powers.",
+                        "diagram_data": """graph TB
+    subgraph "Defense in Depth"
+        SC["Seccomp<br/>Block dangerous syscalls"]
+        AA["AppArmor/SELinux<br/>Mandatory access control"]
+        CAP["Capabilities<br/>Fine-grained root powers"]
+        RO["Read-only rootfs<br/>Prevent modifications"]
+    end
+    style SC fill:#C8E6C9
+    style CAP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Isolation vs VMs",
+                        "explanation": "Containers share a kernel, so isolation is weaker than VMs. But for most use cases, it's sufficient.",
+                        "diagram_data": """graph TB
+    subgraph "VM Isolation"
+        VM["Complete kernel separation<br/>Hardware virtualization<br/>Strongest isolation"]
+    end
+    subgraph "Container Isolation"
+        CT["Kernel shared<br/>Namespace + cgroup<br/>Good for most cases"]
+    end
+    subgraph "Enhanced Containers"
+        GV["gVisor: user-space kernel<br/>Kata: lightweight VM<br/>Better isolation"]
+    end
+    style VM fill:#C8E6C9
+    style CT fill:#FFF9C4
+    style GV fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_cicd_pipeline_visual(self):
+        """Seed CI/CD with Docker visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cicd-docker-pipeline",
+            defaults={
+                "title": "CI/CD with Docker",
+                "description": "Build, test, push, deploy pipeline with container registries",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "ci-cd", "pipeline", "registry", "devops"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Docker CI/CD Overview",
+                        "explanation": "Docker enables consistent CI/CD: build once, run anywhere. The same image tested in CI is deployed to production.",
+                        "diagram_data": """graph LR
+    CODE["Code Push"] --> BUILD["Build Image"]
+    BUILD --> TEST["Test in Container"]
+    TEST --> PUSH["Push to Registry"]
+    PUSH --> DEPLOY["Deploy"]
+    style BUILD fill:#FFF9C4
+    style DEPLOY fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Build Stage",
+                        "explanation": "CI builds a Docker image on every commit. Use multi-stage builds for efficient, small images. Tag with commit SHA for traceability.",
+                        "diagram_data": """graph TB
+    subgraph "Build Stage"
+        GIT["git commit abc123"]
+        BUILD["docker build -t app:abc123"]
+        TAG["docker tag app:abc123 app:latest"]
+    end
+    GIT --> BUILD --> TAG
+    style BUILD fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Test Stage",
+                        "explanation": "Run tests inside containers for consistency. Use docker-compose for integration tests with databases and services.",
+                        "diagram_data": """graph TB
+    subgraph "Test Stage"
+        UNIT["docker run app:abc123 pytest"]
+        INT["docker-compose up -d<br/>Run integration tests"]
+        SCAN["docker scan app:abc123<br/>Security scan"]
+    end
+    UNIT --> INT --> SCAN
+    style UNIT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Push to Registry",
+                        "explanation": "Push tested images to a container registry. Use private registries for production images.",
+                        "diagram_data": """graph LR
+    IMG["app:abc123"] --> PUSH["docker push"]
+    PUSH --> REG["Container Registry<br/>Docker Hub / ECR / GCR"]
+    subgraph "Registries"
+        HUB["Docker Hub"]
+        ECR["AWS ECR"]
+        GCR["Google GCR"]
+        ACR["Azure ACR"]
+    end
+    style REG fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Deploy Stage",
+                        "explanation": "Deploy by pulling the image from registry. Orchestrators pull and run the new version with zero downtime.",
+                        "diagram_data": """graph TB
+    subgraph "Deployment"
+        PULL["Pull from registry"]
+        ROLL["Rolling update"]
+        HEALTH["Health check"]
+        DONE["Deployment complete"]
+    end
+    PULL --> ROLL --> HEALTH --> DONE
+    subgraph "Rollback if needed"
+        PREV["Previous version available"]
+    end
+    style DONE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Complete Pipeline",
+                        "explanation": "A complete CI/CD pipeline with Docker.",
+                        "diagram_data": """graph LR
+    subgraph "CI"
+        C1["Checkout"]
+        C2["Build"]
+        C3["Test"]
+        C4["Scan"]
+        C5["Push"]
+    end
+    subgraph "CD"
+        D1["Deploy Staging"]
+        D2["Integration Tests"]
+        D3["Deploy Prod"]
+    end
+    C1 --> C2 --> C3 --> C4 --> C5 --> D1 --> D2 --> D3
+    style C5 fill:#FFF9C4
+    style D3 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_docker_logging_monitoring_visual(self):
+        """Seed Docker Logging & Monitoring visual topic."""
+        subject = self.get_or_create_subject(
+            "Docker", "docker", "DevOps & Tooling"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="logging-monitoring",
+            defaults={
+                "title": "Container Logging and Monitoring",
+                "description": "Container logs, metrics collection, and observability stack",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "logging", "monitoring", "observability", "metrics"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Container Observability",
+                        "explanation": "Containers are ephemeral. Traditional monitoring doesn't work well. You need centralized logging and metrics collection.",
+                        "diagram_data": """graph TB
+    subgraph "Three Pillars"
+        LOGS["Logs<br/>What happened"]
+        METRICS["Metrics<br/>How it's performing"]
+        TRACES["Traces<br/>Request flow"]
+    end
+    LOGS --> OBS["Observability"]
+    METRICS --> OBS
+    TRACES --> OBS
+    style OBS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Container Logging",
+                        "explanation": "Containers write to stdout/stderr. Docker captures this. Use `docker logs` to view. Configure logging drivers for centralization.",
+                        "diagram_data": """graph LR
+    APP["App writes to stdout"] --> DOCKER["Docker Daemon"]
+    DOCKER --> LOCAL["docker logs<br/>Local JSON files"]
+    DOCKER --> DRIVER["Logging Driver"]
+    DRIVER --> ELK["Elasticsearch"]
+    DRIVER --> SPLUNK["Splunk"]
+    DRIVER --> CW["CloudWatch"]
+    style LOCAL fill:#FFF9C4
+    style ELK fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Logging Drivers",
+                        "explanation": "Configure where Docker sends logs. Default is json-file. Production typically uses fluentd, syslog, or cloud providers.",
+                        "diagram_data": """graph TB
+    subgraph "Logging Drivers"
+        JSON["json-file (default)"]
+        SYSLOG["syslog"]
+        FLUENTD["fluentd"]
+        GELF["gelf (Graylog)"]
+        AWS["awslogs"]
+    end
+    JSON --> DEV["Good for development"]
+    FLUENTD --> PROD["Good for production"]
+    style JSON fill:#FFF9C4
+    style FLUENTD fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Metrics Collection",
+                        "explanation": "Collect container metrics: CPU, memory, network, disk. Use cAdvisor, Prometheus, or cloud monitoring.",
+                        "diagram_data": """graph TB
+    subgraph "Metrics Sources"
+        DOCKER["Docker daemon<br/>docker stats"]
+        CADVISOR["cAdvisor<br/>Container metrics"]
+        APP["App metrics<br/>/metrics endpoint"]
+    end
+    subgraph "Collection"
+        PROM["Prometheus<br/>Scrape & store"]
+    end
+    subgraph "Visualization"
+        GRAF["Grafana<br/>Dashboards"]
+    end
+    DOCKER --> CADVISOR --> PROM --> GRAF
+    APP --> PROM
+    style GRAF fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Common Stack: ELK",
+                        "explanation": "Elasticsearch, Logstash/Fluentd, Kibana - the classic logging stack for containers.",
+                        "diagram_data": """graph LR
+    subgraph "Containers"
+        C1["Container 1"]
+        C2["Container 2"]
+        C3["Container 3"]
+    end
+    subgraph "Collection"
+        FD["Fluentd/Filebeat"]
+    end
+    subgraph "Storage"
+        ES["Elasticsearch"]
+    end
+    subgraph "UI"
+        KB["Kibana"]
+    end
+    C1 --> FD
+    C2 --> FD
+    C3 --> FD
+    FD --> ES --> KB
+    style KB fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Monitoring Stack: Prometheus + Grafana",
+                        "explanation": "Prometheus scrapes metrics, Grafana visualizes. Standard for Kubernetes and container monitoring.",
+                        "diagram_data": """graph TB
+    subgraph "Exporters"
+        NE["Node Exporter<br/>Host metrics"]
+        CE["cAdvisor<br/>Container metrics"]
+        AE["App Exporter<br/>/metrics"]
+    end
+    PROM["Prometheus"] --> NE
+    PROM --> CE
+    PROM --> AE
+    PROM --> GRAF["Grafana"]
+    PROM --> ALERT["Alertmanager"]
+    ALERT --> SLACK["Slack/PagerDuty"]
+    style GRAF fill:#C8E6C9
+    style ALERT fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Best Practices",
+                        "explanation": "Key practices for container observability.",
+                        "diagram_data": """graph TB
+    subgraph "Logging"
+        L1["Log to stdout/stderr"]
+        L2["Use structured JSON logs"]
+        L3["Include request IDs"]
+        L4["Centralize all logs"]
+    end
+    subgraph "Metrics"
+        M1["Export app metrics"]
+        M2["Set up alerts"]
+        M3["Create dashboards"]
+        M4["Monitor resource usage"]
+    end
+    style L1 fill:#C8E6C9
+    style M2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_basemodel_anatomy_visual(self):
+        """Seed Pydantic BaseModel Anatomy visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="basemodel-anatomy",
+            defaults={
+                "title": "BaseModel Anatomy",
+                "description": "Understanding the structure of a Pydantic model: fields, types, defaults, and metadata",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["pydantic", "basemodel", "fields", "types", "validation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is BaseModel?",
+                        "explanation": "**BaseModel** is the foundation of Pydantic. It's a class that provides automatic validation, serialization, and type coercion based on Python type hints.",
+                        "diagram_data": """graph TB
+    subgraph "BaseModel Features"
+        V["Validation<br/>Check data matches types"]
+        S["Serialization<br/>Convert to dict/JSON"]
+        C["Coercion<br/>Convert types automatically"]
+        D["Documentation<br/>Generate JSON Schema"]
+    end
+    BM["BaseModel"] --> V
+    BM --> S
+    BM --> C
+    BM --> D
+    style BM fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Basic Model Structure",
+                        "explanation": "A Pydantic model is a class that inherits from BaseModel. Fields are defined as class attributes with type annotations.",
+                        "diagram_data": """graph TB
+    subgraph "Model Definition"
+        CLS["class User(BaseModel):"]
+        F1["    name: str"]
+        F2["    age: int"]
+        F3["    email: str"]
+    end
+    subgraph "Components"
+        C1["Class inherits BaseModel"]
+        C2["Field name"]
+        C3["Type annotation"]
+    end
+    CLS --> C1
+    F1 --> C2
+    F1 --> C3
+    style CLS fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Field Types",
+                        "explanation": "Pydantic supports all Python types plus special types for validation. Fields can be required, optional, or have defaults.",
+                        "diagram_data": """graph TB
+    subgraph "Required Fields"
+        R["name: str<br/>No default = required"]
+    end
+    subgraph "Optional with Default"
+        D["age: int = 0<br/>Has default value"]
+    end
+    subgraph "Optional (None allowed)"
+        O["nickname: str | None = None<br/>Can be None"]
+    end
+    style R fill:#FFCDD2
+    style D fill:#C8E6C9
+    style O fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Field() for Metadata",
+                        "explanation": "Use **Field()** to add constraints, descriptions, aliases, and other metadata to fields.",
+                        "diagram_data": """graph TB
+    subgraph "Field Options"
+        F1["Field(default=...)"]
+        F2["Field(min_length=1)"]
+        F3["Field(ge=0, le=100)"]
+        F4["Field(alias='userName')"]
+        F5["Field(description='...')"]
+    end
+    F1 --> D["Default value"]
+    F2 --> V["String constraints"]
+    F3 --> N["Numeric constraints"]
+    F4 --> A["JSON key alias"]
+    F5 --> DOC["Documentation"]
+    style F3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Model Instance Creation",
+                        "explanation": "Create instances by passing data as keyword arguments or a dictionary. Pydantic validates and coerces automatically.",
+                        "diagram_data": """graph LR
+    subgraph "Input"
+        KW["User(name='Alice', age='25')"]
+        DICT["User(**{'name': 'Alice'})"]
+    end
+    subgraph "Pydantic"
+        VAL["Validate & Coerce"]
+    end
+    subgraph "Output"
+        INST["User instance<br/>name='Alice'<br/>age=25 (int!)"]
+    end
+    KW --> VAL --> INST
+    DICT --> VAL
+    style VAL fill:#FFF9C4
+    style INST fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Accessing Data",
+                        "explanation": "Access fields as attributes. Use model_dump() for dict, model_dump_json() for JSON string.",
+                        "diagram_data": """graph TB
+    subgraph "Access Methods"
+        ATTR["user.name<br/>Attribute access"]
+        DUMP["user.model_dump()<br/>Returns dict"]
+        JSON["user.model_dump_json()<br/>Returns JSON string"]
+        FIELDS["user.model_fields<br/>Field metadata"]
+    end
+    style ATTR fill:#C8E6C9
+    style DUMP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Complete Example",
+                        "explanation": "A complete model with various field types and options.",
+                        "diagram_data": """graph TB
+    subgraph "Model"
+        M["class User(BaseModel):<br/>    name: str<br/>    age: int = Field(ge=0)<br/>    email: str | None = None<br/>    tags: list[str] = []"]
+    end
+    subgraph "Usage"
+        U["user = User(name='Bob', age=30)<br/>user.model_dump()"]
+    end
+    subgraph "Output"
+        O["{'name': 'Bob',<br/> 'age': 30,<br/> 'email': None,<br/> 'tags': []}"]
+    end
+    M --> U --> O
+    style O fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_validation_flow_visual(self):
+        """Seed Pydantic Validation Flow visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="validation-flow",
+            defaults={
+                "title": "Validation Flow",
+                "description": "How Pydantic processes input data through parsing, validation, and model creation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pydantic", "validation", "parsing", "flow", "errors"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Validation Pipeline",
+                        "explanation": "When you create a model instance, Pydantic runs a pipeline: parse input, coerce types, validate constraints, run validators, create instance.",
+                        "diagram_data": """graph LR
+    INPUT["Input Data"] --> PARSE["Parse"]
+    PARSE --> COERCE["Coerce Types"]
+    COERCE --> VALIDATE["Validate"]
+    VALIDATE --> CUSTOM["Custom Validators"]
+    CUSTOM --> INSTANCE["Model Instance"]
+    style INPUT fill:#BBDEFB
+    style INSTANCE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Step 1: Parse Input",
+                        "explanation": "Pydantic accepts various input formats: keyword args, dicts, JSON strings, or other model instances.",
+                        "diagram_data": """graph TB
+    subgraph "Valid Inputs"
+        KW["User(name='Alice', age=25)"]
+        DICT["User(**data_dict)"]
+        JSON["User.model_validate_json(json_str)"]
+        MODEL["User.model_validate(other_user)"]
+    end
+    ALL --> PARSE["Internal dict representation"]
+    style PARSE fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Step 2: Type Coercion",
+                        "explanation": "Pydantic tries to convert input to the expected type. String '25' becomes int 25. This is configurable with strict mode.",
+                        "diagram_data": """graph TB
+    subgraph "Coercion Examples"
+        C1["'25' --> 25 (str to int)"]
+        C2["25 --> '25' (int to str)"]
+        C3["'true' --> True (str to bool)"]
+        C4["{'a': 1} --> Model (dict to model)"]
+    end
+    subgraph "Strict Mode"
+        S["No coercion - must match exactly"]
+    end
+    style C1 fill:#C8E6C9
+    style S fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Step 3: Constraint Validation",
+                        "explanation": "After coercion, Pydantic checks field constraints: min/max values, string length, regex patterns, etc.",
+                        "diagram_data": """graph TB
+    subgraph "Constraints Checked"
+        N["Numeric: ge, le, gt, lt"]
+        S["String: min_length, max_length, pattern"]
+        L["List: min_length, max_length"]
+        T["Type: must match annotation"]
+    end
+    CHECK{"All pass?"} -->|Yes| NEXT["Continue"]
+    CHECK -->|No| ERROR["ValidationError"]
+    style ERROR fill:#FFCDD2
+    style NEXT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Step 4: Custom Validators",
+                        "explanation": "After built-in validation, custom validators run. Field validators run per-field, model validators run on the whole model.",
+                        "diagram_data": """graph TB
+    subgraph "Validator Order"
+        BV["Before validators (pre-processing)"]
+        FV["Field validators"]
+        MV["Model validators"]
+        AV["After validators (post-processing)"]
+    end
+    BV --> FV --> MV --> AV
+    style BV fill:#BBDEFB
+    style AV fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Success vs Failure",
+                        "explanation": "If all validation passes, you get a model instance. If any fails, you get a ValidationError with all errors collected.",
+                        "diagram_data": """graph TB
+    VAL["Validation"] --> CHECK{"Valid?"}
+    CHECK -->|Yes| SUCCESS["Model Instance<br/>All fields populated"]
+    CHECK -->|No| FAIL["ValidationError<br/>List of all errors"]
+    FAIL --> ERRORS["[<br/>  {'loc': ('age',), 'msg': '...'},<br/>  {'loc': ('email',), 'msg': '...'}<br/>]"]
+    style SUCCESS fill:#C8E6C9
+    style FAIL fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Complete Flow Diagram",
+                        "explanation": "The full validation flow from input to output.",
+                        "diagram_data": """graph TB
+    INPUT["User(name='Al', age='abc')"]
+    INPUT --> PARSE["Parse to dict"]
+    PARSE --> COERCE["Coerce 'abc' to int"]
+    COERCE --> FAIL["FAILS - not a number"]
+    FAIL --> ERROR["ValidationError:<br/>age: value is not a valid integer"]
+    style ERROR fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_type_coercion_visual(self):
+        """Seed Pydantic Type Coercion visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="type-coercion",
+            defaults={
+                "title": "Type Coercion",
+                "description": "How Pydantic automatically converts input types to expected types",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pydantic", "coercion", "types", "conversion", "strict"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Type Coercion?",
+                        "explanation": "**Type coercion** is automatic conversion of input values to expected types. Pydantic is lenient by default - it tries to make data fit.",
+                        "diagram_data": """graph LR
+    subgraph "Input"
+        I["age: int<br/>value: '25' (string)"]
+    end
+    subgraph "Coercion"
+        C["Convert '25' to 25"]
+    end
+    subgraph "Result"
+        R["age = 25 (int)"]
+    end
+    I --> C --> R
+    style C fill:#FFF9C4
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Common Coercions",
+                        "explanation": "Pydantic handles many type conversions automatically.",
+                        "diagram_data": """graph TB
+    subgraph "String to Number"
+        S1["'123' --> 123 (int)"]
+        S2["'3.14' --> 3.14 (float)"]
+    end
+    subgraph "Number to String"
+        N1["123 --> '123' (str)"]
+    end
+    subgraph "String to Bool"
+        B1["'true', '1', 'yes' --> True"]
+        B2["'false', '0', 'no' --> False"]
+    end
+    subgraph "Dict to Model"
+        D1["{'name': 'X'} --> User(name='X')"]
+    end
+    style S1 fill:#C8E6C9
+    style D1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "List and Collection Coercion",
+                        "explanation": "Sequences can be coerced between types. Items inside are also coerced recursively.",
+                        "diagram_data": """graph TB
+    subgraph "Collection Coercion"
+        L1["(1, 2, 3) --> [1, 2, 3]<br/>tuple to list"]
+        L2["[1, 2, 3] --> {1, 2, 3}<br/>list to set"]
+        L3["['1', '2'] --> [1, 2]<br/>list[int] coerces items"]
+    end
+    style L3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Datetime Coercion",
+                        "explanation": "Strings in common formats are automatically parsed to datetime objects.",
+                        "diagram_data": """graph TB
+    subgraph "Datetime Parsing"
+        DT1["'2024-01-15' --> date"]
+        DT2["'2024-01-15T10:30:00' --> datetime"]
+        DT3["1705312200 --> datetime (Unix timestamp)"]
+    end
+    style DT1 fill:#C8E6C9
+    style DT3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Strict Mode",
+                        "explanation": "Strict mode disables coercion - types must match exactly. Enable per-field or for the whole model.",
+                        "diagram_data": """graph TB
+    subgraph "Lax Mode (default)"
+        L["age: int = '25'<br/>Coerced to 25"]
+    end
+    subgraph "Strict Mode"
+        S["age: int = '25'<br/>ValidationError!<br/>Expected int, got str"]
+    end
+    subgraph "Enable Strict"
+        E1["Field(strict=True)"]
+        E2["model_config = ConfigDict(strict=True)"]
+    end
+    style L fill:#C8E6C9
+    style S fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Coercion Failures",
+                        "explanation": "When coercion fails, Pydantic raises a clear ValidationError.",
+                        "diagram_data": """graph TB
+    subgraph "Cannot Coerce"
+        F1["'hello' to int"]
+        F2["'not-a-date' to datetime"]
+        F3["'abc' to float"]
+    end
+    F1 --> ERROR["ValidationError:<br/>Input should be a valid integer"]
+    style ERROR fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_field_types_visual(self):
+        """Seed Pydantic Field Types & Constraints visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="field-types-constraints",
+            defaults={
+                "title": "Field Types and Constraints",
+                "description": "Built-in types, constrained types, and Field() constraints",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pydantic", "fields", "types", "constraints", "validation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Built-in Type Support",
+                        "explanation": "Pydantic supports all Python built-in types plus many standard library types.",
+                        "diagram_data": """graph TB
+    subgraph "Primitive Types"
+        P1["str, int, float, bool"]
+        P2["bytes, None"]
+    end
+    subgraph "Collections"
+        C1["list, dict, set, tuple"]
+        C2["frozenset, deque"]
+    end
+    subgraph "Standard Library"
+        S1["datetime, date, time"]
+        S2["UUID, Path, Decimal"]
+        S3["Enum, Literal"]
+    end
+    style P1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Constrained Types",
+                        "explanation": "Pydantic provides pre-built constrained types for common validation patterns.",
+                        "diagram_data": """graph TB
+    subgraph "String Constraints"
+        S1["constr(min_length=1, max_length=50)"]
+        S2["constr(pattern=r'^[a-z]+$')"]
+    end
+    subgraph "Numeric Constraints"
+        N1["conint(ge=0, le=100)"]
+        N2["confloat(gt=0)"]
+        N3["PositiveInt, NegativeFloat"]
+    end
+    subgraph "Collection Constraints"
+        C1["conlist(str, min_length=1)"]
+    end
+    style N3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Field() Constraints",
+                        "explanation": "Use Field() to add constraints inline with more flexibility.",
+                        "diagram_data": """graph TB
+    subgraph "Numeric"
+        N1["Field(ge=0) # >= 0"]
+        N2["Field(gt=0) # > 0"]
+        N3["Field(le=100) # <= 100"]
+        N4["Field(lt=100) # < 100"]
+        N5["Field(multiple_of=5)"]
+    end
+    subgraph "String"
+        S1["Field(min_length=1)"]
+        S2["Field(max_length=50)"]
+        S3["Field(pattern=r'regex')"]
+    end
+    style N1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Special Types",
+                        "explanation": "Pydantic provides special types for common patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Email & URLs"
+        E["EmailStr"]
+        U["HttpUrl, AnyUrl"]
+    end
+    subgraph "Network"
+        N["IPvAnyAddress"]
+        P["Port"]
+    end
+    subgraph "Files"
+        F["FilePath, DirectoryPath"]
+    end
+    subgraph "JSON"
+        J["Json[MyModel]<br/>Parse JSON string to model"]
+    end
+    style E fill:#C8E6C9
+    style J fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Union Types",
+                        "explanation": "Use Union or | for fields that accept multiple types. Pydantic tries each in order.",
+                        "diagram_data": """graph TB
+    subgraph "Union Syntax"
+        OLD["Union[str, int]"]
+        NEW["str | int"]
+    end
+    subgraph "Validation Order"
+        V["Tries str first, then int"]
+    end
+    subgraph "Optional"
+        O["str | None<br/>Same as Optional[str]"]
+    end
+    style NEW fill:#C8E6C9
+    style O fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Literal and Enum",
+                        "explanation": "Restrict fields to specific values using Literal or Enum.",
+                        "diagram_data": """graph TB
+    subgraph "Literal"
+        L["status: Literal['active', 'inactive']<br/>Only these two values allowed"]
+    end
+    subgraph "Enum"
+        E["class Status(Enum):<br/>    ACTIVE = 'active'<br/>    INACTIVE = 'inactive'<br/><br/>status: Status"]
+    end
+    style L fill:#C8E6C9
+    style E fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_validation_error_visual(self):
+        """Seed Pydantic Validation Error Structure visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="validation-errors",
+            defaults={
+                "title": "Validation Error Structure",
+                "description": "Understanding error location, type, message, and handling multiple errors",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pydantic", "errors", "validation", "debugging", "handling"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "ValidationError Overview",
+                        "explanation": "When validation fails, Pydantic raises **ValidationError** containing all errors found. It doesn't stop at the first error.",
+                        "diagram_data": """graph TB
+    INPUT["Invalid Input"] --> VAL["Pydantic Validates"]
+    VAL --> CHECK{"Valid?"}
+    CHECK -->|Yes| MODEL["Model Instance"]
+    CHECK -->|No| ERROR["ValidationError<br/>Contains ALL errors"]
+    ERROR --> LIST["List of error dicts"]
+    style ERROR fill:#FFCDD2
+    style MODEL fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Error Structure",
+                        "explanation": "Each error is a dict with: **loc** (location), **msg** (message), **type** (error type), and **input** (the bad value).",
+                        "diagram_data": """graph TB
+    subgraph "Error Dict"
+        LOC["loc: ('age',)<br/>Path to the field"]
+        MSG["msg: 'Input should be...'<br/>Human-readable message"]
+        TYPE["type: 'int_parsing'<br/>Error type code"]
+        INP["input: 'abc'<br/>The invalid value"]
+    end
+    style LOC fill:#BBDEFB
+    style MSG fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Location (loc) for Nested Errors",
+                        "explanation": "For nested models, **loc** is a tuple showing the path to the error.",
+                        "diagram_data": """graph TB
+    subgraph "Nested Model"
+        U["User.address.city"]
+    end
+    subgraph "Error Location"
+        L["loc: ('address', 'city')<br/>Tuple path to error"]
+    end
+    subgraph "List Index"
+        LI["loc: ('items', 2, 'name')<br/>Third item's name field"]
+    end
+    style L fill:#FFF9C4
+    style LI fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Common Error Types",
+                        "explanation": "Error types help identify what went wrong programmatically.",
+                        "diagram_data": """graph TB
+    subgraph "Parsing Errors"
+        P1["int_parsing"]
+        P2["float_parsing"]
+        P3["datetime_parsing"]
+    end
+    subgraph "Constraint Errors"
+        C1["string_too_short"]
+        C2["greater_than_equal"]
+        C3["missing"]
+    end
+    subgraph "Type Errors"
+        T1["string_type"]
+        T2["list_type"]
+        T3["model_type"]
+    end
+    style C3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Accessing Errors",
+                        "explanation": "Use .errors() for list of dicts, or string representation for display.",
+                        "diagram_data": """graph TB
+    subgraph "Methods"
+        E["e.errors()<br/>List of error dicts"]
+        J["e.json()<br/>JSON string"]
+        S["str(e)<br/>Formatted string"]
+        C["e.error_count()<br/>Number of errors"]
+    end
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Handling Errors",
+                        "explanation": "Catch ValidationError and handle appropriately for your use case.",
+                        "diagram_data": """graph TB
+    subgraph "Error Handling"
+        TRY["try:<br/>    User(**data)"]
+        CATCH["except ValidationError as e:<br/>    errors = e.errors()"]
+        HANDLE["for err in errors:<br/>    field = err['loc'][0]<br/>    msg = err['msg']"]
+    end
+    TRY --> CATCH --> HANDLE
+    subgraph "Use Cases"
+        API["Return 422 response"]
+        LOG["Log for debugging"]
+        UI["Show form errors"]
+    end
+    style CATCH fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_validator_types_visual(self):
+        """Seed Pydantic Validator Types visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="validator-types",
+            defaults={
+                "title": "Validator Types",
+                "description": "field_validator vs model_validator, before/after modes, and when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pydantic", "validators", "field_validator", "model_validator"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Types of Validators",
+                        "explanation": "Pydantic V2 has two validator decorators: **@field_validator** for single fields, **@model_validator** for the whole model.",
+                        "diagram_data": """graph TB
+    subgraph "Validator Types"
+        FV["@field_validator<br/>Validates ONE field"]
+        MV["@model_validator<br/>Validates ENTIRE model"]
+    end
+    subgraph "Use Cases"
+        FVU["Transform or validate<br/>a single field value"]
+        MVU["Cross-field validation<br/>Computed fields"]
+    end
+    FV --> FVU
+    MV --> MVU
+    style FV fill:#C8E6C9
+    style MV fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Field Validator",
+                        "explanation": "@field_validator runs on specific fields. It receives the field value and returns the (possibly modified) value.",
+                        "diagram_data": """graph TB
+    subgraph "Definition"
+        D["@field_validator('name')<br/>@classmethod<br/>def validate_name(cls, v):<br/>    return v.strip().title()"]
+    end
+    subgraph "Flow"
+        IN["Input: '  alice  '"]
+        VAL["Validator runs"]
+        OUT["Output: 'Alice'"]
+    end
+    IN --> VAL --> OUT
+    style OUT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Validator Modes: Before vs After",
+                        "explanation": "Validators can run BEFORE type coercion (on raw input) or AFTER (on coerced value). Default is 'after'.",
+                        "diagram_data": """graph LR
+    INPUT["Raw Input"] --> BEFORE["mode='before'<br/>Raw value"]
+    BEFORE --> COERCE["Type Coercion"]
+    COERCE --> AFTER["mode='after'<br/>Typed value"]
+    AFTER --> RESULT["Final Value"]
+    style BEFORE fill:#FFF9C4
+    style AFTER fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Model Validator",
+                        "explanation": "@model_validator validates the entire model. Use mode='before' for dict input, mode='after' for model instance.",
+                        "diagram_data": """graph TB
+    subgraph "mode='before'"
+        B["Receives: dict<br/>Before fields validated<br/>Can modify input dict"]
+    end
+    subgraph "mode='after'"
+        A["Receives: model instance<br/>After all fields valid<br/>Can access self"]
+    end
+    style B fill:#FFF9C4
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Validation Order",
+                        "explanation": "The complete order of validation in Pydantic V2.",
+                        "diagram_data": """graph TB
+    S1["1. model_validator mode='before'"]
+    S2["2. field_validator mode='before' (per field)"]
+    S3["3. Type coercion"]
+    S4["4. Field constraints"]
+    S5["5. field_validator mode='after' (per field)"]
+    S6["6. model_validator mode='after'"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    style S1 fill:#BBDEFB
+    style S6 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Multiple Fields",
+                        "explanation": "One validator can handle multiple fields. Use '*' for all fields.",
+                        "diagram_data": """graph TB
+    subgraph "Multiple Specific Fields"
+        M["@field_validator('email', 'username')<br/>def validate_lowercase(cls, v):<br/>    return v.lower()"]
+    end
+    subgraph "All Fields"
+        A["@field_validator('*')<br/>def validate_all(cls, v):<br/>    # runs on every field"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_custom_validators_visual(self):
+        """Seed Pydantic Custom Validators visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="custom-validators",
+            defaults={
+                "title": "Custom Validators",
+                "description": "Writing validators with @field_validator and @model_validator",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pydantic", "validators", "custom", "validation", "decorators"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Field Validator Anatomy",
+                        "explanation": "A field validator is a classmethod decorated with @field_validator, specifying which field(s) to validate.",
+                        "diagram_data": """graph TB
+    subgraph "Structure"
+        DEC["@field_validator('field_name')"]
+        CLS["@classmethod"]
+        DEF["def method(cls, value, info):"]
+        RET["return processed_value"]
+    end
+    DEC --> CLS --> DEF --> RET
+    style DEC fill:#BBDEFB
+    style RET fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "ValidationInfo Object",
+                        "explanation": "The optional **info** parameter provides context: field name, other field values, validation mode.",
+                        "diagram_data": """graph TB
+    subgraph "ValidationInfo"
+        FN["info.field_name<br/>Name of current field"]
+        DATA["info.data<br/>Other validated fields"]
+        MODE["info.mode<br/>'python' or 'json'"]
+    end
+    USE["Access other fields:<br/>info.data.get('other_field')"]
+    DATA --> USE
+    style DATA fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Raising Validation Errors",
+                        "explanation": "Raise ValueError or AssertionError to fail validation. Pydantic converts these to ValidationError.",
+                        "diagram_data": """graph TB
+    subgraph "Raising Errors"
+        VAL["@field_validator('age')<br/>@classmethod<br/>def check_age(cls, v):<br/>    if v < 0:<br/>        raise ValueError('Age must be positive')<br/>    return v"]
+    end
+    subgraph "Result"
+        ERR["ValidationError:<br/>age: Value error, Age must be positive"]
+    end
+    style ERR fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Model Validator Example",
+                        "explanation": "Model validators can check relationships between fields or compute derived values.",
+                        "diagram_data": """graph TB
+    subgraph "Cross-Field Validation"
+        V["@model_validator(mode='after')<br/>def check_passwords(self):<br/>    if self.password != self.confirm:<br/>        raise ValueError('Passwords must match')<br/>    return self"]
+    end
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Before Mode for Preprocessing",
+                        "explanation": "Use mode='before' to preprocess raw input before Pydantic's type coercion.",
+                        "diagram_data": """graph TB
+    subgraph "Preprocessing Example"
+        V["@field_validator('tags', mode='before')<br/>@classmethod<br/>def split_tags(cls, v):<br/>    if isinstance(v, str):<br/>        return v.split(',')<br/>    return v"]
+    end
+    subgraph "Input/Output"
+        I["Input: 'a,b,c'"]
+        O["Output: ['a', 'b', 'c']"]
+    end
+    I --> V --> O
+    style O fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Patterns",
+                        "explanation": "Frequently used validation patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Patterns"
+        STRIP["Strip whitespace"]
+        LOWER["Lowercase emails"]
+        PHONE["Format phone numbers"]
+        SLUG["Generate slugs"]
+        DEFAULT["Set computed defaults"]
+    end
+    STRIP --> CODE1["return v.strip()"]
+    LOWER --> CODE2["return v.lower()"]
+    style STRIP fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_model_inheritance_visual(self):
+        """Seed Pydantic Model Inheritance visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="model-inheritance",
+            defaults={
+                "title": "Model Inheritance",
+                "description": "Extending models, overriding fields, and mixins",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pydantic", "inheritance", "models", "mixins", "extending"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Basic Inheritance",
+                        "explanation": "Pydantic models can inherit from other models. Child models get all parent fields plus their own.",
+                        "diagram_data": """graph TB
+    subgraph "Parent"
+        P["class User(BaseModel):<br/>    name: str<br/>    email: str"]
+    end
+    subgraph "Child"
+        C["class Admin(User):<br/>    role: str<br/>    permissions: list[str]"]
+    end
+    P --> C
+    subgraph "Admin has"
+        A["name, email (inherited)<br/>role, permissions (new)"]
+    end
+    C --> A
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Overriding Fields",
+                        "explanation": "Child models can override parent fields to change type, default, or constraints.",
+                        "diagram_data": """graph TB
+    subgraph "Parent"
+        P["class Base(BaseModel):<br/>    name: str<br/>    count: int = 0"]
+    end
+    subgraph "Child Override"
+        C["class Child(Base):<br/>    name: str = 'default'  # add default<br/>    count: int = 10       # change default"]
+    end
+    P --> C
+    style C fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Multiple Inheritance",
+                        "explanation": "Models can inherit from multiple parents. Fields are merged following Python's MRO.",
+                        "diagram_data": """graph TB
+    subgraph "Mixins"
+        T["class Timestamped(BaseModel):<br/>    created_at: datetime"]
+        A["class Auditable(BaseModel):<br/>    modified_by: str"]
+    end
+    subgraph "Combined"
+        C["class Document(Timestamped, Auditable):<br/>    title: str"]
+    end
+    T --> C
+    A --> C
+    style C fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Mixin Pattern",
+                        "explanation": "Create reusable field groups as mixins. Great for common patterns like timestamps, soft delete, etc.",
+                        "diagram_data": """graph TB
+    subgraph "Mixins Library"
+        TS["TimestampMixin<br/>created_at, updated_at"]
+        SD["SoftDeleteMixin<br/>is_deleted, deleted_at"]
+        AU["AuditMixin<br/>created_by, modified_by"]
+    end
+    subgraph "Usage"
+        U["class User(TimestampMixin, AuditMixin):<br/>    name: str"]
+    end
+    TS --> U
+    AU --> U
+    style U fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Validators Inheritance",
+                        "explanation": "Child models inherit validators from parents. You can override or extend them.",
+                        "diagram_data": """graph TB
+    subgraph "Parent"
+        PV["@field_validator('email')<br/>def validate_email(cls, v): ..."]
+    end
+    subgraph "Child"
+        CV["Inherits parent validator<br/>Can add new validators<br/>Can override with same name"]
+    end
+    PV --> CV
+    style CV fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_nested_models_visual(self):
+        """Seed Pydantic Nested Models visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="nested-models",
+            defaults={
+                "title": "Nested Models",
+                "description": "Models containing other models and recursive structures",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pydantic", "nested", "models", "recursive", "composition"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Basic Nesting",
+                        "explanation": "A Pydantic model can have fields that are other Pydantic models. Nested dicts are automatically converted.",
+                        "diagram_data": """graph TB
+    subgraph "Models"
+        A["class Address(BaseModel):<br/>    street: str<br/>    city: str"]
+        U["class User(BaseModel):<br/>    name: str<br/>    address: Address"]
+    end
+    A --> U
+    subgraph "Input"
+        I["User(name='Bob',<br/>     address={'street': '123 Main', 'city': 'NYC'})"]
+    end
+    subgraph "Result"
+        R["user.address.city == 'NYC'"]
+    end
+    I --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Lists of Models",
+                        "explanation": "Use list[Model] for arrays of nested models. Each dict in the list is validated as the model.",
+                        "diagram_data": """graph TB
+    subgraph "Definition"
+        D["class Order(BaseModel):<br/>    items: list[OrderItem]"]
+    end
+    subgraph "Input"
+        I["Order(items=[<br/>    {'name': 'Widget', 'qty': 2},<br/>    {'name': 'Gadget', 'qty': 1}<br/>])"]
+    end
+    subgraph "Access"
+        A["order.items[0].name"]
+    end
+    D --> I --> A
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Optional Nested Models",
+                        "explanation": "Nested models can be optional. Use Model | None with a default of None.",
+                        "diagram_data": """graph TB
+    subgraph "Optional Nested"
+        D["class User(BaseModel):<br/>    name: str<br/>    address: Address | None = None"]
+    end
+    subgraph "Valid Inputs"
+        V1["User(name='Alice')<br/>address is None"]
+        V2["User(name='Bob', address={...})<br/>address is Address"]
+    end
+    style V1 fill:#C8E6C9
+    style V2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Recursive Models",
+                        "explanation": "Models can reference themselves for tree/graph structures. Use quotes for forward references.",
+                        "diagram_data": """graph TB
+    subgraph "Self-Reference"
+        D["class TreeNode(BaseModel):<br/>    value: int<br/>    children: list['TreeNode'] = []"]
+    end
+    subgraph "Usage"
+        U["node = TreeNode(<br/>    value=1,<br/>    children=[<br/>        TreeNode(value=2),<br/>        TreeNode(value=3)<br/>    ]<br/>)"]
+    end
+    style D fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Validation Propagates",
+                        "explanation": "Validation errors in nested models show the full path in the error location.",
+                        "diagram_data": """graph TB
+    subgraph "Invalid Input"
+        I["User(name='X', address={'city': 123})"]
+    end
+    subgraph "Error"
+        E["loc: ('address', 'city')<br/>msg: Input should be a valid string"]
+    end
+    I --> E
+    style E fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_generics_visual(self):
+        """Seed Pydantic Generics & TypeVar visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="generics-typevar",
+            defaults={
+                "title": "Generics and TypeVar",
+                "description": "Creating generic models with type parameters",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["pydantic", "generics", "typevar", "typing", "advanced"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Generic Models?",
+                        "explanation": "Generic models let you create reusable model patterns with type parameters. Like list[str] vs list[int].",
+                        "diagram_data": """graph TB
+    subgraph "Without Generics"
+        W1["class StringResponse(BaseModel):<br/>    data: str"]
+        W2["class IntResponse(BaseModel):<br/>    data: int"]
+        W3["Duplicate code!"]
+    end
+    subgraph "With Generics"
+        G["class Response(BaseModel, Generic[T]):<br/>    data: T"]
+        U["Response[str], Response[int]"]
+    end
+    style W3 fill:#FFCDD2
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Creating a Generic Model",
+                        "explanation": "Define a TypeVar, inherit from Generic[T], and use T as a type hint.",
+                        "diagram_data": """graph TB
+    subgraph "Definition"
+        TV["T = TypeVar('T')"]
+        CLS["class Box(BaseModel, Generic[T]):<br/>    content: T<br/>    label: str"]
+    end
+    subgraph "Usage"
+        U1["Box[str](content='hello', label='greeting')"]
+        U2["Box[int](content=42, label='answer')"]
+    end
+    TV --> CLS
+    CLS --> U1
+    CLS --> U2
+    style U1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Multiple Type Parameters",
+                        "explanation": "Use multiple TypeVars for models with several generic fields.",
+                        "diagram_data": """graph TB
+    subgraph "Definition"
+        D["K = TypeVar('K')<br/>V = TypeVar('V')<br/><br/>class Pair(BaseModel, Generic[K, V]):<br/>    key: K<br/>    value: V"]
+    end
+    subgraph "Usage"
+        U["Pair[str, int](key='age', value=25)"]
+    end
+    style U fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Generic with Constraints",
+                        "explanation": "TypeVar can be constrained to specific types for bounded generics.",
+                        "diagram_data": """graph TB
+    subgraph "Bounded TypeVar"
+        B["Number = TypeVar('Number', int, float)<br/><br/>class Stats(BaseModel, Generic[Number]):<br/>    values: list[Number]<br/>    avg: Number"]
+    end
+    subgraph "Allowed"
+        A["Stats[int], Stats[float]"]
+    end
+    subgraph "Not Allowed"
+        N["Stats[str] - Error!"]
+    end
+    style A fill:#C8E6C9
+    style N fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Common Use Cases",
+                        "explanation": "Generic models are great for API responses, wrappers, and reusable patterns.",
+                        "diagram_data": """graph TB
+    subgraph "API Response"
+        R["class ApiResponse(BaseModel, Generic[T]):<br/>    data: T<br/>    success: bool<br/>    errors: list[str] = []"]
+    end
+    subgraph "Pagination"
+        P["class Page(BaseModel, Generic[T]):<br/>    items: list[T]<br/>    total: int<br/>    page: int"]
+    end
+    style R fill:#C8E6C9
+    style P fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_serialization_visual(self):
+        """Seed Pydantic Serialization Modes visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="serialization-modes",
+            defaults={
+                "title": "Serialization Modes",
+                "description": "model_dump() vs model_dump_json() and serialization options",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pydantic", "serialization", "json", "dump", "export"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Serialization Methods",
+                        "explanation": "Pydantic models have two main serialization methods: **model_dump()** returns a dict, **model_dump_json()** returns a JSON string.",
+                        "diagram_data": """graph TB
+    subgraph "Model"
+        M["user = User(name='Alice', age=30)"]
+    end
+    subgraph "Serialization"
+        D["model_dump()<br/>Returns: dict"]
+        J["model_dump_json()<br/>Returns: str (JSON)"]
+    end
+    M --> D
+    M --> J
+    subgraph "Results"
+        RD["{'name': 'Alice', 'age': 30}"]
+        RJ['{"name":"Alice","age":30}']
+    end
+    D --> RD
+    J --> RJ
+    style RD fill:#C8E6C9
+    style RJ fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Include/Exclude Fields",
+                        "explanation": "Control which fields appear in output using include, exclude, or exclude_unset parameters.",
+                        "diagram_data": """graph TB
+    subgraph "Options"
+        INC["include={'name', 'email'}<br/>Only these fields"]
+        EXC["exclude={'password'}<br/>All except these"]
+        UNS["exclude_unset=True<br/>Skip fields not explicitly set"]
+        DEF["exclude_defaults=True<br/>Skip fields with default values"]
+    end
+    style INC fill:#C8E6C9
+    style EXC fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "By Alias",
+                        "explanation": "Use by_alias=True to serialize using field aliases instead of field names.",
+                        "diagram_data": """graph TB
+    subgraph "Model"
+        M["class User(BaseModel):<br/>    user_name: str = Field(alias='userName')"]
+    end
+    subgraph "Without Alias"
+        W["model_dump()<br/>{'user_name': 'alice'}"]
+    end
+    subgraph "With Alias"
+        A["model_dump(by_alias=True)<br/>{'userName': 'alice'}"]
+    end
+    M --> W
+    M --> A
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Mode: Python vs JSON",
+                        "explanation": "mode='python' keeps Python types, mode='json' converts to JSON-compatible types.",
+                        "diagram_data": """graph TB
+    subgraph "Python Mode (default)"
+        P["datetime stays datetime<br/>UUID stays UUID<br/>Enum stays Enum"]
+    end
+    subgraph "JSON Mode"
+        J["datetime → ISO string<br/>UUID → string<br/>Enum → value"]
+    end
+    subgraph "Usage"
+        U["model_dump(mode='json')"]
+    end
+    style P fill:#BBDEFB
+    style J fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Round-Trip Safety",
+                        "explanation": "model_dump(mode='json') produces output that can round-trip through JSON safely.",
+                        "diagram_data": """graph LR
+    M["Model"] --> D["model_dump<br/>mode='json'"]
+    D --> JSON["json.dumps()"]
+    JSON --> PARSE["json.loads()"]
+    PARSE --> NEW["Model(**data)"]
+    style NEW fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Custom Serializers",
+                        "explanation": "Use @field_serializer to customize how specific fields are serialized.",
+                        "diagram_data": """graph TB
+    subgraph "Custom Serializer"
+        S["@field_serializer('price')<br/>def serialize_price(self, v):<br/>    return f'${v:.2f}'"]
+    end
+    subgraph "Result"
+        R["price=19.99 → '$19.99'"]
+    end
+    S --> R
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_model_config_visual(self):
+        """Seed Pydantic Model Config visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="model-config",
+            defaults={
+                "title": "Model Configuration",
+                "description": "ConfigDict options for customizing model behavior",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pydantic", "config", "configdict", "settings", "options"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Model Config",
+                        "explanation": "Use **model_config = ConfigDict(...)** to customize model behavior. This replaces the V1 inner Config class.",
+                        "diagram_data": """graph TB
+    subgraph "Pydantic V2 Syntax"
+        V2["class User(BaseModel):<br/>    model_config = ConfigDict(<br/>        str_strip_whitespace=True<br/>    )"]
+    end
+    subgraph "V1 Syntax (deprecated)"
+        V1["class User(BaseModel):<br/>    class Config:<br/>        anystr_strip_whitespace = True"]
+    end
+    style V2 fill:#C8E6C9
+    style V1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "String Handling Options",
+                        "explanation": "Options for automatic string processing.",
+                        "diagram_data": """graph TB
+    subgraph "String Options"
+        STRIP["str_strip_whitespace=True<br/>'  hello  ' → 'hello'"]
+        LOWER["str_to_lower=True<br/>'HELLO' → 'hello'"]
+        UPPER["str_to_upper=True<br/>'hello' → 'HELLO'"]
+        MIN["str_min_length=1<br/>'' raises error"]
+        MAX["str_max_length=100<br/>Limit string length"]
+    end
+    style STRIP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Strict Mode",
+                        "explanation": "Enable strict mode to disable type coercion and require exact types.",
+                        "diagram_data": """graph TB
+    subgraph "Normal Mode"
+        N["age: int = '25'<br/>Works: coerced to 25"]
+    end
+    subgraph "Strict Mode"
+        S["model_config = ConfigDict(strict=True)<br/><br/>age: int = '25'<br/>Error: input should be int"]
+    end
+    style N fill:#FFF9C4
+    style S fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Extra Fields Handling",
+                        "explanation": "Control behavior when extra fields are passed to the model.",
+                        "diagram_data": """graph TB
+    subgraph "Extra Options"
+        IGNORE["extra='ignore'<br/>Silently drop extra fields<br/>(default)"]
+        FORBID["extra='forbid'<br/>Raise error on extra fields"]
+        ALLOW["extra='allow'<br/>Store extra fields in __pydantic_extra__"]
+    end
+    style FORBID fill:#FFCDD2
+    style ALLOW fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Validation Options",
+                        "explanation": "Control validation behavior at the model level.",
+                        "diagram_data": """graph TB
+    subgraph "Validation Config"
+        VAL["validate_default=True<br/>Validate default values"]
+        ASSIGN["validate_assignment=True<br/>Validate on attribute set"]
+        ARB["arbitrary_types_allowed=True<br/>Allow non-Pydantic types"]
+    end
+    style ASSIGN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Config Patterns",
+                        "explanation": "Frequently used configuration patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Frozen Model"
+        F["frozen=True<br/>Immutable model (like dataclass)"]
+    end
+    subgraph "ORM Mode"
+        O["from_attributes=True<br/>Read from object attributes<br/>(SQLAlchemy models)"]
+    end
+    subgraph "Populate by Name"
+        P["populate_by_name=True<br/>Accept both field name and alias"]
+    end
+    style O fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_json_schema_visual(self):
+        """Seed Pydantic JSON Schema Generation visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="json-schema",
+            defaults={
+                "title": "JSON Schema Generation",
+                "description": "Generating JSON Schema from Pydantic models",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pydantic", "json-schema", "openapi", "api", "documentation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is JSON Schema?",
+                        "explanation": "JSON Schema is a standard for describing JSON data structures. Pydantic can automatically generate it from your models.",
+                        "diagram_data": """graph TB
+    subgraph "Pydantic Model"
+        M["class User(BaseModel):<br/>    name: str<br/>    age: int"]
+    end
+    subgraph "JSON Schema"
+        S["{'type': 'object',<br/> 'properties': {<br/>   'name': {'type': 'string'},<br/>   'age': {'type': 'integer'}}}"]
+    end
+    M --> S
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Generating Schema",
+                        "explanation": "Use model_json_schema() to generate JSON Schema from your model.",
+                        "diagram_data": """graph TB
+    subgraph "Method"
+        M["schema = User.model_json_schema()"]
+    end
+    subgraph "Output"
+        O["{'properties': {...},<br/> 'required': [...],<br/> 'title': 'User',<br/> 'type': 'object'}"]
+    end
+    M --> O
+    style O fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Adding Metadata",
+                        "explanation": "Use Field() to add descriptions, examples, and other schema metadata.",
+                        "diagram_data": """graph TB
+    subgraph "Field Metadata"
+        F["name: str = Field(<br/>    description='User full name',<br/>    examples=['Alice Smith'],<br/>    min_length=1,<br/>    max_length=100<br/>)"]
+    end
+    subgraph "In Schema"
+        S["'name': {<br/>  'type': 'string',<br/>  'description': 'User full name',<br/>  'examples': ['Alice Smith'],<br/>  'minLength': 1,<br/>  'maxLength': 100<br/>}"]
+    end
+    F --> S
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Model Docstrings",
+                        "explanation": "Class and field docstrings become schema descriptions.",
+                        "diagram_data": """graph TB
+    subgraph "Model"
+        M["class User(BaseModel):<br/>    '''A user in the system.'''<br/>    name: str"]
+    end
+    subgraph "Schema"
+        S["'title': 'User',<br/>'description': 'A user in the system.'"]
+    end
+    M --> S
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Use Cases",
+                        "explanation": "JSON Schema enables API documentation, form generation, and validation across systems.",
+                        "diagram_data": """graph TB
+    subgraph "Use Cases"
+        API["OpenAPI/Swagger<br/>API documentation"]
+        FORM["Form Generation<br/>Auto-build forms from schema"]
+        VAL["Cross-Language Validation<br/>Validate in JS, Go, etc."]
+        DOC["Documentation<br/>Auto-generate docs"]
+    end
+    style API fill:#C8E6C9
+    style FORM fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Schema Modes",
+                        "explanation": "Control schema generation with mode parameter.",
+                        "diagram_data": """graph TB
+    subgraph "Schema Modes"
+        V["mode='validation'<br/>Schema for input validation<br/>(default)"]
+        S["mode='serialization'<br/>Schema for output/response"]
+    end
+    subgraph "Difference"
+        D["Validation includes required fields<br/>Serialization shows what's returned"]
+    end
+    style V fill:#FFF9C4
+    style S fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_discriminated_unions_visual(self):
+        """Seed Pydantic Discriminated Unions visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="discriminated-unions",
+            defaults={
+                "title": "Discriminated Unions",
+                "description": "Using tagged unions for polymorphic models",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["pydantic", "unions", "discriminator", "polymorphism", "tagged"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem with Unions",
+                        "explanation": "Regular unions try each type until one works. This is slow and can match the wrong type.",
+                        "diagram_data": """graph TB
+    subgraph "Regular Union"
+        U["Action = Cat | Dog | Bird"]
+    end
+    subgraph "Validation Process"
+        T1["Try Cat..."]
+        T2["Try Dog..."]
+        T3["Try Bird..."]
+        T1 --> T2 --> T3
+    end
+    subgraph "Problems"
+        P1["Slow: tries each type"]
+        P2["Wrong match possible"]
+    end
+    style P1 fill:#FFCDD2
+    style P2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Discriminated Union Solution",
+                        "explanation": "A discriminated union uses a 'tag' field to instantly identify the correct type.",
+                        "diagram_data": """graph TB
+    subgraph "Tagged Models"
+        C["class Cat(BaseModel):<br/>    pet_type: Literal['cat']<br/>    meow: str"]
+        D["class Dog(BaseModel):<br/>    pet_type: Literal['dog']<br/>    bark: str"]
+    end
+    subgraph "Union with Discriminator"
+        U["Pet = Annotated[<br/>    Cat | Dog,<br/>    Field(discriminator='pet_type')<br/>]"]
+    end
+    C --> U
+    D --> U
+    style U fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "How It Works",
+                        "explanation": "Pydantic checks the discriminator field first, then validates only the matching type.",
+                        "diagram_data": """graph LR
+    INPUT["{'pet_type': 'dog', 'bark': 'woof'}"]
+    CHECK["Check 'pet_type'"]
+    MATCH["'dog' → use Dog model"]
+    VALID["Validate as Dog"]
+    INPUT --> CHECK --> MATCH --> VALID
+    style MATCH fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Benefits",
+                        "explanation": "Discriminated unions are faster and produce clearer error messages.",
+                        "diagram_data": """graph TB
+    subgraph "Benefits"
+        FAST["O(1) type lookup<br/>No trial-and-error"]
+        ERR["Clear errors<br/>'dog' not valid for pet_type"]
+        DOC["Better OpenAPI schema<br/>Shows discriminator"]
+    end
+    style FAST fill:#C8E6C9
+    style ERR fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Common Patterns",
+                        "explanation": "Discriminated unions are great for event systems, API responses, and polymorphic data.",
+                        "diagram_data": """graph TB
+    subgraph "Events"
+        E["EventCreate, EventUpdate, EventDelete<br/>type: Literal['create' | 'update' | 'delete']"]
+    end
+    subgraph "API Responses"
+        A["SuccessResponse, ErrorResponse<br/>status: Literal['success' | 'error']"]
+    end
+    subgraph "Shapes"
+        S["Circle, Rectangle, Triangle<br/>shape: Literal['circle' | 'rect' | 'tri']"]
+    end
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Nested Discriminators",
+                        "explanation": "You can nest discriminated unions for complex hierarchies.",
+                        "diagram_data": """graph TB
+    subgraph "Two-Level"
+        L1["Vehicle (type: 'car' | 'boat')"]
+        L2A["Car (fuel: 'gas' | 'electric')"]
+        L2B["Boat (style: 'sail' | 'motor')"]
+    end
+    L1 --> L2A
+    L1 --> L2B
+    style L1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pydantic_v1_to_v2_visual(self):
+        """Seed Pydantic V1 to V2 Migration visual topic."""
+        subject = self.get_or_create_subject(
+            "Pydantic", "pydantic", "Python Libraries"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="v1-to-v2-migration",
+            defaults={
+                "title": "V1 to V2 Migration",
+                "description": "Key changes and migration guide from Pydantic V1 to V2",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["pydantic", "migration", "v1", "v2", "upgrade", "breaking-changes"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Pydantic V2?",
+                        "explanation": "Pydantic V2 was rewritten with a Rust core, making it 5-50x faster with better validation.",
+                        "diagram_data": """graph TB
+    subgraph "V2 Benefits"
+        FAST["5-50x Faster<br/>Rust core (pydantic-core)"]
+        STRICT["Strict Mode<br/>Better type safety"]
+        ERR["Better Errors<br/>More helpful messages"]
+        FEAT["New Features<br/>Discriminated unions, etc."]
+    end
+    style FAST fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Method Renames",
+                        "explanation": "Many methods were renamed with 'model_' prefix for consistency.",
+                        "diagram_data": """graph LR
+    subgraph "V1 → V2"
+        A1[".dict()"] --> B1[".model_dump()"]
+        A2[".json()"] --> B2[".model_dump_json()"]
+        A3[".parse_obj()"] --> B3[".model_validate()"]
+        A4[".parse_raw()"] --> B4[".model_validate_json()"]
+        A5[".schema()"] --> B5[".model_json_schema()"]
+        A6[".copy()"] --> B6[".model_copy()"]
+    end
+    style B1 fill:#C8E6C9
+    style B2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Validator Changes",
+                        "explanation": "@validator → @field_validator, @root_validator → @model_validator.",
+                        "diagram_data": """graph TB
+    subgraph "V1"
+        V1A["@validator('name')"]
+        V1B["@root_validator"]
+    end
+    subgraph "V2"
+        V2A["@field_validator('name')"]
+        V2B["@model_validator(mode='after')"]
+    end
+    V1A --> V2A
+    V1B --> V2B
+    style V2A fill:#C8E6C9
+    style V2B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Config Changes",
+                        "explanation": "Inner Config class replaced with model_config = ConfigDict(...).",
+                        "diagram_data": """graph TB
+    subgraph "V1"
+        V1["class Model(BaseModel):<br/>    class Config:<br/>        extra = 'forbid'"]
+    end
+    subgraph "V2"
+        V2["class Model(BaseModel):<br/>    model_config = ConfigDict(<br/>        extra='forbid'<br/>    )"]
+    end
+    V1 --> V2
+    style V2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Field Changes",
+                        "explanation": "Some Field() parameters were renamed or changed.",
+                        "diagram_data": """graph LR
+    subgraph "V1 → V2"
+        A1["regex=..."] --> B1["pattern=..."]
+        A2["min_items=..."] --> B2["min_length=..."]
+        A3["max_items=..."] --> B3["max_length=..."]
+        A4["const=True"] --> B4["Literal[value]"]
+    end
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Type Changes",
+                        "explanation": "Some types were deprecated or changed location.",
+                        "diagram_data": """graph TB
+    subgraph "Deprecated"
+        D1["Optional[X] still works"]
+        D2["Union[X, None] still works"]
+    end
+    subgraph "Preferred in V2"
+        P1["X | None"]
+        P2["list[X] instead of List[X]"]
+    end
+    subgraph "Removed"
+        R["pydantic.Json<br/>Use json_loads in validator"]
+    end
+    style P1 fill:#C8E6C9
+    style R fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Migration Tool",
+                        "explanation": "Use bump-pydantic to automatically update your code.",
+                        "diagram_data": """graph TB
+    subgraph "Migration Steps"
+        S1["1. pip install bump-pydantic"]
+        S2["2. bump-pydantic your_package/"]
+        S3["3. Review changes"]
+        S4["4. Run tests"]
+        S5["5. Fix any remaining issues"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    style S2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== SQL Visuals ====================
+
+    def seed_sql_join_algorithms_visual(self):
+        """Seed SQL JOIN Algorithms visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="join-algorithms",
+            defaults={
+                "title": "JOIN Algorithms",
+                "description": "Nested Loop, Hash Join, Merge Join - how databases execute joins",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["sql", "joins", "algorithms", "performance", "query-optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Three Join Algorithms",
+                        "explanation": "Database engines use three main algorithms to execute JOINs. The query optimizer picks the best one based on table sizes, indexes, and statistics.",
+                        "diagram_data": """graph TB
+    subgraph "JOIN Algorithms"
+        NL["Nested Loop Join<br/>O(n × m)"]
+        HJ["Hash Join<br/>O(n + m)"]
+        MJ["Merge Join<br/>O(n log n + m log m)"]
+    end
+    subgraph "Best For"
+        NL_USE["Small tables<br/>Indexed inner table"]
+        HJ_USE["Large unsorted tables<br/>Equality joins"]
+        MJ_USE["Pre-sorted data<br/>Range joins"]
+    end
+    NL --> NL_USE
+    HJ --> HJ_USE
+    MJ --> MJ_USE
+    style NL fill:#FFCDD2
+    style HJ fill:#C8E6C9
+    style MJ fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Nested Loop Join",
+                        "explanation": "For each row in the outer table, scan the inner table for matches. Simple but can be slow for large tables.",
+                        "diagram_data": """graph TB
+    subgraph "Outer Table (Employees)"
+        E1["Alice"]
+        E2["Bob"]
+        E3["Carol"]
+    end
+    subgraph "Inner Table (Departments)"
+        D1["Sales"]
+        D2["Engineering"]
+        D3["Marketing"]
+    end
+    subgraph "Process"
+        P["For each employee:<br/>  Scan ALL departments<br/>  Find matching dept_id"]
+    end
+    E1 --> D1
+    E1 --> D2
+    E1 --> D3
+    E2 --> D1
+    E2 --> D2
+    E2 --> D3
+    style P fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Index Nested Loop",
+                        "explanation": "With an index on the join column, we can look up matches directly instead of scanning.",
+                        "diagram_data": """graph LR
+    subgraph "Outer"
+        E["Employee<br/>dept_id=5"]
+    end
+    subgraph "Index Lookup"
+        I["B-Tree Index<br/>on dept_id"]
+    end
+    subgraph "Direct Access"
+        D["Department 5<br/>Engineering"]
+    end
+    E --> I --> D
+    style I fill:#C8E6C9
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Hash Join",
+                        "explanation": "Build a hash table from the smaller table, then probe it with each row from the larger table.",
+                        "diagram_data": """graph TB
+    subgraph "Build Phase"
+        S["Smaller Table"]
+        H["Hash Table<br/>{key: row}"]
+        S --> |"Hash each row"| H
+    end
+    subgraph "Probe Phase"
+        L["Larger Table"]
+        P["For each row:<br/>Hash key → lookup"]
+        R["Matched Rows"]
+        L --> P --> H
+        P --> R
+    end
+    style H fill:#C8E6C9
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Merge Join",
+                        "explanation": "Sort both tables by join key, then merge them like a zipper. Very efficient for pre-sorted data.",
+                        "diagram_data": """graph TB
+    subgraph "Sorted Table A"
+        A1["1: Alice"]
+        A2["2: Bob"]
+        A3["3: Carol"]
+    end
+    subgraph "Sorted Table B"
+        B1["1: Sales"]
+        B2["2: Eng"]
+        B3["3: Mkt"]
+    end
+    subgraph "Merge"
+        M["Walk both in order<br/>Match equal keys<br/>Advance pointers"]
+    end
+    A1 --> M
+    B1 --> M
+    style M fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "When Each Is Used",
+                        "explanation": "The optimizer chooses based on table sizes, available indexes, and sort order.",
+                        "diagram_data": """graph TB
+    subgraph "Nested Loop"
+        NL["✓ Small outer table<br/>✓ Index on inner table<br/>✓ Few rows expected"]
+    end
+    subgraph "Hash Join"
+        HJ["✓ Large tables<br/>✓ No useful indexes<br/>✓ Equality join only"]
+    end
+    subgraph "Merge Join"
+        MJ["✓ Already sorted data<br/>✓ Index scan possible<br/>✓ Range conditions"]
+    end
+    style NL fill:#FFCDD2
+    style HJ fill:#C8E6C9
+    style MJ fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_index_structures_visual(self):
+        """Seed SQL Index Structures visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="index-structures",
+            defaults={
+                "title": "Index Structures",
+                "description": "B-Tree vs Hash indexes and how lookups work",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["sql", "indexes", "b-tree", "hash", "performance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Indexes?",
+                        "explanation": "Without an index, finding a row requires scanning every row (full table scan). Indexes provide fast lookups.",
+                        "diagram_data": """graph LR
+    subgraph "Without Index"
+        TS["Table Scan<br/>Check every row<br/>O(n)"]
+    end
+    subgraph "With Index"
+        IL["Index Lookup<br/>Jump to row<br/>O(log n)"]
+    end
+    Q["SELECT * FROM users<br/>WHERE id = 500"] --> TS
+    Q --> IL
+    style TS fill:#FFCDD2
+    style IL fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "B-Tree Structure",
+                        "explanation": "B-Tree is the default index type. It's a balanced tree where each node contains sorted keys and pointers.",
+                        "diagram_data": """graph TB
+    subgraph "B-Tree Index"
+        R["Root<br/>[50]"]
+        L1["[20, 35]"]
+        L2["[65, 80]"]
+        LL1["[10,15]→rows"]
+        LL2["[25,30]→rows"]
+        LL3["[40,45]→rows"]
+        LL4["[55,60]→rows"]
+        LL5["[70,75]→rows"]
+        LL6["[85,90]→rows"]
+    end
+    R --> L1
+    R --> L2
+    L1 --> LL1
+    L1 --> LL2
+    L1 --> LL3
+    L2 --> LL4
+    L2 --> LL5
+    L2 --> LL6
+    style R fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "B-Tree Lookup",
+                        "explanation": "Finding key=42: Start at root, compare, go left/right until leaf. O(log n) comparisons.",
+                        "diagram_data": """graph TB
+    subgraph "Find key=42"
+        S1["Root: 42 < 50<br/>Go LEFT"]
+        S2["Node: 35 < 42<br/>Go RIGHT"]
+        S3["Leaf: [40,45]<br/>Found between!"]
+        S4["Follow pointer<br/>to row"]
+    end
+    S1 --> S2 --> S3 --> S4
+    style S4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "B-Tree Supports",
+                        "explanation": "B-Tree indexes support equality, range queries, and sorting because keys are ordered.",
+                        "diagram_data": """graph TB
+    subgraph "Supported Operations"
+        EQ["= (equality)<br/>WHERE id = 5"]
+        RNG["<, >, BETWEEN<br/>WHERE age > 21"]
+        ORD["ORDER BY<br/>Already sorted!"]
+        PRE["LIKE 'abc%'<br/>Prefix match"]
+    end
+    subgraph "NOT Supported"
+        SUF["LIKE '%abc'<br/>Suffix match"]
+        FN["WHERE UPPER(name)=...<br/>Function on column"]
+    end
+    style EQ fill:#C8E6C9
+    style RNG fill:#C8E6C9
+    style SUF fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Hash Index",
+                        "explanation": "Hash indexes use a hash function. O(1) lookup but only support equality.",
+                        "diagram_data": """graph LR
+    subgraph "Hash Index"
+        K["Key: 'alice'"]
+        H["hash('alice')<br/>= bucket 7"]
+        B["Bucket 7<br/>→ row pointer"]
+    end
+    K --> H --> B
+    subgraph "Limitations"
+        L["✗ No range queries<br/>✗ No ORDER BY<br/>✗ No prefix LIKE"]
+    end
+    style B fill:#C8E6C9
+    style L fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Choosing Index Type",
+                        "explanation": "B-Tree is the default and most versatile. Hash is faster for pure equality lookups.",
+                        "diagram_data": """graph TB
+    subgraph "Use B-Tree"
+        BT["✓ Range queries needed<br/>✓ ORDER BY needed<br/>✓ General purpose<br/>✓ Primary keys"]
+    end
+    subgraph "Use Hash"
+        HI["✓ Only equality checks<br/>✓ Very high cardinality<br/>✓ Memory tables<br/>✓ Join keys"]
+    end
+    style BT fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_clustered_vs_nonclustered_visual(self):
+        """Seed SQL Clustered vs Non-Clustered Indexes visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="clustered-vs-nonclustered",
+            defaults={
+                "title": "Clustered vs Non-Clustered Indexes",
+                "description": "How data is physically stored with different index types",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["sql", "indexes", "clustered", "storage", "primary-key"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Key Difference",
+                        "explanation": "A **clustered index** determines the physical order of data. **Non-clustered** indexes are separate structures pointing to data.",
+                        "diagram_data": """graph TB
+    subgraph "Clustered Index"
+        CI["Data IS the index<br/>Rows stored in index order<br/>Only ONE per table"]
+    end
+    subgraph "Non-Clustered Index"
+        NCI["Separate from data<br/>Contains pointers to rows<br/>Many per table"]
+    end
+    style CI fill:#C8E6C9
+    style NCI fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Clustered Index Structure",
+                        "explanation": "The table data is stored sorted by the clustered index key. The leaf level IS the data.",
+                        "diagram_data": """graph TB
+    subgraph "Clustered Index (by ID)"
+        R["Root"]
+        L["Leaf = Actual Rows"]
+        R1["ID:1 Name:Alice Dept:5"]
+        R2["ID:2 Name:Bob Dept:3"]
+        R3["ID:3 Name:Carol Dept:5"]
+    end
+    R --> L
+    L --> R1
+    L --> R2
+    L --> R3
+    style L fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Non-Clustered Index Structure",
+                        "explanation": "Non-clustered index stores keys + pointers. The pointer leads to the actual row (or clustered index key).",
+                        "diagram_data": """graph TB
+    subgraph "Non-Clustered Index (by Name)"
+        I["Index Leaf"]
+        I1["Alice → ID:1"]
+        I2["Bob → ID:2"]
+        I3["Carol → ID:3"]
+    end
+    subgraph "Table Data"
+        D["Actual Rows<br/>(in clustered order)"]
+    end
+    I --> I1 --> D
+    I --> I2 --> D
+    I --> I3 --> D
+    style I fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Lookup Comparison",
+                        "explanation": "Clustered index: one lookup. Non-clustered: index lookup + bookmark lookup to get full row.",
+                        "diagram_data": """graph LR
+    subgraph "Clustered"
+        C1["Index Seek"]
+        C2["Row Found!"]
+        C1 --> C2
+    end
+    subgraph "Non-Clustered"
+        N1["Index Seek"]
+        N2["Get Row Pointer"]
+        N3["Bookmark Lookup"]
+        N4["Row Found"]
+        N1 --> N2 --> N3 --> N4
+    end
+    style C2 fill:#C8E6C9
+    style N3 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Covering Index",
+                        "explanation": "A **covering index** includes all columns needed by a query. No bookmark lookup required!",
+                        "diagram_data": """graph TB
+    subgraph "Query"
+        Q["SELECT name, email<br/>FROM users<br/>WHERE name = 'Alice'"]
+    end
+    subgraph "Covering Index"
+        CI["CREATE INDEX ix_name_email<br/>ON users(name) INCLUDE(email)"]
+        R["Index has name AND email<br/>No table lookup needed!"]
+    end
+    Q --> CI --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Choosing Clustered Key",
+                        "explanation": "Choose carefully - you only get one! Usually the primary key.",
+                        "diagram_data": """graph TB
+    subgraph "Good Clustered Keys"
+        G1["Auto-increment ID<br/>Sequential, narrow"]
+        G2["Natural key if unique<br/>and frequently queried"]
+    end
+    subgraph "Bad Clustered Keys"
+        B1["UUID/GUID<br/>Random, causes fragmentation"]
+        B2["Wide composite keys<br/>Copied to all non-clustered indexes"]
+    end
+    style G1 fill:#C8E6C9
+    style B1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_index_scan_vs_seek_visual(self):
+        """Seed SQL Index Scan vs Seek visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="index-scan-vs-seek",
+            defaults={
+                "title": "Index Scan vs Index Seek",
+                "description": "Understanding when each is used and performance implications",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 5,
+                "tags": ["sql", "indexes", "scan", "seek", "performance", "explain"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Scan vs Seek",
+                        "explanation": "**Index Seek**: Jump directly to matching rows using the index tree. **Index Scan**: Read all/most index entries sequentially.",
+                        "diagram_data": """graph TB
+    subgraph "Index Seek"
+        S["Navigate tree<br/>Jump to exact location<br/>Read matching rows only"]
+    end
+    subgraph "Index Scan"
+        SC["Read index pages<br/>sequentially<br/>Filter as you go"]
+    end
+    style S fill:#C8E6C9
+    style SC fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "When Seek Is Used",
+                        "explanation": "Seek happens when the query has a predicate on the leading column(s) of the index.",
+                        "diagram_data": """graph TB
+    subgraph "Index on (last_name, first_name)"
+        IDX["B-Tree Index"]
+    end
+    subgraph "Seek"
+        Q1["WHERE last_name = 'Smith'<br/>✓ Uses leading column"]
+        Q2["WHERE last_name = 'Smith'<br/>AND first_name = 'John'<br/>✓ Uses both columns"]
+    end
+    subgraph "Cannot Seek"
+        Q3["WHERE first_name = 'John'<br/>✗ Skips leading column"]
+    end
+    style Q1 fill:#C8E6C9
+    style Q3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "When Scan Is Used",
+                        "explanation": "Scan happens when there's no usable predicate, or when reading most of the data is faster.",
+                        "diagram_data": """graph TB
+    subgraph "Causes Index Scan"
+        C1["No WHERE clause"]
+        C2["Predicate on non-leading column"]
+        C3["Function on indexed column<br/>WHERE UPPER(name) = ..."]
+        C4["Low selectivity<br/>WHERE active = true<br/>(90% of rows match)"]
+    end
+    style C3 fill:#FFCDD2
+    style C4 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Table Scan (Worst)",
+                        "explanation": "Table scan reads every row in the table. No index is used at all.",
+                        "diagram_data": """graph LR
+    subgraph "Table Scan"
+        T["Read every page<br/>Check every row<br/>Most expensive"]
+    end
+    subgraph "Causes"
+        C1["No suitable index exists"]
+        C2["Optimizer thinks scan<br/>is faster than seek"]
+        C3["Very small table"]
+    end
+    C1 --> T
+    C2 --> T
+    style T fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Reading Execution Plans",
+                        "explanation": "EXPLAIN shows which access method is used. Look for Seek vs Scan.",
+                        "diagram_data": """graph TB
+    subgraph "Good Signs"
+        G1["Index Seek"]
+        G2["Key Lookup (small)"]
+        G3["Index Only Scan"]
+    end
+    subgraph "Warning Signs"
+        W1["Table Scan"]
+        W2["Index Scan (large table)"]
+        W3["Key Lookup (many rows)"]
+    end
+    style G1 fill:#C8E6C9
+    style W1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_execution_plan_visual(self):
+        """Seed SQL Query Execution Plan visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="execution-plan",
+            defaults={
+                "title": "Query Execution Plan",
+                "description": "Reading EXPLAIN output and identifying bottlenecks",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["sql", "explain", "execution-plan", "optimization", "performance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is an Execution Plan?",
+                        "explanation": "The execution plan shows HOW the database will execute your query - which indexes, join methods, and order of operations.",
+                        "diagram_data": """graph TB
+    subgraph "Your Query"
+        Q["SELECT * FROM orders o<br/>JOIN customers c ON o.cust_id = c.id<br/>WHERE c.country = 'USA'"]
+    end
+    subgraph "Execution Plan"
+        P["1. Scan customers (filter USA)<br/>2. Hash Join with orders<br/>3. Return results"]
+    end
+    Q --> |"EXPLAIN"| P
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Reading the Plan",
+                        "explanation": "Plans are trees. Read from innermost (first executed) to outermost (final result).",
+                        "diagram_data": """graph TB
+    subgraph "Execution Order"
+        S1["1. Index Scan: customers"]
+        S2["2. Index Scan: orders"]
+        S3["3. Hash Join"]
+        S4["4. Sort"]
+        S5["5. Return"]
+    end
+    S1 --> S3
+    S2 --> S3
+    S3 --> S4 --> S5
+    style S1 fill:#C8E6C9
+    style S2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Key Metrics",
+                        "explanation": "Focus on these numbers to identify slow operations.",
+                        "diagram_data": """graph TB
+    subgraph "Important Metrics"
+        ROWS["Rows: Estimated vs Actual<br/>Large difference = bad stats"]
+        COST["Cost: Relative expense<br/>Higher = slower"]
+        TIME["Time: Actual execution<br/>(with ANALYZE)"]
+        LOOPS["Loops: Times executed<br/>Nested loop multiplier"]
+    end
+    style ROWS fill:#FFF9C4
+    style COST fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Common Operations",
+                        "explanation": "Learn to recognize these operations in execution plans.",
+                        "diagram_data": """graph TB
+    subgraph "Table Access"
+        TS["Seq Scan: Full table read"]
+        IS["Index Scan: Use index + fetch row"]
+        IO["Index Only Scan: Index has all data"]
+    end
+    subgraph "Joins"
+        NL["Nested Loop: Small tables/indexed"]
+        HJ["Hash Join: Large tables"]
+        MJ["Merge Join: Sorted data"]
+    end
+    subgraph "Other"
+        SO["Sort: ORDER BY"]
+        AG["Aggregate: GROUP BY"]
+    end
+    style IO fill:#C8E6C9
+    style TS fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Red Flags",
+                        "explanation": "These patterns often indicate performance problems.",
+                        "diagram_data": """graph TB
+    subgraph "Warning Signs"
+        W1["Seq Scan on large table"]
+        W2["Nested Loop with many rows"]
+        W3["Sort with high cost"]
+        W4["Rows estimate way off"]
+        W5["Multiple Key Lookups"]
+    end
+    subgraph "Solutions"
+        S1["Add index"]
+        S2["Rewrite query"]
+        S3["Add covering index"]
+        S4["Update statistics"]
+    end
+    W1 --> S1
+    W3 --> S3
+    style W1 fill:#FFCDD2
+    style W2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "EXPLAIN Variants",
+                        "explanation": "Different databases have different EXPLAIN syntax and options.",
+                        "diagram_data": """graph TB
+    subgraph "PostgreSQL"
+        PG["EXPLAIN ANALYZE<br/>Shows actual times"]
+    end
+    subgraph "MySQL"
+        MY["EXPLAIN FORMAT=JSON<br/>Detailed output"]
+    end
+    subgraph "SQL Server"
+        SS["SET SHOWPLAN_ALL ON<br/>or graphical plan"]
+    end
+    style PG fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_subquery_join_cte_visual(self):
+        """Seed SQL Subquery vs JOIN vs CTE visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="subquery-join-cte",
+            defaults={
+                "title": "Subquery vs JOIN vs CTE",
+                "description": "Performance tradeoffs and when to use each approach",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["sql", "subquery", "join", "cte", "performance", "patterns"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Three Approaches",
+                        "explanation": "You can often solve the same problem with a subquery, JOIN, or CTE. Each has tradeoffs.",
+                        "diagram_data": """graph TB
+    subgraph "Same Result, Different Approaches"
+        SQ["Subquery<br/>SELECT ... WHERE x IN (SELECT ...)"]
+        JN["JOIN<br/>SELECT ... FROM a JOIN b ON ..."]
+        CT["CTE<br/>WITH temp AS (...) SELECT ..."]
+    end
+    style SQ fill:#BBDEFB
+    style JN fill:#C8E6C9
+    style CT fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Subquery Types",
+                        "explanation": "Subqueries can be scalar (one value), column (one column), or table (full result set).",
+                        "diagram_data": """graph TB
+    subgraph "Scalar Subquery"
+        SC["SELECT name,<br/>  (SELECT MAX(price) FROM products)<br/>FROM categories"]
+    end
+    subgraph "IN Subquery"
+        IN["SELECT * FROM orders<br/>WHERE customer_id IN<br/>  (SELECT id FROM vip_customers)"]
+    end
+    subgraph "Correlated"
+        CO["SELECT * FROM orders o<br/>WHERE price > <br/>  (SELECT AVG(price) FROM orders<br/>   WHERE category = o.category)"]
+    end
+    style CO fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Correlated Subquery Problem",
+                        "explanation": "Correlated subqueries run once PER ROW of outer query. Can be very slow!",
+                        "diagram_data": """graph TB
+    subgraph "Correlated Subquery"
+        O["Outer: 1000 rows"]
+        S["Subquery runs<br/>1000 times!"]
+        O --> S
+    end
+    subgraph "JOIN Alternative"
+        J["Join once<br/>Much faster"]
+    end
+    style S fill:#FFCDD2
+    style J fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "JOIN Advantages",
+                        "explanation": "JOINs are usually the most efficient and give the optimizer most flexibility.",
+                        "diagram_data": """graph TB
+    subgraph "JOIN Benefits"
+        B1["Optimizer can choose<br/>best join algorithm"]
+        B2["Can use indexes<br/>on both tables"]
+        B3["Single pass through data"]
+        B4["Easy to read<br/>explicit relationships"]
+    end
+    style B1 fill:#C8E6C9
+    style B3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "CTE Benefits",
+                        "explanation": "CTEs (Common Table Expressions) improve readability and allow reuse within a query.",
+                        "diagram_data": """graph TB
+    subgraph "CTE Structure"
+        W["WITH sales_summary AS (<br/>  SELECT region, SUM(amount)<br/>  FROM sales GROUP BY region<br/>)"]
+        Q["SELECT * FROM sales_summary<br/>WHERE sum > 10000"]
+        W --> Q
+    end
+    subgraph "Benefits"
+        B1["Readable: Named subqueries"]
+        B2["Reusable: Reference multiple times"]
+        B3["Recursive: Tree/graph queries"]
+    end
+    style B1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "When to Use Each",
+                        "explanation": "Guidelines for choosing the right approach.",
+                        "diagram_data": """graph TB
+    subgraph "Use JOIN"
+        J["✓ Combining related tables<br/>✓ Need columns from both<br/>✓ Performance critical"]
+    end
+    subgraph "Use Subquery"
+        S["✓ EXISTS checks<br/>✓ Simple IN lists<br/>✓ Scalar values in SELECT"]
+    end
+    subgraph "Use CTE"
+        C["✓ Complex multi-step logic<br/>✓ Need to reference result twice<br/>✓ Recursive queries"]
+    end
+    style J fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_window_functions_visual(self):
+        """Seed SQL Window Functions visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="window-functions",
+            defaults={
+                "title": "Window Functions",
+                "description": "OVER, PARTITION BY, ROW_NUMBER, LAG/LEAD explained",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["sql", "window-functions", "over", "partition", "analytics"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Window Functions?",
+                        "explanation": "Window functions perform calculations across a set of rows related to the current row - without collapsing rows like GROUP BY.",
+                        "diagram_data": """graph TB
+    subgraph "GROUP BY"
+        G["Collapses rows<br/>One row per group<br/>Loses detail"]
+    end
+    subgraph "Window Function"
+        W["Keeps all rows<br/>Adds computed column<br/>Preserves detail"]
+    end
+    style G fill:#FFF9C4
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "OVER Clause Anatomy",
+                        "explanation": "The OVER clause defines the window: which rows to consider and in what order.",
+                        "diagram_data": """graph TB
+    subgraph "Window Function Syntax"
+        F["function() OVER ("]
+        P["PARTITION BY col  -- groups"]
+        O["ORDER BY col      -- sort"]
+        FR["ROWS BETWEEN ... -- frame"]
+        C[")"]
+    end
+    F --> P --> O --> FR --> C
+    style P fill:#BBDEFB
+    style O fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "PARTITION BY",
+                        "explanation": "PARTITION BY divides rows into groups. The function resets for each partition.",
+                        "diagram_data": """graph TB
+    subgraph "Data"
+        D1["Dept A: Alice 50k"]
+        D2["Dept A: Bob 60k"]
+        D3["Dept B: Carol 55k"]
+        D4["Dept B: Dave 65k"]
+    end
+    subgraph "SUM(salary) OVER (PARTITION BY dept)"
+        R1["Alice: 110k (A total)"]
+        R2["Bob: 110k (A total)"]
+        R3["Carol: 120k (B total)"]
+        R4["Dave: 120k (B total)"]
+    end
+    D1 --> R1
+    D2 --> R2
+    style R1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Ranking Functions",
+                        "explanation": "ROW_NUMBER, RANK, and DENSE_RANK assign numbers based on order.",
+                        "diagram_data": """graph TB
+    subgraph "Scores: 100, 100, 90, 80"
+        RN["ROW_NUMBER:<br/>1, 2, 3, 4"]
+        RK["RANK:<br/>1, 1, 3, 4"]
+        DR["DENSE_RANK:<br/>1, 1, 2, 3"]
+    end
+    subgraph "Difference"
+        D["ROW_NUMBER: Always unique<br/>RANK: Gaps after ties<br/>DENSE_RANK: No gaps"]
+    end
+    style RN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "LAG and LEAD",
+                        "explanation": "Access values from previous (LAG) or next (LEAD) rows.",
+                        "diagram_data": """graph TB
+    subgraph "Sales by Month"
+        M1["Jan: 100"]
+        M2["Feb: 120"]
+        M3["Mar: 110"]
+    end
+    subgraph "With LAG(sales, 1)"
+        L1["Jan: NULL (no prev)"]
+        L2["Feb: 100 (Jan value)"]
+        L3["Mar: 120 (Feb value)"]
+    end
+    subgraph "Calculate Change"
+        C["sales - LAG(sales, 1)<br/>Feb: 120-100 = +20"]
+    end
+    style C fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Patterns",
+                        "explanation": "Practical uses of window functions.",
+                        "diagram_data": """graph TB
+    subgraph "Running Total"
+        RT["SUM(amount) OVER<br/>(ORDER BY date)"]
+    end
+    subgraph "Top N per Group"
+        TN["ROW_NUMBER() OVER<br/>(PARTITION BY category<br/>ORDER BY sales DESC)<br/>WHERE rn <= 3"]
+    end
+    subgraph "Moving Average"
+        MA["AVG(value) OVER<br/>(ORDER BY date<br/>ROWS 6 PRECEDING)"]
+    end
+    style RT fill:#C8E6C9
+    style TN fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_isolation_levels_visual(self):
+        """Seed SQL Transaction Isolation Levels visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="isolation-levels",
+            defaults={
+                "title": "Transaction Isolation Levels",
+                "description": "Read Uncommitted to Serializable, dirty reads, phantom reads",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["sql", "transactions", "isolation", "acid", "concurrency"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Isolation Levels?",
+                        "explanation": "When multiple transactions run concurrently, isolation levels control what they can see of each other's changes.",
+                        "diagram_data": """graph TB
+    subgraph "Concurrent Transactions"
+                        T1["T1: UPDATE balance"]
+        T2["T2: SELECT balance"]
+    end
+    subgraph "Question"
+        Q["Does T2 see T1's change<br/>before T1 commits?"]
+    end
+    T1 --> Q
+    T2 --> Q
+    style Q fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Four Isolation Levels",
+                        "explanation": "SQL defines four standard isolation levels, from least to most strict.",
+                        "diagram_data": """graph TB
+    subgraph "Isolation Levels"
+        RU["READ UNCOMMITTED<br/>Least strict"]
+        RC["READ COMMITTED<br/>Default in most DBs"]
+        RR["REPEATABLE READ<br/>Stricter"]
+        SE["SERIALIZABLE<br/>Most strict"]
+    end
+    RU --> RC --> RR --> SE
+    style RU fill:#FFCDD2
+    style SE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Dirty Read",
+                        "explanation": "Reading uncommitted changes from another transaction. Only possible at READ UNCOMMITTED.",
+                        "diagram_data": """graph LR
+    subgraph "T1"
+        A1["UPDATE bal=50"]
+        A2["ROLLBACK"]
+    end
+    subgraph "T2 (Dirty Read)"
+        B1["SELECT bal<br/>Returns 50"]
+        B2["Uses invalid data!"]
+    end
+    A1 --> B1
+    A2 --> B2
+    style B2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Non-Repeatable Read",
+                        "explanation": "Reading the same row twice gives different values because another transaction modified it.",
+                        "diagram_data": """graph LR
+    subgraph "T1"
+        A1["SELECT bal → 100"]
+        A2["SELECT bal → 150"]
+    end
+    subgraph "T2"
+        B1["UPDATE bal=150"]
+        B2["COMMIT"]
+    end
+    A1 --> B1 --> B2 --> A2
+    style A2 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Phantom Read",
+                        "explanation": "A query returns different rows on re-execution because another transaction inserted/deleted rows.",
+                        "diagram_data": """graph LR
+    subgraph "T1"
+        A1["SELECT COUNT(*)<br/>WHERE age>20 → 5"]
+        A2["SELECT COUNT(*)<br/>WHERE age>20 → 6"]
+    end
+    subgraph "T2"
+        B1["INSERT new row<br/>age=25"]
+        B2["COMMIT"]
+    end
+    A1 --> B1 --> B2 --> A2
+    style A2 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Isolation Level Comparison",
+                        "explanation": "Which anomalies each level prevents.",
+                        "diagram_data": """graph TB
+    subgraph "Anomalies Prevented"
+        H["Level | Dirty | Non-Rep | Phantom"]
+        RU["READ UNCOMMITTED | ✗ | ✗ | ✗"]
+        RC["READ COMMITTED | ✓ | ✗ | ✗"]
+        RR["REPEATABLE READ | ✓ | ✓ | ✗"]
+        SE["SERIALIZABLE | ✓ | ✓ | ✓"]
+    end
+    style SE fill:#C8E6C9
+    style RU fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Tradeoffs",
+                        "explanation": "Higher isolation = more correctness but less concurrency and performance.",
+                        "diagram_data": """graph LR
+    subgraph "Low Isolation"
+        L["Fast<br/>High concurrency<br/>May see anomalies"]
+    end
+    subgraph "High Isolation"
+        H["Slower<br/>More blocking<br/>Guaranteed consistency"]
+    end
+    L --> |"Tradeoff"| H
+    style L fill:#C8E6C9
+    style H fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_acid_properties_visual(self):
+        """Seed SQL ACID Properties visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="acid-properties",
+            defaults={
+                "title": "ACID Properties",
+                "description": "Atomicity, Consistency, Isolation, Durability explained",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["sql", "acid", "transactions", "database", "fundamentals"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is ACID?",
+                        "explanation": "ACID is a set of properties that guarantee database transactions are processed reliably.",
+                        "diagram_data": """graph TB
+    subgraph "ACID"
+        A["A - Atomicity"]
+        C["C - Consistency"]
+        I["I - Isolation"]
+        D["D - Durability"]
+    end
+    style A fill:#FFCDD2
+    style C fill:#FFF9C4
+    style I fill:#BBDEFB
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Atomicity",
+                        "explanation": "All operations in a transaction succeed, or none do. No partial updates.",
+                        "diagram_data": """graph TB
+    subgraph "Bank Transfer"
+        S1["1. Debit $100 from A"]
+        S2["2. Credit $100 to B"]
+    end
+    subgraph "Atomic"
+        OK["Both succeed → COMMIT"]
+        FAIL["Any fails → ROLLBACK<br/>A and B unchanged"]
+    end
+    S1 --> S2
+    S2 --> OK
+    S2 --> FAIL
+    style OK fill:#C8E6C9
+    style FAIL fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Consistency",
+                        "explanation": "A transaction brings the database from one valid state to another. All rules (constraints) are satisfied.",
+                        "diagram_data": """graph LR
+    subgraph "Valid State 1"
+        V1["Total: $1000<br/>A: $600, B: $400"]
+    end
+    subgraph "Transaction"
+        T["Transfer $100<br/>A→B"]
+    end
+    subgraph "Valid State 2"
+        V2["Total: $1000<br/>A: $500, B: $500"]
+    end
+    V1 --> T --> V2
+    style V1 fill:#C8E6C9
+    style V2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Isolation",
+                        "explanation": "Concurrent transactions don't interfere with each other. Each sees a consistent view.",
+                        "diagram_data": """graph TB
+    subgraph "Without Isolation"
+        W["T1 and T2 interleave<br/>Unpredictable results"]
+    end
+    subgraph "With Isolation"
+        I["T1 and T2 appear<br/>to run sequentially<br/>Predictable results"]
+    end
+    style W fill:#FFCDD2
+    style I fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Durability",
+                        "explanation": "Once a transaction commits, its changes are permanent - even after power failure or crash.",
+                        "diagram_data": """graph TB
+    subgraph "Commit"
+        C["COMMIT successful<br/>Data written to disk"]
+    end
+    subgraph "After Crash"
+        R["Database restarts<br/>Committed data intact<br/>Uncommitted rolled back"]
+    end
+    C --> |"Power failure"| R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "How Databases Achieve ACID",
+                        "explanation": "Mechanisms that implement ACID guarantees.",
+                        "diagram_data": """graph TB
+    subgraph "Atomicity"
+        AT["Transaction log<br/>Undo/redo operations"]
+    end
+    subgraph "Consistency"
+        CO["Constraints<br/>Triggers, checks"]
+    end
+    subgraph "Isolation"
+        IS["Locks, MVCC<br/>Isolation levels"]
+    end
+    subgraph "Durability"
+        DU["Write-ahead log<br/>Checkpoints"]
+    end
+    style AT fill:#FFCDD2
+    style IS fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_normalization_visual(self):
+        """Seed SQL Normalization Forms visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="normalization",
+            defaults={
+                "title": "Normalization Forms",
+                "description": "1NF through BCNF with practical examples",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["sql", "normalization", "database-design", "1nf", "2nf", "3nf", "bcnf"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Normalize?",
+                        "explanation": "Normalization reduces data redundancy and prevents update anomalies.",
+                        "diagram_data": """graph TB
+    subgraph "Problems Without Normalization"
+        R["Redundant data<br/>Same info stored multiple times"]
+        U["Update anomaly<br/>Change one place, forget another"]
+        I["Insert anomaly<br/>Can't add data without other data"]
+        D["Delete anomaly<br/>Deleting one thing loses another"]
+    end
+    style R fill:#FFCDD2
+    style U fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "First Normal Form (1NF)",
+                        "explanation": "Each column contains atomic (indivisible) values. No repeating groups.",
+                        "diagram_data": """graph TB
+    subgraph "Not 1NF"
+        BAD["Student | Courses<br/>Alice | Math, Physics, CS"]
+    end
+    subgraph "1NF"
+        GOOD["Student | Course<br/>Alice | Math<br/>Alice | Physics<br/>Alice | CS"]
+    end
+    BAD --> |"Split"| GOOD
+    style BAD fill:#FFCDD2
+    style GOOD fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Second Normal Form (2NF)",
+                        "explanation": "1NF + no partial dependencies. Non-key columns depend on the WHOLE primary key.",
+                        "diagram_data": """graph TB
+    subgraph "Not 2NF (PK: student_id, course_id)"
+        BAD["student_id | course_id | student_name | grade<br/>student_name depends only on student_id!"]
+    end
+    subgraph "2NF: Split tables"
+        T1["Students: student_id | student_name"]
+        T2["Enrollments: student_id | course_id | grade"]
+    end
+    BAD --> T1
+    BAD --> T2
+    style BAD fill:#FFCDD2
+    style T1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Third Normal Form (3NF)",
+                        "explanation": "2NF + no transitive dependencies. Non-key columns depend ONLY on the primary key.",
+                        "diagram_data": """graph TB
+    subgraph "Not 3NF"
+        BAD["emp_id | dept_id | dept_name<br/>dept_name depends on dept_id,<br/>not directly on emp_id"]
+    end
+    subgraph "3NF: Remove transitive dep"
+        T1["Employees: emp_id | dept_id"]
+        T2["Departments: dept_id | dept_name"]
+    end
+    BAD --> T1
+    BAD --> T2
+    style BAD fill:#FFCDD2
+    style T2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "BCNF (Boyce-Codd)",
+                        "explanation": "Stricter 3NF: Every determinant must be a candidate key.",
+                        "diagram_data": """graph TB
+    subgraph "3NF but not BCNF"
+        BAD["student | subject | teacher<br/>teacher → subject<br/>(each teacher teaches one subject)<br/>but teacher isn't a candidate key"]
+    end
+    subgraph "BCNF"
+        T1["Teachers: teacher | subject"]
+        T2["Classes: student | teacher"]
+    end
+    style BAD fill:#FFF9C4
+    style T1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of normal forms and what each requires.",
+                        "diagram_data": """graph TB
+    subgraph "Normal Forms"
+        NF1["1NF: Atomic values<br/>No repeating groups"]
+        NF2["2NF: 1NF +<br/>No partial dependencies"]
+        NF3["3NF: 2NF +<br/>No transitive dependencies"]
+        BC["BCNF: 3NF +<br/>Every determinant is a key"]
+    end
+    NF1 --> NF2 --> NF3 --> BC
+    style NF3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "When to Denormalize",
+                        "explanation": "Sometimes breaking normalization rules improves performance.",
+                        "diagram_data": """graph TB
+    subgraph "Denormalize When"
+        D1["Read-heavy workloads<br/>Many joins hurt performance"]
+        D2["Reporting/analytics<br/>Pre-computed aggregates"]
+        D3["Caching<br/>Store derived data"]
+    end
+    subgraph "Keep Normalized"
+        N["Write-heavy workloads<br/>Data integrity critical<br/>Storage matters"]
+    end
+    style D1 fill:#FFF9C4
+    style N fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_deadlock_detection_visual(self):
+        """Seed SQL Deadlock Detection visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="deadlock-detection",
+            defaults={
+                "title": "Deadlock Detection",
+                "description": "How deadlocks occur and resolution strategies",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 6,
+                "tags": ["sql", "deadlock", "transactions", "concurrency", "locking"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is a Deadlock?",
+                        "explanation": "Two or more transactions are waiting for each other to release locks. Neither can proceed.",
+                        "diagram_data": """graph LR
+    subgraph "Deadlock"
+        T1["T1: Holds A<br/>Wants B"]
+        T2["T2: Holds B<br/>Wants A"]
+    end
+    T1 --> |"Waits for"| T2
+    T2 --> |"Waits for"| T1
+    style T1 fill:#FFCDD2
+    style T2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Deadlock Example",
+                        "explanation": "Classic scenario: two transactions updating two rows in opposite order.",
+                        "diagram_data": """graph TB
+    subgraph "Timeline"
+        S1["T1: UPDATE accounts SET ... WHERE id=1<br/>(Locks row 1)"]
+        S2["T2: UPDATE accounts SET ... WHERE id=2<br/>(Locks row 2)"]
+        S3["T1: UPDATE accounts SET ... WHERE id=2<br/>(Waits for T2's lock)"]
+        S4["T2: UPDATE accounts SET ... WHERE id=1<br/>(Waits for T1's lock)"]
+        S5["DEADLOCK!"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    style S5 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Detection Methods",
+                        "explanation": "Databases detect deadlocks using wait-for graphs or timeouts.",
+                        "diagram_data": """graph TB
+    subgraph "Wait-For Graph"
+        WG["Track which transactions<br/>wait for which<br/>Cycle = Deadlock"]
+    end
+    subgraph "Timeout"
+        TO["If waiting too long<br/>Assume deadlock<br/>Abort transaction"]
+    end
+    style WG fill:#C8E6C9
+    style TO fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Resolution",
+                        "explanation": "When detected, one transaction is chosen as the victim and rolled back.",
+                        "diagram_data": """graph TB
+    subgraph "Deadlock Detected"
+        D["T1 ↔ T2 deadlock"]
+    end
+    subgraph "Choose Victim"
+        V["Pick one to abort<br/>(least work done,<br/>or lowest priority)"]
+    end
+    subgraph "Resolve"
+        R["Rollback victim<br/>Other continues<br/>Victim can retry"]
+    end
+    D --> V --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Prevention Strategies",
+                        "explanation": "Better than detection: prevent deadlocks from occurring.",
+                        "diagram_data": """graph TB
+    subgraph "Prevention"
+        P1["Lock ordering<br/>Always lock in same order"]
+        P2["Lock all at once<br/>Get all locks upfront"]
+        P3["Short transactions<br/>Hold locks briefly"]
+        P4["Lower isolation<br/>Fewer locks needed"]
+    end
+    style P1 fill:#C8E6C9
+    style P3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Application Handling",
+                        "explanation": "Your application should handle deadlock errors gracefully.",
+                        "diagram_data": """graph TB
+    subgraph "Best Practice"
+        TRY["try:<br/>    execute_transaction()"]
+        CATCH["except DeadlockError:<br/>    wait_random_time()<br/>    retry()"]
+        LIMIT["if retries > MAX:<br/>    raise"]
+    end
+    TRY --> CATCH --> LIMIT
+    style CATCH fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_groupby_vs_partitionby_visual(self):
+        """Seed SQL GROUP BY vs PARTITION BY visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="groupby-vs-partitionby",
+            defaults={
+                "title": "GROUP BY vs PARTITION BY",
+                "description": "Aggregation vs window function differences",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 5,
+                "tags": ["sql", "group-by", "partition-by", "aggregation", "window-functions"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Key Difference",
+                        "explanation": "GROUP BY collapses rows into groups. PARTITION BY keeps all rows but groups them for calculations.",
+                        "diagram_data": """graph TB
+    subgraph "GROUP BY"
+        G["Collapses rows<br/>One row per group<br/>Must aggregate"]
+    end
+    subgraph "PARTITION BY"
+        P["Keeps all rows<br/>Adds computed column<br/>Groups for calculation only"]
+    end
+    style G fill:#FFF9C4
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Same Data, Different Results",
+                        "explanation": "Given sales data, compare the output of each approach.",
+                        "diagram_data": """graph TB
+    subgraph "Original Data"
+        D["Region | Sales<br/>East | 100<br/>East | 150<br/>West | 200"]
+    end
+    subgraph "GROUP BY region"
+        G["Region | SUM<br/>East | 250<br/>West | 200"]
+    end
+    subgraph "SUM() OVER (PARTITION BY region)"
+        P["Region | Sales | Total<br/>East | 100 | 250<br/>East | 150 | 250<br/>West | 200 | 200"]
+    end
+    D --> G
+    D --> P
+    style G fill:#FFF9C4
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "When to Use GROUP BY",
+                        "explanation": "Use GROUP BY when you want summary statistics - one row per group.",
+                        "diagram_data": """graph TB
+    subgraph "Use Cases"
+        U1["Total sales per region"]
+        U2["Average price per category"]
+        U3["Count users per country"]
+        U4["Reports and dashboards"]
+    end
+    subgraph "Must"
+        M["Aggregate all non-grouped columns<br/>SUM, COUNT, AVG, etc."]
+    end
+    style U1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "When to Use PARTITION BY",
+                        "explanation": "Use PARTITION BY when you need detail AND summary together.",
+                        "diagram_data": """graph TB
+    subgraph "Use Cases"
+        U1["Sale amount + % of regional total"]
+        U2["Rank within category"]
+        U3["Running total per customer"]
+        U4["Compare row to group average"]
+    end
+    subgraph "Benefit"
+        B["Keep row details<br/>Add computed metrics"]
+    end
+    style U1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Combining Both",
+                        "explanation": "You can use GROUP BY and window functions in the same query.",
+                        "diagram_data": """graph TB
+    subgraph "Combined Query"
+        Q["SELECT region,<br/>  SUM(sales) as total,<br/>  SUM(sales) * 100.0 /<br/>    SUM(SUM(sales)) OVER() as pct<br/>FROM sales<br/>GROUP BY region"]
+    end
+    subgraph "Result"
+        R["region | total | pct<br/>East | 250 | 55.6%<br/>West | 200 | 44.4%"]
+    end
+    Q --> R
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_sql_having_vs_where_visual(self):
+        """Seed SQL HAVING vs WHERE visual topic."""
+        subject = self.get_or_create_subject("SQL", "sql", "Databases")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="having-vs-where",
+            defaults={
+                "title": "HAVING vs WHERE",
+                "description": "Filtering before vs after aggregation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 4,
+                "tags": ["sql", "having", "where", "filtering", "aggregation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "WHERE vs HAVING",
+                        "explanation": "WHERE filters individual rows BEFORE grouping. HAVING filters groups AFTER aggregation.",
+                        "diagram_data": """graph LR
+    subgraph "Query Execution"
+        R["All Rows"]
+        W["WHERE<br/>Filter rows"]
+        G["GROUP BY<br/>Aggregate"]
+        H["HAVING<br/>Filter groups"]
+        S["SELECT<br/>Output"]
+    end
+    R --> W --> G --> H --> S
+    style W fill:#BBDEFB
+    style H fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "WHERE: Filter Rows",
+                        "explanation": "WHERE operates on individual row values before any grouping happens.",
+                        "diagram_data": """graph TB
+    subgraph "WHERE Example"
+        Q["SELECT dept, COUNT(*)<br/>FROM employees<br/>WHERE salary > 50000<br/>GROUP BY dept"]
+    end
+    subgraph "Process"
+        P1["1. Filter: keep salary > 50k"]
+        P2["2. Group remaining by dept"]
+        P3["3. Count each group"]
+    end
+    Q --> P1 --> P2 --> P3
+    style P1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "HAVING: Filter Groups",
+                        "explanation": "HAVING operates on aggregated values after grouping.",
+                        "diagram_data": """graph TB
+    subgraph "HAVING Example"
+        Q["SELECT dept, COUNT(*)<br/>FROM employees<br/>GROUP BY dept<br/>HAVING COUNT(*) > 5"]
+    end
+    subgraph "Process"
+        P1["1. Group all rows by dept"]
+        P2["2. Count each group"]
+        P3["3. Keep groups with count > 5"]
+    end
+    Q --> P1 --> P2 --> P3
+    style P3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Using Both Together",
+                        "explanation": "Common pattern: WHERE filters rows, HAVING filters the resulting groups.",
+                        "diagram_data": """graph TB
+    subgraph "Combined Query"
+        Q["SELECT dept, AVG(salary)<br/>FROM employees<br/>WHERE hire_date > '2020-01-01'<br/>GROUP BY dept<br/>HAVING AVG(salary) > 60000"]
+    end
+    subgraph "Meaning"
+        M["For recent hires only,<br/>show departments where<br/>average salary exceeds 60k"]
+    end
+    Q --> M
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Quick Rule",
+                        "explanation": "Simple way to remember which to use.",
+                        "diagram_data": """graph TB
+    subgraph "Use WHERE"
+        W["Filtering on columns<br/>name, date, status<br/>Individual row values"]
+    end
+    subgraph "Use HAVING"
+        H["Filtering on aggregates<br/>COUNT, SUM, AVG<br/>Group calculations"]
+    end
+    style W fill:#BBDEFB
+    style H fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== NumPy Visuals ====================
+
+    def seed_numpy_memory_layout_visual(self):
+        """Seed NumPy ndarray Memory Layout visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="memory-layout",
+            defaults={
+                "title": "ndarray Memory Layout",
+                "description": "Contiguous memory, strides, C vs Fortran order",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["numpy", "memory", "strides", "contiguous", "performance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Memory is Flat",
+                        "explanation": "Computer memory is 1D. A 2D array must be stored as a flat sequence of bytes.",
+                        "diagram_data": """graph TB
+    subgraph "2D Array (3x3)"
+        A["[[1,2,3],<br/> [4,5,6],<br/> [7,8,9]]"]
+    end
+    subgraph "Memory (Flat)"
+        M["| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |"]
+    end
+    A --> M
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "C Order (Row-Major)",
+                        "explanation": "Default in NumPy. Rows are stored contiguously. Last index changes fastest.",
+                        "diagram_data": """graph TB
+    subgraph "C Order (Row-Major)"
+        R1["Row 0: 1, 2, 3"]
+        R2["Row 1: 4, 5, 6"]
+        R3["Row 2: 7, 8, 9"]
+    end
+    subgraph "Memory"
+        M["| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |"]
+    end
+    R1 --> M
+    R2 --> M
+    R3 --> M
+    style R1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Fortran Order (Column-Major)",
+                        "explanation": "Columns stored contiguously. First index changes fastest. Used in FORTRAN, MATLAB.",
+                        "diagram_data": """graph TB
+    subgraph "F Order (Column-Major)"
+        C1["Col 0: 1, 4, 7"]
+        C2["Col 1: 2, 5, 8"]
+        C3["Col 2: 3, 6, 9"]
+    end
+    subgraph "Memory"
+        M["| 1 | 4 | 7 | 2 | 5 | 8 | 3 | 6 | 9 |"]
+    end
+    C1 --> M
+    C2 --> M
+    C3 --> M
+    style C1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Strides",
+                        "explanation": "Strides tell NumPy how many bytes to skip to move along each axis.",
+                        "diagram_data": """graph TB
+    subgraph "Shape (3, 4) with int64"
+        S["shape = (3, 4)<br/>itemsize = 8 bytes"]
+    end
+    subgraph "C Order Strides"
+        CS["strides = (32, 8)<br/>Next row: skip 32 bytes<br/>Next col: skip 8 bytes"]
+    end
+    subgraph "F Order Strides"
+        FS["strides = (8, 24)<br/>Next row: skip 8 bytes<br/>Next col: skip 24 bytes"]
+    end
+    style CS fill:#C8E6C9
+    style FS fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Contiguous vs Non-Contiguous",
+                        "explanation": "Slicing can create non-contiguous views. This affects performance.",
+                        "diagram_data": """graph TB
+    subgraph "Contiguous"
+        C["arr = np.array([[1,2,3],[4,5,6]])<br/>arr.flags['C_CONTIGUOUS'] = True"]
+    end
+    subgraph "Non-Contiguous"
+        NC["view = arr[:, ::2]  # every other col<br/>Skips elements in memory<br/>arr.flags['C_CONTIGUOUS'] = False"]
+    end
+    subgraph "Fix"
+        F["np.ascontiguousarray(view)"]
+    end
+    NC --> F
+    style C fill:#C8E6C9
+    style NC fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Why It Matters",
+                        "explanation": "Memory layout affects cache efficiency and compatibility with external libraries.",
+                        "diagram_data": """graph TB
+    subgraph "Performance"
+        P1["Row operations fast in C order"]
+        P2["Column operations fast in F order"]
+        P3["Contiguous = better cache usage"]
+    end
+    subgraph "Compatibility"
+        C1["C libraries expect C order"]
+        C2["FORTRAN/LAPACK expect F order"]
+        C3["np.ascontiguousarray() to fix"]
+    end
+    style P3 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_broadcasting_visual(self):
+        """Seed NumPy Broadcasting Rules visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="broadcasting",
+            defaults={
+                "title": "Broadcasting Rules",
+                "description": "How shapes are matched and expanded for operations",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["numpy", "broadcasting", "shapes", "operations"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is Broadcasting?",
+                        "explanation": "Broadcasting allows NumPy to perform operations on arrays with different shapes without copying data.",
+                        "diagram_data": """graph TB
+    subgraph "Without Broadcasting"
+        W["a = [1,2,3]<br/>b = 2<br/>Must manually expand b to [2,2,2]"]
+    end
+    subgraph "With Broadcasting"
+        B["a = [1,2,3]<br/>b = 2<br/>a + b = [3,4,5]<br/>NumPy expands automatically!"]
+    end
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Broadcasting Rules",
+                        "explanation": "Compare shapes from right to left. Dimensions are compatible if equal OR one is 1.",
+                        "diagram_data": """graph TB
+    subgraph "Rule 1"
+        R1["Align shapes from the RIGHT"]
+    end
+    subgraph "Rule 2"
+        R2["Dimensions match if:<br/>• They are equal, OR<br/>• One of them is 1"]
+    end
+    subgraph "Rule 3"
+        R3["Missing dimensions treated as 1"]
+    end
+    R1 --> R2 --> R3
+    style R2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Example: Scalar + Array",
+                        "explanation": "A scalar broadcasts to match any shape.",
+                        "diagram_data": """graph LR
+    subgraph "Shapes"
+        A["A: (3, 4)"]
+        B["B: ()  scalar"]
+    end
+    subgraph "Broadcast"
+        BR["B stretches to (3, 4)"]
+    end
+    subgraph "Result"
+        R["(3, 4)"]
+    end
+    A --> BR
+    B --> BR
+    BR --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Example: Row + Column",
+                        "explanation": "A (1,3) row and (3,1) column broadcast to (3,3).",
+                        "diagram_data": """graph TB
+    subgraph "Shapes"
+        A["A: (1, 3) = [[1,2,3]]"]
+        B["B: (3, 1) = [[10],[20],[30]]"]
+    end
+    subgraph "Align Right"
+        AL["A: 1, 3<br/>B: 3, 1"]
+    end
+    subgraph "Result (3,3)"
+        R["[[11,12,13],<br/> [21,22,23],<br/> [31,32,33]]"]
+    end
+    A --> AL
+    B --> AL
+    AL --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Incompatible Shapes",
+                        "explanation": "Broadcasting fails if dimensions don't match and neither is 1.",
+                        "diagram_data": """graph TB
+    subgraph "Incompatible"
+        A["A: (3, 4)"]
+        B["B: (3, 5)"]
+        E["4 ≠ 5 and neither is 1<br/>ValueError!"]
+    end
+    subgraph "Also Fails"
+        C["(2, 3) + (4, 3)<br/>2 ≠ 4"]
+    end
+    A --> E
+    B --> E
+    style E fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Visualizing the Stretch",
+                        "explanation": "Broadcasting 'stretches' arrays virtually - no memory is actually copied.",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        A["[1, 2, 3]  shape (3,)"]
+        B["[[10],<br/> [20]]  shape (2,1)"]
+    end
+    subgraph "Virtually Stretched"
+        AS["[[1,2,3],<br/> [1,2,3]]"]
+        BS["[[10,10,10],<br/> [20,20,20]]"]
+    end
+    subgraph "Result (2,3)"
+        R["[[11,12,13],<br/> [21,22,23]]"]
+    end
+    A --> AS
+    B --> BS
+    AS --> R
+    BS --> R
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_axis_parameter_visual(self):
+        """Seed NumPy Axis Parameter visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="axis-parameter",
+            defaults={
+                "title": "Axis Parameter",
+                "description": "Understanding axis=0, axis=1, axis=-1",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["numpy", "axis", "dimensions", "operations"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is an Axis?",
+                        "explanation": "Each dimension of an array has an axis number. Operations can be performed along any axis.",
+                        "diagram_data": """graph TB
+    subgraph "2D Array (3 rows × 4 cols)"
+        A["shape = (3, 4)<br/>axis 0 = rows (3)<br/>axis 1 = columns (4)"]
+    end
+    subgraph "3D Array (2 × 3 × 4)"
+        B["shape = (2, 3, 4)<br/>axis 0 = depth (2)<br/>axis 1 = rows (3)<br/>axis 2 = cols (4)"]
+    end
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "axis=0: Operate Down Rows",
+                        "explanation": "axis=0 collapses the first dimension. Think 'down the rows' or 'across rows'.",
+                        "diagram_data": """graph TB
+    subgraph "Array (3×4)"
+        R1["[1, 2, 3, 4]"]
+        R2["[5, 6, 7, 8]"]
+        R3["[9, 10, 11, 12]"]
+    end
+    subgraph "sum(axis=0)"
+        S["↓ ↓ ↓ ↓<br/>[15, 18, 21, 24]"]
+    end
+    R1 --> S
+    R2 --> S
+    R3 --> S
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "axis=1: Operate Across Columns",
+                        "explanation": "axis=1 collapses the second dimension. Think 'across columns' or 'along rows'.",
+                        "diagram_data": """graph TB
+    subgraph "Array (3×4)"
+        R1["[1, 2, 3, 4] →"]
+        R2["[5, 6, 7, 8] →"]
+        R3["[9, 10, 11, 12] →"]
+    end
+    subgraph "sum(axis=1)"
+        S["[10]<br/>[26]<br/>[42]"]
+    end
+    R1 --> S
+    R2 --> S
+    R3 --> S
+    style S fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Negative Axis",
+                        "explanation": "axis=-1 means the last axis, axis=-2 is second to last, etc.",
+                        "diagram_data": """graph TB
+    subgraph "shape (2, 3, 4)"
+        A["axis 0 = axis -3<br/>axis 1 = axis -2<br/>axis 2 = axis -1"]
+    end
+    subgraph "Why Useful"
+        W["axis=-1 always means<br/>'innermost dimension'<br/>Works for any ndim"]
+    end
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "axis=None: Flatten",
+                        "explanation": "When axis=None, the array is flattened and the operation applies to all elements.",
+                        "diagram_data": """graph TB
+    subgraph "Array (2×3)"
+        A["[[1,2,3],<br/> [4,5,6]]"]
+    end
+    subgraph "sum(axis=None)"
+        S["21<br/>(sum of all elements)"]
+    end
+    A --> S
+    style S fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "keepdims Parameter",
+                        "explanation": "keepdims=True preserves the reduced axis as size 1, maintaining array dimensions.",
+                        "diagram_data": """graph TB
+    subgraph "Original (3, 4)"
+        O["[[1,2,3,4],<br/> [5,6,7,8],<br/> [9,10,11,12]]"]
+    end
+    subgraph "sum(axis=1)"
+        S1["[10, 26, 42]<br/>shape: (3,)"]
+    end
+    subgraph "sum(axis=1, keepdims=True)"
+        S2["[[10],<br/> [26],<br/> [42]]<br/>shape: (3, 1)"]
+    end
+    O --> S1
+    O --> S2
+    style S2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_indexing_visual(self):
+        """Seed NumPy Basic vs Advanced Indexing visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="indexing",
+            defaults={
+                "title": "Basic vs Advanced Indexing",
+                "description": "Views vs copies, fancy indexing explained",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["numpy", "indexing", "slicing", "fancy-indexing", "views"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Types of Indexing",
+                        "explanation": "Basic indexing returns views (shares memory). Advanced indexing returns copies.",
+                        "diagram_data": """graph TB
+    subgraph "Basic Indexing"
+        B["Integers, slices, None<br/>Returns VIEW<br/>Shares memory"]
+    end
+    subgraph "Advanced Indexing"
+        A["Arrays of indices<br/>Boolean arrays<br/>Returns COPY"]
+    end
+    style B fill:#C8E6C9
+    style A fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Basic Indexing Examples",
+                        "explanation": "Slices and single integers create views that share data with the original.",
+                        "diagram_data": """graph TB
+    subgraph "Basic (Views)"
+        E1["arr[0]        # single int"]
+        E2["arr[1:4]      # slice"]
+        E3["arr[::2]      # step slice"]
+        E4["arr[:, 0]     # column"]
+    end
+    subgraph "Memory"
+        M["Original and view<br/>share same data<br/>Modify one → both change"]
+    end
+    E1 --> M
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Advanced Indexing Examples",
+                        "explanation": "Using arrays of indices or boolean arrays creates independent copies.",
+                        "diagram_data": """graph TB
+    subgraph "Advanced (Copies)"
+        E1["arr[[0, 2, 4]]     # list of indices"]
+        E2["arr[arr > 5]      # boolean mask"]
+        E3["arr[[1,2], [0,1]] # fancy indexing"]
+    end
+    subgraph "Memory"
+        M["Creates new array<br/>Independent copy<br/>Original unchanged"]
+    end
+    E1 --> M
+    style M fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Fancy Indexing",
+                        "explanation": "Using arrays of indices to select specific elements.",
+                        "diagram_data": """graph TB
+    subgraph "1D Fancy Indexing"
+        A["arr = [10, 20, 30, 40, 50]<br/>arr[[0, 2, 4]] = [10, 30, 50]"]
+    end
+    subgraph "2D Fancy Indexing"
+        B["arr = [[1,2],[3,4],[5,6]]<br/>arr[[0,2], [1,0]] = [2, 5]<br/>(row 0 col 1, row 2 col 0)"]
+    end
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "View vs Copy Test",
+                        "explanation": "Check if you have a view or copy with .base attribute.",
+                        "diagram_data": """graph TB
+    subgraph "Check"
+        V["view.base is arr  → True (view)"]
+        C["copy.base is None → True (copy)"]
+    end
+    subgraph "Or Use"
+        F["np.shares_memory(a, b)"]
+    end
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Pitfall",
+                        "explanation": "Mixing basic and advanced indexing can be confusing.",
+                        "diagram_data": """graph TB
+    subgraph "Danger"
+        D["arr[0:2][[0, 1]]<br/>First creates view<br/>Then creates copy from view"]
+    end
+    subgraph "Safe Approach"
+        S["When unsure, use .copy()<br/>arr[0:2].copy()"]
+    end
+    style D fill:#FFF9C4
+    style S fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_boolean_masking_visual(self):
+        """Seed NumPy Boolean Masking visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="boolean-masking",
+            defaults={
+                "title": "Boolean Masking",
+                "description": "Filtering arrays with conditions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["numpy", "boolean", "masking", "filtering", "conditions"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Creating Boolean Masks",
+                        "explanation": "Comparison operations on arrays return boolean arrays of the same shape.",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        A["arr = [1, 5, 3, 8, 2]"]
+    end
+    subgraph "Comparison"
+        C["arr > 3"]
+    end
+    subgraph "Boolean Mask"
+        M["[False, True, False, True, False]"]
+    end
+    A --> C --> M
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Applying the Mask",
+                        "explanation": "Use the boolean array to select elements where mask is True.",
+                        "diagram_data": """graph TB
+    subgraph "Array + Mask"
+        A["arr = [1, 5, 3, 8, 2]"]
+        M["mask = [F, T, F, T, F]"]
+    end
+    subgraph "Result"
+        R["arr[mask] = [5, 8]"]
+    end
+    A --> R
+    M --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Combining Conditions",
+                        "explanation": "Use & (and), | (or), ~ (not) to combine masks. Must use parentheses!",
+                        "diagram_data": """graph TB
+    subgraph "Combine Masks"
+        AND["(arr > 2) & (arr < 7)<br/>Both conditions"]
+        OR["(arr < 2) | (arr > 7)<br/>Either condition"]
+        NOT["~(arr > 3)<br/>Inverse of condition"]
+    end
+    subgraph "Warning"
+        W["Use & | ~  NOT and or not<br/>Use parentheses!"]
+    end
+    style W fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Modifying with Masks",
+                        "explanation": "Use boolean indexing on the left side to modify selected elements.",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        A["arr = [1, 5, 3, 8, 2]"]
+    end
+    subgraph "Modify"
+        M["arr[arr > 3] = 0"]
+    end
+    subgraph "Result"
+        R["arr = [1, 0, 3, 0, 2]"]
+    end
+    A --> M --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "2D Boolean Masking",
+                        "explanation": "Masking a 2D array returns a 1D array of matching elements.",
+                        "diagram_data": """graph TB
+    subgraph "2D Array"
+        A["[[1, 2],<br/> [3, 4],<br/> [5, 6]]"]
+    end
+    subgraph "Mask (arr > 2)"
+        M["[[F, F],<br/> [T, T],<br/> [T, T]]"]
+    end
+    subgraph "Result (1D!)"
+        R["[3, 4, 5, 6]"]
+    end
+    A --> M --> R
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_where_vs_boolean_visual(self):
+        """Seed NumPy np.where vs Boolean Indexing visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="where-vs-boolean",
+            defaults={
+                "title": "np.where vs Boolean Indexing",
+                "description": "When to use each approach",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 5,
+                "tags": ["numpy", "where", "boolean", "conditional", "filtering"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Forms of np.where",
+                        "explanation": "np.where has two modes: find indices, or conditional selection.",
+                        "diagram_data": """graph TB
+    subgraph "Find Indices"
+        F["np.where(condition)<br/>Returns tuple of index arrays"]
+    end
+    subgraph "Conditional Selection"
+        C["np.where(condition, x, y)<br/>Returns x where True, y where False"]
+    end
+    style F fill:#BBDEFB
+    style C fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "np.where() - Find Indices",
+                        "explanation": "With one argument, returns indices where condition is True.",
+                        "diagram_data": """graph TB
+    subgraph "Find"
+        A["arr = [10, 20, 30, 40]"]
+        W["np.where(arr > 20)"]
+        R["(array([2, 3]),)<br/>indices 2 and 3"]
+    end
+    A --> W --> R
+    style R fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "np.where(cond, x, y)",
+                        "explanation": "With three arguments, creates new array choosing from x or y based on condition.",
+                        "diagram_data": """graph TB
+    subgraph "Conditional"
+        A["arr = [1, 2, 3, 4]"]
+        W["np.where(arr > 2, 'big', 'small')"]
+        R["['small', 'small', 'big', 'big']"]
+    end
+    A --> W --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Boolean Indexing",
+                        "explanation": "Boolean indexing extracts elements, always returns 1D result.",
+                        "diagram_data": """graph TB
+    subgraph "Extract"
+        A["arr = [10, 20, 30, 40]"]
+        B["arr[arr > 20]"]
+        R["[30, 40]<br/>Values, not indices!"]
+    end
+    A --> B --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "When to Use Each",
+                        "explanation": "Choose based on what you need: values, indices, or conditional replacement.",
+                        "diagram_data": """graph TB
+    subgraph "Use Boolean Indexing"
+        B1["Extract matching values"]
+        B2["Modify in place: arr[mask] = 0"]
+        B3["Simple filtering"]
+    end
+    subgraph "Use np.where"
+        W1["Need indices, not values"]
+        W2["Create new array with if-else"]
+        W3["Keep shape, replace values"]
+    end
+    style B1 fill:#C8E6C9
+    style W2 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_reshape_visual(self):
+        """Seed NumPy Reshape vs Resize vs Flatten visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="reshape",
+            defaults={
+                "title": "Reshape vs Resize vs Flatten",
+                "description": "Differences and memory implications",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["numpy", "reshape", "resize", "flatten", "ravel"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "reshape()",
+                        "explanation": "Returns a view with new shape. Total elements must be the same.",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        A["[1,2,3,4,5,6]<br/>shape: (6,)"]
+    end
+    subgraph "reshape(2,3)"
+        R["[[1,2,3],<br/> [4,5,6]]<br/>shape: (2,3)"]
+    end
+    subgraph "Key"
+        K["Returns VIEW<br/>Same data, different shape<br/>Must have same # elements"]
+    end
+    A --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "reshape with -1",
+                        "explanation": "Use -1 to let NumPy calculate one dimension automatically.",
+                        "diagram_data": """graph TB
+    subgraph "Auto-calculate"
+        E1["arr.reshape(2, -1)<br/>→ (2, 3) if 6 elements"]
+        E2["arr.reshape(-1, 2)<br/>→ (3, 2) if 6 elements"]
+        E3["arr.reshape(-1)<br/>→ flatten to 1D"]
+    end
+    style E1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "resize()",
+                        "explanation": "Changes array in-place. Can change total number of elements!",
+                        "diagram_data": """graph TB
+    subgraph "resize (in-place)"
+        A["arr = [1,2,3,4,5,6]"]
+        R["arr.resize(2, 4)<br/>Pads with zeros if bigger<br/>Truncates if smaller"]
+        RES["[[1,2,3,4],<br/> [5,6,0,0]]"]
+    end
+    A --> R --> RES
+    style RES fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "flatten() vs ravel()",
+                        "explanation": "Both return 1D arrays, but flatten() always copies, ravel() returns view when possible.",
+                        "diagram_data": """graph TB
+    subgraph "flatten()"
+        F["Always returns COPY<br/>Safe but slower"]
+    end
+    subgraph "ravel()"
+        R["Returns VIEW if possible<br/>Faster but shared memory"]
+    end
+    subgraph "Choose"
+        C["Need independence? → flatten()<br/>Performance critical? → ravel()"]
+    end
+    style F fill:#BBDEFB
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Quick Reference",
+                        "explanation": "Summary of reshape operations.",
+                        "diagram_data": """graph TB
+    subgraph "Summary"
+        RE["reshape: View, same # elements"]
+        RS["resize: In-place, can change size"]
+        FL["flatten: Copy to 1D"]
+        RA["ravel: View to 1D (usually)"]
+    end
+    style RE fill:#C8E6C9
+    style RA fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_concatenate_stack_visual(self):
+        """Seed NumPy Concatenate vs Stack visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="concatenate-stack",
+            defaults={
+                "title": "Concatenate vs Stack",
+                "description": "np.concatenate vs np.stack vs vstack/hstack",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["numpy", "concatenate", "stack", "vstack", "hstack", "joining"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Key Difference",
+                        "explanation": "concatenate joins along existing axis. stack creates a NEW axis.",
+                        "diagram_data": """graph TB
+    subgraph "concatenate"
+        C["Joins along existing axis<br/>No new dimension added"]
+    end
+    subgraph "stack"
+        S["Creates NEW axis<br/>Adds one dimension"]
+    end
+    style C fill:#C8E6C9
+    style S fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "np.concatenate",
+                        "explanation": "Join arrays along an existing axis. Arrays must have same shape except on join axis.",
+                        "diagram_data": """graph TB
+    subgraph "Arrays"
+        A["a = [[1,2], [3,4]]  (2×2)"]
+        B["b = [[5,6], [7,8]]  (2×2)"]
+    end
+    subgraph "axis=0 (vertical)"
+        V["[[1,2],[3,4],[5,6],[7,8]]<br/>shape: (4, 2)"]
+    end
+    subgraph "axis=1 (horizontal)"
+        H["[[1,2,5,6],[3,4,7,8]]<br/>shape: (2, 4)"]
+    end
+    A --> V
+    B --> V
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "np.stack",
+                        "explanation": "Stack arrays along a NEW axis. All arrays must have the same shape.",
+                        "diagram_data": """graph TB
+    subgraph "Arrays"
+        A["a = [1, 2, 3]  (3,)"]
+        B["b = [4, 5, 6]  (3,)"]
+    end
+    subgraph "stack(axis=0)"
+        S0["[[1,2,3],<br/> [4,5,6]]<br/>shape: (2, 3)"]
+    end
+    subgraph "stack(axis=1)"
+        S1["[[1,4],<br/> [2,5],<br/> [3,6]]<br/>shape: (3, 2)"]
+    end
+    A --> S0
+    B --> S0
+    style S0 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "vstack and hstack",
+                        "explanation": "Convenience functions for vertical and horizontal stacking.",
+                        "diagram_data": """graph TB
+    subgraph "vstack"
+        VS["np.vstack([a, b])<br/>= np.concatenate([a,b], axis=0)<br/>Stack vertically (rows)"]
+    end
+    subgraph "hstack"
+        HS["np.hstack([a, b])<br/>= np.concatenate([a,b], axis=1)<br/>Stack horizontally (cols)"]
+    end
+    subgraph "dstack"
+        DS["np.dstack([a, b])<br/>Stack along 3rd axis (depth)"]
+    end
+    style VS fill:#C8E6C9
+    style HS fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "When to Use Each",
+                        "explanation": "Choose based on whether you need a new dimension.",
+                        "diagram_data": """graph TB
+    subgraph "Use concatenate"
+        C1["Extend an existing array"]
+        C2["Join along rows or columns"]
+        C3["No new dimension needed"]
+    end
+    subgraph "Use stack"
+        S1["Combine into batch dimension"]
+        S2["Create a new axis"]
+        S3["Arrays represent 'layers'"]
+    end
+    style C1 fill:#C8E6C9
+    style S1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_expand_squeeze_visual(self):
+        """Seed NumPy expand_dims vs squeeze visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="expand-squeeze",
+            defaults={
+                "title": "expand_dims vs squeeze",
+                "description": "Adding and removing dimensions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 4,
+                "tags": ["numpy", "expand_dims", "squeeze", "dimensions", "reshape"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "expand_dims",
+                        "explanation": "Add a new axis of length 1 at specified position.",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        A["arr.shape = (3, 4)"]
+    end
+    subgraph "expand_dims(arr, axis=0)"
+        E0["shape = (1, 3, 4)"]
+    end
+    subgraph "expand_dims(arr, axis=1)"
+        E1["shape = (3, 1, 4)"]
+    end
+    subgraph "expand_dims(arr, axis=-1)"
+        E2["shape = (3, 4, 1)"]
+    end
+    A --> E0
+    A --> E1
+    A --> E2
+    style E0 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Alternative: np.newaxis",
+                        "explanation": "np.newaxis (or None) in indexing adds dimensions inline.",
+                        "diagram_data": """graph TB
+    subgraph "Equivalent"
+        E1["np.expand_dims(arr, 0)"]
+        E2["arr[np.newaxis, :]"]
+        E3["arr[None, :]"]
+    end
+    subgraph "Example"
+        A["arr.shape = (3,)"]
+        R["arr[:, None].shape = (3, 1)"]
+    end
+    A --> R
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "squeeze",
+                        "explanation": "Remove axes of length 1 from the shape.",
+                        "diagram_data": """graph TB
+    subgraph "Original"
+        A["arr.shape = (1, 3, 1, 4, 1)"]
+    end
+    subgraph "squeeze()"
+        S["shape = (3, 4)<br/>All size-1 axes removed"]
+    end
+    subgraph "squeeze(axis=0)"
+        S0["shape = (3, 1, 4, 1)<br/>Only axis 0 removed"]
+    end
+    A --> S
+    A --> S0
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Common Use Cases",
+                        "explanation": "When you need to add or remove dimensions for broadcasting or APIs.",
+                        "diagram_data": """graph TB
+    subgraph "expand_dims Use"
+        E1["Make 1D array broadcastable as row/column"]
+        E2["Add batch dimension for ML"]
+        E3["Match dimensions for concatenate"]
+    end
+    subgraph "squeeze Use"
+        S1["Remove singleton batch dimension"]
+        S2["Clean up after operations"]
+        S3["Simplify output shape"]
+    end
+    style E2 fill:#C8E6C9
+    style S1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_vectorization_visual(self):
+        """Seed NumPy Vectorization vs Loops visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="vectorization",
+            defaults={
+                "title": "Vectorization vs Loops",
+                "description": "Why vectorized operations are faster",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["numpy", "vectorization", "performance", "loops", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Speed Difference",
+                        "explanation": "Vectorized operations can be 10-100x faster than Python loops.",
+                        "diagram_data": """graph TB
+    subgraph "Python Loop"
+        L["for i in range(1000000):<br/>    result[i] = a[i] + b[i]<br/>~500ms"]
+    end
+    subgraph "Vectorized"
+        V["result = a + b<br/>~5ms"]
+    end
+    style L fill:#FFCDD2
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Loops Are Slow",
+                        "explanation": "Python loops have overhead for each iteration: type checking, function calls, etc.",
+                        "diagram_data": """graph TB
+    subgraph "Each Python Iteration"
+        S1["1. Check loop condition"]
+        S2["2. Get next item"]
+        S3["3. Type check operands"]
+        S4["4. Call operator function"]
+        S5["5. Store result"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
+    style S3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Why Vectorization Is Fast",
+                        "explanation": "NumPy does the loop in compiled C code with no per-element overhead.",
+                        "diagram_data": """graph TB
+    subgraph "Vectorized Operation"
+        S1["1. Single type check"]
+        S2["2. C loop over contiguous memory"]
+        S3["3. SIMD instructions (parallel)"]
+        S4["4. Return result array"]
+    end
+    S1 --> S2 --> S3 --> S4
+    style S2 fill:#C8E6C9
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Common Vectorization Patterns",
+                        "explanation": "Replace loops with these vectorized equivalents.",
+                        "diagram_data": """graph TB
+    subgraph "Instead of Loop"
+        L1["for x in arr: sum += x"]
+        L2["for i,x in enumerate(arr):<br/>    if x > 0: result.append(x)"]
+        L3["for x in arr: x**2"]
+    end
+    subgraph "Use Vectorized"
+        V1["arr.sum()"]
+        V2["arr[arr > 0]"]
+        V3["arr ** 2"]
+    end
+    L1 --> V1
+    L2 --> V2
+    L3 --> V3
+    style V1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "When Loops Are OK",
+                        "explanation": "Sometimes loops are acceptable or necessary.",
+                        "diagram_data": """graph TB
+    subgraph "Loops OK When"
+        O1["Small arrays (< 100 elements)"]
+        O2["Complex logic not easily vectorized"]
+        O3["Readability more important"]
+        O4["Prototyping / debugging"]
+    end
+    subgraph "Consider numba"
+        N["@numba.jit decorator<br/>Compiles Python loops to fast code"]
+    end
+    style N fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_views_copies_visual(self):
+        """Seed NumPy Views vs Copies visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="views-copies",
+            defaults={
+                "title": "Views vs Copies",
+                "description": "When data is shared vs duplicated",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 5,
+                "tags": ["numpy", "views", "copies", "memory", "slicing"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "View vs Copy",
+                        "explanation": "A view shares the same data buffer. A copy has its own independent data.",
+                        "diagram_data": """graph TB
+    subgraph "View"
+                        V["Same memory<br/>Changes affect original<br/>Fast, no allocation"]
+    end
+    subgraph "Copy"
+        C["New memory<br/>Independent data<br/>Slower, uses more RAM"]
+    end
+    style V fill:#C8E6C9
+    style C fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Operations That Return Views",
+                        "explanation": "These operations share memory with the original array.",
+                        "diagram_data": """graph TB
+    subgraph "Creates View"
+        V1["Basic slicing: arr[1:5]"]
+        V2["Transpose: arr.T"]
+        V3["Reshape: arr.reshape(...)"]
+        V4["Ravel: arr.ravel() (usually)"]
+        V5["View: arr.view(dtype)"]
+    end
+    style V1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Operations That Return Copies",
+                        "explanation": "These operations create independent arrays.",
+                        "diagram_data": """graph TB
+    subgraph "Creates Copy"
+        C1["Advanced indexing: arr[[0,2,4]]"]
+        C2["Boolean indexing: arr[arr>0]"]
+        C3["Flatten: arr.flatten()"]
+        C4["Copy: arr.copy()"]
+        C5["Most ufuncs: np.sin(arr)"]
+    end
+    style C1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Checking View vs Copy",
+                        "explanation": "Use .base or np.shares_memory() to check.",
+                        "diagram_data": """graph TB
+    subgraph "Check Methods"
+        B["b.base is a  → True if view"]
+        S["np.shares_memory(a, b)"]
+        F["b.flags['OWNDATA']<br/>True if owns data (copy)"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Common Pitfall",
+                        "explanation": "Modifying a view changes the original - this can be surprising!",
+                        "diagram_data": """graph TB
+    subgraph "Danger"
+        A["a = np.array([1,2,3,4,5])"]
+        B["b = a[1:4]  # view"]
+        C["b[0] = 99"]
+        D["a is now [1,99,3,4,5]!"]
+    end
+    subgraph "Safe"
+        S["b = a[1:4].copy()<br/>Now independent"]
+    end
+    style D fill:#FFCDD2
+    style S fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_memory_order_visual(self):
+        """Seed NumPy Memory Order & Cache Efficiency visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="memory-order",
+            defaults={
+                "title": "Memory Order & Cache Efficiency",
+                "description": "Row-major access patterns for performance",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 6,
+                "tags": ["numpy", "memory", "cache", "performance", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "CPU Cache Basics",
+                        "explanation": "CPUs load memory in chunks (cache lines). Accessing nearby memory is fast.",
+                        "diagram_data": """graph LR
+    subgraph "Memory Access"
+        R["RAM<br/>~100ns"]
+        L3["L3 Cache<br/>~10ns"]
+        L1["L1 Cache<br/>~1ns"]
+        CPU["CPU"]
+    end
+    R --> L3 --> L1 --> CPU
+    style L1 fill:#C8E6C9
+    style R fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Row-Major (C Order)",
+                        "explanation": "In C order, adjacent columns are next to each other in memory. Row iteration is cache-friendly.",
+                        "diagram_data": """graph TB
+    subgraph "C Order Memory"
+        M["| r0c0 | r0c1 | r0c2 | r1c0 | r1c1 | r1c2 |"]
+    end
+    subgraph "Fast"
+        F["for row in arr:<br/>    for col in row:<br/>        # sequential access"]
+    end
+    subgraph "Slow"
+        S["for col in range(ncols):<br/>    for row in range(nrows):<br/>        arr[row, col]  # jumps"]
+    end
+    style F fill:#C8E6C9
+    style S fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Column Operations Are Slower",
+                        "explanation": "Summing columns requires jumping through memory, missing cache.",
+                        "diagram_data": """graph TB
+    subgraph "Sum Rows (Fast)"
+        R["arr.sum(axis=1)<br/>Sequential memory access<br/>Cache friendly"]
+    end
+    subgraph "Sum Columns (Slower)"
+        C["arr.sum(axis=0)<br/>Strided memory access<br/>Cache misses"]
+    end
+    style R fill:#C8E6C9
+    style C fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Making Column Ops Fast",
+                        "explanation": "Use Fortran order or transpose for column-heavy operations.",
+                        "diagram_data": """graph TB
+    subgraph "Options"
+        O1["Use F order:<br/>np.array(..., order='F')"]
+        O2["Transpose first:<br/>arr.T then row operations"]
+        O3["Use np.asfortranarray()"]
+    end
+    subgraph "Libraries"
+        L["BLAS/LAPACK handle this<br/>automatically for matrix ops"]
+    end
+    style O2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Practical Tips",
+                        "explanation": "Guidelines for cache-efficient NumPy code.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Process data row by row"]
+        D2["Keep arrays contiguous"]
+        D3["Use vectorized operations"]
+    end
+    subgraph "Avoid"
+        A1["Random access patterns"]
+        A2["Many small allocations"]
+        A3["Excessive transposes"]
+    end
+    style D1 fill:#C8E6C9
+    style A1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_matrix_multiplication_visual(self):
+        """Seed NumPy Matrix Multiplication visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="matrix-multiplication",
+            defaults={
+                "title": "Matrix Multiplication",
+                "description": "@ vs np.dot vs np.matmul vs *",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["numpy", "matrix", "multiplication", "dot", "matmul"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Four Ways to Multiply",
+                        "explanation": "NumPy has several multiplication operations with different behaviors.",
+                        "diagram_data": """graph TB
+    subgraph "Operations"
+        E["* (element-wise)"]
+        D["np.dot()"]
+        M["np.matmul() / @"]
+        MU["np.multiply()"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "* Element-wise",
+                        "explanation": "The * operator multiplies corresponding elements. Arrays must be broadcastable.",
+                        "diagram_data": """graph TB
+    subgraph "Element-wise"
+        A["[1, 2, 3] * [4, 5, 6]<br/>= [4, 10, 18]"]
+        B["[[1,2],[3,4]] * 2<br/>= [[2,4],[6,8]]"]
+    end
+    subgraph "NOT Matrix Multiply"
+        N["This is Hadamard product<br/>Not linear algebra matmul"]
+    end
+    style A fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "@ and np.matmul",
+                        "explanation": "The @ operator (Python 3.5+) and np.matmul do true matrix multiplication.",
+                        "diagram_data": """graph TB
+    subgraph "Matrix Multiply"
+        E["A @ B = np.matmul(A, B)"]
+        R["(m×n) @ (n×p) → (m×p)"]
+    end
+    subgraph "Example"
+        EX["[[1,2],[3,4]] @ [[5,6],[7,8]]<br/>= [[19,22],[43,50]]"]
+    end
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "np.dot",
+                        "explanation": "np.dot is flexible but can be confusing. Behavior depends on input dimensions.",
+                        "diagram_data": """graph TB
+    subgraph "np.dot behavior"
+        D1["1D × 1D: inner product (scalar)"]
+        D2["2D × 2D: matrix multiply"]
+        D3["1D × 2D: matrix-vector multiply"]
+        D4["ND × ND: sum over last/second-to-last"]
+    end
+    subgraph "Recommendation"
+        R["Use @ for clarity<br/>np.dot for 1D inner product"]
+    end
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Quick Reference",
+                        "explanation": "When to use each multiplication operation.",
+                        "diagram_data": """graph TB
+    subgraph "Use *"
+        E["Element-wise multiply<br/>Scaling by constant"]
+    end
+    subgraph "Use @"
+        M["Matrix multiplication<br/>Linear algebra"]
+    end
+    subgraph "Use np.dot"
+        D["Inner product of 1D vectors<br/>Legacy code"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_reduction_operations_visual(self):
+        """Seed NumPy Reduction Operations visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="reduction-operations",
+            defaults={
+                "title": "Reduction Operations",
+                "description": "sum, mean, max along axes",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["numpy", "reduction", "sum", "mean", "aggregation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Are Reductions?",
+                        "explanation": "Reductions collapse an array along one or more axes, producing a smaller array.",
+                        "diagram_data": """graph TB
+    subgraph "Reduction"
+        A["(3, 4) array"]
+        R["reduce along axis"]
+        B["(3,) or (4,) result"]
+    end
+    A --> R --> B
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Common Reductions",
+                        "explanation": "NumPy provides many built-in reduction functions.",
+                        "diagram_data": """graph TB
+    subgraph "Reductions"
+        S["sum() - total"]
+        M["mean() - average"]
+        MX["max() / min()"]
+        P["prod() - product"]
+        SD["std() / var()"]
+        AR["argmax() / argmin()<br/>index of max/min"]
+    end
+    style S fill:#C8E6C9
+    style AR fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Axis Behavior",
+                        "explanation": "The axis parameter determines which dimension is collapsed.",
+                        "diagram_data": """graph TB
+    subgraph "2D Array (3×4)"
+        A["12 elements total"]
+    end
+    subgraph "sum(axis=None)"
+        N["Scalar: sum all<br/>shape: ()"]
+    end
+    subgraph "sum(axis=0)"
+        A0["Sum down rows<br/>shape: (4,)"]
+    end
+    subgraph "sum(axis=1)"
+        A1["Sum across cols<br/>shape: (3,)"]
+    end
+    A --> N
+    A --> A0
+    A --> A1
+    style A0 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Multiple Axes",
+                        "explanation": "Reduce along multiple axes at once with a tuple.",
+                        "diagram_data": """graph TB
+    subgraph "3D Array (2×3×4)"
+        A["24 elements"]
+    end
+    subgraph "sum(axis=(0, 2))"
+        R["Collapse axes 0 and 2<br/>shape: (3,)"]
+    end
+    subgraph "sum(axis=(1, 2))"
+        R2["Collapse axes 1 and 2<br/>shape: (2,)"]
+    end
+    A --> R
+    A --> R2
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "keepdims=True",
+                        "explanation": "Preserve dimensions for broadcasting compatibility.",
+                        "diagram_data": """graph TB
+    subgraph "Without keepdims"
+        W["arr.shape = (3, 4)<br/>arr.sum(axis=1).shape = (3,)"]
+    end
+    subgraph "With keepdims"
+        K["arr.sum(axis=1, keepdims=True)<br/>.shape = (3, 1)<br/>Can broadcast with original!"]
+    end
+    subgraph "Use Case"
+        U["arr / arr.sum(axis=1, keepdims=True)<br/>Normalize each row"]
+    end
+    style K fill:#C8E6C9
+    style U fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_numpy_einsum_visual(self):
+        """Seed NumPy einsum visual topic."""
+        subject = self.get_or_create_subject("NumPy", "numpy", "Python Libraries")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="einsum",
+            defaults={
+                "title": "np.einsum Explained",
+                "description": "Einstein summation notation for powerful array operations",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["numpy", "einsum", "einstein", "advanced", "tensor"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is einsum?",
+                        "explanation": "einsum (Einstein summation) expresses complex array operations in a compact notation.",
+                        "diagram_data": """graph TB
+    subgraph "einsum"
+        E["np.einsum('subscripts', arr1, arr2, ...)"]
+        P["One function for:<br/>transpose, sum, dot, matmul,<br/>outer product, and more!"]
+    end
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Basic Notation",
+                        "explanation": "Each axis gets a letter. Repeated letters are summed. Output letters define result axes.",
+                        "diagram_data": """graph TB
+    subgraph "Rules"
+        R1["Each axis = one letter"]
+        R2["Repeated letter = sum over it"]
+        R3["Output after '->'"]
+    end
+    subgraph "Example"
+        E["'ij,jk->ik'<br/>Matrix multiply!<br/>Sum over j (repeated)"]
+    end
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Common Operations",
+                        "explanation": "Many operations expressed in einsum notation.",
+                        "diagram_data": """graph TB
+    subgraph "Trace"
+        T["'ii->' = diagonal sum"]
+    end
+    subgraph "Transpose"
+        TR["'ij->ji' = A.T"]
+    end
+    subgraph "Sum"
+        S["'ij->' = total sum<br/>'ij->i' = row sums"]
+    end
+    subgraph "Diagonal"
+        D["'ii->i' = extract diagonal"]
+    end
+    style T fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Two-Array Operations",
+                        "explanation": "Operations on pairs of arrays.",
+                        "diagram_data": """graph TB
+    subgraph "Matrix Multiply"
+        M["'ij,jk->ik'<br/>A @ B"]
+    end
+    subgraph "Inner Product"
+        I["'i,i->'<br/>np.dot(a, b) for 1D"]
+    end
+    subgraph "Outer Product"
+        O["'i,j->ij'<br/>np.outer(a, b)"]
+    end
+    subgraph "Element-wise"
+        E["'ij,ij->ij'<br/>A * B"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Batch Operations",
+                        "explanation": "einsum excels at batched operations with extra dimensions.",
+                        "diagram_data": """graph TB
+    subgraph "Batch Matrix Multiply"
+        B["'bij,bjk->bik'<br/>Matmul for each batch"]
+    end
+    subgraph "Batch Dot Product"
+        D["'bi,bi->b'<br/>Dot product per batch"]
+    end
+    subgraph "Power"
+        P["Handle arbitrary batch dims<br/>that other functions can't"]
+    end
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Performance Tips",
+                        "explanation": "einsum can be slower or faster than specialized functions.",
+                        "diagram_data": """graph TB
+    subgraph "Use einsum When"
+        Y1["Complex subscript patterns"]
+        Y2["Batch operations"]
+        Y3["Multiple operations fused"]
+    end
+    subgraph "Use Specialized When"
+        N1["Simple matmul: use @"]
+        N2["Simple sum: use .sum()"]
+        N3["optimize='optimal' for<br/>complex expressions"]
+    end
+    style N3 fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== Reinforcement Learning Visuals ====================
+
+    def seed_rl_agent_environment_visual(self):
+        """Seed RL Agent-Environment Loop visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="agent-environment-loop",
+            defaults={
+                "title": "Agent-Environment Loop",
+                "description": "The fundamental interaction cycle in reinforcement learning",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["rl", "agent", "environment", "fundamentals", "loop"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The RL Loop",
+                        "explanation": "Reinforcement learning is about an **agent** learning to make decisions by interacting with an **environment**.",
+                        "diagram_data": """graph LR
+    A["Agent"] -->|"Action a"| E["Environment"]
+    E -->|"State s', Reward r"| A
+    style A fill:#C8E6C9
+    style E fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "One Timestep",
+                        "explanation": "At each timestep t: Agent observes state, takes action, receives reward, observes new state.",
+                        "diagram_data": """graph TB
+    subgraph "Timestep t"
+        S["State sₜ"]
+        A["Agent chooses aₜ"]
+        E["Environment"]
+        R["Reward rₜ₊₁"]
+        NS["Next State sₜ₊₁"]
+    end
+    S --> A --> E
+    E --> R
+    E --> NS
+    style S fill:#FFF9C4
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Components",
+                        "explanation": "Each component has a specific role in the learning process.",
+                        "diagram_data": """graph TB
+    subgraph "Agent"
+        AG["Makes decisions<br/>Learns from experience<br/>Has a policy π"]
+    end
+    subgraph "Environment"
+        EN["Defines the world<br/>Responds to actions<br/>Provides feedback"]
+    end
+    subgraph "State"
+        ST["Current situation<br/>What agent observes"]
+    end
+    subgraph "Action"
+        AC["What agent can do<br/>Affects environment"]
+    end
+    subgraph "Reward"
+        RW["Feedback signal<br/>Goal: maximize total reward"]
+    end
+    style RW fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Episode",
+                        "explanation": "An episode is a sequence of interactions from start to terminal state.",
+                        "diagram_data": """graph LR
+    S0["s₀"] --> A0["a₀"] --> S1["s₁"]
+    S1 --> A1["a₁"] --> S2["s₂"]
+    S2 --> A2["..."] --> ST["sₜ<br/>(terminal)"]
+    style S0 fill:#C8E6C9
+    style ST fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "The Goal",
+                        "explanation": "The agent learns a policy that maximizes cumulative reward over time.",
+                        "diagram_data": """graph TB
+    subgraph "Objective"
+        G["Maximize: Σ γᵗ rₜ<br/>Sum of discounted rewards"]
+    end
+    subgraph "Discount γ"
+        D["γ ∈ [0, 1]<br/>γ=0: only immediate reward<br/>γ=1: all rewards equal"]
+    end
+    style G fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_mdp_components_visual(self):
+        """Seed RL MDP Components visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="mdp-components",
+            defaults={
+                "title": "MDP Components",
+                "description": "States, actions, transitions, rewards, and discount factor",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["rl", "mdp", "markov", "states", "actions"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is an MDP?",
+                        "explanation": "A **Markov Decision Process** is the mathematical framework for modeling RL problems.",
+                        "diagram_data": """graph TB
+    subgraph "MDP = (S, A, P, R, γ)"
+        S["S: State space"]
+        A["A: Action space"]
+        P["P: Transition probabilities"]
+        R["R: Reward function"]
+        G["γ: Discount factor"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "State Space S",
+                        "explanation": "All possible states the environment can be in.",
+                        "diagram_data": """graph TB
+    subgraph "Examples"
+        D["Discrete: Grid positions<br/>{(0,0), (0,1), (1,0), ...}"]
+        C["Continuous: Robot joint angles<br/>θ ∈ ℝⁿ"]
+    end
+    subgraph "Markov Property"
+        M["Future depends only on<br/>current state, not history"]
+    end
+    style M fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Action Space A",
+                        "explanation": "All possible actions the agent can take.",
+                        "diagram_data": """graph TB
+    subgraph "Discrete Actions"
+        D["A = {up, down, left, right}"]
+    end
+    subgraph "Continuous Actions"
+        C["A = torque ∈ [-1, 1]"]
+    end
+    subgraph "State-Dependent"
+        SD["A(s): Different actions<br/>available in different states"]
+    end
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Transition Probability P",
+                        "explanation": "P(s'|s,a) = probability of reaching state s' when taking action a in state s.",
+                        "diagram_data": """graph LR
+    subgraph "Deterministic"
+        D["P(s'|s,a) = 1 for one s'<br/>Action always leads to same state"]
+    end
+    subgraph "Stochastic"
+        S["P(s'|s,a) = probabilities<br/>Action may lead to different states"]
+    end
+    style S fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Reward Function R",
+                        "explanation": "R(s,a,s') = immediate reward for transition. Defines what the agent should optimize.",
+                        "diagram_data": """graph TB
+    subgraph "Reward Types"
+        G["Goal reward: +100 at goal"]
+        P["Penalty: -1 per step"]
+        SH["Shaped: distance to goal"]
+    end
+    subgraph "Key Point"
+        K["Reward design is crucial!<br/>Defines agent behavior"]
+    end
+    style K fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Discount Factor γ",
+                        "explanation": "γ ∈ [0,1] determines how much future rewards are valued vs immediate rewards.",
+                        "diagram_data": """graph TB
+    subgraph "Return"
+                        R["G = r₁ + γr₂ + γ²r₃ + ..."]
+    end
+    subgraph "γ Values"
+        L["γ = 0: Myopic (only immediate)"]
+        M["γ = 0.99: Far-sighted"]
+        H["γ = 1: Undiscounted (episodic only)"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_policy_vs_value_visual(self):
+        """Seed RL Policy vs Value Function visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="policy-vs-value",
+            defaults={
+                "title": "Policy vs Value Function",
+                "description": "Understanding π(a|s), V(s), and Q(s,a)",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["rl", "policy", "value-function", "q-function"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Three Key Concepts",
+                        "explanation": "Policy, state-value, and action-value are fundamental to RL.",
+                        "diagram_data": """graph TB
+    subgraph "Policy π"
+        P["How to act<br/>π(a|s) = P(action|state)"]
+    end
+    subgraph "Value V"
+        V["How good is a state<br/>V(s) = expected return from s"]
+    end
+    subgraph "Q-Value"
+        Q["How good is an action<br/>Q(s,a) = expected return<br/>from s taking a"]
+    end
+    style P fill:#C8E6C9
+    style V fill:#BBDEFB
+    style Q fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Policy π(a|s)",
+                        "explanation": "A policy maps states to actions. It's what the agent learns.",
+                        "diagram_data": """graph TB
+    subgraph "Deterministic"
+        D["π(s) = a<br/>One action per state"]
+    end
+    subgraph "Stochastic"
+        S["π(a|s) = probability<br/>Distribution over actions"]
+    end
+    subgraph "Example"
+        E["State: traffic light<br/>π(go|green) = 0.99<br/>π(stop|green) = 0.01"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "State-Value V(s)",
+                        "explanation": "Expected cumulative reward starting from state s, following policy π.",
+                        "diagram_data": """graph TB
+    subgraph "Definition"
+        D["Vᵖ(s) = E[Σ γᵗrₜ | s₀=s, π]"]
+    end
+    subgraph "Intuition"
+        I["'How good is it to be<br/>in this state?'"]
+    end
+    subgraph "Example"
+        E["Chess position:<br/>V(winning position) = high<br/>V(losing position) = low"]
+    end
+    style I fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Action-Value Q(s,a)",
+                        "explanation": "Expected return starting from s, taking action a, then following π.",
+                        "diagram_data": """graph TB
+    subgraph "Definition"
+        D["Qᵖ(s,a) = E[Σ γᵗrₜ | s₀=s, a₀=a, π]"]
+    end
+    subgraph "Intuition"
+        I["'How good is taking this<br/>action in this state?'"]
+    end
+    subgraph "Relation to V"
+        R["V(s) = Σₐ π(a|s) Q(s,a)<br/>V is weighted avg of Q"]
+    end
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Optimal Values",
+                        "explanation": "The optimal policy π* has the highest possible value functions.",
+                        "diagram_data": """graph TB
+    subgraph "Optimal"
+        V["V*(s) = max_π Vᵖ(s)"]
+        Q["Q*(s,a) = max_π Qᵖ(s,a)"]
+        P["π*(s) = argmax_a Q*(s,a)"]
+    end
+    subgraph "Key Insight"
+        K["If we know Q*, we know<br/>the optimal policy!"]
+    end
+    style K fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_exploration_exploitation_visual(self):
+        """Seed RL Exploration vs Exploitation visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="exploration-exploitation",
+            defaults={
+                "title": "Exploration vs Exploitation",
+                "description": "ε-greedy, UCB, and softmax strategies",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["rl", "exploration", "exploitation", "epsilon-greedy", "ucb"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Dilemma",
+                        "explanation": "Should the agent use what it knows works (exploit) or try new things (explore)?",
+                        "diagram_data": """graph TB
+    subgraph "Exploitation"
+        EX["Use best known action<br/>Maximize immediate reward<br/>Risk: miss better options"]
+    end
+    subgraph "Exploration"
+        EP["Try new actions<br/>Gather information<br/>Risk: waste time on bad actions"]
+    end
+    style EX fill:#C8E6C9
+    style EP fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "ε-Greedy Strategy",
+                        "explanation": "With probability ε explore randomly, otherwise exploit the best action.",
+                        "diagram_data": """graph TB
+    subgraph "ε-Greedy"
+        D["With prob 1-ε: argmax Q(s,a)<br/>With prob ε: random action"]
+    end
+    subgraph "Typical Values"
+        V["ε = 0.1 (10% exploration)<br/>Often decay ε over time"]
+    end
+    subgraph "Pros/Cons"
+        P["+ Simple<br/>- Explores uniformly<br/>- Wastes time on bad actions"]
+    end
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Softmax (Boltzmann)",
+                        "explanation": "Choose actions proportionally to their estimated value.",
+                        "diagram_data": """graph TB
+    subgraph "Softmax"
+        S["P(a) = exp(Q(s,a)/τ) / Σ exp(Q/τ)"]
+    end
+    subgraph "Temperature τ"
+        H["τ → 0: greedy (exploit)"]
+        L["τ → ∞: uniform (explore)"]
+    end
+    subgraph "Benefit"
+        B["Explores more promising<br/>actions more often"]
+    end
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "UCB (Upper Confidence Bound)",
+                        "explanation": "Balance value estimate with uncertainty. Explore uncertain actions.",
+                        "diagram_data": """graph TB
+    subgraph "UCB Formula"
+        U["a = argmax[Q(a) + c√(ln(t)/N(a))]"]
+    end
+    subgraph "Components"
+        Q["Q(a): estimated value"]
+        B["Bonus: exploration term<br/>High when N(a) is low"]
+    end
+    subgraph "Intuition"
+        I["'Optimism in face of uncertainty'"]
+    end
+    style I fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Comparison",
+                        "explanation": "Different strategies work better in different situations.",
+                        "diagram_data": """graph TB
+    subgraph "ε-Greedy"
+        E["Simple, works well<br/>Stationary problems"]
+    end
+    subgraph "Softmax"
+        S["Differentiates action quality<br/>Good for policy gradients"]
+    end
+    subgraph "UCB"
+        U["Principled, optimal bounds<br/>Best for bandits"]
+    end
+    style E fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_bellman_equations_visual(self):
+        """Seed RL Bellman Equations visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="bellman-equations",
+            defaults={
+                "title": "Bellman Equations",
+                "description": "Recursive value definitions and backup diagrams",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["rl", "bellman", "value-function", "dynamic-programming"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Key Insight",
+                        "explanation": "Value of a state = immediate reward + discounted value of next state.",
+                        "diagram_data": """graph LR
+    S["V(s)"] --> R["r"]
+    R --> G["+ γ"]
+    G --> NS["V(s')"]
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Bellman Expectation Equation (V)",
+                        "explanation": "For a given policy π, the value is the expected return.",
+                        "diagram_data": """graph TB
+    subgraph "Bellman for V"
+        E["Vᵖ(s) = Σₐ π(a|s) Σₛ' P(s'|s,a)[R + γVᵖ(s')]"]
+    end
+    subgraph "In Words"
+        W["Expected reward + <br/>discounted expected next value"]
+    end
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Bellman Expectation Equation (Q)",
+                        "explanation": "For Q-values, similar recursive relationship.",
+                        "diagram_data": """graph TB
+    subgraph "Bellman for Q"
+        E["Qᵖ(s,a) = Σₛ' P(s'|s,a)[R + γΣₐ' π(a'|s')Qᵖ(s',a')]"]
+    end
+    subgraph "Simplified"
+        S["Q(s,a) = R + γ E[Q(s',a')]"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Bellman Optimality Equation",
+                        "explanation": "For optimal values, take the MAX instead of expectation over actions.",
+                        "diagram_data": """graph TB
+    subgraph "Optimal V"
+        V["V*(s) = max_a Σₛ' P(s'|s,a)[R + γV*(s')]"]
+    end
+    subgraph "Optimal Q"
+        Q["Q*(s,a) = Σₛ' P(s'|s,a)[R + γ max_a' Q*(s',a')]"]
+    end
+    subgraph "Key Difference"
+        K["max instead of Σπ"]
+    end
+    style K fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Backup Diagram",
+                        "explanation": "Visual representation of how values 'back up' from future to present.",
+                        "diagram_data": """graph TB
+    subgraph "One-Step Backup"
+        S["s"]
+        A1["a₁"]
+        A2["a₂"]
+        S1["s'₁"]
+        S2["s'₂"]
+        S --> A1
+        S --> A2
+        A1 --> S1
+        A1 --> S2
+        A2 --> S1
+    end
+    subgraph "Meaning"
+        M["Value at s depends on<br/>values at successor states"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_q_learning_visual(self):
+        """Seed RL Q-Learning Algorithm visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="q-learning",
+            defaults={
+                "title": "Q-Learning Algorithm",
+                "description": "Off-policy TD learning step by step",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["rl", "q-learning", "td-learning", "off-policy", "algorithm"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is Q-Learning?",
+                        "explanation": "Q-Learning learns the optimal Q-function directly, without needing a model of the environment.",
+                        "diagram_data": """graph TB
+    subgraph "Q-Learning"
+        M["Model-free: No P(s'|s,a) needed"]
+        O["Off-policy: Learn Q* while<br/>following any policy"]
+        T["TD Learning: Update after<br/>each step, not episode"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Update Rule",
+                        "explanation": "After taking action a in state s, observing r and s':",
+                        "diagram_data": """graph TB
+    subgraph "Q-Learning Update"
+        U["Q(s,a) ← Q(s,a) + α[target - Q(s,a)]"]
+    end
+    subgraph "Where target ="
+        T["r + γ max_a' Q(s', a')"]
+    end
+    subgraph "Components"
+        A["α: learning rate"]
+        G["γ: discount factor"]
+        M["max: key to off-policy"]
+    end
+    style U fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Algorithm Steps",
+                        "explanation": "The complete Q-Learning algorithm.",
+                        "diagram_data": """graph TB
+    S1["1. Initialize Q(s,a) arbitrarily"]
+    S2["2. Observe state s"]
+    S3["3. Choose a using ε-greedy"]
+    S4["4. Take action, observe r, s'"]
+    S5["5. Update Q(s,a)"]
+    S6["6. s ← s', repeat"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    S6 --> S2
+    style S5 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Why 'Off-Policy'?",
+                        "explanation": "The max in the update means we're learning Q* regardless of what policy we follow.",
+                        "diagram_data": """graph TB
+    subgraph "Behavior Policy"
+        B["What we actually do<br/>(e.g., ε-greedy)"]
+    end
+    subgraph "Target Policy"
+        T["What we're learning<br/>(greedy: max Q)"]
+    end
+    subgraph "Benefit"
+        BN["Can explore freely<br/>while learning optimal Q"]
+    end
+    style BN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Convergence",
+                        "explanation": "Q-Learning converges to Q* under certain conditions.",
+                        "diagram_data": """graph TB
+    subgraph "Requirements"
+        R1["All (s,a) visited infinitely"]
+        R2["Learning rate decays properly"]
+        R3["Σα = ∞, Σα² < ∞"]
+    end
+    subgraph "In Practice"
+        P["Works well even without<br/>strict convergence guarantees"]
+    end
+    style P fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_sarsa_vs_qlearning_visual(self):
+        """Seed RL SARSA vs Q-Learning visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="sarsa-vs-qlearning",
+            defaults={
+                "title": "SARSA vs Q-Learning",
+                "description": "On-policy vs off-policy TD comparison",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["rl", "sarsa", "q-learning", "on-policy", "off-policy"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Key Difference",
+                        "explanation": "SARSA uses the actual next action; Q-Learning uses the max action.",
+                        "diagram_data": """graph TB
+    subgraph "SARSA (On-Policy)"
+        S["Q(s,a) ← Q(s,a) + α[r + γQ(s',a') - Q(s,a)]<br/>Uses actual a'"]
+    end
+    subgraph "Q-Learning (Off-Policy)"
+        Q["Q(s,a) ← Q(s,a) + α[r + γ max Q(s',a') - Q(s,a)]<br/>Uses max a'"]
+    end
+    style S fill:#BBDEFB
+    style Q fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "SARSA Name Origin",
+                        "explanation": "SARSA = State-Action-Reward-State-Action. Uses (s,a,r,s',a').",
+                        "diagram_data": """graph LR
+    S["S: state"]
+    A["A: action"]
+    R["R: reward"]
+    SP["S': next state"]
+    AP["A': next action"]
+    S --> A --> R --> SP --> AP
+    style AP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Behavior Comparison",
+                        "explanation": "The difference matters in risky environments.",
+                        "diagram_data": """graph TB
+    subgraph "Cliff Walking Example"
+        C["Agent must walk along cliff edge<br/>Fall = large negative reward"]
+    end
+    subgraph "Q-Learning"
+        Q["Learns optimal path (near cliff)<br/>But may fall during exploration"]
+    end
+    subgraph "SARSA"
+        S["Learns safer path (away from cliff)<br/>Accounts for exploration mistakes"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "On-Policy vs Off-Policy",
+                        "explanation": "Fundamental distinction in how the target is computed.",
+                        "diagram_data": """graph TB
+    subgraph "On-Policy (SARSA)"
+        ON["Evaluates policy being followed<br/>Safe, conservative<br/>What you do = what you learn"]
+    end
+    subgraph "Off-Policy (Q-Learning)"
+        OFF["Learns optimal regardless of behavior<br/>Can use any exploration<br/>More sample efficient"]
+    end
+    style OFF fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "When to Use Each",
+                        "explanation": "Choose based on your problem characteristics.",
+                        "diagram_data": """graph TB
+    subgraph "Use SARSA"
+        S1["Safety matters during learning"]
+        S2["Want to account for exploration"]
+        S3["Online learning"]
+    end
+    subgraph "Use Q-Learning"
+        Q1["Want optimal policy"]
+        Q2["Can afford exploration mistakes"]
+        Q3["Using experience replay"]
+    end
+    style Q1 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_dqn_visual(self):
+        """Seed RL Deep Q-Network visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="dqn",
+            defaults={
+                "title": "Deep Q-Network (DQN)",
+                "description": "Experience replay, target networks, and architecture",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["rl", "dqn", "deep-learning", "experience-replay", "target-network"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Deep Q-Networks?",
+                        "explanation": "Q-tables don't scale to large/continuous state spaces. Use neural networks!",
+                        "diagram_data": """graph TB
+    subgraph "Q-Table"
+        T["States × Actions table<br/>Can't handle images, continuous states"]
+    end
+    subgraph "DQN"
+        D["Neural network approximates Q(s,a)<br/>Input: state (e.g., pixels)<br/>Output: Q-value for each action"]
+    end
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Problem with Naive DQN",
+                        "explanation": "Two issues make training unstable: correlated samples and moving targets.",
+                        "diagram_data": """graph TB
+    subgraph "Problems"
+        C["Correlated samples<br/>Sequential experience is similar"]
+        M["Moving target<br/>Q-network changes every update"]
+    end
+    subgraph "Solutions"
+        ER["Experience Replay"]
+        TN["Target Network"]
+    end
+    C --> ER
+    M --> TN
+    style ER fill:#C8E6C9
+    style TN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Experience Replay",
+                        "explanation": "Store experiences in a buffer, sample random batches for training.",
+                        "diagram_data": """graph TB
+    subgraph "Replay Buffer"
+        B["Store (s, a, r, s', done)<br/>Size: ~1 million"]
+    end
+    subgraph "Training"
+        S["Sample random batch<br/>Train on uncorrelated data"]
+    end
+    subgraph "Benefits"
+        B1["Breaks correlations"]
+        B2["Reuses experience"]
+        B3["More sample efficient"]
+    end
+    B --> S
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Target Network",
+                        "explanation": "Use a separate network for the target, updated periodically.",
+                        "diagram_data": """graph TB
+    subgraph "Online Network θ"
+        ON["Updated every step<br/>Used to select actions"]
+    end
+    subgraph "Target Network θ⁻"
+        TN["Frozen for N steps<br/>Used in target: r + γ max Q(s',a'; θ⁻)"]
+    end
+    subgraph "Update"
+        U["Every N steps:<br/>θ⁻ ← θ"]
+    end
+    ON --> U --> TN
+    style TN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "DQN Architecture",
+                        "explanation": "For Atari: CNN processes frames, outputs Q-values for each action.",
+                        "diagram_data": """graph LR
+    I["4 stacked<br/>frames"] --> C1["Conv"]
+    C1 --> C2["Conv"]
+    C2 --> C3["Conv"]
+    C3 --> FC["FC"]
+    FC --> Q["Q-values<br/>(per action)"]
+    style I fill:#BBDEFB
+    style Q fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "DQN Improvements",
+                        "explanation": "Extensions that improve DQN performance.",
+                        "diagram_data": """graph TB
+    subgraph "Key Extensions"
+        DD["Double DQN<br/>Reduce overestimation"]
+        DU["Dueling DQN<br/>Separate V and A"]
+        PE["Prioritized Replay<br/>Sample important transitions"]
+    end
+    subgraph "Rainbow"
+        R["Combines 6 improvements"]
+    end
+    style R fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_policy_gradient_visual(self):
+        """Seed RL Policy Gradient Theorem visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="policy-gradient",
+            defaults={
+                "title": "Policy Gradient Theorem",
+                "description": "Log probability × reward intuition",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["rl", "policy-gradient", "theorem", "gradient", "optimization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Direct Policy Optimization",
+                        "explanation": "Instead of learning Q then deriving π, learn π directly!",
+                        "diagram_data": """graph TB
+    subgraph "Value-Based"
+        V["Learn Q(s,a)<br/>Derive π from Q<br/>(e.g., argmax)"]
+    end
+    subgraph "Policy-Based"
+        P["Directly parameterize π_θ(a|s)<br/>Optimize θ to maximize return"]
+    end
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Objective",
+                        "explanation": "Maximize expected return under the policy.",
+                        "diagram_data": """graph TB
+    subgraph "Objective"
+        J["J(θ) = E_τ~π_θ [R(τ)]<br/>Expected return of trajectories"]
+    end
+    subgraph "Want"
+        W["∇_θ J(θ)<br/>Gradient to improve policy"]
+    end
+    subgraph "Problem"
+        P["How to differentiate<br/>through sampling?"]
+    end
+    style W fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Policy Gradient Theorem",
+                        "explanation": "The key result that makes policy gradients tractable.",
+                        "diagram_data": """graph TB
+    subgraph "The Theorem"
+        T["∇J(θ) = E[∇log π_θ(a|s) · Q(s,a)]"]
+    end
+    subgraph "Intuition"
+        I["Increase prob of actions<br/>proportional to how good they are"]
+    end
+    style T fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Log Probability Trick",
+                        "explanation": "The ∇log π term makes the gradient estimator simple.",
+                        "diagram_data": """graph TB
+    subgraph "Derivation"
+        D["∇π = π · ∇log π<br/>(chain rule trick)"]
+    end
+    subgraph "Result"
+        R["Can estimate gradient<br/>from samples!"]
+    end
+    subgraph "Monte Carlo"
+        MC["∇J ≈ (1/N) Σ ∇log π(aₜ|sₜ) · Rₜ"]
+    end
+    style MC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Intuitive Understanding",
+                        "explanation": "Actions that led to high reward get higher probability.",
+                        "diagram_data": """graph TB
+    subgraph "If R > 0"
+        P["Increase log π(a|s)<br/>Make action more likely"]
+    end
+    subgraph "If R < 0"
+        N["Decrease log π(a|s)<br/>Make action less likely"]
+    end
+    subgraph "Magnitude"
+        M["|R| determines how much<br/>to adjust probabilities"]
+    end
+    style P fill:#C8E6C9
+    style N fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_reinforce_visual(self):
+        """Seed RL REINFORCE Algorithm visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="reinforce",
+            defaults={
+                "title": "REINFORCE Algorithm",
+                "description": "Monte Carlo policy gradient method",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["rl", "reinforce", "policy-gradient", "monte-carlo"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What Is REINFORCE?",
+                        "explanation": "The simplest policy gradient algorithm. Uses Monte Carlo returns.",
+                        "diagram_data": """graph TB
+    subgraph "REINFORCE"
+        M["Monte Carlo Policy Gradient"]
+        W["Wait for episode to finish"]
+        U["Update using actual returns"]
+    end
+    style M fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Algorithm",
+                        "explanation": "Run episode, compute returns, update policy.",
+                        "diagram_data": """graph TB
+    S1["1. Generate episode<br/>s₀,a₀,r₁,...,sₜ"]
+    S2["2. For each step t:<br/>Compute Gₜ = Σγᵏrₜ₊ₖ"]
+    S3["3. Update:<br/>θ ← θ + α∇log π(aₜ|sₜ)Gₜ"]
+    S4["4. Repeat"]
+    S1 --> S2 --> S3 --> S4
+    S4 --> S1
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "High Variance Problem",
+                        "explanation": "REINFORCE has high variance because returns vary a lot.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["Returns Gₜ have high variance<br/>Noisy gradient estimates<br/>Slow learning"]
+    end
+    subgraph "Solution"
+        S["Subtract a baseline b(s)<br/>∇log π(aₜ|sₜ)(Gₜ - b)"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Baseline",
+                        "explanation": "A good baseline is the value function V(s). This gives us advantage!",
+                        "diagram_data": """graph TB
+    subgraph "Common Baselines"
+        V["V(s): state value<br/>→ Advantage: A = G - V(s)"]
+        A["Average return"]
+    end
+    subgraph "Properties"
+        P["Reduces variance<br/>Doesn't change expected gradient"]
+    end
+    style V fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "REINFORCE with Baseline",
+                        "explanation": "The improved version using advantage estimation.",
+                        "diagram_data": """graph TB
+    subgraph "Update"
+        U["θ ← θ + α∇log π(aₜ|sₜ)(Gₜ - V(sₜ))"]
+    end
+    subgraph "Now Need"
+        N["Also learn V(s)<br/>→ Actor-Critic!"]
+    end
+    style U fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_actor_critic_visual(self):
+        """Seed RL Actor-Critic Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="actor-critic",
+            defaults={
+                "title": "Actor-Critic Architecture",
+                "description": "Combining policy and value networks",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["rl", "actor-critic", "policy", "value", "architecture"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Components",
+                        "explanation": "Actor-Critic combines policy-based (Actor) and value-based (Critic) methods.",
+                        "diagram_data": """graph TB
+    subgraph "Actor"
+        A["Policy π_θ(a|s)<br/>Decides what to do"]
+    end
+    subgraph "Critic"
+        C["Value V_w(s) or Q_w(s,a)<br/>Evaluates actions"]
+    end
+    A --> |"actions"| E["Environment"]
+    E --> |"feedback"| C
+    C --> |"guides"| A
+    style A fill:#C8E6C9
+    style C fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Why Both?",
+                        "explanation": "Actor provides actions, Critic provides low-variance feedback.",
+                        "diagram_data": """graph TB
+    subgraph "Actor Only (REINFORCE)"
+        AO["High variance<br/>Monte Carlo returns"]
+    end
+    subgraph "Critic Only (Q-Learning)"
+        CO["Can't handle continuous actions<br/>Needs max over actions"]
+    end
+    subgraph "Actor-Critic"
+        AC["Low variance (Critic)<br/>Continuous actions (Actor)"]
+    end
+    style AC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "The Updates",
+                        "explanation": "Both networks are updated during learning.",
+                        "diagram_data": """graph TB
+    subgraph "Critic Update"
+        CU["Minimize TD error<br/>δ = r + γV(s') - V(s)"]
+    end
+    subgraph "Actor Update"
+        AU["∇θ log π(a|s) · δ<br/>Use TD error as advantage"]
+    end
+    CU --> AU
+    style CU fill:#BBDEFB
+    style AU fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "TD Error as Advantage",
+                        "explanation": "The TD error δ estimates the advantage A(s,a).",
+                        "diagram_data": """graph TB
+    subgraph "Advantage"
+        A["A(s,a) = Q(s,a) - V(s)<br/>'How much better than average?'"]
+    end
+    subgraph "TD Error"
+        TD["δ = r + γV(s') - V(s)<br/>One-sample estimate of A"]
+    end
+    subgraph "Benefit"
+        B["No need to wait for episode end!<br/>Online learning"]
+    end
+    style B fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Network Architecture",
+                        "explanation": "Actor and Critic can share lower layers.",
+                        "diagram_data": """graph TB
+    subgraph "Separate"
+        S1["Actor Network"]
+        S2["Critic Network"]
+    end
+    subgraph "Shared"
+        SH["Shared layers<br/>(feature extraction)"]
+        AH["Actor head → π(a|s)"]
+        CH["Critic head → V(s)"]
+        SH --> AH
+        SH --> CH
+    end
+    style SH fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_a2c_a3c_visual(self):
+        """Seed RL A2C/A3C visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="a2c-a3c",
+            defaults={
+                "title": "A2C and A3C",
+                "description": "Advantage estimation and parallel workers",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["rl", "a2c", "a3c", "advantage", "parallel"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "A2C: Advantage Actor-Critic",
+                        "explanation": "Actor-Critic using advantage function for lower variance.",
+                        "diagram_data": """graph TB
+    subgraph "A2C"
+        A["Advantage: A(s,a) = Q(s,a) - V(s)"]
+        U["Update: ∇log π(a|s) · A(s,a)"]
+    end
+    subgraph "Advantage Estimation"
+        E["A ≈ r + γV(s') - V(s)<br/>(TD error)"]
+    end
+    style A fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "n-Step Returns",
+                        "explanation": "Use n-step returns instead of 1-step TD for better bias-variance tradeoff.",
+                        "diagram_data": """graph TB
+    subgraph "1-Step"
+        S1["r + γV(s')"]
+    end
+    subgraph "n-Step"
+        SN["r₁ + γr₂ + ... + γⁿ⁻¹rₙ + γⁿV(sₙ)"]
+    end
+    subgraph "Tradeoff"
+        T["More steps: lower bias, higher variance"]
+    end
+    style SN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "A3C: Asynchronous",
+                        "explanation": "Run multiple workers in parallel, each with own environment.",
+                        "diagram_data": """graph TB
+    subgraph "Global Network"
+        G["Shared parameters θ"]
+    end
+    subgraph "Workers"
+        W1["Worker 1"]
+        W2["Worker 2"]
+        W3["Worker 3"]
+        W4["Worker N"]
+    end
+    W1 --> G
+    W2 --> G
+    W3 --> G
+    W4 --> G
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "A3C Workflow",
+                        "explanation": "Each worker collects experience and computes gradients asynchronously.",
+                        "diagram_data": """graph TB
+    S1["1. Copy global params to local"]
+    S2["2. Collect n steps of experience"]
+    S3["3. Compute gradients locally"]
+    S4["4. Apply gradients to global"]
+    S1 --> S2 --> S3 --> S4
+    S4 --> S1
+    style S4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "A2C vs A3C",
+                        "explanation": "A2C is synchronous version - often simpler and equally effective.",
+                        "diagram_data": """graph TB
+    subgraph "A3C"
+        A3["Async updates<br/>No waiting<br/>Stale gradients"]
+    end
+    subgraph "A2C"
+        A2["Sync updates<br/>All workers wait<br/>Fresher gradients"]
+    end
+    subgraph "In Practice"
+        P["A2C often preferred<br/>Easier to implement & debug"]
+    end
+    style A2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_ppo_visual(self):
+        """Seed RL PPO visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="ppo",
+            defaults={
+                "title": "PPO (Proximal Policy Optimization)",
+                "description": "Clipped objective and trust region intuition",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 8,
+                "tags": ["rl", "ppo", "policy-gradient", "clipping", "trust-region"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why PPO?",
+                        "explanation": "Policy gradient updates can be too large, destabilizing learning. PPO prevents this.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P["Large policy updates<br/>→ Performance collapse<br/>→ Hard to recover"]
+    end
+    subgraph "PPO Solution"
+        S["Clip updates to stay<br/>close to old policy"]
+    end
+    style S fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Probability Ratio",
+                        "explanation": "PPO uses the ratio of new to old policy probabilities.",
+                        "diagram_data": """graph TB
+    subgraph "Ratio"
+        R["r(θ) = π_θ(a|s) / π_θold(a|s)"]
+    end
+    subgraph "Meaning"
+        M["r = 1: same as old policy<br/>r > 1: action more likely<br/>r < 1: action less likely"]
+    end
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Clipped Objective",
+                        "explanation": "Clip the ratio to prevent too large updates.",
+                        "diagram_data": """graph TB
+    subgraph "PPO-Clip"
+        L["L = min(<br/>  r(θ) · A,<br/>  clip(r, 1-ε, 1+ε) · A<br/>)"]
+    end
+    subgraph "Effect"
+        E["Limits how much π can change<br/>ε typically 0.1 or 0.2"]
+    end
+    style L fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Clipping Visualization",
+                        "explanation": "The clip removes incentive for extreme policy changes.",
+                        "diagram_data": """graph TB
+    subgraph "If A > 0 (good action)"
+        G["Want to increase π<br/>But clip at 1+ε<br/>No incentive beyond clip"]
+    end
+    subgraph "If A < 0 (bad action)"
+        B["Want to decrease π<br/>But clip at 1-ε<br/>No incentive beyond clip"]
+    end
+    style G fill:#C8E6C9
+    style B fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "PPO Algorithm",
+                        "explanation": "Collect data, then do multiple epochs of updates.",
+                        "diagram_data": """graph TB
+    S1["1. Run policy, collect trajectories"]
+    S2["2. Compute advantages"]
+    S3["3. Multiple epochs of minibatch updates<br/>(using same data!)"]
+    S4["4. Repeat"]
+    S1 --> S2 --> S3 --> S4
+    S4 --> S1
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Why PPO Is Popular",
+                        "explanation": "PPO is the go-to algorithm for many applications.",
+                        "diagram_data": """graph TB
+    subgraph "Benefits"
+        B1["Simple to implement"]
+        B2["Stable training"]
+                        B3["Good sample efficiency"]
+        B4["Works on many problems"]
+    end
+    subgraph "Used In"
+        U["OpenAI Five, ChatGPT RLHF,<br/>Robotics, Games"]
+    end
+    style U fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_reward_shaping_visual(self):
+        """Seed RL Reward Shaping visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="reward-shaping",
+            defaults={
+                "title": "Reward Shaping",
+                "description": "Sparse vs dense rewards and potential-based shaping",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["rl", "reward", "shaping", "sparse", "dense"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Reward Design Problem",
+                        "explanation": "How you design rewards dramatically affects what the agent learns.",
+                        "diagram_data": """graph TB
+    subgraph "Challenge"
+        C["Agent optimizes your reward<br/>Not your intended goal<br/>Reward hacking!"]
+    end
+    subgraph "Example"
+        E["Robot cleaning: reward = dirt collected<br/>Robot learns to dump and re-collect dirt!"]
+    end
+    style C fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Sparse vs Dense Rewards",
+                        "explanation": "Sparse rewards are natural but hard to learn from.",
+                        "diagram_data": """graph TB
+    subgraph "Sparse"
+        S["+1 at goal, 0 elsewhere<br/>Natural, but exploration hard<br/>Long credit assignment"]
+    end
+    subgraph "Dense"
+        D["Reward at every step<br/>Easier learning<br/>Risk: wrong incentives"]
+    end
+    style S fill:#FFCDD2
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Naive Reward Shaping",
+                        "explanation": "Adding helpful rewards can change the optimal policy!",
+                        "diagram_data": """graph TB
+    subgraph "Original Task"
+        O["Get to goal<br/>Optimal: shortest path"]
+    end
+    subgraph "Add Distance Reward"
+        A["+ (old_dist - new_dist)<br/>Might make agent avoid goal!<br/>(to keep getting reward)"]
+    end
+    style A fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Potential-Based Shaping",
+                        "explanation": "The safe way to add rewards without changing optimal policy.",
+                        "diagram_data": """graph TB
+    subgraph "Formula"
+        F["F(s,s') = γΦ(s') - Φ(s)<br/>Φ: potential function"]
+    end
+    subgraph "Guarantee"
+        G["Preserves optimal policy!<br/>Provably safe shaping"]
+    end
+    subgraph "Example"
+        E["Φ(s) = -distance_to_goal"]
+    end
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Practical Tips",
+                        "explanation": "Guidelines for designing good rewards.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Start sparse, add shaping if needed"]
+        D2["Use potential-based shaping"]
+        D3["Test for reward hacking"]
+    end
+    subgraph "Avoid"
+        A1["Rewards that can be exploited"]
+        A2["Conflicting reward signals"]
+        A3["Over-specified rewards"]
+    end
+    style D2 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rl_multi_agent_visual(self):
+        """Seed RL Multi-Agent visual topic."""
+        subject = self.get_or_create_subject(
+            "Reinforcement Learning", "reinforcement_learning", "Machine Learning"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="multi-agent",
+            defaults={
+                "title": "Multi-Agent RL",
+                "description": "Cooperative, competitive, and mixed scenarios",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["rl", "multi-agent", "marl", "cooperative", "competitive"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Multi-Agent Setting",
+                        "explanation": "Multiple agents interact in the same environment, affecting each other.",
+                        "diagram_data": """graph TB
+    subgraph "Environment"
+        A1["Agent 1"]
+        A2["Agent 2"]
+        A3["Agent N"]
+        E["Shared Environment"]
+    end
+    A1 --> E
+    A2 --> E
+    A3 --> E
+    E --> A1
+    E --> A2
+    E --> A3
+    style E fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Types of Interaction",
+                        "explanation": "Agents can cooperate, compete, or have mixed objectives.",
+                        "diagram_data": """graph TB
+    subgraph "Cooperative"
+        CO["Same reward for all<br/>Team games, robotics<br/>Maximize shared goal"]
+    end
+    subgraph "Competitive"
+        CM["Zero-sum: one wins, one loses<br/>Chess, Go, games"]
+    end
+    subgraph "Mixed"
+        MX["Some cooperation, some competition<br/>Most real-world scenarios"]
+    end
+    style CO fill:#C8E6C9
+    style CM fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Challenges",
+                        "explanation": "MARL is harder than single-agent RL.",
+                        "diagram_data": """graph TB
+    subgraph "Non-Stationarity"
+        NS["Other agents change their policies<br/>Environment appears non-stationary"]
+    end
+    subgraph "Credit Assignment"
+        CA["Who deserves credit for team success?"]
+    end
+    subgraph "Scalability"
+        SC["Action space grows exponentially<br/>with number of agents"]
+    end
+    style NS fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Common Approaches",
+                        "explanation": "Different paradigms for training multi-agent systems.",
+                        "diagram_data": """graph TB
+    subgraph "Independent Learning"
+        IL["Each agent learns independently<br/>Ignore other agents<br/>Simple but unstable"]
+    end
+    subgraph "Centralized Training"
+        CT["Train with global info<br/>Execute with local info<br/>CTDE paradigm"]
+    end
+    subgraph "Communication"
+        CM["Agents learn to communicate<br/>Share information"]
+    end
+    style CT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "CTDE: Centralized Training, Decentralized Execution",
+                        "explanation": "The dominant paradigm in modern MARL.",
+                        "diagram_data": """graph TB
+    subgraph "Training"
+        T["Access to all agents' observations<br/>Global state, joint actions<br/>Centralized critic"]
+    end
+    subgraph "Execution"
+        E["Each agent uses only<br/>local observation<br/>Decentralized policies"]
+    end
+    T --> E
+    style T fill:#BBDEFB
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Applications",
+                        "explanation": "Where multi-agent RL is used.",
+                        "diagram_data": """graph TB
+    subgraph "Games"
+        G["StarCraft, Dota 2<br/>Hide and Seek"]
+    end
+    subgraph "Robotics"
+        R["Swarm robots<br/>Warehouse automation"]
+    end
+    subgraph "Real World"
+        RW["Traffic control<br/>Power grid<br/>Financial markets"]
+    end
+    style G fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== Linux Visuals ====================
+
+    def seed_linux_process_states_visual(self):
+        """Seed Linux Process States & Lifecycle visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="process-states-lifecycle",
+            defaults={
+                "title": "Process States & Lifecycle",
+                "description": "Understanding Linux process states and transitions",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["linux", "process", "states", "lifecycle", "kernel"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Process States Overview",
+                        "explanation": "Linux processes transition through several states during their lifecycle.",
+                        "diagram_data": """stateDiagram-v2
+    [*] --> Created: fork()
+    Created --> Ready: Admitted
+    Ready --> Running: Scheduler dispatch
+    Running --> Ready: Preempted/Yield
+    Running --> Waiting: I/O or Event wait
+    Waiting --> Ready: I/O complete
+    Running --> Terminated: exit()
+    Terminated --> [*]: Cleanup""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Detailed State Codes",
+                        "explanation": "Linux uses specific codes for process states visible in `ps` output.",
+                        "diagram_data": """graph TB
+    subgraph "Running States"
+        R["R - Running/Runnable<br/>On CPU or ready queue"]
+    end
+    subgraph "Sleeping States"
+        S["S - Interruptible Sleep<br/>Waiting for event, can be signaled"]
+        D["D - Uninterruptible Sleep<br/>Waiting for I/O, cannot be killed"]
+    end
+    subgraph "Stopped States"
+        T["T - Stopped<br/>By signal (SIGSTOP)"]
+        t["t - Tracing Stop<br/>Debugger attached"]
+    end
+    subgraph "Dead States"
+        Z["Z - Zombie<br/>Terminated, waiting for parent"]
+        X["X - Dead<br/>Should never be seen"]
+    end
+    style R fill:#C8E6C9
+    style Z fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Process Creation (fork)",
+                        "explanation": "New processes are created by duplicating the parent process.",
+                        "diagram_data": """graph TB
+    subgraph "Parent Process (PID 100)"
+        P1["Code + Data + Stack"]
+    end
+    F["fork()"]
+    subgraph "Child Process (PID 101)"
+        C1["Copy of Code + Data + Stack<br/>Returns 0 from fork()"]
+    end
+    subgraph "Parent Continues"
+        P2["Returns child PID (101)<br/>from fork()"]
+    end
+    P1 --> F
+    F --> C1
+    F --> P2
+    style F fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Zombie Process",
+                        "explanation": "A zombie occurs when a child exits but parent hasn't called wait().",
+                        "diagram_data": """graph LR
+    subgraph "Normal Exit"
+        C1["Child exits"] --> W1["Parent calls wait()"]
+        W1 --> CL1["Resources freed"]
+    end
+    subgraph "Zombie State"
+        C2["Child exits"] --> Z["Zombie State<br/>Exit code retained"]
+        Z --> |"Parent never<br/>calls wait()"| Z
+        Z --> |"Parent calls wait()<br/>or parent dies"| CL2["Finally freed"]
+    end
+    style Z fill:#FFCDD2
+    style CL1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Process Hierarchy",
+                        "explanation": "All processes form a tree with init/systemd (PID 1) as the root.",
+                        "diagram_data": """graph TB
+    I["init/systemd<br/>PID 1"] --> S1["sshd<br/>PID 500"]
+    I --> S2["nginx<br/>PID 600"]
+    I --> S3["cron<br/>PID 700"]
+    S1 --> U1["bash<br/>PID 1001"]
+    S1 --> U2["bash<br/>PID 1002"]
+    U1 --> P1["python<br/>PID 2001"]
+    U1 --> P2["vim<br/>PID 2002"]
+    style I fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Key Commands",
+                        "explanation": "Common commands for process management.",
+                        "diagram_data": """graph TB
+    subgraph "View Processes"
+        PS["ps aux<br/>ps -ef"]
+        TOP["top / htop"]
+        PSTREE["pstree"]
+    end
+    subgraph "Control Processes"
+        KILL["kill PID<br/>kill -9 PID"]
+        NICE["nice -n 10 cmd<br/>renice"]
+        BG["bg / fg<br/>jobs"]
+    end
+    subgraph "Process Info"
+        PROC["/proc/PID/*"]
+        STAT["/proc/PID/status"]
+    end
+    style PS fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_fork_exec_visual(self):
+        """Seed Linux Fork/Exec Model visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="fork-exec-model",
+            defaults={
+                "title": "Fork/Exec Model",
+                "description": "How processes are created and programs executed in Unix",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["linux", "fork", "exec", "process", "unix"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Fork + Exec Pattern",
+                        "explanation": "Unix creates new processes in two steps: fork() copies, exec() replaces.",
+                        "diagram_data": """graph TB
+    subgraph "Step 1: fork()"
+        P1["Parent: /bin/bash"] --> |"fork()"| P2["Parent: /bin/bash"]
+        P1 --> |"fork()"| C1["Child: /bin/bash<br/>(copy of parent)"]
+    end
+    subgraph "Step 2: exec()"
+        C1 --> |"exec('/bin/ls')"| C2["Child: /bin/ls<br/>(replaced)"]
+    end
+    style C2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "fork() Details",
+                        "explanation": "fork() creates an almost exact copy of the calling process.",
+                        "diagram_data": """graph TB
+    subgraph "Before fork()"
+        BP["Process<br/>PID: 100<br/>Code + Data + FDs"]
+    end
+    subgraph "After fork()"
+        AP["Parent<br/>PID: 100<br/>fork() returns 101"]
+        AC["Child<br/>PID: 101<br/>fork() returns 0"]
+    end
+    subgraph "Shared (Copy-on-Write)"
+        SH["Code segment<br/>Read-only data"]
+    end
+    subgraph "Copied"
+        CP["Stack<br/>Heap<br/>File descriptors"]
+    end
+    BP --> AP
+    BP --> AC
+    style AC fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "exec() Family",
+                        "explanation": "exec() replaces the current process image with a new program.",
+                        "diagram_data": """graph TB
+    subgraph "exec() variants"
+        EL["execl(path, arg0, arg1, ..., NULL)<br/>List of args"]
+        EV["execv(path, argv[])<br/>Vector of args"]
+        ELP["execlp(file, arg0, ...)<br/>Search PATH"]
+        EVP["execvp(file, argv[])<br/>Search PATH"]
+        ELE["execle(path, arg0, ..., envp[])<br/>Custom environment"]
+        EVE["execve(path, argv[], envp[])<br/>System call"]
+    end
+    EVE --> |"Base syscall"| K["Kernel"]
+    EL --> EVE
+    EV --> EVE
+    ELP --> EVE
+    EVP --> EVE
+    ELE --> EVE
+    style EVE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Shell Command Execution",
+                        "explanation": "How a shell runs a command like `ls -la`.",
+                        "diagram_data": """graph TB
+    S1["Shell reads: ls -la"]
+    S2["Shell calls fork()"]
+    S3["Child process created"]
+    S4["Child: exec('/bin/ls', 'ls', '-la')"]
+    S5["ls runs, outputs to stdout"]
+    S6["ls exits"]
+    S7["Parent shell: wait() returns"]
+    S8["Shell shows prompt again"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
+    style S4 fill:#BBDEFB
+    style S7 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Copy-on-Write (COW)",
+                        "explanation": "fork() is efficient because pages are shared until modified.",
+                        "diagram_data": """graph TB
+    subgraph "After fork() - Pages Shared"
+        P1["Parent Page Table"] --> M1["Physical Page A"]
+        C1["Child Page Table"] --> M1
+    end
+    subgraph "After Child Writes - COW Triggered"
+        P2["Parent Page Table"] --> M2["Physical Page A"]
+        C2["Child Page Table"] --> M3["Physical Page A'<br/>(copy with changes)"]
+    end
+    M1 --> |"Child writes"| M3
+    style M1 fill:#BBDEFB
+    style M3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Patterns",
+                        "explanation": "Typical fork/exec usage patterns in programs.",
+                        "diagram_data": """graph TB
+    subgraph "Pattern 1: Run Command"
+        R1["fork() + exec() + wait()"]
+    end
+    subgraph "Pattern 2: Daemon"
+        D1["fork() twice<br/>Parent exits<br/>Child becomes daemon"]
+    end
+    subgraph "Pattern 3: Pipeline"
+        P1["fork() for each cmd<br/>pipe() between them<br/>exec() each command"]
+    end
+    subgraph "Modern Alternative"
+        M1["posix_spawn()<br/>Combines fork+exec<br/>More efficient"]
+    end
+    style M1 fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_virtual_memory_visual(self):
+        """Seed Linux Virtual Memory & Paging visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="virtual-memory-paging",
+            defaults={
+                "title": "Virtual Memory & Paging",
+                "description": "Understanding address spaces, page tables, and swapping",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 10,
+                "tags": ["linux", "memory", "virtual", "paging", "swap", "kernel"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Virtual vs Physical Memory",
+                        "explanation": "Each process sees its own virtual address space, mapped to physical RAM.",
+                        "diagram_data": """graph LR
+    subgraph "Process A View"
+        VA1["0x0000 - 0xFFFF<br/>Virtual Addresses"]
+    end
+    subgraph "Process B View"
+        VB1["0x0000 - 0xFFFF<br/>Virtual Addresses"]
+    end
+    subgraph "Physical RAM"
+        PA["Physical Addresses<br/>Shared by all"]
+    end
+    VA1 --> |"Page Table A"| PA
+    VB1 --> |"Page Table B"| PA
+    style PA fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Page Table Translation",
+                        "explanation": "Virtual addresses are translated to physical addresses via page tables.",
+                        "diagram_data": """graph LR
+    subgraph "Virtual Address"
+        VA["0x12345678"]
+        VPN["Page Number: 0x12345"]
+        OFF["Offset: 0x678"]
+    end
+    subgraph "Page Table"
+        PT["VPN to PFN mapping<br/>0x12345 to 0xABCDE"]
+    end
+    subgraph "Physical Address"
+        PFN["Frame Number: 0xABCDE"]
+        POFF["Offset: 0x678"]
+        PA["0xABCDE678"]
+    end
+    VA --> VPN
+    VA --> OFF
+    VPN --> PT --> PFN
+    OFF --> POFF
+    PFN --> PA
+    POFF --> PA
+    style PA fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Multi-Level Page Tables",
+                        "explanation": "64-bit systems use multiple levels to avoid huge page tables.",
+                        "diagram_data": """graph TB
+    VA["Virtual Address<br/>48 bits used"] --> PGD["PGD<br/>Page Global Dir"]
+    PGD --> |"9 bits"| PUD["PUD<br/>Page Upper Dir"]
+    PUD --> |"9 bits"| PMD["PMD<br/>Page Middle Dir"]
+    PMD --> |"9 bits"| PTE["PTE<br/>Page Table Entry"]
+    PTE --> |"9 bits"| PAGE["Physical Page<br/>4KB"]
+    PAGE --> |"12 bits offset"| BYTE["Byte"]
+    style PAGE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Page Fault Handling",
+                        "explanation": "When a page isn't in memory, the kernel handles the fault.",
+                        "diagram_data": """graph TB
+    ACC["Process accesses address"]
+    CHK["Check page table"]
+    CHK --> |"Present bit = 1"| OK["Access physical page"]
+    CHK --> |"Present bit = 0"| PF["PAGE FAULT!"]
+    PF --> TRAP["Trap to kernel"]
+    TRAP --> TYPE{"Fault type?"}
+    TYPE --> |"Valid, not loaded"| LOAD["Load from disk/swap"]
+    TYPE --> |"Copy-on-write"| COW["Copy page, update PTE"]
+    TYPE --> |"Invalid address"| SEG["SIGSEGV!"]
+    LOAD --> RES["Resume process"]
+    COW --> RES
+    style PF fill:#FFCDD2
+    style SEG fill:#FFCDD2
+    style OK fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Swap Space",
+                        "explanation": "When RAM is full, pages are swapped to disk.",
+                        "diagram_data": """graph TB
+    subgraph "RAM (Full)"
+        R1["Page A - Active"]
+        R2["Page B - Active"]
+        R3["Page C - Inactive"]
+        R4["Page D - Inactive"]
+    end
+    subgraph "Swap (Disk)"
+        S1["Page E"]
+        S2["Page F"]
+    end
+    R3 --> |"Swap out<br/>(LRU)"| S1
+    S2 --> |"Swap in<br/>(page fault)"| R3
+    style S1 fill:#FFCDD2
+    style R1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Memory Monitoring",
+                        "explanation": "Tools and files for monitoring memory usage.",
+                        "diagram_data": """graph TB
+    subgraph "Commands"
+        FREE["free -h<br/>System memory"]
+        TOP["top / htop<br/>Per-process"]
+        VMSTAT["vmstat<br/>VM statistics"]
+        PMAP["pmap PID<br/>Process mapping"]
+    end
+    subgraph "/proc Files"
+        MI["/proc/meminfo<br/>System details"]
+        PM["/proc/PID/maps<br/>Process mappings"]
+        SM["/proc/PID/smaps<br/>Detailed memory"]
+    end
+    subgraph "Key Metrics"
+        RSS["RSS: Resident Set Size"]
+        VSZ["VSZ: Virtual Size"]
+        SHR["SHR: Shared Memory"]
+    end
+    style FREE fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_memory_layout_visual(self):
+        """Seed Linux Memory Layout visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="memory-layout",
+            defaults={
+                "title": "Memory Layout",
+                "description": "Stack, heap, data, and text segments in process memory",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["linux", "memory", "stack", "heap", "segments"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Process Memory Layout",
+                        "explanation": "A process's virtual memory is divided into distinct segments.",
+                        "diagram_data": """graph TB
+    subgraph "High Addresses (0xFFFF...)"
+        K["Kernel Space<br/>(not accessible)"]
+    end
+    subgraph "User Space"
+        ST["Stack down<br/>Local vars, return addrs"]
+        GAP1["..."]
+        MM["Memory Mapped Region<br/>Shared libs, mmap"]
+        GAP2["..."]
+        HP["Heap up<br/>Dynamic allocation"]
+        BSS["BSS<br/>Uninitialized globals"]
+        DATA["Data<br/>Initialized globals"]
+        TEXT["Text<br/>Program code"]
+    end
+    subgraph "Low Addresses (0x0000...)"
+        NL["NULL (unmapped)"]
+    end
+    style ST fill:#FFCDD2
+    style HP fill:#C8E6C9
+    style TEXT fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Text Segment",
+                        "explanation": "Contains the executable code (read-only, shared).",
+                        "diagram_data": """graph TB
+    subgraph "Text Segment"
+        CODE["Machine code instructions<br/>Read-only<br/>Shared between processes<br/>Fixed size"]
+    end
+    subgraph "Properties"
+        P1["Loaded from executable"]
+        P2["Cannot be modified"]
+        P3["Same code = shared pages"]
+    end
+    CODE --> P1
+    CODE --> P2
+    CODE --> P3
+    style CODE fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Data and BSS Segments",
+                        "explanation": "Global and static variables live in data segments.",
+                        "diagram_data": """graph TB
+    subgraph "Data Segment"
+        D1["Initialized globals<br/>int x = 42;"]
+        D2["Initialized statics<br/>static int y = 10;"]
+    end
+    subgraph "BSS Segment"
+        B1["Uninitialized globals<br/>int arr[1000];"]
+        B2["Zero-initialized<br/>by kernel at load"]
+    end
+    subgraph "Note"
+        N["BSS doesn't take space<br/>in executable file"]
+    end
+    style D1 fill:#FFF9C4
+    style B1 fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Heap",
+                        "explanation": "Dynamic memory allocation grows upward.",
+                        "diagram_data": """graph TB
+    subgraph "Heap Management"
+        BRK["Program break (brk)"]
+        M1["malloc(100)"]
+        M2["malloc(200)"]
+        M3["malloc(50)"]
+        FREE["free() - returns to pool"]
+    end
+    subgraph "Heap Growth"
+        H1["Initial heap"]
+        H2["After allocations up"]
+        H3["brk() moves up"]
+    end
+    M1 --> H2
+    M2 --> H2
+    H2 --> H3
+    FREE --> |"Fragmentation<br/>possible"| H2
+    style H3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Stack",
+                        "explanation": "Function calls, local variables, grows downward.",
+                        "diagram_data": """graph TB
+    subgraph "Stack Frame (main)"
+        M1["Return address"]
+        M2["Local vars"]
+    end
+    subgraph "Stack Frame (func1)"
+        F1["Return address"]
+        F2["Arguments"]
+        F3["Local vars"]
+    end
+    subgraph "Stack Frame (func2)"
+        G1["Return address"]
+        G2["Arguments"]
+        G3["Local vars - ESP/RSP"]
+    end
+    M1 --> F1
+    F1 --> G1
+    style G3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Viewing Memory Layout",
+                        "explanation": "Commands to inspect process memory layout.",
+                        "diagram_data": """graph TB
+    subgraph "View Layout"
+        MAPS["/proc/PID/maps<br/>Memory regions"]
+        SIZE["size executable<br/>Segment sizes"]
+        PMAP["pmap -x PID<br/>Detailed mapping"]
+    end
+    subgraph "Example /proc/PID/maps"
+        EX["00400000-00401000 r-xp [text]<br/>00600000-00601000 rw-p [data]<br/>00601000-00622000 rw-p [heap]<br/>7fff...-7fff... rw-p [stack]"]
+    end
+    style EX fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_inode_visual(self):
+        """Seed Linux Inode Structure visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="inode-structure",
+            defaults={
+                "title": "Inode Structure",
+                "description": "How files are stored and referenced in Linux filesystems",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["linux", "filesystem", "inode", "storage"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is an Inode?",
+                        "explanation": "An inode stores metadata about a file, but NOT its name or data.",
+                        "diagram_data": """graph TB
+    subgraph "Inode Contains"
+        I["Inode #12345"]
+        M1["File type (file/dir/link)"]
+        M2["Permissions (rwxr-xr-x)"]
+        M3["Owner UID / Group GID"]
+        M4["Size in bytes"]
+        M5["Timestamps (atime/mtime/ctime)"]
+        M6["Link count"]
+        M7["Pointers to data blocks"]
+    end
+    subgraph "NOT in Inode"
+        N1["Filename X"]
+        N2["File data X"]
+    end
+    I --> M1
+    I --> M2
+    I --> M3
+    I --> M4
+    I --> M5
+    I --> M6
+    I --> M7
+    style I fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Directory Entries",
+                        "explanation": "Directories map filenames to inode numbers.",
+                        "diagram_data": """graph LR
+    subgraph "Directory /home/user"
+        DE1["'file.txt' to inode 1001"]
+        DE2["'data.csv' to inode 1002"]
+        DE3["'.' to inode 500"]
+        DE4["'..' to inode 2"]
+    end
+    subgraph "Inodes"
+        I1["Inode 1001<br/>metadata + blocks"]
+        I2["Inode 1002<br/>metadata + blocks"]
+    end
+    DE1 --> I1
+    DE2 --> I2
+    style I1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Data Block Pointers",
+                        "explanation": "Inodes use direct and indirect pointers for file data.",
+                        "diagram_data": """graph TB
+    subgraph "Inode"
+        D["12 Direct Pointers<br/>(12 x 4KB = 48KB)"]
+        SI["Single Indirect<br/>(1024 x 4KB = 4MB)"]
+        DI["Double Indirect<br/>(1024^2 x 4KB = 4GB)"]
+        TI["Triple Indirect<br/>(1024^3 x 4KB = 4TB)"]
+    end
+    D --> B1["Block 100"]
+    D --> B2["Block 101"]
+    SI --> IB1["Indirect Block"]
+    IB1 --> B3["Block 200"]
+    IB1 --> B4["Block 201"]
+    DI --> IB2["Indirect Block"]
+    IB2 --> IB3["Indirect Block"]
+    IB3 --> B5["Block 300"]
+    style D fill:#C8E6C9
+    style SI fill:#FFF9C4
+    style DI fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Hard Links",
+                        "explanation": "Multiple directory entries can point to the same inode.",
+                        "diagram_data": """graph LR
+    subgraph "Directory A"
+        F1["'original.txt' to inode 1001"]
+    end
+    subgraph "Directory B"
+        F2["'link.txt' to inode 1001"]
+    end
+    subgraph "Inode 1001"
+        I["Link count: 2<br/>Size: 1024<br/>Blocks: ..."]
+    end
+    F1 --> I
+    F2 --> I
+    style I fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Symbolic Links",
+                        "explanation": "Symlinks are separate files that store a path.",
+                        "diagram_data": """graph LR
+    subgraph "Symlink"
+        S["'shortcut' to inode 2001"]
+        SI["Inode 2001<br/>Type: symlink<br/>Data: '/path/to/target'"]
+    end
+    subgraph "Target"
+        T["'target' to inode 1001"]
+        TI["Inode 1001<br/>Type: file<br/>Actual data"]
+    end
+    S --> SI
+    SI --> |"Path lookup"| T
+    T --> TI
+    style SI fill:#E1BEE7
+    style TI fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Inode Commands",
+                        "explanation": "Commands to view inode information.",
+                        "diagram_data": """graph TB
+    subgraph "View Inodes"
+        LS["ls -i file<br/>Show inode number"]
+        STAT["stat file<br/>Detailed inode info"]
+        DF["df -i<br/>Inode usage"]
+    end
+    subgraph "Create Links"
+        LN["ln file hardlink<br/>Hard link"]
+        LNS["ln -s file symlink<br/>Symbolic link"]
+    end
+    subgraph "Find by Inode"
+        FIND["find / -inum 12345<br/>Find files by inode"]
+    end
+    style LS fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_file_descriptors_visual(self):
+        """Seed Linux File Descriptors visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="file-descriptors",
+            defaults={
+                "title": "File Descriptors",
+                "description": "Understanding stdin, stdout, stderr, and file handles",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["linux", "file", "descriptor", "stdin", "stdout", "stderr"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is a File Descriptor?",
+                        "explanation": "A file descriptor is an integer that references an open file/resource.",
+                        "diagram_data": """graph LR
+    subgraph "Process"
+        FD["File Descriptor Table<br/>FD to File Object"]
+    end
+    subgraph "Kernel"
+        OF["Open File Table<br/>Position, Flags, Inode"]
+        IN["Inode Table<br/>File metadata"]
+    end
+    FD --> OF --> IN
+    style FD fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Standard Streams",
+                        "explanation": "Every process starts with three open file descriptors.",
+                        "diagram_data": """graph LR
+    subgraph "Process"
+        FD0["FD 0: stdin"]
+        FD1["FD 1: stdout"]
+        FD2["FD 2: stderr"]
+    end
+    subgraph "Default Connections"
+        TERM["Terminal"]
+    end
+    TERM --> |"Input"| FD0
+    FD1 --> |"Output"| TERM
+    FD2 --> |"Errors"| TERM
+    style FD0 fill:#C8E6C9
+    style FD1 fill:#BBDEFB
+    style FD2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Opening Files",
+                        "explanation": "open() returns the lowest available file descriptor.",
+                        "diagram_data": """graph TB
+    subgraph "Initial State"
+        I0["0: stdin"]
+        I1["1: stdout"]
+        I2["2: stderr"]
+    end
+    subgraph "After open('file.txt')"
+        A0["0: stdin"]
+        A1["1: stdout"]
+        A2["2: stderr"]
+        A3["3: file.txt"]
+    end
+    subgraph "After open('data.csv')"
+        B0["0: stdin"]
+        B1["1: stdout"]
+        B2["2: stderr"]
+        B3["3: file.txt"]
+        B4["4: data.csv"]
+    end
+    style A3 fill:#C8E6C9
+    style B4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "FD Inheritance",
+                        "explanation": "Child processes inherit file descriptors from parent.",
+                        "diagram_data": """graph TB
+    subgraph "Parent Process"
+        PFD["FD Table<br/>0: stdin<br/>1: stdout<br/>2: stderr<br/>3: logfile"]
+    end
+    F["fork()"]
+    subgraph "Child Process"
+        CFD["FD Table (copy)<br/>0: stdin<br/>1: stdout<br/>2: stderr<br/>3: logfile"]
+    end
+    subgraph "Shared"
+        SH["Both point to same<br/>open file objects!"]
+    end
+    PFD --> F --> CFD
+    PFD --> SH
+    CFD --> SH
+    style SH fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "dup/dup2",
+                        "explanation": "Duplicate file descriptors for redirection.",
+                        "diagram_data": """graph TB
+    subgraph "Before dup2(fd, 1)"
+        B1["1: stdout to terminal"]
+        BF["fd: logfile"]
+    end
+    subgraph "After dup2(fd, 1)"
+        A1["1: stdout to logfile"]
+        AF["fd: logfile"]
+    end
+    subgraph "Effect"
+        E["printf() now writes<br/>to logfile!"]
+    end
+    B1 --> |"dup2(fd, 1)"| A1
+    style A1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Viewing File Descriptors",
+                        "explanation": "Commands to inspect process file descriptors.",
+                        "diagram_data": """graph TB
+    subgraph "View FDs"
+        LS["ls -la /proc/PID/fd/<br/>List open FDs"]
+        LSOF["lsof -p PID<br/>Detailed FD info"]
+        FUSER["fuser file<br/>Who has file open"]
+    end
+    subgraph "/proc/PID/fd/ Example"
+        EX["0 to /dev/pts/0<br/>1 to /dev/pts/0<br/>2 to /dev/pts/0<br/>3 to /home/user/file.txt"]
+    end
+    subgraph "Limits"
+        UL["ulimit -n<br/>Max open FDs"]
+    end
+    style LS fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_permissions_visual(self):
+        """Seed Linux Permissions Model visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="permissions-model",
+            defaults={
+                "title": "Permissions Model",
+                "description": "User/group/other permissions, rwx, chmod, and chown",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["linux", "permissions", "chmod", "chown", "security"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Permission Structure",
+                        "explanation": "Every file has three permission sets: owner, group, and others.",
+                        "diagram_data": """graph TB
+    subgraph "File Permissions"
+        F["file.txt"]
+        P["-rwxr-xr--"]
+    end
+    subgraph "Breakdown"
+        T["- = file type<br/>(d=dir, l=link)"]
+        U["rwx = Owner<br/>(user)"]
+        G["r-x = Group"]
+        O["r-- = Others<br/>(world)"]
+    end
+    P --> T
+    P --> U
+    P --> G
+    P --> O
+    style U fill:#C8E6C9
+    style G fill:#BBDEFB
+    style O fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Permission Bits",
+                        "explanation": "Each permission (r, w, x) has a numeric value.",
+                        "diagram_data": """graph TB
+    subgraph "Symbolic"
+        R["r = read"]
+        W["w = write"]
+        X["x = execute"]
+    end
+    subgraph "Numeric (Octal)"
+        R4["r = 4"]
+        W2["w = 2"]
+        X1["x = 1"]
+    end
+    subgraph "Examples"
+        E1["rwx = 4+2+1 = 7"]
+        E2["rw- = 4+2+0 = 6"]
+        E3["r-x = 4+0+1 = 5"]
+        E4["r-- = 4+0+0 = 4"]
+    end
+    R --> R4
+    W --> W2
+    X --> X1
+    style E1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Common Permission Sets",
+                        "explanation": "Typical permission combinations and their use cases.",
+                        "diagram_data": """graph TB
+    subgraph "Files"
+        F1["644 (rw-r--r--)<br/>Normal files"]
+        F2["755 (rwxr-xr-x)<br/>Scripts, executables"]
+        F3["600 (rw-------)<br/>Private files"]
+        F4["700 (rwx------)<br/>Private scripts"]
+    end
+    subgraph "Directories"
+        D1["755 (rwxr-xr-x)<br/>Normal directories"]
+        D2["700 (rwx------)<br/>Private directories"]
+        D3["777 (rwxrwxrwx)<br/>Shared /tmp"]
+    end
+    style F1 fill:#C8E6C9
+    style D1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Directory Permissions",
+                        "explanation": "Permissions have different meanings for directories.",
+                        "diagram_data": """graph TB
+    subgraph "For Directories"
+        R["r = list contents<br/>(ls)"]
+        W["w = create/delete files<br/>(touch, rm)"]
+        X["x = enter directory<br/>(cd)"]
+    end
+    subgraph "Common Issues"
+        I1["r without x:<br/>Can list but not access"]
+        I2["w without x:<br/>Cannot create files"]
+        I3["x without r:<br/>Can enter but not list"]
+    end
+    style X fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Special Permissions",
+                        "explanation": "setuid, setgid, and sticky bit add extra security controls.",
+                        "diagram_data": """graph TB
+    subgraph "setuid (4xxx)"
+        SUID["Runs as file owner<br/>-rwsr-xr-x<br/>Example: /usr/bin/passwd"]
+    end
+    subgraph "setgid (2xxx)"
+        SGID["Runs as file group<br/>-rwxr-sr-x<br/>Dir: new files inherit group"]
+    end
+    subgraph "Sticky Bit (1xxx)"
+        STICKY["Only owner can delete<br/>drwxrwxrwt<br/>Example: /tmp"]
+    end
+    style SUID fill:#FFCDD2
+    style STICKY fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Permission Commands",
+                        "explanation": "Commands to view and modify permissions.",
+                        "diagram_data": """graph TB
+    subgraph "View"
+        LS["ls -l<br/>Show permissions"]
+        STAT["stat file<br/>Detailed info"]
+    end
+    subgraph "Modify Permissions"
+        CM1["chmod 755 file<br/>Numeric mode"]
+        CM2["chmod u+x file<br/>Add execute for user"]
+        CM3["chmod go-w file<br/>Remove write for group/other"]
+        CM4["chmod -R 755 dir/<br/>Recursive"]
+    end
+    subgraph "Modify Ownership"
+        CO1["chown user file"]
+        CO2["chown user:group file"]
+        CO3["chgrp group file"]
+    end
+    style CM1 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_directory_tree_visual(self):
+        """Seed Linux Directory Tree visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="directory-tree",
+            defaults={
+                "title": "Directory Tree",
+                "description": "Standard Linux filesystem hierarchy and directory purposes",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["linux", "filesystem", "fhs", "directories"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Root Filesystem",
+                        "explanation": "The Filesystem Hierarchy Standard (FHS) defines directory purposes.",
+                        "diagram_data": """graph TB
+    ROOT["/"] --> BIN["/bin<br/>Essential binaries"]
+    ROOT --> SBIN["/sbin<br/>System binaries"]
+    ROOT --> ETC["/etc<br/>Configuration"]
+    ROOT --> HOME["/home<br/>User directories"]
+    ROOT --> VAR["/var<br/>Variable data"]
+    ROOT --> TMP["/tmp<br/>Temporary files"]
+    ROOT --> USR["/usr<br/>User programs"]
+    ROOT --> OPT["/opt<br/>Optional software"]
+    ROOT --> PROC["/proc<br/>Process info"]
+    ROOT --> DEV["/dev<br/>Device files"]
+    style ROOT fill:#FFCDD2
+    style ETC fill:#C8E6C9
+    style HOME fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Essential Directories",
+                        "explanation": "Directories required for system boot and basic operation.",
+                        "diagram_data": """graph TB
+    subgraph "Boot Critical"
+        BIN["/bin<br/>ls, cp, cat, bash"]
+        SBIN["/sbin<br/>fdisk, mount, init"]
+        LIB["/lib<br/>Shared libraries"]
+    end
+    subgraph "Configuration"
+        ETC["/etc<br/>passwd, fstab, hosts"]
+        ETCD["/etc/systemd/<br/>Service configs"]
+    end
+    subgraph "Temporary"
+        TMP["/tmp<br/>Cleared on reboot"]
+        VARTMP["/var/tmp<br/>Persistent temp"]
+    end
+    style BIN fill:#C8E6C9
+    style ETC fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "/usr Hierarchy",
+                        "explanation": "Secondary hierarchy for user programs and data.",
+                        "diagram_data": """graph TB
+    USR["/usr"] --> UBIN["/usr/bin<br/>User commands"]
+    USR --> USBIN["/usr/sbin<br/>System admin commands"]
+    USR --> ULIB["/usr/lib<br/>Libraries"]
+    USR --> ULOCAL["/usr/local<br/>Locally installed"]
+    ULOCAL --> ULBIN["/usr/local/bin"]
+    ULOCAL --> ULLIB["/usr/local/lib"]
+    USR --> USHARE["/usr/share<br/>Architecture-independent"]
+    USHARE --> MAN["/usr/share/man<br/>Man pages"]
+    style ULOCAL fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "/var Hierarchy",
+                        "explanation": "Variable data that changes during operation.",
+                        "diagram_data": """graph TB
+    VAR["/var"] --> LOG["/var/log<br/>Log files"]
+    VAR --> CACHE["/var/cache<br/>Application cache"]
+    VAR --> SPOOL["/var/spool<br/>Print/mail queues"]
+    VAR --> LIB["/var/lib<br/>State information"]
+    VAR --> RUN["/var/run -> /run<br/>Runtime data"]
+    LOG --> SYSLOG["syslog, auth.log"]
+    LOG --> NGINX["nginx/, apache2/"]
+    style LOG fill:#FFCDD2
+    style LIB fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Virtual Filesystems",
+                        "explanation": "Special filesystems that provide kernel/hardware info.",
+                        "diagram_data": """graph TB
+    subgraph "/proc (Process Info)"
+        P1["/proc/cpuinfo"]
+        P2["/proc/meminfo"]
+        P3["/proc/PID/<br/>Per-process info"]
+    end
+    subgraph "/sys (System/Hardware)"
+        S1["/sys/class/<br/>Device classes"]
+        S2["/sys/block/<br/>Block devices"]
+    end
+    subgraph "/dev (Devices)"
+        D1["/dev/sda<br/>Hard drive"]
+        D2["/dev/null<br/>Null device"]
+        D3["/dev/random<br/>Random numbers"]
+    end
+    style P3 fill:#C8E6C9
+    style D2 fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Key Configuration Files",
+                        "explanation": "Important files in /etc for system configuration.",
+                        "diagram_data": """graph TB
+    subgraph "User/Auth"
+        PASSWD["/etc/passwd<br/>User accounts"]
+        SHADOW["/etc/shadow<br/>Password hashes"]
+        GROUP["/etc/group<br/>Group definitions"]
+    end
+    subgraph "Network"
+        HOSTS["/etc/hosts<br/>Host mappings"]
+        RESOLV["/etc/resolv.conf<br/>DNS servers"]
+        NETPLAN["/etc/netplan/<br/>Network config"]
+    end
+    subgraph "System"
+        FSTAB["/etc/fstab<br/>Mount points"]
+        CRON["/etc/crontab<br/>Scheduled tasks"]
+        SSH["/etc/ssh/<br/>SSH config"]
+    end
+    style PASSWD fill:#C8E6C9
+    style FSTAB fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_io_redirection_visual(self):
+        """Seed Linux I/O Redirection & Pipes visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="io-redirection-pipes",
+            defaults={
+                "title": "I/O Redirection & Pipes",
+                "description": "stdin/stdout chaining, pipes, and redirection operators",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["linux", "io", "redirection", "pipe", "shell"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Standard Streams",
+                        "explanation": "Every process has three standard I/O streams.",
+                        "diagram_data": """graph LR
+    subgraph "Input"
+        STDIN["stdin (0)<br/>Keyboard/File"]
+    end
+    subgraph "Process"
+        PROC["Command"]
+    end
+    subgraph "Output"
+        STDOUT["stdout (1)<br/>Normal output"]
+        STDERR["stderr (2)<br/>Error messages"]
+    end
+    STDIN --> PROC
+    PROC --> STDOUT
+    PROC --> STDERR
+    style STDIN fill:#C8E6C9
+    style STDOUT fill:#BBDEFB
+    style STDERR fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Output Redirection",
+                        "explanation": "Redirect stdout and stderr to files.",
+                        "diagram_data": """graph LR
+    subgraph "Operators"
+        GT["> file<br/>Overwrite stdout"]
+        GTGT[">> file<br/>Append stdout"]
+        GT2["2> file<br/>Redirect stderr"]
+        GTAMP["&> file<br/>Both stdout+stderr"]
+    end
+    subgraph "Examples"
+        E1["ls > list.txt"]
+        E2["echo hi >> log.txt"]
+        E3["cmd 2> errors.txt"]
+        E4["cmd &> all.txt"]
+    end
+    style GT fill:#C8E6C9
+    style GTGT fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Input Redirection",
+                        "explanation": "Redirect stdin from files.",
+                        "diagram_data": """graph LR
+    subgraph "Operators"
+        LT["< file<br/>Read from file"]
+        LTLT["<< EOF<br/>Here document"]
+        LTLTLT["<<< 'string'<br/>Here string"]
+    end
+    subgraph "Examples"
+        E1["sort < data.txt"]
+        E2["cat << EOF<br/>multi-line<br/>EOF"]
+        E3["grep x <<< 'text'"]
+    end
+    LT --> E1
+    LTLT --> E2
+    LTLTLT --> E3
+    style LT fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Pipes",
+                        "explanation": "Connect stdout of one command to stdin of another.",
+                        "diagram_data": """graph LR
+    subgraph "Pipeline"
+        C1["ls -la"]
+        P1["|"]
+        C2["grep txt"]
+        P2["|"]
+        C3["wc -l"]
+    end
+    C1 --> |"stdout"| P1
+    P1 --> |"stdin"| C2
+    C2 --> |"stdout"| P2
+    P2 --> |"stdin"| C3
+    C3 --> OUT["Result: count"]
+    style P1 fill:#BBDEFB
+    style P2 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Advanced Redirection",
+                        "explanation": "File descriptor manipulation and tee.",
+                        "diagram_data": """graph TB
+    subgraph "FD Manipulation"
+        F1["2>&1<br/>stderr to stdout"]
+        F2["1>&2<br/>stdout to stderr"]
+        F3["cmd > f 2>&1<br/>Both to file"]
+    end
+    subgraph "tee Command"
+        T1["cmd | tee file<br/>Write to file AND stdout"]
+        T2["cmd | tee -a file<br/>Append mode"]
+    end
+    subgraph "Process Substitution"
+        PS["diff <(cmd1) <(cmd2)<br/>Compare outputs"]
+    end
+    style T1 fill:#C8E6C9
+    style PS fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Patterns",
+                        "explanation": "Frequently used redirection patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Discard Output"
+        D1["cmd > /dev/null<br/>Discard stdout"]
+        D2["cmd 2> /dev/null<br/>Discard stderr"]
+        D3["cmd &> /dev/null<br/>Discard all"]
+    end
+    subgraph "Log Everything"
+        L1["script | tee log.txt"]
+        L2["cmd 2>&1 | tee log.txt"]
+    end
+    subgraph "Error Handling"
+        E1["cmd 2>&1 | grep Error"]
+        E2["cmd > out.txt 2> err.txt"]
+    end
+    style D1 fill:#E1BEE7
+    style L1 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_signals_visual(self):
+        """Seed Linux Signal Handling visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="signal-handling",
+            defaults={
+                "title": "Signal Handling",
+                "description": "SIGTERM, SIGKILL, SIGINT, and signal flow in Linux",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["linux", "signals", "kill", "process", "ipc"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What are Signals?",
+                        "explanation": "Signals are software interrupts for inter-process communication.",
+                        "diagram_data": """graph LR
+    subgraph "Signal Sources"
+        K["Kernel"]
+        U["User (kill cmd)"]
+        P["Another Process"]
+        HW["Hardware"]
+    end
+    subgraph "Target Process"
+        PROC["Process"]
+        H["Signal Handler"]
+    end
+    K --> |"SIGSEGV"| PROC
+    U --> |"SIGTERM"| PROC
+    P --> |"SIGUSR1"| PROC
+    HW --> |"SIGFPE"| PROC
+    PROC --> H
+    style PROC fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Common Signals",
+                        "explanation": "The most frequently used signals and their purposes.",
+                        "diagram_data": """graph TB
+    subgraph "Termination"
+        S15["SIGTERM (15)<br/>Graceful terminate<br/>Can be caught"]
+        S9["SIGKILL (9)<br/>Force kill<br/>Cannot be caught!"]
+        S3["SIGQUIT (3)<br/>Quit with core dump"]
+    end
+    subgraph "User Input"
+        S2["SIGINT (2)<br/>Ctrl+C"]
+        S20["SIGTSTP (20)<br/>Ctrl+Z"]
+    end
+    subgraph "Job Control"
+        S18["SIGCONT (18)<br/>Resume stopped"]
+        S19["SIGSTOP (19)<br/>Stop process"]
+    end
+    style S9 fill:#FFCDD2
+    style S15 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Signal Handling Options",
+                        "explanation": "A process can handle, ignore, or use default action for signals.",
+                        "diagram_data": """graph TB
+    SIG["Signal Arrives"]
+    SIG --> D{"Process Choice"}
+    D --> |"Default"| DEF["Default Action<br/>(usually terminate)"]
+    D --> |"Handle"| H["Custom Handler<br/>Run user code"]
+    D --> |"Ignore"| IGN["Ignore Signal<br/>(except SIGKILL)"]
+    subgraph "Cannot be caught/ignored"
+        KILL["SIGKILL (9)"]
+        STOP["SIGSTOP (19)"]
+    end
+    style KILL fill:#FFCDD2
+    style H fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Sending Signals",
+                        "explanation": "Commands to send signals to processes.",
+                        "diagram_data": """graph TB
+    subgraph "kill Command"
+        K1["kill PID<br/>(sends SIGTERM)"]
+        K2["kill -9 PID<br/>(sends SIGKILL)"]
+        K3["kill -SIGTERM PID"]
+        K4["kill -l<br/>(list signals)"]
+    end
+    subgraph "Other Commands"
+        KA["killall name<br/>Kill by name"]
+        PK["pkill pattern<br/>Kill by pattern"]
+    end
+    subgraph "Keyboard"
+        CC["Ctrl+C = SIGINT"]
+        CZ["Ctrl+Z = SIGTSTP"]
+        CB["Ctrl+\\ = SIGQUIT"]
+    end
+    style K1 fill:#C8E6C9
+    style CC fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Signal Flow",
+                        "explanation": "How signals are delivered and processed.",
+                        "diagram_data": """graph TB
+    SEND["Signal Sent"]
+    PEND["Added to Pending Set"]
+    CHK{"Process Running?"}
+    PEND --> CHK
+    CHK --> |"Yes"| DEL["Delivered Immediately"]
+    CHK --> |"No (sleeping)"| WAKE["Wake Process"]
+    WAKE --> DEL
+    DEL --> MASK{"Signal Masked?"}
+    MASK --> |"Yes"| BLOCK["Remains Pending"]
+    MASK --> |"No"| EXEC["Execute Handler"]
+    style DEL fill:#C8E6C9
+    style BLOCK fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Graceful Shutdown Pattern",
+                        "explanation": "Best practice for handling termination signals.",
+                        "diagram_data": """graph TB
+    subgraph "Proper Shutdown"
+        S1["Receive SIGTERM"]
+        S2["Set shutdown flag"]
+        S3["Finish current work"]
+        S4["Close connections"]
+        S5["Cleanup resources"]
+        S6["Exit cleanly"]
+    end
+    subgraph "Timeout Backup"
+        T1["If still running..."]
+        T2["SIGKILL after timeout"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    T1 --> T2
+    style S1 fill:#FFF9C4
+    style S6 fill:#C8E6C9
+    style T2 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_tcpip_stack_visual(self):
+        """Seed Linux TCP/IP Stack visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="tcpip-stack",
+            defaults={
+                "title": "TCP/IP Stack",
+                "description": "Network layers in Linux kernel and data flow",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 9,
+                "tags": ["linux", "networking", "tcp", "ip", "kernel"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Network Layer Model",
+                        "explanation": "The TCP/IP model maps to Linux kernel subsystems.",
+                        "diagram_data": """graph TB
+    subgraph "Application Layer"
+        APP["HTTP, SSH, DNS<br/>User space programs"]
+    end
+    subgraph "Transport Layer"
+        TCP["TCP"]
+        UDP["UDP"]
+    end
+    subgraph "Network Layer"
+        IP["IP (IPv4/IPv6)<br/>Routing, ICMP"]
+    end
+    subgraph "Link Layer"
+        ETH["Ethernet, WiFi<br/>Device drivers"]
+    end
+    APP --> TCP
+    APP --> UDP
+    TCP --> IP
+    UDP --> IP
+    IP --> ETH
+    style IP fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Packet Send Path",
+                        "explanation": "How data flows from application to network.",
+                        "diagram_data": """graph TB
+    APP["Application: send()"]
+    SOCK["Socket Layer"]
+    TCP["TCP: Add header<br/>Seq, Ack, Checksum"]
+    IP["IP: Add header<br/>Src/Dst IP, TTL"]
+    ROUTE["Routing Decision"]
+    DEV["Device Driver"]
+    NIC["Network Card (NIC)"]
+    APP --> SOCK --> TCP --> IP --> ROUTE --> DEV --> NIC
+    style TCP fill:#C8E6C9
+    style IP fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Packet Receive Path",
+                        "explanation": "How incoming packets reach applications.",
+                        "diagram_data": """graph TB
+    NIC["NIC receives packet"]
+    IRQ["Hardware IRQ"]
+    NAPI["NAPI polling"]
+    IP["IP Layer<br/>Check destination"]
+    FW["Netfilter/iptables"]
+    TCP["TCP Layer<br/>Reassemble, ACK"]
+    SOCK["Socket Queue"]
+    APP["Application: recv()"]
+    NIC --> IRQ --> NAPI --> IP --> FW --> TCP --> SOCK --> APP
+    style FW fill:#FFCDD2
+    style SOCK fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Netfilter/iptables",
+                        "explanation": "Linux firewall framework with chain hooks.",
+                        "diagram_data": """graph LR
+    IN["Incoming"]
+    PRE["PREROUTING"]
+    ROUTE{"Routing<br/>Decision"}
+    FWD["FORWARD"]
+    INPUT["INPUT"]
+    LOCAL["Local Process"]
+    OUTPUT["OUTPUT"]
+    POST["POSTROUTING"]
+    OUT["Outgoing"]
+    IN --> PRE --> ROUTE
+    ROUTE --> |"For us"| INPUT --> LOCAL
+    ROUTE --> |"Forward"| FWD --> POST --> OUT
+    LOCAL --> OUTPUT --> POST
+    style INPUT fill:#C8E6C9
+    style FWD fill:#BBDEFB
+    style OUTPUT fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Socket Types",
+                        "explanation": "Different socket types for different protocols.",
+                        "diagram_data": """graph TB
+    subgraph "Stream Socket (SOCK_STREAM)"
+        TCP["TCP<br/>Reliable, ordered<br/>Connection-oriented"]
+    end
+    subgraph "Datagram Socket (SOCK_DGRAM)"
+        UDP["UDP<br/>Unreliable, unordered<br/>Connectionless"]
+    end
+    subgraph "Raw Socket (SOCK_RAW)"
+        RAW["Direct IP access<br/>Custom protocols<br/>Requires root"]
+    end
+    style TCP fill:#C8E6C9
+    style UDP fill:#BBDEFB
+    style RAW fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Network Debugging Tools",
+                        "explanation": "Commands for network troubleshooting.",
+                        "diagram_data": """graph TB
+    subgraph "Connectivity"
+        PING["ping<br/>ICMP echo"]
+        TRACE["traceroute<br/>Path discovery"]
+        NC["nc (netcat)<br/>TCP/UDP testing"]
+    end
+    subgraph "Configuration"
+        IP["ip addr/link/route<br/>Network config"]
+        SS["ss -tuln<br/>Socket statistics"]
+        NETSTAT["netstat<br/>(legacy)"]
+    end
+    subgraph "Packet Analysis"
+        TCPD["tcpdump<br/>Packet capture"]
+        WS["wireshark<br/>GUI analysis"]
+    end
+    style SS fill:#C8E6C9
+    style TCPD fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_sockets_visual(self):
+        """Seed Linux Socket Communication visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="socket-communication",
+            defaults={
+                "title": "Socket Communication",
+                "description": "Client-server model, ports, bind/listen/accept",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["linux", "sockets", "networking", "client", "server"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Socket Concept",
+                        "explanation": "A socket is an endpoint for network communication.",
+                        "diagram_data": """graph LR
+    subgraph "Client"
+        CS["Socket<br/>IP:Port"]
+    end
+    subgraph "Network"
+        NET["TCP/IP"]
+    end
+    subgraph "Server"
+        SS["Socket<br/>IP:Port"]
+    end
+    CS <--> NET <--> SS
+    style CS fill:#C8E6C9
+    style SS fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Server Socket Flow",
+                        "explanation": "Steps to create a listening server socket.",
+                        "diagram_data": """graph TB
+    S1["socket()<br/>Create socket FD"]
+    S2["bind()<br/>Assign address:port"]
+    S3["listen()<br/>Mark as passive"]
+    S4["accept()<br/>Wait for connection"]
+    S5["recv()/send()<br/>Exchange data"]
+    S6["close()<br/>End connection"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    S4 --> |"New client"| S5
+    S4 --> |"Loop"| S4
+    style S3 fill:#C8E6C9
+    style S4 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Client Socket Flow",
+                        "explanation": "Steps for a client to connect to a server.",
+                        "diagram_data": """graph TB
+    C1["socket()<br/>Create socket FD"]
+    C2["connect()<br/>Connect to server"]
+    C3["send()/recv()<br/>Exchange data"]
+    C4["close()<br/>End connection"]
+    C1 --> C2 --> C3 --> C4
+    style C2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "TCP Handshake",
+                        "explanation": "Three-way handshake establishes TCP connections.",
+                        "diagram_data": """sequenceDiagram
+    participant C as Client
+    participant S as Server
+    Note over S: listen()
+    C->>S: SYN (seq=x)
+    Note over S: SYN received
+    S->>C: SYN-ACK (seq=y, ack=x+1)
+    Note over C: SYN-ACK received
+    C->>S: ACK (ack=y+1)
+    Note over S: Connection established
+    Note over C,S: Data transfer begins""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Port Ranges",
+                        "explanation": "Port numbers are categorized by usage.",
+                        "diagram_data": """graph TB
+    subgraph "Well-Known (0-1023)"
+        W1["22: SSH"]
+        W2["80: HTTP"]
+        W3["443: HTTPS"]
+        W4["Require root to bind"]
+    end
+    subgraph "Registered (1024-49151)"
+        R1["3306: MySQL"]
+        R2["5432: PostgreSQL"]
+        R3["8080: Alt HTTP"]
+    end
+    subgraph "Dynamic (49152-65535)"
+        D1["Ephemeral ports"]
+        D2["Client connections"]
+        D3["Assigned by OS"]
+    end
+    style W2 fill:#C8E6C9
+    style D1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Socket Options",
+                        "explanation": "Important socket options for common scenarios.",
+                        "diagram_data": """graph TB
+    subgraph "Address Reuse"
+        SO1["SO_REUSEADDR<br/>Reuse TIME_WAIT addr"]
+        SO2["SO_REUSEPORT<br/>Multiple binds to same port"]
+    end
+    subgraph "Timeouts"
+        SO3["SO_RCVTIMEO<br/>Receive timeout"]
+        SO4["SO_SNDTIMEO<br/>Send timeout"]
+    end
+    subgraph "Buffer Sizes"
+        SO5["SO_RCVBUF<br/>Receive buffer"]
+        SO6["SO_SNDBUF<br/>Send buffer"]
+    end
+    subgraph "Keep Alive"
+        SO7["SO_KEEPALIVE<br/>Detect dead connections"]
+    end
+    style SO1 fill:#C8E6C9
+    style SO7 fill:#FFF9C4""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_systemd_visual(self):
+        """Seed Linux Systemd Service Lifecycle visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="systemd-service-lifecycle",
+            defaults={
+                "title": "Systemd Service Lifecycle",
+                "description": "Unit files, dependencies, targets, and service management",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["linux", "systemd", "services", "init", "units"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Systemd?",
+                        "explanation": "Systemd is the init system and service manager for modern Linux.",
+                        "diagram_data": """graph TB
+    subgraph "systemd (PID 1)"
+        SM["Service Manager"]
+        JM["Journal (Logging)"]
+        TM["Timer Management"]
+        DM["Device Management"]
+    end
+    subgraph "Units"
+        SVC["service<br/>.service"]
+        TGT["target<br/>.target"]
+        TMR["timer<br/>.timer"]
+        MNT["mount<br/>.mount"]
+        SKT["socket<br/>.socket"]
+    end
+    SM --> SVC
+    SM --> TGT
+    SM --> TMR
+    style SM fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Service States",
+                        "explanation": "Services transition through different states.",
+                        "diagram_data": """stateDiagram-v2
+    [*] --> inactive: Unit loaded
+    inactive --> activating: start
+    activating --> active: Started successfully
+    activating --> failed: Start failed
+    active --> deactivating: stop
+    active --> reloading: reload
+    reloading --> active: Reloaded
+    deactivating --> inactive: Stopped
+    failed --> inactive: reset-failed
+    inactive --> [*]: unload""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Unit File Structure",
+                        "explanation": "A service unit file has three main sections.",
+                        "diagram_data": """graph TB
+    subgraph "[Unit] Section"
+        U1["Description=My Service"]
+        U2["After=network.target"]
+        U3["Requires=postgresql.service"]
+    end
+    subgraph "[Service] Section"
+        S1["Type=simple|forking|oneshot"]
+        S2["ExecStart=/usr/bin/myapp"]
+        S3["ExecReload=/bin/kill -HUP"]
+        S4["Restart=on-failure"]
+        S5["User=myuser"]
+    end
+    subgraph "[Install] Section"
+        I1["WantedBy=multi-user.target"]
+    end
+    style S2 fill:#C8E6C9
+    style I1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Dependencies",
+                        "explanation": "Units can depend on other units in various ways.",
+                        "diagram_data": """graph TB
+    subgraph "Ordering"
+        AFTER["After=<br/>Start after X"]
+        BEFORE["Before=<br/>Start before X"]
+    end
+    subgraph "Requirement"
+        REQ["Requires=<br/>Must have X running"]
+        WANTS["Wants=<br/>Prefer X running"]
+        BINDS["BindsTo=<br/>Stop if X stops"]
+    end
+    subgraph "Conflicts"
+        CON["Conflicts=<br/>Cannot run with X"]
+    end
+    style WANTS fill:#C8E6C9
+    style REQ fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Targets",
+                        "explanation": "Targets group units and define system states.",
+                        "diagram_data": """graph TB
+    subgraph "Boot Sequence"
+        SYS["sysinit.target"]
+        BASIC["basic.target"]
+        NET["network.target"]
+        MULTI["multi-user.target"]
+        GRAPH["graphical.target"]
+    end
+    SYS --> BASIC --> NET --> MULTI --> GRAPH
+    subgraph "Common Targets"
+        RES["rescue.target<br/>Single user"]
+        SHUT["shutdown.target<br/>Shutdown"]
+        REB["reboot.target<br/>Reboot"]
+    end
+    style MULTI fill:#C8E6C9
+    style GRAPH fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "systemctl Commands",
+                        "explanation": "Essential commands for managing services.",
+                        "diagram_data": """graph TB
+    subgraph "Control"
+        START["systemctl start svc"]
+        STOP["systemctl stop svc"]
+        RESTART["systemctl restart svc"]
+        RELOAD["systemctl reload svc"]
+    end
+    subgraph "Enable/Disable"
+        EN["systemctl enable svc<br/>Start at boot"]
+        DIS["systemctl disable svc"]
+    end
+    subgraph "Status"
+        STAT["systemctl status svc"]
+        LIST["systemctl list-units"]
+        FAIL["systemctl --failed"]
+    end
+    subgraph "Logs"
+        JRNL["journalctl -u svc"]
+        JFLW["journalctl -fu svc<br/>Follow"]
+    end
+    style START fill:#C8E6C9
+    style JRNL fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_cron_visual(self):
+        """Seed Linux Cron & Scheduling visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cron-scheduling",
+            defaults={
+                "title": "Cron & Scheduling",
+                "description": "Crontab syntax, scheduled jobs, and systemd timers",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["linux", "cron", "scheduling", "automation", "timer"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Cron Overview",
+                        "explanation": "Cron runs scheduled commands at specified times.",
+                        "diagram_data": """graph TB
+    subgraph "Cron Daemon"
+        CD["crond<br/>Runs continuously"]
+    end
+    subgraph "Crontab Files"
+        UC["/var/spool/cron/<br/>User crontabs"]
+        SC["/etc/crontab<br/>System crontab"]
+        CD1["/etc/cron.d/<br/>Drop-in files"]
+    end
+    subgraph "Periodic Dirs"
+        H["/etc/cron.hourly/"]
+        D["/etc/cron.daily/"]
+        W["/etc/cron.weekly/"]
+        M["/etc/cron.monthly/"]
+    end
+    CD --> UC
+    CD --> SC
+    CD --> CD1
+    style CD fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Crontab Syntax",
+                        "explanation": "Five time fields followed by the command.",
+                        "diagram_data": """graph TB
+    subgraph "Format"
+        F["* * * * * command"]
+        F1["| | | | +-- Day of week (0-7)"]
+        F2["| | | +---- Month (1-12)"]
+        F3["| | +------ Day of month (1-31)"]
+        F4["| +-------- Hour (0-23)"]
+        F5["+---------- Minute (0-59)"]
+    end
+    subgraph "Special Characters"
+        AST["* = any value"]
+        COM[", = value list"]
+        DASH["- = range"]
+        SLASH["/ = step"]
+    end
+    style F fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Crontab Examples",
+                        "explanation": "Common scheduling patterns.",
+                        "diagram_data": """graph TB
+    subgraph "Examples"
+        E1["0 * * * *<br/>Every hour"]
+        E2["0 0 * * *<br/>Daily at midnight"]
+        E3["0 0 * * 0<br/>Weekly on Sunday"]
+        E4["0 0 1 * *<br/>Monthly on 1st"]
+        E5["*/5 * * * *<br/>Every 5 minutes"]
+        E6["0 9-17 * * 1-5<br/>Hourly 9-5 weekdays"]
+    end
+    subgraph "Special Strings"
+        S1["@reboot - on boot"]
+        S2["@hourly - 0 * * * *"]
+        S3["@daily - 0 0 * * *"]
+        S4["@weekly - 0 0 * * 0"]
+    end
+    style E1 fill:#C8E6C9
+    style S1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Crontab Commands",
+                        "explanation": "Managing user crontabs.",
+                        "diagram_data": """graph TB
+    subgraph "User Commands"
+        ED["crontab -e<br/>Edit your crontab"]
+        LS["crontab -l<br/>List your crontab"]
+        RM["crontab -r<br/>Remove your crontab"]
+    end
+    subgraph "Admin Commands"
+        EU["crontab -u user -e<br/>Edit user's crontab"]
+        LU["crontab -u user -l<br/>List user's crontab"]
+    end
+    subgraph "Best Practices"
+        BP1["Use full paths"]
+        BP2["Redirect output"]
+        BP3["Set PATH in crontab"]
+    end
+    style ED fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Cron Environment",
+                        "explanation": "Cron runs with a minimal environment.",
+                        "diagram_data": """graph TB
+    subgraph "Default Cron Environment"
+        E1["PATH=/usr/bin:/bin"]
+        E2["HOME=user's home"]
+        E3["SHELL=/bin/sh"]
+        E4["No DISPLAY, etc."]
+    end
+    subgraph "Solutions"
+        S1["Set PATH in crontab"]
+        S2["Use full paths"]
+        S3["Source profile in script"]
+        S4["Set vars in crontab"]
+    end
+    subgraph "Example"
+        EX["PATH=/usr/local/bin:/usr/bin:/bin<br/>0 * * * * /path/to/script.sh"]
+    end
+    style E1 fill:#FFCDD2
+    style EX fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Systemd Timers",
+                        "explanation": "Modern alternative to cron using systemd.",
+                        "diagram_data": """graph TB
+    subgraph "Timer Unit (.timer)"
+        T1["[Unit]<br/>Description=My Timer"]
+        T2["[Timer]<br/>OnCalendar=daily<br/>OnBootSec=5min"]
+        T3["[Install]<br/>WantedBy=timers.target"]
+    end
+    subgraph "Service Unit (.service)"
+        S1["[Service]<br/>ExecStart=/path/to/script"]
+    end
+    subgraph "Commands"
+        C1["systemctl enable mytimer.timer"]
+        C2["systemctl list-timers"]
+    end
+    T2 --> |"Triggers"| S1
+    style T2 fill:#C8E6C9
+    style C2 fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_linux_environment_variables_visual(self):
+        """Seed Linux Environment Variables visual topic."""
+        subject = self.get_or_create_subject("Linux", "linux", "DevOps & Infrastructure")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="environment-variables",
+            defaults={
+                "title": "Environment Variables",
+                "description": "Shell inheritance, PATH resolution, and configuration",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["linux", "environment", "variables", "shell", "path"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What are Environment Variables?",
+                        "explanation": "Named values that affect process behavior.",
+                        "diagram_data": """graph TB
+    subgraph "Environment Variables"
+        P["PATH=/usr/bin:/bin"]
+        H["HOME=/home/user"]
+        U["USER=username"]
+        S["SHELL=/bin/bash"]
+        L["LANG=en_US.UTF-8"]
+    end
+    subgraph "Usage"
+        U1["Configure programs"]
+        U2["Store secrets"]
+        U3["Customize behavior"]
+    end
+    P --> U1
+    style P fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Variable Inheritance",
+                        "explanation": "Environment variables are inherited by child processes.",
+                        "diagram_data": """graph TB
+    subgraph "Parent Shell"
+        PS["VAR=value<br/>export VAR"]
+    end
+    subgraph "Child Process (fork+exec)"
+        CP["Inherits VAR=value"]
+    end
+    subgraph "Not Inherited"
+        NI["Shell variables<br/>(not exported)"]
+    end
+    PS --> |"export"| CP
+    NI --> |"Not passed"| CP
+    style PS fill:#C8E6C9
+    style CP fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Setting Variables",
+                        "explanation": "Different ways to set environment variables.",
+                        "diagram_data": """graph TB
+    subgraph "Current Session"
+        S1["export VAR=value<br/>Set for this shell + children"]
+        S2["VAR=value command<br/>Set only for this command"]
+    end
+    subgraph "Permanent (User)"
+        U1["~/.bashrc<br/>Interactive shells"]
+        U2["~/.bash_profile<br/>Login shells"]
+        U3["~/.profile<br/>POSIX shells"]
+    end
+    subgraph "Permanent (System)"
+        G1["/etc/environment"]
+        G2["/etc/profile"]
+        G3["/etc/profile.d/*.sh"]
+    end
+    style S1 fill:#C8E6C9
+    style U1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "PATH Variable",
+                        "explanation": "PATH tells the shell where to find executables.",
+                        "diagram_data": """graph TB
+    subgraph "PATH Resolution"
+        CMD["$ python"]
+        CHK["Shell checks PATH<br/>left to right"]
+        P1["/usr/local/bin/python?"]
+        P2["/usr/bin/python?"]
+        P3["/bin/python?"]
+        FOUND["Execute first match"]
+    end
+    CMD --> CHK
+    CHK --> P1 --> |"No"| P2 --> |"Yes"| FOUND
+    subgraph "Modify PATH"
+        ADD["export PATH=$PATH:/new/path<br/>Append"]
+        PRE["export PATH=/new/path:$PATH<br/>Prepend"]
+    end
+    style FOUND fill:#C8E6C9
+    style PRE fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Common Variables",
+                        "explanation": "Frequently used environment variables.",
+                        "diagram_data": """graph TB
+    subgraph "User Info"
+        USER["USER - Username"]
+        HOME["HOME - Home directory"]
+        SHELL["SHELL - Default shell"]
+    end
+    subgraph "Locale"
+        LANG["LANG - Language"]
+        TZ["TZ - Timezone"]
+    end
+    subgraph "Programs"
+        EDITOR["EDITOR - Default editor"]
+        PAGER["PAGER - Default pager"]
+        TERM["TERM - Terminal type"]
+    end
+    subgraph "Development"
+        PATH["PATH - Executable search"]
+        LD["LD_LIBRARY_PATH - Libraries"]
+        PYPATH["PYTHONPATH - Python modules"]
+    end
+    style PATH fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Viewing and Debugging",
+                        "explanation": "Commands to inspect environment variables.",
+                        "diagram_data": """graph TB
+    subgraph "View Variables"
+        ENV["env<br/>All variables"]
+        PRINT["printenv VAR<br/>Specific variable"]
+        ECHO["echo $VAR<br/>In shell"]
+        SET["set<br/>Shell + env vars"]
+    end
+    subgraph "Unset"
+        UN["unset VAR<br/>Remove variable"]
+    end
+    subgraph "Debug"
+        D1["env -i command<br/>Run with empty env"]
+        D2["which command<br/>Show PATH resolution"]
+    end
+    style ENV fill:#C8E6C9
+    style D2 fill:#E1BEE7""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== Package Management Visuals ====================
+
+    def seed_pkg_pip_conda_poetry_visual(self):
+        """Seed pip vs conda vs poetry comparison visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pip-conda-poetry",
+            defaults={
+                "title": "pip vs conda vs poetry",
+                "description": "Comparison of Python package managers and their use cases",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 7,
+                "tags": ["pip", "conda", "poetry", "python", "packages"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Package Manager Overview",
+                        "explanation": "Three main Python package managers serve different needs.",
+                        "diagram_data": """graph TB
+    subgraph "pip"
+        PIP["Python Package Installer<br/>Default, PyPI-focused"]
+    end
+    subgraph "conda"
+        CONDA["Cross-language Manager<br/>Data science focused"]
+    end
+    subgraph "poetry"
+        POETRY["Modern Python Tool<br/>Dependency management + packaging"]
+    end
+    style PIP fill:#BBDEFB
+    style CONDA fill:#C8E6C9
+    style POETRY fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "pip Characteristics",
+                        "explanation": "pip is Python's default package installer.",
+                        "diagram_data": """graph TB
+    subgraph "pip Pros"
+        P1["Default with Python"]
+        P2["Huge PyPI ecosystem"]
+        P3["Simple and fast"]
+        P4["requirements.txt standard"]
+    end
+    subgraph "pip Cons"
+        C1["Python-only packages"]
+        C2["No env management"]
+        C3["Weak dependency resolution"]
+        C4["No lock file built-in"]
+    end
+    subgraph "Best For"
+        B1["Simple projects"]
+        B2["Pure Python deps"]
+    end
+    style P2 fill:#C8E6C9
+    style C3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "conda Characteristics",
+                        "explanation": "conda manages packages AND environments across languages.",
+                        "diagram_data": """graph TB
+    subgraph "conda Pros"
+        P1["Multi-language (Python, R, C++)"]
+        P2["Built-in env management"]
+        P3["Pre-compiled binaries"]
+        P4["Great for data science"]
+    end
+    subgraph "conda Cons"
+        C1["Slower resolution"]
+        C2["Larger disk usage"]
+        C3["Fewer packages than PyPI"]
+        C4["Can conflict with pip"]
+    end
+    subgraph "Best For"
+        B1["Data science/ML"]
+        B2["Complex native deps"]
+    end
+    style P3 fill:#C8E6C9
+    style C1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "poetry Characteristics",
+                        "explanation": "poetry is a modern all-in-one Python tool.",
+                        "diagram_data": """graph TB
+    subgraph "poetry Pros"
+        P1["Deterministic builds (lock file)"]
+        P2["Strong dependency resolver"]
+        P3["Built-in packaging"]
+        P4["pyproject.toml standard"]
+    end
+    subgraph "poetry Cons"
+        C1["Learning curve"]
+        C2["Slower installs"]
+        C3["Python-only"]
+        C4["Less ecosystem support"]
+    end
+    subgraph "Best For"
+        B1["Libraries/packages"]
+        B2["Reproducible builds"]
+    end
+    style P1 fill:#C8E6C9
+    style P2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Feature Comparison",
+                        "explanation": "Side-by-side feature comparison.",
+                        "diagram_data": """graph TB
+    subgraph "Feature Matrix"
+        F1["Env Management:<br/>pip: No | conda: Yes | poetry: Yes"]
+        F2["Lock Files:<br/>pip: No* | conda: Yes | poetry: Yes"]
+        F3["Non-Python:<br/>pip: No | conda: Yes | poetry: No"]
+        F4["Build/Publish:<br/>pip: No | conda: No | poetry: Yes"]
+        F5["Speed:<br/>pip: Fast | conda: Slow | poetry: Medium"]
+    end
+    style F1 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Decision Guide",
+                        "explanation": "Choose based on your project needs.",
+                        "diagram_data": """graph TB
+    START["New Project?"]
+    START --> Q1{"Need non-Python<br/>packages?"}
+    Q1 --> |"Yes"| CONDA["Use conda"]
+    Q1 --> |"No"| Q2{"Building a<br/>library?"}
+    Q2 --> |"Yes"| POETRY["Use poetry"]
+    Q2 --> |"No"| Q3{"Need reproducible<br/>builds?"}
+    Q3 --> |"Yes"| POETRY
+    Q3 --> |"Simple project"| PIP["Use pip + venv"]
+    style CONDA fill:#C8E6C9
+    style POETRY fill:#E1BEE7
+    style PIP fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_virtual_environments_visual(self):
+        """Seed Virtual Environments visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="virtual-environments",
+            defaults={
+                "title": "Virtual Environments",
+                "description": "venv, virtualenv, and conda environment isolation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["venv", "virtualenv", "conda", "isolation", "python"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Virtual Environments?",
+                        "explanation": "Isolate project dependencies to avoid conflicts.",
+                        "diagram_data": """graph TB
+    subgraph "Without Virtual Envs"
+        SYS["System Python"]
+        P1["Project A<br/>needs Django 3.2"]
+        P2["Project B<br/>needs Django 4.0"]
+        SYS --> P1
+        SYS --> P2
+        CONFLICT["Version Conflict!"]
+    end
+    subgraph "With Virtual Envs"
+        VA["Env A<br/>Django 3.2"]
+        VB["Env B<br/>Django 4.0"]
+        PA["Project A"] --> VA
+        PB["Project B"] --> VB
+        OK["No Conflict!"]
+    end
+    style CONFLICT fill:#FFCDD2
+    style OK fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "venv (Built-in)",
+                        "explanation": "Python's built-in virtual environment tool.",
+                        "diagram_data": """graph TB
+    subgraph "Create"
+        C1["python -m venv myenv"]
+    end
+    subgraph "Activate"
+        A1["source myenv/bin/activate<br/>(Linux/Mac)"]
+        A2["myenv\\Scripts\\activate<br/>(Windows)"]
+    end
+    subgraph "Use"
+        U1["pip install packages"]
+        U2["python script.py"]
+    end
+    subgraph "Deactivate"
+        D1["deactivate"]
+    end
+    C1 --> A1
+    A1 --> U1 --> U2 --> D1
+    style C1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Environment Structure",
+                        "explanation": "What's inside a virtual environment directory.",
+                        "diagram_data": """graph TB
+    subgraph "myenv/"
+        BIN["bin/ (or Scripts/)<br/>python, pip, activate"]
+        LIB["lib/pythonX.X/site-packages/<br/>Installed packages"]
+        INC["include/<br/>C headers"]
+        CFG["pyvenv.cfg<br/>Configuration"]
+    end
+    subgraph "Key Points"
+        K1["Symlinks to base Python"]
+        K2["Isolated site-packages"]
+        K3["Own pip installation"]
+    end
+    style LIB fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "conda Environments",
+                        "explanation": "conda provides more powerful environment isolation.",
+                        "diagram_data": """graph TB
+    subgraph "Create"
+        C1["conda create -n myenv python=3.11"]
+        C2["conda create -n myenv --file env.yml"]
+    end
+    subgraph "Activate"
+        A1["conda activate myenv"]
+    end
+    subgraph "Manage"
+        M1["conda install numpy"]
+        M2["conda list"]
+        M3["conda env export > env.yml"]
+    end
+    subgraph "Deactivate"
+        D1["conda deactivate"]
+    end
+    C1 --> A1 --> M1
+    style C1 fill:#C8E6C9
+    style M3 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "venv vs conda",
+                        "explanation": "Key differences between venv and conda environments.",
+                        "diagram_data": """graph TB
+    subgraph "venv"
+        V1["Python only"]
+        V2["Uses system Python"]
+        V3["Lightweight"]
+        V4["pip for packages"]
+    end
+    subgraph "conda"
+        C1["Any language"]
+        C2["Own Python copy"]
+        C3["Heavier"]
+        C4["conda or pip"]
+    end
+    subgraph "Choose venv when"
+        CV["Pure Python project<br/>Simple deps"]
+    end
+    subgraph "Choose conda when"
+        CC["Data science<br/>Native libraries<br/>Non-Python deps"]
+    end
+    style CV fill:#BBDEFB
+    style CC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Best Practices",
+                        "explanation": "Tips for managing virtual environments effectively.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["One env per project"]
+        D2["Add env to .gitignore"]
+        D3["Document in README"]
+        D4["Use requirements.txt or lock file"]
+    end
+    subgraph "Don't"
+        N1["Don't commit env folder"]
+        N2["Don't use global packages"]
+        N3["Don't share envs between projects"]
+    end
+    subgraph "Naming"
+        NM["Use .venv or venv<br/>in project root"]
+    end
+    style D1 fill:#C8E6C9
+    style N1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_dependency_resolution_visual(self):
+        """Seed Dependency Resolution visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="dependency-resolution",
+            defaults={
+                "title": "Dependency Resolution",
+                "description": "How package managers resolve version conflicts",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["dependencies", "resolution", "versions", "conflicts"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Dependency Problem",
+                        "explanation": "Packages depend on other packages with version constraints.",
+                        "diagram_data": """graph TB
+    APP["Your App"]
+    APP --> A["Package A<br/>requires C>=1.0"]
+    APP --> B["Package B<br/>requires C<2.0"]
+    A --> C1["C 1.5?"]
+    B --> C1
+    subgraph "Resolution"
+        R["Find C version that<br/>satisfies both:<br/>C>=1.0 AND C<2.0<br/>Solution: C 1.5"]
+    end
+    style R fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Version Specifiers",
+                        "explanation": "How to specify version requirements.",
+                        "diagram_data": """graph TB
+    subgraph "Exact"
+        E1["==1.2.3<br/>Exactly this version"]
+    end
+    subgraph "Ranges"
+        R1[">=1.0<br/>1.0 or higher"]
+        R2["<2.0<br/>Below 2.0"]
+        R3[">=1.0,<2.0<br/>Between 1.0 and 2.0"]
+    end
+    subgraph "Compatible"
+        C1["~=1.4<br/>>=1.4, <1.5 (patch updates)"]
+        C2["^1.4<br/>>=1.4, <2.0 (minor updates)"]
+    end
+    subgraph "Wildcards"
+        W1["1.*<br/>Any 1.x version"]
+    end
+    style C1 fill:#C8E6C9
+    style C2 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Resolution Strategies",
+                        "explanation": "Different approaches to finding compatible versions.",
+                        "diagram_data": """graph TB
+    subgraph "pip (Legacy)"
+        P1["First-found wins"]
+        P2["Install in order"]
+        P3["May break later"]
+    end
+    subgraph "pip (New Resolver)"
+        N1["Backtracking algorithm"]
+        N2["Tries to satisfy all"]
+        N3["Fails if impossible"]
+    end
+    subgraph "poetry/conda"
+        C1["SAT solver"]
+        C2["Optimal solution"]
+        C3["Slower but complete"]
+    end
+    style P3 fill:#FFCDD2
+    style C2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Conflict Example",
+                        "explanation": "When dependencies cannot be satisfied together.",
+                        "diagram_data": """graph TB
+    APP["Your App"]
+    APP --> A["Package A<br/>requires numpy>=2.0"]
+    APP --> B["Package B<br/>requires numpy<1.20"]
+    A --> NP1["numpy 2.0"]
+    B --> NP2["numpy 1.19"]
+    CONFLICT["CONFLICT!<br/>No version satisfies both"]
+    subgraph "Solutions"
+        S1["Update Package B"]
+        S2["Downgrade Package A"]
+        S3["Find alternatives"]
+        S4["Fork and patch"]
+    end
+    style CONFLICT fill:#FFCDD2
+    style S1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Transitive Dependencies",
+                        "explanation": "Dependencies of dependencies add complexity.",
+                        "diagram_data": """graph TB
+    APP["Your App"]
+    APP --> A["requests"]
+    APP --> B["flask"]
+    A --> C["urllib3"]
+    A --> D["certifi"]
+    B --> E["werkzeug"]
+    B --> F["jinja2"]
+    F --> G["markupsafe"]
+    subgraph "Depth"
+        DIRECT["Direct: 2"]
+        TRANS["Transitive: 5"]
+        TOTAL["Total: 7"]
+    end
+    style APP fill:#BBDEFB
+    style G fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Debugging Resolution",
+                        "explanation": "Tools to understand dependency issues.",
+                        "diagram_data": """graph TB
+    subgraph "Visualization"
+        V1["pipdeptree<br/>Show dependency tree"]
+        V2["pip show pkg<br/>Package details"]
+    end
+    subgraph "Debugging"
+        D1["pip install --dry-run"]
+        D2["pip check<br/>Find broken deps"]
+        D3["pip install -v<br/>Verbose output"]
+    end
+    subgraph "Resolution"
+        R1["pip install --upgrade-strategy eager"]
+        R2["pip install pkg --force-reinstall"]
+    end
+    style V1 fill:#C8E6C9
+    style D2 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_requirements_vs_pyproject_visual(self):
+        """Seed requirements.txt vs pyproject.toml visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="requirements-vs-pyproject",
+            defaults={
+                "title": "requirements.txt vs pyproject.toml",
+                "description": "Dependency specification formats comparison",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["requirements", "pyproject", "toml", "dependencies"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Approaches",
+                        "explanation": "Two main ways to specify Python project dependencies.",
+                        "diagram_data": """graph LR
+    subgraph "Traditional"
+        REQ["requirements.txt<br/>Simple list of packages"]
+    end
+    subgraph "Modern"
+        PYP["pyproject.toml<br/>Project metadata + deps"]
+    end
+    REQ --> |"pip install -r"| INST["Install"]
+    PYP --> |"pip install ."| INST
+    style REQ fill:#BBDEFB
+    style PYP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "requirements.txt",
+                        "explanation": "Simple text file listing packages and versions.",
+                        "diagram_data": """graph TB
+    subgraph "Format"
+        F1["# Comments<br/>package==1.0.0<br/>package>=1.0,<2.0<br/>-r other-requirements.txt"]
+    end
+    subgraph "Variants"
+        V1["requirements.txt<br/>Production"]
+        V2["requirements-dev.txt<br/>Development"]
+        V3["requirements-test.txt<br/>Testing"]
+    end
+    subgraph "Generate"
+        G1["pip freeze > requirements.txt"]
+    end
+    style F1 fill:#FFF9C4
+    style G1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "pyproject.toml",
+                        "explanation": "Modern standard for Python project configuration.",
+                        "diagram_data": """graph TB
+    subgraph "Sections"
+        S1["[build-system]<br/>Build tool config"]
+        S2["[project]<br/>Metadata + dependencies"]
+        S3["[project.optional-dependencies]<br/>Extras like dev, test"]
+        S4["[tool.*]<br/>Tool configs (black, pytest)"]
+    end
+    subgraph "Benefits"
+        B1["Single config file"]
+        B2["Standard format (PEP 621)"]
+        B3["Tool configuration"]
+    end
+    style S2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Comparison",
+                        "explanation": "Key differences between the two formats.",
+                        "diagram_data": """graph TB
+    subgraph "requirements.txt"
+        R1["Just dependencies"]
+        R2["No metadata"]
+        R3["pip only"]
+        R4["Good for apps"]
+    end
+    subgraph "pyproject.toml"
+        P1["Deps + metadata"]
+        P2["Name, version, authors"]
+        P3["Multiple tools"]
+        P4["Good for libraries"]
+    end
+    subgraph "Can use both!"
+        BOTH["pyproject.toml for package<br/>requirements.txt for pinning"]
+    end
+    style BOTH fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Migration Path",
+                        "explanation": "Moving from requirements.txt to pyproject.toml.",
+                        "diagram_data": """graph TB
+    subgraph "Step 1"
+        S1["Create pyproject.toml<br/>Add [project] section"]
+    end
+    subgraph "Step 2"
+        S2["Move dependencies to<br/>[project.dependencies]"]
+    end
+    subgraph "Step 3"
+        S3["Add optional deps to<br/>[project.optional-dependencies]"]
+    end
+    subgraph "Step 4"
+        S4["Keep requirements.txt<br/>for CI/deployment pinning"]
+    end
+    S1 --> S2 --> S3 --> S4
+    style S4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "When to Use Which",
+                        "explanation": "Guidelines for choosing the right format.",
+                        "diagram_data": """graph TB
+    subgraph "Use requirements.txt"
+        R1["Simple scripts"]
+        R2["Legacy projects"]
+        R3["Deployment pinning"]
+        R4["Docker builds"]
+    end
+    subgraph "Use pyproject.toml"
+        P1["New projects"]
+        P2["Publishable packages"]
+        P3["Need tool configs"]
+        P4["Modern workflow"]
+    end
+    subgraph "Use Both"
+        B1["Library development<br/>pyproject.toml for package<br/>requirements.txt for CI pins"]
+    end
+    style P4 fill:#C8E6C9
+    style B1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_installation_flow_visual(self):
+        """Seed Package Installation Flow visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="installation-flow",
+            defaults={
+                "title": "Package Installation Flow",
+                "description": "PyPI, wheels, source distributions, and installation process",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pip", "pypi", "wheel", "sdist", "installation"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Installation Overview",
+                        "explanation": "What happens when you run pip install.",
+                        "diagram_data": """graph TB
+    CMD["pip install requests"]
+    RESOLVE["Resolve dependencies"]
+    FETCH["Fetch from PyPI"]
+    CHOOSE["Choose distribution"]
+    INSTALL["Install to site-packages"]
+    CMD --> RESOLVE --> FETCH --> CHOOSE --> INSTALL
+    style CMD fill:#BBDEFB
+    style INSTALL fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Distribution Types",
+                        "explanation": "Packages can be distributed as wheels or source.",
+                        "diagram_data": """graph TB
+    subgraph "Wheel (.whl)"
+        W1["Pre-built binary"]
+        W2["Fast installation"]
+        W3["No compilation needed"]
+        W4["Platform-specific"]
+    end
+    subgraph "Source Distribution (.tar.gz)"
+        S1["Source code"]
+        S2["Needs build step"]
+        S3["May need compiler"]
+        S4["Platform-independent"]
+    end
+    subgraph "pip Preference"
+        PREF["Wheel > Source<br/>Faster and reliable"]
+    end
+    style W2 fill:#C8E6C9
+    style S3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "PyPI Lookup",
+                        "explanation": "How pip finds packages on PyPI.",
+                        "diagram_data": """graph TB
+    PIP["pip install numpy"]
+    API["Query PyPI API<br/>pypi.org/pypi/numpy/json"]
+    VERS["Get available versions"]
+    COMPAT["Filter compatible<br/>(Python, OS, arch)"]
+    BEST["Select best match"]
+    DOWN["Download from CDN"]
+    PIP --> API --> VERS --> COMPAT --> BEST --> DOWN
+    style API fill:#BBDEFB
+    style DOWN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Wheel Naming",
+                        "explanation": "Wheel filenames encode compatibility information.",
+                        "diagram_data": """graph TB
+    subgraph "Wheel Filename"
+        FN["numpy-1.24.0-cp311-cp311-manylinux_x86_64.whl"]
+    end
+    subgraph "Components"
+        C1["numpy: package name"]
+        C2["1.24.0: version"]
+        C3["cp311: Python 3.11"]
+        C4["cp311: ABI tag"]
+        C5["manylinux_x86_64: platform"]
+    end
+    subgraph "Universal Wheel"
+        U1["package-1.0-py3-none-any.whl<br/>Pure Python, any platform"]
+    end
+    style FN fill:#FFF9C4
+    style U1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Installation Locations",
+                        "explanation": "Where packages get installed.",
+                        "diagram_data": """graph TB
+    subgraph "System Python"
+        SYS["/usr/lib/python3.x/site-packages/<br/>(needs sudo)"]
+    end
+    subgraph "User Install"
+        USR["~/.local/lib/python3.x/site-packages/<br/>(pip install --user)"]
+    end
+    subgraph "Virtual Environment"
+        VENV["./venv/lib/python3.x/site-packages/<br/>(recommended)"]
+    end
+    subgraph "Editable Install"
+        EDIT["Creates .pth file<br/>Links to source directory"]
+    end
+    style VENV fill:#C8E6C9
+    style SYS fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Installation Options",
+                        "explanation": "Common pip install flags and sources.",
+                        "diagram_data": """graph TB
+    subgraph "Sources"
+        S1["pip install pkg<br/>From PyPI"]
+        S2["pip install ./pkg<br/>From local dir"]
+        S3["pip install git+url<br/>From Git"]
+        S4["pip install pkg.whl<br/>From file"]
+    end
+    subgraph "Useful Flags"
+        F1["--no-cache-dir<br/>Fresh download"]
+        F2["--upgrade<br/>Update existing"]
+        F3["--pre<br/>Include prereleases"]
+        F4["--index-url<br/>Custom PyPI"]
+    end
+    style S1 fill:#C8E6C9
+    style F2 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_conda_architecture_visual(self):
+        """Seed Conda Environment Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="conda-architecture",
+            defaults={
+                "title": "Conda Environment Architecture",
+                "description": "Base environment, named environments, and channels",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["conda", "environments", "channels", "anaconda"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Conda Architecture",
+                        "explanation": "Conda manages environments and packages separately from system Python.",
+                        "diagram_data": """graph TB
+    subgraph "Conda Installation"
+        BASE["Base Environment<br/>(conda, python, pip)"]
+    end
+    subgraph "User Environments"
+        E1["env: ml-project<br/>python=3.10, pytorch"]
+        E2["env: web-app<br/>python=3.11, flask"]
+        E3["env: data-analysis<br/>python=3.9, pandas"]
+    end
+    BASE --> E1
+    BASE --> E2
+    BASE --> E3
+    style BASE fill:#BBDEFB
+    style E1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Base vs Named Environments",
+                        "explanation": "The base environment is special.",
+                        "diagram_data": """graph TB
+    subgraph "Base Environment"
+        B1["Always exists"]
+        B2["Contains conda itself"]
+        B3["Activated by default"]
+        B4["Don't install project deps here!"]
+    end
+    subgraph "Named Environments"
+        N1["Created with conda create"]
+        N2["Isolated from base"]
+        N3["Activatable by name"]
+        N4["Can have different Python"]
+    end
+    style B4 fill:#FFCDD2
+    style N2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Directory Structure",
+                        "explanation": "Where conda stores environments and packages.",
+                        "diagram_data": """graph TB
+    subgraph "~/miniconda3/ or ~/anaconda3/"
+        BIN["bin/<br/>conda, python, pip"]
+        ENVS["envs/<br/>Named environments"]
+        PKGS["pkgs/<br/>Package cache"]
+    end
+    subgraph "envs/myenv/"
+        EBIN["bin/<br/>Environment executables"]
+        ELIB["lib/<br/>Libraries"]
+        ECONDA["conda-meta/<br/>Package metadata"]
+    end
+    ENVS --> EBIN
+    style PKGS fill:#FFF9C4
+    style ENVS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Channels",
+                        "explanation": "Channels are package repositories.",
+                        "diagram_data": """graph TB
+    subgraph "Default Channels"
+        DEF["defaults<br/>(Anaconda's curated)"]
+    end
+    subgraph "Community Channels"
+        CF["conda-forge<br/>(Community maintained)"]
+        BIO["bioconda<br/>(Bioinformatics)"]
+        NV["nvidia<br/>(CUDA packages)"]
+    end
+    subgraph "Priority"
+        P1["Channel order matters!<br/>First match wins"]
+        P2["conda config --add channels conda-forge"]
+    end
+    style CF fill:#C8E6C9
+    style P1 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Environment Files",
+                        "explanation": "Export and recreate environments.",
+                        "diagram_data": """graph TB
+    subgraph "Export"
+        EX1["conda env export > env.yml<br/>(All packages, exact versions)"]
+        EX2["conda env export --from-history > env.yml<br/>(Only explicitly installed)"]
+    end
+    subgraph "environment.yml"
+        YML["name: myenv<br/>channels:<br/>  - conda-forge<br/>dependencies:<br/>  - python=3.11<br/>  - numpy<br/>  - pip:<br/>    - some-pip-pkg"]
+    end
+    subgraph "Create from file"
+        CR["conda env create -f env.yml"]
+    end
+    EX2 --> YML --> CR
+    style EX2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Commands",
+                        "explanation": "Essential conda environment commands.",
+                        "diagram_data": """graph TB
+    subgraph "Create & Remove"
+        C1["conda create -n myenv python=3.11"]
+        C2["conda remove -n myenv --all"]
+    end
+    subgraph "Activate & List"
+        A1["conda activate myenv"]
+        A2["conda deactivate"]
+        A3["conda env list"]
+    end
+    subgraph "Packages"
+        P1["conda install numpy pandas"]
+        P2["conda update --all"]
+        P3["conda list"]
+    end
+    style C1 fill:#C8E6C9
+    style A1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_conda_pip_interop_visual(self):
+        """Seed Conda vs Pip Interoperability visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="conda-pip-interop",
+            defaults={
+                "title": "Conda vs Pip Interoperability",
+                "description": "When and how to safely mix conda and pip",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["conda", "pip", "interoperability", "mixing"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Challenge",
+                        "explanation": "Conda and pip can conflict because they don't share metadata.",
+                        "diagram_data": """graph TB
+    subgraph "conda install numpy"
+        C1["Conda records: numpy 1.24"]
+    end
+    subgraph "pip install numpy --upgrade"
+        P1["Pip overwrites to 1.25<br/>Conda doesn't know!"]
+    end
+    subgraph "conda update numpy"
+        C2["Conda tries to install 1.24<br/>Conflict!"]
+    end
+    C1 --> P1 --> C2
+    style P1 fill:#FFCDD2
+    style C2 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Safe Mixing Rules",
+                        "explanation": "Follow these rules to avoid problems.",
+                        "diagram_data": """graph TB
+    subgraph "Rule 1"
+        R1["Install conda packages FIRST"]
+    end
+    subgraph "Rule 2"
+        R2["Use pip only for packages<br/>not available in conda"]
+    end
+    subgraph "Rule 3"
+        R3["Never run conda after pip<br/>in same environment"]
+    end
+    subgraph "Rule 4"
+        R4["Pin versions when using pip"]
+    end
+    R1 --> R2 --> R3 --> R4
+    style R1 fill:#C8E6C9
+    style R3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Recommended Workflow",
+                        "explanation": "The safe way to use both package managers.",
+                        "diagram_data": """graph TB
+    S1["Create conda environment"]
+    S2["Install conda packages"]
+    S3["Export conda environment"]
+    S4["Install remaining pip packages"]
+    S5["Freeze pip requirements"]
+    S6["Done! Don't use conda install again"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    style S2 fill:#C8E6C9
+    style S4 fill:#BBDEFB
+    style S6 fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "environment.yml with pip",
+                        "explanation": "Include pip packages in your conda environment file.",
+                        "diagram_data": """graph TB
+    subgraph "environment.yml"
+        YML["name: myproject<br/>channels:<br/>  - conda-forge<br/>dependencies:<br/>  - python=3.11<br/>  - numpy<br/>  - pandas<br/>  - pip<br/>  - pip:<br/>    - some-pip-only-package<br/>    - another-pip-package==1.2.3"]
+    end
+    subgraph "Key Points"
+        K1["Include pip as conda dep"]
+        K2["pip section comes last"]
+        K3["Pin versions for pip pkgs"]
+    end
+    style YML fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Troubleshooting",
+                        "explanation": "How to fix conda/pip conflicts.",
+                        "diagram_data": """graph TB
+    subgraph "If Things Break"
+        F1["Create fresh environment"]
+        F2["Install conda deps first"]
+        F3["Then pip deps"]
+    end
+    subgraph "Check Consistency"
+        C1["conda list<br/>(shows pip packages too)"]
+        C2["pip check<br/>(verify dependencies)"]
+    end
+    subgraph "Nuclear Option"
+        N1["conda remove -n myenv --all"]
+        N2["Start over with env.yml"]
+    end
+    style F1 fill:#C8E6C9
+    style N1 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "When to Use Which",
+                        "explanation": "Guidelines for choosing conda vs pip.",
+                        "diagram_data": """graph TB
+    subgraph "Use conda for"
+        C1["Python itself"]
+        C2["NumPy, SciPy, Pandas"]
+        C3["PyTorch, TensorFlow"]
+        C4["Non-Python libs (CUDA)"]
+    end
+    subgraph "Use pip for"
+        P1["Packages not on conda"]
+        P2["Latest versions needed"]
+        P3["Pure Python packages"]
+        P4["Your own packages"]
+    end
+    style C3 fill:#C8E6C9
+    style P1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_pyproject_structure_visual(self):
+        """Seed pyproject.toml Structure visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pyproject-structure",
+            defaults={
+                "title": "pyproject.toml Structure",
+                "description": "Build system, dependencies, and metadata in pyproject.toml",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["pyproject", "toml", "pep621", "packaging"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "pyproject.toml Overview",
+                        "explanation": "The modern standard for Python project configuration (PEP 517/621).",
+                        "diagram_data": """graph TB
+    subgraph "pyproject.toml sections"
+        BS["[build-system]<br/>How to build"]
+        PROJ["[project]<br/>Metadata + deps"]
+        OPT["[project.optional-dependencies]<br/>Extras"]
+        TOOL["[tool.*]<br/>Tool configs"]
+    end
+    BS --> PROJ --> OPT --> TOOL
+    style PROJ fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "[build-system]",
+                        "explanation": "Specifies how to build the package.",
+                        "diagram_data": """graph TB
+    subgraph "Build System Options"
+        SETUP["setuptools (traditional)"]
+        HATCH["hatchling (modern)"]
+        POETRY["poetry-core"]
+        FLIT["flit-core (simple)"]
+    end
+    subgraph "Example"
+        EX["[build-system]<br/>requires = ['hatchling']<br/>build-backend = 'hatchling.build'"]
+    end
+    style EX fill:#C8E6C9
+    style HATCH fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "[project] Metadata",
+                        "explanation": "Core project information (PEP 621).",
+                        "diagram_data": """graph TB
+    subgraph "[project]"
+        NAME["name = 'my-package'"]
+        VER["version = '1.0.0'"]
+        DESC["description = 'A great package'"]
+        AUTH["authors = [{name='Me', email='me@x.com'}]"]
+        REQ["requires-python = '>=3.9'"]
+        LIC["license = {text = 'MIT'}"]
+    end
+    subgraph "Dynamic"
+        DYN["dynamic = ['version']<br/>(read from __init__.py)"]
+    end
+    style NAME fill:#C8E6C9
+    style VER fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Dependencies",
+                        "explanation": "Specifying package dependencies.",
+                        "diagram_data": """graph TB
+    subgraph "[project]"
+        DEPS["dependencies = [<br/>  'requests>=2.28',<br/>  'pandas~=2.0',<br/>  'numpy',<br/>]"]
+    end
+    subgraph "[project.optional-dependencies]"
+        DEV["dev = [<br/>  'pytest>=7.0',<br/>  'black',<br/>  'mypy',<br/>]"]
+        DOCS["docs = ['sphinx', 'furo']"]
+    end
+    subgraph "Install extras"
+        INS["pip install .[dev]<br/>pip install .[dev,docs]"]
+    end
+    style DEPS fill:#C8E6C9
+    style INS fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Entry Points & Scripts",
+                        "explanation": "Define CLI commands and plugin entry points.",
+                        "diagram_data": """graph TB
+    subgraph "[project.scripts]"
+        CLI["my-cli = 'mypackage.cli:main'<br/>(Creates 'my-cli' command)"]
+    end
+    subgraph "[project.gui-scripts]"
+        GUI["my-app = 'mypackage.gui:run'<br/>(GUI application)"]
+    end
+    subgraph "[project.entry-points.'group']"
+        EP["plugin_name = 'mypackage:Plugin'<br/>(Plugin system)"]
+    end
+    style CLI fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "[tool.*] Sections",
+                        "explanation": "Configuration for development tools.",
+                        "diagram_data": """graph TB
+    subgraph "[tool.black]"
+        BLACK["line-length = 88<br/>target-version = ['py311']"]
+    end
+    subgraph "[tool.pytest.ini_options]"
+        PYTEST["testpaths = ['tests']<br/>addopts = '-v'"]
+    end
+    subgraph "[tool.mypy]"
+        MYPY["python_version = '3.11'<br/>strict = true"]
+    end
+    subgraph "[tool.ruff]"
+        RUFF["select = ['E', 'F', 'I']<br/>line-length = 88"]
+    end
+    style BLACK fill:#C8E6C9
+    style RUFF fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_lock_files_visual(self):
+        """Seed Lock Files visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="lock-files",
+            defaults={
+                "title": "Lock Files",
+                "description": "poetry.lock, pip-tools, and reproducible builds",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["lock", "poetry", "pip-tools", "reproducible"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Lock Files?",
+                        "explanation": "Lock files ensure reproducible installations.",
+                        "diagram_data": """graph TB
+    subgraph "Without Lock File"
+        REQ1["requirements.txt<br/>requests>=2.28"]
+        T1["Today: installs 2.28.0"]
+        T2["Tomorrow: installs 2.29.0"]
+        DIFF["Different environments!"]
+    end
+    subgraph "With Lock File"
+        LOCK["lock file<br/>requests==2.28.0<br/>+ all transitive deps"]
+        S1["Always installs exactly<br/>the same versions"]
+    end
+    style DIFF fill:#FFCDD2
+    style S1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "poetry.lock",
+                        "explanation": "Poetry generates and maintains lock files automatically.",
+                        "diagram_data": """graph TB
+    subgraph "Workflow"
+        PP["pyproject.toml<br/>(loose constraints)"]
+        LOCK["poetry.lock<br/>(exact versions)"]
+        ADD["poetry add requests"]
+        INST["poetry install"]
+        UPD["poetry update"]
+    end
+    ADD --> PP
+    ADD --> LOCK
+    INST --> |"Uses"| LOCK
+    UPD --> |"Regenerates"| LOCK
+    style LOCK fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "pip-tools",
+                        "explanation": "Generate locked requirements from loose constraints.",
+                        "diagram_data": """graph TB
+    subgraph "Input"
+        IN["requirements.in<br/>requests<br/>flask"]
+    end
+    subgraph "Compile"
+        CMD["pip-compile requirements.in"]
+    end
+    subgraph "Output"
+        OUT["requirements.txt<br/>certifi==2023.7.22<br/>charset-normalizer==3.2.0<br/>flask==2.3.3<br/>requests==2.31.0<br/>...all transitive deps"]
+    end
+    IN --> CMD --> OUT
+    subgraph "Install"
+        SYNC["pip-sync requirements.txt"]
+    end
+    OUT --> SYNC
+    style CMD fill:#BBDEFB
+    style SYNC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Lock File Contents",
+                        "explanation": "What lock files typically contain.",
+                        "diagram_data": """graph TB
+    subgraph "Lock File Includes"
+        V["Exact versions<br/>package==1.2.3"]
+        H["Hashes<br/>(verify integrity)"]
+        M["Markers<br/>(platform-specific)"]
+        S["Sources<br/>(PyPI URL)"]
+    end
+    subgraph "Example Entry"
+        EX["[[package]]<br/>name = 'requests'<br/>version = '2.31.0'<br/>files = [<br/>  {hash = 'sha256:...'}]"]
+    end
+    style H fill:#C8E6C9
+    style EX fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Development vs Production",
+                        "explanation": "Separate lock files for different environments.",
+                        "diagram_data": """graph TB
+    subgraph "pip-tools approach"
+        REQ["requirements.in<br/>(production)"]
+        DEV["requirements-dev.in<br/>-c requirements.txt<br/>pytest<br/>black"]
+    end
+    subgraph "Generated"
+        REQT["requirements.txt"]
+        DEVT["requirements-dev.txt"]
+    end
+    subgraph "poetry approach"
+        PGRP["[tool.poetry.group.dev.dependencies]"]
+        PLOCK["Single poetry.lock"]
+        PINS["poetry install --only main"]
+    end
+    style REQT fill:#C8E6C9
+    style PINS fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Best Practices",
+                        "explanation": "Lock file management guidelines.",
+                        "diagram_data": """graph TB
+    subgraph "Do"
+        D1["Commit lock files to git"]
+        D2["Use lock for deployments"]
+        D3["Update regularly"]
+        D4["Review lock file changes"]
+    end
+    subgraph "Don't"
+        N1["Don't edit lock manually"]
+        N2["Don't ignore in .gitignore"]
+        N3["Don't skip in CI/CD"]
+    end
+    subgraph "Update Workflow"
+        U1["Update deps locally"]
+        U2["Test thoroughly"]
+        U3["Commit updated lock"]
+    end
+    style D1 fill:#C8E6C9
+    style N2 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_editable_installs_visual(self):
+        """Seed Editable Installs visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="editable-installs",
+            defaults={
+                "title": "Editable Installs",
+                "description": "Development mode installation with -e flag",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 5,
+                "tags": ["editable", "development", "pip", "-e"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Regular vs Editable Install",
+                        "explanation": "Editable installs link to source instead of copying.",
+                        "diagram_data": """graph TB
+    subgraph "Regular Install"
+        R1["pip install mypackage"]
+        R2["Copies to site-packages"]
+        R3["Changes need reinstall"]
+    end
+    subgraph "Editable Install"
+        E1["pip install -e ."]
+        E2["Links to source directory"]
+        E3["Changes reflect immediately"]
+    end
+    style R3 fill:#FFCDD2
+    style E3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "How It Works",
+                        "explanation": "Editable installs create a link to your source code.",
+                        "diagram_data": """graph TB
+    subgraph "Your Project"
+        SRC["/home/user/myproject/src/"]
+    end
+    subgraph "site-packages/"
+        PTH["mypackage.egg-link<br/>or .pth file"]
+    end
+    subgraph "Python Import"
+        IMP["import mypackage"]
+        FIND["Finds via .pth link"]
+        LOAD["Loads from /home/user/myproject/"]
+    end
+    PTH --> |"Points to"| SRC
+    IMP --> FIND --> LOAD
+    style PTH fill:#BBDEFB
+    style SRC fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Installation Commands",
+                        "explanation": "Different ways to do editable installs.",
+                        "diagram_data": """graph TB
+    subgraph "pip"
+        P1["pip install -e .<br/>(current directory)"]
+        P2["pip install -e ./mypackage<br/>(subdirectory)"]
+        P3["pip install -e .[dev]<br/>(with extras)"]
+    end
+    subgraph "poetry"
+        PO1["poetry install<br/>(always editable for local)"]
+    end
+    subgraph "From git"
+        G1["pip install -e git+https://...#egg=pkg"]
+    end
+    style P1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Project Requirements",
+                        "explanation": "What your project needs for editable install.",
+                        "diagram_data": """graph TB
+    subgraph "Modern (PEP 660)"
+        M1["pyproject.toml with<br/>[build-system]"]
+        M2["Works with pip >= 21.3"]
+    end
+    subgraph "Legacy"
+        L1["setup.py or setup.cfg"]
+        L2["Creates .egg-link"]
+    end
+    subgraph "Minimum pyproject.toml"
+        MIN["[build-system]<br/>requires = ['setuptools']<br/>build-backend = 'setuptools.build_meta'<br/><br/>[project]<br/>name = 'mypackage'<br/>version = '0.1.0'"]
+    end
+    style M1 fill:#C8E6C9
+    style MIN fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Development Workflow",
+                        "explanation": "Typical development cycle with editable installs.",
+                        "diagram_data": """graph TB
+    S1["Clone repository"]
+    S2["Create virtual environment"]
+    S3["pip install -e .[dev]"]
+    S4["Edit source code"]
+    S5["Run tests (changes reflected)"]
+    S6["No reinstall needed!"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    S6 --> |"More changes"| S4
+    style S3 fill:#C8E6C9
+    style S6 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Common Issues",
+                        "explanation": "Troubleshooting editable installs.",
+                        "diagram_data": """graph TB
+    subgraph "Issue: Changes not reflecting"
+        I1["Restart Python/kernel"]
+        I2["Check import path"]
+        I3["Reinstall with -e"]
+    end
+    subgraph "Issue: Module not found"
+        I4["Check package structure"]
+        I5["Verify __init__.py exists"]
+        I6["Check pyproject.toml paths"]
+    end
+    subgraph "Verify installation"
+        V1["pip show mypackage<br/>Location should be your dir"]
+    end
+    style V1 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_apt_yum_visual(self):
+        """Seed apt/yum Architecture visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="apt-yum-architecture",
+            defaults={
+                "title": "apt/yum Architecture",
+                "description": "System package managers, repositories, and dependencies",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["apt", "yum", "dnf", "system", "linux"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "System Package Managers",
+                        "explanation": "Linux distributions use system package managers.",
+                        "diagram_data": """graph TB
+    subgraph "Debian/Ubuntu"
+        APT["apt / apt-get"]
+        DPKG["dpkg (low-level)"]
+        DEB[".deb packages"]
+    end
+    subgraph "RHEL/Fedora/CentOS"
+        DNF["dnf / yum"]
+        RPM["rpm (low-level)"]
+        RPMPKG[".rpm packages"]
+    end
+    APT --> DPKG --> DEB
+    DNF --> RPM --> RPMPKG
+    style APT fill:#C8E6C9
+    style DNF fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Repository Architecture",
+                        "explanation": "Packages come from configured repositories.",
+                        "diagram_data": """graph TB
+    subgraph "apt sources (/etc/apt/sources.list)"
+        S1["deb http://archive.ubuntu.com/ubuntu jammy main"]
+        S2["deb http://security.ubuntu.com/ubuntu jammy-security main"]
+    end
+    subgraph "dnf repos (/etc/yum.repos.d/)"
+        R1["[fedora]<br/>baseurl=https://..."]
+        R2["[updates]<br/>baseurl=https://..."]
+    end
+    subgraph "Repository Contents"
+        META["Package metadata"]
+        PKGS["Binary packages"]
+        DEPS["Dependency info"]
+    end
+    style META fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Package Installation Flow",
+                        "explanation": "What happens when you install a package.",
+                        "diagram_data": """graph TB
+    CMD["apt install nginx"]
+    UPDATE["Check package index"]
+    RESOLVE["Resolve dependencies"]
+    DOWN["Download packages"]
+    INST["Install packages"]
+    CONF["Run post-install scripts"]
+    CMD --> UPDATE --> RESOLVE --> DOWN --> INST --> CONF
+    style RESOLVE fill:#BBDEFB
+    style INST fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Common apt Commands",
+                        "explanation": "Essential apt commands for Debian/Ubuntu.",
+                        "diagram_data": """graph TB
+    subgraph "Update & Upgrade"
+        U1["apt update<br/>(refresh package list)"]
+        U2["apt upgrade<br/>(upgrade all packages)"]
+    end
+    subgraph "Install & Remove"
+        I1["apt install pkg"]
+        I2["apt remove pkg"]
+        I3["apt autoremove<br/>(remove unused deps)"]
+    end
+    subgraph "Search & Info"
+        S1["apt search term"]
+        S2["apt show pkg"]
+        S3["apt list --installed"]
+    end
+    style U1 fill:#C8E6C9
+    style I3 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Common dnf Commands",
+                        "explanation": "Essential dnf commands for RHEL/Fedora.",
+                        "diagram_data": """graph TB
+    subgraph "Update"
+        U1["dnf check-update"]
+        U2["dnf upgrade"]
+    end
+    subgraph "Install & Remove"
+        I1["dnf install pkg"]
+        I2["dnf remove pkg"]
+        I3["dnf autoremove"]
+    end
+    subgraph "Search & Info"
+        S1["dnf search term"]
+        S2["dnf info pkg"]
+        S3["dnf list installed"]
+    end
+    subgraph "Groups"
+        G1["dnf group install 'Development Tools'"]
+    end
+    style I1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Python Considerations",
+                        "explanation": "System Python vs user Python packages.",
+                        "diagram_data": """graph TB
+    subgraph "System Python"
+        SYS["apt install python3-numpy<br/>System-wide, managed by apt"]
+    end
+    subgraph "pip packages"
+        PIP["pip install numpy<br/>User/venv, managed by pip"]
+    end
+    subgraph "Best Practice"
+        BP["Use system packages for:<br/>- System tools<br/>- Libraries (libpq, etc.)<br/><br/>Use pip/venv for:<br/>- Project dependencies<br/>- Latest versions"]
+    end
+    style BP fill:#C8E6C9
+    SYS --> |"Don't mix"| PIP""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_docker_packages_visual(self):
+        """Seed Docker + Package Managers visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="docker-packages",
+            defaults={
+                "title": "Docker + Package Managers",
+                "description": "Layer caching, multi-stage builds, and efficient images",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["docker", "layers", "caching", "multi-stage"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Docker Layer Caching",
+                        "explanation": "Each Dockerfile instruction creates a cached layer.",
+                        "diagram_data": """graph TB
+    subgraph "Dockerfile"
+        D1["FROM python:3.11"]
+        D2["COPY requirements.txt ."]
+        D3["RUN pip install -r requirements.txt"]
+        D4["COPY . ."]
+    end
+    subgraph "Layer Cache"
+        L1["Layer 1: Base image (cached)"]
+        L2["Layer 2: requirements.txt (cached if unchanged)"]
+        L3["Layer 3: pip install (cached if L2 unchanged)"]
+        L4["Layer 4: Source code (rebuilt on changes)"]
+    end
+    D1 --> L1
+    D2 --> L2
+    D3 --> L3
+    D4 --> L4
+    style L3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Optimized Layer Order",
+                        "explanation": "Copy dependency files before source code.",
+                        "diagram_data": """graph TB
+    subgraph "Bad (cache invalidated often)"
+        B1["COPY . ."]
+        B2["RUN pip install -r requirements.txt"]
+        B3["Any code change rebuilds deps!"]
+    end
+    subgraph "Good (deps cached)"
+        G1["COPY requirements.txt ."]
+        G2["RUN pip install -r requirements.txt"]
+        G3["COPY . ."]
+        G4["Code changes don't rebuild deps"]
+    end
+    style B3 fill:#FFCDD2
+    style G4 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "pip in Docker",
+                        "explanation": "Best practices for pip in Docker images.",
+                        "diagram_data": """graph TB
+    subgraph "Dockerfile Commands"
+        C1["RUN pip install --no-cache-dir -r requirements.txt"]
+        C2["# --no-cache-dir: smaller image"]
+        C3["# Use requirements.txt with pinned versions"]
+    end
+    subgraph "Flags"
+        F1["--no-cache-dir<br/>Don't store pip cache"]
+        F2["--disable-pip-version-check<br/>Faster builds"]
+        F3["--quiet<br/>Less output"]
+    end
+    style C1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Multi-Stage Builds",
+                        "explanation": "Separate build and runtime for smaller images.",
+                        "diagram_data": """graph TB
+    subgraph "Stage 1: Builder"
+        B1["FROM python:3.11 AS builder"]
+        B2["Install build tools"]
+        B3["pip install --target=/deps"]
+    end
+    subgraph "Stage 2: Runtime"
+        R1["FROM python:3.11-slim"]
+        R2["COPY --from=builder /deps /deps"]
+        R3["No build tools in final image!"]
+    end
+    B3 --> |"Copy only deps"| R2
+    style R3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Example Optimized Dockerfile",
+                        "explanation": "A production-ready Python Dockerfile.",
+                        "diagram_data": """graph TB
+    subgraph "Dockerfile"
+        DF["FROM python:3.11-slim<br/><br/>WORKDIR /app<br/><br/># Install system deps first<br/>RUN apt-get update && apt-get install -y \\<br/>    libpq-dev \\<br/>    && rm -rf /var/lib/apt/lists/*<br/><br/># Install Python deps<br/>COPY requirements.txt .<br/>RUN pip install --no-cache-dir -r requirements.txt<br/><br/># Copy source last<br/>COPY . .<br/><br/>CMD ['python', 'app.py']"]
+    end
+    style DF fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Image Size Tips",
+                        "explanation": "Keep Docker images small and efficient.",
+                        "diagram_data": """graph TB
+    subgraph "Use Slim Images"
+        S1["python:3.11-slim<br/>vs python:3.11"]
+        S2["~150MB vs ~900MB"]
+    end
+    subgraph "Clean Up"
+        C1["rm -rf /var/lib/apt/lists/*"]
+        C2["pip --no-cache-dir"]
+        C3["Multi-stage builds"]
+    end
+    subgraph "Avoid"
+        A1["Installing dev dependencies"]
+        A2["Leaving build tools"]
+        A3[".git in image"]
+    end
+    style S2 fill:#C8E6C9
+    style A1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_pinning_strategies_visual(self):
+        """Seed Dependency Pinning Strategies visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="pinning-strategies",
+            defaults={
+                "title": "Dependency Pinning Strategies",
+                "description": "Exact vs compatible versions and when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["pinning", "versions", "semver", "dependencies"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Pinning Spectrum",
+                        "explanation": "From loose to strict version constraints.",
+                        "diagram_data": """graph LR
+    subgraph "Loose"
+        L1["requests"]
+        L2["Any version"]
+    end
+    subgraph "Compatible"
+        C1["requests>=2.28,<3"]
+        C2["Within major version"]
+    end
+    subgraph "Strict"
+        S1["requests==2.31.0"]
+        S2["Exact version"]
+    end
+    L1 --> C1 --> S1
+    style L2 fill:#FFCDD2
+    style C2 fill:#FFF9C4
+    style S2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Semantic Versioning",
+                        "explanation": "Understanding MAJOR.MINOR.PATCH versions.",
+                        "diagram_data": """graph TB
+    subgraph "Version 2.31.0"
+        MAJOR["2 = MAJOR<br/>Breaking changes"]
+        MINOR["31 = MINOR<br/>New features"]
+        PATCH["0 = PATCH<br/>Bug fixes"]
+    end
+    subgraph "Safe Updates"
+        S1["Patch: 2.31.0 to 2.31.1 (safe)"]
+        S2["Minor: 2.31.0 to 2.32.0 (usually safe)"]
+        S3["Major: 2.31.0 to 3.0.0 (may break!)"]
+    end
+    style S1 fill:#C8E6C9
+    style S3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Version Operators",
+                        "explanation": "Different ways to specify version ranges.",
+                        "diagram_data": """graph TB
+    subgraph "Comparison"
+        OP1[">=2.0 (2.0 or newer)"]
+        OP2["<3.0 (below 3.0)"]
+        OP3["!=2.5.0 (not this version)"]
+    end
+    subgraph "Range"
+        R1[">=2.0,<3.0 (2.x series)"]
+    end
+    subgraph "Compatible Release"
+        C1["~=2.31 (>=2.31, <2.32)"]
+        C2["~=2.31.0 (>=2.31.0, <2.32.0)"]
+    end
+    subgraph "Caret (poetry)"
+        CA["^2.31.0 (>=2.31.0, <3.0.0)"]
+    end
+    style R1 fill:#C8E6C9
+    style CA fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Strategy: Applications",
+                        "explanation": "Pinning strategy for deployed applications.",
+                        "diagram_data": """graph TB
+    subgraph "Application Pinning"
+        A1["Pin everything exactly"]
+        A2["Use lock files"]
+        A3["requirements.txt:<br/>requests==2.31.0<br/>urllib3==2.0.4"]
+    end
+    subgraph "Why?"
+        W1["Reproducible deploys"]
+        W2["No surprise updates"]
+        W3["Easier debugging"]
+    end
+    subgraph "Update Process"
+        U1["Update deps intentionally"]
+        U2["Test thoroughly"]
+        U3["Deploy new versions"]
+    end
+    style A1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Strategy: Libraries",
+                        "explanation": "Pinning strategy for published packages.",
+                        "diagram_data": """graph TB
+    subgraph "Library Pinning"
+        L1["Use loose constraints"]
+        L2["pyproject.toml:<br/>dependencies = [<br/>  'requests>=2.28',<br/>]"]
+    end
+    subgraph "Why?"
+        W1["Don't restrict users"]
+        W2["Allow dep resolution"]
+        W3["Avoid conflicts"]
+    end
+    subgraph "Guidelines"
+        G1["Min version you tested"]
+        G2["Max version if known issues"]
+        G3["Let users pin exact versions"]
+    end
+    style L1 fill:#BBDEFB
+    style G1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Two-File Strategy",
+                        "explanation": "Combine loose constraints with locked versions.",
+                        "diagram_data": """graph TB
+    subgraph "Abstract (for humans)"
+        ABS["pyproject.toml<br/>or requirements.in<br/><br/>requests>=2.28<br/>pandas~=2.0"]
+    end
+    subgraph "Concrete (for machines)"
+        CON["poetry.lock<br/>or requirements.txt<br/><br/>requests==2.31.0<br/>pandas==2.0.3<br/>...all transitive"]
+    end
+    ABS --> |"pip-compile<br/>poetry lock"| CON
+    subgraph "Install"
+        DEV["Dev: pip install -e .[dev]"]
+        PROD["Prod: pip install -r requirements.txt"]
+    end
+    style ABS fill:#BBDEFB
+    style CON fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_security_scanning_visual(self):
+        """Seed Security Scanning visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="security-scanning",
+            defaults={
+                "title": "Security Scanning",
+                "description": "Vulnerability detection in dependencies",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["security", "vulnerabilities", "scanning", "safety"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Scan Dependencies?",
+                        "explanation": "Your code is only as secure as your dependencies.",
+                        "diagram_data": """graph TB
+    subgraph "Your App"
+        APP["Your secure code"]
+    end
+    subgraph "Dependencies"
+        D1["requests 2.28.0"]
+        D2["flask 2.3.0"]
+        D3["urllib3 1.26.5<br/>(CVE-2023-XXXXX!)"]
+    end
+    APP --> D1
+    APP --> D2
+    D1 --> D3
+    style D3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Scanning Tools",
+                        "explanation": "Popular tools for dependency vulnerability scanning.",
+                        "diagram_data": """graph TB
+    subgraph "Python Tools"
+        P1["pip-audit<br/>(Official, fast)"]
+        P2["safety<br/>(Popular, free tier)"]
+        P3["bandit<br/>(Code analysis)"]
+    end
+    subgraph "General Tools"
+        G1["Snyk<br/>(Multi-language)"]
+        G2["Dependabot<br/>(GitHub native)"]
+        G3["Trivy<br/>(Containers too)"]
+    end
+    style P1 fill:#C8E6C9
+    style G2 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "pip-audit Usage",
+                        "explanation": "The official Python security scanner.",
+                        "diagram_data": """graph TB
+    subgraph "Install"
+        I1["pip install pip-audit"]
+    end
+    subgraph "Scan"
+        S1["pip-audit<br/>(scan current env)"]
+        S2["pip-audit -r requirements.txt"]
+        S3["pip-audit --fix<br/>(auto-fix if possible)"]
+    end
+    subgraph "Output"
+        O1["Name    Version  Vuln ID<br/>urllib3 1.26.5   CVE-2023-..."]
+    end
+    I1 --> S1 --> O1
+    style S3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "CI/CD Integration",
+                        "explanation": "Automate security scanning in your pipeline.",
+                        "diagram_data": """graph TB
+    subgraph "GitHub Actions"
+        GH["- uses: pypa/gh-action-pip-audit@v1<br/>  with:<br/>    inputs: requirements.txt"]
+    end
+    subgraph "GitLab CI"
+        GL["pip-audit:<br/>  script:<br/>    - pip-audit -r requirements.txt"]
+    end
+    subgraph "Pre-commit"
+        PC["- repo: https://github.com/pypa/pip-audit<br/>  hooks:<br/>    - id: pip-audit"]
+    end
+    style GH fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Handling Vulnerabilities",
+                        "explanation": "What to do when vulnerabilities are found.",
+                        "diagram_data": """graph TB
+    FOUND["Vulnerability Found"]
+    FOUND --> CHECK{"Fix Available?"}
+    CHECK --> |"Yes"| UPDATE["Update package"]
+    CHECK --> |"No"| ASSESS{"Exploitable<br/>in your context?"}
+    ASSESS --> |"Yes"| MITIGATE["Mitigate or<br/>find alternative"]
+    ASSESS --> |"No"| ACCEPT["Accept risk<br/>(document it)"]
+    UPDATE --> TEST["Test thoroughly"]
+    TEST --> DEPLOY["Deploy"]
+    style UPDATE fill:#C8E6C9
+    style ACCEPT fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Best Practices",
+                        "explanation": "Proactive security for dependencies.",
+                        "diagram_data": """graph TB
+    subgraph "Preventive"
+        P1["Pin dependencies"]
+        P2["Use lock files"]
+        P3["Review before adding deps"]
+    end
+    subgraph "Detective"
+        D1["Scan in CI/CD"]
+        D2["Enable Dependabot"]
+        D3["Regular audits"]
+    end
+    subgraph "Responsive"
+        R1["Update promptly"]
+        R2["Have rollback plan"]
+        R3["Monitor security advisories"]
+    end
+    style D2 fill:#C8E6C9
+    style R1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_pkg_monorepo_polyrepo_visual(self):
+        """Seed Monorepo vs Polyrepo Dependencies visual topic."""
+        subject = self.get_or_create_subject(
+            "Package Management", "pkg_management", "DevOps & Infrastructure"
+        )
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="monorepo-polyrepo",
+            defaults={
+                "title": "Monorepo vs Polyrepo Dependencies",
+                "description": "Managing shared packages in different repository structures",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 7,
+                "tags": ["monorepo", "polyrepo", "workspace", "dependencies"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Repository Structures",
+                        "explanation": "Two approaches to organizing multiple packages.",
+                        "diagram_data": """graph TB
+    subgraph "Polyrepo"
+        R1["repo: service-a"]
+        R2["repo: service-b"]
+        R3["repo: shared-lib"]
+    end
+    subgraph "Monorepo"
+        M1["repo: company/<br/>  packages/<br/>    service-a/<br/>    service-b/<br/>    shared-lib/"]
+    end
+    style R1 fill:#BBDEFB
+    style M1 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Polyrepo Dependencies",
+                        "explanation": "Managing dependencies across separate repositories.",
+                        "diagram_data": """graph TB
+    subgraph "service-a"
+        SA["requirements.txt:<br/>shared-lib==1.2.0<br/>(from PyPI/private index)"]
+    end
+    subgraph "service-b"
+        SB["requirements.txt:<br/>shared-lib==1.1.0<br/>(different version!)"]
+    end
+    subgraph "shared-lib"
+        SL["Published to PyPI<br/>or private index"]
+    end
+    SL --> |"v1.2.0"| SA
+    SL --> |"v1.1.0"| SB
+    style SL fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Monorepo with Poetry",
+                        "explanation": "Poetry workspaces for monorepo dependency management.",
+                        "diagram_data": """graph TB
+    subgraph "Project Structure"
+        ROOT["pyproject.toml (root)"]
+        PKG1["packages/service-a/<br/>pyproject.toml"]
+        PKG2["packages/service-b/<br/>pyproject.toml"]
+        SHARED["packages/shared/<br/>pyproject.toml"]
+    end
+    subgraph "Local Dependencies"
+        DEP["service-a pyproject.toml:<br/>[tool.poetry.dependencies]<br/>shared = {path = '../shared'}"]
+    end
+    ROOT --> PKG1
+    ROOT --> PKG2
+    ROOT --> SHARED
+    style DEP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Monorepo with pip",
+                        "explanation": "Using pip editable installs in a monorepo.",
+                        "diagram_data": """graph TB
+    subgraph "Install Commands"
+        I1["pip install -e packages/shared"]
+        I2["pip install -e packages/service-a"]
+    end
+    subgraph "requirements.txt"
+        REQ["-e ./packages/shared<br/>-e ./packages/service-a"]
+    end
+    subgraph "Development"
+        DEV["Changes to shared/<br/>immediately available<br/>in service-a"]
+    end
+    I1 --> I2 --> DEV
+    style DEV fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Pros and Cons",
+                        "explanation": "Trade-offs between monorepo and polyrepo.",
+                        "diagram_data": """graph TB
+    subgraph "Monorepo Pros"
+        MP1["Atomic changes across packages"]
+        MP2["Easier refactoring"]
+        MP3["Single CI/CD pipeline"]
+        MP4["Consistent tooling"]
+    end
+    subgraph "Monorepo Cons"
+        MC1["Large repo size"]
+        MC2["Complex CI/CD"]
+        MC3["Tight coupling risk"]
+    end
+    subgraph "Polyrepo Pros"
+        PP1["Independent deployments"]
+        PP2["Clear ownership"]
+        PP3["Smaller repos"]
+    end
+    subgraph "Polyrepo Cons"
+        PC1["Version management overhead"]
+        PC2["Harder cross-repo changes"]
+    end
+    style MP1 fill:#C8E6C9
+    style PP1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Tools for Monorepos",
+                        "explanation": "Tools that help manage Python monorepos.",
+                        "diagram_data": """graph TB
+    subgraph "Build Tools"
+        B1["poetry (workspaces)"]
+        B2["pdm (workspaces)"]
+        B3["pants (build system)"]
+        B4["bazel (build system)"]
+    end
+    subgraph "CI/CD"
+        C1["Affected packages detection"]
+        C2["Parallel builds"]
+        C3["Shared caching"]
+    end
+    subgraph "Versioning"
+        V1["Changesets"]
+        V2["Lerna-style (JS)"]
+        V3["Manual coordination"]
+    end
+    style B1 fill:#C8E6C9
+    style B3 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    # ==================== Git Visuals (New) ====================
+
+    def seed_git_object_model_visual(self):
+        """Seed Git Object Model visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-object-model",
+            defaults={
+                "title": "Git Object Model",
+                "description": "Blobs, trees, commits, and how they link together",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["git", "objects", "blob", "tree", "commit", "internals"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Git is a Content-Addressable Filesystem",
+                        "explanation": "Git stores everything as objects identified by SHA-1 hashes.",
+                        "diagram_data": """graph TB
+    subgraph "Git Objects"
+        BLOB["Blob<br/>File contents"]
+        TREE["Tree<br/>Directory listing"]
+        COMMIT["Commit<br/>Snapshot + metadata"]
+        TAG["Tag<br/>Named reference"]
+    end
+    subgraph "Key Concept"
+        SHA["Every object has a SHA-1 hash<br/>e.g., a1b2c3d4e5f6..."]
+    end
+    style COMMIT fill:#C8E6C9
+    style SHA fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Blob Objects",
+                        "explanation": "Blobs store file contents (no filename, just data).",
+                        "diagram_data": """graph TB
+    subgraph "File: hello.py"
+        FILE["print('hello')"]
+    end
+    subgraph "Blob Object"
+        BLOB["SHA: 3b18e5...<br/>Type: blob<br/>Content: print('hello')"]
+    end
+    FILE --> |"git hash-object"| BLOB
+    subgraph "Key Points"
+        K1["Same content = same hash"]
+        K2["No filename stored in blob"]
+        K3["Compressed with zlib"]
+    end
+    style BLOB fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Tree Objects",
+                        "explanation": "Trees represent directories, mapping names to blobs/trees.",
+                        "diagram_data": """graph TB
+    subgraph "Tree Object (root)"
+        TREE["SHA: 8f4a2b...<br/>Type: tree"]
+        E1["100644 blob 3b18e5... hello.py"]
+        E2["100644 blob 7c2d1a... README.md"]
+        E3["040000 tree 5e9f3c... src/"]
+    end
+    subgraph "Subtree (src/)"
+        STREE["SHA: 5e9f3c...<br/>Type: tree"]
+        SE1["100644 blob 9a8b7c... main.py"]
+    end
+    TREE --> E1
+    TREE --> E2
+    TREE --> E3
+    E3 --> STREE
+    STREE --> SE1
+    style TREE fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Commit Objects",
+                        "explanation": "Commits point to a tree and contain metadata.",
+                        "diagram_data": """graph TB
+    subgraph "Commit Object"
+        COMMIT["SHA: d4e5f6...<br/>Type: commit"]
+        CTREE["tree 8f4a2b..."]
+        CPAR["parent a1b2c3..."]
+        CAUTH["author: Alice"]
+        CDATE["date: 2024-01-15"]
+        CMSG["message: Add feature X"]
+    end
+    COMMIT --> CTREE
+    COMMIT --> CPAR
+    subgraph "Points to"
+        TREE["Tree (snapshot)"]
+        PARENT["Parent commit"]
+    end
+    CTREE --> TREE
+    CPAR --> PARENT
+    style COMMIT fill:#C8E6C9
+    style TREE fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Object Relationships",
+                        "explanation": "How objects link together to form history.",
+                        "diagram_data": """graph LR
+    subgraph "Commit C3"
+        C3["commit<br/>d4e5f6"]
+    end
+    subgraph "Commit C2"
+        C2["commit<br/>a1b2c3"]
+    end
+    subgraph "Commit C1"
+        C1["commit<br/>7c8d9e"]
+    end
+    C3 --> |"parent"| C2
+    C2 --> |"parent"| C1
+    C3 --> |"tree"| T3["tree"]
+    T3 --> B1["blob<br/>file1"]
+    T3 --> B2["blob<br/>file2"]
+    style C3 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Exploring Objects",
+                        "explanation": "Commands to inspect Git objects.",
+                        "diagram_data": """graph TB
+    subgraph "View Object"
+        V1["git cat-file -t SHA<br/>(show type)"]
+        V2["git cat-file -p SHA<br/>(show contents)"]
+    end
+    subgraph "Create Object"
+        C1["git hash-object -w file<br/>(create blob)"]
+    end
+    subgraph "List Objects"
+        L1["git rev-list --objects --all<br/>(all objects)"]
+        L2[".git/objects/<br/>(object storage)"]
+    end
+    style V2 fill:#C8E6C9
+    style L2 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_three_trees_visual(self):
+        """Seed Git Three Trees visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-three-trees",
+            defaults={
+                "title": "The Three Trees",
+                "description": "Working directory, staging area (index), and repository",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["git", "staging", "index", "working", "repository"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Three Trees",
+                        "explanation": "Git manages three 'trees' of file contents.",
+                        "diagram_data": """graph LR
+    subgraph "Working Directory"
+        WD["Your actual files<br/>on disk"]
+    end
+    subgraph "Staging Area (Index)"
+        SA["Proposed next commit<br/>.git/index"]
+    end
+    subgraph "Repository (HEAD)"
+        REPO["Last commit<br/>.git/objects"]
+    end
+    WD --> |"git add"| SA
+    SA --> |"git commit"| REPO
+    style WD fill:#FFCDD2
+    style SA fill:#FFF9C4
+    style REPO fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Working Directory",
+                        "explanation": "The files you see and edit in your project folder.",
+                        "diagram_data": """graph TB
+    subgraph "Working Directory"
+        F1["hello.py (modified)"]
+        F2["README.md (unchanged)"]
+        F3["new_file.py (untracked)"]
+    end
+    subgraph "States"
+        S1["Modified: changed since last commit"]
+        S2["Untracked: new file Git doesn't know"]
+        S3["Unmodified: same as last commit"]
+    end
+    F1 --> S1
+    F3 --> S2
+    F2 --> S3
+    style F1 fill:#FFCDD2
+    style F3 fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Staging Area (Index)",
+                        "explanation": "A buffer between working directory and repository.",
+                        "diagram_data": """graph TB
+    subgraph "Why Stage?"
+        W1["Select specific changes"]
+                        W2["Build commits piece by piece"]
+                        W3["Review before committing"]
+    end
+    subgraph "Commands"
+        C1["git add file<br/>(stage file)"]
+        C2["git add -p<br/>(stage hunks)"]
+        C3["git reset file<br/>(unstage)"]
+    end
+    subgraph "Index State"
+        I1["Snapshot of what<br/>will be committed"]
+    end
+    style I1 fill:#FFF9C4
+    style C2 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Repository (HEAD)",
+                        "explanation": "The committed history stored in .git directory.",
+                        "diagram_data": """graph TB
+    subgraph "Repository"
+        HEAD["HEAD<br/>(current commit)"]
+        C1["Commit 1"]
+        C2["Commit 2"]
+        C3["Commit 3"]
+    end
+    HEAD --> C3
+    C3 --> C2 --> C1
+    subgraph "After git commit"
+        NEW["New commit created<br/>HEAD moves forward"]
+    end
+    style HEAD fill:#C8E6C9
+    style C3 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "File Lifecycle",
+                        "explanation": "How files move between the three trees.",
+                        "diagram_data": """graph TB
+    UN["Untracked"]
+    UN --> |"git add"| ST["Staged"]
+    ST --> |"git commit"| CM["Committed"]
+    CM --> |"edit file"| MOD["Modified"]
+    MOD --> |"git add"| ST
+    MOD --> |"git checkout"| CM
+    ST --> |"git reset"| MOD
+    style UN fill:#E1BEE7
+    style ST fill:#FFF9C4
+    style CM fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Comparing Trees",
+                        "explanation": "Commands to see differences between trees.",
+                        "diagram_data": """graph TB
+    subgraph "Diff Commands"
+        D1["git diff<br/>Working vs Staging"]
+        D2["git diff --staged<br/>Staging vs HEAD"]
+        D3["git diff HEAD<br/>Working vs HEAD"]
+    end
+    subgraph "Visual"
+        WD["Working"] --> |"git diff"| SA["Staging"]
+        SA --> |"git diff --staged"| HD["HEAD"]
+        WD --> |"git diff HEAD"| HD
+    end
+    style D1 fill:#FFCDD2
+    style D2 fill:#FFF9C4
+    style D3 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_commit_graph_visual(self):
+        """Seed Git Commit Graph visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-commit-graph",
+            defaults={
+                "title": "Commit Graph",
+                "description": "How commits form a directed acyclic graph (DAG)",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["git", "commit", "graph", "dag", "history"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Git History is a Graph",
+                        "explanation": "Commits form a directed acyclic graph (DAG).",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    subgraph "Properties"
+        P1["Directed: parent to child"]
+        P2["Acyclic: no loops"]
+        P3["Each commit points to parent(s)"]
+    end
+    style D fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Linear History",
+                        "explanation": "The simplest case: one commit after another.",
+                        "diagram_data": """graph LR
+    A["A<br/>Initial"] --> B["B<br/>Add feature"]
+    B --> C["C<br/>Fix bug"]
+    C --> D["D<br/>Update docs"]
+    MAIN["main"] --> D
+    style MAIN fill:#C8E6C9
+    style D fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Branching",
+                        "explanation": "Branches create diverging paths in the graph.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"]
+    B --> D["D"] --> E["E"]
+    MAIN["main"] --> C
+    FEAT["feature"] --> E
+    style C fill:#C8E6C9
+    style E fill:#BBDEFB
+    style MAIN fill:#C8E6C9
+    style FEAT fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Merge Commits",
+                        "explanation": "Merges have two parents, joining branches.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"]
+    B --> D["D"] --> E["E"]
+    C --> F["F<br/>Merge"]
+    E --> F
+    MAIN["main"] --> F
+    style F fill:#C8E6C9
+    style MAIN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Complex History",
+                        "explanation": "Real projects have complex graphs with multiple branches.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> G["G"]
+    B --> D["D"] --> E["E"]
+    C --> F["F"]
+    E --> G
+    F --> H["H"]
+    G --> H
+    MAIN["main"] --> H
+    style H fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Visualizing History",
+                        "explanation": "Commands to view the commit graph.",
+                        "diagram_data": """graph TB
+    subgraph "Commands"
+        C1["git log --oneline --graph"]
+        C2["git log --graph --all"]
+        C3["git log --oneline --graph --decorate"]
+    end
+    subgraph "GUI Tools"
+        G1["gitk"]
+        G2["git gui"]
+        G3["GitHub/GitLab UI"]
+        G4["VS Code Git Graph"]
+    end
+    style C1 fill:#C8E6C9
+    style G4 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_branch_visualization_visual(self):
+        """Seed Git Branch Visualization visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-branch-diverge-converge",
+            defaults={
+                "title": "Branch Visualization",
+                "description": "How branches diverge, develop, and converge",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["git", "branch", "diverge", "converge", "visualization"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is a Branch?",
+                        "explanation": "A branch is just a movable pointer to a commit.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"]
+    MAIN["main<br/>(pointer)"] --> C
+    HEAD["HEAD"] --> MAIN
+    subgraph "Key Insight"
+        K1["Branch = 41 bytes<br/>(just a SHA reference)"]
+    end
+    style MAIN fill:#C8E6C9
+    style HEAD fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Creating a Branch",
+                        "explanation": "A new branch points to the current commit.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"]
+    MAIN["main"] --> C
+    FEAT["feature<br/>(new)"] --> C
+    HEAD["HEAD"] --> FEAT
+    subgraph "Commands"
+        CMD["git branch feature<br/>git checkout feature<br/>or: git checkout -b feature"]
+    end
+    style FEAT fill:#BBDEFB
+    style HEAD fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Branches Diverge",
+                        "explanation": "Commits on different branches create diverging history.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"]
+    C --> D["D<br/>main commit"]
+    C --> E["E<br/>feature commit"]
+    E --> F["F"]
+    MAIN["main"] --> D
+    FEAT["feature"] --> F
+    style D fill:#C8E6C9
+    style F fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Parallel Development",
+                        "explanation": "Multiple branches can develop independently.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"]
+    B --> C["C"] --> D["D"]
+    B --> E["E"] --> F["F"]
+    B --> G["G"]
+    MAIN["main"] --> D
+    FEAT1["feature-1"] --> F
+    FEAT2["feature-2"] --> G
+    style D fill:#C8E6C9
+    style F fill:#BBDEFB
+    style G fill:#E1BEE7""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Branches Converge (Merge)",
+                        "explanation": "Branches come back together through merging.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    B --> E["E"] --> F["F"]
+    D --> G["G<br/>Merge commit"]
+    F --> G
+    MAIN["main"] --> G
+    subgraph "After Merge"
+        AM["feature integrated<br/>into main"]
+    end
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Branch Commands",
+                        "explanation": "Essential commands for branch management.",
+                        "diagram_data": """graph TB
+    subgraph "Create & Switch"
+        C1["git branch name"]
+        C2["git checkout name"]
+        C3["git checkout -b name"]
+        C4["git switch name"]
+    end
+    subgraph "List & Delete"
+        L1["git branch -a<br/>(list all)"]
+        D1["git branch -d name<br/>(delete merged)"]
+        D2["git branch -D name<br/>(force delete)"]
+    end
+    subgraph "Rename"
+        R1["git branch -m old new"]
+    end
+    style C3 fill:#C8E6C9
+    style L1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_merge_vs_rebase_visual(self):
+        """Seed Git Merge vs Rebase visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-merge-vs-rebase",
+            defaults={
+                "title": "Merge vs Rebase",
+                "description": "Two strategies for integrating changes",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["git", "merge", "rebase", "integration", "workflow"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Scenario",
+                        "explanation": "You have a feature branch that diverged from main.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    B --> E["E"] --> F["F"]
+    MAIN["main"] --> D
+    FEAT["feature"] --> F
+    subgraph "Question"
+        Q["How to integrate feature into main?"]
+    end
+    style D fill:#C8E6C9
+    style F fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Option 1: Merge",
+                        "explanation": "Create a merge commit that joins both branches.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    B --> E["E"] --> F["F"]
+    D --> G["G<br/>Merge"]
+    F --> G
+    MAIN["main"] --> G
+    subgraph "Command"
+        CMD["git checkout main<br/>git merge feature"]
+    end
+    subgraph "Result"
+        R["Preserves full history<br/>Creates merge commit"]
+    end
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Option 2: Rebase",
+                        "explanation": "Replay feature commits on top of main.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    D --> E2["E'"] --> F2["F'"]
+    MAIN["main"] --> D
+    FEAT["feature"] --> F2
+    subgraph "Command"
+        CMD["git checkout feature<br/>git rebase main"]
+    end
+    subgraph "Result"
+        R["Linear history<br/>Commits rewritten (new SHAs)"]
+    end
+    style E2 fill:#BBDEFB
+    style F2 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "After Rebase: Fast-Forward",
+                        "explanation": "After rebasing, main can fast-forward.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    D --> E2["E'"] --> F2["F'"]
+    MAIN["main"] --> F2
+    subgraph "Command"
+        CMD["git checkout main<br/>git merge feature<br/>(fast-forward)"]
+    end
+    subgraph "Result"
+        R["Clean linear history<br/>No merge commit needed"]
+    end
+    style F2 fill:#C8E6C9
+    style MAIN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Comparison",
+                        "explanation": "When to use each approach.",
+                        "diagram_data": """graph TB
+    subgraph "Merge"
+        M1["Preserves complete history"]
+        M2["Non-destructive"]
+        M3["Shows when branches joined"]
+        M4["Can create messy history"]
+    end
+    subgraph "Rebase"
+        R1["Clean, linear history"]
+        R2["Easier to read/bisect"]
+        R3["Rewrites commit history"]
+        R4["Dangerous for shared branches!"]
+    end
+    style M2 fill:#C8E6C9
+    style R4 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Golden Rule",
+                        "explanation": "Never rebase public/shared branches.",
+                        "diagram_data": """graph TB
+    subgraph "Safe to Rebase"
+        S1["Local feature branches"]
+        S2["Before pushing"]
+        S3["Personal cleanup"]
+    end
+    subgraph "Never Rebase"
+        N1["main/master"]
+        N2["Shared branches"]
+        N3["Already pushed commits"]
+    end
+    subgraph "Why?"
+        W["Rebasing rewrites history<br/>Others have old commits<br/>Causes chaos when they pull"]
+    end
+    style S1 fill:#C8E6C9
+    style N1 fill:#FFCDD2""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_ff_vs_3way_visual(self):
+        """Seed Git Fast-Forward vs 3-Way Merge visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-ff-vs-3way-merge",
+            defaults={
+                "title": "Fast-Forward vs 3-Way Merge",
+                "description": "When Git can fast-forward vs needs a merge commit",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["git", "merge", "fast-forward", "3-way"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Two Merge Types",
+                        "explanation": "Git chooses merge strategy based on branch topology.",
+                        "diagram_data": """graph TB
+    subgraph "Fast-Forward Possible"
+        FF["main hasn't moved<br/>since branch creation"]
+    end
+    subgraph "3-Way Merge Required"
+        TW["main has new commits<br/>branches diverged"]
+    end
+    style FF fill:#C8E6C9
+    style TW fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Fast-Forward Scenario",
+                        "explanation": "Feature branch is directly ahead of main.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"]
+    C --> D["D"] --> E["E"]
+    MAIN["main"] --> C
+    FEAT["feature"] --> E
+    subgraph "Condition"
+        COND["main is ancestor of feature<br/>No divergence"]
+    end
+    style C fill:#C8E6C9
+    style E fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Fast-Forward Result",
+                        "explanation": "Main pointer simply moves forward. No merge commit.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"] --> E["E"]
+    MAIN["main"] --> E
+    subgraph "After: git merge feature"
+        R1["main pointer moved to E"]
+        R2["No new commit created"]
+        R3["Linear history preserved"]
+    end
+    style E fill:#C8E6C9
+    style MAIN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "3-Way Merge Scenario",
+                        "explanation": "Both branches have new commits (diverged).",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    B --> E["E"] --> F["F"]
+    MAIN["main"] --> D
+    FEAT["feature"] --> F
+    subgraph "Condition"
+        COND["Both have commits since B<br/>Branches diverged"]
+    end
+    style D fill:#C8E6C9
+    style F fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "3-Way Merge Result",
+                        "explanation": "Git creates a merge commit with two parents.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C"] --> D["D"]
+    B --> E["E"] --> F["F"]
+    D --> G["G<br/>Merge commit"]
+    F --> G
+    MAIN["main"] --> G
+    subgraph "3-Way Merge Uses"
+        TW1["Base: B (common ancestor)"]
+        TW2["Ours: D (main)"]
+        TW3["Theirs: F (feature)"]
+    end
+    style G fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Controlling Merge Behavior",
+                        "explanation": "Options to control merge strategy.",
+                        "diagram_data": """graph TB
+    subgraph "Force No Fast-Forward"
+        NF["git merge --no-ff feature<br/>Always create merge commit"]
+    end
+    subgraph "Force Fast-Forward Only"
+        FO["git merge --ff-only feature<br/>Fail if can't fast-forward"]
+    end
+    subgraph "Use Cases"
+        U1["--no-ff: preserve feature branch history"]
+        U2["--ff-only: ensure linear history"]
+    end
+    style NF fill:#FFF9C4
+    style FO fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_revert_visual(self):
+        """Seed Git Revert visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-revert",
+            defaults={
+                "title": "Git Revert",
+                "description": "Safely undo commits by creating new commits",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 6,
+                "tags": ["git", "revert", "undo", "safe"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Git Revert?",
+                        "explanation": "Revert creates a NEW commit that undoes a previous commit.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B"] --> C["C<br/>(bad)"] --> D["D"]
+    D --> E["E<br/>Revert C"]
+    subgraph "Key Point"
+        K1["History preserved"]
+        K2["Safe for shared branches"]
+        K3["Creates inverse commit"]
+    end
+    style C fill:#FFCDD2
+    style E fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Revert vs Reset",
+                        "explanation": "Revert adds history, reset removes it.",
+                        "diagram_data": """graph TB
+    subgraph "git revert C"
+        R1["A - B - C - D - E(revert)"]
+        R2["History preserved"]
+        R3["Safe for public branches"]
+    end
+    subgraph "git reset --hard B"
+        RS1["A - B"]
+        RS2["History removed"]
+        RS3["Dangerous for public branches!"]
+    end
+    style R3 fill:#C8E6C9
+    style RS3 fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "How Revert Works",
+                        "explanation": "Git calculates the inverse diff and applies it.",
+                        "diagram_data": """graph TB
+    subgraph "Original Commit C"
+        ADD["Added: line X"]
+        DEL["Removed: line Y"]
+    end
+    subgraph "Revert Commit"
+        RADD["Removed: line X"]
+        RDEL["Added: line Y"]
+    end
+    ADD --> |"Inverse"| RADD
+    DEL --> |"Inverse"| RDEL
+    style ADD fill:#C8E6C9
+    style RADD fill:#FFCDD2""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Revert Commands",
+                        "explanation": "Different ways to use git revert.",
+                        "diagram_data": """graph TB
+    subgraph "Basic Revert"
+        B1["git revert SHA<br/>(revert single commit)"]
+    end
+    subgraph "Multiple Commits"
+        M1["git revert SHA1..SHA2<br/>(revert range)"]
+        M2["git revert -n SHA1 SHA2<br/>(stage without commit)"]
+    end
+    subgraph "Merge Commits"
+        MG["git revert -m 1 SHA<br/>(-m specifies parent)"]
+    end
+    style B1 fill:#C8E6C9
+    style MG fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Revert Conflicts",
+                        "explanation": "Reverts can have conflicts if code changed since.",
+                        "diagram_data": """graph LR
+    A["A"] --> B["B<br/>add X"] --> C["C<br/>modify X"] --> D["D"]
+    subgraph "Revert B"
+        R1["Tries to remove X"]
+        R2["But C modified X"]
+        R3["CONFLICT!"]
+    end
+    subgraph "Resolution"
+        RS["Manually resolve<br/>git add files<br/>git revert --continue"]
+    end
+    style R3 fill:#FFCDD2
+    style RS fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "When to Use Revert",
+                        "explanation": "Revert is ideal for undoing public commits.",
+                        "diagram_data": """graph TB
+    subgraph "Use Revert When"
+        U1["Commit already pushed"]
+        U2["Others may have pulled"]
+        U3["Need audit trail"]
+        U4["Reverting merge commits"]
+    end
+    subgraph "Consider Reset When"
+        R1["Local commits only"]
+        R2["Haven't pushed yet"]
+        R3["Want clean history"]
+    end
+    style U1 fill:#C8E6C9
+    style R1 fill:#BBDEFB""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_stash_visual(self):
+        """Seed Git Stash Workflow visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-stash-workflow",
+            defaults={
+                "title": "Stash Workflow",
+                "description": "Saving and applying work in progress",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "beginner",
+                "estimated_time_minutes": 6,
+                "tags": ["git", "stash", "wip", "workflow"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Stash?",
+                        "explanation": "Stash saves uncommitted changes temporarily.",
+                        "diagram_data": """graph TB
+    subgraph "Scenario"
+        S1["Working on feature"]
+        S2["Need to switch branches"]
+        S3["Don't want to commit WIP"]
+    end
+    subgraph "Solution"
+        ST["git stash<br/>Saves changes to stash stack"]
+    end
+    S1 --> S2 --> S3 --> ST
+    style ST fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Stash Stack",
+                        "explanation": "Stashes are stored in a stack (LIFO).",
+                        "diagram_data": """graph TB
+    subgraph "Stash Stack"
+        S0["stash@{0}<br/>Most recent"]
+        S1["stash@{1}<br/>Previous"]
+        S2["stash@{2}<br/>Older"]
+    end
+    subgraph "Commands"
+        PUSH["git stash push<br/>(add to top)"]
+        POP["git stash pop<br/>(remove from top)"]
+    end
+    PUSH --> S0
+    S0 --> POP
+    style S0 fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Basic Workflow",
+                        "explanation": "Common stash workflow for context switching.",
+                        "diagram_data": """graph TB
+    W1["Working on feature..."]
+    W2["Urgent bug on main!"]
+    ST["git stash"]
+    SW["git checkout main"]
+    FIX["Fix the bug"]
+    BACK["git checkout feature"]
+    POP["git stash pop"]
+    CONT["Continue feature work"]
+    W1 --> W2 --> ST --> SW --> FIX --> BACK --> POP --> CONT
+    style ST fill:#FFF9C4
+    style POP fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Stash Commands",
+                        "explanation": "Essential stash commands.",
+                        "diagram_data": """graph TB
+    subgraph "Save"
+        S1["git stash<br/>(stash tracked files)"]
+        S2["git stash -u<br/>(include untracked)"]
+        S3["git stash -m 'message'<br/>(with description)"]
+    end
+    subgraph "Restore"
+        R1["git stash pop<br/>(apply and delete)"]
+        R2["git stash apply<br/>(apply, keep stash)"]
+        R3["git stash apply stash@{2}<br/>(specific stash)"]
+    end
+    subgraph "Manage"
+        M1["git stash list"]
+        M2["git stash show"]
+        M3["git stash drop"]
+        M4["git stash clear"]
+    end
+    style S1 fill:#C8E6C9
+    style R1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Stash Specific Files",
+                        "explanation": "Stash only certain files or hunks.",
+                        "diagram_data": """graph TB
+    subgraph "Specific Files"
+        F1["git stash push file1 file2<br/>(stash specific files)"]
+    end
+    subgraph "Interactive"
+        I1["git stash -p<br/>(patch mode, select hunks)"]
+    end
+    subgraph "Keep Staged"
+        K1["git stash --keep-index<br/>(only stash unstaged)"]
+    end
+    style F1 fill:#C8E6C9
+    style I1 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Stash to Branch",
+                        "explanation": "Create a branch from stashed changes.",
+                        "diagram_data": """graph TB
+    subgraph "Problem"
+        P1["Stashed on wrong branch"]
+        P2["Stash conflicts with current branch"]
+    end
+    subgraph "Solution"
+        S1["git stash branch new-branch<br/>Creates branch from stash parent<br/>Applies stash<br/>Drops stash if successful"]
+    end
+    P1 --> S1
+    P2 --> S1
+    style S1 fill:#C8E6C9""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_git_remote_tracking_visual(self):
+        """Seed Git Remote Tracking Branches visual topic."""
+        subject = self.get_or_create_subject("Git", "git", "DevOps & Tooling")
+
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="git-remote-tracking-branches",
+            defaults={
+                "title": "Remote Tracking Branches",
+                "description": "Understanding origin/main vs main",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 7,
+                "tags": ["git", "remote", "tracking", "origin", "fetch"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Three Types of Branches",
+                        "explanation": "Local branches, remote branches, and remote-tracking branches.",
+                        "diagram_data": """graph TB
+    subgraph "Your Machine"
+        LOCAL["main<br/>(local branch)"]
+        TRACK["origin/main<br/>(remote-tracking)"]
+    end
+    subgraph "Remote Server (origin)"
+        REMOTE["main<br/>(remote branch)"]
+    end
+    TRACK --> |"tracks"| REMOTE
+    LOCAL --> |"may track"| TRACK
+    style LOCAL fill:#C8E6C9
+    style TRACK fill:#BBDEFB
+    style REMOTE fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Remote-Tracking Branches",
+                        "explanation": "Local references that mirror remote state at last fetch.",
+                        "diagram_data": """graph TB
+    subgraph "Remote-Tracking Branch"
+        RT["origin/main<br/>origin/feature<br/>origin/develop"]
+    end
+    subgraph "Properties"
+        P1["Read-only (can't commit to them)"]
+        P2["Updated by fetch/pull"]
+        P3["Named: remote/branch"]
+    end
+    subgraph "Purpose"
+        PU["Know where remote branches<br/>were last time you checked"]
+    end
+    style RT fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Fetch Updates Tracking Branches",
+                        "explanation": "git fetch updates remote-tracking branches without merging.",
+                        "diagram_data": """graph TB
+    subgraph "Before Fetch"
+        BL["main: C"]
+        BT["origin/main: C"]
+        BR["remote main: D, E"]
+    end
+    subgraph "git fetch origin"
+        F["Downloads D, E<br/>Updates origin/main"]
+    end
+    subgraph "After Fetch"
+        AL["main: C (unchanged)"]
+        AT["origin/main: E (updated)"]
+    end
+    BT --> |"fetch"| AT
+    style AT fill:#C8E6C9
+    style AL fill:#FFF9C4""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Tracking Relationship",
+                        "explanation": "Local branches can track remote-tracking branches.",
+                        "diagram_data": """graph LR
+    subgraph "Local"
+        MAIN["main"]
+    end
+    subgraph "Remote-Tracking"
+        ORIGIN["origin/main"]
+    end
+    subgraph "Remote"
+        RMAIN["main on origin"]
+    end
+    MAIN --> |"upstream"| ORIGIN
+    ORIGIN --> |"mirrors"| RMAIN
+    subgraph "Benefits"
+        B1["git status shows ahead/behind"]
+        B2["git pull knows what to merge"]
+        B3["git push knows where to push"]
+    end
+    style MAIN fill:#C8E6C9""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Setting Up Tracking",
+                        "explanation": "How to establish tracking relationships.",
+                        "diagram_data": """graph TB
+    subgraph "Automatic"
+        A1["git clone<br/>(main tracks origin/main)"]
+        A2["git checkout feature<br/>(if origin/feature exists)"]
+    end
+    subgraph "Manual"
+        M1["git branch -u origin/main<br/>(set upstream for current)"]
+        M2["git branch -u origin/feat feat<br/>(set for specific branch)"]
+        M3["git push -u origin branch<br/>(push and set upstream)"]
+    end
+    style A1 fill:#C8E6C9
+    style M3 fill:#BBDEFB""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Viewing Tracking Info",
+                        "explanation": "Commands to see tracking relationships.",
+                        "diagram_data": """graph TB
+    subgraph "List Branches"
+        L1["git branch -vv<br/>(shows tracking and ahead/behind)"]
+    end
+    subgraph "Remote Info"
+        R1["git remote -v<br/>(show remote URLs)"]
+        R2["git remote show origin<br/>(detailed remote info)"]
+    end
+    subgraph "Example Output"
+        EX["* main  abc123 [origin/main: ahead 2] commit msg<br/>  feat  def456 [origin/feat: behind 1] other msg"]
+    end
+    style L1 fill:#C8E6C9
+    style EX fill:#FFF9C4""",
                     },
                 ],
             },
