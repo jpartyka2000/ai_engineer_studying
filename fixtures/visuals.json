@@ -34366,5 +34366,1099 @@
     "created_at": "2026-03-11T02:22:28.752Z",
     "updated_at": "2026-03-11T02:22:28.752Z"
   }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 576,
+  "fields": {
+    "subject": 7,
+    "title": "Conversation & Tool Call Flow",
+    "slug": "claude-code-conversation-flow",
+    "description": "How user input → Claude → tool calls → results → response works",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "The Agentic Loop",
+        "explanation": "Claude Code operates in an **agentic loop**: you send a message, Claude thinks and may call tools, tools return results, Claude continues until the task is complete.",
+        "diagram_data": "flowchart TB\n    USER[\"User Input\"]\n    CLAUDE[\"Claude Thinks\"]\n    TOOLS[\"Tool Calls\"]\n    RESULTS[\"Tool Results\"]\n    RESPONSE[\"Response to User\"]\n    USER --> CLAUDE\n    CLAUDE --> TOOLS\n    TOOLS --> RESULTS\n    RESULTS --> CLAUDE\n    CLAUDE --> RESPONSE\n    style CLAUDE fill:#E3F2FD"
+      },
+      {
+        "step_number": 1,
+        "title": "User Sends Message",
+        "explanation": "You type a message or question. Claude Code sends this to the Claude API along with conversation history and system instructions.",
+        "diagram_data": "flowchart LR\n    USER[\"'Fix the bug in auth.py'\"]\n    CONTEXT[\"+ Conversation history<br/>+ System prompt<br/>+ Tool definitions\"]\n    API[\"Claude API\"]\n    USER --> CONTEXT --> API\n    style USER fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "Claude Analyzes & Plans",
+        "explanation": "Claude reads your request, considers the context, and decides what to do. It may need to read files, run commands, or ask clarifying questions.",
+        "diagram_data": "flowchart TB\n    INPUT[\"User request\"]\n    THINK[\"Claude analyzes:<br/>- What's being asked?<br/>- What info do I need?<br/>- Which tools to use?\"]\n    DECIDE{\"Need tools?\"}\n    INPUT --> THINK --> DECIDE\n    DECIDE -->|Yes| TOOLS[\"Make tool calls\"]\n    DECIDE -->|No| RESPOND[\"Respond directly\"]\n    style THINK fill:#E3F2FD"
+      },
+      {
+        "step_number": 3,
+        "title": "Tool Calls",
+        "explanation": "Claude can call multiple tools in one turn. Each tool call specifies the tool name and parameters. Tools run locally on your machine.",
+        "diagram_data": "flowchart TB\n    CLAUDE[\"Claude\"]\n    subgraph \"Tool Calls\"\n        T1[\"Read: auth.py\"]\n        T2[\"Grep: 'error'\"]\n        T3[\"Bash: git status\"]\n    end\n    CLAUDE --> T1\n    CLAUDE --> T2\n    CLAUDE --> T3\n    NOTE[\"Tools run on YOUR machine\"]\n    style NOTE fill:#FFF9C4"
+      },
+      {
+        "step_number": 4,
+        "title": "Tool Execution",
+        "explanation": "Claude Code executes the tool calls locally. Some tools may require permission (like writing files or running commands).",
+        "diagram_data": "flowchart TB\n    CALL[\"Tool Call\"]\n    CHECK{\"Needs permission?\"}\n    ASK[\"Ask user\"]\n    EXEC[\"Execute tool\"]\n    RESULT[\"Return result\"]\n    CALL --> CHECK\n    CHECK -->|Yes| ASK --> EXEC\n    CHECK -->|No| EXEC\n    EXEC --> RESULT\n    style EXEC fill:#C8E6C9"
+      },
+      {
+        "step_number": 5,
+        "title": "Results Back to Claude",
+        "explanation": "Tool results are sent back to Claude. It sees file contents, command output, search results - everything needed to continue.",
+        "diagram_data": "flowchart LR\n    subgraph \"Tool Results\"\n        R1[\"File: 200 lines of code\"]\n        R2[\"Grep: 3 matches found\"]\n        R3[\"Bash: 'clean working tree'\"]\n    end\n    CLAUDE[\"Claude processes results\"]\n    R1 --> CLAUDE\n    R2 --> CLAUDE\n    R3 --> CLAUDE\n    style CLAUDE fill:#E3F2FD"
+      },
+      {
+        "step_number": 6,
+        "title": "Iterative Processing",
+        "explanation": "Claude may need multiple rounds of tool calls. Read a file → find an issue → edit the file → run tests → fix test failures. This continues until done.",
+        "diagram_data": "flowchart TB\n    subgraph \"Turn 1\"\n        T1A[\"Read file\"]\n        T1B[\"Find bug\"]\n    end\n    subgraph \"Turn 2\"\n        T2A[\"Edit file\"]\n        T2B[\"Fix bug\"]\n    end\n    subgraph \"Turn 3\"\n        T3A[\"Run tests\"]\n        T3B[\"Verify fix\"]\n    end\n    T1B --> T2A\n    T2B --> T3A\n    style T3B fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Final Response",
+        "explanation": "Once Claude has completed the task (or needs your input), it responds with text explaining what was done, what was found, or asking for clarification.",
+        "diagram_data": "flowchart TB\n    DONE[\"Task complete\"]\n    RESPONSE[\"Claude responds:<br/>'I fixed the bug in auth.py line 42.<br/>The issue was a missing null check.<br/>Tests now pass.'\"]\n    USER[\"User sees response\"]\n    DONE --> RESPONSE --> USER\n    style RESPONSE fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:22:25.974Z",
+    "updated_at": "2026-03-11T16:22:25.974Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 577,
+  "fields": {
+    "subject": 7,
+    "title": "Tool Architecture",
+    "slug": "claude-code-tool-architecture",
+    "description": "Overview of all tools: Bash, Read, Write, Edit, Glob, Grep, Task, etc.",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Tools Overview",
+        "explanation": "Claude Code has access to a set of **tools** - functions it can call to interact with your system. Each tool has a specific purpose and set of parameters.",
+        "diagram_data": "flowchart TB\n    CLAUDE[\"Claude\"]\n    subgraph \"Tools\"\n        FILES[\"File Tools\"]\n        SEARCH[\"Search Tools\"]\n        EXEC[\"Execution Tools\"]\n        AGENT[\"Agent Tools\"]\n    end\n    CLAUDE --> FILES\n    CLAUDE --> SEARCH\n    CLAUDE --> EXEC\n    CLAUDE --> AGENT\n    style CLAUDE fill:#E3F2FD"
+      },
+      {
+        "step_number": 1,
+        "title": "File Reading Tools",
+        "explanation": "**Read** reads file contents. **Glob** finds files by pattern. These are the primary ways Claude explores your codebase.",
+        "diagram_data": "flowchart TB\n    subgraph \"Reading\"\n        READ[\"Read<br/>Read file contents<br/>Supports images, PDFs, notebooks\"]\n        GLOB[\"Glob<br/>Find files by pattern<br/>'**/*.py', 'src/**/*.ts'\"]\n    end\n    EX1[\"Read: /path/to/file.py\"]\n    EX2[\"Glob: **/*.test.js\"]\n    READ --> EX1\n    GLOB --> EX2\n    style READ fill:#C8E6C9\n    style GLOB fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "File Writing Tools",
+        "explanation": "**Write** creates/overwrites files. **Edit** makes surgical replacements. Edit is preferred for modifying existing files.",
+        "diagram_data": "flowchart TB\n    subgraph \"Writing\"\n        WRITE[\"Write<br/>Create new file or<br/>overwrite entirely\"]\n        EDIT[\"Edit<br/>Replace specific text<br/>Surgical changes\"]\n    end\n    EX1[\"Write: Create new config.py\"]\n    EX2[\"Edit: Fix line 42 in auth.py\"]\n    WRITE --> EX1\n    EDIT --> EX2\n    style EDIT fill:#C8E6C9"
+      },
+      {
+        "step_number": 3,
+        "title": "Search Tools",
+        "explanation": "**Grep** searches file contents with regex. **Glob** finds files by name pattern. Together they help locate relevant code.",
+        "diagram_data": "flowchart TB\n    subgraph \"Search\"\n        GREP[\"Grep<br/>Search file contents<br/>Regex support, context lines\"]\n        GLOB[\"Glob<br/>Search file names<br/>Pattern matching\"]\n    end\n    EX1[\"Grep: 'def authenticate' in **/*.py\"]\n    EX2[\"Glob: **/test_*.py\"]\n    GREP --> EX1\n    GLOB --> EX2\n    style GREP fill:#BBDEFB"
+      },
+      {
+        "step_number": 4,
+        "title": "Execution Tools",
+        "explanation": "**Bash** runs shell commands. Powerful but sandboxed by default. Used for git, npm, pytest, docker, etc.",
+        "diagram_data": "flowchart TB\n    BASH[\"Bash<br/>Run shell commands<br/>Sandboxed by default\"]\n    subgraph \"Common uses\"\n        U1[\"git status, commit, push\"]\n        U2[\"npm install, npm test\"]\n        U3[\"pytest, ruff check\"]\n        U4[\"docker, kubectl\"]\n    end\n    BASH --> U1\n    BASH --> U2\n    BASH --> U3\n    BASH --> U4\n    style BASH fill:#FFE0B2"
+      },
+      {
+        "step_number": 5,
+        "title": "Agent Tools",
+        "explanation": "**Task** spawns sub-agents for complex work. Different agent types: Explore, Plan, Bash specialist, etc.",
+        "diagram_data": "flowchart TB\n    TASK[\"Task<br/>Spawn sub-agents\"]\n    subgraph \"Agent Types\"\n        EXPLORE[\"Explore<br/>Codebase exploration\"]\n        PLAN[\"Plan<br/>Implementation planning\"]\n        BASH_AGENT[\"Bash<br/>Command specialist\"]\n        GENERAL[\"General<br/>Multi-step tasks\"]\n    end\n    TASK --> EXPLORE\n    TASK --> PLAN\n    TASK --> BASH_AGENT\n    TASK --> GENERAL\n    style TASK fill:#E1BEE7"
+      },
+      {
+        "step_number": 6,
+        "title": "Interaction Tools",
+        "explanation": "Tools for interacting with you and the web: **AskUserQuestion**, **WebSearch**, **WebFetch**.",
+        "diagram_data": "flowchart TB\n    subgraph \"Interaction\"\n        ASK[\"AskUserQuestion<br/>Get user input/choices\"]\n        SEARCH[\"WebSearch<br/>Search the web\"]\n        FETCH[\"WebFetch<br/>Fetch URL content\"]\n    end\n    EX1[\"Ask: Which auth method?\"]\n    EX2[\"Search: React 19 new features\"]\n    EX3[\"Fetch: API documentation\"]\n    ASK --> EX1\n    SEARCH --> EX2\n    FETCH --> EX3\n    style ASK fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Planning & Tracking Tools",
+        "explanation": "Tools for organizing work: **TodoWrite** for task tracking, **EnterPlanMode**/**ExitPlanMode** for planning workflows.",
+        "diagram_data": "flowchart TB\n    subgraph \"Planning\"\n        TODO[\"TodoWrite<br/>Track task progress\"]\n        ENTER[\"EnterPlanMode<br/>Start planning\"]\n        EXIT[\"ExitPlanMode<br/>Finish planning\"]\n    end\n    subgraph \"Workflow\"\n        W1[\"Create todo list\"]\n        W2[\"Mark tasks complete\"]\n        W3[\"Plan before coding\"]\n    end\n    TODO --> W1\n    TODO --> W2\n    ENTER --> W3\n    style TODO fill:#FFF9C4"
+      },
+      {
+        "step_number": 8,
+        "title": "Tool Selection",
+        "explanation": "Claude chooses tools based on the task. It prefers specialized tools (Read over cat, Edit over sed) for better results.",
+        "diagram_data": "flowchart TB\n    TASK[\"Task: Read a file\"]\n    subgraph \"Prefer\"\n        GOOD[\"Read tool ✓\"]\n    end\n    subgraph \"Avoid\"\n        BAD[\"Bash: cat file ✗\"]\n    end\n    TASK --> GOOD\n    TASK -.-> BAD\n    NOTE[\"Specialized tools > generic Bash\"]\n    style GOOD fill:#C8E6C9\n    style BAD fill:#FFCDD2"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:22:25.975Z",
+    "updated_at": "2026-03-11T16:22:25.975Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 578,
+  "fields": {
+    "subject": 7,
+    "title": "Context Window Management",
+    "slug": "claude-code-context-management",
+    "description": "How conversation history is managed, truncated, and summarized",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "The Context Window",
+        "explanation": "Claude has a **context window** - the maximum amount of text it can process at once. Claude Code manages this automatically so conversations can continue indefinitely.",
+        "diagram_data": "flowchart TB\n    subgraph \"Context Window\"\n        SYS[\"System prompt\"]\n        HIST[\"Conversation history\"]\n        TOOLS[\"Tool definitions\"]\n        CURR[\"Current message\"]\n    end\n    LIMIT[\"~200K tokens max\"]\n    style LIMIT fill:#FFF9C4"
+      },
+      {
+        "step_number": 1,
+        "title": "What's in Context",
+        "explanation": "Each API call includes: system instructions, tool definitions, conversation history (messages + tool results), and your current input.",
+        "diagram_data": "flowchart TB\n    subgraph \"Sent to Claude\"\n        S1[\"System prompt<br/>(instructions, rules)\"]\n        S2[\"Tool schemas<br/>(available tools)\"]\n        S3[\"Prior messages<br/>(user + assistant)\"]\n        S4[\"Tool results<br/>(file contents, etc.)\"]\n        S5[\"Current input\"]\n    end\n    S1 --> S2 --> S3 --> S4 --> S5\n    style S4 fill:#FFE0B2"
+      },
+      {
+        "step_number": 2,
+        "title": "Context Fills Up",
+        "explanation": "Long conversations accumulate history. File contents, command outputs, and tool results can be large. Eventually context fills up.",
+        "diagram_data": "flowchart TB\n    subgraph \"Growing Context\"\n        M1[\"Message 1\"]\n        M2[\"Message 2\"]\n        M3[\"+ Large file read\"]\n        M4[\"Message 3\"]\n        M5[\"+ Command output\"]\n        M6[\"Message 4...\"]\n    end\n    FULL[\"Context getting full!\"]\n    M6 --> FULL\n    style FULL fill:#FFCDD2"
+      },
+      {
+        "step_number": 3,
+        "title": "Automatic Summarization",
+        "explanation": "When context gets too large, Claude Code automatically **summarizes** older parts of the conversation. Key information is preserved, verbatim details are condensed.",
+        "diagram_data": "flowchart TB\n    subgraph \"Before\"\n        B1[\"Full message 1\"]\n        B2[\"Full file contents\"]\n        B3[\"Full message 2\"]\n    end\n    SUMMARIZE[\"Summarize\"]\n    subgraph \"After\"\n        A1[\"Summary: 'Discussed auth bug,<br/>read auth.py, found issue on line 42'\"]\n    end\n    B1 --> SUMMARIZE\n    B2 --> SUMMARIZE\n    B3 --> SUMMARIZE\n    SUMMARIZE --> A1\n    style A1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "What Gets Preserved",
+        "explanation": "Summarization preserves: what tasks were completed, key decisions made, important findings, and current state. Recent messages stay verbatim.",
+        "diagram_data": "flowchart TB\n    subgraph \"Preserved\"\n        P1[\"✓ Tasks completed\"]\n        P2[\"✓ Key decisions\"]\n        P3[\"✓ Important findings\"]\n        P4[\"✓ Current state\"]\n    end\n    subgraph \"Condensed\"\n        C1[\"○ Exact file contents\"]\n        C2[\"○ Full command outputs\"]\n        C3[\"○ Exploration attempts\"]\n    end\n    style P1 fill:#C8E6C9\n    style C1 fill:#FFF9C4"
+      },
+      {
+        "step_number": 5,
+        "title": "Unlimited Conversations",
+        "explanation": "Thanks to summarization, conversations can continue indefinitely. You won't hit a wall - Claude Code handles context management transparently.",
+        "diagram_data": "flowchart LR\n    START[\"Start\"]\n    WORK[\"Work...\"]\n    SUMMARIZE[\"Auto-summarize\"]\n    MORE[\"More work...\"]\n    SUMMARIZE2[\"Auto-summarize\"]\n    CONTINUE[\"Continue...\"]\n    START --> WORK --> SUMMARIZE --> MORE --> SUMMARIZE2 --> CONTINUE\n    style SUMMARIZE fill:#BBDEFB\n    style SUMMARIZE2 fill:#BBDEFB"
+      },
+      {
+        "step_number": 6,
+        "title": "Best Practices",
+        "explanation": "Help Claude Code manage context: be specific in requests, don't paste huge files in chat (let Claude read them), and start new conversations for unrelated tasks.",
+        "diagram_data": "flowchart TB\n    subgraph \"Good\"\n        G1[\"'Read auth.py and fix the bug'\"]\n        G2[\"Let Claude use Read tool\"]\n        G3[\"New chat for new project\"]\n    end\n    subgraph \"Avoid\"\n        B1[\"Pasting 1000 lines in chat\"]\n        B2[\"Unrelated tasks in one chat\"]\n    end\n    style G1 fill:#C8E6C9\n    style B1 fill:#FFCDD2"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:22:25.976Z",
+    "updated_at": "2026-03-11T16:22:25.976Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 579,
+  "fields": {
+    "subject": 7,
+    "title": "Agent/Subagent System",
+    "slug": "claude-code-agent-system",
+    "description": "How the Task tool spawns specialized agents (Explore, Plan, Bash, etc.)",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Why Subagents?",
+        "explanation": "Complex tasks benefit from **specialized agents**. Instead of one agent doing everything, Claude Code can spawn focused sub-agents for specific work.",
+        "diagram_data": "flowchart TB\n    MAIN[\"Main Claude\"]\n    subgraph \"Subagents\"\n        E[\"Explore Agent\"]\n        P[\"Plan Agent\"]\n        B[\"Bash Agent\"]\n    end\n    MAIN -->|\"spawn\"| E\n    MAIN -->|\"spawn\"| P\n    MAIN -->|\"spawn\"| B\n    style MAIN fill:#E3F2FD"
+      },
+      {
+        "step_number": 1,
+        "title": "The Task Tool",
+        "explanation": "The **Task** tool spawns subagents. You specify the agent type, a prompt, and the agent works autonomously, returning results when done.",
+        "diagram_data": "flowchart TB\n    TASK[\"Task Tool\"]\n    subgraph \"Parameters\"\n        TYPE[\"subagent_type: 'Explore'\"]\n        PROMPT[\"prompt: 'Find auth code'\"]\n        BG[\"run_in_background: false\"]\n    end\n    TASK --> TYPE\n    TASK --> PROMPT\n    TASK --> BG\n    style TASK fill:#E1BEE7"
+      },
+      {
+        "step_number": 2,
+        "title": "Explore Agent",
+        "explanation": "**Explore** agent is optimized for codebase exploration. Use it for finding files, understanding structure, searching for patterns.",
+        "diagram_data": "flowchart TB\n    EXPLORE[\"Explore Agent\"]\n    subgraph \"Good for\"\n        U1[\"Finding files by pattern\"]\n        U2[\"Searching code for keywords\"]\n        U3[\"Understanding codebase structure\"]\n        U4[\"Answering 'where is X?'\"]\n    end\n    EXPLORE --> U1\n    EXPLORE --> U2\n    EXPLORE --> U3\n    style EXPLORE fill:#C8E6C9"
+      },
+      {
+        "step_number": 3,
+        "title": "Plan Agent",
+        "explanation": "**Plan** agent designs implementation strategies. Use it before coding to think through architecture, identify files to change, consider trade-offs.",
+        "diagram_data": "flowchart TB\n    PLAN[\"Plan Agent\"]\n    subgraph \"Good for\"\n        U1[\"Designing implementations\"]\n        U2[\"Identifying critical files\"]\n        U3[\"Considering trade-offs\"]\n        U4[\"Step-by-step plans\"]\n    end\n    PLAN --> U1\n    PLAN --> U2\n    PLAN --> U3\n    style PLAN fill:#BBDEFB"
+      },
+      {
+        "step_number": 4,
+        "title": "Bash Agent",
+        "explanation": "**Bash** agent specializes in command execution. Use for git operations, running builds, executing terminal tasks.",
+        "diagram_data": "flowchart TB\n    BASH[\"Bash Agent\"]\n    subgraph \"Good for\"\n        U1[\"Git operations\"]\n        U2[\"Running builds\"]\n        U3[\"Terminal tasks\"]\n        U4[\"Command sequences\"]\n    end\n    BASH --> U1\n    BASH --> U2\n    BASH --> U3\n    style BASH fill:#FFE0B2"
+      },
+      {
+        "step_number": 5,
+        "title": "General-Purpose Agent",
+        "explanation": "**General-purpose** agent handles complex multi-step tasks. It has access to all tools and works autonomously.",
+        "diagram_data": "flowchart TB\n    GENERAL[\"General-Purpose Agent\"]\n    subgraph \"Has access to\"\n        T1[\"All tools\"]\n        T2[\"Full context\"]\n        T3[\"Multi-step reasoning\"]\n    end\n    USE[\"Use for complex<br/>autonomous tasks\"]\n    GENERAL --> T1\n    GENERAL --> USE\n    style GENERAL fill:#E1BEE7"
+      },
+      {
+        "step_number": 6,
+        "title": "Background Agents",
+        "explanation": "Agents can run in the **background** with `run_in_background: true`. Main conversation continues while agent works. Check results later.",
+        "diagram_data": "flowchart TB\n    MAIN[\"Main conversation\"]\n    BG[\"Background agent<br/>(running tests)\"]\n    CONTINUE[\"Continue chatting...\"]\n    CHECK[\"Check agent results\"]\n    MAIN --> BG\n    MAIN --> CONTINUE\n    CONTINUE --> CHECK\n    style BG fill:#FFF9C4"
+      },
+      {
+        "step_number": 7,
+        "title": "Agent Communication",
+        "explanation": "Agents return results to the main conversation. The main Claude sees what the agent found/did and incorporates it into its response.",
+        "diagram_data": "flowchart TB\n    MAIN[\"Main Claude\"]\n    SPAWN[\"Spawn Explore agent\"]\n    AGENT[\"Agent explores...\"]\n    RESULT[\"Returns: 'Found auth in<br/>src/auth/handler.py'\"]\n    USE[\"Main Claude uses result\"]\n    MAIN --> SPAWN --> AGENT --> RESULT --> USE\n    style RESULT fill:#C8E6C9"
+      },
+      {
+        "step_number": 8,
+        "title": "Parallel Agents",
+        "explanation": "Multiple agents can run in **parallel** when tasks are independent. Claude Code launches them simultaneously for efficiency.",
+        "diagram_data": "flowchart TB\n    MAIN[\"Main Claude\"]\n    subgraph \"Parallel\"\n        A1[\"Agent 1: Search frontend\"]\n        A2[\"Agent 2: Search backend\"]\n        A3[\"Agent 3: Check tests\"]\n    end\n    MAIN --> A1\n    MAIN --> A2\n    MAIN --> A3\n    RESULTS[\"All results combined\"]\n    A1 --> RESULTS\n    A2 --> RESULTS\n    A3 --> RESULTS\n    style RESULTS fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:22:25.977Z",
+    "updated_at": "2026-03-11T16:22:25.977Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 580,
+  "fields": {
+    "subject": 7,
+    "title": "Sandbox Model",
+    "slug": "claude-code-sandbox-model",
+    "description": "Filesystem and network restrictions, when sandbox is bypassed",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Why Sandbox?",
+        "explanation": "Claude Code runs commands on your machine. The **sandbox** provides safety by restricting what commands can access - limiting filesystem and network by default.",
+        "diagram_data": "flowchart TB\n    CMD[\"Bash command\"]\n    SANDBOX[\"Sandbox\"]\n    subgraph \"Restricted\"\n        FS[\"Filesystem access\"]\n        NET[\"Network access\"]\n    end\n    CMD --> SANDBOX --> FS\n    SANDBOX --> NET\n    style SANDBOX fill:#FFE0B2"
+      },
+      {
+        "step_number": 1,
+        "title": "Filesystem Restrictions",
+        "explanation": "By default, commands can only **write** to the current project directory and `/tmp/claude`. Reading is more permissive but still restricted.",
+        "diagram_data": "flowchart TB\n    subgraph \"Write Allowed\"\n        W1[\"Current directory (.)\"]\n        W2[\"/tmp/claude/\"]\n    end\n    subgraph \"Write Denied\"\n        D1[\"Home directory (~)\"]\n        D2[\"System files\"]\n        D3[\".env files\"]\n    end\n    style W1 fill:#C8E6C9\n    style D1 fill:#FFCDD2"
+      },
+      {
+        "step_number": 2,
+        "title": "Network Restrictions",
+        "explanation": "Network access is limited to an allowlist of hosts. Common development services are allowed (GitHub, PyPI, npm). Others are blocked.",
+        "diagram_data": "flowchart TB\n    subgraph \"Allowed Hosts\"\n        A1[\"github.com\"]\n        A2[\"api.github.com\"]\n        A3[\"pypi.org\"]\n        A4[\"api.anthropic.com\"]\n    end\n    subgraph \"Blocked\"\n        B1[\"Random URLs\"]\n        B2[\"Internal networks\"]\n    end\n    style A1 fill:#C8E6C9\n    style B1 fill:#FFCDD2"
+      },
+      {
+        "step_number": 3,
+        "title": "Sandbox Violations",
+        "explanation": "When a command hits sandbox restrictions, it fails with 'Operation not permitted'. Claude Code detects this and can retry with sandbox disabled (with your permission).",
+        "diagram_data": "flowchart TB\n    CMD[\"Command runs\"]\n    BLOCK[\"Sandbox blocks\"]\n    ERR[\"'Operation not permitted'\"]\n    DETECT[\"Claude detects violation\"]\n    RETRY[\"Retry without sandbox?\"]\n    CMD --> BLOCK --> ERR --> DETECT --> RETRY\n    style ERR fill:#FFCDD2"
+      },
+      {
+        "step_number": 4,
+        "title": "Disabling Sandbox",
+        "explanation": "Claude can set `dangerouslyDisableSandbox: true` to bypass restrictions. This requires **your permission** via a prompt.",
+        "diagram_data": "flowchart TB\n    CLAUDE[\"Claude requests\"]\n    PARAM[\"dangerouslyDisableSandbox: true\"]\n    PROMPT[\"User prompted for permission\"]\n    ALLOW{\"Allow?\"}\n    RUN[\"Command runs unrestricted\"]\n    DENY[\"Command blocked\"]\n    CLAUDE --> PARAM --> PROMPT --> ALLOW\n    ALLOW -->|Yes| RUN\n    ALLOW -->|No| DENY\n    style PROMPT fill:#FFF9C4"
+      },
+      {
+        "step_number": 5,
+        "title": "When Sandbox is Bypassed",
+        "explanation": "Sandbox should only be disabled when: 1) You explicitly ask, or 2) A command failed due to sandbox restrictions. Claude explains why it's needed.",
+        "diagram_data": "flowchart TB\n    subgraph \"Bypass OK\"\n        B1[\"User explicitly requests\"]\n        B2[\"Command failed with permission error\"]\n    end\n    subgraph \"Should Not Bypass\"\n        N1[\"Just because it's convenient\"]\n        N2[\"Without clear reason\"]\n    end\n    style B1 fill:#C8E6C9\n    style N1 fill:#FFCDD2"
+      },
+      {
+        "step_number": 6,
+        "title": "Managing Sandbox Settings",
+        "explanation": "Use `/sandbox` command to manage restrictions. Add allowed paths, hosts, or see current settings.",
+        "diagram_data": "flowchart TB\n    CMD[\"/sandbox\"]\n    subgraph \"Options\"\n        O1[\"View current settings\"]\n        O2[\"Add allowed paths\"]\n        O3[\"Add allowed hosts\"]\n        O4[\"Reset to defaults\"]\n    end\n    CMD --> O1\n    CMD --> O2\n    style CMD fill:#BBDEFB"
+      },
+      {
+        "step_number": 7,
+        "title": "Security Best Practices",
+        "explanation": "Keep sandbox enabled by default. Only disable for specific operations. Review what Claude wants to do before allowing unrestricted access.",
+        "diagram_data": "flowchart TB\n    subgraph \"Best Practices\"\n        P1[\"Keep sandbox ON by default\"]\n        P2[\"Review before allowing bypass\"]\n        P3[\"Don't add sensitive paths to allowlist\"]\n        P4[\"Use /sandbox to check settings\"]\n    end\n    style P1 fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:24:12.029Z",
+    "updated_at": "2026-03-11T16:24:12.029Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 581,
+  "fields": {
+    "subject": 7,
+    "title": "Permission Flow",
+    "slug": "claude-code-permission-flow",
+    "description": "How Claude Code requests and handles user permissions",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Permission System",
+        "explanation": "Claude Code asks for permission before potentially dangerous operations. This keeps you in control while allowing Claude to work efficiently.",
+        "diagram_data": "flowchart TB\n    ACTION[\"Claude wants to act\"]\n    CHECK{\"Needs permission?\"}\n    ASK[\"Ask user\"]\n    ALLOW{\"Allowed?\"}\n    EXEC[\"Execute\"]\n    SKIP[\"Skip/modify\"]\n    ACTION --> CHECK\n    CHECK -->|Yes| ASK --> ALLOW\n    CHECK -->|No| EXEC\n    ALLOW -->|Yes| EXEC\n    ALLOW -->|No| SKIP\n    style ASK fill:#FFF9C4"
+      },
+      {
+        "step_number": 1,
+        "title": "What Requires Permission",
+        "explanation": "Operations that modify your system typically require permission: writing files, running bash commands (especially without sandbox), making network requests.",
+        "diagram_data": "flowchart TB\n    subgraph \"Needs Permission\"\n        P1[\"Write/Edit files\"]\n        P2[\"Bash commands\"]\n        P3[\"Sandbox bypass\"]\n        P4[\"Some MCP tools\"]\n    end\n    subgraph \"No Permission Needed\"\n        N1[\"Read files\"]\n        N2[\"Glob/Grep search\"]\n        N3[\"Ask questions\"]\n    end\n    style P1 fill:#FFF9C4\n    style N1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "Permission Prompt",
+        "explanation": "When permission is needed, Claude Code shows what it wants to do and waits for your approval. You can approve, deny, or modify.",
+        "diagram_data": "flowchart TB\n    PROMPT[\"Claude wants to edit auth.py\"]\n    subgraph \"Your options\"\n        Y[\"Yes - allow\"]\n        N[\"No - deny\"]\n        A[\"Always - allow this type\"]\n        E[\"Edit - modify first\"]\n    end\n    PROMPT --> Y\n    PROMPT --> N\n    PROMPT --> A\n    style PROMPT fill:#E3F2FD"
+      },
+      {
+        "step_number": 3,
+        "title": "Auto-Allow Rules",
+        "explanation": "Selecting 'Always' creates an auto-allow rule. That operation type won't ask again. Rules can be project-specific or global.",
+        "diagram_data": "flowchart TB\n    ALWAYS[\"Select 'Always'\"]\n    RULE[\"Rule created\"]\n    FUTURE[\"Future same actions\"]\n    AUTO[\"Auto-approved\"]\n    ALWAYS --> RULE --> FUTURE --> AUTO\n    NOTE[\"Check .claude/settings.json\"]\n    style AUTO fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "Permission Modes",
+        "explanation": "Claude Code can run in different permission modes: ask for everything, auto-allow safe ops, or full auto (use with caution).",
+        "diagram_data": "flowchart TB\n    subgraph \"Modes\"\n        M1[\"Default: Ask for writes/bash\"]\n        M2[\"Yolo mode: Less asking\"]\n        M3[\"Custom allowlists\"]\n    end\n    SETTING[\"Configure in settings\"]\n    M1 --> SETTING\n    M2 --> SETTING\n    style M1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 5,
+        "title": "Viewing Permissions",
+        "explanation": "Check current permission settings with `/permissions` or look at `.claude/settings.json` in your project.",
+        "diagram_data": "flowchart TB\n    CHECK[\"/permissions\"]\n    subgraph \"Shows\"\n        S1[\"Auto-allowed operations\"]\n        S2[\"Denied patterns\"]\n        S3[\"Current mode\"]\n    end\n    FILE[\".claude/settings.json\"]\n    CHECK --> S1\n    FILE --> S1\n    style CHECK fill:#BBDEFB"
+      },
+      {
+        "step_number": 6,
+        "title": "Revoking Permissions",
+        "explanation": "You can revoke auto-allow rules anytime. Edit settings or use commands to tighten permissions.",
+        "diagram_data": "flowchart TB\n    REVOKE[\"Want to revoke\"]\n    subgraph \"Methods\"\n        M1[\"Edit .claude/settings.json\"]\n        M2[\"Use /permissions command\"]\n        M3[\"Delete and recreate rules\"]\n    end\n    REVOKE --> M1\n    REVOKE --> M2\n    style M1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Best Practices",
+        "explanation": "Review before allowing. Use 'Always' sparingly. Keep sensitive operations requiring approval. Balance safety with workflow efficiency.",
+        "diagram_data": "flowchart TB\n    subgraph \"Good Practices\"\n        G1[\"Review what Claude wants to do\"]\n        G2[\"Use 'Always' for safe, common ops\"]\n        G3[\"Keep bash commands requiring approval\"]\n        G4[\"Project-specific rules when possible\"]\n    end\n    style G1 fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:24:12.031Z",
+    "updated_at": "2026-03-11T16:24:12.031Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 582,
+  "fields": {
+    "subject": 7,
+    "title": "Hooks System",
+    "slug": "claude-code-hooks-system",
+    "description": "Pre/post hooks for tool calls, user prompt hooks",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What Are Hooks?",
+        "explanation": "**Hooks** are shell commands that run automatically at certain points. They let you customize Claude Code's behavior - run linters, format code, trigger builds, etc.",
+        "diagram_data": "flowchart TB\n    EVENT[\"Event occurs\"]\n    HOOK[\"Hook runs\"]\n    CONTINUE[\"Continue\"]\n    EVENT --> HOOK --> CONTINUE\n    EX[\"e.g., After file edit → run formatter\"]\n    style HOOK fill:#E1BEE7"
+      },
+      {
+        "step_number": 1,
+        "title": "Hook Types",
+        "explanation": "Several hook points are available: before/after tool calls, on user prompt submit, and more. Each triggers at a different moment.",
+        "diagram_data": "flowchart TB\n    subgraph \"Hook Points\"\n        H1[\"PreToolCall<br/>Before tool runs\"]\n        H2[\"PostToolCall<br/>After tool completes\"]\n        H3[\"UserPromptSubmit<br/>When user sends message\"]\n    end\n    NOTE[\"Configure in settings\"]\n    style H2 fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "PreToolCall Hooks",
+        "explanation": "Run **before** a tool executes. Can validate, log, or even block the operation. Receives tool name and parameters.",
+        "diagram_data": "flowchart TB\n    TOOL[\"Tool: Edit auth.py\"]\n    PRE[\"PreToolCall hook\"]\n    subgraph \"Hook can\"\n        V[\"Validate params\"]\n        L[\"Log operation\"]\n        B[\"Block if needed\"]\n    end\n    EXEC[\"Tool executes\"]\n    TOOL --> PRE --> V\n    PRE --> EXEC\n    style PRE fill:#FFE0B2"
+      },
+      {
+        "step_number": 3,
+        "title": "PostToolCall Hooks",
+        "explanation": "Run **after** a tool completes. Perfect for: running formatters after edits, running tests after changes, notifications.",
+        "diagram_data": "flowchart TB\n    TOOL[\"Edit completes\"]\n    POST[\"PostToolCall hook\"]\n    subgraph \"Common uses\"\n        F[\"Run prettier/black\"]\n        T[\"Run tests\"]\n        N[\"Send notification\"]\n    end\n    TOOL --> POST --> F\n    style POST fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "Configuring Hooks",
+        "explanation": "Hooks are configured in `.claude/settings.json`. Specify the event, matcher (which tools), and command to run.",
+        "diagram_data": "flowchart TB\n    subgraph \"settings.json\"\n        H[\"hooks: [<br/>  {<br/>    event: 'PostToolCall',<br/>    matcher: 'Edit',<br/>    command: 'npm run format'<br/>  }<br/>]\"]\n    end\n    RESULT[\"Runs formatter after every Edit\"]\n    H --> RESULT\n    style H fill:#FFF9C4"
+      },
+      {
+        "step_number": 5,
+        "title": "Hook Matchers",
+        "explanation": "Matchers filter which tools trigger the hook. Match by tool name, file patterns, or other criteria.",
+        "diagram_data": "flowchart TB\n    subgraph \"Matcher Examples\"\n        M1[\"'Edit' → all Edit calls\"]\n        M2[\"'Edit:*.py' → Python edits\"]\n        M3[\"'Bash' → all bash commands\"]\n        M4[\"'*' → all tools\"]\n    end\n    style M1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 6,
+        "title": "Hook Output",
+        "explanation": "Hook output is shown to Claude. If a hook fails (non-zero exit), Claude sees the error and can respond. Hooks can provide feedback!",
+        "diagram_data": "flowchart TB\n    HOOK[\"Hook runs\"]\n    OUTPUT[\"Output/errors\"]\n    CLAUDE[\"Claude sees output\"]\n    RESPOND[\"Claude responds accordingly\"]\n    HOOK --> OUTPUT --> CLAUDE --> RESPOND\n    EX[\"e.g., 'Lint errors found on line 42'\"]\n    style OUTPUT fill:#BBDEFB"
+      },
+      {
+        "step_number": 7,
+        "title": "Common Hook Patterns",
+        "explanation": "Popular hook setups: auto-format on edit, run tests on file changes, lint before commit, notify on completion.",
+        "diagram_data": "flowchart TB\n    subgraph \"Popular Hooks\"\n        P1[\"PostEdit → prettier/black\"]\n        P2[\"PostEdit → eslint/ruff\"]\n        P3[\"PostBash:git commit → run tests\"]\n        P4[\"UserPromptSubmit → log prompts\"]\n    end\n    style P1 fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:24:12.031Z",
+    "updated_at": "2026-03-11T16:24:12.031Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 583,
+  "fields": {
+    "subject": 7,
+    "title": "Settings Hierarchy",
+    "slug": "claude-code-settings-hierarchy",
+    "description": "User settings vs project settings vs managed settings",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Multiple Settings Levels",
+        "explanation": "Claude Code has settings at multiple levels: global user settings, project-specific settings, and organization-managed settings. They're merged with specific precedence.",
+        "diagram_data": "flowchart TB\n    subgraph \"Settings Levels\"\n        M[\"Managed (org)\"]\n        U[\"User (~/.claude)\"]\n        P[\"Project (.claude/)\"]\n    end\n    MERGE[\"Merged settings\"]\n    M --> MERGE\n    U --> MERGE\n    P --> MERGE\n    style P fill:#C8E6C9"
+      },
+      {
+        "step_number": 1,
+        "title": "User Settings",
+        "explanation": "Global settings in `~/.claude/settings.json`. Apply to all projects. Set your preferences, default behaviors, API keys.",
+        "diagram_data": "flowchart TB\n    PATH[\"~/.claude/settings.json\"]\n    subgraph \"Contains\"\n        S1[\"Default model preferences\"]\n        S2[\"Global permissions\"]\n        S3[\"Theme/display settings\"]\n        S4[\"API configuration\"]\n    end\n    PATH --> S1\n    style PATH fill:#BBDEFB"
+      },
+      {
+        "step_number": 2,
+        "title": "Project Settings",
+        "explanation": "Project-specific settings in `.claude/settings.json`. Override user settings for this project. Can be committed to git for team sharing.",
+        "diagram_data": "flowchart TB\n    PATH[\".claude/settings.json\"]\n    subgraph \"Contains\"\n        S1[\"Project-specific rules\"]\n        S2[\"Allowed operations\"]\n        S3[\"Hooks for this project\"]\n        S4[\"Custom instructions\"]\n    end\n    GIT[\"Can commit to git!\"]\n    PATH --> S1\n    PATH --> GIT\n    style PATH fill:#C8E6C9"
+      },
+      {
+        "step_number": 3,
+        "title": "Local Settings",
+        "explanation": "`.claude/settings.local.json` for personal project settings that shouldn't be shared. Gitignored by default.",
+        "diagram_data": "flowchart TB\n    PATH[\".claude/settings.local.json\"]\n    subgraph \"Use for\"\n        S1[\"Personal preferences\"]\n        S2[\"Local paths\"]\n        S3[\"Secrets/tokens\"]\n    end\n    IGNORE[\"Gitignored - not shared\"]\n    PATH --> S1\n    PATH --> IGNORE\n    style IGNORE fill:#FFF9C4"
+      },
+      {
+        "step_number": 4,
+        "title": "Managed Settings",
+        "explanation": "Organizations can push managed settings. These take highest precedence and can't be overridden locally. For enterprise policies.",
+        "diagram_data": "flowchart TB\n    ORG[\"Organization admin\"]\n    MANAGED[\"Managed settings\"]\n    POLICY[\"Enforced policies\"]\n    LOCAL[\"Can't override locally\"]\n    ORG --> MANAGED --> POLICY\n    MANAGED --> LOCAL\n    style MANAGED fill:#E1BEE7"
+      },
+      {
+        "step_number": 5,
+        "title": "Precedence Order",
+        "explanation": "Settings merge with this precedence (highest to lowest): Managed → Project local → Project → User. Higher levels override lower.",
+        "diagram_data": "flowchart TB\n    subgraph \"Precedence (high to low)\"\n        P1[\"1. Managed (org)\"]\n        P2[\"2. Project local\"]\n        P3[\"3. Project shared\"]\n        P4[\"4. User global\"]\n    end\n    P1 --> P2 --> P3 --> P4\n    NOTE[\"Higher overrides lower\"]\n    style P1 fill:#E1BEE7\n    style P3 fill:#C8E6C9"
+      },
+      {
+        "step_number": 6,
+        "title": "CLAUDE.md Files",
+        "explanation": "`CLAUDE.md` files provide project instructions to Claude. They're read automatically and inform Claude about the codebase.",
+        "diagram_data": "flowchart TB\n    subgraph \"CLAUDE.md locations\"\n        ROOT[\"./CLAUDE.md\"]\n        SUB[\"./subdir/CLAUDE.md\"]\n        PARENT[\"../CLAUDE.md\"]\n    end\n    CLAUDE[\"Claude reads these\"]\n    ROOT --> CLAUDE\n    SUB --> CLAUDE\n    NOTE[\"Project-specific instructions\"]\n    style ROOT fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Viewing Effective Settings",
+        "explanation": "See the merged effective settings with `/config` or by checking what Claude knows about your settings.",
+        "diagram_data": "flowchart TB\n    CMD[\"/config\"]\n    subgraph \"Shows\"\n        S1[\"Effective merged settings\"]\n        S2[\"Where each setting comes from\"]\n        S3[\"Current permissions\"]\n    end\n    CMD --> S1\n    style CMD fill:#BBDEFB"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:24:12.031Z",
+    "updated_at": "2026-03-11T16:24:12.031Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 584,
+  "fields": {
+    "subject": 7,
+    "title": "MCP Server Architecture",
+    "slug": "claude-code-mcp-architecture",
+    "description": "How Model Context Protocol servers extend capabilities",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What is MCP?",
+        "explanation": "**Model Context Protocol (MCP)** is a standard for connecting AI assistants to external tools and data sources. MCP servers extend Claude Code's capabilities.",
+        "diagram_data": "flowchart LR\n    CLAUDE[\"Claude Code\"]\n    MCP[\"MCP Protocol\"]\n    subgraph \"MCP Servers\"\n        S1[\"Database\"]\n        S2[\"APIs\"]\n        S3[\"Custom tools\"]\n    end\n    CLAUDE --> MCP --> S1\n    MCP --> S2\n    MCP --> S3\n    style MCP fill:#E1BEE7"
+      },
+      {
+        "step_number": 1,
+        "title": "MCP Components",
+        "explanation": "MCP has three main components: **Servers** (provide tools/data), **Clients** (consume tools), and the **Protocol** (how they communicate).",
+        "diagram_data": "flowchart TB\n    subgraph \"MCP Architecture\"\n        CLIENT[\"Client<br/>(Claude Code)\"]\n        PROTOCOL[\"Protocol<br/>(JSON-RPC)\"]\n        SERVER[\"Server<br/>(provides tools)\"]\n    end\n    CLIENT --> PROTOCOL --> SERVER\n    style PROTOCOL fill:#E3F2FD"
+      },
+      {
+        "step_number": 2,
+        "title": "What MCP Servers Provide",
+        "explanation": "MCP servers can provide: **Tools** (functions Claude can call), **Resources** (data/context), and **Prompts** (predefined instructions).",
+        "diagram_data": "flowchart TB\n    SERVER[\"MCP Server\"]\n    subgraph \"Provides\"\n        T[\"Tools<br/>Functions to call\"]\n        R[\"Resources<br/>Data/context\"]\n        P[\"Prompts<br/>Instructions\"]\n    end\n    SERVER --> T\n    SERVER --> R\n    SERVER --> P\n    style T fill:#C8E6C9"
+      },
+      {
+        "step_number": 3,
+        "title": "Example MCP Servers",
+        "explanation": "Popular MCP servers: filesystem access, database queries, GitHub integration, Slack, web browsing, and many more.",
+        "diagram_data": "flowchart TB\n    subgraph \"Common MCP Servers\"\n        S1[\"Filesystem<br/>Read/write files\"]\n        S2[\"PostgreSQL<br/>Query databases\"]\n        S3[\"GitHub<br/>Issues, PRs, repos\"]\n        S4[\"Slack<br/>Messages, channels\"]\n        S5[\"Puppeteer<br/>Web automation\"]\n    end\n    style S3 fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "Configuring MCP Servers",
+        "explanation": "Add MCP servers in settings. Specify the server command, arguments, and any environment variables needed.",
+        "diagram_data": "flowchart TB\n    subgraph \"settings.json\"\n        CONFIG[\"mcpServers: {<br/>  'github': {<br/>    command: 'npx',<br/>    args: ['@mcp/github'],<br/>    env: { GITHUB_TOKEN: '...' }<br/>  }<br/>}\"]\n    end\n    RESULT[\"GitHub tools available\"]\n    CONFIG --> RESULT\n    style CONFIG fill:#FFF9C4"
+      },
+      {
+        "step_number": 5,
+        "title": "How Claude Uses MCP Tools",
+        "explanation": "MCP tools appear alongside built-in tools. Claude can call them the same way - they're seamlessly integrated.",
+        "diagram_data": "flowchart TB\n    CLAUDE[\"Claude\"]\n    subgraph \"Available Tools\"\n        BUILTIN[\"Built-in: Read, Edit, Bash\"]\n        MCP[\"MCP: github_create_issue,<br/>db_query, slack_post\"]\n    end\n    CLAUDE --> BUILTIN\n    CLAUDE --> MCP\n    style MCP fill:#E1BEE7"
+      },
+      {
+        "step_number": 6,
+        "title": "MCP Server Lifecycle",
+        "explanation": "MCP servers start when needed and can stay running. Claude Code manages the connection automatically.",
+        "diagram_data": "flowchart LR\n    START[\"Claude needs tool\"]\n    SPAWN[\"Start MCP server\"]\n    CONNECT[\"Establish connection\"]\n    USE[\"Call tools\"]\n    KEEP[\"Keep alive for reuse\"]\n    START --> SPAWN --> CONNECT --> USE --> KEEP\n    style USE fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Building Custom MCP Servers",
+        "explanation": "You can build custom MCP servers for your specific needs. SDKs available for Python, TypeScript, and more.",
+        "diagram_data": "flowchart TB\n    subgraph \"Build with\"\n        PY[\"Python SDK<br/>mcp-python\"]\n        TS[\"TypeScript SDK<br/>@modelcontextprotocol/sdk\"]\n    end\n    CUSTOM[\"Custom server for<br/>your internal tools\"]\n    PY --> CUSTOM\n    TS --> CUSTOM\n    style CUSTOM fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:28:23.826Z",
+    "updated_at": "2026-03-11T16:28:23.826Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 585,
+  "fields": {
+    "subject": 7,
+    "title": "IDE Integration",
+    "slug": "claude-code-ide-integration",
+    "description": "How Claude Code integrates with VS Code, JetBrains, etc.",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "IDE Integration Overview",
+        "explanation": "Claude Code can integrate with popular IDEs. This enables features like inline code actions, terminal integration, and seamless file navigation.",
+        "diagram_data": "flowchart TB\n    CC[\"Claude Code CLI\"]\n    subgraph \"IDEs\"\n        VS[\"VS Code\"]\n        JB[\"JetBrains\"]\n        OTHER[\"Other editors\"]\n    end\n    CC --> VS\n    CC --> JB\n    CC --> OTHER\n    style CC fill:#E3F2FD"
+      },
+      {
+        "step_number": 1,
+        "title": "VS Code Extension",
+        "explanation": "The VS Code extension provides: inline Claude suggestions, terminal integration, file sync, and quick actions from the editor.",
+        "diagram_data": "flowchart TB\n    EXT[\"VS Code Extension\"]\n    subgraph \"Features\"\n        F1[\"Inline suggestions\"]\n        F2[\"Terminal integration\"]\n        F3[\"File navigation\"]\n        F4[\"Quick actions\"]\n    end\n    EXT --> F1\n    EXT --> F2\n    EXT --> F3\n    style EXT fill:#007ACC"
+      },
+      {
+        "step_number": 2,
+        "title": "Terminal Integration",
+        "explanation": "Run Claude Code in VS Code's integrated terminal. Files Claude edits automatically refresh in the editor. Seamless workflow!",
+        "diagram_data": "flowchart LR\n    TERM[\"VS Code Terminal\"]\n    CC[\"Claude Code\"]\n    EDIT[\"Edits file\"]\n    REFRESH[\"Editor refreshes\"]\n    TERM --> CC --> EDIT --> REFRESH\n    style REFRESH fill:#C8E6C9"
+      },
+      {
+        "step_number": 3,
+        "title": "File Navigation",
+        "explanation": "When Claude references files (like 'src/auth.py:42'), the IDE can make them clickable. Jump directly to the location.",
+        "diagram_data": "flowchart TB\n    CLAUDE[\"'Fixed bug in src/auth.py:42'\"]\n    LINK[\"Clickable link\"]\n    OPEN[\"Opens file at line 42\"]\n    CLAUDE --> LINK --> OPEN\n    style LINK fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "JetBrains Integration",
+        "explanation": "JetBrains IDEs (PyCharm, WebStorm, IntelliJ) have similar integration. Plugin available for terminal integration and file sync.",
+        "diagram_data": "flowchart TB\n    JB[\"JetBrains Plugin\"]\n    subgraph \"Supported IDEs\"\n        I1[\"PyCharm\"]\n        I2[\"WebStorm\"]\n        I3[\"IntelliJ IDEA\"]\n        I4[\"Other JetBrains\"]\n    end\n    JB --> I1\n    JB --> I2\n    style JB fill:#FF6B6B"
+      },
+      {
+        "step_number": 5,
+        "title": "Diff View",
+        "explanation": "When Claude edits files, some integrations show a diff view - see exactly what changed before accepting.",
+        "diagram_data": "flowchart TB\n    EDIT[\"Claude edits file\"]\n    DIFF[\"Diff view shown\"]\n    subgraph \"Options\"\n        A[\"Accept changes\"]\n        R[\"Reject changes\"]\n        M[\"Modify first\"]\n    end\n    EDIT --> DIFF --> A\n    DIFF --> R\n    style DIFF fill:#FFF9C4"
+      },
+      {
+        "step_number": 6,
+        "title": "Keyboard Shortcuts",
+        "explanation": "IDE integrations often add keyboard shortcuts for common Claude Code actions. Quick access without leaving the editor.",
+        "diagram_data": "flowchart TB\n    subgraph \"Common Shortcuts\"\n        K1[\"Cmd+Shift+C → Open Claude\"]\n        K2[\"Cmd+L → Send selection\"]\n        K3[\"Cmd+K → Quick action\"]\n    end\n    NOTE[\"Customize in IDE settings\"]\n    style K1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Setup Tips",
+        "explanation": "For best experience: install the IDE extension, run Claude Code in integrated terminal, enable file watchers for auto-refresh.",
+        "diagram_data": "flowchart TB\n    subgraph \"Setup Steps\"\n        S1[\"1. Install IDE extension\"]\n        S2[\"2. Use integrated terminal\"]\n        S3[\"3. Enable auto-refresh\"]\n        S4[\"4. Configure shortcuts\"]\n    end\n    S1 --> S2 --> S3 --> S4\n    style S1 fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:28:23.828Z",
+    "updated_at": "2026-03-11T16:28:23.828Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 586,
+  "fields": {
+    "subject": 7,
+    "title": "Plan Mode Workflow",
+    "slug": "claude-code-plan-mode",
+    "description": "EnterPlanMode → explore → plan → ExitPlanMode → implement",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What is Plan Mode?",
+        "explanation": "**Plan Mode** is for designing before coding. Claude explores the codebase, creates a plan, and gets your approval before implementing. Prevents wasted effort!",
+        "diagram_data": "flowchart LR\n    TASK[\"Complex task\"]\n    PLAN[\"Plan Mode\"]\n    APPROVE[\"User approves\"]\n    IMPLEMENT[\"Implement\"]\n    TASK --> PLAN --> APPROVE --> IMPLEMENT\n    style PLAN fill:#E1BEE7"
+      },
+      {
+        "step_number": 1,
+        "title": "When to Use Plan Mode",
+        "explanation": "Use Plan Mode for: new features, architectural changes, multi-file modifications, unclear requirements. Skip for simple fixes.",
+        "diagram_data": "flowchart TB\n    subgraph \"Use Plan Mode\"\n        U1[\"New features\"]\n        U2[\"Architecture changes\"]\n        U3[\"Multiple files affected\"]\n        U4[\"Unclear requirements\"]\n    end\n    subgraph \"Skip Plan Mode\"\n        S1[\"Simple bug fixes\"]\n        S2[\"Single-line changes\"]\n        S3[\"Clear, small tasks\"]\n    end\n    style U1 fill:#E1BEE7\n    style S1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "Entering Plan Mode",
+        "explanation": "Claude uses `EnterPlanMode` tool (or you can request it). This shifts Claude to planning-focused behavior - no code changes yet.",
+        "diagram_data": "flowchart TB\n    REQUEST[\"'Plan how to add auth'\"]\n    ENTER[\"EnterPlanMode\"]\n    MODE[\"Now in Plan Mode\"]\n    FOCUS[\"Focus: explore & design\"]\n    REQUEST --> ENTER --> MODE --> FOCUS\n    style MODE fill:#E1BEE7"
+      },
+      {
+        "step_number": 3,
+        "title": "Exploration Phase",
+        "explanation": "In Plan Mode, Claude explores: reads relevant files, understands existing patterns, identifies what needs to change. No modifications yet!",
+        "diagram_data": "flowchart TB\n    subgraph \"Plan Mode Activities\"\n        E1[\"Read existing code\"]\n        E2[\"Understand patterns\"]\n        E3[\"Identify files to change\"]\n        E4[\"Consider trade-offs\"]\n    end\n    NO[\"NO edits or writes\"]\n    E4 --> NO\n    style NO fill:#FFCDD2"
+      },
+      {
+        "step_number": 4,
+        "title": "Writing the Plan",
+        "explanation": "Claude writes a detailed plan to a file (often `PLAN.md`). Lists steps, files to modify, approach, and any questions.",
+        "diagram_data": "flowchart TB\n    PLAN[\"Plan document\"]\n    subgraph \"Contents\"\n        C1[\"Overview\"]\n        C2[\"Files to modify\"]\n        C3[\"Step-by-step approach\"]\n        C4[\"Open questions\"]\n    end\n    PLAN --> C1\n    PLAN --> C2\n    PLAN --> C3\n    style PLAN fill:#FFF9C4"
+      },
+      {
+        "step_number": 5,
+        "title": "Exiting Plan Mode",
+        "explanation": "Claude calls `ExitPlanMode` to signal the plan is ready. You review and approve (or request changes) before implementation begins.",
+        "diagram_data": "flowchart TB\n    EXIT[\"ExitPlanMode\"]\n    REVIEW[\"You review plan\"]\n    DECIDE{\"Approve?\"}\n    IMPLEMENT[\"Start implementing\"]\n    REVISE[\"Revise plan\"]\n    EXIT --> REVIEW --> DECIDE\n    DECIDE -->|Yes| IMPLEMENT\n    DECIDE -->|No| REVISE\n    style DECIDE fill:#FFF9C4"
+      },
+      {
+        "step_number": 6,
+        "title": "Implementation Phase",
+        "explanation": "After approval, Claude implements the plan step-by-step. The plan serves as a checklist. Progress is visible and trackable.",
+        "diagram_data": "flowchart TB\n    PLAN[\"Approved plan\"]\n    subgraph \"Implementation\"\n        I1[\"Step 1: Create model ✓\"]\n        I2[\"Step 2: Add routes ✓\"]\n        I3[\"Step 3: Write tests...\"]\n    end\n    PLAN --> I1 --> I2 --> I3\n    style I1 fill:#C8E6C9\n    style I2 fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Benefits of Plan Mode",
+        "explanation": "Plan Mode: catches issues early, ensures alignment, provides clear progress tracking, and creates documentation of decisions.",
+        "diagram_data": "flowchart TB\n    subgraph \"Benefits\"\n        B1[\"Catch issues early\"]\n        B2[\"Align on approach\"]\n        B3[\"Track progress\"]\n        B4[\"Document decisions\"]\n        B5[\"Avoid rework\"]\n    end\n    style B1 fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:28:23.828Z",
+    "updated_at": "2026-03-11T16:28:23.828Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 587,
+  "fields": {
+    "subject": 7,
+    "title": "Git Commit Flow",
+    "slug": "claude-code-git-commit",
+    "description": "How Claude Code handles git operations safely",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Git Safety Protocol",
+        "explanation": "Claude Code follows strict git safety rules: only commits when asked, never force pushes, respects hooks, and follows conventional commit style.",
+        "diagram_data": "flowchart TB\n    GIT[\"Git Operations\"]\n    subgraph \"Safety Rules\"\n        R1[\"Only commit when asked\"]\n        R2[\"Never force push\"]\n        R3[\"Respect git hooks\"]\n        R4[\"No destructive ops\"]\n    end\n    GIT --> R1\n    GIT --> R2\n    style R1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 1,
+        "title": "When Claude Commits",
+        "explanation": "Claude only creates commits when you explicitly ask. It won't proactively commit changes - you stay in control of your git history.",
+        "diagram_data": "flowchart TB\n    subgraph \"Will Commit\"\n        Y1[\"'Commit these changes'\"]\n        Y2[\"'Create a commit'\"]\n        Y3[\"'Save this to git'\"]\n    end\n    subgraph \"Won't Commit\"\n        N1[\"After making edits\"]\n        N2[\"Automatically\"]\n    end\n    style Y1 fill:#C8E6C9\n    style N1 fill:#FFCDD2"
+      },
+      {
+        "step_number": 2,
+        "title": "Pre-Commit Checks",
+        "explanation": "Before committing, Claude checks: git status, staged changes, recent commit style. Ensures the commit is appropriate.",
+        "diagram_data": "flowchart TB\n    REQUEST[\"'Commit the changes'\"]\n    subgraph \"Checks\"\n        C1[\"git status\"]\n        C2[\"git diff --staged\"]\n        C3[\"git log (commit style)\"]\n    end\n    ANALYZE[\"Analyze changes\"]\n    REQUEST --> C1 --> ANALYZE\n    REQUEST --> C2 --> ANALYZE\n    REQUEST --> C3 --> ANALYZE\n    style ANALYZE fill:#BBDEFB"
+      },
+      {
+        "step_number": 3,
+        "title": "Commit Message Style",
+        "explanation": "Claude follows **conventional commits**: `type(scope): description`. Adds Co-Authored-By line. Explains 'why' not just 'what'.",
+        "diagram_data": "flowchart TB\n    subgraph \"Message Format\"\n        F1[\"type(scope): short summary\"]\n        F2[\"\"]\n        F3[\"Body explains WHY\"]\n        F4[\"\"]\n        F5[\"Co-Authored-By: Claude...\"]\n    end\n    EX[\"feat(auth): add password reset flow\"]\n    style EX fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "Commit Types",
+        "explanation": "Standard types: feat (new feature), fix (bug fix), refactor (code change), test (tests), docs (documentation), chore (maintenance).",
+        "diagram_data": "flowchart TB\n    subgraph \"Commit Types\"\n        T1[\"feat → new feature\"]\n        T2[\"fix → bug fix\"]\n        T3[\"refactor → restructure\"]\n        T4[\"test → add tests\"]\n        T5[\"docs → documentation\"]\n        T6[\"chore → maintenance\"]\n    end\n    style T1 fill:#C8E6C9\n    style T2 fill:#BBDEFB"
+      },
+      {
+        "step_number": 5,
+        "title": "Handling Pre-Commit Hooks",
+        "explanation": "If pre-commit hooks modify files (formatters, linters), Claude handles it gracefully. May need a follow-up commit for hook changes.",
+        "diagram_data": "flowchart TB\n    COMMIT[\"Commit attempt\"]\n    HOOK[\"Pre-commit hook runs\"]\n    MODIFY{\"Files modified?\"}\n    SUCCESS[\"Commit succeeds\"]\n    AMEND[\"Amend to include changes\"]\n    COMMIT --> HOOK --> MODIFY\n    MODIFY -->|No| SUCCESS\n    MODIFY -->|Yes| AMEND\n    style HOOK fill:#FFE0B2"
+      },
+      {
+        "step_number": 6,
+        "title": "Dangerous Operations Avoided",
+        "explanation": "Claude never does: force push, hard reset, rebase published commits, skip hooks, or modify git config. These require explicit user action.",
+        "diagram_data": "flowchart TB\n    subgraph \"Claude NEVER does\"\n        N1[\"git push --force\"]\n        N2[\"git reset --hard\"]\n        N3[\"git rebase (published)\"]\n        N4[\"--no-verify\"]\n        N5[\"Modify .gitconfig\"]\n    end\n    SAFE[\"Your history is safe\"]\n    style N1 fill:#FFCDD2\n    style SAFE fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Pull Request Creation",
+        "explanation": "Claude can create PRs using `gh` CLI. Follows a template: summary, test plan, and links. Never pushes without asking.",
+        "diagram_data": "flowchart TB\n    REQUEST[\"'Create a PR'\"]\n    CHECK[\"Check branch status\"]\n    PUSH[\"Push if needed (asks first)\"]\n    PR[\"gh pr create\"]\n    DONE[\"PR created with summary\"]\n    REQUEST --> CHECK --> PUSH --> PR --> DONE\n    style DONE fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:28:23.829Z",
+    "updated_at": "2026-03-11T16:28:23.829Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 588,
+  "fields": {
+    "subject": 7,
+    "title": "Multi-file Edit Pattern",
+    "slug": "claude-code-multifile-edit",
+    "description": "Read → understand → Edit → verify workflow",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "The Pattern",
+        "explanation": "When modifying code, Claude follows a disciplined pattern: **Read** files first, **Understand** the context, **Edit** carefully, **Verify** the changes work.",
+        "diagram_data": "flowchart LR\n    READ[\"Read\"]\n    UNDERSTAND[\"Understand\"]\n    EDIT[\"Edit\"]\n    VERIFY[\"Verify\"]\n    READ --> UNDERSTAND --> EDIT --> VERIFY\n    style READ fill:#BBDEFB\n    style EDIT fill:#C8E6C9"
+      },
+      {
+        "step_number": 1,
+        "title": "Read First",
+        "explanation": "Claude **always** reads files before modifying them. This ensures it understands current code, doesn't break existing functionality, and maintains consistency.",
+        "diagram_data": "flowchart TB\n    TASK[\"Modify auth.py\"]\n    READ[\"Read auth.py\"]\n    UNDERSTAND[\"See current implementation\"]\n    EDIT[\"Make informed edits\"]\n    TASK --> READ --> UNDERSTAND --> EDIT\n    RULE[\"NEVER edit without reading!\"]\n    style RULE fill:#FFCDD2"
+      },
+      {
+        "step_number": 2,
+        "title": "Understanding Context",
+        "explanation": "After reading, Claude analyzes: coding style, patterns used, related functions, imports needed, test coverage. This informs the edit strategy.",
+        "diagram_data": "flowchart TB\n    READ[\"File contents\"]\n    subgraph \"Analyze\"\n        A1[\"Coding style\"]\n        A2[\"Existing patterns\"]\n        A3[\"Dependencies\"]\n        A4[\"Test coverage\"]\n    end\n    PLAN[\"Plan the edit\"]\n    READ --> A1 --> PLAN\n    READ --> A2 --> PLAN\n    style PLAN fill:#C8E6C9"
+      },
+      {
+        "step_number": 3,
+        "title": "Surgical Edits",
+        "explanation": "Claude uses the **Edit** tool for precise changes - replace specific text, not rewrite entire files. This minimizes diff size and risk.",
+        "diagram_data": "flowchart TB\n    subgraph \"Edit Tool\"\n        OLD[\"old_string: exact text\"]\n        NEW[\"new_string: replacement\"]\n    end\n    RESULT[\"Only changed lines modified\"]\n    OLD --> NEW --> RESULT\n    BETTER[\"Better than Write for existing files\"]\n    style BETTER fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "Multiple Related Edits",
+        "explanation": "When changes span multiple files, Claude plans all edits together. Maintains consistency across files - imports match exports, types align.",
+        "diagram_data": "flowchart TB\n    TASK[\"Add new feature\"]\n    subgraph \"Coordinated Edits\"\n        E1[\"Edit model.py\"]\n        E2[\"Edit views.py\"]\n        E3[\"Edit tests.py\"]\n    end\n    TASK --> E1\n    TASK --> E2\n    TASK --> E3\n    CONSISTENT[\"All changes consistent\"]\n    E3 --> CONSISTENT\n    style CONSISTENT fill:#C8E6C9"
+      },
+      {
+        "step_number": 5,
+        "title": "Verification",
+        "explanation": "After editing, Claude verifies: runs tests, checks for syntax errors, ensures the change works. Catches problems immediately.",
+        "diagram_data": "flowchart TB\n    EDIT[\"Edits complete\"]\n    subgraph \"Verify\"\n        V1[\"Run tests\"]\n        V2[\"Check syntax\"]\n        V3[\"Lint code\"]\n    end\n    PASS{\"Pass?\"}\n    DONE[\"Complete\"]\n    FIX[\"Fix issues\"]\n    EDIT --> V1 --> PASS\n    PASS -->|Yes| DONE\n    PASS -->|No| FIX\n    style DONE fill:#C8E6C9"
+      },
+      {
+        "step_number": 6,
+        "title": "Handling Edit Failures",
+        "explanation": "If an edit fails (string not found, not unique), Claude reads the file again to understand current state and retries with correct context.",
+        "diagram_data": "flowchart TB\n    EDIT[\"Edit attempt\"]\n    FAIL[\"'String not unique'\"]\n    REREAD[\"Re-read file\"]\n    UNDERSTAND[\"Find correct context\"]\n    RETRY[\"Retry with more context\"]\n    EDIT --> FAIL --> REREAD --> UNDERSTAND --> RETRY\n    style FAIL fill:#FFCDD2\n    style RETRY fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Best Practices",
+        "explanation": "For reliable multi-file edits: read before editing, use Edit not Write for existing files, verify changes, keep edits focused.",
+        "diagram_data": "flowchart TB\n    subgraph \"Best Practices\"\n        B1[\"Always read first\"]\n        B2[\"Use Edit for existing files\"]\n        B3[\"Keep changes minimal\"]\n        B4[\"Verify after editing\"]\n        B5[\"Handle failures gracefully\"]\n    end\n    style B1 fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:30:13.181Z",
+    "updated_at": "2026-03-11T16:30:13.181Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 589,
+  "fields": {
+    "subject": 7,
+    "title": "Parallel Tool Execution",
+    "slug": "claude-code-parallel-tools",
+    "description": "When and how tools run in parallel vs sequential",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Parallel vs Sequential",
+        "explanation": "Claude Code can run multiple tools in **parallel** (simultaneously) or **sequential** (one after another). Choosing correctly improves speed and correctness.",
+        "diagram_data": "flowchart TB\n    subgraph \"Parallel\"\n        P1[\"Tool A\"]\n        P2[\"Tool B\"]\n        P3[\"Tool C\"]\n    end\n    subgraph \"Sequential\"\n        S1[\"Tool A\"] --> S2[\"Tool B\"] --> S3[\"Tool C\"]\n    end\n    FAST[\"Faster\"]\n    SAFE[\"Safer for dependencies\"]\n    P1 --> FAST\n    S3 --> SAFE\n    style FAST fill:#C8E6C9"
+      },
+      {
+        "step_number": 1,
+        "title": "When to Parallelize",
+        "explanation": "Run tools in **parallel** when they're independent - no tool needs another's output. Reading multiple files, searching in different places.",
+        "diagram_data": "flowchart TB\n    subgraph \"Independent → Parallel\"\n        R1[\"Read auth.py\"]\n        R2[\"Read users.py\"]\n        R3[\"Read tests.py\"]\n    end\n    NOTE[\"None depends on others\"]\n    PARALLEL[\"Run all at once!\"]\n    R1 --> PARALLEL\n    R2 --> PARALLEL\n    R3 --> PARALLEL\n    style PARALLEL fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "When to Sequence",
+        "explanation": "Run tools **sequentially** when outputs feed into inputs. Read file → Edit file. Create directory → Write file inside it.",
+        "diagram_data": "flowchart TB\n    subgraph \"Dependent → Sequential\"\n        S1[\"Read file\"]\n        S2[\"Edit based on contents\"]\n        S3[\"Run tests on edited file\"]\n    end\n    S1 --> S2 --> S3\n    NOTE[\"Each needs previous result\"]\n    style NOTE fill:#FFF9C4"
+      },
+      {
+        "step_number": 3,
+        "title": "How Claude Decides",
+        "explanation": "Claude analyzes tool calls: if outputs are needed as inputs, they're sequential. If independent, they can parallelize.",
+        "diagram_data": "flowchart TB\n    CALLS[\"Multiple tool calls\"]\n    CHECK{\"Dependencies?\"}\n    SEQ[\"Run sequential\"]\n    PAR[\"Run parallel\"]\n    CALLS --> CHECK\n    CHECK -->|\"A needs B's output\"| SEQ\n    CHECK -->|\"Independent\"| PAR\n    style PAR fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "Parallel Example",
+        "explanation": "Searching codebase: Grep in src/, Grep in tests/, Glob for configs. All independent - run in parallel for speed.",
+        "diagram_data": "flowchart TB\n    SEARCH[\"Find all usages\"]\n    subgraph \"Parallel searches\"\n        G1[\"Grep src/\"]\n        G2[\"Grep tests/\"]\n        G3[\"Glob configs\"]\n    end\n    COMBINE[\"Combine results\"]\n    SEARCH --> G1 --> COMBINE\n    SEARCH --> G2 --> COMBINE\n    SEARCH --> G3 --> COMBINE\n    style COMBINE fill:#C8E6C9"
+      },
+      {
+        "step_number": 5,
+        "title": "Sequential Example",
+        "explanation": "Making changes: Read file → Plan edit → Edit file → Run tests. Each step needs the previous result.",
+        "diagram_data": "flowchart LR\n    R[\"Read\"]\n    P[\"Plan\"]\n    E[\"Edit\"]\n    T[\"Test\"]\n    R --> P --> E --> T\n    NOTE[\"Must be sequential\"]\n    style NOTE fill:#FFF9C4"
+      },
+      {
+        "step_number": 6,
+        "title": "Mixed Approach",
+        "explanation": "Often Claude uses both: parallel for gathering info, then sequential for modifications. Best of both worlds.",
+        "diagram_data": "flowchart TB\n    subgraph \"Phase 1: Parallel\"\n        R1[\"Read file A\"]\n        R2[\"Read file B\"]\n        R3[\"Search codebase\"]\n    end\n    ANALYZE[\"Analyze all\"]\n    subgraph \"Phase 2: Sequential\"\n        E1[\"Edit A\"]\n        E2[\"Edit B\"]\n        T[\"Test\"]\n    end\n    R1 --> ANALYZE\n    R2 --> ANALYZE\n    R3 --> ANALYZE\n    ANALYZE --> E1 --> E2 --> T\n    style ANALYZE fill:#BBDEFB"
+      },
+      {
+        "step_number": 7,
+        "title": "User-Requested Parallel",
+        "explanation": "You can ask Claude to run things in parallel. Say 'run these in parallel' and Claude will batch independent operations together.",
+        "diagram_data": "flowchart TB\n    USER[\"'Run tests and lint in parallel'\"]\n    subgraph \"Parallel execution\"\n        T[\"pytest\"]\n        L[\"ruff check\"]\n    end\n    RESULTS[\"Both results returned\"]\n    USER --> T --> RESULTS\n    USER --> L --> RESULTS\n    style RESULTS fill:#C8E6C9"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:30:13.182Z",
+    "updated_at": "2026-03-11T16:30:13.182Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 590,
+  "fields": {
+    "subject": 7,
+    "title": "Background Tasks",
+    "slug": "claude-code-background-tasks",
+    "description": "Running commands in background, checking output later",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Background Execution",
+        "explanation": "Long-running commands can run in the **background**. Claude continues working while the command runs. Check results later.",
+        "diagram_data": "flowchart TB\n    CMD[\"Long command\"]\n    BG[\"Run in background\"]\n    CONTINUE[\"Continue conversation\"]\n    LATER[\"Check results later\"]\n    CMD --> BG\n    BG --> CONTINUE\n    BG --> LATER\n    style CONTINUE fill:#C8E6C9"
+      },
+      {
+        "step_number": 1,
+        "title": "When to Use Background",
+        "explanation": "Use background for: long test suites, builds, installations, any command where you don't need immediate results.",
+        "diagram_data": "flowchart TB\n    subgraph \"Good for Background\"\n        B1[\"Test suites (pytest)\"]\n        B2[\"Build processes\"]\n        B3[\"npm install\"]\n        B4[\"Long-running scripts\"]\n    end\n    subgraph \"Keep Foreground\"\n        F1[\"Quick commands\"]\n        F2[\"Need result immediately\"]\n    end\n    style B1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "Starting Background Tasks",
+        "explanation": "Claude sets `run_in_background: true` on the Bash tool. The command starts, and Claude gets a task ID to check later.",
+        "diagram_data": "flowchart TB\n    CALL[\"Bash: pytest<br/>run_in_background: true\"]\n    START[\"Command starts\"]\n    ID[\"Returns task_id\"]\n    RUNNING[\"Tests running...\"]\n    CALL --> START --> ID\n    START --> RUNNING\n    style ID fill:#BBDEFB"
+      },
+      {
+        "step_number": 3,
+        "title": "Checking Task Status",
+        "explanation": "Use **TaskOutput** tool to check on background tasks. Can check status without waiting, or block until complete.",
+        "diagram_data": "flowchart TB\n    CHECK[\"TaskOutput\"]\n    subgraph \"Options\"\n        BLOCK[\"block: true → wait for completion\"]\n        NOBLOCK[\"block: false → check current status\"]\n    end\n    RESULT[\"Get output/status\"]\n    CHECK --> BLOCK --> RESULT\n    CHECK --> NOBLOCK --> RESULT\n    style RESULT fill:#C8E6C9"
+      },
+      {
+        "step_number": 4,
+        "title": "Task Status Flow",
+        "explanation": "Background tasks go through states: running → completed (or failed). Output is captured for later retrieval.",
+        "diagram_data": "flowchart LR\n    START[\"Started\"]\n    RUNNING[\"Running\"]\n    COMPLETE[\"Completed\"]\n    FAILED[\"Failed\"]\n    START --> RUNNING\n    RUNNING --> COMPLETE\n    RUNNING --> FAILED\n    style COMPLETE fill:#C8E6C9\n    style FAILED fill:#FFCDD2"
+      },
+      {
+        "step_number": 5,
+        "title": "Background Agents",
+        "explanation": "The Task tool can also run agents in background. Useful for long explorations or parallel investigations.",
+        "diagram_data": "flowchart TB\n    TASK[\"Task tool\"]\n    PARAM[\"run_in_background: true\"]\n    AGENT[\"Agent works autonomously\"]\n    MAIN[\"Main conversation continues\"]\n    LATER[\"Check agent results\"]\n    TASK --> PARAM --> AGENT\n    PARAM --> MAIN --> LATER\n    style MAIN fill:#C8E6C9"
+      },
+      {
+        "step_number": 6,
+        "title": "Listing Tasks",
+        "explanation": "Use `/tasks` command to see all running and completed background tasks. Shows task IDs and status.",
+        "diagram_data": "flowchart TB\n    CMD[\"/tasks\"]\n    subgraph \"Output\"\n        T1[\"task_123: pytest (running)\"]\n        T2[\"task_124: build (completed)\"]\n        T3[\"task_125: agent (running)\"]\n    end\n    CMD --> T1\n    style CMD fill:#BBDEFB"
+      },
+      {
+        "step_number": 7,
+        "title": "Killing Background Tasks",
+        "explanation": "Long-running tasks can be killed with **KillShell** tool. Stops the command and frees resources.",
+        "diagram_data": "flowchart TB\n    RUNNING[\"Task running too long\"]\n    KILL[\"KillShell: task_id\"]\n    STOPPED[\"Task terminated\"]\n    RUNNING --> KILL --> STOPPED\n    style KILL fill:#FFCDD2\n    style STOPPED fill:#FFF9C4"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:30:13.183Z",
+    "updated_at": "2026-03-11T16:30:13.183Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 591,
+  "fields": {
+    "subject": 7,
+    "title": "Skill/Command System",
+    "slug": "claude-code-skills-commands",
+    "description": "How /slash commands and skills work",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Slash Commands",
+        "explanation": "**Slash commands** (like `/help`, `/clear`, `/commit`) are shortcuts for common actions. Type `/` to see available commands.",
+        "diagram_data": "flowchart TB\n    SLASH[\"/command\"]\n    subgraph \"Types\"\n        BUILTIN[\"Built-in commands\"]\n        SKILLS[\"Custom skills\"]\n    end\n    SLASH --> BUILTIN\n    SLASH --> SKILLS\n    style SLASH fill:#BBDEFB"
+      },
+      {
+        "step_number": 1,
+        "title": "Built-in Commands",
+        "explanation": "Core commands built into Claude Code: `/help`, `/clear`, `/config`, `/permissions`, `/tasks`, and more.",
+        "diagram_data": "flowchart TB\n    subgraph \"Built-in Commands\"\n        C1[\"/help → show help\"]\n        C2[\"/clear → clear conversation\"]\n        C3[\"/config → show settings\"]\n        C4[\"/permissions → manage permissions\"]\n        C5[\"/tasks → list background tasks\"]\n        C6[\"/sandbox → sandbox settings\"]\n    end\n    style C1 fill:#C8E6C9"
+      },
+      {
+        "step_number": 2,
+        "title": "What Are Skills?",
+        "explanation": "**Skills** are user-defined commands that expand into prompts. Create custom workflows: `/review-pr`, `/commit`, `/deploy`, etc.",
+        "diagram_data": "flowchart TB\n    SKILL[\"/commit\"]\n    EXPAND[\"Expands to full prompt\"]\n    INSTRUCTIONS[\"Detailed commit instructions\"]\n    EXECUTE[\"Claude follows instructions\"]\n    SKILL --> EXPAND --> INSTRUCTIONS --> EXECUTE\n    style SKILL fill:#E1BEE7"
+      },
+      {
+        "step_number": 3,
+        "title": "How Skills Work",
+        "explanation": "When you type `/skill-name`, Claude Code looks up the skill definition and executes it using the Skill tool. The skill's prompt guides Claude.",
+        "diagram_data": "flowchart TB\n    USER[\"/commit\"]\n    LOOKUP[\"Find skill definition\"]\n    TOOL[\"Skill tool invoked\"]\n    PROMPT[\"Skill prompt loaded\"]\n    EXECUTE[\"Claude executes\"]\n    USER --> LOOKUP --> TOOL --> PROMPT --> EXECUTE\n    style TOOL fill:#BBDEFB"
+      },
+      {
+        "step_number": 4,
+        "title": "Defining Custom Skills",
+        "explanation": "Skills are defined in settings or CLAUDE.md files. Specify name, description, and the prompt/instructions.",
+        "diagram_data": "flowchart TB\n    subgraph \"Skill Definition\"\n        NAME[\"name: 'review-pr'\"]\n        DESC[\"description: 'Review a PR'\"]\n        PROMPT[\"prompt: 'Review the PR...'\"]\n    end\n    WHERE[\"Define in settings or CLAUDE.md\"]\n    NAME --> WHERE\n    style WHERE fill:#FFF9C4"
+      },
+      {
+        "step_number": 5,
+        "title": "Skill with Arguments",
+        "explanation": "Skills can accept arguments. `/review-pr 123` passes '123' to the skill. The prompt can use this value.",
+        "diagram_data": "flowchart TB\n    CMD[\"/review-pr 123\"]\n    subgraph \"Parsed\"\n        SKILL[\"skill: review-pr\"]\n        ARGS[\"args: '123'\"]\n    end\n    USE[\"Prompt uses PR number\"]\n    CMD --> SKILL\n    CMD --> ARGS --> USE\n    style ARGS fill:#C8E6C9"
+      },
+      {
+        "step_number": 6,
+        "title": "Project-Specific Skills",
+        "explanation": "Define skills in `.claude/` for project-specific workflows. Team shares them via git. Consistent processes!",
+        "diagram_data": "flowchart TB\n    subgraph \"Project Skills\"\n        S1[\"/deploy → deploy to staging\"]\n        S2[\"/db-migrate → run migrations\"]\n        S3[\"/test-e2e → run E2E tests\"]\n    end\n    GIT[\"Committed to repo\"]\n    TEAM[\"Whole team uses them\"]\n    S3 --> GIT --> TEAM\n    style TEAM fill:#C8E6C9"
+      },
+      {
+        "step_number": 7,
+        "title": "Discovering Skills",
+        "explanation": "Type `/` and start typing to see available skills. The Skill tool's description shows what's available in current context.",
+        "diagram_data": "flowchart TB\n    TYPE[\"/\"]\n    LIST[\"Available commands appear\"]\n    subgraph \"Shows\"\n        B[\"Built-in commands\"]\n        P[\"Project skills\"]\n        U[\"User skills\"]\n    end\n    TYPE --> LIST --> B\n    LIST --> P\n    style LIST fill:#BBDEFB"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:30:13.183Z",
+    "updated_at": "2026-03-11T16:30:13.183Z"
+  }
 }
 ]
