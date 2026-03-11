@@ -1,0 +1,2200 @@
+{
+  "metadata": {
+    "subject_slug": "fastapi",
+    "subject_name": "FastAPI",
+    "exported_at": "2026-03-11T19:42:09.702134",
+    "question_count": 109,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Middleware scenario: You want to (a) propagate a correlation ID, (b) redact PII in logs, and (c) avoid logging huge request bodies or breaking streaming endpoints.\n\nWhich approach is safest in FastAPI/Starlette?\n",
+      "question_type": "mc",
+      "options": [
+        "A. In middleware, always call `await request.body()` and log it; then pass the request onward.",
+        "B. In middleware, log `request.json()` for JSON requests and ignore others; streaming endpoints are unaffected.",
+        "C. In middleware, log only metadata by default (method/path/headers subset/size), optionally sample small bodies with explicit size limits, and avoid consuming the body for streaming; use `request.state` for context propagation.",
+        "D. Add logging inside each endpoint; middleware is not appropriate for request context."
+      ],
+      "correct_answer": "C",
+      "explanation": "Reading the body in middleware (`request.body()` / `request.json()`) can consume the stream and can be expensive or break streaming/large uploads unless you carefully buffer and replay the body—often not worth it. The safer approach is to log metadata, enforce size limits, sample selectively, and redact sensitive headers/fields. Correlation IDs are well-suited to middleware and can be stored in `request.state` for use in handlers, dependencies, and exception handlers.\n\nFor ML services, large payloads (images, audio, parquet) are common; logging bodies naively can cause memory spikes and leak PII.",
+      "difficulty": "intermediate",
+      "tags": [
+        "middleware",
+        "logging",
+        "pii-redaction",
+        "streaming",
+        "request-context"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Internal auth for ML services: You expose `/predict` to other services in your cluster. You want service-to-service auth with scoped access (e.g., `predict:write`, `models:read`) and you want the Swagger docs to support trying endpoints with auth.\n\nDescribe a practical FastAPI setup (libraries/patterns are fine) and mention two common failure modes you’d watch for in production.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use FastAPI’s security utilities (e.g., `fastapi.security.HTTPBearer` for JWTs or `OAuth2AuthorizationCodeBearer`/`OAuth2PasswordBearer` depending on your environment) and implement a dependency that validates the token (signature, issuer, audience), extracts service identity and scopes/roles, and enforces required scopes per endpoint (e.g., `Depends(require_scopes(['predict:write']))`). Configure the OpenAPI security scheme so Swagger UI can send the Authorization header.\n\nIf using mTLS or a service mesh, you can still enforce application-level scopes by passing identity via JWT or mesh-provided headers (validated/whitelisted).\n\nCommon failure modes: (1) accepting tokens without verifying `aud`/`iss` or clock skew handling, leading to confused-deputy or replay issues; (2) trusting spoofable headers (e.g., `X-User`) without ensuring they’re injected by a trusted proxy; (3) scope drift—endpoints not enforcing scopes consistently; (4) overly large auth checks done per request without caching JWKS keys, causing latency spikes/outages.",
+      "explanation": "ML services are often internal but still need robust auth because they can be high-impact (data exfiltration, expensive GPU usage). Interviewers look for practical enforcement (dependencies per route), correct token validation, and awareness of proxy/header trust boundaries and performance pitfalls.",
+      "difficulty": "advanced",
+      "tags": [
+        "auth",
+        "authorization",
+        "scopes-roles",
+        "openapi-docs",
+        "security"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to run post-inference work: write an audit record, emit metrics, and enqueue an async re-ranking job. Some tasks must be reliable even if the request is cancelled. Explain when you would use `BackgroundTasks` vs an external queue (Celery/RQ/Kafka/etc.), and describe how you’d handle idempotency, retries, and cancellation semantics.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`BackgroundTasks` is suitable for best-effort, short, non-critical work that can run in-process after returning the response (e.g., lightweight logging/metrics) and where losing the task on worker crash/restart is acceptable. For reliable work (must run even if the request is cancelled, must survive process restarts, needs retries/backoff, or may take long), use an external queue/job system.\n\nIdempotency: include a stable idempotency key (e.g., request_id or a client-provided `Idempotency-Key`) in the job payload and enforce deduplication in the consumer/storage layer. Retries: configure retry policies in the queue system (exponential backoff, max attempts) and ensure the job handler is idempotent. Cancellation: client disconnect/cancellation can abort request handling, but queued jobs should be decoupled; if you need cancellation, implement explicit job cancellation via job IDs and a cancel endpoint, not implicit HTTP disconnects. For audit writes that must not be lost, write synchronously to durable storage or enqueue to a durable queue before responding, depending on latency requirements.",
+      "explanation": "This question probes decision-making: `BackgroundTasks` is not a durable queue. ML systems often need reliable side effects (audit, async pipelines). Idempotency and retries are essential because duplicate requests and at-least-once delivery are common in distributed systems.",
+      "difficulty": "advanced",
+      "tags": [
+        "background-tasks",
+        "queues",
+        "idempotency",
+        "retries",
+        "cancellation",
+        "ml-pipelines"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You deploy a GPU-backed model with FastAPI. You want predictable latency and safe cleanup on shutdown. Which approach best balances lifecycle management, memory use, and reliability?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Load the model as a global variable at import time; rely on Python GC for cleanup.",
+        "B. Load the model in the `startup` event (or lifespan) and store it on `app.state`; release resources in `shutdown` (or lifespan teardown).",
+        "C. Load the model inside the request handler each time to avoid shared state issues.",
+        "D. Use `BackgroundTasks` to load the model after the first request so startup is instant, and never unload it."
+      ],
+      "correct_answer": "B",
+      "explanation": "Using FastAPI’s lifespan (preferred) or `startup`/`shutdown` events lets you eagerly initialize heavyweight resources (GPU model, tokenizer, thread pools) once per process and store them in `app.state` for reuse. On shutdown, you can explicitly free GPU memory / close sessions (e.g., close ONNX/TensorRT sessions, call framework-specific cleanup) to avoid leaks during rolling deploys.\n\nImport-time loading (A) can make workers fail to start cleanly and complicates configuration. Per-request loading (C) destroys latency and can thrash GPU memory. Background loading after first request (D) can create race conditions and inconsistent behavior unless carefully synchronized; it also doesn’t address cleanup.",
+      "difficulty": "intermediate",
+      "tags": [
+        "lifespan",
+        "startup-shutdown",
+        "gpu-memory",
+        "ml-serving"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Testing an ML FastAPI service: You have an endpoint that depends on (a) a model loader dependency and (b) an external feature store HTTP call. You want fast, deterministic tests.\n\nWrite a test strategy describing: when to use `TestClient` vs `httpx.AsyncClient`, how to override dependencies, and how you’d add a lightweight contract test to prevent breaking clients.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `TestClient` (sync) for most endpoint tests because it’s simple and fast; use `httpx.AsyncClient` (async) when you need to test async behavior more realistically (e.g., concurrency, async dependencies, streaming responses) or when your test utilities/mocks are async.\n\nOverride dependencies via `app.dependency_overrides[dep] = override_fn` to inject a fake/in-memory model (returns deterministic outputs) and to replace the feature store client with a stub that returns fixed data or raises controlled errors. For external HTTP calls, mock at the client layer (e.g., replace the dependency that constructs the client) rather than patching deep internals.\n\nAdd a contract test that asserts the request/response schema and error shapes: (1) validate OpenAPI stays compatible (snapshot key portions or validate with a schema tool), (2) assert response fields/types for representative inputs, and (3) assert error envelopes (including `request_id`, `code`, and validation error format) remain stable. This prevents accidental breaking changes when model input schemas evolve.",
+      "explanation": "FastAPI’s dependency overrides are the primary mechanism for isolating ML inference from heavy model loads and flaky upstreams. Contract tests are especially important for ML APIs because schema drift (renamed fields, changed shapes) is a common failure mode and may not be caught by unit tests alone.",
+      "difficulty": "advanced",
+      "tags": [
+        "testing",
+        "dependency-overrides",
+        "httpx",
+        "contract-testing",
+        "mocking"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Model/API versioning: You serve multiple model versions (v1, v2) with slightly different input schemas. You want a clear deprecation workflow and minimal client breakage. Which strategy is generally best at the API surface, and why?\n",
+      "question_type": "mc",
+      "options": [
+        "A. URL versioning (e.g., `/v1/predict`, `/v2/predict`) with explicit deprecation notices and a migration window.",
+        "B. Header versioning only (e.g., `X-Model-Version: 2`) because it keeps URLs stable and OpenAPI doesn’t matter.",
+        "C. Query parameter versioning (e.g., `?v=2`) because caches handle it better than URLs.",
+        "D. No versioning; always deploy the latest model and rely on clients to adapt quickly."
+      ],
+      "correct_answer": "A",
+      "explanation": "URL versioning is explicit, easy to route, easy to document (OpenAPI per version or tags), and supports running versions side-by-side—useful when input/response schemas change across model versions. A practical deprecation workflow includes: announce deprecation, add response headers (e.g., `Deprecation`, `Sunset`), monitor usage, and remove after a window.\n\nHeader versioning can work but is often harder to discover/debug and can complicate documentation and client tooling. For ML model-versioning, URL versioning maps cleanly to “contract version” while you can still track internal model artifacts separately (e.g., v2 contract served by multiple model builds).",
+      "difficulty": "intermediate",
+      "tags": [
+        "versioning",
+        "deprecation",
+        "ml-model-versioning",
+        "api-design"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to accept large file uploads (e.g., 500MB) for batch inference. Which approach is most appropriate to avoid loading the entire file into memory while still working well with FastAPI?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Accept `bytes` in the request body and write it to disk; FastAPI will stream it automatically.",
+        "B. Use `UploadFile` and stream from `UploadFile.file` / `await upload.read(size)` in chunks, enforcing size limits.",
+        "C. Use a Pydantic model with a `file: str` field containing base64; it’s safer for JSON APIs.",
+        "D. Use `File(...)` with `str` type; Starlette will store it in memory efficiently."
+      ],
+      "correct_answer": "B",
+      "explanation": "`UploadFile` uses Starlette’s spooled temporary file behavior: small uploads may stay in memory, but larger ones are spooled to a temporary file on disk, enabling streaming reads without loading everything into RAM. You can process in chunks and enforce limits (e.g., max size, content type) to protect your service.\n\nUsing raw `bytes` (A) typically reads the full body into memory. Base64-in-JSON (C) inflates payload size and increases memory/CPU usage. `File(...)` with `str` (D) is not the correct type for file streaming.",
+      "difficulty": "intermediate",
+      "tags": [
+        "file-upload",
+        "streaming",
+        "limits",
+        "ml-batch-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Dependency injection sanity check. Consider:\n\n```python\nfrom fastapi import Depends, FastAPI\n\napp = FastAPI()\n\nasync def get_token():\n    print('token')\n    return 't'\n\nasync def get_user(token: str = Depends(get_token)):\n    print('user')\n    return {'token': token}\n\n@app.get('/a')\nasync def a(user=Depends(get_user)):\n    return user\n\n@app.get('/b')\nasync def b(t1: str = Depends(get_token), t2: str = Depends(get_token)):\n    return {'t1': t1, 't2': t2}\n```\n\nFor a single request to `/b`, how many times is `get_token()` executed by default, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. 2 times, because each parameter calls the dependency independently.",
+        "B. 1 time, because FastAPI caches dependency results per-request by default.",
+        "C. 0 times, because dependencies only run when used in sub-dependencies.",
+        "D. It depends on whether `get_token` is async or sync."
+      ],
+      "correct_answer": "B",
+      "explanation": "FastAPI caches dependency results per request by default (`use_cache=True`), keyed by the dependency callable and parameters. In `/b`, both `t1` and `t2` depend on the same `get_token` with the same arguments, so it runs once and the result is reused.\n\nThis matters in ML APIs where dependencies may load a model handle, decode auth, or open a DB connection—caching avoids duplicated work within the same request. You can disable caching with `Depends(get_token, use_cache=False)` when you truly need multiple executions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dependencies",
+        "async",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want consistent error responses across endpoints, including validation errors and your own domain errors (e.g., `ModelNotLoaded`, `UpstreamTimeout`). You also want every error response to include a `request_id` stored in `request.state.request_id`.\n\nDescribe a practical structure to achieve this in FastAPI (beyond “add exception handlers”), including where `request_id` should be set and how you would ensure validation errors follow the same shape.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use middleware to generate/propagate a request ID early in the request lifecycle (e.g., read `X-Request-ID` if present else generate a UUID) and store it in `request.state.request_id`. Then define a shared error response schema (e.g., `{ \"error\": {\"code\": str, \"message\": str, \"details\": any}, \"request_id\": str }`). Implement exception handlers for: (1) `RequestValidationError` to transform `exc.errors()` into your `details` format while preserving locations/types; (2) `HTTPException` to wrap standard HTTP errors into the same envelope; (3) your custom domain exceptions (e.g., `ModelNotLoaded`) mapping to appropriate status codes.\n\nAdditionally, define a small helper function (e.g., `make_error(request, code, message, status_code, details=None) -> JSONResponse`) used by all handlers to guarantee consistent shape. Ensure the middleware runs before routing so `request.state.request_id` exists even when validation fails (since validation happens after route match but before endpoint execution).",
+      "explanation": "The key is that validation errors happen before your endpoint code, so you can’t rely on per-endpoint logic to standardize them. Middleware is the right place for request-scoped context like `request_id`. A shared helper used by multiple exception handlers keeps error contracts stable—important for ML clients and for contract testing.",
+      "difficulty": "advanced",
+      "tags": [
+        "exceptions",
+        "middleware",
+        "request-state",
+        "error-handling",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A client calls your endpoint with an invalid request body and receives a 422 response. Explain the exception flow in FastAPI/Starlette that produces this 422, and name at least two practical ways to debug what went wrong (without just saying “look at the logs”).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "FastAPI uses Starlette routing to match the endpoint, then performs dependency resolution and request parsing/validation. For body/query/path/header/cookie parameters and Pydantic models, FastAPI validates input using Pydantic. If validation fails, FastAPI raises `fastapi.exceptions.RequestValidationError` (for request data) which is handled by FastAPI’s default exception handler to produce a 422 Unprocessable Entity JSON response containing a `detail` list of error objects (location, message, error type).\n\nPractical debugging approaches include: (1) Inspect the 422 response body to see `detail` and the `loc` path indicating where the error occurred (e.g., `['body','features',0]`). (2) Add a custom exception handler for `RequestValidationError` to log `exc.errors()` and `exc.body` (careful with PII/size) and to include a correlation/trace ID. (3) Use middleware to attach a request ID and store it in `request.state`, then include it in error responses; also inspect headers and query params via `request.headers`, `request.query_params`. (4) In tests, reproduce with TestClient/httpx and assert on the `detail` structure to pinpoint mismatched types/field names.",
+      "explanation": "Interviewers want you to understand that 422 is not “your code threw”; it’s the framework’s validation layer failing before your endpoint logic runs. Knowing `RequestValidationError`, `exc.errors()`, and `exc.body` helps you debug quickly. For ML services, this is critical because many failures come from payload shape/type mismatches (lists vs arrays, nested feature dicts, etc.).",
+      "difficulty": "intermediate",
+      "tags": [
+        "exceptions",
+        "debugging",
+        "validation",
+        "error-handling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Validation gotcha: You want an optional query param `threshold` that can be omitted, but if provided must be between 0 and 1 inclusive. Which definition is correct?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `threshold: float = Query(0.5, ge=0, le=1)`",
+        "B. `threshold: float | None = Query(None, ge=0, le=1)`",
+        "C. `threshold: float = None`",
+        "D. `threshold: Optional[float] = 0.5; Query(ge=0, le=1)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "To make a query parameter optional, its type should allow `None` and the default should be `None`. `Query(None, ge=0, le=1)` applies constraints only when a value is present. Option A makes it non-optional with a default of 0.5. Option C is ambiguous/invalid style: `float = None` conflicts with the type. Option D is not a valid FastAPI parameter declaration pattern.\n\nThis pattern matters in ML APIs when you want to distinguish “client didn’t specify threshold” (use model default) vs “client explicitly set threshold=0.5”.",
+      "difficulty": "intermediate",
+      "tags": [
+        "fastapi-fundamentals",
+        "validation",
+        "request-parsing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an endpoint that returns a NumPy embedding vector. You want the OpenAPI schema to show a list of floats and you also want FastAPI to validate/serialize the output accordingly. Which is the best approach?\n\n```python\nimport numpy as np\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n# model returns: np.ndarray shape (768,)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `response_class=List[float]` so FastAPI validates the response as a list of floats.",
+        "B. Use `response_model=list[float]` and convert the ndarray to a Python list before returning.",
+        "C. Use `response_model=np.ndarray` so FastAPI knows how to serialize NumPy arrays.",
+        "D. Don’t specify anything; FastAPI will infer the schema from the returned object."
+      ],
+      "correct_answer": "B",
+      "explanation": "`response_model` controls response validation and OpenAPI schema generation using Pydantic. `response_class` controls the actual Response type (e.g., `JSONResponse`, `ORJSONResponse`, `StreamingResponse`) and does not provide schema validation like a Pydantic model.\n\nFor NumPy arrays, you typically convert to native Python types (`arr.tolist()`) and declare `response_model=list[float]` (or a Pydantic model containing that field). FastAPI won’t reliably serialize `np.ndarray` without conversion, and `np.ndarray` isn’t a Pydantic schema type by default.",
+      "difficulty": "beginner",
+      "tags": [
+        "fastapi-fundamentals",
+        "response_model-vs-response_class",
+        "serialization",
+        "ml-serving"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a prediction endpoint for an ML model. Which FastAPI signature correctly puts `text` in the JSON body, `top_k` as a query parameter (default 5), and `x_trace_id` from a request header?\n\n```python\nfrom fastapi import FastAPI, Header\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass PredictIn(BaseModel):\n    text: str\n\n# Choose the best endpoint signature\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. `@app.post('/predict')\nasync def predict(payload: PredictIn, top_k: int = 5, x_trace_id: str = Header(None)):`",
+        "B. `@app.post('/predict')\nasync def predict(text: str, top_k: int = 5, x_trace_id: str = Header(None)):`",
+        "C. `@app.post('/predict')\nasync def predict(payload: PredictIn = None, top_k: int = 5, x_trace_id: str = '':`",
+        "D. `@app.post('/predict')\nasync def predict(payload: dict, top_k: int = Header(5), x_trace_id: str = Header(None)):`"
+      ],
+      "correct_answer": "A",
+      "explanation": "In FastAPI, Pydantic models declared as function parameters are parsed from the request body by default (for POST/PUT/PATCH). Simple types like `int` become query parameters unless wrapped with `Body(...)`. Headers are extracted via `Header(...)`. Option A correctly maps: JSON body -> `payload: PredictIn`, query -> `top_k: int = 5`, header -> `x_trace_id: str = Header(None)`.\n\nCommon gotcha: if you use a plain `text: str` parameter (option B), FastAPI treats it as a query parameter, not JSON body, unless you explicitly use `Body(...)`.",
+      "difficulty": "beginner",
+      "tags": [
+        "fastapi-fundamentals",
+        "path-query-header-cookie",
+        "request-body-vs-query",
+        "validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your FastAPI service accepts large image/audio uploads. What would you do to prevent memory issues and handle content types safely, and what deployment misconfiguration commonly breaks this in production (e.g., behind Nginx/Kubernetes)?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `UploadFile` (streaming interface) instead of reading raw bytes into memory; enforce size limits (at proxy and app) and validate `Content-Type`/file signatures. In the app, avoid `await file.read()` for huge files; stream to disk or process in chunks when possible. Set reasonable request body limits and timeouts; reject oversized payloads with clear errors (413). For content negotiation, require correct `Content-Type` (e.g., `multipart/form-data` for uploads) and return appropriate media types.\n\nCommon production misconfiguration: Nginx/Ingress body size defaults (e.g., `client_max_body_size` in Nginx or ingress annotations) causing mysterious 413 errors, or buffering settings that cause high memory usage. Another common issue is proxy timeouts for slow uploads, and gzip/buffering settings that interfere with streaming responses. In Kubernetes, ensure resource limits/requests match worst-case decoding needs and consider separate upload endpoints or pre-signed object storage uploads for very large media.",
+      "explanation": "ML payloads are often large; naive `bytes = await request.body()` or `await file.read()` can spike memory and crash pods. The right approach is streaming (`UploadFile`), explicit size limits, and validating content types. Many real outages come from proxy defaults (ingress body size/timeouts/buffering) rather than FastAPI code itself, so candidates should think end-to-end (client → proxy → app).",
+      "difficulty": "advanced",
+      "tags": [
+        "large-payloads",
+        "uploads",
+        "memory-safety",
+        "content-type",
+        "nginx",
+        "kubernetes",
+        "production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re designing an OpenAPI contract for an ML inference endpoint that will generate client SDKs used by other teams. What practical FastAPI/OpenAPI choices improve backward compatibility and client stability over time? Mention `response_model`, examples, error models, and versioning.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use explicit `response_model` (and request models) so the schema is stable and validated; avoid returning ad-hoc dicts that drift. Provide `examples`/`example` for requests and responses to guide client generation and reduce integration ambiguity. Define consistent error response models (e.g., a structured `{code, message, details, request_id}`) and register them via `responses={400: {\"model\": ErrorModel}, ...}` so SDKs can type errors. For backward compatibility, prefer additive changes (new optional fields) over breaking changes (renaming/removing fields, changing types). Use API versioning (path version like `/v1/...` or header-based) and keep older versions available while clients migrate. If you use Pydantic v2, be mindful of serialization changes (e.g., how enums/datetimes/aliases are dumped) and lock down schema/serialization behavior to avoid accidental contract changes.",
+      "explanation": "Generated SDKs depend heavily on OpenAPI stability. `response_model` makes FastAPI enforce output shape and makes OpenAPI deterministic. Examples reduce misinterpretation (especially for ML outputs like arrays/probabilities). Explicit error models prevent clients from treating errors as untyped blobs. Versioning and additive changes are the core compatibility techniques; many ML APIs fail integration because schemas drift without a contract-first mindset.",
+      "difficulty": "advanced",
+      "tags": [
+        "openapi",
+        "response_model",
+        "examples",
+        "error-models",
+        "versioning",
+        "sdk-generation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re adding an endpoint `/embed` that can take 5–30 seconds and you don’t want clients to block. Which approach is most appropriate when you need reliability (retries), observability, and the ability to scale workers independently of the API?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `BackgroundTasks` for all jobs; it persists across restarts and supports retries automatically.",
+        "B. Spawn an `asyncio.create_task()` inside the request handler; it will keep running even if the process restarts.",
+        "C. Return `202 Accepted` with a `job_id` and enqueue work to an external queue/worker system (e.g., Celery/RQ/Redis, Kafka consumers), with a separate status/result endpoint.",
+        "D. Increase the Uvicorn timeout; long requests are always better than job queues."
+      ],
+      "correct_answer": "C",
+      "explanation": "`BackgroundTasks` is best-effort within the same process after returning the response; it won’t survive process crashes/restarts and doesn’t provide retries/visibility by default. `asyncio.create_task()` has similar reliability issues and can be cancelled on shutdown. For reliable, scalable async ML workloads, the common production pattern is 202 + job ID + external queue/worker + status/result retrieval. This also enables worker autoscaling independently of the API tier.",
+      "difficulty": "intermediate",
+      "tags": [
+        "background-tasks",
+        "async-jobs",
+        "queues",
+        "202-accepted",
+        "ml-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a heavy model and a feature store client. You want clean separation, testability, and to avoid hidden global state in FastAPI. Describe a dependency injection pattern you would use, including how you would override dependencies in tests.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use FastAPI dependencies to provide services (model, feature store, config) and initialize long-lived resources during startup/lifespan. Pattern:\n\n- Define provider functions like `get_model()` and `get_feature_store()` that return instances (often stored on `app.state` after initialization).\n- Use a lifespan context (`asynccontextmanager`) to load the model once at startup, create clients, and close them on shutdown.\n- In routes, inject with `Depends(get_model)` etc., so handlers stay pure and easy to unit test.\n- In tests, override with `app.dependency_overrides[get_model] = lambda: FakeModel(...)` (or async equivalent), and similarly override the feature store client.\n\nAvoid importing and instantiating the model at module import time (hard to control in workers/tests) and avoid mutable globals that complicate concurrency and test isolation.",
+      "explanation": "ML services often need expensive initialization and external clients. Lifespan + dependency injection keeps route logic decoupled from infrastructure and enables fast tests without loading real models. Dependency overrides are a practical FastAPI mechanism for swapping real services with fakes/mocks, which is commonly expected in ML engineering interviews.",
+      "difficulty": "advanced",
+      "tags": [
+        "dependency-injection",
+        "lifespan",
+        "testing",
+        "ml-systems",
+        "feature-store"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re streaming LLM tokens to a browser client. When is Server-Sent Events (SSE) typically sufficient vs when do you need WebSockets?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use WebSockets for any streaming; SSE cannot stream incrementally.",
+        "B. SSE is sufficient for one-way server→client token streaming and tends to work well through proxies/CDNs; WebSockets are better when you need bidirectional messaging (client sends frequent messages) or lower-latency interactive protocols.",
+        "C. SSE is only for binary data; WebSockets are only for text.",
+        "D. WebSockets are always more proxy-compatible than SSE."
+      ],
+      "correct_answer": "B",
+      "explanation": "For LLM token streaming, the common requirement is one-way streaming from server to client; SSE fits well and is often simpler and more proxy-friendly than WebSockets (which can be blocked or require special proxy config). WebSockets are appropriate when the client must send messages mid-stream (interactive control, tool calls, real-time collaboration) or you need a fully duplex channel.",
+      "difficulty": "intermediate",
+      "tags": [
+        "streaming",
+        "sse",
+        "websocket",
+        "llm",
+        "production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need an endpoint that accepts an image upload plus structured metadata (e.g., prompt, temperature, user_id) in the same request. What is a robust FastAPI pattern for `multipart/form-data` + JSON metadata, and what common typing/validation pitfall should you avoid?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `UploadFile = File(...)` for the image and accept metadata as either individual `Form(...)` fields (simple) or as a JSON string field that you parse into a Pydantic model. A common robust approach is:\n\n- `image: UploadFile = File(...)`\n- `metadata_json: str = Form(...)` then `metadata = Meta.model_validate_json(metadata_json)` (Pydantic v2)\n\nPitfall: you cannot declare `metadata: Meta` directly as `Body(...)` in a `multipart/form-data` request; FastAPI won’t parse a nested JSON object from multipart automatically. Another pitfall is typing form fields incorrectly (e.g., `temperature: float = Form(...)` is fine, but optional fields and lists need careful handling; lists often arrive as repeated fields or comma-separated strings). Also validate content-type and size for the uploaded file and avoid reading the entire file into memory if it can be large.",
+      "explanation": "ML APIs frequently need image/audio + metadata. FastAPI treats multipart fields as form fields, not JSON bodies, so you must use `Form`/`File` and explicitly parse JSON if you want a structured object. Pydantic v2 provides `model_validate_json` which is convenient and avoids manual `json.loads` + `model_validate`. Correct typing prevents silent string coercions and validation surprises.",
+      "difficulty": "intermediate",
+      "tags": [
+        "multipart",
+        "file-upload",
+        "pydantic-v2",
+        "validation",
+        "ml-inputs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your ML endpoint sometimes returns JSON (predictions + probabilities) and sometimes returns an image (e.g., a segmentation mask PNG). Which statement best captures correct FastAPI response handling?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Always return dicts; FastAPI will automatically convert them to PNG if the client sets `Accept: image/png`.",
+        "B. Use `JSONResponse`/`ORJSONResponse` for JSON; for images return `Response(content=bytes, media_type=\"image/png\")` or `StreamingResponse`; use `FileResponse` when serving a file path on disk.",
+        "C. Use `FileResponse` for any bytes output because it is faster than `Response`.",
+        "D. Use `PlainTextResponse` for JSON because it avoids serialization overhead."
+      ],
+      "correct_answer": "B",
+      "explanation": "FastAPI doesn’t perform automatic content negotiation to transform JSON into images. For JSON, `ORJSONResponse` can be a performance win for large ML outputs (arrays, nested structures) if your data is JSON-serializable. For images, you typically return raw bytes with an appropriate `media_type` (or stream them). `FileResponse` is appropriate when you have a file on disk you want to send efficiently (and can leverage OS-level file sending).",
+      "difficulty": "intermediate",
+      "tags": [
+        "responses",
+        "content-negotiation",
+        "orjson",
+        "images",
+        "file-response",
+        "ml-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to add basic security headers to all responses from a FastAPI inference service (e.g., `X-Content-Type-Options: nosniff`, `Referrer-Policy`, maybe `Content-Security-Policy` for docs). What is a simple, correct middleware pattern?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Add headers inside every route handler right before returning; middleware can’t modify responses.",
+        "B. Use an HTTP middleware that calls `response = await call_next(request)` and then sets headers on `response.headers` before returning it.",
+        "C. Use a dependency (`Depends`) on every route; dependencies can mutate response headers globally without being added per-route.",
+        "D. Put headers in the OpenAPI schema; clients will enforce them automatically."
+      ],
+      "correct_answer": "B",
+      "explanation": "FastAPI/Starlette middleware can intercept the response after the downstream handler runs. The common pattern is `response = await call_next(request)` then `response.headers[...] = ...`. Dependencies can set headers if you pass a `Response` object, but that must be wired into routes (or routers) and is easier to miss. OpenAPI doesn’t enforce runtime headers.",
+      "difficulty": "beginner",
+      "tags": [
+        "middleware",
+        "security-headers",
+        "production",
+        "ml-api"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need middleware for an ML API that logs requests and responses for debugging, but must redact PII (emails, phone numbers) from user-provided text. Describe a safe middleware approach in FastAPI/Starlette that avoids breaking request body consumption and avoids logging large binary payloads (images/audio). Include key implementation details and tradeoffs.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Implement an ASGI middleware (or `BaseHTTPMiddleware` carefully) that (1) conditionally inspects bodies only for small `Content-Type: application/json` or `text/*` payloads, (2) reads the body once, stores it, and re-injects it into the downstream request so handlers can still read it, and (3) applies redaction before logging. In Starlette, reading `await request.body()` consumes the stream; to avoid breaking, either wrap the `receive` channel (pure ASGI middleware) to buffer and replay the body, or set `request._body` and provide a custom `receive` that replays bytes. Also skip/limit logging for `multipart/form-data`, `application/octet-stream`, images/audio, or bodies over a size threshold to prevent memory blowups and leaking raw media. Redact using deterministic regex/tokenization (e.g., replace emails/phones) and log structured metadata (path, status, latency, model version) rather than raw content. For responses, log status and selected headers; avoid logging full response bodies for large outputs. Ensure logs don’t include authorization headers; explicitly drop/obscure `Authorization`, `Cookie`, and any session headers.",
+      "explanation": "A common pitfall is consuming the request body in middleware, causing downstream dependencies/handlers to see an empty body. Another pitfall is logging raw multipart/image bytes (PII + huge size). In ML APIs, safe logging means: content-type gating, size limits, replaying the body correctly, and explicit header redaction. Pure ASGI middleware is often safer than `BaseHTTPMiddleware` for body streaming edge cases, but either can work if implemented carefully.",
+      "difficulty": "advanced",
+      "tags": [
+        "middleware",
+        "pii-redaction",
+        "logging",
+        "request-body",
+        "ml-api"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a FastAPI ML service, you want to control Pydantic behavior (e.g., forbid extra fields, populate by name/alias) in a way that works with Pydantic v2. Which is the correct pattern?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use an inner `class Config:` with attributes like `extra = \"forbid\"`.",
+        "B. Use `model_config = {\"extra\": \"forbid\"}` (or `ConfigDict(...)`) on the model.",
+        "C. Set `app.model_config = ...` globally in FastAPI.",
+        "D. Put config under `__pydantic_config__` to be discovered by FastAPI."
+      ],
+      "correct_answer": "B",
+      "explanation": "Pydantic v2 replaces the v1 `class Config:` with `model_config` (commonly a dict or `ConfigDict`). This impacts FastAPI request parsing and response serialization because extra fields, alias behavior, and other settings are enforced at model boundaries. Global `app.model_config` isn’t a thing in FastAPI, and `__pydantic_config__` isn’t the standard project-facing mechanism.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-v2",
+        "model_config",
+        "fastapi-migration",
+        "schema-validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re migrating an ML inference API from Pydantic v1 to v2. In v1 you had:\n\n```python\nclass PredictRequest(BaseModel):\n    text: str\n\n    @validator(\"text\")\n    def non_empty(cls, v):\n        if not v.strip():\n            raise ValueError(\"empty\")\n        return v\n```\n\nIn Pydantic v2 (as commonly used with newer FastAPI versions), which change is the most correct high-level rewrite for the validator?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Keep `@validator` but rename it to `@validate`; the signature stays the same.",
+        "B. Replace with `@field_validator(\"text\")` and typically make it a `@classmethod` receiving `v` (and optionally `info`).",
+        "C. Replace with `@root_validator` because field validators were removed in v2.",
+        "D. No change is needed; FastAPI adapts v1 validators automatically at runtime."
+      ],
+      "correct_answer": "B",
+      "explanation": "In Pydantic v2, `@validator` is replaced by `@field_validator` (and `@root_validator` is replaced by `@model_validator`). The practical migration is to use `@field_validator(\"text\")` and return the validated value. FastAPI won’t automatically translate v1 validators; you must update code. This is a frequent real-world migration point in ML APIs where input text needs normalization/validation.",
+      "difficulty": "beginner",
+      "tags": [
+        "pydantic-v2",
+        "validators",
+        "fastapi-migration",
+        "ml-input-validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building an LLM-style endpoint that streams tokens to the client. In FastAPI, what is a correct way to implement token streaming and handle client disconnects?\n\nA) Return a list of tokens at the end; streaming isn’t supported.\nB) Use `StreamingResponse` with an async generator that yields bytes/strings, and stop generation when the client disconnects (e.g., by checking request state/cancellation).\nC) Use middleware to append tokens to the response body after it is sent.\nD) Use OpenAPI `examples` to simulate streaming behavior for clients.",
+      "question_type": "mc",
+      "options": [
+        "A) Return a list of tokens at the end; streaming isn’t supported.",
+        "B) Use `StreamingResponse` with an async generator that yields bytes/strings, and stop generation when the client disconnects (e.g., by checking request state/cancellation).",
+        "C) Use middleware to append tokens to the response body after it is sent.",
+        "D) Use OpenAPI `examples` to simulate streaming behavior for clients."
+      ],
+      "correct_answer": "B",
+      "explanation": "FastAPI (via Starlette) supports streaming with `StreamingResponse`. For LLM inference, you typically yield incremental chunks (often SSE or newline-delimited JSON). You should handle disconnects to avoid wasting GPU/CPU: when the client disconnects, the server-side task is usually cancelled; your generator should be written to respond to cancellation and stop token generation/cleanup resources.",
+      "difficulty": "advanced",
+      "tags": [
+        "streaming",
+        "llm",
+        "streamingresponse",
+        "client-disconnect",
+        "inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to test an inference endpoint without loading the real model or calling external services (feature store/model server). What is a good testing approach in FastAPI to validate both:\n- the success schema (contract)\n- the error contract (e.g., 503 with a specific JSON body)\n\nInclude tools/patterns you’d use.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `TestClient` (or `httpx.AsyncClient` with ASGI transport) and dependency overrides/mocking.\n\n- Success contract: call the endpoint with `TestClient`, assert status 200 and validate the response JSON matches the expected schema (fields/types). Optionally validate against the OpenAPI schema or use Pydantic models in tests to parse the response.\n\n- Error contract: override the dependency that calls the feature store/model server to raise a controlled exception (e.g., timeout), then assert the API returns 503 and a JSON body matching `ErrorResponse` (including stable fields like `code`, `message`, `correlation_id`).\n\nPatterns/tools:\n- `app.dependency_overrides[...]` to inject a stub model client.\n- `pytest` + `unittest.mock`/`pytest-mock` to mock outbound calls.\n- Contract tests: snapshot or schema-based checks to ensure response shape doesn’t drift (including error responses).",
+      "explanation": "ML services are hard to test if they require large models and real upstreams. FastAPI’s dependency injection makes it straightforward to replace model/clients with stubs. Testing both success and failure paths is crucial because consumers rely on stable error contracts in production pipelines (retries, fallbacks, alerting).",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing",
+        "testclient",
+        "dependency-overrides",
+        "mocking",
+        "contracts",
+        "error-handling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You deploy a GPU-backed FastAPI inference service with Uvicorn workers. Which statement is most accurate regarding resource management and concurrency?\n\nA) Increasing Uvicorn workers always increases throughput on a single GPU.\nB) A single GPU is typically best served by one worker process (or careful batching), because multiple processes can duplicate model memory and contend for the GPU.\nC) Thread-safety is irrelevant because Python has the GIL.\nD) Using more workers reduces GPU memory usage because memory is shared across processes.",
+      "question_type": "mc",
+      "options": [
+        "A) Increasing Uvicorn workers always increases throughput on a single GPU.",
+        "B) A single GPU is typically best served by one worker process (or careful batching), because multiple processes can duplicate model memory and contend for the GPU.",
+        "C) Thread-safety is irrelevant because Python has the GIL.",
+        "D) Using more workers reduces GPU memory usage because memory is shared across processes."
+      ],
+      "correct_answer": "B",
+      "explanation": "Each worker is a separate process; GPU model weights are usually loaded per process, multiplying GPU memory usage and potentially causing OOM. Multiple processes can also contend for GPU execution and hurt latency. Throughput often improves more from batching, async I/O for upstream calls, or a single well-managed worker per GPU. Thread-safety still matters (e.g., shared caches, tokenizers, non-thread-safe model clients), and the GIL doesn’t protect you from race conditions in external libraries or async contexts.",
+      "difficulty": "advanced",
+      "tags": [
+        "gpu",
+        "resource-management",
+        "workers",
+        "throughput",
+        "thread-safety",
+        "deployment"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "How would you structure model loading in FastAPI so that:\n- the model is loaded once per worker process (not per request)\n- you can swap model versions via config\n- tests can override the model with a small stub\n\nProvide a sketch using lifespan/startup and dependencies.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use lifespan (or startup) to load and cache the model per process, and expose it via a dependency that reads from app state. Version selection can come from env/config and influence what gets loaded.\n\nSketch:\n\n```python\nfrom contextlib import asynccontextmanager\nfrom fastapi import FastAPI, Depends\n\nclass Model:\n    def predict(self, x): ...\n\ndef load_model(version: str) -> Model:\n    # load from disk/registry\n    ...\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    version = app.state.model_version  # set from config before startup\n    app.state.model = load_model(version)\n    yield\n    # optional cleanup\n\napp = FastAPI(lifespan=lifespan)\napp.state.model_version = \"v1\"  # typically from env\n\ndef get_model() -> Model:\n    return app.state.model\n\n@app.post(\"/predict\")\ndef predict(req: dict, model: Model = Depends(get_model)):\n    return {\"y\": model.predict(req[\"x\"]) }\n```\n\nIn tests, override the dependency:\n\n```python\napp.dependency_overrides[get_model] = lambda: StubModel()\n```\n\nThis avoids per-request loading, supports versioned loading, and enables fast deterministic tests.",
+      "explanation": "Loading large models per request is a common ML service anti-pattern. Lifespan/startup is the right place to perform expensive one-time initialization per worker. Using a dependency to access the model keeps endpoints testable and allows `dependency_overrides` to swap implementations without changing production code.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dependencies",
+        "lifespan",
+        "startup",
+        "model-loading",
+        "model-versioning",
+        "testing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your inference response includes `datetime`, `Decimal`, and raw `bytes` (e.g., an image thumbnail). What is the safest approach for returning these in a JSON API intended for broad client consumption?\n\nA) Return Python objects directly; FastAPI will always serialize them correctly.\nB) Base64-encode bytes, convert Decimal to string (or float with explicit rounding), and ensure datetimes are ISO-8601 strings via Pydantic models.\nC) Put bytes into a JSON array of integers; it’s the most standard.\nD) Use `pickle` and return it as a binary blob in JSON to preserve types.",
+      "question_type": "mc",
+      "options": [
+        "A) Return Python objects directly; FastAPI will always serialize them correctly.",
+        "B) Base64-encode bytes, convert Decimal to string (or float with explicit rounding), and ensure datetimes are ISO-8601 strings via Pydantic models.",
+        "C) Put bytes into a JSON array of integers; it’s the most standard.",
+        "D) Use `pickle` and return it as a binary blob in JSON to preserve types."
+      ],
+      "correct_answer": "B",
+      "explanation": "JSON has limited native types. For interoperable ML APIs, bytes should be base64 (or served via a separate binary endpoint), datetimes should be ISO-8601 strings (Pydantic handles this well), and Decimal should be explicitly represented (often string to avoid float precision surprises, or float with documented rounding). Pickle is insecure and not language-agnostic; arrays of ints are bulky and uncommon for API contracts.",
+      "difficulty": "intermediate",
+      "tags": [
+        "serialization",
+        "pydantic",
+        "datetime",
+        "decimal",
+        "bytes",
+        "contracts"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a composite inference endpoint:\n1) fetch features from a feature store\n2) call a downstream model server\n3) post-process and return\n\nSometimes the feature store is down. You want consistent error mapping and optional fallback to default features. Describe a practical strategy in FastAPI to:\n- propagate correlation IDs to downstream calls\n- return a consistent error contract (status code + JSON body)\n- implement a fallback when feature fetch fails (but still distinguish degraded responses).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A practical strategy:\n\n- Correlation IDs: generate/accept an `X-Correlation-ID` in middleware, store it (e.g., request.state.correlation_id), and include it in outbound `httpx` headers for feature store/model calls.\n\n- Consistent error contract: define Pydantic error models (e.g., `ErrorResponse{code, message, correlation_id, details}`) and raise `HTTPException` (or custom exceptions) handled by `@app.exception_handler` to always return the same JSON shape. Map upstream timeouts/5xx to your own error codes (e.g., `FEATURE_STORE_UNAVAILABLE`) and appropriate HTTP statuses (often 503).\n\n- Fallback + degraded signal: wrap feature fetch in try/except for `httpx.TimeoutException`/`httpx.HTTPError`. If fallback is allowed, use default features and set a response field like `degraded: true` or a header like `X-Degraded: feature_store`, while still returning 200. If fallback is not allowed, raise your custom exception to return 503 with the standard error body.\n\nThis keeps downstream calls traceable, contracts stable, and failure behavior predictable for consumers.",
+      "explanation": "ML inference services often depend on multiple upstreams. Without a consistent error schema, clients can’t reliably handle failures. Middleware is the right place to manage correlation IDs and timing. Central exception handling prevents ad-hoc error bodies. A deliberate fallback policy (and an explicit degraded indicator) prevents silent correctness regressions while maintaining availability when acceptable.",
+      "difficulty": "advanced",
+      "tags": [
+        "error-handling",
+        "fallbacks",
+        "inference-pipeline",
+        "middleware",
+        "httpx",
+        "contracts"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re orchestrating inference by calling a downstream feature store and a model server from a FastAPI endpoint. Which `httpx` usage pattern is most appropriate for high-throughput inference (low latency, many requests)?\n\nA) Create a new `httpx.Client()` inside the endpoint on every request.\nB) Use a single `httpx.AsyncClient()` created at startup (lifespan) with timeouts, and reuse it across requests.\nC) Use `requests` because it’s simpler and FastAPI is synchronous by default.\nD) Disable timeouts to avoid failing requests under load.",
+      "question_type": "mc",
+      "options": [
+        "A) Create a new `httpx.Client()` inside the endpoint on every request.",
+        "B) Use a single `httpx.AsyncClient()` created at startup (lifespan) with timeouts, and reuse it across requests.",
+        "C) Use `requests` because it’s simpler and FastAPI is synchronous by default.",
+        "D) Disable timeouts to avoid failing requests under load."
+      ],
+      "correct_answer": "B",
+      "explanation": "Reusing an `httpx.AsyncClient` enables connection pooling and avoids per-request TCP/TLS overhead—critical for inference latency and throughput. Timeouts are essential to prevent request pile-ups. Creating a client per request or disabling timeouts can cause resource exhaustion and cascading failures. `requests` is blocking and can reduce concurrency unless carefully isolated to threadpools.",
+      "difficulty": "intermediate",
+      "tags": [
+        "httpx",
+        "connection-pooling",
+        "timeouts",
+        "inference-orchestration",
+        "lifespan"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to add correlation IDs and request timing to all inference requests. When is middleware the better choice than FastAPI dependencies?\n\nA) When you need per-endpoint parameter validation.\nB) When you want cross-cutting behavior that applies to all routes including error handling and response headers.\nC) When you need to inject a model object into a single endpoint.\nD) When you want to validate request bodies with Pydantic.",
+      "question_type": "mc",
+      "options": [
+        "A) When you need per-endpoint parameter validation.",
+        "B) When you want cross-cutting behavior that applies to all routes including error handling and response headers.",
+        "C) When you need to inject a model object into a single endpoint.",
+        "D) When you want to validate request bodies with Pydantic."
+      ],
+      "correct_answer": "B",
+      "explanation": "Middleware is ideal for cross-cutting concerns: correlation IDs, timing, logging, CORS, auth at the edge, and consistent headers—because it wraps the entire request/response lifecycle and can run even when an exception occurs. Dependencies are better for per-route injection/validation, accessing resources, and endpoint-specific logic.",
+      "difficulty": "intermediate",
+      "tags": [
+        "middleware",
+        "dependencies",
+        "logging",
+        "observability",
+        "correlation-id"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an inference endpoint that currently returns a NumPy array. The following code fails at runtime with a JSON serialization error:\n\n```python\nfrom fastapi import FastAPI\nimport numpy as np\n\napp = FastAPI()\n\n@app.get(\"/embed\")\ndef embed():\n    vec = np.array([0.1, 0.2, 0.3], dtype=np.float32)\n    return {\"embedding\": vec}\n```\n\nHow would you fix this while keeping the OpenAPI schema clear for client SDK generation?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Return JSON-serializable types and declare a response model. Common fixes:\n\n1) Convert NumPy to Python lists (and floats) before returning.\n2) Use a Pydantic response model like `EmbeddingResponse(embedding: list[float])` and return that.\n\nExample:\n\n```python\nfrom pydantic import BaseModel\nfrom fastapi import FastAPI\nimport numpy as np\n\napp = FastAPI()\n\nclass EmbeddingResponse(BaseModel):\n    embedding: list[float]\n\n@app.get(\"/embed\", response_model=EmbeddingResponse)\ndef embed():\n    vec = np.array([0.1, 0.2, 0.3], dtype=np.float32)\n    return EmbeddingResponse(embedding=vec.astype(float).tolist())\n```\n\nThis avoids non-JSON-native NumPy types and produces a stable OpenAPI schema (`array<number>`), which is important for SDK generation.",
+      "explanation": "FastAPI ultimately needs JSON-serializable objects (or a custom response class). NumPy arrays and NumPy scalar types (e.g., np.float32) are not JSON serializable by default. Converting to `list[float]` is the simplest portable contract and yields a clean OpenAPI schema. Declaring `response_model` prevents accidental schema drift and helps client generation.",
+      "difficulty": "beginner",
+      "tags": [
+        "serialization",
+        "numpy",
+        "openapi",
+        "sdk-generation",
+        "response_model"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team is deploying an inference API and wants to auto-generate a typed client SDK for data scientists (Python) and a backend consumer (TypeScript) from FastAPI. Which approach best supports stable contracts and reliable SDK generation over time?\n\nA) Keep returning plain dicts and rely on examples in the README; OpenAPI is optional.\nB) Define request/response with Pydantic models, version the API (path or header), and treat OpenAPI as the source of truth for codegen.\nC) Use dynamic responses (Any) so the schema can evolve without breaking clients.\nD) Disable OpenAPI docs in production so clients don’t depend on them.",
+      "question_type": "mc",
+      "options": [
+        "A) Keep returning plain dicts and rely on examples in the README; OpenAPI is optional.",
+        "B) Define request/response with Pydantic models, version the API (path or header), and treat OpenAPI as the source of truth for codegen.",
+        "C) Use dynamic responses (Any) so the schema can evolve without breaking clients.",
+        "D) Disable OpenAPI docs in production so clients don’t depend on them."
+      ],
+      "correct_answer": "B",
+      "explanation": "FastAPI generates OpenAPI from your declared types (Pydantic models, path params, response_model, etc.). For ML teams, using those models as the contract enables consistent validation, clear ownership of schema changes, and reliable SDK generation (e.g., openapi-generator). Versioning (path like /v1 or explicit version fields) helps keep schemas stable while allowing evolution. Returning untyped dicts or Any makes schemas vague and breaks codegen/contract alignment.",
+      "difficulty": "beginner",
+      "tags": [
+        "openapi",
+        "sdk-generation",
+        "contracts",
+        "pydantic",
+        "versioning"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re serving a GPU-backed model and see occasional CUDA errors and unstable latency under load. The service runs with multiple Uvicorn workers and an async endpoint. What are practical resource-management steps in FastAPI deployments to improve stability?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Practical steps:\n1) Avoid blocking the event loop: use sync `def` endpoints or offload inference to a thread/process pool or a separate worker service.\n2) Limit concurrent inferences per GPU (e.g., an asyncio.Semaphore or anyio CapacityLimiter around the inference call) to prevent GPU OOM/oversubscription and reduce tail latency.\n3) Be careful with multi-process workers: multiple Uvicorn workers may each load the model and allocate GPU memory, causing OOM. Often run 1 worker per GPU (or per model replica) and scale replicas horizontally.\n4) Ensure model object/thread-safety: some frameworks require a single-threaded execution context or explicit locks.\n5) Control downstream connections: if calling feature stores/vector DBs, use connection pooling and timeouts; don’t create clients per request.\n6) Implement request size/time limits at the gateway and consider streaming/UploadFile for large payloads.\n\nIn FastAPI terms, initialize heavyweight clients/models on startup (per process), use dependency injection to share them safely, and wrap inference with concurrency controls; choose an appropriate worker model for GPU (often fewer processes, more controlled concurrency).",
+      "explanation": "This question targets common ML-serving failures: GPU memory duplication across processes, unsafe concurrent access to model/runtime, and event-loop blocking. A strong answer ties FastAPI mechanics (startup hooks, dependency injection, sync vs async endpoints, middleware/limits) to deployment realities (worker processes, GPU allocation, queueing, and backpressure).",
+      "difficulty": "advanced",
+      "tags": [
+        "resource-management",
+        "gpu",
+        "concurrency-limits",
+        "worker-model",
+        "production-pitfalls",
+        "connection-pooling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to accept image inputs for an inference endpoint. Which statement best captures the JSON base64 vs multipart/form-data tradeoff and common FastAPI parsing pitfalls?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Always use JSON base64 because it’s smaller than multipart and avoids any request size concerns.",
+        "B. multipart/form-data is often better for large binaries (less overhead and streaming-friendly), while JSON base64 is simpler for some clients but increases payload size and memory pressure; you must validate Content-Type and enforce size limits either way.",
+        "C. FastAPI cannot parse multipart, so you must use JSON base64 for all images.",
+        "D. Content-Type does not matter in FastAPI because it auto-detects the body format."
+      ],
+      "correct_answer": "B",
+      "explanation": "Base64 inflates payload size (~33%) and often leads to large in-memory strings during parsing/validation, increasing latency and memory growth risk. multipart/form-data is a common choice for binary uploads and can be more efficient; it also aligns with standard tooling. In both cases, you should enforce request size limits (at proxy and/or app), validate Content-Type, and be careful about reading entire payloads into memory. FastAPI supports multipart via `UploadFile` and `File(...)`.",
+      "difficulty": "beginner",
+      "tags": [
+        "request-parsing",
+        "content-type",
+        "images",
+        "base64",
+        "multipart",
+        "memory"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Define an error contract for an ML inference API in FastAPI. Your goal: consistent error responses across validation errors, model failures, and downstream timeouts.\n\nWhat is a good practice for mapping errors to HTTP status codes and implementing it in FastAPI?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a consistent error response model (e.g., {\"error\": {\"code\": str, \"message\": str, \"details\": {...}, \"request_id\": str}}) and implement exception handlers for both FastAPI validation errors and domain-specific inference errors. Map:\n- 400 for semantically invalid requests that pass JSON parsing but fail domain rules (e.g., empty inputs)\n- 422 for Pydantic validation errors (FastAPI default), optionally wrap it into your error envelope via a handler\n- 429 for rate limit\n- 503 for temporary unavailability (model not loaded, dependency down)\n- 504 for upstream timeout (if acting as a proxy)\n- 500 for unexpected errors\n\nImplementation sketch:\n```python\nfrom fastapi import FastAPI, Request, HTTPException\nfrom fastapi.responses import JSONResponse\nfrom fastapi.exceptions import RequestValidationError\n\napp = FastAPI()\n\nclass InferenceError(Exception):\n    def __init__(self, code: str, message: str, status_code: int = 500, details=None):\n        self.code = code\n        self.message = message\n        self.status_code = status_code\n        self.details = details or {}\n\n@app.exception_handler(RequestValidationError)\nasync def validation_handler(request: Request, exc: RequestValidationError):\n    return JSONResponse(\n        status_code=422,\n        content={\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request\", \"details\": exc.errors()}},\n    )\n\n@app.exception_handler(InferenceError)\nasync def inference_handler(request: Request, exc: InferenceError):\n    return JSONResponse(\n        status_code=exc.status_code,\n        content={\"error\": {\"code\": exc.code, \"message\": exc.message, \"details\": exc.details}},\n    )\n```\nUse HTTPException for simple cases, but prefer custom exceptions + handlers to keep a consistent envelope and avoid scattering status-code logic across endpoints.",
+      "explanation": "Interviewers look for an explicit, stable error model so clients can handle failures predictably. FastAPI’s defaults (422 validation responses) are fine, but in ML services you often want a unified envelope to attach request IDs, model version, or remediation hints. Mapping inference-specific errors to appropriate HTTP codes (429/503/504) improves retries and alerting, and exception handlers centralize the policy.",
+      "difficulty": "intermediate",
+      "tags": [
+        "error-handling",
+        "api-contract",
+        "exception-handlers",
+        "http-codes",
+        "inference-errors"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re deploying a public inference endpoint and want simple rate limiting to control cost. Where should rate limiting primarily live, and what’s a reasonable FastAPI-side fallback?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Primarily in FastAPI endpoints using a global Python dict counter; fallback is to do nothing else.",
+        "B. Primarily at the edge (API gateway/load balancer/CDN) using client identity (API key/IP); FastAPI can add a lightweight middleware-based limiter (often Redis-backed) for defense-in-depth.",
+        "C. Only in the database by counting rows per user; FastAPI should not be involved.",
+        "D. Only by limiting the number of Uvicorn workers; that is equivalent to rate limiting."
+      ],
+      "correct_answer": "B",
+      "explanation": "Edge rate limiting is more effective (protects before requests hit your app, scales horizontally, and can block abusive traffic early). FastAPI-side limiting can be a secondary layer (e.g., middleware using Redis/leaky bucket) to enforce per-key quotas and protect internal routes. In-memory dict counters break in multi-process deployments and reset on restart. Worker count limits concurrency, not per-client rate, and doesn’t prevent abusive traffic from consuming all capacity.",
+      "difficulty": "beginner",
+      "tags": [
+        "rate-limiting",
+        "cost-control",
+        "middleware",
+        "gateway",
+        "production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to expose monitoring for an inference API. Which set of metrics is most useful for diagnosing ML inference performance and reliability (regardless of whether you use Prometheus, OpenTelemetry, etc.)?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Average latency only, because p95/p99 are too noisy.",
+        "B. p50/p95/p99 latency, request rate, error rate (by code), and saturation signals like queue depth / in-flight requests; optionally model-specific counters (e.g., fallback usage).",
+        "C. Only GPU utilization; it fully determines inference performance.",
+        "D. Only application logs; metrics are optional if you have logs."
+      ],
+      "correct_answer": "B",
+      "explanation": "Inference services are dominated by tail latency and saturation effects. Percentiles (p95/p99) capture queueing and contention better than averages. Request rate and error rate show load and reliability. Queue depth/in-flight requests (or semaphore saturation) indicates overload before errors spike. Model-specific counters (fallbacks, warnings, truncation) help detect silent quality regressions. GPU utilization alone is insufficient; logs alone are too slow and expensive for alerting.",
+      "difficulty": "intermediate",
+      "tags": [
+        "monitoring",
+        "metrics",
+        "latency",
+        "queue-depth",
+        "error-rates",
+        "inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to implement basic health endpoints for an inference service. Which mapping is most appropriate?\n",
+      "question_type": "mc",
+      "options": [
+        "A. /healthz checks model weights can be loaded and runs a real inference; /readyz just returns 200 always.",
+        "B. /healthz returns 200 if the process is up (cheap); /readyz returns 200 only if the service can serve traffic (e.g., model loaded, dependencies reachable, warmed up).",
+        "C. /healthz and /readyz are identical and should always do a full end-to-end inference to be safe.",
+        "D. /healthz should require authentication; /readyz should be public."
+      ],
+      "correct_answer": "B",
+      "explanation": "Common convention: liveness (/healthz) is a cheap check used to restart stuck processes; readiness (/readyz) gates traffic routing and should validate prerequisites (model loaded, GPU available, downstream dependencies reachable if required). Doing full inference on every probe can be expensive and can create load spikes. Auth is usually not required for cluster-internal probes; if exposed publicly, use network controls rather than making readiness public by default.",
+      "difficulty": "beginner",
+      "tags": [
+        "monitoring",
+        "healthz",
+        "readyz",
+        "production",
+        "kubernetes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this FastAPI code serving a PyTorch model:\n\n```python\nfrom fastapi import FastAPI\nimport torch\n\napp = FastAPI()\nmodel = torch.jit.load(\"model.pt\")\n\n@app.post(\"/predict\")\nasync def predict(x: list[float]):\n    with torch.no_grad():\n        y = model(torch.tensor(x))\n    return {\"y\": y.tolist()}\n```\n\nWhich production pitfall is most likely and what is the best fix?\n",
+      "question_type": "mc",
+      "options": [
+        "A. No pitfall; loading the model globally is always best practice in FastAPI.",
+        "B. The model is loaded globally so each request reloads it; fix by moving load into the endpoint.",
+        "C. The endpoint is async but runs blocking CPU/GPU work; fix by making it a normal def endpoint or offloading to a threadpool/process/worker, and consider concurrency limits around the model.",
+        "D. Returning y.tolist() is invalid JSON; fix by returning a torch tensor directly."
+      ],
+      "correct_answer": "C",
+      "explanation": "The biggest issue is mixing an async endpoint with blocking compute. The event loop thread will be blocked during inference, harming throughput and increasing tail latency. Solutions include: (1) use a regular synchronous `def` endpoint (FastAPI will run it in a threadpool), (2) explicitly offload with `run_in_threadpool`, or (3) use a separate worker/queue for heavy jobs. Additionally, many model runtimes are not fully thread-safe or can oversubscribe GPU/CPU; you often need a semaphore/concurrency limiter. Global model loading can be fine (and is common) but must be done carefully with process model and GPU memory; it’s not the core issue here.",
+      "difficulty": "intermediate",
+      "tags": [
+        "production-pitfalls",
+        "blocking-in-async",
+        "concurrency",
+        "gpu",
+        "global-state"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a Pydantic schema for an ML inference request where:\n- Some features are optional (missing values allowed)\n- You want forward-compatible schema evolution (new features may be added without breaking old clients)\n- You want to avoid silently accepting typos in feature names\n\nIn FastAPI/Pydantic terms, what is a good approach? Provide a brief example schema.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good approach is to separate known, strongly-typed fields from an explicit \"extra_features\" map, and configure the model to forbid unknown top-level fields to catch typos. Optional fields use Optional[...] with defaults. Example (Pydantic v2):\n\n```python\nfrom typing import Optional, Dict, Any\nfrom pydantic import BaseModel, ConfigDict, Field\n\nclass InferenceRequest(BaseModel):\n    model_config = ConfigDict(extra='forbid')  # catch unknown/typo fields\n\n    user_id: Optional[str] = None\n    age: Optional[float] = Field(default=None, ge=0)\n    country: Optional[str] = None\n\n    # forward-compatible bucket for new features\n    extra_features: Dict[str, Any] = Field(default_factory=dict)\n```\n\nThis lets you evolve by adding new typed fields over time while still accepting unseen features via extra_features. If you truly need to accept unknown top-level fields, use extra='allow' but then add custom validation/whitelisting to detect typos (e.g., require that unknown keys live under extra_features).",
+      "explanation": "ML schemas often need both strictness (to catch client mistakes) and flexibility (to support new features). Forbidding unknown top-level keys prevents silent feature drift due to typos (e.g., \"counrty\"). A dedicated map for additional features provides forward compatibility without weakening validation for core fields. Optional fields model missingness explicitly and keep the API ergonomic for clients.",
+      "difficulty": "intermediate",
+      "tags": [
+        "schema-design",
+        "pydantic",
+        "optional-fields",
+        "validation",
+        "schema-evolution",
+        "feature-store"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to expose both synchronous inference and asynchronous job-style inference for long-running requests (e.g., large document OCR). Which design best matches common FastAPI + ML production patterns?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Only provide a synchronous /predict endpoint; increase the server timeout to 10 minutes for long jobs.",
+        "B. Provide /predict (sync) plus an async job API: POST /jobs returns job_id, GET /jobs/{job_id} returns status/result, optionally DELETE to cancel; run work in a queue/worker.",
+        "C. Use FastAPI BackgroundTasks to run the inference after returning 200 OK with the final result.",
+        "D. Use WebSockets only; do not provide HTTP endpoints."
+      ],
+      "correct_answer": "B",
+      "explanation": "For long-running inference, the standard pattern is a job API: submit -> poll (or callback) -> fetch result, backed by a queue/worker system (Celery/RQ/Arq/Kafka consumers, etc.). This avoids tying up web workers, prevents client timeouts, and supports retries/cancellation semantics. BackgroundTasks runs in the same process after sending the response and is not a durable queue; it can be lost on restart and still consumes the web server’s resources. Increasing timeouts (A) is brittle and harms concurrency. WebSockets (D) can be an optional add-on but is rarely the only interface.",
+      "difficulty": "intermediate",
+      "tags": [
+        "background-jobs",
+        "async-inference",
+        "job-id-pattern",
+        "queues",
+        "timeouts"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re designing an inference API in FastAPI for a text classification model. You need to support both single-item and batch inference while keeping responses consistent and including model metadata (e.g., model_version, latency_ms, warnings).\n\nWhat is the most practical endpoint/response pattern for production ML inference?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Create two separate endpoints (/predict and /predict_batch) that return different response shapes optimized for each use case (single returns a dict, batch returns a list).",
+        "B. Use one endpoint (/predict) that accepts either a single object or a list and returns either a single object or a list, depending on input.",
+        "C. Use separate endpoints for single and batch, but wrap both responses in a consistent envelope including metadata, and keep per-item outputs in a list for batch.",
+        "D. Always force clients to use batch format (list of inputs) even for single inference to simplify the server."
+      ],
+      "correct_answer": "C",
+      "explanation": "In production, clients benefit from stable, predictable response contracts. Separate endpoints can be useful because single vs batch often has different limits, latency expectations, and cost controls. The key is to keep a consistent envelope (e.g., {model_version, latency_ms, warnings, results}) so observability and client parsing are uniform. Option B creates ambiguous response types that complicate client code and OpenAPI docs. Option A breaks consistency and makes it harder to add shared metadata. Option D is workable but often unpopular and can hide per-item error handling needs; it also complicates UX for simple clients.",
+      "difficulty": "beginner",
+      "tags": [
+        "endpoint-patterns",
+        "inference-api",
+        "batching",
+        "response-envelope",
+        "model-metadata"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re deploying a FastAPI model server behind a reverse proxy. Which deployment setup and settings best address concurrency and graceful rollouts for inference workloads?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Run `uvicorn app:app --reload` in production with 1 worker; rely on async to handle all load and ignore readiness/liveness probes.",
+        "B. Run Gunicorn with Uvicorn workers (or Uvicorn with multiple workers) sized to CPU/GPU constraints; configure proxy timeouts for long inferences; implement readiness (model loaded) and graceful shutdown to stop accepting new requests while finishing in-flight ones.",
+        "C. Use only Nginx to execute Python code via `proxy_pass`; no app server is needed if Nginx is configured correctly.",
+        "D. Increase `--timeout-keep-alive` to 1 hour and disable worker recycling; this guarantees no dropped requests during deploys."
+      ],
+      "correct_answer": "B",
+      "explanation": "B matches real-world ML serving: use multiple workers/processes when appropriate (especially CPU-bound), but size them carefully for GPU memory and model loading time. Configure reverse proxy and server timeouts (request/response, upstream) to match inference latency. Add readiness checks that only pass when the model is loaded/warm, and handle graceful shutdown (stop accepting new requests, allow in-flight to complete, close resources). A is a common anti-pattern (`--reload` is for dev). C is incorrect. D can cause resource leaks and doesn’t ensure graceful rollouts by itself.",
+      "difficulty": "advanced",
+      "tags": [
+        "deployment",
+        "uvicorn",
+        "gunicorn",
+        "nginx",
+        "workers",
+        "timeouts",
+        "graceful-shutdown",
+        "readiness"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to secure your ML inference API for both end users and service-to-service calls.\n\nCompare API keys vs JWT for this scenario, and describe how you would implement (at a high level) authorization for:\n- different model versions (e.g., `model:foo@v3`),\n- different roles (viewer vs invoker vs admin).\n\nAlso mention where in FastAPI you’d enforce this (dependency vs middleware) and why.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "API keys are simple for service-to-service: static secret presented in a header, easy to rotate but typically coarse-grained unless backed by a key registry. JWTs are better for end-user auth and fine-grained claims (subject, roles, scopes, expiry) and can be validated statelessly (with signing keys) while still supporting rotation via JWKS.\n\nAuthorization approach: define scopes/claims that encode permissions like `invoke:model:foo:v3` or a more general `invoke:model:foo` with version constraints; map roles to allowed actions (viewer: list/read metadata, invoker: call inference, admin: register/deploy). Implement a FastAPI dependency (e.g., `authorize(required_scopes=[...])`) that validates the credential (API key lookup or JWT verify), extracts identity + roles/scopes, and checks requested resource (model/version) against policy. Enforce in dependencies because authorization is route-specific (different endpoints need different scopes) and dependencies integrate naturally with OpenAPI security schemes; middleware can be used for coarse authentication/parsing but fine-grained authorization is typically cleaner in dependencies.",
+      "explanation": "ML APIs often serve both internal services and external users. Interviewers look for practical security thinking: choosing a credential type that matches the actor, scoping access to specific model versions/endpoints, and placing checks where they’re maintainable. Dependencies enable per-route requirements and testing via overrides.",
+      "difficulty": "intermediate",
+      "tags": [
+        "auth",
+        "authorization",
+        "api-keys",
+        "jwt",
+        "scopes-roles",
+        "dependency-injection",
+        "ml-platform"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re implementing an inference endpoint that can return large outputs (e.g., token streams or long JSON). You also want to handle client disconnects gracefully.\n\nWhat are practical FastAPI/Starlette patterns to:\n- stream responses,\n- avoid buffering huge payloads in memory,\n- and stop work when the client disconnects?\nAlso mention one payload constraint you’d enforce for large inputs.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `StreamingResponse` (or SSE/WebSocket when appropriate) to yield chunks incrementally instead of building a giant in-memory object. Generate chunks from an iterator/async generator. To handle disconnects, check `await request.is_disconnected()` periodically (or handle cancellation in async generators) and stop generating tokens/work when disconnected. Avoid buffering by emitting bytes/JSON lines incrementally and by not constructing large Python lists/dicts before sending.\n\nFor input constraints, enforce max request size (via server/proxy settings) and validate fields like `max_tokens`, `batch_size`, image dimensions, or number of items in a list using Pydantic constraints; reject oversized inputs with 413 (Payload Too Large) or 422 depending on where validation occurs.",
+      "explanation": "Streaming is common in LLM-style endpoints and for large artifacts. The key is to avoid building the full output in RAM and to stop expensive generation when the client is gone. Many production incidents come from missing size limits (inputs) or buffering (outputs), leading to memory spikes and cascading latency.",
+      "difficulty": "advanced",
+      "tags": [
+        "streaming",
+        "request-parsing",
+        "large-payloads",
+        "client-disconnect",
+        "backpressure",
+        "responses"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your inference function is CPU-bound and uses a library that blocks (e.g., NumPy/scikit-learn) and takes ~300ms. You’re using Uvicorn.\n\nWhich statement best describes the async/sync tradeoffs and what you should do in FastAPI?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Make the endpoint `async def` and call the blocking function directly; the event loop will run it in parallel automatically.",
+        "B. Keep the endpoint `def` (sync) or use `run_in_threadpool` for blocking work; scale with multiple workers/processes for CPU-bound workloads, and avoid blocking the event loop.",
+        "C. Always use `async def` because it is faster than `def` even for CPU-bound work, and set `--reload` in production for better concurrency.",
+        "D. Use a single worker with `async def` and increase `--timeout-keep-alive` to handle more concurrent CPU-bound requests."
+      ],
+      "correct_answer": "B",
+      "explanation": "CPU-bound or blocking code should not run on the event loop. In FastAPI/Starlette, a sync (`def`) endpoint runs in a threadpool by default, or you can explicitly offload from an `async def` using `starlette.concurrency.run_in_threadpool`. For true CPU-bound workloads, multiple processes (workers) are often needed to use multiple cores; threads won’t bypass the GIL for pure Python CPU work (though native code may release it). A is a common pitfall: blocking inside `async def` stalls the event loop and reduces concurrency.",
+      "difficulty": "advanced",
+      "tags": [
+        "async",
+        "concurrency",
+        "threadpool",
+        "processes",
+        "ml-inference",
+        "performance",
+        "backpressure"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to load a large model once at startup and inject it into endpoints, while also injecting a per-request context (request ID, user). You also want tests to swap the real model with a fake.\n\nProvide a FastAPI dependency injection pattern that supports:\n- app startup model loading,\n- a `get_model()` dependency,\n- a `get_context()` dependency (per-request),\n- overriding dependencies in tests.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Pattern: load the model into `app.state` during startup (lifespan event), then define `get_model()` that returns `request.app.state.model` (or closes over `app`). Define `get_context()` that reads request headers/auth and returns a context object. In endpoints, declare `model=Depends(get_model)` and `ctx=Depends(get_context)`. In tests, use `app.dependency_overrides[get_model] = lambda: FakeModel()` (and similarly for context) and clear overrides after tests.\n\nExample sketch:\n```python\nfrom fastapi import FastAPI, Depends, Request\nfrom contextlib import asynccontextmanager\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    app.state.model = load_model()\n    yield\n    # optional cleanup\n\napp = FastAPI(lifespan=lifespan)\n\ndef get_model(request: Request):\n    return request.app.state.model\n\ndef get_context(request: Request):\n    return {\"request_id\": request.headers.get(\"X-Request-ID\")}\n\n@app.post('/infer')\ndef infer(payload: Features, model=Depends(get_model), ctx=Depends(get_context)):\n    ...\n```\n",
+      "explanation": "ML services often have heavyweight singletons (models, tokenizers, vector DB clients) plus request-scoped context (identity, tracing). FastAPI dependencies let you express both cleanly, while `app.dependency_overrides` is the standard way to swap implementations in tests without rewriting endpoint code.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dependency-injection",
+        "lifespan",
+        "startup",
+        "testing",
+        "request-context",
+        "ml-model-loading"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your ML platform has an endpoint to list model versions:\n`GET /models/{model_name}/versions?limit=50&offset=0&stage=prod&created_after=...`\n\nDescribe a practical FastAPI implementation approach for pagination and filtering, including validation and response shape. Mention at least one pitfall to avoid.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use query parameters with validation constraints (e.g., `limit: int = Query(50, ge=1, le=200)`, `offset: int = Query(0, ge=0)`, optional filters like `stage: Literal['dev','staging','prod'] | None`, and `created_after: datetime | None`). Build a DB/query-layer call that applies filters and pagination. Return a response model that includes `items: list[ModelVersion]` plus pagination metadata such as `limit`, `offset`, and `total` (or `next_offset`/`has_more`). A common pitfall is failing to cap `limit` (can cause heavy DB reads) or returning inconsistent ordering (pagination breaks without a stable sort, e.g., by created_at + id).",
+      "explanation": "Even for ML engineers, platform endpoints (models, jobs, artifacts) are common. Good pagination requires validated inputs, stable ordering, and a response shape that clients can use reliably. FastAPI’s `Query(...)` constraints and Pydantic response models make these patterns straightforward and self-documenting in OpenAPI.",
+      "difficulty": "beginner",
+      "tags": [
+        "pagination",
+        "filtering",
+        "query-params",
+        "pydantic",
+        "ml-platform"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re serving embeddings and want to cache results for repeated identical inputs to reduce GPU load. Which caching approach is safest and most appropriate at the application level for a single FastAPI instance?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Cache by raw request body for every endpoint, including user-specific endpoints, with no TTL to maximize hit rate.",
+        "B. Use an in-memory TTL cache keyed by a stable, privacy-safe key (e.g., hash of normalized input) and avoid caching sensitive per-user data unless explicitly intended; add size limits and TTL.",
+        "C. Cache in a global Python dict keyed by `request.client.host` so each user gets their own cache forever.",
+        "D. Cache only HTTP 500 responses so repeated failures return faster."
+      ],
+      "correct_answer": "B",
+      "explanation": "B reflects common ML-serving practice: use a bounded in-memory TTL cache for expensive deterministic computations (embeddings, feature lookups) and key it carefully. Hashing normalized inputs avoids storing raw sensitive content and prevents trivial key explosions. TTL and max size limit memory growth and stale results. You should not cache per-user sensitive outputs unless you have explicit authorization boundaries and a clear policy. A and C are unsafe (privacy, unbounded growth). D is not useful and can hide transient issues.",
+      "difficulty": "intermediate",
+      "tags": [
+        "caching",
+        "ttl",
+        "privacy",
+        "ml-inference",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to return a model-generated image (PNG) from FastAPI. Which response type is most appropriate, and what headers should you consider setting?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Return a Python `dict` with base64 data; FastAPI will automatically set `Content-Type: image/png`.",
+        "B. Return `StreamingResponse` or `Response` with `media_type='image/png'`; optionally set `Content-Disposition` for download and caching headers if appropriate.",
+        "C. Return `JSONResponse` with raw bytes; JSON is the most compatible for binary payloads.",
+        "D. Return `PlainTextResponse` with bytes; clients can infer it is PNG from the first bytes."
+      ],
+      "correct_answer": "B",
+      "explanation": "Binary outputs should be returned as `Response` (for in-memory bytes) or `StreamingResponse` (for generated/streamed bytes) with the correct `media_type` (e.g., `image/png`). You may also set `Content-Disposition` (inline vs attachment/filename) and caching headers (`Cache-Control`, `ETag`) depending on whether the output is cacheable. JSON/base64 increases payload size and adds encoding overhead.",
+      "difficulty": "beginner",
+      "tags": [
+        "responses",
+        "binary-response",
+        "streaming-response",
+        "headers",
+        "file-handling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You receive image uploads for an embedding endpoint. Which approach is best to avoid loading large files fully into memory while still validating that the uploaded bytes are a decodable image?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `bytes = await file.read()` and pass bytes directly to PIL; this is always safe because FastAPI streams uploads by default.",
+        "B. Use `UploadFile`, stream/copy to a temporary file (or spool file), then attempt to decode with PIL/OpenCV; handle decode exceptions and return 415/422 as appropriate.",
+        "C. Use `File(...)` with a `str` parameter and base64 decode it; base64 is always more memory efficient than multipart uploads.",
+        "D. Use `requests.get(file.filename)` on the server to re-download the file from the client, then decode it."
+      ],
+      "correct_answer": "B",
+      "explanation": "B is the practical pattern: `UploadFile` gives you a file-like object and supports streaming; for large uploads you should avoid `await file.read()` because it reads the entire file into memory. Spooling to a temporary file (or using the underlying spooled file) lets you validate and process robustly. You must also handle decode failures (corrupt image, wrong format) and return an appropriate error (commonly 415 Unsupported Media Type for unacceptable formats, or 422 for semantically invalid content). A is risky for large files. C increases size (~33%) and often increases memory pressure. D is insecure and incorrect.",
+      "difficulty": "intermediate",
+      "tags": [
+        "file-handling",
+        "uploadfile",
+        "streaming",
+        "temporary-storage",
+        "validation",
+        "images"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to add middleware that:\n- attaches/propagates a request ID (from `X-Request-ID` if present, otherwise generate one),\n- measures request latency,\n- and ensures the request ID is included in the response headers.\n\nWhere should this logic live (middleware vs dependency), and what ordering concerns exist if you also have CORS and GZip middleware enabled?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "This belongs in middleware because it’s cross-cutting and should wrap the entire request lifecycle (including routing, dependencies, and exception handling) to measure full latency and consistently add headers. Ordering matters: middleware executes in the order it’s added (outer-to-inner on request, reverse on response). Typically you want request ID + timing middleware as one of the outer layers so it captures total time and can tag logs even for failures. CORS should be early enough to handle preflight OPTIONS requests correctly; GZip should generally be later so it can compress the final response body after other headers are set. If request ID is added too late, some responses (errors, early returns, preflight) may miss the header; if timing is too inner, you won’t measure full overhead.",
+      "explanation": "Middleware is the right tool for concerns that should apply uniformly and wrap the whole app. Dependencies are better for per-endpoint resources (model handles, clients) and request-scoped context. In ML APIs, request IDs and latency metrics are essential for tracing slow inferences and correlating logs across services; middleware ordering affects correctness (CORS/preflight) and observability (capturing errors and total time).",
+      "difficulty": "intermediate",
+      "tags": [
+        "middleware",
+        "observability",
+        "request-id",
+        "timing",
+        "cors",
+        "gzip",
+        "ordering"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a mixed ML API you have two endpoints:\n1) `/infer` takes JSON with numeric features.\n2) `/embed-image` takes an uploaded image file.\n\nExplain when you should use a JSON request body vs `multipart/form-data` (e.g., `UploadFile`/`File`) in FastAPI, and what can go wrong if a client sends the wrong content type.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a JSON request body (Pydantic model) for structured data like numeric features because it provides schema validation, clear OpenAPI docs, and is efficient for typical inference payloads. Use `multipart/form-data` with `UploadFile = File(...)` (and optionally `Form(...)` fields) when you need to upload binary files (images, audio) or mix files with small metadata fields. If the client sends the wrong content type (e.g., JSON to an endpoint expecting multipart, or multipart to an endpoint expecting JSON), FastAPI will fail validation and return 422 (Unprocessable Entity) because it can’t parse the body into the expected parameters; for JSON parsing errors you may also see 400 (Bad Request) depending on where parsing fails.",
+      "explanation": "AI/ML services often have both structured feature inputs and binary media inputs. FastAPI infers where parameters come from: Pydantic models default to JSON body, while `File(...)`/`Form(...)` indicate multipart parsing. Getting the content type right matters for both correctness and performance. Knowing typical error codes (422 for validation) helps debug client/server integration quickly.",
+      "difficulty": "beginner",
+      "tags": [
+        "request-body",
+        "form-data",
+        "uploadfile",
+        "content-type",
+        "status-codes",
+        "ml-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building an inference endpoint and want to accept: (1) a path parameter `model_name`, (2) a query parameter `threshold` with default 0.5, (3) an optional header `X-Request-ID`, and (4) a JSON body with features. Which FastAPI signature is the most correct and idiomatic?\n\n```python\nfrom fastapi import FastAPI, Header\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Features(BaseModel):\n    x: float\n    y: float\n\n# Choose the best function signature\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. ```python\n@app.post('/infer/{model_name}')\ndef infer(model_name: str, threshold: float = 0.5, x_request_id: str | None = Header(default=None), features: Features = None):\n    ...\n```",
+        "B. ```python\n@app.post('/infer/{model_name}')\ndef infer(model_name: str, features: Features, threshold: float = 0.5, x_request_id: str | None = Header(default=None)):\n    ...\n```",
+        "C. ```python\n@app.post('/infer')\ndef infer(model_name: str, threshold: float = 0.5, x_request_id: str | None = Header(default=None), features: dict = {}):\n    ...\n```",
+        "D. ```python\n@app.post('/infer/{model_name}')\ndef infer(model_name: str, threshold: float = 0.5, headers: dict = Header(...), features: Features = Body(...)):\n    ...\n```"
+      ],
+      "correct_answer": "B",
+      "explanation": "B is the most idiomatic: `model_name` comes from the path, `threshold` is a query param with a default, `x_request_id` is read from the `X-Request-ID` header via `Header`, and `features: Features` is a required JSON request body (Pydantic model). In A, `features` is optional and defaults to `None`, which is usually not desired for required inference inputs. C misses the path parameter and uses a mutable default dict (bad practice) and loses schema validation. D is awkward: you typically don’t pass an entire headers dict via `Header`, and `Body(...)` wasn’t imported; also it’s unnecessary when a Pydantic model already implies a body parameter.",
+      "difficulty": "beginner",
+      "tags": [
+        "request-response",
+        "path-params",
+        "query-params",
+        "headers",
+        "pydantic",
+        "ml-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a long-running inference (e.g., video processing) that can take minutes. You want an API pattern that doesn’t tie up a request worker and supports timeouts/cancellation.\n\nDescribe a practical design using FastAPI that:\n- returns quickly with a `job_id`\n- runs work asynchronously (queue/background worker at a high level)\n- exposes `GET /jobs/{job_id}` for status/result\n- handles timeouts and cancellation semantics",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use an async job pattern:\n1) `POST /jobs` (or `/predict:async`) validates input, stores a job record (status=pending), enqueues work to a queue system (e.g., Redis + RQ/Celery, Kafka consumer, or a managed queue), and returns `202 Accepted` with a `job_id` and polling URL.\n2) A separate worker process consumes jobs and runs the long inference, writing results back to storage (DB/object store) and updating job status.\n3) `GET /jobs/{job_id}` returns a stable status model: `pending|running|succeeded|failed|canceled`, plus result when available.\n4) Cancellation: `DELETE /jobs/{job_id}` (or `POST /jobs/{id}:cancel`) marks job as canceled; the worker should periodically check cancellation (cooperative cancellation). If the underlying framework supports revocation, use it, but still design for best-effort cancellation.\n5) Timeouts: enforce per-job max runtime in the worker; if exceeded, mark failed with code `TIMEOUT`. Also set HTTP client timeouts for downstream calls.\n\nFastAPI specifics:\n- Don’t use `BackgroundTasks` for multi-minute heavy work if you need reliability; it runs in-process and can be lost on restart.\n- Keep API responses consistent; include `trace_id` and error codes for failed jobs.\n\nExample responses:\n- `POST /jobs` -> 202 `{ \"job_id\": \"...\", \"status\": \"pending\" }`\n- `GET /jobs/{id}` -> 200 `{ \"job_id\": \"...\", \"status\": \"running\" }` or `{ \"status\": \"succeeded\", \"result\": {...} }`",
+      "explanation": "Long-running inference should not occupy web workers; it reduces throughput and causes load balancer timeouts. A job-id + queue pattern decouples request handling from compute, improves reliability, and enables retries, rate limiting, and priority. Cancellation in distributed systems is usually cooperative/best-effort, so the API should reflect that and provide clear terminal states.",
+      "difficulty": "advanced",
+      "tags": [
+        "background-jobs",
+        "queues",
+        "async",
+        "timeouts",
+        "cancellation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want OpenAPI to serve as a contract for ML clients and SDK generation. Which approach best supports schema evolution and deprecation while keeping clients stable?",
+      "question_type": "mc",
+      "options": [
+        "A. Never change the schema; if you must, change fields in-place and rely on clients to update quickly.",
+        "B. Use versioned endpoints (e.g., `/v1`, `/v2`), keep changes additive within a version, include examples in schemas, and explicitly mark deprecated fields/endpoints with a deprecation window.",
+        "C. Hide OpenAPI docs in production so clients cannot rely on them; distribute PDFs instead.",
+        "D. Put all fields in a single flat schema so clients don’t need to navigate nested objects."
+      ],
+      "correct_answer": "B",
+      "explanation": "OpenAPI is most valuable when it is treated as a contract: clients can generate SDKs and validate requests. Additive changes (new optional fields) preserve backward compatibility. Breaking changes should trigger a new version. Examples improve generated SDK usability and reduce integration errors. Deprecation markers and a deprecation window give clients time to migrate safely.",
+      "difficulty": "beginner",
+      "tags": [
+        "openapi",
+        "schema-evolution",
+        "versioning",
+        "sdk-generation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are deploying a FastAPI inference service for a GPU-based model. Which statement is most accurate about `uvicorn`/`gunicorn` worker configuration and GPU/process implications?",
+      "question_type": "mc",
+      "options": [
+        "A. More workers always improves throughput; GPU memory is automatically shared across workers.",
+        "B. Multiple process workers may each load their own copy of the model into GPU memory; for large models you often run fewer workers (sometimes 1 per GPU) and rely on batching/async I/O for throughput.",
+        "C. Threads are safer than processes for GPU models because they isolate CUDA contexts per thread.",
+        "D. `gunicorn` with many workers is required for FastAPI; `uvicorn` alone cannot be used in production."
+      ],
+      "correct_answer": "B",
+      "explanation": "With multi-process workers, each process typically has its own Python interpreter and often its own CUDA context/model copy, which can multiply GPU memory usage and cause OOM. For large GPU models, a common pattern is 1 worker per GPU (or even 1 total) and improve throughput via request batching, efficient preprocessing, and non-blocking I/O. Threads don’t isolate CUDA contexts the way processes do. Uvicorn can be used in production; gunicorn is a common process manager but not mandatory.",
+      "difficulty": "advanced",
+      "tags": [
+        "deployment",
+        "uvicorn",
+        "gunicorn",
+        "gpu",
+        "workers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want consistent error responses for an inference API. Consider:\n- input validation errors\n- model runtime errors (e.g., CUDA OOM)\n- downstream dependency timeouts\n\nPropose an error model and explain how you would implement it using FastAPI exception handlers (including when to use `HTTPException`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a consistent error envelope with a stable schema, e.g.:\n\n```python\nfrom pydantic import BaseModel\nfrom typing import Optional, Dict, Any\n\nclass ErrorResponse(BaseModel):\n    trace_id: str\n    error: Dict[str, Any]  # or a structured model\n    # e.g. {\"code\": \"DOWNSTREAM_TIMEOUT\", \"message\": \"Feature store timeout\", \"details\": {...}}\n```\n\nImplementation:\n- For expected HTTP-level errors in endpoints (auth failures, missing resources, simple bad requests), raise `HTTPException(status_code=..., detail=...)`.\n- For consistent shape, register exception handlers:\n  - `RequestValidationError` -> 422 with your `ErrorResponse` (map Pydantic errors to a stable `code` like `VALIDATION_ERROR`).\n  - Custom exceptions like `ModelNotLoaded`, `InferenceError`, `CudaOOMError`, `DownstreamTimeout` -> map to 503/500/504 as appropriate.\n  - A catch-all handler for `Exception` -> 500 with generic message, log full stack trace server-side.\n- Include `trace_id` in every error response; never leak stack traces or internal hostnames.\n\nHTTP mapping example:\n- Validation -> 422\n- Downstream timeout -> 504\n- Model not ready -> 503\n- CUDA OOM -> 503 (or 500 depending on policy), often 503 if it’s capacity-related\n- Unexpected -> 500\n\nThis yields predictable client behavior and better observability.",
+      "explanation": "ML services fail in multiple layers (validation, preprocessing, model execution, dependencies). If each failure returns a different shape, client SDKs become brittle. FastAPI’s exception handlers let you centralize formatting while still using `HTTPException` for straightforward cases. Separating internal logs from external error messages prevents information leakage and keeps the contract stable.",
+      "difficulty": "intermediate",
+      "tags": [
+        "error-handling",
+        "exception-handlers",
+        "http-exceptions",
+        "observability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want clean separation of concerns: configuration, model instance, and per-request context (e.g., trace_id). In FastAPI, which approach best matches app-scoped vs request-scoped dependencies?",
+      "question_type": "mc",
+      "options": [
+        "A. Load the model inside the endpoint for each request to ensure freshness; store config in query params.",
+        "B. Use `Depends` to inject a request-scoped context (e.g., trace_id), and store the model/config as app-scoped objects created during lifespan and accessed via dependency functions.",
+        "C. Use middleware to load the model and config on every request so they are always available in `request.state`.",
+        "D. Put everything (config, model, trace_id) into global variables for maximum performance."
+      ],
+      "correct_answer": "B",
+      "explanation": "App-scoped resources (model weights, tokenizer, shared HTTP clients, DB pools) should be created once during startup/lifespan and reused. Request-scoped values (trace_id, auth context, per-request timers) fit well as dependencies (`Depends`) or middleware that populates `request.state`. Middleware is useful for cross-cutting concerns (logging, auth), but not for loading heavy resources per request. Globals can work but often make testing, multi-worker behavior, and lifecycle management harder.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dependency-injection",
+        "lifespan",
+        "request-scope",
+        "app-scope"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design two endpoints for an ML inference service:\n- `GET /healthz` (liveness)\n- `GET /readyz` (readiness)\n\nWhat should each endpoint check, and how do you avoid leaking sensitive internals (e.g., exact dependency hostnames or stack traces)? Provide a brief example response format.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A common pattern:\n- `/healthz` (liveness): very cheap checks that the process is up and the event loop can respond. Typically returns 200 if the server is running. Avoid expensive dependency checks here.\n- `/readyz` (readiness): checks the service can actually serve inference, e.g. model loaded into memory, GPU available if required, and critical downstream dependencies reachable (feature store, model registry, tokenizer files, etc.). Keep timeouts short.\n\nAvoid leaking internals by returning coarse statuses and generic error messages, and logging details server-side. Example:\n\n```json\n// 200\n{ \"status\": \"ok\" }\n\n// readiness 503\n{ \"status\": \"not_ready\", \"checks\": { \"model_loaded\": false, \"gpu\": \"unknown\", \"feature_store\": \"fail\" } }\n```\n\nImplementation details:\n- Use HTTP 200 for ready, 503 for not-ready.\n- Don’t include stack traces, hostnames, credentials, or full exception messages in responses; log them with the trace_id instead.\n- If you expose per-check results, keep them boolean/coarse (ok/fail) and avoid sensitive identifiers.",
+      "explanation": "Kubernetes and load balancers use liveness/readiness differently: liveness decides when to restart a container; readiness decides whether to send it traffic. Mixing heavy dependency checks into liveness can cause restart loops during transient outages. Readiness should reflect whether inference can succeed. Returning minimal information reduces the risk of leaking internal topology while still enabling automated orchestration.",
+      "difficulty": "beginner",
+      "tags": [
+        "health-checks",
+        "readiness",
+        "observability",
+        "security"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your `/predict` endpoint accepts either JSON features or an uploaded image file. Which set of checks is most appropriate to reduce security risk and prevent common ML payload abuse (without overcomplicating the service)?",
+      "question_type": "mc",
+      "options": [
+        "A. Trust the client: accept any `Content-Type`, parse whatever arrives, and rely on model robustness.",
+        "B. Validate `Content-Type`, enforce max request size, validate file signatures (magic bytes) not only extensions, limit JSON nesting/array sizes, and guard against decompression bombs when handling compressed uploads.",
+        "C. Only validate that the request body is valid JSON; file uploads are safe because FastAPI handles them.",
+        "D. Encrypt the request body with a shared key to prevent malformed payloads from reaching the server."
+      ],
+      "correct_answer": "B",
+      "explanation": "ML endpoints are common targets for resource exhaustion and malformed inputs. Practical protections include: checking `Content-Type` (and rejecting unexpected media types), enforcing body size limits (via reverse proxy and/or app), validating files by signature/magic bytes and allowed MIME types, constraining JSON complexity (array lengths, nesting depth) to prevent memory blowups, and protecting image handling from decompression bombs (e.g., very small compressed files expanding to huge images). Encryption doesn’t replace validation and is usually handled at transport (TLS) rather than custom payload encryption.",
+      "difficulty": "intermediate",
+      "tags": [
+        "security",
+        "input-validation",
+        "content-type",
+        "file-upload",
+        "dos-protection"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You call an external feature store via HTTP during inference. What is the best pattern in FastAPI to manage an `httpx.AsyncClient` for connection pooling and clean shutdown?",
+      "question_type": "mc",
+      "options": [
+        "A. Create a new `httpx.AsyncClient()` inside the endpoint for each request and let it be garbage-collected.",
+        "B. Create one global `httpx.AsyncClient()` at import time and never close it; the OS will clean up sockets on exit.",
+        "C. Create the client in the FastAPI lifespan (startup) and close it on shutdown; reuse it across requests.",
+        "D. Store the client in a module-level variable but recreate it every N requests to avoid stale connections."
+      ],
+      "correct_answer": "C",
+      "explanation": "Reusing a single `httpx.AsyncClient` across requests enables connection pooling, reduces latency, and avoids socket exhaustion. The correct lifecycle is to create it in the app’s lifespan/startup and close it on shutdown. Per-request clients are expensive and can leak connections if not properly closed. Creating at import time can cause issues in tests, reloads, and multi-worker environments, and still needs explicit cleanup.",
+      "difficulty": "beginner",
+      "tags": [
+        "resource-management",
+        "httpx",
+        "lifespan",
+        "connection-pooling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an async endpoint that does CPU-heavy preprocessing (e.g., tokenization, image resizing) before calling a model. Which approach best avoids blocking the event loop?\n\n```python\n@app.post(\"/predict\")\nasync def predict(req: Req):\n    x = preprocess(req)  # CPU-heavy\n    y = model(x)\n    return {\"y\": y}\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Keep the endpoint async; CPU-heavy work is fine because Python async makes CPU work non-blocking.",
+        "B. Convert the endpoint to a normal `def` (sync) handler so FastAPI runs it in a threadpool by default, or explicitly offload CPU-heavy work using `run_in_threadpool`.",
+        "C. Replace preprocessing with `await preprocess(req)`; adding `await` makes it non-blocking even if it is CPU-heavy.",
+        "D. Use `BackgroundTasks` for preprocessing so the request returns immediately, and then compute the response later in the same request."
+      ],
+      "correct_answer": "B",
+      "explanation": "Async in Python is cooperative; CPU-bound work blocks the event loop and hurts concurrency. In FastAPI/Starlette, sync (`def`) endpoints run in a threadpool, which prevents event-loop blocking. Alternatively, keep an async endpoint but offload CPU-heavy parts via `starlette.concurrency.run_in_threadpool` (or `anyio.to_thread.run_sync`). `await` doesn’t make CPU work non-blocking. `BackgroundTasks` is for post-response work; it can’t compute a response body later within the same request.",
+      "difficulty": "intermediate",
+      "tags": [
+        "async",
+        "event-loop",
+        "cpu-bound",
+        "run_in_threadpool",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re designing a prediction endpoint that many clients will call (mobile, batch jobs, internal services). You want a stable request/response contract that can evolve without breaking clients.\n\nDesign a request and response schema (Pydantic models) for `POST /v1/predict` that includes:\n- a standardized envelope\n- `trace_id` (client-provided or server-generated)\n- `model_version`\n- a place for optional `metadata`\n- a stable `data` section for input/output\n\nExplain how you would evolve the schema over time without breaking existing clients.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good approach is to use a versioned path (`/v1/predict`) plus a stable envelope with explicit fields that rarely change, and a nested `data` field for the actual payload. Example:\n\n```python\nfrom typing import Any, Dict, List, Optional\nfrom pydantic import BaseModel, Field\n\nclass PredictRequestData(BaseModel):\n    # keep this stable; add optional fields rather than changing meaning\n    inputs: List[List[float]] = Field(..., description=\"Batch of feature vectors\")\n\nclass PredictRequest(BaseModel):\n    trace_id: Optional[str] = Field(None, description=\"Client trace id\")\n    model_version: Optional[str] = Field(None, description=\"Requested model version\")\n    metadata: Dict[str, Any] = Field(default_factory=dict)\n    data: PredictRequestData\n\nclass PredictResponseData(BaseModel):\n    predictions: List[float]\n\nclass PredictResponse(BaseModel):\n    trace_id: str\n    model_version: str\n    metadata: Dict[str, Any] = Field(default_factory=dict)\n    data: PredictResponseData\n```\n\nEvolution strategy:\n- Additive changes only: add new optional fields with defaults; never change semantics of existing fields.\n- Keep envelope stable; evolve `data` by adding optional fields or introducing `data_v2` only when necessary.\n- Use explicit API versioning (`/v1`, `/v2`) for breaking changes.\n- Document deprecated fields in OpenAPI and keep them for a deprecation window.\n- Use `extra = \"forbid\"` (or `ignore`) intentionally: forbid can catch client bugs but can make forward-compat harder. Many inference APIs choose `ignore` for request models and strict typing for response models.\n- Include examples in OpenAPI so clients can generate SDKs reliably.",
+      "explanation": "ML inference APIs often need a stable contract because clients are diverse and deployments are frequent. A standardized envelope (trace/model_version/metadata) supports observability, routing, and reproducibility, while isolating the payload under `data` reduces churn. Additive schema evolution (new optional fields with defaults) preserves backward compatibility; path versioning handles breaking changes. Being deliberate about Pydantic `extra` behavior is important: strict request validation can break forward compatibility when servers add fields and clients echo payloads, while ignoring unknown fields can make rollouts smoother.",
+      "difficulty": "intermediate",
+      "tags": [
+        "schema-design",
+        "request-envelope",
+        "model-versioning",
+        "trace-id",
+        "openapi-contract"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A browser-based frontend calls your FastAPI API on a different domain and gets CORS errors on a POST request with an `Authorization: Bearer ...` header.\n\nWhat is the correct fix in FastAPI, and what common gotcha causes the preflight to fail?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Fix: add `CORSMiddleware` with the correct `allow_origins` (specific frontend origin), `allow_methods` (include POST), and `allow_headers` (include Authorization and Content-Type). Example:\n```python\nfrom fastapi.middleware.cors import CORSMiddleware\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"https://app.example.com\"],\n    allow_credentials=True,\n    allow_methods=[\"POST\", \"GET\", \"OPTIONS\"],\n    allow_headers=[\"Authorization\", \"Content-Type\"],\n)\n```\nGotcha: the browser sends an OPTIONS preflight when using Authorization or non-simple content types; if the API/proxy doesn’t handle OPTIONS or the CORS middleware isn’t applied early enough, the preflight fails. Another common issue is using `allow_origins=[\"*\"]` together with `allow_credentials=True`, which is not allowed by browsers.",
+      "explanation": "CORS is enforced by browsers and commonly breaks ML inference APIs when adding auth headers. The presence of `Authorization` triggers preflight, so your server must respond correctly to OPTIONS with the right CORS headers. Correct configuration must match the exact origin and headers the browser uses; otherwise, requests will be blocked even though the API works from non-browser clients (curl/Python).",
+      "difficulty": "beginner",
+      "tags": [
+        "cors",
+        "browser-clients",
+        "preflight",
+        "authentication",
+        "client-integration"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Performance & reliability: Your `/embed` endpoint receives large texts and sometimes spikes GPU memory. You want to add protections: request size limits, timeouts, and backpressure/rate limiting. Which combination is most appropriate in FastAPI deployments?",
+      "question_type": "mc",
+      "options": [
+        "A. Only add `response_model` and rely on Pydantic to prevent large requests automatically",
+        "B. Enforce max body size at the proxy/server (e.g., Nginx/Traefik) and/or ASGI middleware, set timeouts at client + server layers, and add concurrency limits (semaphore) or rate limiting to prevent overload; consider batching where appropriate",
+        "C. Use CORS settings to limit payload size and prevent spikes",
+        "D. Increase Uvicorn workers indefinitely; this always reduces latency for GPU inference"
+      ],
+      "correct_answer": "B",
+      "explanation": "Pydantic validation doesn’t inherently cap raw body size; large uploads can exhaust memory before validation. In production, size limits are often best enforced at the edge proxy and/or ASGI middleware. Timeouts should be considered end-to-end (client, proxy, server) to avoid stuck requests. Backpressure can be implemented via concurrency limiting (e.g., an asyncio.Semaphore around GPU inference), queueing, or rate limiting to protect GPU memory and latency SLOs. Batching can improve throughput but adds latency and complexity, so it’s a tradeoff.",
+      "difficulty": "advanced",
+      "tags": [
+        "performance",
+        "reliability",
+        "timeouts",
+        "rate-limiting",
+        "backpressure",
+        "request-size-limits",
+        "batching"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Testing strategy: You have a FastAPI ML service that calls an external embedding service and uses a loaded model dependency.\n\nDescribe a practical test plan that includes unit tests and integration tests, and show how you’d override a dependency in tests.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Plan:\n- Unit tests: test pure functions (preprocessing, postprocessing, thresholding, request parsing helpers) without FastAPI.\n- API tests (fast integration): use `TestClient` (sync) or `httpx.AsyncClient` (async) to call endpoints; override dependencies to inject a lightweight fake model and mock external embedding calls.\n- Contract/integration tests: run the app with real routing + validation and possibly a test container for external services; verify status codes, schemas, and error handling.\n\nDependency override example:\n```python\nfrom fastapi.testclient import TestClient\nfrom myapp import app, get_model\n\nclass FakeModel:\n    def predict(self, x):\n        return {\"label\": \"ok\", \"score\": 1.0}\n\ndef override_get_model():\n    return FakeModel()\n\napp.dependency_overrides[get_model] = override_get_model\n\nclient = TestClient(app)\n\ndef test_predict():\n    r = client.post(\"/predict\", json={\"text\": \"hi\"})\n    assert r.status_code == 200\n    assert r.json()[\"label\"] == \"ok\"\n```\nAlso mock external HTTP calls (e.g., respx for httpx) and test failure modes/timeouts.",
+      "explanation": "ML services benefit from layering tests: keep model logic testable without the web framework, then verify FastAPI wiring (validation, dependencies, status codes) with TestClient/httpx. Dependency overrides are the canonical FastAPI way to replace heavyweight resources (models, DBs, external clients) for deterministic tests. Mocking timeouts and error responses is critical for reliability testing.",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing",
+        "testclient",
+        "httpx",
+        "dependency-overrides",
+        "mocking",
+        "ml-inference-api"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to protect your inference endpoints with Bearer tokens and also prevent unauthorized users from accessing `/docs` and `/openapi.json`.\n\nWhat is the most practical FastAPI approach?",
+      "question_type": "mc",
+      "options": [
+        "A. Use a dependency (e.g., HTTPBearer/OAuth2PasswordBearer) on routers/endpoints for API protection, and disable docs in production or mount docs behind auth (e.g., custom docs route with dependency)",
+        "B. Put token validation only in middleware and rely on CORS to block unauthorized access to docs",
+        "C. Use `response_model` to hide docs fields and prevent access to `/openapi.json`",
+        "D. Only protect `/docs`; inference endpoints do not need auth if they are behind a load balancer"
+      ],
+      "correct_answer": "A",
+      "explanation": "Bearer auth is commonly implemented as a dependency so you can attach it to specific routers, reuse it, and override it in tests. Protecting docs is usually done by disabling docs URLs in production (`docs_url=None`, `openapi_url=None`) or serving docs at a custom route guarded by the same auth dependency. CORS is not an auth mechanism; it only affects browser behavior and does not secure endpoints.",
+      "difficulty": "intermediate",
+      "tags": [
+        "authentication",
+        "authorization",
+        "bearer-token",
+        "docs-security",
+        "dependencies"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to add: (1) request-id, (2) structured logging of latency, and (3) authentication for an inference API.\n\nWhich statement best describes what belongs in middleware vs dependencies in FastAPI, and why ordering matters?",
+      "question_type": "mc",
+      "options": [
+        "A. Put everything in dependencies because they run before middleware and are easier to unit test",
+        "B. Put request-id + timing in middleware (cross-cutting, runs for all routes including errors), and auth in dependencies (route-specific, can access parsed params); middleware order affects what gets logged and which headers are present",
+        "C. Put authentication in middleware only; dependencies can’t access headers",
+        "D. Put logging in dependencies only; middleware can’t see response status codes"
+      ],
+      "correct_answer": "B",
+      "explanation": "Middleware is ideal for cross-cutting concerns that should apply uniformly (request-id injection, timing, logging, CORS) and that should run even when exceptions occur. Dependencies are ideal for route-specific logic like auth/authorization or model selection that may vary per router/endpoint and benefits from FastAPI’s injection and validation. Middleware ordering matters: e.g., request-id middleware should run early so all downstream logs include it; auth placement affects whether unauthenticated requests still get request-id and consistent logging.",
+      "difficulty": "beginner",
+      "tags": [
+        "middleware",
+        "dependencies",
+        "auth",
+        "logging",
+        "request-id",
+        "ordering"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re streaming tokens from an LLM endpoint using Server-Sent Events (SSE) or a StreamingResponse. The client disconnects mid-stream.\n\nWhat should your FastAPI code do to avoid wasting GPU/CPU, and how can you detect the disconnect?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Your streaming generator should periodically check for client disconnect and stop generation/cleanup when disconnected. In FastAPI/Starlette, you can check `await request.is_disconnected()` inside the streaming loop, and you should also handle `asyncio.CancelledError` because the server may cancel the task on disconnect. On disconnect, stop the model generation, release any GPU memory or cancel background tasks, and close any open resources. For long-running non-streaming inference, also propagate cancellation by checking disconnect and/or timeouts to avoid finishing expensive work for a response that will never be delivered.",
+      "explanation": "In practical ML systems, the expensive part is generation/inference. If you don’t handle disconnects, you can keep generating tokens for a client that’s gone, wasting GPU time and causing queueing for other users. Starlette can cancel the response task; robust code treats cancellation as a normal control flow and ensures cleanup (e.g., stopping generation loops, closing iterators, releasing semaphores).",
+      "difficulty": "advanced",
+      "tags": [
+        "streaming",
+        "client-disconnect",
+        "cancellation",
+        "reliability",
+        "llm-serving"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a large Transformer model that must be loaded once per process (GPU init is expensive). Which FastAPI pattern best fits this requirement, and what key thread-safety concern should you consider?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Load the model in the application lifecycle (startup event or the newer lifespan context) and store it in `app.state` (or a dedicated singleton managed by lifespan). Avoid loading inside the request handler to prevent per-request reload. Consider thread-safety/concurrency: if the model/inference code is not thread-safe (common with some GPU contexts or mutable caches), protect critical sections with a lock or route requests through a single worker, or use process-based concurrency (multiple Uvicorn/Gunicorn workers) so each process has its own model instance. Also consider warmup (one or more dummy forwards) during startup to trigger kernel compilation/caching and reduce first-request latency.",
+      "explanation": "ML models are expensive to initialize; lifecycle hooks ensure it happens once per process. FastAPI dependencies can also cache singletons, but lifespan/startup is the clearest for heavyweight resources and warmup. Thread-safety matters because ASGI servers can run multiple requests concurrently; even if Python has a GIL, GPU libraries and internal state can still be unsafe or lead to memory spikes. A correct design chooses an explicit concurrency model (locks, queues, batching, or multi-process).",
+      "difficulty": "intermediate",
+      "tags": [
+        "lifespan",
+        "startup-shutdown",
+        "model-loading",
+        "warmup",
+        "thread-safety",
+        "app-state"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to return a generated image (PNG bytes) from a FastAPI endpoint. You also want the OpenAPI schema to correctly indicate the response is an image, not JSON.\n\nWhich setup is most appropriate?",
+      "question_type": "mc",
+      "options": [
+        "A. Use `response_model=bytes` and return `bytes`; FastAPI will set `image/png` automatically",
+        "B. Use `response_class=Response` (or StreamingResponse) and set `media_type=\"image/png\"`; don’t use `response_model` for binary payloads",
+        "C. Use `response_model=dict` and return `{ \"png\": <bytes> }` so OpenAPI stays accurate",
+        "D. Use `response_class=JSONResponse` and base64-encode the bytes; OpenAPI will infer binary"
+      ],
+      "correct_answer": "B",
+      "explanation": "Binary responses should typically use `Response`/`StreamingResponse` with an explicit `media_type` like `image/png`. `response_model` is for JSON-serializable data models; using it for bytes is misleading and often results in incorrect OpenAPI and client expectations. If you must return base64 in JSON, that’s a different contract and should be documented as such (string field), but it’s not the same as returning an actual image response.",
+      "difficulty": "intermediate",
+      "tags": [
+        "responses",
+        "response_class",
+        "streaming",
+        "openapi",
+        "binary-response"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this FastAPI endpoint:\n\n```python\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Prediction(BaseModel):\n    label: str\n    score: float\n\n@app.get(\"/predict\", response_model=Prediction)\ndef predict():\n    return {\"label\": \"cat\", \"score\": \"0.91\"}\n```\n\nWhat is the most accurate description of what happens at runtime and why this can be a pitfall in ML APIs?",
+      "question_type": "mc",
+      "options": [
+        "A. FastAPI returns the dict as-is; response_model only affects OpenAPI docs",
+        "B. FastAPI validates/serializes the response against Prediction and will coerce types (e.g., \"0.91\" -> 0.91), potentially hiding bugs",
+        "C. FastAPI raises a request validation error because response_model validates the request body",
+        "D. FastAPI will always raise a response validation error because score is a string"
+      ],
+      "correct_answer": "B",
+      "explanation": "With response_model, FastAPI runs the returned value through Pydantic for validation/serialization. Pydantic commonly coerces types (string to float), which can hide upstream bugs (e.g., model returning strings, NaNs, or wrong shapes). For ML APIs, this is a real pitfall: the endpoint may appear to work while silently transforming or dropping fields. If you want strictness, configure Pydantic stricter types (e.g., StrictFloat) or add explicit checks.",
+      "difficulty": "beginner",
+      "tags": [
+        "responses",
+        "response_model",
+        "pydantic",
+        "openapi",
+        "ml-inference-api"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need an endpoint that accepts either:\n1) a multipart file upload (preferred), OR\n2) a JSON body with a base64 image (fallback for some clients).\n\nIn FastAPI, what’s the most practical way to implement this without making the OpenAPI schema misleading?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A common approach is to expose two explicit endpoints (e.g., /predict-file using UploadFile + Form, and /predict-json using a Pydantic model with a base64 string) rather than one polymorphic endpoint. This keeps OpenAPI accurate and client generation straightforward. If you must use one path, you can branch based on Content-Type and define optional parameters (UploadFile = File(None), body: Model = Body(None)), but OpenAPI will often be confusing and validation errors can be hard to interpret. Two endpoints or a clear versioned contract is usually better for production ML APIs.",
+      "explanation": "FastAPI/OpenAPI is strongest when the request body schema is unambiguous. Mixing multipart and JSON in a single endpoint tends to produce confusing OpenAPI (and client SDKs), because OpenAPI describes one requestBody content type at a time per operation. Two endpoints also makes it easier to set size limits, rate limits, and logging separately for each ingestion method.",
+      "difficulty": "intermediate",
+      "tags": [
+        "request-parsing",
+        "openapi",
+        "json-vs-formdata",
+        "file-upload",
+        "base64-images"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a FastAPI inference endpoint for image classification. Clients include:\n- A browser app\n- A Python batch client\n- A mobile app\n\nYou must choose between (1) JSON with base64-encoded image, (2) multipart/form-data file upload, or (3) raw bytes body.\n\nWhich option is generally the best default for a typical production ML image inference API and why?",
+      "question_type": "mc",
+      "options": [
+        "A. JSON + base64, because JSON is easiest to validate with Pydantic and works well with large binary payloads",
+        "B. multipart/form-data, because it avoids base64 overhead, is broadly supported by browsers/clients, and maps cleanly to UploadFile streaming",
+        "C. raw bytes, because it’s the simplest payload and always produces the best OpenAPI documentation",
+        "D. JSON + base64, because it enables streaming uploads and minimizes memory usage on the server"
+      ],
+      "correct_answer": "B",
+      "explanation": "multipart/form-data is usually the best default for image uploads in production ML APIs: it’s natively supported by browsers and common HTTP clients, avoids base64’s ~33% size overhead, and FastAPI’s UploadFile can stream file content (spooling to disk) rather than forcing the entire payload into memory. JSON+base64 is convenient when clients can’t send multipart, but it increases payload size and often increases memory pressure because you typically decode into bytes in memory. Raw bytes can be fine for specialized clients, but it’s less ergonomic for browsers and often less self-describing unless you add headers/metadata handling.",
+      "difficulty": "beginner",
+      "tags": [
+        "request-parsing",
+        "json-vs-formdata",
+        "file-upload",
+        "base64-images",
+        "ml-inference-api"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want your OpenAPI docs to be useful for downstream consumers of your ML API. You need to: document auth, provide request/response examples, and standardize error responses (e.g., `{\"error\": {\"code\": ..., \"message\": ...}}`). You also want to signal deprecations.\n\nHow would you do this in FastAPI in a practical way?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use FastAPI’s built-in OpenAPI generation with:\n- Security schemes: define auth via `fastapi.security` (e.g., `HTTPBearer`, OAuth2) and apply it via dependencies so OpenAPI includes `security` requirements.\n- Examples: add `examples=` (or `openapi_examples=`) on `Body`, `Query`, and response definitions; and use Pydantic models with `json_schema_extra` for richer examples.\n- Standard error models: define a Pydantic error response model and attach it via `responses={400: {\"model\": ErrorModel}, 401: {...}, 422: {...}}`; implement matching exception handlers to ensure runtime matches docs.\n- Deprecation/versioning: use versioned routes/routers and mark endpoints with `deprecated=True`; optionally include notes in descriptions and keep `/v1` and `/v2` schemas distinct.\nThis keeps documentation aligned with behavior and supports client generation/validation.",
+      "explanation": "For ML APIs, OpenAPI is often used for client generation and contract validation, not just human reading. Explicit security schemes, examples, and error models reduce integration friction. Deprecation signals help clients migrate safely without surprise breaking changes.",
+      "difficulty": "intermediate",
+      "tags": [
+        "openapi",
+        "auth",
+        "examples",
+        "error-models",
+        "deprecation",
+        "versioning"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to add: (a) request-id propagation, (b) auth, (c) structured logging with latency, and (d) consistent JSON error responses. In FastAPI/Starlette, where should these be implemented to ensure correct ordering and behavior?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Implement request-id + timing + logging as middleware; implement auth as a dependency (or middleware if it must run for all routes including static); implement consistent error bodies via exception handlers. Be mindful that middleware runs before dependencies and can wrap exception handling depending on placement.",
+        "B. Put everything inside each endpoint function to keep control local; middleware is only for CORS.",
+        "C. Implement auth in exception handlers so unauthorized requests are handled uniformly.",
+        "D. Only rely on Uvicorn access logs; application-level request-id and timing are unnecessary."
+      ],
+      "correct_answer": "A",
+      "explanation": "Middleware is ideal for cross-cutting concerns like request-id assignment, timing, and logging because it wraps the request lifecycle. Auth is often best as a dependency (testable, composable per-router), though sometimes middleware is used for global enforcement. Exception handlers define consistent error responses and can convert internal exceptions into stable error schemas. Understanding ordering matters: middleware runs around routing/dependencies, and exception handling can be affected by where errors are raised.",
+      "difficulty": "advanced",
+      "tags": [
+        "middleware",
+        "request-lifecycle",
+        "auth",
+        "logging",
+        "exception-handlers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to return a generated artifact from an ML endpoint: sometimes it’s a small JSON prediction, other times it’s a binary (e.g., a PNG mask) or a NumPy array.\n\nWhat are two practical serialization/response strategies in FastAPI for these cases, and what trade-offs do they have?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) JSON response using Pydantic models for small structured outputs; for arrays you can convert NumPy to lists (or to a compact representation like base64-encoded bytes) and return metadata (dtype/shape). Trade-off: converting large arrays to JSON is slow and bloats payloads.\n2) Binary/file responses for artifacts: return `Response(content=bytes, media_type=\"image/png\")` or `StreamingResponse` for large outputs; optionally use `FileResponse` for files on disk. Trade-off: clients must handle binary content types; you lose some of the self-describing structure of JSON unless you add headers/sidecar metadata.\nA common hybrid is JSON with a URL to download the artifact (object storage), which keeps inference responses small and retry-friendly.",
+      "explanation": "ML services frequently deal with non-JSON-native types (NumPy arrays, bytes). FastAPI supports multiple response classes; choosing between JSON, base64-in-JSON, and binary streaming is about payload size, latency, client convenience, and memory usage.",
+      "difficulty": "advanced",
+      "tags": [
+        "serialization",
+        "numpy",
+        "base64",
+        "response-classes",
+        "artifacts"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your FastAPI service uses a GPU model and you deploy with Gunicorn + Uvicorn workers. You have 1 GPU on the machine.\n\nWhich deployment choice is usually safest to avoid GPU memory contention and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Run a single worker process that owns the GPU model, and scale with replicas across GPUs/machines rather than many workers on one GPU.",
+        "B. Run 8 Gunicorn workers to maximize parallelism; the GPU will automatically share memory efficiently.",
+        "C. Use `--reload` in production to keep the model fresh without restarts.",
+        "D. Use as many workers as CPU cores; GPU inference is unaffected by worker count."
+      ],
+      "correct_answer": "A",
+      "explanation": "Most GPU model runtimes allocate significant GPU memory per process; multiple worker processes can duplicate the model in GPU memory and cause OOM or thrashing. A common pattern is one worker per GPU (or per model instance) and scaling horizontally. `--reload` is a dev feature. Worker count should be chosen based on CPU/GPU constraints, not just CPU cores.",
+      "difficulty": "intermediate",
+      "tags": [
+        "deployment",
+        "gunicorn",
+        "uvicorn",
+        "gpu",
+        "production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You receive bug reports: some users get 413 errors (Request Entity Too Large) when uploading images to your FastAPI endpoint. The endpoint is behind NGINX.\n\nName two places where request size limits can be enforced (one in the app/framework layer and one in the proxy/server layer), and what you would check/change.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Proxy/server layer: NGINX `client_max_body_size` (or an ingress controller/body size setting) can reject large uploads before they reach the app; check NGINX config and logs and adjust the limit appropriately. App/framework layer: Starlette/FastAPI can hit limits/timeouts/memory constraints when parsing multipart/form-data or reading request bodies; you can enforce your own max size via middleware (checking `Content-Length` or streaming reads) and ensure the ASGI server settings/timeouts are appropriate. Also verify any platform limits (API gateway/load balancer) that may enforce body size caps.",
+      "explanation": "413 often originates at the proxy (NGINX/ingress) rather than FastAPI itself. Even if the proxy allows the request, the application must still handle large bodies safely (streaming, validation, and explicit limits) to avoid memory spikes and timeouts—common in ML image/audio upload endpoints.",
+      "difficulty": "intermediate",
+      "tags": [
+        "request-size-limits",
+        "uploads",
+        "starlette",
+        "nginx",
+        "production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a long-running inference endpoint that enqueues a job (e.g., video processing). Clients may retry on timeouts. You want retries to be safe and avoid duplicate jobs.\n\nWhich design is most appropriate in FastAPI?",
+      "question_type": "mc",
+      "options": [
+        "A. Require an `Idempotency-Key` header, store key->job_id/result with TTL, and return the existing job on duplicate requests.",
+        "B. Use HTTP GET instead of POST; GET is always idempotent even if it triggers work.",
+        "C. Increase server timeout to 10 minutes so clients never retry.",
+        "D. Add a random delay so duplicate requests are unlikely to happen at the same time."
+      ],
+      "correct_answer": "A",
+      "explanation": "Idempotency keys are a standard approach for safe retries: the server deduplicates requests and returns consistent results for the same key. Switching to GET doesn’t make side-effecting operations safe. Long timeouts hurt capacity and still don’t prevent retries. Random delays are unreliable.",
+      "difficulty": "advanced",
+      "tags": [
+        "idempotency",
+        "safe-retries",
+        "long-running-jobs",
+        "ml-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are evolving a response schema for `/v1/predict`.\n\nCurrent response:\n```json\n{\"label\": \"cat\", \"score\": 0.93}\n```\nYou want to add per-class probabilities in a new field `probs` without breaking existing clients.\n\nWhat is the best change to make in the Pydantic response model and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Add `probs` as an optional field with a sensible default (e.g., `probs: dict[str, float] | None = None`) while keeping existing fields unchanged. This is backward compatible because clients that only parse `label`/`score` will still work, and the OpenAPI schema will reflect the new optional field. Avoid renaming/removing existing fields in-place for v1; do breaking changes in v2.",
+      "explanation": "Backward-compatible schema evolution typically means adding optional fields (or fields with defaults) rather than changing types or removing fields. This is especially important for ML inference APIs where many clients are lightly maintained and can break on strict JSON parsing.",
+      "difficulty": "beginner",
+      "tags": [
+        "schema-evolution",
+        "pydantic",
+        "backward-compatibility",
+        "versioning"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to support two model versions in production (v1 and v2) and gradually migrate clients. Some clients will be pinned to v1 for months.\n\nWhich versioning strategy is generally the safest for backward compatibility in inference APIs?",
+      "question_type": "mc",
+      "options": [
+        "A. Use route versioning such as `/v1/predict` and `/v2/predict`, keep separate request/response models, and mark old endpoints as deprecated when appropriate.",
+        "B. Change the request/response schema in-place at `/predict`; clients should adapt quickly.",
+        "C. Use a single endpoint and return different schemas depending on the user agent header.",
+        "D. Only change the OpenAPI description to mention the new behavior; no code changes needed."
+      ],
+      "correct_answer": "A",
+      "explanation": "Route versioning is explicit and minimizes surprises: clients can pin to a stable contract. You can evolve schemas independently and use `deprecated=True` plus documentation to guide migration. In-place schema changes are risky and often break clients. Dynamic schemas based on headers are hard to validate and maintain.",
+      "difficulty": "intermediate",
+      "tags": [
+        "versioning",
+        "backward-compatibility",
+        "openapi",
+        "schema-evolution"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need environment-based configuration for an ML API: model version, feature flags (e.g., \"use_new_preprocessor\"), and secrets (e.g., API keys). You want type safety and easy local/dev/prod overrides.\n\nWhich approach best matches FastAPI/Pydantic best practices?",
+      "question_type": "mc",
+      "options": [
+        "A. Use `pydantic-settings` (`BaseSettings`) to define a Settings class, load from environment/`.env`, inject settings via a dependency, and keep secrets in env/secret manager.",
+        "B. Read `os.environ` directly inside each endpoint function and parse values manually.",
+        "C. Store secrets in the repository in a `config.py` file and import it in production.",
+        "D. Put configuration inside the OpenAPI schema so clients can discover which model version is running."
+      ],
+      "correct_answer": "A",
+      "explanation": "Pydantic Settings provides validated, typed configuration with consistent precedence (env vars, `.env`, defaults). Injecting settings via dependencies avoids hidden global state and improves testability. Secrets should come from environment variables or a secrets manager, not source control. OpenAPI is for documenting the API contract, not runtime configuration distribution.",
+      "difficulty": "beginner",
+      "tags": [
+        "configuration",
+        "pydantic-settings",
+        "secrets",
+        "feature-flags",
+        "model-versioning"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You maintain an inference API with request/response Pydantic models. A downstream team relies on the OpenAPI schema. You want a test that fails if the schema changes unexpectedly (a contract test).\n\nDescribe one practical way to implement a schema contract test in CI for FastAPI, and how you would handle intentional schema changes.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Generate the OpenAPI JSON from the app in tests (e.g., `client.get('/openapi.json').json()` or `app.openapi()`), then compare it to a checked-in snapshot (golden file) using a diff/snapshot tool. In CI, fail if the schema differs. For intentional changes, update the snapshot as part of the PR and require review/approval (optionally with a changelog entry or version bump). You can also normalize non-deterministic fields (like server URLs) before comparing.",
+      "explanation": "Schema contract tests catch accidental breaking changes (renamed fields, changed types, missing error models) that can break clients. Snapshotting the OpenAPI output is a common, practical approach. Treating snapshot updates as deliberate changes forces review and supports controlled evolution of ML inference APIs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing",
+        "contract-tests",
+        "openapi",
+        "schemas"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to write async tests for a FastAPI service that calls an external embedding service over HTTP. You need to (1) avoid real network calls, and (2) still test request/response validation.\n\nWhich setup is most appropriate?",
+      "question_type": "mc",
+      "options": [
+        "A. Use `httpx.AsyncClient(app=app, base_url=\"http://test\")` to call the app, and use `respx` (or `httpx.MockTransport`) to mock outbound `httpx` calls to the embedding service.",
+        "B. Use `requests` to call `localhost:8000` and use `monkeypatch` to disable the network card.",
+        "C. Use `TestClient` and mock `asyncio` so the outbound request never runs.",
+        "D. Use `curl` in a shell script and parse output text; this is the most realistic contract test."
+      ],
+      "correct_answer": "A",
+      "explanation": "For async FastAPI endpoints, `httpx.AsyncClient` can exercise the ASGI app without a real server. Outbound HTTP calls should be mocked at the `httpx` layer (e.g., `respx` or a `MockTransport`) to keep tests deterministic and fast. Calling a live server or using shell scripts is slower and less isolated; disabling asyncio/network is not a robust technique.",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing",
+        "httpx",
+        "mocking-external-services",
+        "ml-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a FastAPI inference endpoint that depends on (a) an auth dependency and (b) a model loader dependency. In tests, you want to bypass auth and inject a lightweight fake model.\n\nGiven this app code:\n```python\nfrom fastapi import FastAPI, Depends, HTTPException\n\napp = FastAPI()\n\nclass Model:\n    def predict(self, x: str) -> str:\n        return x\n\ndef get_model() -> Model:\n    # expensive load in real life\n    return Model()\n\ndef require_token(token: str = \"\"):\n    if token != \"secret\":\n        raise HTTPException(status_code=401, detail=\"unauthorized\")\n\n@app.post(\"/predict\")\ndef predict(payload: dict, _=Depends(require_token), model: Model = Depends(get_model)):\n    return {\"y\": model.predict(payload[\"x\"])}\n```\nWhich testing approach best isolates the endpoint while still exercising FastAPI routing/validation?",
+      "question_type": "mc",
+      "options": [
+        "A. Use `app.dependency_overrides` to override `require_token` and `get_model`, then call the endpoint with `TestClient`.",
+        "B. Import and call `predict()` directly in the test with a dict payload; this is the recommended FastAPI testing approach.",
+        "C. Patch `Model.predict` with `unittest.mock.patch` and run the app with Uvicorn in a subprocess for each test.",
+        "D. Set a global variable `MODEL=FakeModel()` and modify `get_model()` to return it only during tests."
+      ],
+      "correct_answer": "A",
+      "explanation": "For FastAPI, `app.dependency_overrides` is the idiomatic way to replace dependencies (auth, model loading, DB sessions) in tests while still going through the ASGI stack (routing, dependency injection, request parsing, and response serialization). Calling the function directly skips validation/DI and can miss real integration issues. Spawning a server per test is slow and brittle. Global-state toggles often leak between tests and defeat dependency injection.",
+      "difficulty": "beginner",
+      "tags": [
+        "testing",
+        "dependency-overrides",
+        "dependency-injection",
+        "ml-inference"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You serve two endpoints:\n- POST /predict returns a small JSON with scores\n- GET /artifacts/{id} returns a binary artifact (e.g., an embedding file, image mask, or model explanation plot)\n\nWhich statement best describes how to control response schemas and response types in FastAPI?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use response_model for /predict to validate/shape output (e.g., exclude_none), and use FileResponse/StreamingResponse (or Response with media_type) for binary artifacts",
+        "B. Use response_model for both JSON and binary endpoints; FastAPI will base64-encode binaries automatically",
+        "C. Avoid response_model because it slows down inference; always return dicts without any schema",
+        "D. Use PlainTextResponse for artifacts because it supports all media types"
+      ],
+      "correct_answer": "A",
+      "explanation": "response_model is ideal for JSON responses: it documents the API, validates output shape, and can control fields via options like response_model_exclude_none. For binary/large artifacts, you typically return FileResponse or StreamingResponse (or a raw Response) with an appropriate media_type (e.g., application/octet-stream, image/png). This cleanly separates structured inference outputs from artifact delivery.",
+      "difficulty": "intermediate",
+      "tags": [
+        "response-modeling",
+        "schema-control",
+        "response-classes",
+        "file-response",
+        "streaming",
+        "exclude-none"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Performance/reliability: Your inference endpoint occasionally gets very large JSON payloads and sometimes clients hang connections. Which combination of measures is most relevant to implement at the API layer (even before model optimization)?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Increase the OpenAPI version and disable validation to speed things up",
+        "B. Configure server/client timeouts, limit request body size, apply basic rate limiting/backpressure, and avoid blocking the event loop during inference",
+        "C. Always compress responses with gzip; that prevents hangs and large requests",
+        "D. Use StreamingResponse for every endpoint; it automatically rate-limits clients"
+      ],
+      "correct_answer": "B",
+      "explanation": "Reliability issues often come from unbounded inputs, slow clients, and overloaded concurrency. Practical API-layer controls include: request size limits (at proxy/server), timeouts (server keep-alive, upstream calls), rate limiting (per key/IP), and backpressure/concurrency limits for inference. Also ensure blocking inference doesn’t block the event loop. Compression can help bandwidth but doesn’t solve oversized requests or runaway concurrency by itself.",
+      "difficulty": "advanced",
+      "tags": [
+        "performance",
+        "reliability",
+        "timeouts",
+        "rate-limiting",
+        "request-size",
+        "backpressure",
+        "event-loop"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to load a model once and share it across requests, but also want request-scoped dependencies (e.g., auth context, request ID). What’s an idiomatic FastAPI dependency-injection setup for this, and what’s the difference between app-scoped and request-scoped dependencies?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Idiomatic setup:\n\n- Load heavy resources (model, tokenizer, GPU session, DB clients) at startup/lifespan and store them on app.state (or in a singleton container).\n- Provide a dependency like get_model(request: Request) that returns request.app.state.model. This dependency is cheap per request but the underlying model is shared.\n- Use separate request-scoped dependencies for per-request data: e.g., get_current_user(token=Depends(bearer_scheme)), get_request_id(request: Request), etc.\n\nDifference:\n- App-scoped resources live for the process lifetime (created once, reused); they must be thread-safe and cleaned up on shutdown.\n- Request-scoped dependencies are created/resolved per request and can safely hold request-specific context (auth claims, correlation IDs, per-request timers) without leaking across requests.",
+      "explanation": "ML services commonly need both: a shared model for performance and per-request context for security/observability. FastAPI’s dependency system makes it easy to compose these concerns cleanly without global variables, while lifespan/app.state provides a reliable place for heavyweight initialization and teardown.",
+      "difficulty": "beginner",
+      "tags": [
+        "dependencies",
+        "di",
+        "app-state",
+        "request-scope",
+        "model-sharing",
+        "auth-hooks"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your /predict endpoint may fail in several ways: invalid input, model not loaded, upstream feature store timeout, or internal inference errors. Propose an error-handling approach in FastAPI that yields consistent error responses and appropriate HTTP status codes. Include how you’d handle validation errors.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A practical approach:\n\n- Use Pydantic request models so most input issues become automatic 422 Unprocessable Entity responses.\n- Define a consistent error schema (e.g., {\"error\": {\"code\": str, \"message\": str, \"request_id\": str, \"details\": ...}}).\n- For expected failures, raise HTTPException with specific status codes:\n  - 400 for semantically invalid requests not caught by schema (e.g., unsupported model name)\n  - 401/403 for auth issues\n  - 408/504 for timeouts (or 503 if a dependency is unavailable)\n  - 429 for rate limiting\n  - 503 if model not loaded / warming up / overloaded\n- Add exception handlers:\n  - @app.exception_handler(HTTPException) to wrap/normalize into your error schema\n  - @app.exception_handler(RequestValidationError) to map FastAPI’s 422 payload into your schema while preserving field-level info\n  - A catch-all handler for Exception returning 500 with a safe message, logging the stack trace with request_id\n\nThis keeps client behavior predictable and improves debuggability.",
+      "explanation": "Inference APIs benefit from predictable error formats so clients can implement retries/backoff and show useful messages. FastAPI already provides strong validation via Pydantic (422). Custom exception handlers let you normalize different failure modes into one schema while still using correct HTTP semantics.",
+      "difficulty": "intermediate",
+      "tags": [
+        "error-handling",
+        "httpexception",
+        "validation",
+        "status-codes",
+        "consistent-schema"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this endpoint:\n\n```python\nfrom fastapi import FastAPI\nimport time\n\napp = FastAPI()\n\n@app.post(\"/predict\")\nasync def predict(payload: dict):\n    # CPU-bound / blocking model call\n    time.sleep(2)\n    return {\"y\": 1}\n```\n\nIn production under concurrent load, what’s the main issue and the best practical fix?\n",
+      "question_type": "mc",
+      "options": [
+        "A. No issue: async def automatically makes time.sleep non-blocking",
+        "B. The blocking call will block the event loop; use a threadpool (run_in_threadpool/anyio.to_thread) or make the endpoint sync def so it runs in a worker thread",
+        "C. The fix is to add more await keywords until it becomes non-blocking",
+        "D. The fix is to move time.sleep into middleware so it runs outside the event loop"
+      ],
+      "correct_answer": "B",
+      "explanation": "Declaring an endpoint async doesn’t make blocking code non-blocking. time.sleep (and many ML library calls) can block the event loop, reducing concurrency and causing timeouts. Practical fixes: (1) make the endpoint a normal def so FastAPI runs it in a threadpool, or (2) keep async def but offload blocking work via run_in_threadpool/anyio.to_thread. For GPU/CPU inference, you also often need to control concurrency explicitly to avoid oversubscription.",
+      "difficulty": "intermediate",
+      "tags": [
+        "async-vs-sync",
+        "concurrency",
+        "event-loop",
+        "threadpool",
+        "inference-performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building basic observability into a FastAPI inference service. You want to attach a request ID, log latency, and enable CORS for a web client. Where should these concerns typically live, and what FastAPI mechanism is commonly used?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Put everything in each endpoint function; middleware is only for authentication",
+        "B. Use middleware for cross-cutting concerns (request ID, timing, logging) and add CORSMiddleware for CORS configuration",
+        "C. Use Pydantic models to generate request IDs and compute latency",
+        "D. Use background tasks to log after the response is sent; CORS must be handled by the client"
+      ],
+      "correct_answer": "B",
+      "explanation": "Cross-cutting concerns like request IDs, timing, structured logging, and basic tracing hooks are typically implemented as middleware so they apply uniformly across endpoints. FastAPI/Starlette provides CORSMiddleware for standard CORS headers. This keeps endpoint code focused on inference logic while still enabling consistent observability and operational hygiene.",
+      "difficulty": "beginner",
+      "tags": [
+        "middleware",
+        "observability",
+        "logging",
+        "request-id",
+        "timing",
+        "cors"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to stream tokens from an LLM as they are generated (or stream large outputs in chunks) rather than waiting for the full response. Which FastAPI response type is most appropriate, and when is streaming preferable to returning JSON?\n",
+      "question_type": "mc",
+      "options": [
+        "A. JSONResponse; streaming is not supported in FastAPI",
+        "B. StreamingResponse; use it when you can yield chunks incrementally (tokens/log lines/bytes) to reduce latency and memory pressure",
+        "C. FileResponse; it is required for any response larger than 1MB",
+        "D. PlainTextResponse; it automatically streams by default"
+      ],
+      "correct_answer": "B",
+      "explanation": "StreamingResponse lets you return an iterator/async generator that yields bytes/strings incrementally. This is ideal for token streaming (chat completions), long-running generation with partial results, or large artifacts where buffering the entire output would increase memory and delay time-to-first-byte. JSON is better when you need a single structured object at the end (e.g., a small prediction with metadata) or when clients require a single JSON document.",
+      "difficulty": "intermediate",
+      "tags": [
+        "streaming",
+        "streamingresponse",
+        "llm",
+        "chunked-output",
+        "response-classes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a long-running inference (30–120 seconds) such as batch embedding generation or multi-step retrieval + reranking. You want the API to return quickly with a job_id and let clients poll for status/results. Describe a practical FastAPI design for this pattern (endpoints, background work, and where state is stored).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A common design is:\n\n- POST /jobs (or /predict-async): validate request, create a job_id, persist a job record with status='queued' (e.g., Redis/Postgres/in-memory for demos), then enqueue work.\n- A worker executes the inference and updates the job record to 'running' then 'succeeded' (or 'failed' with error details), storing output location (DB row, object storage key, etc.).\n- GET /jobs/{job_id}: returns status + progress metadata; if succeeded, include result or a link to fetch it.\n- Optionally GET /jobs/{job_id}/result to download artifacts.\n\nImplementation options:\n- For simple cases, FastAPI BackgroundTasks can kick off a function after returning the response, but it runs in the same process and is not durable across restarts.\n- For production, use a queue/worker system (Celery/RQ/Arq/Redis queue, or a separate service) so jobs survive API restarts and you can scale workers independently.\n\nKey points: return 202 Accepted for queued jobs, store job state in a shared backend, and ensure idempotency/retries where appropriate.",
+      "explanation": "The job pattern avoids tying up HTTP connections and server workers for long inferences, improves reliability (retries, persistence), and enables scaling inference workers separately from the API. BackgroundTasks is fine for lightweight, best-effort tasks but is not a true queue. Polling endpoints and a shared job store (Redis/DB) are the minimal practical pieces most teams implement.",
+      "difficulty": "intermediate",
+      "tags": [
+        "background-tasks",
+        "async-jobs",
+        "queue",
+        "job-id",
+        "reliability",
+        "inference-patterns"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to protect a POST /predict endpoint with a Bearer token (e.g., JWT or opaque token). You want it to show up in the generated OpenAPI docs and be enforced via a dependency. Which approach best fits FastAPI conventions?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Manually parse the Authorization header inside the endpoint and return 200 with an error message if invalid",
+        "B. Use OAuth2PasswordBearer (or HTTPBearer) security dependency and raise HTTPException(status_code=401/403) on invalid tokens",
+        "C. Put the token in the request body and validate it with Pydantic",
+        "D. Add token checks only in middleware because dependencies can’t access headers"
+      ],
+      "correct_answer": "B",
+      "explanation": "FastAPI’s security utilities (e.g., HTTPBearer or OAuth2PasswordBearer) integrate with dependency injection and OpenAPI so the docs show an authorization scheme. The dependency can extract the Authorization header, validate the token, and raise HTTPException with proper status codes (401 for missing/invalid auth, 403 for authenticated-but-not-authorized). This is the minimal, idiomatic way to protect /predict without building a full auth system.",
+      "difficulty": "beginner",
+      "tags": [
+        "auth",
+        "authorization",
+        "dependencies",
+        "openapi",
+        "bearer-token",
+        "security"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re deploying a FastAPI service that serves a GPU-based model. You want to (1) load the model once on startup, (2) optionally run a warm-up inference, and (3) reliably release GPU resources on shutdown. Which FastAPI pattern is most appropriate?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Load the model inside each /predict request handler and rely on Python GC to free GPU memory after the response",
+        "B. Use FastAPI lifespan (or startup/shutdown events) to initialize and tear down the model/resources, storing them on app.state",
+        "C. Use Pydantic model validators to load the model when request bodies are parsed",
+        "D. Use middleware to load the model on the first request and unload it after each request"
+      ],
+      "correct_answer": "B",
+      "explanation": "For ML inference services, you typically want a single model instance per process, created at application startup and cleaned up at shutdown. FastAPI’s lifespan (recommended) or startup/shutdown events let you allocate heavy resources (GPU model, tokenizer, thread pools, DB clients), optionally warm the model (e.g., a dummy forward pass to trigger kernel compilation), and then release resources deterministically. Storing the model on app.state (or in a dependency that reads from app.state) avoids re-loading per request and improves latency and stability.",
+      "difficulty": "beginner",
+      "tags": [
+        "lifecycle",
+        "startup-shutdown",
+        "lifespan",
+        "gpu-resources",
+        "warmup",
+        "app-state"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your model can return a very large output (e.g., per-token logits or large embeddings). Which approach is generally best to keep the API reliable and efficient?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Always return the full raw logits for every request to maximize flexibility",
+        "B. Compress the response by base64-encoding the NumPy array inside JSON",
+        "C. Return only what the client needs (e.g., top-k, pooled embedding), and consider pagination/chunking or storing large artifacts externally and returning a reference",
+        "D. Convert the output to a string with `str(array)` to avoid JSON serialization issues"
+      ],
+      "correct_answer": "C",
+      "explanation": "Large outputs can create latency, memory, and bandwidth issues and may exceed proxy limits. A practical ML-serving pattern is to reduce outputs (top-k, summaries), or move large artifacts to object storage/DB and return a URL/id. Base64-in-JSON increases size and CPU overhead; `str(array)` is not machine-friendly and loses structure; always returning raw logits is rarely necessary and can be costly.",
+      "difficulty": "advanced",
+      "tags": [
+        "serialization",
+        "large-outputs",
+        "inference-service",
+        "api-design"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a `POST /embed-text` endpoint for NLP that accepts either:\n- a raw text form field (`text`) via `application/x-www-form-urlencoded`, OR\n- a `.txt` file upload via `multipart/form-data`\n\nReturn a JSON response with an embedding vector (you can stub it) and include basic safety: limit input size and avoid reading unbounded data.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom typing import List, Optional\nfrom fastapi import FastAPI, UploadFile, File, Form, HTTPException\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nMAX_CHARS = 50_000\nMAX_BYTES = 200_000\n\nclass EmbedResponse(BaseModel):\n    embedding: List[float]\n\ndef fake_embed(s: str) -> List[float]:\n    # stub embedding\n    return [float(len(s)), 0.0, 1.0]\n\n@app.post(\"/embed-text\", response_model=EmbedResponse)\nasync def embed_text(\n    text: Optional[str] = Form(None),\n    file: Optional[UploadFile] = File(None),\n):\n    if (text is None) == (file is None):\n        raise HTTPException(status_code=400, detail=\"Provide exactly one of: text or file\")\n\n    if text is not None:\n        if len(text) > MAX_CHARS:\n            raise HTTPException(status_code=413, detail=\"Text too large\")\n        content = text\n    else:\n        # Read at most MAX_BYTES to avoid unbounded memory usage\n        chunk = await file.read(MAX_BYTES + 1)\n        if len(chunk) > MAX_BYTES:\n            raise HTTPException(status_code=413, detail=\"File too large\")\n        try:\n            content = chunk.decode(\"utf-8\")\n        except UnicodeDecodeError:\n            raise HTTPException(status_code=400, detail=\"File must be UTF-8 text\")\n        if len(content) > MAX_CHARS:\n            raise HTTPException(status_code=413, detail=\"Text too large\")\n\n    return {\"embedding\": fake_embed(content)}\n```",
+      "explanation": "AI/ML endpoints often accept text either directly or as a file. Using `Form(...)` and `File(...)` matches how clients send data. The safety measures (bounded reads, size checks, decoding validation) prevent memory pressure and ambiguous input handling—common production concerns for inference APIs.",
+      "difficulty": "advanced",
+      "tags": [
+        "file-uploads",
+        "multipart",
+        "form-data",
+        "nlp-inference",
+        "safe-io"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a CV endpoint that accepts an uploaded image via `multipart/form-data` and returns a label. Which FastAPI parameter type is most appropriate for receiving the file?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `image: bytes` (no additional imports needed)",
+        "B. `image: UploadFile = File(...)`",
+        "C. `image: str = Body(...)`",
+        "D. `image: dict = Form(...)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`UploadFile = File(...)` is the standard FastAPI approach for multipart uploads. It provides a file-like interface and metadata (filename, content type), and it is more memory-friendly than reading the entire file into memory immediately. `bytes` can work in some cases but is less flexible and can encourage loading large files eagerly. `Body` is for JSON bodies, and `Form` is for form fields, not file streams.",
+      "difficulty": "beginner",
+      "tags": [
+        "file-uploads",
+        "multipart",
+        "cv-inference",
+        "fastapi-fundamentals"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Implement a `POST /predict_proba` endpoint that returns probabilities for a batch. Requirements:\n- Request: `{ \"features\": [[...], [...]] }`\n- Response: `{ \"proba\": [[0.1, 0.9], [0.8, 0.2]] }`\n- Ensure the response is JSON-serializable even if the model returns a NumPy array.\n\nProvide the FastAPI + Pydantic code (model can be a stub).\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom typing import List\nimport numpy as np\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass ProbaRequest(BaseModel):\n    features: List[List[float]]\n\nclass ProbaResponse(BaseModel):\n    proba: List[List[float]]\n\n@app.post(\"/predict_proba\", response_model=ProbaResponse)\ndef predict_proba(req: ProbaRequest):\n    # Stub: pretend model outputs a NumPy array of shape (batch, n_classes)\n    x = np.asarray(req.features, dtype=np.float32)\n    # dummy probabilities\n    out = np.stack([0.1 * np.ones(len(x)), 0.9 * np.ones(len(x))], axis=1).astype(np.float32)\n    return {\"proba\": out.tolist()}\n```",
+      "explanation": "Batch probability outputs are a common ML serving pattern. The key practical point is converting NumPy arrays to Python lists (`tolist()`) so JSON encoding is safe. Declaring `response_model` documents the shape and catches mistakes (e.g., returning a 1D list when clients expect 2D).",
+      "difficulty": "intermediate",
+      "tags": [
+        "endpoints",
+        "pydantic",
+        "batch-inference",
+        "serialization",
+        "numpy"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an endpoint that returns a NumPy scalar and a NumPy array:\n\n```python\nimport numpy as np\n\n@app.get(\"/demo\")\ndef demo():\n    score = np.float32(0.9)\n    vec = np.array([1, 2, 3], dtype=np.int64)\n    return {\"score\": score, \"vec\": vec}\n```\n\nWhat is the most likely outcome and best fix?\n",
+      "question_type": "mc",
+      "options": [
+        "A. It will always work because FastAPI automatically converts all NumPy types to JSON; no fix needed",
+        "B. It will raise a JSON serialization error; convert NumPy values to Python types (e.g., `float(score)` and `vec.tolist()`) before returning",
+        "C. It will return the raw binary representation of the array; set `response_class=Response`",
+        "D. It will silently drop the NumPy fields; add `@app.serializer` to keep them"
+      ],
+      "correct_answer": "B",
+      "explanation": "Standard JSON encoders don’t know how to serialize many NumPy types (e.g., `np.float32`, `np.ndarray`). A common ML API fix is to convert scalars with `float(...)`/`int(...)` and arrays with `.tolist()` (or use `jsonable_encoder` with custom encoders). This prevents runtime 500 errors during response serialization.",
+      "difficulty": "intermediate",
+      "tags": [
+        "serialization",
+        "numpy",
+        "json",
+        "inference-output"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a request schema for tabular inference with metadata. The payload should look like:\n\n```json\n{\n  \"features\": [[1.2, 3.4], [5.6, 7.8]],\n  \"metadata\": {\"request_id\": \"abc\", \"model_version\": \"v1\"}\n}\n```\n\nWhich Pydantic model definition is best?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `class Req(BaseModel): features: list; metadata: dict`",
+        "B. `class Meta(BaseModel): request_id: str; model_version: str\\nclass Req(BaseModel): features: List[List[float]]; metadata: Meta`",
+        "C. `class Req(BaseModel): features: List[float]; metadata: List[str]`",
+        "D. `class Req(BaseModel): features: List[List[int]]; metadata: str`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Option B uses precise type hints and a nested Pydantic model for `metadata`, which provides strong validation and clear API documentation. This is a common ML pattern: a batch of feature vectors (`List[List[float]]`) plus structured metadata. Option A is too generic and loses validation/documentation quality. Options C/D don’t match the required JSON shape or numeric types.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pydantic",
+        "nested-schemas",
+        "type-hints",
+        "ml-payload"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain, at a high level, what happens in FastAPI from the moment a request hits `POST /predict` until a JSON response is returned. Mention validation and serialization.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "At a high level: (1) the ASGI server (e.g., Uvicorn) receives the HTTP request and hands it to the FastAPI app/router; (2) FastAPI matches the request path and method to a route function; (3) it parses inputs (path/query/body), and if the body is declared as a Pydantic model it validates/coerces types (returning a 422 error on validation failure); (4) dependency injection (if used) runs to provide resources like a loaded model; (5) the endpoint function executes and produces a Python object; (6) FastAPI serializes the return value to JSON (using `jsonable_encoder` internally) and applies `response_model` validation/filtering if configured; (7) it sends the HTTP response with status code and headers back to the client.",
+      "explanation": "This lifecycle understanding matters for ML services because many production issues are input-shape/type problems (caught at validation) and output serialization issues (e.g., NumPy types). Knowing where 422/500 errors originate helps debugging and designing robust inference endpoints.",
+      "difficulty": "intermediate",
+      "tags": [
+        "request-lifecycle",
+        "validation",
+        "serialization",
+        "inference-service"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want an endpoint to fetch a model by name and optionally control the returned verbosity.\n\nWhich FastAPI function signature best matches:\n- Path parameter: `model_name` in `/models/{model_name}`\n- Optional query parameter: `verbose` defaulting to `false`\n",
+      "question_type": "mc",
+      "options": [
+        "A. `@app.get(\"/models\")\\ndef get_model(model_name: str, verbose: bool = False): ...`",
+        "B. `@app.get(\"/models/{model_name}\")\\ndef get_model(model_name: str, verbose: bool = False): ...`",
+        "C. `@app.post(\"/models/{model_name}\")\\ndef get_model(model_name: str, verbose: str): ...`",
+        "D. `@app.get(\"/models/{model_name}\")\\ndef get_model(model_name: int, verbose: bool = \"false\"): ...`"
+      ],
+      "correct_answer": "B",
+      "explanation": "In FastAPI, variables in the route path (e.g., `{model_name}`) become path parameters, and additional function arguments not in the path are treated as query parameters by default. `verbose: bool = False` creates an optional query parameter with a default. Option A lacks the path parameter in the route. Option C uses POST (not necessarily wrong, but the question asks for fetching) and uses `verbose` as string. Option D mismatches types/defaults.",
+      "difficulty": "beginner",
+      "tags": [
+        "endpoints",
+        "http-methods",
+        "path-parameters",
+        "query-parameters"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a minimal FastAPI app for an ML inference service with:\n- `app = FastAPI()`\n- a `GET /health` endpoint returning `{ \"status\": \"ok\" }`\n- a `POST /predict` endpoint that accepts JSON `{ \"features\": [..] }` and returns `{ \"prediction\": <number> }`\n\nYou can use a dummy model like `sum(features)`.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom typing import List\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass PredictRequest(BaseModel):\n    features: List[float]\n\nclass PredictResponse(BaseModel):\n    prediction: float\n\n@app.get(\"/health\")\ndef health():\n    return {\"status\": \"ok\"}\n\n@app.post(\"/predict\", response_model=PredictResponse)\ndef predict(req: PredictRequest):\n    pred = float(sum(req.features))\n    return {\"prediction\": pred}\n```",
+      "explanation": "A typical inference service has a lightweight health endpoint and a prediction endpoint. Using Pydantic `BaseModel` makes the request schema explicit and validated (e.g., `features` must be a list of numbers). Returning a plain dict is fine; FastAPI serializes it to JSON. `response_model` documents and validates the response shape, which is useful for clients and for catching accidental non-serializable outputs.",
+      "difficulty": "beginner",
+      "tags": [
+        "fastapi-fundamentals",
+        "endpoints",
+        "http-methods",
+        "pydantic",
+        "basic-app-structure"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an AI/ML inference service, what is the most accurate reason to use FastAPI?\n",
+      "question_type": "mc",
+      "options": [
+        "A. It automatically trains ML models on incoming requests and stores weights in a database",
+        "B. It provides a simple, type-hinted way to build HTTP APIs with request validation and good performance, making it suitable for model inference endpoints",
+        "C. It is the only Python framework that can serve deep learning models on GPUs",
+        "D. It replaces Docker/Kubernetes and handles deployment and autoscaling by itself"
+      ],
+      "correct_answer": "B",
+      "explanation": "FastAPI is a Python web framework designed for building APIs. For ML inference, its strengths are: (1) easy endpoint definition (GET/POST), (2) Pydantic-based validation/serialization using type hints (reducing input bugs), (3) strong performance (ASGI, async support), and (4) automatic OpenAPI/Swagger docs that help consumers test and integrate with the model service. It does not train models, is not GPU-exclusive, and does not replace deployment tooling.",
+      "difficulty": "beginner",
+      "tags": [
+        "fastapi-fundamentals",
+        "inference-service",
+        "openapi",
+        "performance"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    }
+  ]
+}

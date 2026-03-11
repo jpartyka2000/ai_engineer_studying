@@ -2,11 +2,228 @@
   "metadata": {
     "subject_slug": "gpu",
     "subject_name": "GPU Computing",
-    "exported_at": "2026-03-07T22:49:44.540970",
-    "question_count": 108,
+    "exported_at": "2026-03-11T19:42:09.711653",
+    "question_count": 119,
     "format_version": "1.0"
   },
   "questions": [
+    {
+      "question_text": "Give me a summary of all the supported dtypes for GPUs, and what they are.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Here's a comprehensive overview of GPU-supported data types, particularly relevant for NVIDIA GPUs and PyTorch:\n\n**Full Precision (32-bit):**\n- **FP32 (float32)**: Standard single-precision floating point. 1 sign bit, 8 exponent bits, 23 mantissa bits. This is the default dtype for most deep learning operations and offers good numerical stability.\n\n**Half Precision (16-bit):**\n- **FP16 (float16)**: Half-precision floating point. 1 sign bit, 5 exponent bits, 10 mantissa bits. Offers 2x memory savings and faster computation on Tensor Cores, but has limited dynamic range (can overflow/underflow more easily).\n- **BF16 (bfloat16)**: Brain floating point, developed by Google. 1 sign bit, 8 exponent bits, 7 mantissa bits. Same dynamic range as FP32 (same exponent bits) but less precision. Great for training because it rarely overflows. Supported on Ampere (A100) and newer GPUs.\n\n**Special Formats:**\n- **TF32 (TensorFloat-32)**: NVIDIA's format for Ampere+. Uses 19 bits internally (1 sign, 8 exponent, 10 mantissa). Automatically used by Tensor Cores when doing FP32 operations—you get speedups without code changes. Not a storage format, just a compute format.\n\n**8-bit Formats (Emerging):**\n- **FP8 (E4M3 and E5M2)**: Two variants available on Hopper (H100) GPUs. E4M3 has more precision (for forward pass), E5M2 has more range (for gradients). Used for inference and increasingly for training.\n- **INT8**: 8-bit integer, commonly used for quantized inference. Requires calibration to map floating-point ranges to integers.\n\n**Double Precision:**\n- **FP64 (float64)**: Double precision, 64 bits. Used for scientific computing requiring high precision. Consumer GPUs have limited FP64 throughput; data center GPUs (A100, H100) have better support.\n\n**Integer Types:**\n- **INT32, INT16, INT8, INT4**: Various integer precisions. INT8 and INT4 are popular for quantized inference to reduce memory and increase throughput.",
+      "explanation": "Here's a comprehensive overview of GPU-supported data types, particularly relevant for NVIDIA GPUs and PyTorch:\n\n**Full Precision (32-bit):**\n- **FP32 (float32)**: Standard single-precision floating point. 1 sign bit, 8 exponent bits, 23 mantissa bits. This is the default dtype for most deep learning operations and offers good numerical stability.\n\n**Half Precision (16-bit):**\n- **FP16 (float16)**: Half-precision floating point. 1 sign bit, 5 exponent bits, 10 mantissa bits. Offers 2x memory savings and faster computation on Tensor Cores, but has limited dynamic range (can overflow/underflow more easily).\n- **BF16 (bfloat16)**: Brain floating point, developed by Google. 1 sign bit, 8 exponent bits, 7 mantissa bits. Same dynamic range as FP32 (same exponent bits) but less precision. Great for training because it rarely overflows. Supported on Ampere (A100) and newer GPUs.\n\n**Special Formats:**\n- **TF32 (TensorFloat-32)**: NVIDIA's format for Ampere+. Uses 19 bits internally (1 sign, 8 exponent, 10 mantissa). Automatically used by Tensor Cores when doing FP32 operations—you get speedups without code changes. Not a storage format, just a compute format.\n\n**8-bit Formats (Emerging):**\n- **FP8 (E4M3 and E5M2)**: Two variants available on Hopper (H100) GPUs. E4M3 has more precision (for forward pass), E5M2 has more range (for gradients). Used for inference and increasingly for training.\n- **INT8**: 8-bit integer, commonly used for quantized inference. Requires calibration to map floating-point ranges to integers.\n\n**Double Precision:**\n- **FP64 (float64)**: Double precision, 64 bits. Used for scientific computing requiring high precision. Consumer GPUs have limited FP64 throughput; data center GPUs (A100, H100) have better support.\n\n**Integer Types:**\n- **INT32, INT16, INT8, INT4**: Various integer precisions. INT8 and INT4 are popular for quantized inference to reduce memory and increase throughput.\n\nKey Points:\n• FP32 is the default, offering stability; FP16/BF16 are half-precision formats that enable Tensor Core acceleration\n• BF16 has the same dynamic range as FP32 (8 exponent bits) making it safer for training than FP16\n• TF32 is a compute-only format on Ampere+ that automatically accelerates FP32 matmuls without code changes\n• FP8 (on Hopper GPUs) and INT8 are used for quantized inference and emerging training techniques\n• For Tensor Core usage: FP16, BF16, TF32, and FP8 are the key formats that provide acceleration",
+      "difficulty": "beginner",
+      "tags": [
+        "tensor-cores",
+        "mixed-precision",
+        "autocast",
+        "matmul",
+        "convolution",
+        "performance",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What is a GPU synchronization point?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A GPU synchronization point is a moment in your code where the CPU (host) must wait for the GPU (device) to complete all its pending operations before proceeding. Normally, GPU operations are asynchronous - when you call a GPU function from Python, the CPU immediately continues to the next line of code while the GPU works in the background. This allows the CPU to queue up many GPU operations, keeping the GPU busy and maximizing throughput.\n\nHowever, certain operations force the CPU to stop and wait for the GPU to finish everything it's currently doing. This is called a 'sync point' or 'synchronization barrier.' Common examples include:\n\n1. **Calling `.item()`** - When you convert a GPU tensor to a Python scalar, the CPU needs the actual computed value, so it must wait for all GPU computations to complete.\n\n2. **Calling `.cpu()` or `.numpy()`** - Transferring data from GPU to CPU memory requires the data to actually exist, forcing a sync.\n\n3. **Printing GPU tensor values** - Python needs the actual numbers to display.\n\n4. **Explicit `torch.cuda.synchronize()`** - Manually forces a sync.\n\nThe problem is that sync points break the asynchronous pipeline. Instead of the CPU staying ahead and keeping the GPU fed with work, the CPU sits idle waiting. This creates 'bubbles' in the execution timeline where the GPU might briefly have nothing to do, reducing overall throughput.",
+      "explanation": "A GPU synchronization point is a moment in your code where the CPU (host) must wait for the GPU (device) to complete all its pending operations before proceeding. Normally, GPU operations are asynchronous - when you call a GPU function from Python, the CPU immediately continues to the next line of code while the GPU works in the background. This allows the CPU to queue up many GPU operations, keeping the GPU busy and maximizing throughput.\n\nHowever, certain operations force the CPU to stop and wait for the GPU to finish everything it's currently doing. This is called a 'sync point' or 'synchronization barrier.' Common examples include:\n\n1. **Calling `.item()`** - When you convert a GPU tensor to a Python scalar, the CPU needs the actual computed value, so it must wait for all GPU computations to complete.\n\n2. **Calling `.cpu()` or `.numpy()`** - Transferring data from GPU to CPU memory requires the data to actually exist, forcing a sync.\n\n3. **Printing GPU tensor values** - Python needs the actual numbers to display.\n\n4. **Explicit `torch.cuda.synchronize()`** - Manually forces a sync.\n\nThe problem is that sync points break the asynchronous pipeline. Instead of the CPU staying ahead and keeping the GPU fed with work, the CPU sits idle waiting. This creates 'bubbles' in the execution timeline where the GPU might briefly have nothing to do, reducing overall throughput.\n\nKey Points:\n• GPU operations are normally asynchronous - CPU queues work and continues without waiting\n• A sync point forces the CPU to wait until all pending GPU operations complete\n• Common sync triggers: .item(), .cpu(), .numpy(), printing tensor values, torch.cuda.synchronize()\n• Sync points break the parallel execution pipeline and reduce throughput\n• Mitigation strategies: log less frequently, accumulate values on GPU, use CUDA events for timing",
+      "difficulty": "beginner",
+      "tags": [
+        "pytorch-performance",
+        "sync",
+        "async-execution",
+        "logging-footguns",
+        "device-host-transfer",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Which shapes/alignments are Tensor core friendly?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Tensor Cores operate on small matrix tiles and achieve best performance when your tensor dimensions align with their native tile sizes:\n\n**Dimension Alignment Rules:**\n- For FP16/BF16: Dimensions should be multiples of **8** (minimum) or ideally **16**\n- For INT8: Dimensions should be multiples of **16**\n- For TF32: Dimensions should be multiples of **8**\n- For FP8: Dimensions should be multiples of **16**\n\n**Practical Guidelines for Matrix Multiplication (M×K × K×N = M×N):**\n1. **M, N, K all divisible by 8 or 16** - This is the most important rule\n2. **Larger is better** - Very small matrices may not benefit from Tensor Cores due to overhead\n3. **Powers of 2 are ideal** - e.g., 256, 512, 1024, 2048\n\n**Memory Alignment:**\n- Tensors should be contiguous in memory\n- Starting addresses should be 16-byte aligned (usually automatic in PyTorch)\n- Row-major (C-contiguous) or column-major layouts both work, but consistency matters\n\n**Common Pitfalls:**\n- Batch sizes, hidden dimensions, and vocabulary sizes not divisible by 8\n- Sequence lengths that are odd numbers\n- Using `.view()` or slicing that creates non-contiguous tensors\n\n**Example - Good vs Bad:**\n```python\n# Good: 512 × 768 × 768 × 1024 (all divisible by 8)\nnn.Linear(768, 1024)  # with batch_size=512\n\n# Bad: 512 × 768 × 768 × 1000 (1000 not divisible by 8)\nnn.Linear(768, 1000)  # Pad to 1024 if possible\n```",
+      "explanation": "Tensor Cores operate on small matrix tiles and achieve best performance when your tensor dimensions align with their native tile sizes:\n\n**Dimension Alignment Rules:**\n- For FP16/BF16: Dimensions should be multiples of **8** (minimum) or ideally **16**\n- For INT8: Dimensions should be multiples of **16**\n- For TF32: Dimensions should be multiples of **8**\n- For FP8: Dimensions should be multiples of **16**\n\n**Practical Guidelines for Matrix Multiplication (M×K × K×N = M×N):**\n1. **M, N, K all divisible by 8 or 16** - This is the most important rule\n2. **Larger is better** - Very small matrices may not benefit from Tensor Cores due to overhead\n3. **Powers of 2 are ideal** - e.g., 256, 512, 1024, 2048\n\n**Memory Alignment:**\n- Tensors should be contiguous in memory\n- Starting addresses should be 16-byte aligned (usually automatic in PyTorch)\n- Row-major (C-contiguous) or column-major layouts both work, but consistency matters\n\n**Common Pitfalls:**\n- Batch sizes, hidden dimensions, and vocabulary sizes not divisible by 8\n- Sequence lengths that are odd numbers\n- Using `.view()` or slicing that creates non-contiguous tensors\n\n**Example - Good vs Bad:**\n```python\n# Good: 512 × 768 × 768 × 1024 (all divisible by 8)\nnn.Linear(768, 1024)  # with batch_size=512\n\n# Bad: 512 × 768 × 768 × 1000 (1000 not divisible by 8)\nnn.Linear(768, 1000)  # Pad to 1024 if possible\n```\n\nKey Points:\n• Multiples of 8 (FP16/BF16/TF32) or 16 (INT8/FP8) for all matrix dimensions\n• This applies to batch size, sequence length, hidden dimensions, and output features\n• Contiguous memory layout is required - watch out for tensor views and slices\n• Padding dimensions to friendly sizes often provides net speedup despite extra computation\n• Use `torch.backends.cudnn.benchmark = True` to let cuDNN auto-tune for your shapes",
+      "difficulty": "beginner",
+      "tags": [
+        "tf32",
+        "ampere",
+        "pytorch",
+        "tensor-cores",
+        "matmul",
+        "convolution",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What are the supported dtypes for Tensor cores?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Tensor Cores support various data types depending on the GPU architecture generation:\n\n**Volta (V100) - First Generation:**\n- FP16 (half precision) with FP16 or FP32 accumulation\n\n**Turing (T4, RTX 20xx):**\n- FP16 with FP16/FP32 accumulation\n- INT8 and INT4 for inference\n\n**Ampere (A100, RTX 30xx):**\n- FP16, BF16 (bfloat16) with FP16/FP32 accumulation\n- TF32 (TensorFloat-32) - operates on FP32 inputs internally\n- INT8, INT4, INT1 for inference\n- FP64 (double precision) Tensor Cores on A100\n\n**Hopper (H100) and Ada Lovelace (RTX 40xx):**\n- All previous types plus FP8 (E4M3 and E5M2 formats)\n- Enhanced sparsity support\n\nIn PyTorch, you typically use `torch.float16`, `torch.bfloat16`, or `torch.float32` (with TF32 mode enabled) to leverage Tensor Cores. The `autocast()` context manager automatically selects FP16 or BF16 for compatible operations.",
+      "explanation": "Tensor Cores support various data types depending on the GPU architecture generation:\n\n**Volta (V100) - First Generation:**\n- FP16 (half precision) with FP16 or FP32 accumulation\n\n**Turing (T4, RTX 20xx):**\n- FP16 with FP16/FP32 accumulation\n- INT8 and INT4 for inference\n\n**Ampere (A100, RTX 30xx):**\n- FP16, BF16 (bfloat16) with FP16/FP32 accumulation\n- TF32 (TensorFloat-32) - operates on FP32 inputs internally\n- INT8, INT4, INT1 for inference\n- FP64 (double precision) Tensor Cores on A100\n\n**Hopper (H100) and Ada Lovelace (RTX 40xx):**\n- All previous types plus FP8 (E4M3 and E5M2 formats)\n- Enhanced sparsity support\n\nIn PyTorch, you typically use `torch.float16`, `torch.bfloat16`, or `torch.float32` (with TF32 mode enabled) to leverage Tensor Cores. The `autocast()` context manager automatically selects FP16 or BF16 for compatible operations.\n\nKey Points:\n• FP16 is universally supported across all Tensor Core generations (Volta onwards)\n• BF16 support starts with Ampere - preferred for training due to larger exponent range\n• TF32 is unique - it's a compute mode for FP32 tensors, not a storage dtype\n• FP8 is the newest addition (Hopper/Ada) enabling even faster training with proper scaling\n• INT8/INT4 are primarily used for inference/quantization workloads",
+      "difficulty": "beginner",
+      "tags": [
+        "tf32",
+        "ampere",
+        "pytorch",
+        "tensor-cores",
+        "matmul",
+        "convolution",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What are the main differences between a Tensor Core and a CUDA core?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "CUDA cores and Tensor Cores serve fundamentally different purposes in NVIDIA GPUs. CUDA cores are general-purpose processing units that handle scalar operations - each CUDA core performs one floating-point or integer operation per clock cycle (like a single multiply or add). They're versatile and can handle any type of computation, making them suitable for general parallel workloads.\n\nTensor Cores, introduced with the Volta architecture (2017), are specialized hardware units designed specifically for matrix operations. A single Tensor Core can perform a matrix multiply-accumulate operation on small matrices (typically 4x4) in a single clock cycle. For example, one Tensor Core operation computes D = A × B + C where A, B, C, and D are small matrices - this represents dozens of fused multiply-add operations simultaneously.\n\nThe key architectural difference is granularity: CUDA cores operate on individual numbers (scalars), while Tensor Cores operate on entire matrices. This specialization makes Tensor Cores dramatically faster for matrix math - often 8-16x faster than CUDA cores for the same operations - but they can only be used for specific workloads like matrix multiplications and convolutions.\n\nTensor Cores also support various precision formats (FP16, BF16, TF32, INT8, FP8) that CUDA cores may not accelerate as efficiently. This is why mixed-precision training and TF32 mode specifically leverage Tensor Cores to achieve significant speedups in deep learning workloads.",
+      "explanation": "CUDA cores and Tensor Cores serve fundamentally different purposes in NVIDIA GPUs. CUDA cores are general-purpose processing units that handle scalar operations - each CUDA core performs one floating-point or integer operation per clock cycle (like a single multiply or add). They're versatile and can handle any type of computation, making them suitable for general parallel workloads.\n\nTensor Cores, introduced with the Volta architecture (2017), are specialized hardware units designed specifically for matrix operations. A single Tensor Core can perform a matrix multiply-accumulate operation on small matrices (typically 4x4) in a single clock cycle. For example, one Tensor Core operation computes D = A × B + C where A, B, C, and D are small matrices - this represents dozens of fused multiply-add operations simultaneously.\n\nThe key architectural difference is granularity: CUDA cores operate on individual numbers (scalars), while Tensor Cores operate on entire matrices. This specialization makes Tensor Cores dramatically faster for matrix math - often 8-16x faster than CUDA cores for the same operations - but they can only be used for specific workloads like matrix multiplications and convolutions.\n\nTensor Cores also support various precision formats (FP16, BF16, TF32, INT8, FP8) that CUDA cores may not accelerate as efficiently. This is why mixed-precision training and TF32 mode specifically leverage Tensor Cores to achieve significant speedups in deep learning workloads.\n\nKey Points:\n• CUDA cores are general-purpose and perform one scalar operation per cycle; Tensor Cores are specialized for matrix operations\n• Tensor Cores perform matrix multiply-accumulate (D = A×B + C) on small matrices in a single operation\n• Tensor Cores can be 8-16x faster than CUDA cores for matrix math but only work for specific operations\n• Tensor Cores support specialized precision formats like TF32, BF16, and FP8 that enable faster deep learning computations\n• Deep learning benefits greatly from Tensor Cores because neural networks are dominated by matrix multiplications (in linear layers and convolutions)",
+      "difficulty": "beginner",
+      "tags": [
+        "tf32",
+        "ampere",
+        "pytorch",
+        "tensor-cores",
+        "matmul",
+        "convolution",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What are Tensor Cores on a GPU?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Tensor Cores are specialized hardware units found in NVIDIA GPUs (starting with the Volta architecture in 2017) designed specifically to accelerate matrix multiplication and accumulation operations, which are the fundamental computations in deep learning.\n\nUnlike regular CUDA cores that perform one floating-point operation per clock cycle, Tensor Cores can perform entire matrix-multiply-and-accumulate operations on small matrices (typically 4x4) in a single operation. For example, a Tensor Core can compute D = A × B + C where A, B, C, and D are small matrices, all in one clock cycle.\n\n**How they work:**\nTensor Cores take two input matrices, multiply them together, and add the result to a third matrix. The key insight is that this fused operation (multiply + accumulate) happens at the hardware level, making it extremely fast compared to doing these operations separately on regular CUDA cores.\n\n**Precision modes:**\n- Original Tensor Cores (Volta/Turing): FP16 inputs with FP16 or FP32 accumulation\n- Ampere and newer: Added TF32, BF16, and INT8 support\n- Hopper: Added FP8 support\n\n**Why they matter for deep learning:**\nNeural network training and inference are dominated by matrix multiplications (in linear layers, convolutions, attention mechanisms, etc.). Tensor Cores can provide 4-8x or more speedup over regular CUDA cores for these operations, which is why mixed-precision training and formats like TF32 have become so important—they're designed to leverage Tensor Core acceleration.",
+      "explanation": "Tensor Cores are specialized hardware units found in NVIDIA GPUs (starting with the Volta architecture in 2017) designed specifically to accelerate matrix multiplication and accumulation operations, which are the fundamental computations in deep learning.\n\nUnlike regular CUDA cores that perform one floating-point operation per clock cycle, Tensor Cores can perform entire matrix-multiply-and-accumulate operations on small matrices (typically 4x4) in a single operation. For example, a Tensor Core can compute D = A × B + C where A, B, C, and D are small matrices, all in one clock cycle.\n\n**How they work:**\nTensor Cores take two input matrices, multiply them together, and add the result to a third matrix. The key insight is that this fused operation (multiply + accumulate) happens at the hardware level, making it extremely fast compared to doing these operations separately on regular CUDA cores.\n\n**Precision modes:**\n- Original Tensor Cores (Volta/Turing): FP16 inputs with FP16 or FP32 accumulation\n- Ampere and newer: Added TF32, BF16, and INT8 support\n- Hopper: Added FP8 support\n\n**Why they matter for deep learning:**\nNeural network training and inference are dominated by matrix multiplications (in linear layers, convolutions, attention mechanisms, etc.). Tensor Cores can provide 4-8x or more speedup over regular CUDA cores for these operations, which is why mixed-precision training and formats like TF32 have become so important—they're designed to leverage Tensor Core acceleration.\n\nKey Points:\n• Tensor Cores are specialized hardware units for accelerating matrix multiply-accumulate operations\n• They can process entire small matrix operations (e.g., 4x4) in a single clock cycle, unlike regular CUDA cores\n• Introduced in NVIDIA Volta architecture (2017) and improved in subsequent generations\n• They support various precision formats: FP16, BF16, TF32, INT8, and FP8 (on newer architectures)\n• Tensor Cores provide massive speedups (4-8x+) for deep learning workloads which are dominated by matrix operations",
+      "difficulty": "beginner",
+      "tags": [
+        "tf32",
+        "ampere",
+        "pytorch",
+        "tensor-cores",
+        "matmul",
+        "convolution",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What are SMs in a GPU?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "An SM (Streaming Multiprocessor) is the fundamental processing unit of an NVIDIA GPU—think of it as a mini-processor within the larger GPU. A modern GPU contains many SMs (for example, an A100 has 108 SMs, an H100 has 132 SMs). Each SM contains its own execution units (CUDA cores, tensor cores), registers, shared memory, L1 cache, and warp schedulers. The SM is responsible for scheduling and executing warps: it keeps track of multiple resident warps and rapidly switches between them to hide latency. When you launch a CUDA kernel, thread blocks are distributed across available SMs, and each SM can run multiple thread blocks concurrently (limited by resources like registers and shared memory). The SM's ability to context-switch between warps with essentially zero overhead is what makes GPUs so effective at throughput-oriented workloads—while one warp waits for memory, another can compute.",
+      "explanation": "An SM (Streaming Multiprocessor) is the fundamental processing unit of an NVIDIA GPU—think of it as a mini-processor within the larger GPU. A modern GPU contains many SMs (for example, an A100 has 108 SMs, an H100 has 132 SMs). Each SM contains its own execution units (CUDA cores, tensor cores), registers, shared memory, L1 cache, and warp schedulers. The SM is responsible for scheduling and executing warps: it keeps track of multiple resident warps and rapidly switches between them to hide latency. When you launch a CUDA kernel, thread blocks are distributed across available SMs, and each SM can run multiple thread blocks concurrently (limited by resources like registers and shared memory). The SM's ability to context-switch between warps with essentially zero overhead is what makes GPUs so effective at throughput-oriented workloads—while one warp waits for memory, another can compute.\n\nKey Points:\n• SMs are the main execution units of the GPU—a GPU has many SMs working in parallel\n• Each SM has its own CUDA cores, tensor cores, registers, shared memory, and schedulers\n• SMs schedule and execute warps, rapidly switching between them to hide latency\n• Thread blocks from your kernel are distributed across SMs for parallel execution",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu_architecture",
+        "sms",
+        "warps",
+        "occupancy",
+        "latency_hiding",
+        "ml_kernels",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What are warps in a GPU?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A warp is a group of 32 threads that execute together in lockstep on an NVIDIA GPU. All 32 threads in a warp share the same instruction stream—meaning they all execute the same instruction at the same time, just on different data. This execution model is called SIMT (Single Instruction, Multiple Threads). When you launch a kernel with, say, 256 threads, the GPU organizes them into 8 warps of 32 threads each. The warp is the fundamental scheduling unit: the SM doesn't schedule individual threads, it schedules entire warps. This is why branch divergence (where threads in the same warp take different code paths) is costly—the warp must execute both paths sequentially. Understanding warps helps explain why thread counts are often multiples of 32 and why certain access patterns (like coalesced memory access where adjacent threads access adjacent memory) are so important for performance.",
+      "explanation": "A warp is a group of 32 threads that execute together in lockstep on an NVIDIA GPU. All 32 threads in a warp share the same instruction stream—meaning they all execute the same instruction at the same time, just on different data. This execution model is called SIMT (Single Instruction, Multiple Threads). When you launch a kernel with, say, 256 threads, the GPU organizes them into 8 warps of 32 threads each. The warp is the fundamental scheduling unit: the SM doesn't schedule individual threads, it schedules entire warps. This is why branch divergence (where threads in the same warp take different code paths) is costly—the warp must execute both paths sequentially. Understanding warps helps explain why thread counts are often multiples of 32 and why certain access patterns (like coalesced memory access where adjacent threads access adjacent memory) are so important for performance.\n\nKey Points:\n• A warp contains exactly 32 threads that execute in lockstep (SIMT model)\n• Warps are the basic scheduling unit on an SM\n• All threads in a warp execute the same instruction simultaneously on different data\n• Branch divergence within a warp causes serialization and hurts performance",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu_architecture",
+        "sms",
+        "warps",
+        "occupancy",
+        "latency_hiding",
+        "ml_kernels",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What is occupancy in the context of GPUs?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Occupancy is a metric that measures how many warps are actively resident on a Streaming Multiprocessor (SM) compared to the maximum number of warps that SM can support. Think of it as a measure of how 'full' the SM is with work. For example, if an SM can handle a maximum of 64 warps but your kernel only has 32 warps active, your occupancy is 50%. The reason occupancy matters is that GPUs hide latency (the wait time for memory operations or instructions to complete) by quickly switching between warps. When one warp is waiting for data from memory, the SM can immediately execute instructions from another ready warp. Higher occupancy means more warps available to switch to, which helps keep the SM productive. However, occupancy isn't everything—sometimes using more registers or shared memory per thread (which reduces occupancy) can actually improve performance if it enables better data reuse or more efficient computation.",
+      "explanation": "Occupancy is a metric that measures how many warps are actively resident on a Streaming Multiprocessor (SM) compared to the maximum number of warps that SM can support. Think of it as a measure of how 'full' the SM is with work. For example, if an SM can handle a maximum of 64 warps but your kernel only has 32 warps active, your occupancy is 50%. The reason occupancy matters is that GPUs hide latency (the wait time for memory operations or instructions to complete) by quickly switching between warps. When one warp is waiting for data from memory, the SM can immediately execute instructions from another ready warp. Higher occupancy means more warps available to switch to, which helps keep the SM productive. However, occupancy isn't everything—sometimes using more registers or shared memory per thread (which reduces occupancy) can actually improve performance if it enables better data reuse or more efficient computation.\n\nKey Points:\n• Occupancy = active warps / maximum possible warps on an SM\n• Higher occupancy helps hide memory and instruction latency through warp switching\n• Occupancy is affected by resource usage: registers, shared memory, and thread block size\n• Maximum occupancy isn't always optimal—sometimes trading occupancy for efficiency wins",
+      "difficulty": "beginner",
+      "tags": [
+        "gpu_architecture",
+        "sms",
+        "warps",
+        "occupancy",
+        "latency_hiding",
+        "ml_kernels",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What is padding in GPUs?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Padding in the context of GPU computing refers to adding extra 'dummy' or placeholder values (typically zeros) to sequences or data to make them all the same length within a batch. This is necessary because GPUs are optimized for parallel processing of uniformly-sized data structures.\n\nHere's why padding exists: Imagine you have three sentences of different lengths - 5 words, 12 words, and 8 words. To process them together in a batch on a GPU, they all need to be the same size. So you 'pad' the shorter sequences with zeros (or a special padding token) until they match the longest sequence (12 words in this case).\n\nThe problem with padding is that the GPU still performs computations on these padding values even though they don't contain meaningful data. In attention mechanisms (like those in Transformers), this is especially wasteful because attention complexity is O(T²), where T is sequence length. If you pad a 5-word sentence to length 100, you're computing attention over 100×100 = 10,000 positions when you only needed 5×5 = 25 meaningful computations.\n\nThis wasted computation leads to:\n- Lower GPU utilization (doing unnecessary work)\n- Increased memory usage\n- Slower training/inference times\n- Higher energy consumption",
+      "explanation": "Padding in the context of GPU computing refers to adding extra 'dummy' or placeholder values (typically zeros) to sequences or data to make them all the same length within a batch. This is necessary because GPUs are optimized for parallel processing of uniformly-sized data structures.\n\nHere's why padding exists: Imagine you have three sentences of different lengths - 5 words, 12 words, and 8 words. To process them together in a batch on a GPU, they all need to be the same size. So you 'pad' the shorter sequences with zeros (or a special padding token) until they match the longest sequence (12 words in this case).\n\nThe problem with padding is that the GPU still performs computations on these padding values even though they don't contain meaningful data. In attention mechanisms (like those in Transformers), this is especially wasteful because attention complexity is O(T²), where T is sequence length. If you pad a 5-word sentence to length 100, you're computing attention over 100×100 = 10,000 positions when you only needed 5×5 = 25 meaningful computations.\n\nThis wasted computation leads to:\n- Lower GPU utilization (doing unnecessary work)\n- Increased memory usage\n- Slower training/inference times\n- Higher energy consumption\n\nKey Points:\n• Padding adds placeholder values (usually zeros) to make all sequences in a batch the same length\n• GPUs require uniform data sizes for efficient parallel processing\n• Padding causes wasted computation because GPUs still process the meaningless padding values\n• The waste is especially significant in attention mechanisms due to O(T²) complexity\n• Strategies like bucketing (grouping similar-length sequences) help minimize padding overhead",
+      "difficulty": "beginner",
+      "tags": [
+        "batching",
+        "padding",
+        "variable-length",
+        "attention-efficiency",
+        "data-pipeline",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What is padding for GPUs?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Padding in GPU computing refers to adding extra 'dummy' data to sequences or tensors to make them all the same length within a batch. GPUs are highly optimized for parallel processing of uniform data structures - they work most efficiently when processing batches where every element has the same dimensions.\n\nImagine you have three sentences to process: 'Hello' (1 word), 'How are you' (3 words), and 'I am doing great today' (5 words). To process these together in a batch on a GPU, you need them all to be the same length. So you 'pad' the shorter sequences with special placeholder tokens (often zeros or a special [PAD] token) to match the longest sequence:\n\n- 'Hello [PAD] [PAD] [PAD] [PAD]' (5 tokens)\n- 'How are you [PAD] [PAD]' (5 tokens)\n- 'I am doing great today' (5 tokens)\n\nThe problem is that the GPU still performs computations on these padding tokens, even though they carry no meaningful information. In attention mechanisms, this is especially wasteful because attention has O(T²) complexity - if you double the sequence length with padding, you quadruple the compute. This leads to wasted GPU cycles (FLOPs) and memory (VRAM), which is why strategies like 'bucketing by length' (grouping similar-length sequences together) help minimize padding and improve GPU utilization.",
+      "explanation": "Padding in GPU computing refers to adding extra 'dummy' data to sequences or tensors to make them all the same length within a batch. GPUs are highly optimized for parallel processing of uniform data structures - they work most efficiently when processing batches where every element has the same dimensions.\n\nImagine you have three sentences to process: 'Hello' (1 word), 'How are you' (3 words), and 'I am doing great today' (5 words). To process these together in a batch on a GPU, you need them all to be the same length. So you 'pad' the shorter sequences with special placeholder tokens (often zeros or a special [PAD] token) to match the longest sequence:\n\n- 'Hello [PAD] [PAD] [PAD] [PAD]' (5 tokens)\n- 'How are you [PAD] [PAD]' (5 tokens)\n- 'I am doing great today' (5 tokens)\n\nThe problem is that the GPU still performs computations on these padding tokens, even though they carry no meaningful information. In attention mechanisms, this is especially wasteful because attention has O(T²) complexity - if you double the sequence length with padding, you quadruple the compute. This leads to wasted GPU cycles (FLOPs) and memory (VRAM), which is why strategies like 'bucketing by length' (grouping similar-length sequences together) help minimize padding and improve GPU utilization.\n\nKey Points:\n• Padding adds dummy data to make all sequences in a batch the same length\n• GPUs require uniform tensor dimensions for efficient parallel processing\n• Padding tokens still consume compute and memory even though they're meaningless\n• Attention mechanisms are particularly affected due to O(T²) complexity with sequence length\n• Strategies like length bucketing group similar-length sequences to minimize padding waste",
+      "difficulty": "beginner",
+      "tags": [
+        "batching",
+        "padding",
+        "variable-length",
+        "attention-efficiency",
+        "data-pipeline",
+        "user-generated",
+        "follow-up"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
     {
       "question_text": "You are deploying a transformer model and considering **INT8** or **4-bit** quantization. Describe when quantization is likely to provide real speedups vs when it mostly reduces memory. Your answer should address:\n- kernel availability / whether ops are actually quantized end-to-end\n- dequantization overhead\n- compute-bound vs bandwidth-bound regimes\n- accuracy tradeoffs and calibration (PTQ vs QAT)",
       "question_type": "free",

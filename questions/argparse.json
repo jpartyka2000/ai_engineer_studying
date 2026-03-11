@@ -2,11 +2,1959 @@
   "metadata": {
     "subject_slug": "argparse",
     "subject_name": "Argparse",
-    "exported_at": "2026-03-07T22:49:44.612727",
-    "question_count": 21,
+    "exported_at": "2026-03-11T19:42:09.703381",
+    "question_count": 124,
     "format_version": "1.0"
   },
   "questions": [
+    {
+      "question_text": "You need to make the training CLI testable and safe for automation.\n\nAnswer both parts:\n1) How would you unit-test argument parsing and error paths (invalid args) without spawning subprocesses?\n2) How would you add a machine-readable mode for pipeline orchestration (e.g., `--json`) while keeping stdout/stderr separation and meaningful exit codes?\n\nProvide a practical approach and small snippets/pseudocode.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Testing parsing + error paths:\n- Structure code as build_parser() and parse_args(argv) so tests can inject argv.\n- For success cases: call parser.parse_args([...]) and assert Namespace fields.\n- For error cases: argparse raises SystemExit; in pytest, use `with pytest.raises(SystemExit) as e:` and assert e.value.code != 0.\n- For help text: capture stdout (capsys) and call `parser.format_help()` (golden test) or run parse_args(['-h']) and assert output.\n\nExample:\n```python\nimport pytest\n\ndef test_parse_defaults():\n    p = build_parser()\n    args = p.parse_args([\"--data\", \"d\", \"--run-dir\", \"r\"])\n    assert args.epochs == 10\n\ndef test_invalid_batch_size_exits():\n    p = build_parser()\n    with pytest.raises(SystemExit) as e:\n        p.parse_args([\"--data\", \"d\", \"--run-dir\", \"r\", \"--batch-size\", \"notint\"])\n    assert e.value.code != 0\n```\n\n2) Machine-readable output + exit codes:\n- Add `--json` flag. When enabled, print a single JSON object to stdout for programmatic consumption.\n- Send human logs/progress to stderr (logging StreamHandler to sys.stderr).\n- Use exit codes: 0 success, non-zero for failures; optionally map common failures (e.g., 2 for CLI usage errors from argparse).\n\nPseudocode:\n```python\nimport json, sys\n\nparser.add_argument(\"--json\", action=\"store_true\", help=\"Emit machine-readable output\")\n\ntry:\n    args = parser.parse_args(argv)\n    # run job...\n    result = {\"status\": \"ok\", \"run_dir\": str(args.run_dir)}\n    if args.json:\n        print(json.dumps(result))  # stdout\n    else:\n        print(f\"Done. Run dir: {args.run_dir}\")\n    raise SystemExit(0)\nexcept Exception as ex:\n    err = {\"status\": \"error\", \"error\": str(ex)}\n    if getattr(args, \"json\", False):\n        print(json.dumps(err))\n    # logs already went to stderr\n    raise SystemExit(1)\n```\n",
+      "explanation": "Testability comes from dependency injection of argv and separating parser construction from execution logic. Error-path testing relies on catching SystemExit (argparse’s normal behavior). For automation, a JSON mode plus strict stdout/stderr separation prevents log noise from breaking parsers. Consistent exit codes are critical for orchestrators to detect failures and retry appropriately.",
+      "difficulty": "advanced",
+      "tags": [
+        "testing",
+        "argv-injection",
+        "help-text-tests",
+        "machine-readable-output",
+        "exit-codes",
+        "automation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want CLI flags to control logging for a training script:\n- `--log-level` (DEBUG/INFO/WARNING/ERROR)\n- Ensure logs are written to a file under `--run-dir` and also to stderr\n- Avoid double-configuring logging when libraries also configure handlers\n\nDescribe a practical pattern to implement this with argparse and Python logging (high level + a small code sketch).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Pattern:\n- Parse args first (or parse known args) to get run_dir and log_level.\n- Configure logging exactly once in the entrypoint (if __name__ == '__main__').\n- Use force=True (Python 3.8+) in basicConfig or manually clear existing handlers to prevent duplicate logs.\n- Add a FileHandler pointing to run_dir / 'train.log' and a StreamHandler to stderr, with consistent formatter.\n\nCode sketch:\n```python\nimport argparse\nimport logging\nfrom pathlib import Path\n\nLOG_LEVELS = {\"DEBUG\": logging.DEBUG, \"INFO\": logging.INFO,\n              \"WARNING\": logging.WARNING, \"ERROR\": logging.ERROR}\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--run-dir\", type=Path, required=True)\nparser.add_argument(\"--log-level\", default=\"INFO\", choices=LOG_LEVELS.keys())\nargs = parser.parse_args()\n\nargs.run_dir.mkdir(parents=True, exist_ok=True)\nlog_path = args.run_dir / \"train.log\"\n\nhandlers = [\n    logging.StreamHandler(),\n    logging.FileHandler(log_path, encoding=\"utf-8\"),\n]\nlogging.basicConfig(\n    level=LOG_LEVELS[args.log_level],\n    format=\"%(asctime)s %(levelname)s %(name)s: %(message)s\",\n    handlers=handlers,\n    force=True,\n)\n```\n",
+      "explanation": "The key is tying logging configuration to parsed CLI args (log level, run-dir) and ensuring the entrypoint is the single place that configures handlers. In ML repos, double logging often happens when both the app and a library call basicConfig; force=True (or clearing handlers) prevents duplicated output. Writing to run-dir makes runs auditable and is critical for debugging training jobs on remote workers.",
+      "difficulty": "intermediate",
+      "tags": [
+        "logging",
+        "run-dir",
+        "argparse-integration",
+        "ml-ops"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a CLI with subcommands for an ML project:\n- `train`\n- `eval`\n- `export`\n\nAll subcommands share `--device`, `--seed`, and `--run-dir`. You want consistent help text and to avoid duplicating argument definitions.\n\nWhich approach is best practice in argparse?",
+      "question_type": "mc",
+      "options": [
+        "A. Copy/paste the shared add_argument calls into each subparser; duplication is fine and clearer.",
+        "B. Use a parent parser (add_help=False) that defines shared flags, then pass it via `parents=[parent]` when creating each subparser.",
+        "C. Put shared flags only on the `train` subcommand and rely on users to call `train` first so the others can read the same run-dir.",
+        "D. Avoid subparsers; instead use a single `--mode {train,eval,export}` flag and manually branch."
+      ],
+      "correct_answer": "B",
+      "explanation": "Parent parsers are the idiomatic way to share a set of arguments across subcommands while keeping definitions DRY and help text consistent. You typically set add_help=False on the parent to avoid duplicate -h/--help. This pattern is common in ML toolchains where train/eval/export share runtime settings and paths.",
+      "difficulty": "intermediate",
+      "tags": [
+        "subparsers",
+        "best-practices",
+        "shared-flags",
+        "cli-design"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your training CLI has an argument `--lr` and you run `python train.py --lr -1e-3` expecting it to parse a negative float (e.g., for testing error handling). In some setups, argparse treats `-1e-3` like another option and errors.\n\nWhat is the most robust way to ensure negative numbers are parsed as values when needed?",
+      "question_type": "mc",
+      "options": [
+        "A. Always require users to write `--lr=-1e-3` or use `--` to end options (e.g., `--lr -- -1e-3`) and document it; argparse itself can’t fully disambiguate leading-dash values.",
+        "B. Set `allow_abbrev=True` so negative numbers are accepted.",
+        "C. Use `action='store_true'` for numeric arguments.",
+        "D. Change the argument to positional to avoid the issue."
+      ],
+      "correct_answer": "A",
+      "explanation": "Values starting with '-' can be ambiguous with option flags. The robust, standard solutions are (1) the equals form `--lr=-1e-3`, or (2) using `--` to signal end-of-options in some CLI patterns (less common for this specific case). allow_abbrev is unrelated; store_true is for booleans; making it positional harms usability. In ML, this comes up when testing constraints (e.g., \"lr must be > 0\") and you want to pass negative values intentionally.",
+      "difficulty": "advanced",
+      "tags": [
+        "pitfalls",
+        "negative-number-parsing",
+        "cli-robustness",
+        "ml-debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an ML script, you want an optional float value where the flag may appear without a value to mean “use a default schedule”, but may also accept a number:\n\nDesired behavior:\n- `--dropout` (not provided) -> None\n- `--dropout` (provided without value) -> 0.1\n- `--dropout 0.3` -> 0.3\n\nWhich argparse definition best matches this behavior?",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--dropout', type=float, default=None)`",
+        "B. `parser.add_argument('--dropout', type=float, nargs='?', const=0.1, default=None)`",
+        "C. `parser.add_argument('--dropout', action='store_true', default=None)`",
+        "D. `parser.add_argument('--dropout', type=float, nargs='*', default=None)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "nargs='?' allows the option to take zero or one values. With const=0.1, providing `--dropout` with no value yields 0.1; default=None handles the not-provided case; and `--dropout 0.3` parses as 0.3. This is a common source of confusion in ML repos because it looks similar to boolean flags but has different semantics.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pitfalls",
+        "nargs",
+        "optional-values",
+        "hyperparameters"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider this argparse code from an ML repo:\n\n```python\nparser.add_argument(\"--layers\", type=int, nargs=\"*\", default=[])\n```\n\nWhat is the most accurate statement about this pattern?",
+      "question_type": "mc",
+      "options": [
+        "A. It is unsafe because the default list is mutable and shared across parses; use default=None and set [] later.",
+        "B. It is safe in typical argparse usage because parse_args creates a new Namespace each time, but it can still be confusing; consider default=None to distinguish 'not provided' vs 'provided empty'.",
+        "C. It will crash because argparse cannot handle list defaults.",
+        "D. It forces at least one integer to be provided because nargs='*' means one or more."
+      ],
+      "correct_answer": "B",
+      "explanation": "The classic Python pitfall is mutable defaults in function definitions, but here the list is stored on the ArgumentParser and used as a constant default when building a new Namespace; it’s generally not “shared and mutated” unless your code mutates args.layers in a way you later rely on as a default. The real pitfall is semantics: with nargs='*', you can’t easily tell whether the user omitted --layers or intentionally provided an empty list. Using default=None and normalizing after parsing can make intent clearer.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pitfalls",
+        "mutable-defaults",
+        "nargs",
+        "ml-repos"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Give two concrete examples of ML engineering scenarios where argparse remains the better choice than Hydra/OmegaConf, and explain why (practical, not theoretical).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Examples:\n1) A lightweight inference/embedding extraction script used in a pipeline: flags like --input, --output, --model-path, --device, --batch-size. Argparse is simpler to deploy (no config package assumptions), easy to document, and stable for automation.\n2) A training entrypoint that already has a small, stable interface and is called by an orchestrator (Airflow/Kubeflow/SLURM wrapper) that passes a fixed set of arguments. Argparse keeps the contract explicit and avoids Hydra’s run-dir behavior and config complexity unless composition/sweeps are needed.\n\nIn both cases, the CLI surface is small and mostly flat; using Hydra would add dependency and operational complexity without much benefit.",
+      "explanation": "Interviewers look for judgment: Hydra shines when configuration complexity grows (nested configs, composition, sweeps), but many ML scripts are simple, called by automation, and benefit from a minimal dependency footprint and predictable CLI behavior. Argparse is often best for small, stable interfaces and for utilities where config composition is not required.",
+      "difficulty": "intermediate",
+      "tags": [
+        "when-not-argparse",
+        "practical-ml",
+        "cli-design"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team wants to add configuration composition and experiment sweeps (e.g., base config + model config + dataset config; override nested values like optimizer.lr; run grid searches). When is it a signal to NOT rely solely on argparse and to use something like Hydra/OmegaConf instead?\n\nPick the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. When you need any default values at all.",
+        "B. When you need hierarchical configs, config composition, and many overrides/sweeps that would otherwise create dozens of CLI flags or ad-hoc parsing.",
+        "C. When you need to print help text.",
+        "D. When you need to parse integers and floats."
+      ],
+      "correct_answer": "B",
+      "explanation": "Argparse is great for a small, stable set of top-level parameters. When you need hierarchical configuration, composition (merging multiple config files), and systematic sweeps (multirun/grid), Hydra/OmegaConf provide structured config management, nested overrides, and sweep tooling that quickly becomes unwieldy with plain argparse. Defaults/help/integer parsing are not reasons to abandon argparse.",
+      "difficulty": "intermediate",
+      "tags": [
+        "when-not-argparse",
+        "hydra-omegaconf",
+        "config-composition",
+        "sweeps"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Write an argparse snippet (Python) for a minimal ML training CLI with these flags:\n- --data (path to dataset)\n- --run-dir (output directory for checkpoints/logs)\n- --seed (int)\n- --device (string, e.g. cuda:0/cpu)\n- --batch-size (int)\n- --epochs (int)\n- --resume (optional path to checkpoint)\n\nRequirements:\n- Use pathlib.Path for path args\n- Validate that --data exists\n- Create --run-dir if missing\n- If --resume is provided, validate it exists\n- Keep the code reasonably clean (helper function ok)\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nfrom __future__ import annotations\n\nimport argparse\nfrom pathlib import Path\n\n\ndef build_parser() -> argparse.ArgumentParser:\n    p = argparse.ArgumentParser(description=\"Train a model\")\n    p.add_argument(\"--data\", type=Path, required=True, help=\"Path to dataset\")\n    p.add_argument(\"--run-dir\", type=Path, required=True, help=\"Output directory for this run\")\n    p.add_argument(\"--seed\", type=int, default=0, help=\"Random seed\")\n    p.add_argument(\"--device\", type=str, default=\"cuda:0\", help=\"Device, e.g. cuda:0 or cpu\")\n    p.add_argument(\"--batch-size\", type=int, default=64)\n    p.add_argument(\"--epochs\", type=int, default=10)\n    p.add_argument(\"--resume\", type=Path, default=None, help=\"Path to checkpoint to resume from\")\n    return p\n\n\ndef parse_and_validate(argv=None):\n    args = build_parser().parse_args(argv)\n\n    if not args.data.exists():\n        raise SystemExit(f\"--data does not exist: {args.data}\")\n\n    args.run_dir.mkdir(parents=True, exist_ok=True)\n\n    if args.resume is not None and not args.resume.exists():\n        raise SystemExit(f\"--resume checkpoint does not exist: {args.resume}\")\n\n    return args\n```\n",
+      "explanation": "This is a canonical pattern in ML repos: build_parser() for reuse/testing, parse_and_validate() for post-parse checks. pathlib.Path gives robust path handling across OSes; explicit validation catches misconfigurations early; creating run-dir ensures logs/checkpoints have a destination; resume validation avoids failing later mid-training when trying to load a checkpoint.",
+      "difficulty": "beginner",
+      "tags": [
+        "canonical-template",
+        "paths",
+        "validation",
+        "training-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re asked to create a minimal, canonical CLI for a PyTorch training script used by a team. Which set of flags and structure is the most appropriate baseline using argparse?\n\nConstraints:\n- Must support: data path, output/run dir, seed, device, batch size, epochs, resume/checkpoint\n- Should be clean and conventional for ML repos\n\nWhich option is best?",
+      "question_type": "mc",
+      "options": [
+        "A. Use only positional args: data_path output_dir seed device batch_size epochs checkpoint_path; avoid optionals to keep it short.",
+        "B. Use optionals with clear names and types, e.g. --data, --run-dir, --seed, --device, --batch-size, --epochs, --resume; parse paths as pathlib.Path; keep defaults sensible.",
+        "C. Put everything into a single --config JSON string; argparse only parses that string and no individual flags.",
+        "D. Use environment variables for all settings; argparse only provides --help."
+      ],
+      "correct_answer": "B",
+      "explanation": "For ML training scripts, a conventional baseline is option flags with explicit types and defaults so runs are reproducible and discoverable via --help. Parsing paths as pathlib.Path and using clear names like --run-dir, --batch-size, --epochs, and --resume (checkpoint path) matches common practice and keeps the CLI stable. Pure positionals (A) are brittle and unclear; a single JSON blob (C) hurts usability and shell ergonomics; env-vars-only (D) reduces reproducibility and makes automation harder.",
+      "difficulty": "beginner",
+      "tags": [
+        "canonical-template",
+        "training-cli",
+        "paths",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a CLI with subcommands and want to ensure reproducibility + clean separation of concerns:\n- `train` should create a run directory and save `argv.txt` and `args.json`.\n- `eval` should require `--checkpoint` and should not create a new run directory by default.\n\nDescribe a clean `argparse`-based design (parser structure + where side effects happen) that avoids import-time side effects and keeps commands testable.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a `build_parser()` that defines subparsers (`train`, `eval`, etc.) with a shared parent parser for common flags. Put all side effects (creating run dirs, writing files) inside command handlers, not during parsing or module import. Structure:\n\n- `build_parser()` returns the configured parser.\n- `main(argv=None)` calls `parse_args(argv)`.\n- Dispatch: `if args.command == \"train\": return train_cmd(args)`; `elif ...`.\n- `train_cmd(args)`:\n  - create `run_dir` (or accept `--run_dir`),\n  - write `argv.txt` from the original argv (store it in `main` and pass it along),\n  - write resolved args to `args.json` (after any normalization),\n  - then start training.\n- `eval` subparser adds `--checkpoint` as `required=True` (or validate post-parse) and defaults to using an existing run dir or no run dir.\n\nThis keeps parsing pure, avoids import-time parsing, enables unit tests by calling `main([\"train\", \"--lr\", \"...\"])`, and ensures reproducibility artifacts are created only for the commands that need them.",
+      "explanation": "In ML tooling, the biggest maintainability wins come from: (1) pure parsing (no filesystem/network side effects), (2) explicit command dispatch, and (3) reproducibility artifacts written in the command layer. Subparsers model the workflow cleanly, and passing `argv`/`args` into handlers makes behavior deterministic and testable across CLIs, notebooks, and orchestration systems.",
+      "difficulty": "advanced",
+      "tags": [
+        "subcommands",
+        "reproducibility",
+        "side-effects",
+        "parse-args-at-import-time",
+        "cli-architecture",
+        "testing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re considering Hydra for a research team that runs large hyperparameter sweeps and wants config composition across models/datasets. What is a realistic downside/tradeoff compared to sticking with `argparse` for a smaller production training CLI?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Hydra cannot run on clusters and is incompatible with SLURM",
+        "B. Hydra adds dependency and conceptual overhead (config composition, override syntax, working-directory changes), which can surprise users and complicate debugging if you only need a small stable CLI",
+        "C. Hydra cannot log resolved configurations for reproducibility",
+        "D. Hydra prevents you from using environment variables for defaults"
+      ],
+      "correct_answer": "B",
+      "explanation": "Hydra is powerful for complex configuration and sweeps, but it introduces additional concepts (composition, defaults lists, override grammar) and behaviors (notably working-directory management unless configured) that can be overkill for a small, stable production CLI. `argparse` keeps the surface area small and predictable when you don’t need Hydra’s advanced features.",
+      "difficulty": "advanced",
+      "tags": [
+        "argparse-vs-alternatives",
+        "hydra",
+        "tradeoffs",
+        "ml-production"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are packaging an internal training CLI so teammates can run `mltrain train --config cfg.yaml` after installing the package. At a practical level, how do you wire this up using Python entry points?\n\nProvide a minimal `pyproject.toml` snippet (or `setup.cfg`/`setup.py`) and the corresponding Python `main()` function signature you’d expose.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example using `pyproject.toml` (PEP 621):\n\n```toml\n[project]\nname = \"mltrain\"\nversion = \"0.1.0\"\n\n[project.scripts]\nmltrain = \"mltrain.cli:main\"\n```\n\nAnd in `mltrain/cli.py`:\n\n```python\nimport argparse\n\ndef build_parser():\n    p = argparse.ArgumentParser(prog=\"mltrain\")\n    sub = p.add_subparsers(dest=\"command\", required=True)\n    # add train/eval/etc.\n    return p\n\ndef main(argv=None):\n    parser = build_parser()\n    args = parser.parse_args(argv)\n    # dispatch on args.command\n    return 0\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n```\n\n(Equivalent legacy: `console_scripts` in `setup.cfg`.)",
+      "explanation": "Entry points create a stable executable that calls into your package code, which is preferable to telling users to run `python -m ...` or a raw script path. Exposing `main(argv=None)` makes it testable and notebook-friendly. Returning an int and using `SystemExit(main())` gives clean exit codes for orchestration systems.",
+      "difficulty": "intermediate",
+      "tags": [
+        "packaging",
+        "entry-points",
+        "console-scripts",
+        "ml-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In Jupyter/IPython, `sys.argv` often contains notebook/kernel flags, and calling `parser.parse_args()` may fail. What is the best practice approach for writing ML code that can run both as a CLI and in notebooks?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Always use `parse_known_args()` and ignore all unknown args in every production script",
+        "B. In notebooks, call `parse_args([])` (or pass an explicit argv list) and keep parsing inside a `main(argv=None)` so notebooks can supply their own argv; optionally expose `get_default_args()` for programmatic use",
+        "C. Modify `sys.argv` globally at import time to remove unknown flags",
+        "D. Disable argument parsing entirely when `get_ipython()` exists"
+      ],
+      "correct_answer": "B",
+      "explanation": "Notebook environments inject their own argv flags, so relying on ambient `sys.argv` is brittle. A robust pattern is to design `main(argv=None)` and call `parse_args(argv)` so notebooks can pass `[]` or custom args. This keeps CLI behavior intact while enabling interactive usage without hacks like mutating global `sys.argv`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "notebooks",
+        "ipython",
+        "argv-collisions",
+        "design-for-interactive"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want 12-factor-ish config hygiene: allow environment variables (e.g., `DATA_DIR`, `WANDB_PROJECT`) to provide defaults, while still letting CLI flags override them. What is a good `argparse` pattern?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Read environment variables after parsing and overwrite `args` unconditionally so env always wins",
+        "B. Set `default=os.environ[\"DATA_DIR\"]` so the script crashes if the env var is missing",
+        "C. Use `default=os.getenv(\"DATA_DIR\", <fallback>)` and document precedence as: CLI > env > hardcoded default; optionally record which source was used",
+        "D. Avoid env vars because they make experiments non-reproducible"
+      ],
+      "correct_answer": "C",
+      "explanation": "A practical pattern is to set defaults from `os.getenv` with a fallback, making precedence explicit: command-line flags override env-provided defaults, which override hardcoded defaults. This aligns with common ML tooling needs (cluster/job environments, secrets injection) while remaining reproducible if you log both argv and resolved args (and optionally relevant env).",
+      "difficulty": "beginner",
+      "tags": [
+        "env-defaults",
+        "12-factor",
+        "config-hygiene",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have these constraints in a training CLI:\n- User must specify exactly one of: `--config` (path to YAML) OR `--lr` (manual override).\n- If `--resume` is set, `--checkpoint` must be provided.\n\nImplement this using `argparse` in a way that goes beyond a basic mutually exclusive group (i.e., includes cross-argument validation). Provide a short code snippet.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```python\nimport argparse\n\ndef build_parser():\n    p = argparse.ArgumentParser()\n\n    mx = p.add_mutually_exclusive_group(required=True)\n    mx.add_argument(\"--config\", type=str, help=\"YAML config path\")\n    mx.add_argument(\"--lr\", type=float, help=\"Learning rate override\")\n\n    p.add_argument(\"--resume\", action=\"store_true\")\n    p.add_argument(\"--checkpoint\", type=str, default=None)\n\n    return p\n\ndef parse_args(argv=None):\n    p = build_parser()\n    args = p.parse_args(argv)\n\n    # Cross-argument validation\n    if args.resume and not args.checkpoint:\n        p.error(\"--resume requires --checkpoint\")\n\n    return args\n```\n\n(Alternative: validate in a `main()` after parsing; use `p.error(...)` for consistent CLI error formatting.)",
+      "explanation": "`argparse` can enforce simple exclusivity with `add_mutually_exclusive_group`, but many ML constraints are conditional (resume requires checkpoint, export requires output dir, etc.). The common pattern is: parse first, then validate combinations and call `parser.error(...)` (or raise a custom exception) to produce a clear CLI error message and exit code.",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "mutual-exclusion",
+        "cross-argument-validation",
+        "ml-training"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a CLI for an ML workflow with subcommands: `train`, `eval`, `predict`, `export`. Using `argparse` subparsers, what is the most robust structure?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Put all flags in one parser and infer the mode from which flags are provided (e.g., if `--checkpoint` then eval)",
+        "B. Use `add_subparsers(dest=\"command\", required=True)`; each subcommand has its own parser, and shared flags go on a parent parser used by all subcommands",
+        "C. Create four separate scripts (`train.py`, `eval.py`, etc.) and avoid subparsers entirely because `argparse` can’t handle shared flags",
+        "D. Use subparsers but duplicate shared flags in every subcommand parser to keep them independent"
+      ],
+      "correct_answer": "B",
+      "explanation": "Subparsers map naturally to ML workflows. A common pattern is a parent parser for shared options (e.g., `--seed`, `--device`, `--log_dir`) and subcommand-specific parsers for `train/eval/predict/export`. Setting `required=True` (Python 3.7+) and `dest=\"command\"` makes the interface explicit and reduces ambiguous invocations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "subcommands",
+        "subparsers",
+        "ml-workflows",
+        "cli-design"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want reproducibility for ML runs launched via CLI. Which pattern best captures what should be logged/saved when using `argparse`?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Only print `args` to stdout; saving is unnecessary because the code is in git",
+        "B. Save only the raw `sys.argv` string because it’s the most faithful representation",
+        "C. Save both the raw argv and the resolved/normalized args (e.g., JSON/YAML) into the run directory, ideally along with git commit info and environment metadata",
+        "D. Avoid logging args because it may leak secrets; never store them"
+      ],
+      "correct_answer": "C",
+      "explanation": "For reproducibility, it’s useful to (1) record the exact invocation (`sys.argv`), and (2) record the resolved arguments after parsing (and after any programmatic normalization), typically as JSON/YAML in the run directory. Raw argv alone can be ambiguous (implicit defaults, environment-derived values), while resolved args provide a canonical record. You should still handle secrets carefully (e.g., avoid logging tokens), but blanket avoidance harms reproducibility.",
+      "difficulty": "beginner",
+      "tags": [
+        "reproducibility",
+        "logging",
+        "argv",
+        "run-directory",
+        "experiment-tracking"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate wrote this in `train.py`:\n\n```python\n# train.py\nimport argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--lr\", type=float, default=1e-3)\nargs = parser.parse_args()   # <-- at import time\n\ndef train():\n    print(\"Training with\", args.lr)\n```\n\nIn your ML codebase, other modules import `train.py` to reuse `train()`.\n\nWhat is the most likely pitfall, and what’s the best practice fix?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Pitfall: calling `parse_args()` at import time causes side effects—importing the module will try to parse the process argv and may exit with a usage error (SystemExit) due to unknown args, especially under notebooks, test runners, or when imported by other CLIs. Best practice: move parsing into a `main()` guarded by `if __name__ == \"__main__\":` (or provide `parse_args(argv=None)` and call it from `main()`), and pass the resulting `args` explicitly into `train(args)` or set defaults in function parameters.",
+      "explanation": "ML code is frequently imported by notebooks, unit tests, or orchestrators (e.g., `pytest`, `torchrun`, `accelerate`) that add their own argv flags. Import-time parsing makes the module non-importable and brittle. The standard hygiene is: define `build_parser()`, define `main(argv=None)` that calls `parser.parse_args(argv)`, and only call `main()` under the `__main__` guard. This prevents unwanted parsing and makes the code reusable and testable.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pitfalls",
+        "parse-args-at-import-time",
+        "side-effects",
+        "testability",
+        "notebooks"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a training script for a small research project (single machine, a handful of flags, optional config file). When is plain `argparse` typically sufficient compared to Hydra/OmegaConf/Click/Typer?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. When you need hierarchical configs, structured schema validation, and multi-run sweeps with overrides like `model.hidden=512`",
+        "B. When you have a small number of flags, simple defaults, and you mainly need a stable CLI for launching experiments",
+        "C. When you need automatic CLI generation from type hints and rich shell completion without writing parsers",
+        "D. When you need plugin-based configuration composition across packages and runtime config interpolation"
+      ],
+      "correct_answer": "B",
+      "explanation": "`argparse` is a good fit for straightforward ML scripts: a few flags (paths, hyperparameters), basic validation, and stable invocation. Hydra/OmegaConf shine when you need composable hierarchical configuration, schema/structured configs, interpolation, and multi-run sweeps. Typer/Click are often chosen for ergonomics (type-hint-driven CLIs, nicer UX), but they’re not required if your needs are simple and you want minimal dependencies.",
+      "difficulty": "beginner",
+      "tags": [
+        "argparse-vs-alternatives",
+        "hydra",
+        "omegaconf",
+        "click",
+        "typer",
+        "ml-cli-design"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "How would you unit-test an argparse-based training CLI to ensure:\n- `--config` + CLI overrides precedence works\n- invalid paths fail with a clear error\n- `--log-level` sets logging correctly\n\nDescribe a testable structure (functions/modules) and how you’d inject `argv` without relying on `sys.argv` globally.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Structure:\n- `build_parser()` returns an `ArgumentParser`\n- `parse_args(argv)` calls `build_parser().parse_args(argv)`\n- `load_config(path)` loads YAML\n- `merge_config(defaults, cfg, args)` returns `(resolved, provenance)`\n- `main(argv=None)` calls `parse_args(argv or sys.argv[1:])`, then runs training\n- Keep `if __name__ == '__main__': raise SystemExit(main())` so importing doesn’t execute.\n\nTesting:\n- Call `parse_args([...])` directly with a list of strings to inject argv.\n- For precedence: create a temp YAML config (e.g., lr=1e-3) and pass `--config tmp.yaml --lr 1e-4`, assert resolved lr is 1e-4 and provenance marks CLI.\n- For invalid paths: pass a non-existent `--train-path` and assert `SystemExit` is raised and stderr contains a friendly message (use `pytest`’s `capsys` / `capfd`).\n- For logging: call a `configure_logging(level)` function and assert the root logger level/handlers, or capture logs; also ensure logs go to stderr and machine-readable outputs (like `--print-config json`) go to stdout.",
+      "explanation": "This evaluates practical engineering maturity: import-safe entrypoints, argv injection, separation of concerns, and verifying behavior (including stderr/stdout expectations) rather than just parsing.",
+      "difficulty": "advanced",
+      "tags": [
+        "testing",
+        "argv-injection",
+        "import-safe-main",
+        "config-merging",
+        "logging-integration"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want robust path parsing/validation for `--train-path` and `--save-dir` across Linux/Windows. Which approach is best in argparse-based ML scripts?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `type=str` and later do `open(path)`; if it fails, let the stack trace show.",
+        "B. Use `type=pathlib.Path` and validate existence/permissions after parsing (or via a custom `type` function) with clear `parser.error(...)` messages.",
+        "C. Use `type=os.path` so argparse normalizes separators automatically.",
+        "D. Use `nargs='*'` for paths to avoid Windows unicode issues."
+      ],
+      "correct_answer": "B",
+      "explanation": "`Path` gives consistent path handling and is ergonomic in training code. For ML tooling, you typically validate after parsing (existence for inputs, creatable for outputs) and emit user-friendly errors. Windows quirks (backslashes, drive letters, Unicode) are best handled by treating paths as `Path` objects and avoiding manual string munging.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "path-validation",
+        "windows-paths",
+        "robust-parsing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a canonical minimal training-script CLI for a single-node PyTorch/TF training job using argparse. Include at least: data path(s), output/save dir, epochs, batch size, learning rate, resume checkpoint, device, seed, and log level. Explain one tradeoff in choosing positionals vs optionals for `data` and `output`.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example design:\n\n```python\nimport argparse\nfrom pathlib import Path\n\n\ndef build_parser():\n    p = argparse.ArgumentParser(prog=\"train.py\")\n\n    g_data = p.add_argument_group(\"Data\")\n    g_data.add_argument(\"--train-path\", type=Path, required=True)\n    g_data.add_argument(\"--val-path\", type=Path, default=None)\n\n    g_out = p.add_argument_group(\"Output\")\n    g_out.add_argument(\"--save-dir\", type=Path, required=True)\n    g_out.add_argument(\"--resume\", type=Path, default=None)\n\n    g_optim = p.add_argument_group(\"Optim\")\n    g_optim.add_argument(\"--epochs\", type=int, default=10)\n    g_optim.add_argument(\"--batch-size\", type=int, default=64)\n    g_optim.add_argument(\"--lr\", type=float, default=1e-3)\n\n    g_sys = p.add_argument_group(\"System\")\n    g_sys.add_argument(\"--device\", type=str, default=\"cuda\")\n    g_sys.add_argument(\"--seed\", type=int, default=0)\n\n    g_log = p.add_argument_group(\"Logging\")\n    g_log.add_argument(\"--log-level\", choices=[\"DEBUG\",\"INFO\",\"WARNING\",\"ERROR\"], default=\"INFO\")\n\n    return p\n```\n\nTradeoff: using positionals for `data`/`save_dir` makes invocation shorter (`train.py DATA OUT`), but reduces flexibility (ordering constraints, harder to extend to multiple datasets, and more fragile with `parse_intermixed_args`). Using explicit optionals (`--train-path`, `--save-dir`) is more verbose but clearer, easier to validate, and composes better with config files and overrides.",
+      "explanation": "This tests whether the candidate can propose a realistic ML CLI surface area and structure it for maintainability (groups, sensible defaults, explicit paths). The positional vs optional tradeoff is a common real-world design decision.",
+      "difficulty": "beginner",
+      "tags": [
+        "ml-training-cli",
+        "add_argument_group",
+        "cli-design",
+        "standard-flags"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your teammate suggests using `fromfile_prefix_chars='@'` so users can run `train.py @exp1.args` where `exp1.args` contains a long list of CLI arguments. In ML practice, what is a good reason this is often avoided in favor of an explicit `--config` file?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `@file` is slower than YAML/JSON parsing for large configs.",
+        "B. `@file` makes provenance/versioning and schema validation harder; config files support structure (nested keys), comments, and clearer reproducibility.",
+        "C. `@file` cannot include flags like `--lr` or `--epochs` at all.",
+        "D. `@file` only works on Windows and breaks on Linux shells."
+      ],
+      "correct_answer": "B",
+      "explanation": "`fromfile_prefix_chars` can be handy for quick experiments, but ML teams usually prefer explicit config files because they support nested structure, validation, and clearer tracking in version control. Also, `@args` files inherit CLI parsing quirks (quoting/escaping) and don’t naturally provide provenance unless you build it yourself.",
+      "difficulty": "intermediate",
+      "tags": [
+        "fromfile_prefix_chars",
+        "config",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Given this parser snippet:\n\n```python\nparser.add_argument('--warmup-steps', type=int, default=None)\n```\n\nExplain how you would distinguish these cases in your training code:\n1) user did not pass `--warmup-steps`\n2) user passed `--warmup-steps 0`\n3) user passed `--warmup-steps 500`\n\nAlso explain why this distinction matters when merging with a config file.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "You can distinguish by checking `args.warmup_steps is None` vs an integer value:\n- Not passed: `args.warmup_steps is None`\n- Passed 0: `args.warmup_steps == 0`\n- Passed 500: `args.warmup_steps == 500`\n\nThis matters for config merging because `None` can mean “no CLI opinion; let config/default decide”, while `0` is an explicit override that may mean “disable warmup” (or “warmup for 0 steps”). If you used `default=0`, you’d lose the ability to tell ‘not provided’ from ‘provided 0’, which breaks precedence and provenance reporting.",
+      "explanation": "A common ML CLI pitfall is collapsing `None` and `0` (or empty strings) and accidentally overriding config. Keeping `None` as the sentinel for “not provided” makes overrides correct and reproducible.",
+      "difficulty": "beginner",
+      "tags": [
+        "optional-values",
+        "none-vs-not-provided",
+        "config-merging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want warmup to be optional. Requirements:\n- If the user does not mention warmup at all, keep it unset so the config file can decide.\n- If the user explicitly disables warmup, it must override config.\n- If the user enables warmup, they can optionally specify steps.\n\nWhich argparse design best supports this cleanly?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `--warmup-steps` with `type=int` and default `0`.",
+        "B. Use `--warmup` and `--no-warmup` as a boolean pair (same dest) plus `--warmup-steps` defaulting to `None` so you can distinguish not-provided vs provided.",
+        "C. Use `--warmup-steps` with `nargs='?'` and `const=1000` so it always enables warmup and sets steps to 1000 when omitted; no disable flag needed.",
+        "D. Use `--warmup-steps` with `required=True` so warmup is always configured explicitly."
+      ],
+      "correct_answer": "B",
+      "explanation": "In ML config+CLI systems, distinguishing three states matters: not provided (defer to config), explicitly disabled (override config), explicitly enabled (possibly with steps). A boolean pair `--warmup/--no-warmup` (or `BooleanOptionalAction`) gives explicit enable/disable, while `--warmup-steps=None` preserves the ability to detect whether steps were provided and to let config supply them.",
+      "difficulty": "intermediate",
+      "tags": [
+        "optional-vs-flag",
+        "none-vs-not-provided",
+        "config-overrides",
+        "warmup"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Implement (pseudocode is fine) a merge strategy for `defaults`, `config_dict`, and `cli_args` that:\n1) Applies precedence: defaults < config < CLI\n2) Supports nested keys via dot-notation overrides like `--set optim.lr=1e-4 --set data.num_workers=4`\n3) Prints a resolved config with provenance for each leaf key\n\nAssume `--config` is YAML and `--set` can be repeated.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One reasonable approach:\n\n- Start with a deep copy of `defaults` as `resolved`\n- Maintain `source` dict with same shape, initialized to 'default'\n- Load YAML into `cfg`; deep-merge into `resolved`, setting corresponding `source` leaves to 'config'\n- Parse CLI args. For regular args (e.g., `--epochs`), if the CLI provided a non-None value, write it into `resolved` and mark `source` as 'cli'.\n- For `--set key=value` (repeatable):\n  - Split on first '=' to get keypath and value\n  - Split keypath by '.'\n  - Walk/create nested dicts in `resolved`\n  - Parse value (e.g., via YAML/JSON scalar parsing) and set leaf\n  - Mark `source` leaf as 'cli'\n- Finally, print resolved values and sources, e.g.:\n\n```python\n# printing\nfor keypath, val in iter_leaves(resolved):\n    print(f\"{keypath}: {val}  # from {get_source(source, keypath)}\")\n```\n\nEdge cases to handle: type mismatches (config says string but CLI expects float), unknown keys in `--set` (either allow with warning or error), and lists (decide replace vs merge semantics).",
+      "explanation": "This mirrors real ML tooling (Hydra-like behavior) but with argparse. The key is separating parsing from merging and keeping a provenance map so users can debug why a run used a particular hyperparameter.",
+      "difficulty": "advanced",
+      "tags": [
+        "config-merging",
+        "cli-overrides",
+        "nested-keys",
+        "provenance",
+        "resolved-config"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your ML training tool supports `--config config.yaml` plus CLI overrides (e.g., `--lr 1e-4`). You also want to print a resolved config that includes provenance for each field (default vs config file vs CLI). Which design best supports provenance reporting?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Parse args normally, then merge dictionaries while tracking a parallel `source` map per key (e.g., `{key: 'default'|'config'|'cli'}`) and print both resolved values and sources.",
+        "B. Rely on `ArgumentParser` internals to tell you whether each argument came from CLI or default; no extra bookkeeping needed.",
+        "C. Use `allow_abbrev=True` and treat abbreviated flags as coming from config; full flags as coming from CLI.",
+        "D. Use `parse_known_args()` and treat unknown args as config overrides; known args as defaults."
+      ],
+      "correct_answer": "A",
+      "explanation": "argparse does not provide a robust, built-in per-argument provenance API. In ML tooling, the common pattern is to (1) load config, (2) parse CLI, (3) merge with explicit precedence, and (4) track provenance in a separate structure for transparency/debugging and reproducibility.",
+      "difficulty": "advanced",
+      "tags": [
+        "config",
+        "cli-overrides",
+        "provenance",
+        "resolved-config"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Write a `build_parser()` function that produces a help output with 4 groups: Data, Model, Optim, Logging. Include at least these args:\n- Data: `--train-path` (Path), `--val-path` (Path), `--num-workers` (int)\n- Model: `--arch` (str), `--checkpoint` (Path or None)\n- Optim: `--epochs` (int), `--batch-size` (int), `--lr` (float)\n- Logging: `--log-level` (choices), `--save-dir` (Path)\n\nUse `pathlib.Path` types and reasonable defaults.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n```python\nfrom __future__ import annotations\nimport argparse\nfrom pathlib import Path\n\n\ndef build_parser() -> argparse.ArgumentParser:\n    p = argparse.ArgumentParser(prog=\"train.py\")\n\n    g_data = p.add_argument_group(\"Data\")\n    g_data.add_argument(\"--train-path\", type=Path, required=True, help=\"Path to training dataset\")\n    g_data.add_argument(\"--val-path\", type=Path, default=None, help=\"Optional validation dataset\")\n    g_data.add_argument(\"--num-workers\", type=int, default=8)\n\n    g_model = p.add_argument_group(\"Model\")\n    g_model.add_argument(\"--arch\", type=str, default=\"resnet50\")\n    g_model.add_argument(\"--checkpoint\", type=Path, default=None, help=\"Resume/initialize from checkpoint\")\n\n    g_optim = p.add_argument_group(\"Optim\")\n    g_optim.add_argument(\"--epochs\", type=int, default=10)\n    g_optim.add_argument(\"--batch-size\", type=int, default=64)\n    g_optim.add_argument(\"--lr\", type=float, default=1e-3)\n\n    g_log = p.add_argument_group(\"Logging\")\n    g_log.add_argument(\"--log-level\", choices=[\"DEBUG\", \"INFO\", \"WARNING\", \"ERROR\"], default=\"INFO\")\n    g_log.add_argument(\"--save-dir\", type=Path, default=Path(\"runs\"))\n\n    return p\n```\n\nKey points: use `add_argument_group()` for readability, `Path` for paths, and defaults that match typical training scripts.",
+      "explanation": "This tests practical CLI organization: grouping improves UX, `Path` avoids manual path parsing, and defaults reflect common ML workflows. The import-safe `build_parser()` also supports unit testing and reuse.",
+      "difficulty": "intermediate",
+      "tags": [
+        "add_argument_group",
+        "pathlib",
+        "ml-training-cli",
+        "parser-structure"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want your training script help output to be readable by grouping flags into sections (data/model/optim/logging). Which argparse feature is designed for this?\n\nExample desired help sections:\n- Data: `--train-path`, `--val-path`, `--num-workers`\n- Model: `--arch`, `--pretrained`, `--checkpoint`\n- Optim: `--lr`, `--batch-size`, `--epochs`, `--weight-decay`\n- Logging: `--log-level`, `--wandb-project`, `--save-dir`\n",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument_group(title='Data')`",
+        "B. `parser.add_subparsers(title='Data')`",
+        "C. `parser.set_defaults(group='Data')`",
+        "D. `parser.add_mutually_exclusive_group(title='Data')`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`add_argument_group()` creates labeled sections in `--help`, improving discoverability in ML CLIs with many flags. Subparsers are for subcommands, `set_defaults` sets default values, and mutually exclusive groups enforce constraints (and only optionally affect help layout).",
+      "difficulty": "beginner",
+      "tags": [
+        "add_argument_group",
+        "help-output",
+        "ml-training-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a positional `data_dir` with `nargs='+'` to allow multiple datasets, plus optional flags. You consider switching to `parse_intermixed_args()` to allow flexible ordering. In practice, why might you avoid `parse_intermixed_args()` here, and what’s a safer CLI design alternative for ML tooling?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "With `nargs='+'` positionals, intermixing can become ambiguous: argparse may not know where the list of datasets ends and where optionals begin, and `parse_intermixed_args()` has limitations with certain positional patterns/subparsers. A safer alternative is to either (1) require positionals first (standard argparse behavior), or (2) convert the positional to an explicit optional like `--data-dir` (repeatable) or `--data` (accepting multiple values) so ordering is unambiguous, or (3) use subcommands (e.g., `train`, `eval`) and keep complex lists as optionals.",
+      "explanation": "In ML scripts, dataset inputs often use variable-length lists and glob patterns. Allowing arbitrary intermixing can create confusing parse errors or mis-parses. Making inputs explicit optionals (repeatable flags) improves clarity, makes help output clearer, and avoids edge cases with intermixing.",
+      "difficulty": "advanced",
+      "tags": [
+        "parse_intermixed_args",
+        "nargs",
+        "cli-design",
+        "ml-data-inputs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re writing a training CLI that accepts a positional `run_name` and optional flags like `--lr`, `--batch-size`, `--seed`. Users ask to place flags anywhere (e.g., `train.py --lr 1e-3 myrun --seed 0`). Which approach is most appropriate in Python argparse, and what is a key tradeoff?\n\nExample desired calls:\n- `train.py myrun --lr 1e-3`\n- `train.py --lr 1e-3 myrun --seed 0`\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `ArgumentParser.parse_intermixed_args()` so optionals and positionals can intermix; tradeoff: some combinations (especially `nargs` positionals) can become ambiguous or unsupported.",
+        "B. Use `parse_known_args()` and ignore unknown args; tradeoff: you lose strict validation and may silently drop typos.",
+        "C. Set `allow_abbrev=True` so flags can appear anywhere; tradeoff: abbreviations can misparse similarly named options.",
+        "D. Use `conflict_handler='resolve'` so later args override earlier; tradeoff: positionals may be overwritten by optionals."
+      ],
+      "correct_answer": "A",
+      "explanation": "`parse_intermixed_args()` is the argparse feature designed for mixing optionals and positionals in arbitrary order. In ML CLIs this can improve UX when users copy/paste flags. The tradeoff is that intermixing can interact poorly with complex positionals (e.g., `nargs='+'`, multiple positionals, subparsers), leading to ambiguity or limitations. Many training scripts avoid intermixing by putting positionals first (or making `run_name` an optional like `--run-name`) to keep parsing predictable.",
+      "difficulty": "intermediate",
+      "tags": [
+        "parse_intermixed_args",
+        "positionals-vs-optionals",
+        "cli-design",
+        "ml-training-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Machine-readable outputs & logging: You’re integrating with a job scheduler that expects JSON on stdout when the user passes `--print-config`.\n\nRequirements:\n- Normal runs log to stderr\n- `--print-config` should output a JSON representation of the final config (after precedence/validation) to stdout and exit 0\n- You also want to log the invoked argv for reproducibility\n\nSketch how you’d structure this with argparse and Python logging (where would you print JSON, where would you log, and how do you avoid mixing streams?).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good structure:\n- Add a flag `--print-config`.\n- Configure logging to write to stderr.\n- After parsing + building the final config + validation, if `print_config` is true: serialize config to JSON and `print(...)` to stdout, then `return`/`sys.exit(0)`.\n- Log `sys.argv` (or the `argv` passed into `main`) at startup.\n\nExample sketch:\n\n```python\nimport argparse, json, logging, sys\nfrom dataclasses import asdict\n\nlog = logging.getLogger(__name__)\n\ndef build_parser():\n    p = argparse.ArgumentParser()\n    p.add_argument('--print-config', action='store_true')\n    p.add_argument('--log-level', default='INFO')\n    # ... other args\n    return p\n\ndef main(argv=None):\n    argv = sys.argv[1:] if argv is None else argv\n    p = build_parser()\n    args = p.parse_args(argv)\n\n    logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO),\n                        stream=sys.stderr,\n                        format='%(asctime)s %(levelname)s %(message)s')\n\n    log.info('argv=%s', ['mltool', *argv])\n\n    cfg = build_final_cfg(args)  # includes precedence + validation\n\n    if args.print_config:\n        print(json.dumps(asdict(cfg), indent=2, sort_keys=True))  # stdout\n        return 0\n\n    return train(cfg)\n```\n\n(Any equivalent answer that clearly separates stdout JSON from stderr logs and ensures JSON reflects the final validated config is acceptable.)",
+      "explanation": "Schedulers and pipelines often parse stdout, so structured outputs must not be polluted by logs. Logging to stderr is the standard pattern. Printing the *final* config ensures reproducibility: it reflects config-file/env/CLI precedence and validation. Logging argv is a lightweight but valuable practice for ML experiment traceability.",
+      "difficulty": "advanced",
+      "tags": [
+        "machine-readable-output",
+        "logging-integration",
+        "json-output",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Packaging/entry points: You want users to run your training tool as `mltool train ...` after `pip install .`.\n\nName two common ways to expose this command in Python packaging, and briefly describe how they work (e.g., `console_scripts` vs `python -m ...`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two common approaches:\n\n1) `console_scripts` entry point (recommended for installed CLIs):\n- In `pyproject.toml` (or `setup.cfg`), define an entry point mapping a command name to a callable, e.g. `mltool = mltool.cli:main`.\n- When installed, pip creates an executable `mltool` that calls `mltool.cli.main()`.\n\n2) `python -m package` via `__main__.py`:\n- Add `mltool/__main__.py` that calls your CLI `main()`.\n- Users run `python -m mltool train ...` (no separate script needed), useful for editable installs and direct module execution.\n\n(Answer may mention both and note that `console_scripts` gives the nicest UX, while `-m` is a standard module entry point.)",
+      "explanation": "ML engineers commonly ship internal tooling and need to know how a parser becomes an actual command. `console_scripts` is the standard for installed CLIs and integrates well with virtual environments. `__main__.py` supports module execution and is often used as a fallback or for development workflows.",
+      "difficulty": "beginner",
+      "tags": [
+        "packaging-training-cli",
+        "console-scripts",
+        "__main__",
+        "entrypoints"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Subcommands in real ML tooling: You want a single entry point `mltool` with subcommands:\n- `mltool train ...`\n- `mltool eval ...`\n\nRequirements:\n- Shared flags: `--seed`, `--device`, `--log-level`\n- `train` has `--epochs`, `--lr`\n- `eval` has `--checkpoint` (required)\n- Help output should be clean and consistent\n\nWhich design is best with argparse?",
+      "question_type": "mc",
+      "options": [
+        "A. Put all flags on one parser and manually branch on `args.command` without using subparsers.",
+        "B. Use `add_subparsers()` plus a parent parser for shared flags, and attach per-subcommand parsers.",
+        "C. Create two completely separate scripts (`train.py` and `eval.py`) and avoid a unified CLI.",
+        "D. Use `parse_known_args()` everywhere and ignore unknown flags to keep it flexible."
+      ],
+      "correct_answer": "B",
+      "explanation": "`add_subparsers()` is the canonical approach for `train/eval` commands. A parent parser (created with `add_help=False`) can hold shared flags and be passed via `parents=[parent]` to each subcommand parser, keeping help consistent and avoiding duplication. Option A leads to confusing help and validation. Option C can be acceptable in small projects but fails the requirement of a single entry point. Option D tends to hide mistakes and makes debugging hard (typos silently ignored).",
+      "difficulty": "intermediate",
+      "tags": [
+        "subcommands",
+        "parent-parsers",
+        "mltooling-cli-design"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Robust validation beyond `choices`: You support mixed precision modes: `fp32`, `fp16`, `bf16`.\n\nConstraints:\n- `bf16` is only allowed when `--device cuda` AND the GPU supports bf16 (assume you can check via a function `gpu_supports_bf16()`).\n- `fp16` requires `--device cuda`.\n- If `--precision fp32`, AMP must be disabled.\n\nDescribe (or code) how you’d enforce these constraints using argparse plus a validation step. Where should the checks live and how should errors be reported?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good approach is:\n1) Use argparse for basic parsing and simple `choices`.\n2) Perform cross-argument and hardware-dependent checks after parsing (in a `validate_cfg`/`validate_args` function).\n3) For user-friendly CLI errors, raise `parser.error(...)` (or catch `ValueError` in `main` and call `parser.error`).\n\nExample:\n\n```python\ndef build_parser():\n    p = argparse.ArgumentParser()\n    p.add_argument('--device', choices=['cpu','cuda'], default='cuda')\n    p.add_argument('--precision', choices=['fp32','fp16','bf16'], default='fp32')\n    p.add_argument('--no-amp', dest='use_amp', action='store_false', default=True)\n    return p\n\ndef validate_args(p, a):\n    if a.precision in ('fp16','bf16') and a.device != 'cuda':\n        p.error(f\"precision={a.precision} requires --device cuda\")\n    if a.precision == 'bf16' and not gpu_supports_bf16():\n        p.error(\"bf16 requested but GPU does not support bf16\")\n    if a.precision == 'fp32' and a.use_amp:\n        p.error(\"--precision fp32 is incompatible with AMP; pass --no-amp\")\n\ndef main(argv=None):\n    p = build_parser()\n    a = p.parse_args(argv)\n    validate_args(p, a)\n```\n\n(Equivalent solutions using dataclass config + validation are also acceptable.)",
+      "explanation": "Argparse `choices` handles single-argument validity, but cross-argument constraints and hardware checks must happen after parsing. Using `parser.error()` yields consistent CLI error formatting and exit code 2. This is realistic for ML: precision depends on device and hardware capabilities, and AMP interactions are a frequent source of silent misconfiguration.",
+      "difficulty": "advanced",
+      "tags": [
+        "input-validation",
+        "cross-argument-constraints",
+        "mixed-precision",
+        "hardware-constraints"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Defaults & precedence: Your training script supports three sources of configuration:\n1) a config file (e.g., JSON) with defaults\n2) environment variables (e.g., `TRAIN_LR`, `TRAIN_EPOCHS`)\n3) CLI flags\n\nYou want a clear precedence model: CLI overrides env overrides config file.\n\nHow would you implement this robustly with argparse? Choose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Put env var values as argparse defaults, then parse args, then load config file and overwrite parsed args.",
+        "B. Parse CLI first, then load config file, then load env vars, and overwrite in that order.",
+        "C. Load config file first, then apply env vars, then set those values as argparse defaults and parse CLI last.",
+        "D. Use `argparse` only for CLI; ignore env vars/config files because precedence is too complex."
+      ],
+      "correct_answer": "C",
+      "explanation": "To achieve CLI > env > config, you typically: (1) load config file defaults, (2) overlay environment variables, then (3) set the resulting values as argparse defaults and parse CLI last so explicit CLI flags win. Options A and B overwrite in the wrong direction and can accidentally clobber explicit CLI values. Option D is not acceptable in real ML tooling where config/env integration is common (e.g., cluster schedulers, CI, secrets).",
+      "difficulty": "intermediate",
+      "tags": [
+        "defaults-precedence",
+        "env-defaults",
+        "config-file-integration"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to keep training code decoupled from argparse by mapping parsed args into a typed config object.\n\nGiven:\n\n```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass TrainConfig:\n    data: str\n    out: str = \"runs/exp\"\n    epochs: int = 10\n    lr: float = 3e-4\n    use_amp: bool = True\n```\n\nWrite a lightweight pattern (no Hydra) to:\n1) parse args with argparse\n2) convert `Namespace` -> `TrainConfig`\n3) run a validation step (e.g., epochs > 0, lr in (0, 1])\n4) pass `TrainConfig` into `train(cfg)`\n\nShow code structure (functions) rather than only fragments.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example pattern:\n\n```python\nimport argparse\nfrom dataclasses import dataclass\n\n@dataclass\nclass TrainConfig:\n    data: str\n    out: str = \"runs/exp\"\n    epochs: int = 10\n    lr: float = 3e-4\n    use_amp: bool = True\n\n\ndef build_parser() -> argparse.ArgumentParser:\n    p = argparse.ArgumentParser()\n    p.add_argument(\"--data\", required=True)\n    p.add_argument(\"--out\", default=\"runs/exp\")\n    p.add_argument(\"--epochs\", type=int, default=10)\n    p.add_argument(\"--lr\", type=float, default=3e-4)\n    p.add_argument(\"--no-amp\", dest=\"use_amp\", action=\"store_false\", default=True)\n    return p\n\n\ndef validate_cfg(cfg: TrainConfig) -> None:\n    if cfg.epochs <= 0:\n        raise ValueError(\"epochs must be > 0\")\n    if not (0.0 < cfg.lr <= 1.0):\n        raise ValueError(\"lr must be in (0, 1]\")\n\n\ndef parse_cfg(argv=None) -> TrainConfig:\n    args = build_parser().parse_args(argv)\n    cfg = TrainConfig(**vars(args))\n    validate_cfg(cfg)\n    return cfg\n\n\ndef main(argv=None):\n    cfg = parse_cfg(argv)\n    train(cfg)\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n(Any equivalent approach using `vars(args)`/`Namespace.__dict__` to construct the dataclass and a separate validation function is acceptable.)",
+      "explanation": "This is a common ML-engineering pattern: argparse is only responsible for CLI parsing; the rest of the code consumes a typed config. `TrainConfig(**vars(args))` is a lightweight mapping that avoids tying the training pipeline to `argparse.Namespace`. A separate `validate_cfg` keeps cross-field checks out of the parser and makes configs testable from code (e.g., unit tests can instantiate `TrainConfig` directly).",
+      "difficulty": "intermediate",
+      "tags": [
+        "dataclasses-config",
+        "namespace-to-dataclass",
+        "validation",
+        "decoupled-training-code"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to represent a list of hidden layer sizes from the CLI.\n\nRequirement: both of these should work:\n- `--layers 256 128 64`\n- `--layers 256,128,64`\n\nWrite an argparse snippet that supports both forms, producing `args.layers` as `List[int]`. (You can choose one canonical representation and add a small adapter, or accept both via a custom type.)",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One acceptable approach is to accept a single string and parse either whitespace or commas:\n\n```python\nimport argparse\n\ndef parse_layers(s: str) -> list[int]:\n    # allow \"256 128\" only if passed as a single token; commas are common\n    parts = s.replace(\",\", \" \").split()\n    out = [int(p) for p in parts]\n    if not out:\n        raise argparse.ArgumentTypeError(\"--layers must be non-empty\")\n    return out\n\np = argparse.ArgumentParser()\np.add_argument(\"--layers\", type=parse_layers, default=[256, 128])\n```\n\nOr accept the space-separated form natively and add an alternate flag for CSV:\n\n```python\np.add_argument('--layers', nargs='+', type=int, default=[256,128])\np.add_argument('--layers-csv', type=parse_layers, dest='layers')\n```",
+      "explanation": "ML CLIs often need to express variable-length architecture parameters. `nargs='+'` naturally supports space-separated lists, while a custom parser handles comma-separated input (common in config files or schedulers). Using `ArgumentTypeError` yields good error messages. The key is to return a `List[int]` and validate non-empty input.",
+      "difficulty": "intermediate",
+      "tags": [
+        "list-args",
+        "performance-scale-of-arguments",
+        "input-parsing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a training CLI where users may specify multiple tags for experiment tracking, like:\n\n`python train.py --tag baseline --tag resnet --tag aug-v2`\n\nWhich argparse configuration correctly collects all tags into a Python list (default empty list)?",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--tag', action='append', default=[])`",
+        "B. `parser.add_argument('--tag', nargs='*', default=[])`",
+        "C. `parser.add_argument('--tag', type=list, default=[])`",
+        "D. `parser.add_argument('--tag', action='store_true', default=[])`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`action='append'` is the standard way to accumulate repeated flags into a list. With `--tag a --tag b`, you get `['a', 'b']`. `nargs='*'` changes how many values a single `--tag` consumes and can lead to confusing parsing; also repeated uses yield nested lists unless carefully handled. `type=list` won’t split input how you want. `store_true` is for booleans, not strings.",
+      "difficulty": "beginner",
+      "tags": [
+        "repeated-options",
+        "list-args",
+        "experiment-tracking"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Boolean flag pitfall: You want AMP enabled by default, but allow users to explicitly disable it.\n\nWhich argparse pattern best supports this behavior?\n\nRequirements:\n- default is AMP ON\n- user can pass a flag to turn it OFF\n- help text should be clear",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--use-amp', action='store_true', default=True)`",
+        "B. `parser.add_argument('--no-amp', action='store_false', dest='use_amp', default=True)`",
+        "C. `parser.add_argument('--amp', type=bool, default=True)`",
+        "D. `parser.add_argument('--use-amp', action='store_true'); parser.add_argument('--no-amp', action='store_true')`"
+      ],
+      "correct_answer": "B",
+      "explanation": "For default-True booleans, the canonical pattern is a disable flag that flips the destination to False: `--no-amp` with `action='store_false'`, `dest='use_amp'`, and `default=True`. Option A is misleading because `store_true` can’t set False when the flag is present; it only sets True. Option C is a common bug: `type=bool` doesn’t parse strings like you expect (`bool('False')` is True). Option D creates two separate booleans unless you carefully wire `dest`/mutual exclusion; it’s error-prone and ambiguous.",
+      "difficulty": "beginner",
+      "tags": [
+        "boolean-flags",
+        "default-true-disable-flag",
+        "argparse-pitfalls"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re asked to write a minimal, canonical CLI for an ML training script `train.py` that supports common flags:\n- required dataset path\n- output directory\n- epochs (int)\n- batch size (int)\n- learning rate (float)\n- seed (int)\n- device (cpu/cuda)\n\nWrite a small `build_parser()` function using `argparse` and show how you’d call it in `main()`.\n\nInclude sensible defaults where appropriate and make `--data` required.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example solution:\n\n```python\nimport argparse\n\n\ndef build_parser() -> argparse.ArgumentParser:\n    p = argparse.ArgumentParser(description=\"Train a model\")\n    p.add_argument(\"--data\", required=True, type=str, help=\"Path to dataset\")\n    p.add_argument(\"--out\", default=\"runs/exp\", type=str, help=\"Output directory\")\n    p.add_argument(\"--epochs\", default=10, type=int)\n    p.add_argument(\"--batch-size\", default=64, type=int)\n    p.add_argument(\"--lr\", default=3e-4, type=float)\n    p.add_argument(\"--seed\", default=42, type=int)\n    p.add_argument(\"--device\", default=\"cuda\", choices=[\"cpu\", \"cuda\"])\n    return p\n\n\ndef main(argv=None):\n    parser = build_parser()\n    args = parser.parse_args(argv)\n    # pass args into training\n    train(data=args.data, out=args.out, epochs=args.epochs,\n          batch_size=args.batch_size, lr=args.lr, seed=args.seed,\n          device=args.device)\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n(Any equivalent canonical pattern that uses `ArgumentParser`, `add_argument`, `parse_args`, and passes parsed values into training is acceptable.)",
+      "explanation": "This tests the baseline expectation for ML engineers: define a small set of standard hyperparameters and runtime toggles, use types and defaults, and ensure required inputs (like dataset path) are enforced by the parser. A clean pattern is to have a `build_parser()` and a `main(argv=None)` to allow programmatic testing by passing a custom argv list.",
+      "difficulty": "beginner",
+      "tags": [
+        "minimal-train-cli",
+        "argparse-basics",
+        "ml-training-script"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Unknown-arg forwarding: Your `train` command needs to forward some arguments to downstream tools like `torchrun`/`accelerate`/`deepspeed` without argparse rejecting them.\n\nWhich implementation is the most robust pattern for stable pass-through contracts?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `parse_args()` and set `ArgumentParser(allow_abbrev=True)` so unknown flags are treated as abbreviations and won't error.",
+        "B. Use `parse_known_args()` and forward the remaining list, optionally behind an explicit `--` separator or a dedicated `--deepspeed-args ...` remainder argument.",
+        "C. Put all downstream flags into your argparse schema even if your tool doesn’t use them, so argparse will accept them.",
+        "D. Disable error handling by wrapping `parse_args()` in a broad `try/except Exception` and ignoring failures."
+      ],
+      "correct_answer": "B",
+      "explanation": "Forwarding is best handled explicitly: `parse_known_args()` lets your CLI parse what it owns and pass the rest through unchanged. For an even clearer contract, use `--` to separate your args from downstream args, or use `argparse.REMAINDER` for a specific option (e.g., `--torchrun-args`). This avoids fragile coupling to downstream tools and keeps your CLI stable as those tools evolve.",
+      "difficulty": "advanced",
+      "tags": [
+        "unknown-arg-forwarding",
+        "distributed-training",
+        "parse_known_args",
+        "pass-through-contract"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Argument grouping and consistent help across subcommands: You have `train`, `eval`, and `predict` subcommands that share common flags like `--device`, `--seed`, `--log-level`, and also have command-specific flags.\n\nExplain how you would structure argparse code to avoid duplication while keeping help output well-organized (e.g., shared groups + per-subcommand groups). Mention at least one concrete argparse API you would use.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use subparsers for `train/eval/predict`, and create helper functions that add shared argument groups to any parser. For example, define `add_runtime_group(parser)` that calls `parser.add_argument_group('Runtime')` and adds `--device/--seed/--log-level`, and `add_io_group(parser)` for `--output-dir/--cache-dir`. In `build_parser()`, create the top-level parser, then `subparsers = parser.add_subparsers(dest='command', required=True)`. For each subcommand parser, call the shared helpers first (ensuring consistent ordering/names), then add a command-specific group via `subparser.add_argument_group('Training')` or `('Evaluation')` to keep help readable. This avoids duplication and produces consistent help layout across commands.",
+      "explanation": "As CLIs grow, duplication causes drift (flags behave differently across commands). Shared helper functions plus `add_argument_group` create a stable, readable help structure. Subparsers enforce clear contracts per command while still allowing shared global behavior and shared documentation patterns.",
+      "difficulty": "advanced",
+      "tags": [
+        "argument-grouping",
+        "help-layout",
+        "subcommands",
+        "maintainability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "nargs / multi-value ML use case: You want a flag that can accept multiple datasets:\n- If user does not provide it: use datasets from config\n- If user provides it with one or more values: override config\n- You want to reject the case where the flag is present but empty\n\nWhich argparse definition best matches this?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--datasets', nargs='*', default=None)`",
+        "B. `parser.add_argument('--datasets', nargs='+', default=DEFAULT_SENTINEL)`",
+        "C. `parser.add_argument('--datasets', action='append', default=[])`",
+        "D. `parser.add_argument('--datasets', nargs=1, required=True)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`nargs='+'` requires at least one value if the flag appears, which prevents the “present but empty” case. Pairing it with a sentinel default lets you distinguish “not provided” (use config) from “provided list” (override). `nargs='*'` allows empty lists, which can be ambiguous. `append` is useful for repeated flags but defaults to `[]`, making it hard to distinguish not-provided vs provided-empty without extra work.",
+      "difficulty": "intermediate",
+      "tags": [
+        "nargs",
+        "multi-value-args",
+        "datasets",
+        "defaults"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Defaults semantics: You want `--precision` to default to whatever is in the config file, but if the user explicitly passes `--precision bf16`, it should override. You also want to detect whether the user provided the flag at all.\n\nWhat is the best argparse pattern?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Set `default=None`; if args.precision is None, treat it as not provided.",
+        "B. Set `default=\"fp32\"`; if args.precision is \"fp32\", treat it as not provided.",
+        "C. Use a sentinel object as default (e.g., `DEFAULT = object()`), set `default=DEFAULT`, and check `is DEFAULT` to detect not provided.",
+        "D. Use `required=True` so you always know it was provided."
+      ],
+      "correct_answer": "C",
+      "explanation": "Using `None` as a proxy for “not provided” fails when `None` is a legitimate value (or when you want config-driven defaults). A sentinel cleanly distinguishes “not provided” from “provided value”, and avoids conflating with real domain values like \"fp32\". `required=True` defeats the goal of deferring to config defaults.",
+      "difficulty": "intermediate",
+      "tags": [
+        "defaults",
+        "sentinel",
+        "config-override",
+        "not-provided-detection"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Error handling: You want parse errors to show a clean message and usage, but in unit tests you don't want the process to exit.\n\nGiven this code:\n```python\nimport argparse\n\ndef build_parser():\n    p = argparse.ArgumentParser(prog=\"train\")\n    p.add_argument(\"--lr\", type=float, required=True)\n    return p\n\ndef main(argv=None):\n    args = build_parser().parse_args(argv)\n    return 0\n```\nHow would you adjust this to (1) keep user-friendly CLI behavior and (2) make it testable without terminating the test runner? Provide a concrete approach.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Keep argparse’s normal behavior for the real CLI, but in tests call `parse_args` with a provided `argv` and capture/handle `SystemExit`. A common approach is: keep `main(argv=None)` as shown, and in tests call `main([])` and assert it raises `SystemExit` with code 2 for missing `--lr`. Alternatively, subclass `ArgumentParser` and override `error()` to raise a custom exception (e.g., `ArgumentError`) instead of calling `sys.exit`, then catch that in tests; in production entrypoint, catch it and return exit code 2 after printing usage. Both preserve clean messages while avoiding hard exits in test contexts.",
+      "explanation": "argparse intentionally raises `SystemExit` on parse errors (exit code 2). For CLI correctness, that’s desirable. For tests, you either (a) assert on `SystemExit` or (b) route errors through an exception you control by overriding `ArgumentParser.error`. The key is separating the library-like logic from the CLI entrypoint so tests can exercise parsing deterministically.",
+      "difficulty": "intermediate",
+      "tags": [
+        "error-handling",
+        "SystemExit",
+        "testing",
+        "parser.error"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Internationalization/encoding edge case: A user runs your tool on Windows with a dataset path containing non-ASCII characters (e.g., Japanese). Sometimes `sys.argv` decoding can be tricky, and paths may include characters not representable in the current code page.\n\nWhat is the most practical approach for an AI/ML CLI to handle this robustly?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Force ASCII-only by rejecting any argument containing non-ASCII characters; it simplifies the code.",
+        "B. Prefer `pathlib.Path` end-to-end, avoid manual `.encode()`/`.decode()`, and when opening files use Python APIs that accept `Path` objects; add tests that pass Unicode paths.",
+        "C. Convert all arguments to bytes immediately and operate on bytes paths to avoid Unicode issues.",
+        "D. Print help text in English only; encoding issues only affect help output."
+      ],
+      "correct_answer": "B",
+      "explanation": "In most production ML tooling, the practical solution is to rely on Python’s Unicode `str`/`Path` handling and avoid unnecessary encoding conversions. Using `Path` objects and standard file APIs reduces bugs. Adding tests with Unicode paths catches regressions. Converting everything to bytes is rarely necessary and can break cross-platform behavior; rejecting non-ASCII is not acceptable in many environments.",
+      "difficulty": "advanced",
+      "tags": [
+        "i18n",
+        "unicode-paths",
+        "windows",
+        "pathlib"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are building a large internal ML CLI with 30+ subcommands and hundreds of flags across a monorepo. Startup time is not the bottleneck, but maintainability is.\n\nWhich pattern best keeps argparse construction maintainable and consistent?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Put all arguments for all subcommands in a single file so they are easy to search with Ctrl+F.",
+        "B. Create helper functions to add shared argument groups (e.g., logging, I/O, distributed), and have each subcommand module export an `add_parser(subparsers)` function to register itself.",
+        "C. Dynamically introspect function signatures and automatically create argparse flags for every parameter to avoid manual work.",
+        "D. Use positional arguments only; they are shorter and reduce help text clutter."
+      ],
+      "correct_answer": "B",
+      "explanation": "Large CLIs benefit from modular registration and shared group helpers: consistent flags, consistent help layout, and reduced duplication. Each subcommand owning its parser keeps boundaries clear, while shared helpers enforce cross-command standards (e.g., `--log-level`, `--device`, `--output-dir`). Auto-generating from signatures often produces unstable CLIs and confusing help; positional-only CLIs become brittle and harder to use correctly.",
+      "difficulty": "advanced",
+      "tags": [
+        "large-cli-maintainability",
+        "argument-grouping",
+        "subparsers",
+        "repo-patterns"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Security/safety: your CLI accepts `--output-dir` and writes model checkpoints and predictions there. Which approach best reduces common risks like accidental overwrite and path traversal issues?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Always call `shutil.rmtree(output_dir)` before writing to ensure a clean run; it prevents partial outputs.",
+        "B. Use `Path(output_dir).resolve()` and allow any resolved path; overwrite files by default to keep runs reproducible.",
+        "C. Default to creating a new run directory (e.g., timestamp/UUID), refuse to write into non-empty directories unless `--overwrite` is set, and validate that resolved paths stay under an allowed base directory when applicable.",
+        "D. Accept relative paths only; relative paths cannot be used for path traversal."
+      ],
+      "correct_answer": "C",
+      "explanation": "A safe default is to avoid destructive behavior: create a new run directory, and require an explicit `--overwrite`/`--resume` flag to write into existing locations. If your environment has a designated workspace (common in ML platforms), validating that `output_dir.resolve()` is within that base directory mitigates traversal-like mistakes (e.g., `../../`). Relative paths can still traverse; and deleting directories by default is dangerous.",
+      "difficulty": "intermediate",
+      "tags": [
+        "cli-security",
+        "safe-file-writing",
+        "path-validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a single Python entrypoint `mljob` with subcommands `train`, `eval`, and `predict`. In production, it will be called by schedulers that care about exit codes and machine-readable outputs.\n\nDescribe a CLI contract (stdout/stderr + exit codes) you would implement using argparse, and how you would structure output for both humans and machines.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good contract is: stdout for primary results (optionally machine-readable), stderr for logs/errors; exit code 0 on success, non-zero on failure with consistent meanings. For example: `train` prints a final JSON line to stdout with metrics/artifact paths when `--json` is set, while human-friendly progress/logging goes to stderr (or a logging framework configured to stderr). `eval`/`predict` similarly write predictions/metrics to files and print a concise summary or JSON to stdout. Use argparse subparsers to define `train/eval/predict`, add `--json` (or `--output-format json|text`) and `--output` paths, and ensure failures call `parser.error(...)` for argument issues (exit code 2) and raise/return non-zero for runtime failures (e.g., 1).",
+      "explanation": "Schedulers and pipelines typically parse stdout and treat stderr as diagnostic. argparse already uses exit code 2 for parse errors; leaning into that convention is useful. Separating human vs machine output avoids brittle parsing of logs. Subparsers make help discoverable and keep contracts per command while sharing global flags (e.g., `--log-level`, `--json`).",
+      "difficulty": "intermediate",
+      "tags": [
+        "train-eval-predict-cli",
+        "exit-codes",
+        "stdout-stderr",
+        "machine-readable-output"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a training script that uses a Hydra/OMEGACONF-style config file for most hyperparameters. You still want a minimal, stable CLI for production. Which boundary design is the best practice?\n\nAssume you want to support: choosing the config file, overriding a small set of top-level knobs, and passing the rest to the config system.\n",
+      "question_type": "mc",
+      "options": [
+        "A. Put every config key into argparse so `--help` shows the full config surface area; avoid a config system for consistency.",
+        "B. Use argparse only for bootstrapping (e.g., `--config`, `--run-name`, `--seed`, `--dry-run`), then hand off remaining overrides to the config system (possibly via `parse_known_args`).",
+        "C. Use argparse for everything and also load the config file afterwards to override CLI values (config wins).",
+        "D. Skip argparse entirely; accept a single positional JSON blob and parse it in code."
+      ],
+      "correct_answer": "B",
+      "explanation": "In ML tooling, argparse is most valuable as a stable entrypoint: selecting the config, environment/run metadata, and a small set of common overrides. The config system should own the large/fast-changing hyperparameter surface. A common pattern is `parse_known_args()` to capture pass-through overrides for Hydra/OmegaConf (or equivalent) and keep the CLI maintainable while still flexible.",
+      "difficulty": "intermediate",
+      "tags": [
+        "argparse-config-boundary",
+        "unknown-arg-forwarding",
+        "production-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Custom validation beyond `choices`: You have these constraints in a training CLI:\n- `--fp16` requires CUDA (`--device cuda`)\n- `--scheduler cosine` requires `--optimizer adamw` (not `sgd`)\n- Effective batch size must be divisible by world size: `batch_size * grad_accum % world_size == 0`\n\nWhere and how should you implement these checks when using `argparse`, and what should happen on failure? Provide a concise code sketch.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Implement cross-argument validation *after* parsing (because it depends on multiple fields) and fail with a clear CLI error (typically `parser.error(...)` so the message is user-friendly and consistent with argparse).\n\nSketch:\n```python\nimport argparse\n\ndef build_parser():\n    p = argparse.ArgumentParser()\n    p.add_argument('--device', default='cuda')\n    p.add_argument('--fp16', action='store_true')\n    p.add_argument('--optimizer', choices=['sgd','adamw'], default='adamw')\n    p.add_argument('--scheduler', choices=['none','cosine'], default='none')\n    p.add_argument('--batch-size', type=int, default=32)\n    p.add_argument('--grad-accum', type=int, default=1)\n    p.add_argument('--world-size', type=int, default=1)\n    return p\n\ndef validate_args(p, args):\n    if args.fp16 and args.device != 'cuda':\n        p.error('--fp16 requires --device cuda')\n    if args.scheduler == 'cosine' and args.optimizer != 'adamw':\n        p.error('cosine scheduler requires --optimizer adamw')\n    eff = args.batch_size * args.grad_accum\n    if eff % args.world_size != 0:\n        p.error(f'effective batch size ({eff}) must be divisible by world size ({args.world_size})')\n\ndef parse_args(argv=None):\n    p = build_parser()\n    args = p.parse_args(argv)\n    validate_args(p, args)\n    return args\n```\nThis keeps parsing separate from validation, produces actionable messages, and is easy to unit test by injecting `argv` and asserting failures.",
+      "explanation": "Argparse’s built-in validation (`type`, `choices`, `required`) is per-argument. Real ML constraints are often cross-argument and environment-dependent. Validating immediately after parsing is the cleanest approach; using `parser.error()` yields consistent exit codes/help behavior and avoids cryptic stack traces in user-facing CLIs.",
+      "difficulty": "advanced",
+      "tags": [
+        "validation",
+        "cross-argument-constraints",
+        "fp16",
+        "distributed-training",
+        "argv-injection"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Path handling in ML scripts: you want to accept `--data` (must exist), `--ckpt` (optional but if provided must exist), and `--out-dir` (create if missing). You also want clear error messages.\n\nWhich approach is best in `argparse`?",
+      "question_type": "mc",
+      "options": [
+        "A. Use `type=str` for all paths and let the training code crash if paths are wrong",
+        "B. Use `type=pathlib.Path` and perform existence/creation validation after parsing (or via a custom `type`), raising `parser.error(...)` for user-friendly messages",
+        "C. Use `choices=os.listdir('.')` so only existing files can be selected",
+        "D. Use `nargs='*'` for paths so missing paths are treated as empty lists"
+      ],
+      "correct_answer": "B",
+      "explanation": "Using `pathlib.Path` gives ergonomic path operations. Validation should produce CLI-friendly errors (via `parser.error` or a custom type that raises `ArgumentTypeError`). Creating output directories is a side effect that should be explicit and usually happens after parsing once you’ve resolved the final output path, ensuring consistent behavior in scripts and tests.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "input-output-paths",
+        "validation",
+        "filesystem"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a clean subcommand-based CLI for an ML project with commands: `train`, `eval`, `export`.\n\nRequirements:\n- Subcommand is required.\n- Shared args: `--config`, `--seed`, `--device`.\n- `train` has `--epochs`, `--lr`; `eval` has `--ckpt` (required); `export` has `--format`.\n- Clean dispatch without long `if/elif` chains.\n\nWrite a code sketch showing how you would use subparsers, parent parsers, and dispatch (e.g., `set_defaults(func=...)`).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```python\nimport argparse\n\ndef add_shared(parent: argparse.ArgumentParser):\n    g = parent.add_argument_group('Common')\n    g.add_argument('--config', type=str)\n    g.add_argument('--seed', type=int, default=0)\n    g.add_argument('--device', type=str, default='cuda')\n\n\ndef cmd_train(args):\n    # load config, merge, train\n    return 0\n\ndef cmd_eval(args):\n    return 0\n\ndef cmd_export(args):\n    return 0\n\n\ndef build_parser():\n    shared = argparse.ArgumentParser(add_help=False)\n    add_shared(shared)\n\n    p = argparse.ArgumentParser(prog='mlproj')\n    sub = p.add_subparsers(dest='command', required=True)\n\n    p_train = sub.add_parser('train', parents=[shared], help='Train a model')\n    p_train.add_argument('--epochs', type=int, default=10)\n    p_train.add_argument('--lr', type=float, default=1e-3)\n    p_train.set_defaults(func=cmd_train)\n\n    p_eval = sub.add_parser('eval', parents=[shared], help='Evaluate a checkpoint')\n    p_eval.add_argument('--ckpt', type=str, required=True)\n    p_eval.set_defaults(func=cmd_eval)\n\n    p_export = sub.add_parser('export', parents=[shared], help='Export for inference')\n    p_export.add_argument('--format', choices=['onnx', 'torchscript'], required=True)\n    p_export.set_defaults(func=cmd_export)\n\n    return p\n\n\ndef main(argv=None):\n    p = build_parser()\n    args = p.parse_args(argv)\n    return args.func(args)\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n```\nKey points: `required=True` enforces a subcommand; `parents=[shared]` reuses common args; `set_defaults(func=...)` enables clean dispatch via `args.func(args)`.",
+      "explanation": "Subparsers are the standard way to model multi-step ML tooling (train/eval/export). Parent parsers prevent duplication and keep help consistent. Dispatch via `set_defaults(func=...)` scales better than long branching logic and makes commands easy to test by calling their functions directly.",
+      "difficulty": "advanced",
+      "tags": [
+        "subparsers",
+        "parent-parsers",
+        "dispatch",
+        "shared-args",
+        "import-safe"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are integrating your script with wrappers/launchers like `torchrun`, SLURM, or notebook kernels that may inject extra flags you don't control. You also want to forward unknown args to a downstream tool (e.g., a tokenizer trainer).\n\nWhich `argparse` API is most appropriate, and what should you do with the unknown args?",
+      "question_type": "mc",
+      "options": [
+        "A. `parse_args()`; it will ignore unknown args by default",
+        "B. `parse_known_args()`; keep the returned `unknown` list and pass it through (or error with a custom message if non-empty)",
+        "C. `parse_intermixed_args()`; it automatically routes unknown args to subcommands",
+        "D. `parse_known_intermixed_args()`; it removes unknown args permanently so you can’t forward them"
+      ],
+      "correct_answer": "B",
+      "explanation": "`parse_known_args()` returns `(args, unknown)` so you can interoperate with launchers or wrappers that add flags, or intentionally forward extra flags to another parser/tool. In ML pipelines, this is common when composing CLIs (e.g., your training script + a library component). You should either forward `unknown` or fail with a clear error listing unknown flags to avoid silently ignoring typos.",
+      "difficulty": "intermediate",
+      "tags": [
+        "parse-known-args",
+        "unknown-arguments",
+        "wrappers",
+        "torchrun",
+        "slurm"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a large training CLI with many options. What is the best use of `argparse` argument groups to keep `--help` readable and consistent across commands?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Put everything in the default group; users can search within the help text anyway",
+        "B. Use `add_argument_group()` to group by concern (data/model/optim/logging), and use shared parent parsers for common groups across subcommands",
+        "C. Use only subparsers; groups are redundant and should be avoided",
+        "D. Create one group per argument to maximize clarity"
+      ],
+      "correct_answer": "B",
+      "explanation": "Groups improve UX by clustering related flags (e.g., Data, Model, Optimization, Logging, Distributed). In multi-command CLIs, parent parsers let you reuse shared groups consistently across subcommands (e.g., `train`, `eval`, `export`) without duplicating definitions, keeping help output uniform and maintainable.",
+      "difficulty": "beginner",
+      "tags": [
+        "argument-groups",
+        "help-ux",
+        "parent-parsers",
+        "subcommands"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team wants every run to log the *final resolved configuration* deterministically for experiment tracking (CLI args + config file values + environment-derived values). What is a good pattern to implement this when using `argparse`?\n\nProvide a short outline or pseudocode. Include how you ensure deterministic ordering for printing/logging.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Pattern:\n1) Parse CLI args into a Namespace (ideally with `parse_args(argv=None)` for injection).\n2) Load config file (YAML/JSON) if provided (e.g., `--config path.yaml`).\n3) Merge with a clear precedence rule (commonly: defaults < config file < CLI overrides < env overrides or vice versa, but document it).\n4) Compute derived values (e.g., effective batch size, run name, seed).\n5) Serialize and log a single resolved config object.\n\nDeterministic logging:\n- Convert Namespace to a plain dict: `vars(args)`.\n- Build a resolved dict and sort keys before printing: `json.dumps(resolved, sort_keys=True, indent=2)`.\n- If nested dicts, ensure nested sorting (JSON sorting handles keys per object; for YAML use a dumper that sorts keys).\n\nPseudocode:\n```python\nargs = parse_args(argv)\nfile_cfg = load_yaml(args.config) if args.config else {}\ncli_cfg = vars(args)\nenv_cfg = {'slurm_job_id': os.getenv('SLURM_JOB_ID')}\nresolved = merge(defaults, file_cfg, cli_cfg, env_cfg)\nresolved = add_derived(resolved)\nlogger.info('resolved_config=%s', json.dumps(resolved, sort_keys=True))\n```\nAlso store it to disk (e.g., `out_dir/config.resolved.json`) so reruns are reproducible.",
+      "explanation": "Argparse only covers CLI parsing; ML reproducibility typically requires recording the *effective* configuration after merging multiple sources. Deterministic printing (sorted keys, stable serialization) avoids noisy diffs and makes it easy to compare runs and reproduce results.",
+      "difficulty": "intermediate",
+      "tags": [
+        "resolved-config",
+        "experiment-tracking",
+        "reproducibility",
+        "logging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an optional argument that should become Python `None` when the user explicitly passes a null-like value, to avoid the ambiguous string `'None'` ending up in configs.\n\nWhich approach is most principled in `argparse`?\n\nGoal behavior:\n- default is `None`\n- `--wandb-project myproj` -> `'myproj'`\n- `--wandb-project none` (or `null`) -> `None`",
+      "question_type": "mc",
+      "options": [
+        "A. Set `type=None` so argparse converts strings to None automatically",
+        "B. Use `choices=['none', 'null', '...']` and keep the string; handle later",
+        "C. Use a custom `type` function that maps case-insensitive `none/null` to `None`",
+        "D. Use `action='store_false'` for `--wandb-project`"
+      ],
+      "correct_answer": "C",
+      "explanation": "Argparse always receives strings from the CLI; `type` is the right hook to convert them into a desired Python type/value. A small converter like `lambda s: None if s.lower() in {'none','null'} else s` keeps the resolved config unambiguous and avoids propagating the literal string `'None'` into experiment configs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "none-handling",
+        "type-conversion",
+        "config-hygiene"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an ML training CLI, when should you prefer positional arguments vs optional flags? Answer with a concrete recommendation for a script like:\n\n- dataset path\n- output directory\n- checkpoint to resume (optional)\n- hyperparameters like lr/epochs\n\nInclude at least one tradeoff and an example CLI invocation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use positional arguments for the few *essential* inputs that almost always vary per run and are unambiguous (often `data` and sometimes `out_dir`), and use optional flags for everything else (hyperparameters, toggles, and genuinely optional inputs like resume checkpoint).\n\nExample recommendation:\n- `data` as positional: required and central to the run.\n- `out_dir` as optional `--out` (or positional if your org standard is `train DATA OUT`), but ensure it’s explicit if ambiguity is likely.\n- `--resume` / `--ckpt` as optional because it’s not always present.\n- `--lr`, `--epochs`, `--batch-size` as optional flags.\n\nExample:\n`python train.py /datasets/imagenet --out runs/exp42 --epochs 90 --lr 0.1 --resume runs/exp41/ckpt.pt`\n\nTradeoffs: positionals are concise and encourage correct usage for must-have parameters, but they are harder to reorder/extend without breaking call sites; optionals are more verbose but self-documenting and stable as the CLI grows (common in large ML codebases and launchers).",
+      "explanation": "ML scripts tend to accumulate many parameters. If too many are positional, calls become brittle and unreadable. If everything is optional, users can forget key inputs or rely on hidden defaults. A pragmatic pattern is: a small number of required, high-salience items can be positional; everything else should be optional flags with clear names and defaults.",
+      "difficulty": "intermediate",
+      "tags": [
+        "positional-vs-optional",
+        "ml-cli-design",
+        "ux"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to unit test your CLI parsing without touching global `sys.argv`. Given:\n\n```python\n# cli.py\nimport argparse\n\ndef parse_args(argv=None):\n    p = argparse.ArgumentParser()\n    p.add_argument('--batch-size', type=int, default=32)\n    p.add_argument('--fp16', action='store_true')\n    return p.parse_args(argv)\n```\n\nWhich test approach is best and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Set `sys.argv = ['prog', '--batch-size', '64']` before calling `parse_args()`",
+        "B. Call `parse_args(['--batch-size', '64'])` and assert on the returned namespace",
+        "C. Use `os.environ['BATCH_SIZE']='64'` and rely on argparse to read it automatically",
+        "D. Call `parse_args()` and then manually overwrite `args.batch_size = 64`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Passing an explicit `argv` list to `parse_args(argv)` is deterministic and avoids mutating global process state (`sys.argv`) that can leak across tests. It also mirrors how real arguments are parsed (including type conversion and validation).",
+      "difficulty": "beginner",
+      "tags": [
+        "argv-injection",
+        "unit-testing",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a training script that is used both as a CLI (`python train.py ...`) and imported from other Python code (e.g., notebooks, hyperparameter sweeps). Which pattern best makes it import-safe and library-friendly while still supporting CLI execution?\n\n```python\n# train.py\nimport argparse\n\ndef parse_args(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument('--lr', type=float, default=1e-3)\n    return parser.parse_args(argv)\n\ndef main(argv=None):\n    args = parse_args(argv)\n    train(args)\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n```\n\nWhat is the key reason this pattern is preferred over calling `parser.parse_args()` at import time?",
+      "question_type": "mc",
+      "options": [
+        "A. It makes `argparse` faster because it caches parsed arguments between imports",
+        "B. It prevents side effects on import and allows programmatic calls/tests by injecting `argv`",
+        "C. It automatically generates shell completion scripts for the CLI",
+        "D. It ensures all arguments become environment variables for experiment tracking"
+      ],
+      "correct_answer": "B",
+      "explanation": "Parsing arguments at import time is a side effect: importing the module will try to read `sys.argv`, may exit the process on `-h`/errors, and makes reuse from other code difficult. Separating `parse_args(argv=None)` and `main(argv=None)` keeps the module import-safe and enables programmatic usage and unit tests by passing an explicit `argv` list.",
+      "difficulty": "beginner",
+      "tags": [
+        "import-safe",
+        "main-pattern",
+        "argv-injection",
+        "ml-scripts"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Reproducibility is critical. Which CLI design best supports reproducible ML experiments while staying lightweight (argparse-only)?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Only provide `--seed`; determinism and logging are the responsibility of the training framework.",
+        "B. Provide `--seed` and `--deterministic`, log and save the exact argv invocation, and save a resolved config (after CLI overrides) alongside metrics/checkpoints.",
+        "C. Hard-code the seed in code and forbid overriding it via CLI to ensure consistency.",
+        "D. Save only the parsed `args` object via `pickle` to reproduce runs later."
+      ],
+      "correct_answer": "B",
+      "explanation": "Reproducibility in practice needs more than a seed: determinism toggles, exact CLI invocation (`sys.argv`), and the resolved configuration used for the run (after merging config + CLI overrides). Saving these artifacts next to checkpoints/metrics is a common ML engineering pattern and works well with experiment trackers. Hard-coding seeds blocks controlled sweeps; pickling args is brittle across code changes and doesn’t capture config merge logic or environment context.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reproducibility",
+        "seed",
+        "deterministic",
+        "logging-argv",
+        "resolved-config"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your training CLI has 40+ flags. You want `--help` to be discoverable for ML users (data, model, optimization, logging, reproducibility).\n\nHow would you organize help output using argparse, and what are common mistakes to avoid? Provide a brief example.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `add_argument_group()` to create topical sections and keep related flags together; optionally use `ArgumentDefaultsHelpFormatter` and consistent naming.\n\nExample:\n```python\np = argparse.ArgumentParser(\n    formatter_class=argparse.ArgumentDefaultsHelpFormatter\n)\n\ng_data = p.add_argument_group('Data')\ng_data.add_argument('--dataset', required=True)\ng_data.add_argument('--batch-size', type=int, default=64)\n\ng_model = p.add_argument_group('Model')\ng_model.add_argument('--model', choices=['resnet50', 'vit_b16'], required=True)\n\ng_optim = p.add_argument_group('Optimization')\ng_optim.add_argument('--optimizer', choices=['adamw', 'sgd'], default='adamw')\ng_optim.add_argument('--lr', type=float, default=1e-3)\n\ng_logging = p.add_argument_group('Logging')\ng_logging.add_argument('--log-dir', default='runs/')\n\ng_repro = p.add_argument_group('Reproducibility')\ng_repro.add_argument('--seed', type=int, default=42)\ng_repro.add_argument('--deterministic', action='store_true')\n```\nMistakes: dumping everything in the default group, inconsistent flag names, hiding important defaults, and relying on positional args for core training settings. Also avoid duplicating the same arg across subcommands without parent parsers (help becomes inconsistent).",
+      "explanation": "Large ML CLIs live or die by `--help`. Argument groups provide a low-effort, high-impact structure that mirrors how practitioners think (data/model/optim/logging/repro). A formatter that shows defaults reduces guesswork. The most common pitfall is an unstructured help wall that makes the CLI feel unmaintainable and causes misuse of flags.",
+      "difficulty": "beginner",
+      "tags": [
+        "argument-groups",
+        "help-organization",
+        "discoverability",
+        "large-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to parse an argument `--img-size` that accepts either:\n- a single int (applies to both H and W), e.g. `--img-size 224`\n- or a pair, e.g. `--img-size 256 320`\n\nYou also want good error messages.\n\nWhich argparse setup is most appropriate?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--img-size', type=int, nargs='*', default=[224, 224])` and handle lengths manually.",
+        "B. `parser.add_argument('--img-size', type=int, nargs='+', default=None)` and assume the first two values exist.",
+        "C. `parser.add_argument('--img-size', type=parse_img_size)` where `parse_img_size` accepts either one token like `224` or a comma form like `256,320`.",
+        "D. `parser.add_argument('--img-size', action='store_true')` and infer size from the dataset."
+      ],
+      "correct_answer": "A",
+      "explanation": "`nargs='*'` allows 0, 1, or 2 values; you can then validate length (must be 1 or 2) and normalize to a tuple `(h, w)` with a clear error if length is invalid. Option C can work but changes the UX to require comma-separated input (unless you also implement `nargs`), and B is unsafe because it accepts 1 value but your code might index 2. D is unrelated.",
+      "difficulty": "intermediate",
+      "tags": [
+        "type-conversion",
+        "tuple-list-parsing",
+        "user-friendly-errors",
+        "image-preprocessing"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a YAML config file and want CLI overrides via argparse.\n\nDefine clear precedence rules and a practical implementation approach (no Hydra required) that:\n- loads config,\n- applies CLI overrides,\n- supports nested keys (e.g., `--optim.lr 1e-3` or `--set optim.lr=1e-3`),\n- produces a resolved config for reproducibility (saved to disk).\n\nWhat precedence order would you use, and how do you implement it safely?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Precedence: (1) code defaults, then (2) config file values, then (3) explicit CLI overrides. Implementation: parse minimal args first to locate config path, load config, then parse the full CLI and apply only explicitly-provided overrides.\n\nApproach:\n1) Bootstrap parser for `--config` and `--set` (repeatable).\n2) Load YAML/JSON into a dict.\n3) Full parser defines known CLI args with `default=argparse.SUPPRESS` so absent args don’t overwrite config.\n4) Apply overrides:\n   - For known args: `vars(args)` only contains provided keys when using SUPPRESS.\n   - For nested overrides: support `--set key=value` repeated; split on `=` and set into nested dict by dot path.\n5) Save resolved config + argv.\n\nSketch:\n```python\np0 = argparse.ArgumentParser(add_help=False)\np0.add_argument('--config', required=True)\np0.add_argument('--set', action='append', default=[])\nboot = p0.parse_known_args(argv)[0]\ncfg = load_yaml(boot.config)\n\np = build_full_parser(default=argparse.SUPPRESS)\nargs = p.parse_args(argv)\n\nresolved = deep_copy(cfg)\nresolved = apply_known_args(resolved, vars(args))\nresolved = apply_dotlist(resolved, boot.set)  # ['optim.lr=1e-3']\n\nsave_yaml(resolved, out_dir/'resolved_config.yaml')\nsave_text(' '.join(shlex.quote(a) for a in argv), out_dir/'argv.txt')\n```\nSafety: validate keys (error on unknown), type-convert values (e.g., via schema or per-key converters), and log the final resolved config for reproducibility.",
+      "explanation": "The key is avoiding accidental overwrites: if argparse sets defaults, it can clobber config values even when the user didn’t specify a flag. `default=argparse.SUPPRESS` (or parsing known args and merging carefully) ensures only explicit CLI inputs override config. Saving a resolved config and argv is a practical reproducibility requirement in ML training pipelines and experiment tracking.",
+      "difficulty": "advanced",
+      "tags": [
+        "config-cli-integration",
+        "precedence",
+        "nested-keys",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design an argparse CLI for a real ML workflow with subcommands: `train`, `eval`, `predict`, `export`.\n\nRequirements:\n- Shared args: `--model`, `--checkpoint`, `--device`\n- `train` adds `--epochs`, `--lr`\n- `eval` adds `--split`\n- Help output should be consistent, and defaults should be shared unless overridden per subcommand.\n\nProvide a code sketch using subparsers and parent parsers, and explain how you avoid duplication and handle defaults cleanly.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a parent parser for shared args and pass it as `parents=[parent]` to each subparser; set `add_help=False` on the parent to avoid duplicate help. Put shared defaults on the parent unless a subcommand needs to override.\n\n```python\nimport argparse\n\ndef build_parser():\n    parent = argparse.ArgumentParser(add_help=False)\n    parent.add_argument('--model', required=True)\n    parent.add_argument('--checkpoint', default=None)\n    parent.add_argument('--device', default='cuda')\n\n    p = argparse.ArgumentParser(prog='mlcli')\n    sub = p.add_subparsers(dest='command', required=True)\n\n    p_train = sub.add_parser('train', parents=[parent])\n    p_train.add_argument('--epochs', type=int, default=10)\n    p_train.add_argument('--lr', type=float, default=1e-3)\n\n    p_eval = sub.add_parser('eval', parents=[parent])\n    p_eval.add_argument('--split', choices=['val', 'test'], default='val')\n\n    p_predict = sub.add_parser('predict', parents=[parent])\n    p_predict.add_argument('--input', required=True)\n\n    p_export = sub.add_parser('export', parents=[parent])\n    p_export.add_argument('--format', choices=['onnx', 'torchscript'], required=True)\n\n    return p\n\ndef main(args):\n    if args.command == 'train':\n        ...\n```\nDefaults: shared defaults live in the parent; subcommands can override by specifying a different default on that subparser. Duplication is avoided because shared args are defined once. Consistency comes from the same option names and help text across subcommands.",
+      "explanation": "Subparsers map well to real ML lifecycle commands. Parent parsers prevent copy/paste drift across `train/eval/predict/export` and keep help consistent. Setting `required=True` on the subparser selection forces users to pick a workflow step. Defaults should be defined where they semantically belong: global defaults on the parent; command-specific defaults on the subparser, with a clear override rule.",
+      "difficulty": "advanced",
+      "tags": [
+        "subparsers",
+        "parent-parsers",
+        "shared-args",
+        "ml-workflows"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A user reports that running `train.py --lr -1e-3` sometimes fails with “unrecognized arguments: -1e-3” in certain scripts, especially when combined with other short flags.\n\nWhich mitigation is most robust for ML training CLIs, and why?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Tell users to always pass negative numbers as `--lr=-1e-3` so argparse treats it as a value, not an option.",
+        "B. Change `--lr` to a positional argument so negative values are always accepted.",
+        "C. Disable abbreviation with `allow_abbrev=False` so negative numbers are never ambiguous.",
+        "D. Set `prefix_chars='+-'` so `-1e-3` is always treated as a value."
+      ],
+      "correct_answer": "A",
+      "explanation": "The most reliable user-facing mitigation is `--opt=value` form (e.g., `--lr=-1e-3`), which avoids the token being interpreted as a new option. Negative numbers can be mis-parsed as options in edge cases (especially with short options or when values are missing). Making LR positional is poor CLI design for training scripts, `allow_abbrev=False` addresses a different class of ambiguity, and changing `prefix_chars` to include `-` makes things worse, not better.",
+      "difficulty": "beginner",
+      "tags": [
+        "negative-numbers",
+        "option-parsing-ambiguity",
+        "training-cli-pitfalls"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You expose `--optimizer` in your training CLI. When should you use `choices=[...]` vs custom validation logic?\n\nPick the best answer for an ML training script that may accept optimizer-specific extra parameters.\n",
+      "question_type": "mc",
+      "options": [
+        "A. Always use `choices` because it automatically validates and you never need custom validation.",
+        "B. Use `choices` for a small, fixed set of string identifiers (e.g., `adam`, `sgd`), and use custom validation when constraints depend on multiple args (e.g., `--momentum` only valid for `sgd`) or when you want richer error messages.",
+        "C. Avoid `choices` because it makes help output too long; always validate inside `main()` with `assert`.",
+        "D. Use custom validation only for numeric ranges; for strings, `choices` is never appropriate."
+      ],
+      "correct_answer": "B",
+      "explanation": "`choices` is great for simple, single-argument membership validation and yields consistent argparse errors and help text. In ML CLIs, validity often depends on combinations (optimizer + scheduler + their parameters). That requires custom validation after parsing (or via a custom `Action`) to produce user-friendly errors like “--momentum is only valid with --optimizer sgd” rather than a generic failure or a late runtime crash.",
+      "difficulty": "intermediate",
+      "tags": [
+        "choices-vs-validation",
+        "user-friendly-errors",
+        "optimizer-scheduler"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your codebase renames `--lr` to `--learning-rate` but you must keep backward compatibility for old experiment scripts. You also want a deprecation warning when `--lr` is used.\n\nWrite an argparse-friendly approach (code sketch) that:\n1) accepts both flags,\n2) resolves to one canonical field in `args`, and\n3) emits a warning only when the deprecated flag is used.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One practical approach is to parse both into separate destinations, then reconcile after parsing.\n\n```python\nimport argparse, warnings\n\ndef build_parser():\n    p = argparse.ArgumentParser()\n    p.add_argument('--learning-rate', '--learning_rate', dest='learning_rate',\n                   type=float, default=None)\n    p.add_argument('--lr', dest='lr_deprecated', type=float, default=None,\n                   help=argparse.SUPPRESS)  # hide from help if desired\n    return p\n\ndef main(args):\n    if args.lr_deprecated is not None:\n        warnings.warn('`--lr` is deprecated; use `--learning-rate`', DeprecationWarning)\n        if args.learning_rate is None:\n            args.learning_rate = args.lr_deprecated\n        # else: if both provided, you can error or prefer the new flag\n\n    if args.learning_rate is None:\n        args.learning_rate = 1e-3  # global default if neither provided\n```\nThis keeps a canonical `args.learning_rate` and only warns when `--lr` was used.",
+      "explanation": "Argparse supports alias flags by listing multiple option strings for one argument, but that alone can’t tell you which alias was used (so you can’t conditionally warn). Parsing the deprecated flag into a separate destination lets you detect usage and emit a warning, then merge into the canonical value with clear precedence (often “new flag wins”). This pattern is common in evolving ML training CLIs where many experiments depend on old flags.",
+      "difficulty": "intermediate",
+      "tags": [
+        "backward-compatibility",
+        "deprecating-flags",
+        "aliases",
+        "ml-codebase-evolution"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to accept multiple GPU ids like:\n\n- `--gpus 0 1 2`\n\nand you also want `--gpus` to be optional (if absent, you auto-detect). Which argparse definition best matches that behavior while avoiding common pitfalls?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--gpus', type=int, nargs='+', required=True)`",
+        "B. `parser.add_argument('--gpus', type=int, nargs='*', default=None)`",
+        "C. `parser.add_argument('--gpus', type=int, action='append', default=[])`",
+        "D. `parser.add_argument('--gpus', type=list, default=None)`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`nargs='*'` allows zero or more integers after `--gpus`, and `default=None` lets you detect “not provided” (auto-detect) vs “provided” (even if empty, you can treat it as user intent depending on your policy). `nargs='+'` forces at least one value (often too strict). `action='append'` would require repeating `--gpus` per value, and `type=list` won’t parse CLI tokens into a list of ints correctly.",
+      "difficulty": "beginner",
+      "tags": [
+        "required-nargs-pitfalls",
+        "multi-value-args",
+        "gpu-selection"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a training script to support repeated flags for dataset filters:\n\n- `--include classA --include classB`\n- `--exclude classX`\n\nYou also need to distinguish between:\n1) flag not provided (use default behavior), and\n2) provided but empty (user explicitly wants no includes).\n\nHow would you design the argparse arguments and defaults to support this cleanly? Provide a short code snippet and explain how you interpret the resulting values in `main(args)`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `action='append'` (or `extend` in newer Python) with a default of `None` so “not provided” stays `None`. For an explicit empty list, provide a separate explicit flag (e.g., `--no-include`) or accept an empty value via a custom type/`nargs='*'` with a sentinel.\n\nExample:\n```python\ndef build_parser():\n    p = argparse.ArgumentParser()\n    p.add_argument('--include', action='append', default=None,\n                   help='May be repeated. If not set, use all classes.')\n    p.add_argument('--exclude', action='append', default=None)\n    p.add_argument('--no-include', action='store_true',\n                   help='Explicitly set include list to empty.')\n    return p\n\ndef main(args):\n    if args.no_include:\n        include = []\n    elif args.include is None:\n        include = None  # means default behavior (all)\n    else:\n        include = args.include\n```\nInterpretation: `None` means \"user didn’t specify\"; `[]` means \"user explicitly wants no includes\"; otherwise list of strings. `action='append'` matches real ML CLIs where users repeat flags for multiple values.",
+      "explanation": "The pitfall is using `default=[]` with `append`, which makes it impossible to tell whether the user provided nothing vs. provided values that happen to yield an empty list. Using `default=None` preserves intent. If you truly need an explicit empty list, argparse cannot easily represent “user passed flag but with zero values” for repeated flags, so you add an explicit negation flag (`--no-include`) or use a different interface (e.g., `--include` with `nargs='*'` plus a sentinel). This is a common training-script need when filters affect dataset construction.",
+      "difficulty": "intermediate",
+      "tags": [
+        "required-nargs-pitfalls",
+        "list-arguments",
+        "dataset-filters",
+        "empty-vs-not-provided"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You inherit a PyTorch training script that parses args at import time and immediately starts training. You want it to be testable and reusable from notebooks.\n\nWhich refactor is the most interview-common and practical pattern using argparse?\n\n```python\n# current (bad)\nparser = argparse.ArgumentParser()\nparser.add_argument('--lr', type=float, default=1e-3)\nargs = parser.parse_args()\ntrain(args)\n```\n",
+      "question_type": "mc",
+      "options": [
+        "A. Move `parser.parse_args()` into a `main()` function and keep parser creation at module top-level.",
+        "B. Create `build_parser()` that returns an ArgumentParser, create `main(args)` that runs training, and have `if __name__ == '__main__': main(build_parser().parse_args())`.",
+        "C. Replace argparse with environment variables so you can test without CLI parsing.",
+        "D. Keep everything as-is but add a `--dry-run` flag for unit tests."
+      ],
+      "correct_answer": "B",
+      "explanation": "The standard, practical pattern is to separate concerns: `build_parser()` constructs the CLI (reusable for docs, other entrypoints, and subcommands), while `main(args)` contains the business logic (easy to unit-test by passing a Namespace). Parsing only in the `__main__` guard avoids side effects on import, enabling notebook reuse and tests that call `main(Namespace(...))` or `main(parser.parse_args(custom_argv))`.",
+      "difficulty": "beginner",
+      "tags": [
+        "main-build_parser-separation",
+        "testability",
+        "packaging-training-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Path handling ergonomics: You accept `--data-dir` and `--output-dir`.\n\nWhich option best demonstrates robust handling for ML scripts (tilde expansion, validation, safe creation)?",
+      "question_type": "mc",
+      "options": [
+        "A. Accept both as `str` and concatenate paths manually with `+`",
+        "B. Use `type=pathlib.Path`, call `.expanduser().resolve()` where appropriate, validate existence/permissions for inputs, and `mkdir(parents=True, exist_ok=True)` for outputs",
+        "C. Use `os.chdir(output_dir)` immediately after parsing so all paths become relative",
+        "D. Use `type=open` for directories so argparse validates them"
+      ],
+      "correct_answer": "B",
+      "explanation": "Using `Path` objects is idiomatic and reduces path bugs. For input dirs/files, validate they exist and are readable; for output dirs, create them safely (and optionally check writability). Expanding `~` is a common quality-of-life improvement. `type=open` is for files, not directories, and changing the working directory is often a source of confusing bugs in training pipelines.",
+      "difficulty": "beginner",
+      "tags": [
+        "path-handling",
+        "pathlib",
+        "filesystem",
+        "help-ux"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Testing CLI reliability: You want unit tests that verify parsing behavior (including defaults and overrides) without actually running training.\n\nWhich test approach is best practice for argparse-based scripts?",
+      "question_type": "mc",
+      "options": [
+        "A. Call the script via `subprocess` in every test and parse stdout for correctness",
+        "B. Factor out `build_parser()` and test `parser.parse_args([...])` directly; optionally test `parser.format_help()` as a golden snapshot",
+        "C. Only test `main()` and assume argparse works",
+        "D. Set environment variables in tests and rely on argparse to read them"
+      ],
+      "correct_answer": "B",
+      "explanation": "A common ML-engineering pattern is to separate `build_parser()` from `main()`. Then tests can directly assert on `parser.parse_args(list_of_args)` results (fast, deterministic) and can snapshot `format_help()`/usage to catch accidental UX regressions. Subprocess tests can be useful but are slower and more brittle; relying on environment variables is not argparse’s core responsibility.",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing",
+        "cli-reliability",
+        "help-ux",
+        "defaults"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re integrating with `torchrun`/DDP and want to allow passing through unknown launcher-related args without your script failing. Which approach is most appropriate?\n\nGoal: your script parses its own args, collects the rest, and can forward them (or ignore them) intentionally.",
+      "question_type": "mc",
+      "options": [
+        "A. Use `parse_args()` and tell users to only pass args your script knows about",
+        "B. Use `parse_known_args()` to split (known, unknown) and optionally forward `unknown` to downstream tooling",
+        "C. Set `allow_abbrev=True` so unknown args are treated as abbreviations",
+        "D. Use `conflict_handler='resolve'` so unknown args are resolved automatically"
+      ],
+      "correct_answer": "B",
+      "explanation": "`parse_known_args()` is the standard pattern for interoperability: your script parses what it owns and collects unknown args for forwarding (or explicit rejection with a custom message). This is common when wrapping launchers (torchrun/deepspeed) or composing CLIs. The other options either break usability (A) or misunderstand argparse features (C/D don’t make unknown args valid).",
+      "difficulty": "advanced",
+      "tags": [
+        "interoperability",
+        "parse_known_args",
+        "ddp",
+        "torchrun"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your script supports `--resume /path/to/ckpt.pt`. Requirement: if `--resume` is provided, `--output-dir` must also be provided (so logs/checkpoints have a place to go). Argparse doesn’t express this directly.\n\nWrite a concise pattern to implement this validation and produce a clear error message (i.e., show the user the message and usage, similar to argparse errors).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "After `parse_args()`, perform cross-argument validation and call `parser.error(...)` for a consistent CLI error (it prints usage and exits with code 2).\n\n```python\nargs = parser.parse_args()\n\nif args.resume is not None and args.output_dir is None:\n    parser.error(\"--resume requires --output-dir (where to write logs/checkpoints)\")\n```\n\nOptionally also validate that `args.resume` exists and `output_dir` is creatable.",
+      "explanation": "Cross-argument constraints (conditional requirements, value-dependent rules) are common in ML CLIs and are best handled after parsing. `parser.error()` is preferable to raising arbitrary exceptions because it matches argparse’s UX: it prints usage, shows a helpful message, and exits with the standard error code.",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "cross-argument-constraints",
+        "training-resume",
+        "help-ux"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have device selection flags for an ML script: `--cpu`, `--cuda`, `--mps`. You want:\n- at most one can be selected\n- if none selected, pick a default based on availability (prefer cuda > mps > cpu)\n- but tests should be stable and not depend on the machine running them\n\nHow would you structure this with argparse and code (high level)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a mutually exclusive group for the explicit user choice, and keep availability-based selection out of argparse defaults. Example: define `--cpu/--cuda/--mps` in a mutually exclusive group (all default False). After parsing, compute `device` deterministically: if user set one flag, honor it; else choose based on runtime checks. For test stability, factor device selection into a pure function that accepts an injected “availability” object or parameters, and unit test that function with mocked availability instead of relying on `torch.cuda.is_available()` in the test environment.\n\nSketch:\n\n```python\ng = parser.add_mutually_exclusive_group()\ng.add_argument('--cpu', action='store_true')\ng.add_argument('--cuda', action='store_true')\ng.add_argument('--mps', action='store_true')\n\n# later\nif args.cpu: device = 'cpu'\nelif args.cuda: device = 'cuda'\nelif args.mps: device = 'mps'\nelse: device = pick_default_device(cuda_ok, mps_ok)  # injected for tests\n```",
+      "explanation": "Argparse should capture user intent; environment-dependent logic belongs after parsing. If you bake `torch.cuda.is_available()` into argparse defaults, you risk flaky behavior across machines and CI. Separating “parse CLI” from “resolve device” yields predictable precedence, clearer debugging, and testable logic.",
+      "difficulty": "intermediate",
+      "tags": [
+        "mutually-exclusive",
+        "device-selection",
+        "testing",
+        "defaults"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You are implementing precision selection for training. Exactly one of these should be chosen: `--fp16`, `--bf16`, `--fp32`. If the user provides none, default to fp32.\n\nWhich argparse approach best matches this requirement?",
+      "question_type": "mc",
+      "options": [
+        "A. Three separate boolean flags; if multiple are set, pick the last one encountered in argv",
+        "B. A mutually exclusive group with `required=False`, plus a `--precision {fp16,bf16,fp32}` choice argument",
+        "C. A mutually exclusive group containing `--fp16`, `--bf16`, `--fp32` with `required=False`, and set a default precision in code when none are set",
+        "D. Use subparsers: `train fp16`, `train bf16`, `train fp32`"
+      ],
+      "correct_answer": "C",
+      "explanation": "A `mutually_exclusive_group()` is designed for this. Set `required=False` so none is allowed, then in code default to fp32 if all flags are false. Option B is muddled: you typically choose either a single `--precision` choice OR a set of mutually exclusive flags, not both. Option A creates ambiguous behavior and makes validation harder; option D is awkward UX for a simple training toggle.",
+      "difficulty": "intermediate",
+      "tags": [
+        "mutually-exclusive",
+        "precision",
+        "ml-training"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to distinguish between:\n1) user explicitly provided `--lr`\n2) user did not provide `--lr` (so you will load it from a config file)\n\nWhich argparse setup best supports this distinction?",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--lr', type=float, default=3e-4)` and check if `args.lr == 3e-4`",
+        "B. `parser.add_argument('--lr', type=float, default=None)` and treat `None` as 'not provided'",
+        "C. `parser.add_argument('--lr', type=float, required=True)` and always force the user to pass it",
+        "D. `parser.add_argument('--lr', type=float, default=argparse.SUPPRESS)` and access `args.lr` directly without checks"
+      ],
+      "correct_answer": "B",
+      "explanation": "Using `default=None` is the interview-friendly, common pattern: it preserves the difference between “not provided” and “provided value”. Option A fails because the user could legitimately want `3e-4`, and you can’t tell if it was defaulted. Option D (SUPPRESS) can be useful, but you must use `hasattr(args, 'lr')` or `vars(args)` checks; accessing `args.lr` directly can raise `AttributeError`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "defaults-vs-not-provided",
+        "config-override",
+        "argparse-suppress"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a training script that should accept a boolean flag `--use-amp`.\n\nA candidate writes:\n\n```python\nparser.add_argument('--use-amp', type=bool, default=False)\n```\n\nUsers report that `--use-amp False` still enables AMP in some cases, and `--use-amp` alone errors. Which is the best argparse pattern here?",
+      "question_type": "mc",
+      "options": [
+        "A. Keep `type=bool` but require `--use-amp` to always be passed with True/False",
+        "B. Use `action='store_true'` (and optionally a paired `--no-use-amp` with `store_false`) instead of `type=bool`",
+        "C. Use `nargs='?'` and `const=True` with `type=bool`",
+        "D. Parse it as a string and compare to 'true' manually everywhere"
+      ],
+      "correct_answer": "B",
+      "explanation": "In argparse, `type=bool` is a common pitfall: `bool('False')` is `True` because non-empty strings are truthy. For flags, `store_true`/`store_false` (or `BooleanOptionalAction` in newer Python) is the idiomatic and reliable approach. It also makes `--use-amp` work without requiring a value.",
+      "difficulty": "beginner",
+      "tags": [
+        "pitfalls",
+        "boolean-flags",
+        "training-script"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a notebook (IPython/Jupyter/Databricks), this code often crashes:\n\n```python\nimport argparse\np = argparse.ArgumentParser()\np.add_argument('--epochs', type=int, default=10)\nargs = p.parse_args()\n```\n\nWhat is the most practical fix to make it work in notebooks without breaking normal CLI usage?",
+      "question_type": "mc",
+      "options": [
+        "A. Replace `parse_args()` with `parse_known_args()` and ignore the unknown args in notebooks",
+        "B. Use `eval(input())` to read arguments interactively instead of argparse",
+        "C. Set `add_help=False` to prevent notebook flags from being parsed",
+        "D. Wrap `parse_args()` in a broad try/except and ignore all exceptions"
+      ],
+      "correct_answer": "A",
+      "explanation": "Notebooks inject extra argv entries (e.g., `-f <kernel.json>`). `parse_args()` treats unknown flags as errors and triggers `SystemExit`. Using `parse_known_args()` lets you parse what you care about and keep the rest in `unknown`, which you can ignore or pass along. This preserves normal CLI behavior while making the code robust in IPython/Databricks environments.",
+      "difficulty": "beginner",
+      "tags": [
+        "notebooks-ipython",
+        "parse_known_args",
+        "systemexit-debugging",
+        "pitfalls"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re asked to create a minimal end-to-end CLI for a PyTorch training script. Write a small but realistic argparse-based example that:\n- defines typical training args (e.g., --data-dir, --output-dir, --epochs, --batch-size, --lr, --seed)\n- parses them\n- uses them inside a main() function\n- is runnable via `python train.py --data-dir ...`\n\nKeep it clean (no subcommands), and show how you’d set a seed and create the output directory.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A solid answer includes a `build_parser()` + `main(args)` structure, uses `pathlib.Path`, calls `parser.parse_args()`, validates/creates output dir, and uses args to configure training. Example:\n\n```python\nimport argparse\nfrom pathlib import Path\nimport random\nimport numpy as np\nimport torch\n\n\ndef build_parser():\n    p = argparse.ArgumentParser(description=\"Train a model\")\n    p.add_argument(\"--data-dir\", type=Path, required=True,\n                   help=\"Path to training dataset\")\n    p.add_argument(\"--output-dir\", type=Path, required=True,\n                   help=\"Where to write checkpoints/logs\")\n    p.add_argument(\"--epochs\", type=int, default=10)\n    p.add_argument(\"--batch-size\", type=int, default=64)\n    p.add_argument(\"--lr\", type=float, default=3e-4)\n    p.add_argument(\"--seed\", type=int, default=42)\n    return p\n\n\ndef set_seed(seed: int):\n    random.seed(seed)\n    np.random.seed(seed)\n    torch.manual_seed(seed)\n    torch.cuda.manual_seed_all(seed)\n\n\ndef main(args):\n    args.output_dir.expanduser().mkdir(parents=True, exist_ok=True)\n    set_seed(args.seed)\n\n    # Example usage of args\n    print(f\"Training for {args.epochs} epochs with bs={args.batch_size}, lr={args.lr}\")\n    print(f\"data={args.data_dir} output={args.output_dir}\")\n    # ... load data from args.data_dir, train, save to args.output_dir\n\n\nif __name__ == \"__main__\":\n    parser = build_parser()\n    args = parser.parse_args()\n    main(args)\n```\n\nThis demonstrates the baseline patterns interviewers expect: typical args, parse in `__main__`, isolate logic in `main`, and basic filesystem + seed handling.",
+      "explanation": "For AI/ML scripts, interviewers often look for a clean CLI baseline: (1) a parser builder, (2) a main entrypoint that consumes parsed args, and (3) pragmatic ergonomics like `Path` types, `expanduser()`, `mkdir(..., exist_ok=True)`, and deterministic seeding. Keeping parsing out of business logic also makes testing easier (you can call `main(parsed_args)` directly).",
+      "difficulty": "beginner",
+      "tags": [
+        "cli-fundamentals",
+        "training-script",
+        "pathlib",
+        "filesystem"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a single CLI with subcommands:\n\n```bash\npython cli.py train ...\npython cli.py eval ...\npython cli.py predict ...\n```\n\nYou want:\n- a required subcommand\n- shared flags (e.g., `--device`, `--output-dir`) across subcommands\n- clean dispatch to functions like `run_train(args)`, `run_eval(args)`\n\nWhich pattern is the cleanest and most common with argparse?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `subparsers = parser.add_subparsers(required=True)` and `subparser.set_defaults(func=run_train)`; after parsing call `args.func(args)`.",
+        "B. Use one parser, parse `sys.argv[1]` manually for the subcommand, then call a different parser per command.",
+        "C. Use `parse_known_args()` and treat the first unknown token as the subcommand name.",
+        "D. Use `argparse.REMAINDER` to capture all subcommand arguments and parse them later."
+      ],
+      "correct_answer": "A",
+      "explanation": "Argparse subparsers support required subcommands (Python 3.7+), per-subcommand arguments, and a clean dispatch mechanism via `set_defaults(func=...)`. Shared flags are typically handled via a parent parser included in each subparser (or by adding shared args before creating subparsers). This yields a maintainable ML CLI structure as the codebase grows.",
+      "difficulty": "intermediate",
+      "tags": [
+        "subparsers",
+        "dispatch",
+        "parent-parsers",
+        "multi-command-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have two boolean-ish flags controlling evaluation:\n- `--eval` (run evaluation)\n- `--no-eval` (explicitly disable evaluation)\n\nYou also have a config file that may set `eval: true/false`.\n\nYou want these semantics:\n- If user passes neither flag, don’t override config.\n- If user passes `--eval` or `--no-eval`, override config accordingly.\n\nHow would you implement this with argparse in a way that preserves “not provided” vs “provided”?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a tri-state default with a sentinel so you can detect whether the user specified a flag. For example:\n\n```python\nUNSET = object()\nparser.add_argument('--eval', dest='do_eval', action='store_true', default=UNSET)\nparser.add_argument('--no-eval', dest='do_eval', action='store_false', default=UNSET)\n```\n\nAfter parsing:\n- if `args.do_eval is UNSET`: do not override config\n- else: override config with the boolean value.\n\nAlternatively, use `default=argparse.SUPPRESS` on both and check presence in `vars(args)` (but you must ensure both write to the same `dest`).",
+      "explanation": "ML config merging often needs tri-state logic (true/false/unset). If you used `default=False`, you couldn’t tell “user didn’t specify” from “user explicitly disabled”. A sentinel or `SUPPRESS` preserves the difference and supports clean precedence rules (config base → CLI override only when provided).",
+      "difficulty": "advanced",
+      "tags": [
+        "defaults-semantics",
+        "sentinel",
+        "config-merge",
+        "boolean-flags"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to support structured overrides similar to Hydra/OmegaConf, e.g.:\n\n```bash\npython train.py --override model.hidden=512 --override optim.lr=1e-4 --override data.augment=true\n```\n\nYou plan to allow repeating `--override` multiple times.\n\nWhich argparse definition is most appropriate?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `parser.add_argument('--override', type=dict)`",
+        "B. `parser.add_argument('--override', action='append', default=[])` and parse each `key=value` string yourself (with validation).",
+        "C. `parser.add_argument('--override', nargs='*')` so all overrides are captured in one list without needing repeats.",
+        "D. `parser.add_argument('--override', action='store_true')` and read overrides from environment variables."
+      ],
+      "correct_answer": "B",
+      "explanation": "Argparse doesn’t natively parse nested dict updates from `key=value` strings. The common robust pattern is `action='append'` to capture repeated occurrences and then parse/validate each token (split on the first `=`; type-cast values; support dotted keys). `nargs='*'` can work but often makes quoting/spacing and interleaving with other flags more error-prone; repeated `--override` is clearer and easier to debug in ML pipelines.",
+      "difficulty": "intermediate",
+      "tags": [
+        "structured-inputs",
+        "key-value-overrides",
+        "robust-parsing",
+        "ml-config-overrides"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a large training CLI, you want help output to be readable and organized. You have logical sections like:\n- Data: `--train-data`, `--val-data`, `--num-workers`\n- Model: `--model`, `--hidden-size`, `--dropout`\n- Logging: `--output-dir`, `--wandb-project`, `--log-interval`\n\nWhich statement best describes the difference between `add_argument_group()` and parent parsers in this context?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Argument groups share arguments across scripts; parent parsers only affect help formatting.",
+        "B. Argument groups are for help/organization within one parser; parent parsers are for reusing argument definitions across multiple parsers/entrypoints.",
+        "C. Argument groups automatically enforce mutual exclusivity; parent parsers do not.",
+        "D. Parent parsers are required when using subparsers; argument groups are not compatible with subparsers."
+      ],
+      "correct_answer": "B",
+      "explanation": "`add_argument_group()` primarily organizes help output and can improve UX for large ML CLIs. Parent parsers (`parents=[...]`) are for code reuse: define a common set of arguments once and include them in multiple parsers (including subcommands). They solve different problems and are often used together (shared parent parser + groups inside each parser for readability).",
+      "difficulty": "intermediate",
+      "tags": [
+        "argument-groups",
+        "parent-parsers",
+        "cli-organization",
+        "ml-cli-scale"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a YAML config file and CLI overrides:\n\n- `--config config.yaml`\n- optional CLI args like `--lr`, `--batch-size`, `--device`\n\nGoal: load YAML defaults, then apply CLI overrides *only for flags the user explicitly provided*, and finally save the fully resolved config to `output_dir/resolved.yaml` for reproducibility.\n\nIn argparse, how do you best distinguish between “user did not specify this flag” vs “user specified a value that happens to equal the default”?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a sentinel approach so you can detect whether an option was provided. Common patterns:\n1) `default=None` when `None` is not a valid user value, and treat `None` as “not provided”.\n2) Better: use `argparse.SUPPRESS` or a custom sentinel object.\n\nExample with `SUPPRESS`:\n```python\nparser.add_argument('--lr', type=float, default=argparse.SUPPRESS)\n...\nargs = vars(parser.parse_args())\nconfig = load_yaml(...)\nconfig.update(args)  # only keys provided on CLI exist\n```\nThen write `config` (resolved values after merging) to `resolved.yaml` and also log it. This ensures deterministic experiment tracking because you persist the final effective configuration, not just the user’s command line.",
+      "explanation": "If you set argparse defaults to actual values (e.g., `default=1e-3`), you can’t tell whether the user explicitly passed `--lr 1e-3` or didn’t pass `--lr` at all. For config merging, that distinction matters. `SUPPRESS` (or a sentinel) is a robust way to make “provided vs not provided” explicit and supports clean precedence rules (YAML base → CLI overrides → resolved config saved).",
+      "difficulty": "advanced",
+      "tags": [
+        "config-merge",
+        "override-precedence",
+        "defaults-semantics",
+        "SUPPRESS",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re cleaning up an ML CLI and want consistent naming. Historically you had `--batch_size` but you want to move to `--batch-size` while keeping backward compatibility for older scripts.\n\nWhat is the best approach in argparse to support both flags while keeping a single destination variable?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Define only `--batch-size` and rely on `allow_abbrev=True` so `--batch_size` still works.",
+        "B. Define both option strings in one `add_argument`, e.g. `parser.add_argument('--batch-size', '--batch_size', dest='batch_size', ...)` and optionally mark the old one as deprecated in help text.",
+        "C. Define two separate arguments and then manually pick whichever is not `None` after parsing.",
+        "D. Use `prefix_chars='-_'` so underscores are treated as valid prefix characters."
+      ],
+      "correct_answer": "B",
+      "explanation": "Argparse allows multiple option strings for the same argument; they map to one `dest`. This is the cleanest way to alias/deprecate flags without creating two separate fields. `allow_abbrev` is unrelated to underscore vs dash. Two separate arguments complicate precedence/validation and can introduce ambiguity.",
+      "difficulty": "beginner",
+      "tags": [
+        "cli-naming",
+        "aliasing",
+        "deprecation",
+        "ux"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to support `@args.txt` so users can run:\n\n```bash\npython train.py @configs/run1.args\n```\n\nWhere `run1.args` contains newline-separated CLI tokens like:\n\n```\n--lr 0.001\n--batch-size 64\n--override model.hidden=512\n```\n\nWhich argparse setting enables this behavior?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `ArgumentParser(fromfile_prefix_chars='@')`",
+        "B. `ArgumentParser(allow_abbrev=True)`",
+        "C. `ArgumentParser(prefix_chars='@')`",
+        "D. `ArgumentParser(argument_default='@')`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`fromfile_prefix_chars` tells argparse to treat arguments prefixed with a character (commonly `@`) as a filename and to read additional arguments from that file. This is occasionally used in training pipelines to avoid extremely long command lines and can coexist with config files (YAML/JSON) depending on your project’s conventions.",
+      "difficulty": "beginner",
+      "tags": [
+        "fromfile-prefix",
+        "ml-training-pipelines",
+        "cli-ux"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your codebase has multiple entrypoints: `train.py`, `eval.py`, `predict.py`. They share many flags (e.g., `--model`, `--checkpoint`, `--device`, `--batch_size`, logging flags). You want to avoid duplicating argument definitions.\n\nWhich argparse feature is best suited for sharing a common set of arguments across these scripts?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Use `ArgumentParser(add_help=False)` as a parent parser and pass it via `parents=[...]` to each entrypoint parser.",
+        "B. Use `argparse.REMAINDER` so each script can accept unknown flags and forward them.",
+        "C. Use `parse_known_args()` and manually merge the results from multiple parsers.",
+        "D. Use `set_defaults()` with a shared dictionary of default values."
+      ],
+      "correct_answer": "A",
+      "explanation": "Parent parsers are designed specifically to share argument definitions without duplication. You define shared args once in a parent parser (often with `add_help=False` to avoid duplicate `-h/--help`) and then include it in multiple parsers via `parents=[parent]`. `parse_known_args()` and `REMAINDER` are more about forwarding/unknown args, not maintaining a single source of truth for shared flags.",
+      "difficulty": "beginner",
+      "tags": [
+        "parent-parsers",
+        "shared-args",
+        "multi-entrypoint",
+        "ml-codebase-patterns"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want `--device` to default to `\"cuda\"` if CUDA is available, otherwise `\"cpu\"`. A naive approach is:\n\n```python\nparser.add_argument(\"--device\", default=\"cuda\" if torch.cuda.is_available() else \"cpu\")\n```\n\nWhat is the main reproducibility/determinism concern with this, and what’s a better pattern for ML pipelines?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Concern: the default depends on runtime environment (GPU availability), so the same command line can resolve to different effective configs on different machines/runs, harming reproducibility and making experiments hard to compare.\n\nBetter pattern: keep argparse defaults stable (e.g., default=None or default=\"auto\"), then resolve the final value deterministically in code while recording it. Example: `--device {cpu,cuda,auto}` with default=\"auto\"; after parsing, if device==\"auto\" choose based on CUDA. Save the resolved config (including the resolved device) to the run directory and log it. Optionally allow env var override (e.g., `DEVICE`) but still record the resolved value.",
+      "explanation": "Argparse defaults are often treated as part of an experiment’s configuration. If the default is computed from the environment at parse time, the CLI becomes non-deterministic across machines. Using an explicit \"auto\" sentinel (or `None`) makes it clear that resolution happens later, and saving/logging the resolved configuration ensures reproducibility and auditability.",
+      "difficulty": "intermediate",
+      "tags": [
+        "env-defaults",
+        "determinism",
+        "reproducibility",
+        "defaults-semantics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re implementing a training CLI with these flags:\n- `--resume` (bool): resume from the latest checkpoint in `--output_dir`\n- `--checkpoint PATH`: resume from an explicit checkpoint\n- `--pretrained PATH`: load weights but start a fresh run (new optimizer state, new step)\n\nDesign the argparse logic so the behavior is unambiguous. What is the best approach?\n\nAssume: if both `--resume` and `--checkpoint` are provided, it should be an error; `--pretrained` cannot be combined with either resume mode.\n",
+      "question_type": "mc",
+      "options": [
+        "A. Put all three in a mutually exclusive group; use `required=True` so one must be chosen.",
+        "B. Use a mutually exclusive group for `--resume` and `--checkpoint`, and separately check that `--pretrained` is not used with either (or use a second mutually exclusive group with custom logic).",
+        "C. Allow all combinations in argparse and resolve precedence in code: `--checkpoint` > `--resume` > `--pretrained`.",
+        "D. Use `argparse` subparsers with commands `resume`, `checkpoint`, `pretrained` so the user must pick one."
+      ],
+      "correct_answer": "B",
+      "explanation": "In ML training CLIs, `--resume` and `--checkpoint` are alternative ways to resume, so a mutually exclusive group cleanly enforces that. `--pretrained` is conceptually different (fresh run with weights only), and it must not be combined with resume modes, so you either (1) enforce via a second mutually exclusive group that includes a \"none\" option, or (2) validate after parsing and raise a clear error. Making the group `required=True` is usually wrong because starting from scratch is valid. Subparsers can work but are often heavier than needed for a few flags and can complicate UX when resume is just an optional behavior.",
+      "difficulty": "intermediate",
+      "tags": [
+        "resume-checkpoint-pretrained",
+        "mutual-exclusion",
+        "validation",
+        "ml-training-cli"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "parse_args vs parse_known_args and Namespace patterns (free text):\n\nYou’re integrating your training CLI with a launcher that injects extra flags (e.g., Databricks, torchrun, Hydra, or a custom wrapper). Sometimes you want to tolerate unknown args; other times you want to fail fast.\n\nExplain when you would use `parse_args()` vs `parse_known_args()`. Then show a clean pattern for structuring `main(args)` so you avoid global parser state and can unit test argument handling. Mention how you’d handle the unknown args returned by `parse_known_args()`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use `parse_args()` when your script owns the full CLI contract and unknown flags likely indicate user typos; it should fail fast with a clear error. Use `parse_known_args()` when another system may add flags you don’t control and you either need to forward them (e.g., to Hydra) or ignore them intentionally. A clean structure: `def build_parser(): ...; def main(args): ...; if __name__=='__main__': parser=build_parser(); args, unknown = parser.parse_known_args(); ...; main(args)`; in tests call `parser.parse_args([...])` or `main(parser.parse_args([...]))`. For unknown args: either forward them to the downstream tool (pass-through), log/warn, or error if any unknowns remain after expected forwarding to prevent silently ignoring real typos.",
+      "explanation": "ML production code often runs under orchestrators that add arguments. `parse_known_args()` prevents brittle failures but can hide mistakes if you ignore unknowns blindly. Separating `build_parser()` and `main(args)` makes code testable and avoids hidden global state (e.g., parsing at import time), which is important in distributed training and when importing modules for notebooks or hyperparameter sweeps.",
+      "difficulty": "advanced",
+      "tags": [
+        "parse-known-args",
+        "parse-args",
+        "namespace",
+        "testability",
+        "launchers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Type conversion and validation: You have `--lr` and `--dropout` hyperparameters. You want:\n- `--lr` to be a float in (0, 1]\n- `--dropout` to be a float in [0, 1)\n\nWhat is a practical argparse pattern to enforce this?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Use `type=float` and rely on the model training code to crash if values are invalid.",
+        "B. Use `choices=[...]` enumerating all valid floats between 0 and 1.",
+        "C. Use `type=float` plus a custom post-parse validation step that checks ranges and calls `parser.error(...)` with a helpful message.",
+        "D. Use `nargs='?'` so missing values become `None` and then you can validate."
+      ],
+      "correct_answer": "C",
+      "explanation": "Argparse can convert types (`type=float`) but range constraints typically require custom validation. Doing it right after parsing allows you to fail fast with clear CLI errors (e.g., `--lr must be in (0,1]`). `choices` is impractical for continuous values. Deferring validation to training code often produces harder-to-debug stack traces.",
+      "difficulty": "intermediate",
+      "tags": [
+        "type-conversion",
+        "validation",
+        "hyperparameters",
+        "choices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "nargs vs action='append': You want to support multiple tags for an experiment run.\n\nTwo candidate CLIs:\n1) `--tags baseline debug ablation`\n2) `--tag baseline --tag debug --tag ablation`\n\nWhich argparse setup best matches each style?\n\nPick the best mapping.",
+      "question_type": "mc",
+      "options": [
+        "A. Style (1): `action='append'`; Style (2): `nargs='+'`",
+        "B. Style (1): `nargs='+'`; Style (2): `action='append'`",
+        "C. Style (1): `nargs='*'`; Style (2): `nargs='?'`",
+        "D. Both styles require `nargs='*'`"
+      ],
+      "correct_answer": "B",
+      "explanation": "For a single flag followed by multiple values (`--tags a b c`), use `nargs='+'` (one or more values). For repeated flags (`--tag a --tag b`), use `action='append'` to accumulate values. This distinction matters in ML CLIs for lists like layers, augmentations, metrics, and tags.",
+      "difficulty": "intermediate",
+      "tags": [
+        "nargs",
+        "append",
+        "lists",
+        "experiment-tracking"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Defaults vs requiredness: In training scripts, it’s common to require an optional flag like `--train-dataset` (because it’s too important to be positional). What does `required=True` on an optional argument do, and what happens if it’s missing?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. It sets the default value to `True` and argparse continues if missing.",
+        "B. It makes argparse treat the argument as positional; order now matters.",
+        "C. It causes argparse to exit with a usage message and error if the flag is not provided.",
+        "D. It only affects `--help` output (marks it required) but does not enforce anything."
+      ],
+      "correct_answer": "C",
+      "explanation": "`required=True` on an optional (e.g., `--train-dataset`) enforces that the user must supply it. If missing, argparse prints usage and a clear error message and exits with a non-zero code. This is a common pattern in ML training CLIs where you want explicitness and avoid accidentally training on the wrong data due to a default path.",
+      "difficulty": "beginner",
+      "tags": [
+        "required",
+        "defaults",
+        "training-scripts",
+        "error-handling"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Path handling and robustness (free text):\n\nIn an ML CLI you have:\n- `--train-data` (input path must exist)\n- `--output-dir` (output path may not exist; should be created)\n\nShow how you’d define these arguments using `pathlib.Path` and where you’d validate/prepare them (argparse type vs post-parse). Mention at least one pitfall with doing filesystem checks inside the `type=` function.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Define args with `type=pathlib.Path` for both. After parsing, validate `args.train_data.exists()` (and is a file/dir as expected) and error cleanly (e.g., `parser.error(...)`). For output, ensure `args.output_dir.mkdir(parents=True, exist_ok=True)` and possibly check writability. Pitfall: doing existence checks inside `type=` can make unit tests harder, can break `--help` in some edge cases if the type function has side effects, and can cause confusing errors when argparse calls `type` during parsing (you lose context for better messages). A good pattern is: keep `type=Path` pure conversion, then do IO validation/creation after parse.",
+      "explanation": "ML scripts often run in remote environments (containers, clusters) where path semantics matter. `Path` gives safer joins and clearer intent. Separating conversion from IO validation keeps parsing deterministic and makes it easier to test and to provide high-quality error messages (e.g., distinguish missing input vs unwritable output).",
+      "difficulty": "intermediate",
+      "tags": [
+        "pathlib",
+        "filesystem",
+        "validation",
+        "input-output-paths"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want your `--help` output to be readable for a large training script by grouping arguments into sections like: Data, Model, Training, Logging. Which approach is best?\n\nAssume you want help output similar to:\n\nData:\n  --train-dataset ...\n  --val-dataset ...\nTraining:\n  --epochs ...\n  --batch-size ...",
+      "question_type": "mc",
+      "options": [
+        "A. Use `parser.add_argument_group('Data')` etc., and add relevant arguments to each group.",
+        "B. Use subparsers for Data/Model/Training/Logging and require one to be chosen.",
+        "C. Use mutually exclusive groups for each section so only one section can be used at a time.",
+        "D. Use `ArgumentDefaultsHelpFormatter` only; it automatically groups by topic."
+      ],
+      "correct_answer": "A",
+      "explanation": "`add_argument_group()` is the intended mechanism for organizing help output into named sections without changing parsing semantics. Subparsers change the CLI structure (commands), and mutually exclusive groups enforce exclusivity (not desired). `ArgumentDefaultsHelpFormatter` is useful but doesn’t create topical sections by itself.",
+      "difficulty": "beginner",
+      "tags": [
+        "argument-groups",
+        "help-output",
+        "maintainability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Config precedence question (free text):\n\nYou have a training script that supports:\n- defaults in code (e.g., batch_size=32)\n- a YAML config file passed via `--config path.yaml`\n- CLI overrides like `--batch-size 64 --lr 3e-4`\n\nDescribe a robust precedence strategy (CLI > config > defaults) and outline how you would implement it with argparse + a YAML loader. Include how you’d handle: missing config file, unknown keys in config, and type conversion for overrides.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use argparse to parse known top-level arguments first (at least `--config` and any explicit overrides), load defaults in code, then if `--config` is provided load YAML into a dict, merge it over defaults, then apply CLI-provided values last. Implementation outline: (1) define parser with defaults for all args; (2) parse args; (3) if args.config: validate path exists, load YAML; (4) validate YAML keys against an allowlist or parser dest names; (5) merge: merged = defaults -> update(config_dict) -> update(cli_overrides_only). To apply CLI overrides only when the user explicitly set them, either set argparse defaults to `None` for override-able fields and later fill from merged config/defaults, or compare against a sentinel. For unknown YAML keys, fail fast with a clear error or warn and ignore depending on team policy; for missing config file, raise an argparse-style error. For type conversion, rely on argparse types for CLI (int/float/Path) and validate YAML types after loading (cast/validate ranges).",
+      "explanation": "In ML projects, reproducibility depends on deterministic precedence. A common pitfall is that argparse defaults can unintentionally override config values; using `None` (or a sentinel) for override-able CLI args lets you distinguish “user didn’t set it” from “use default”. Validating config keys catches typos early (e.g., `batc_size`). Type conversion should be explicit: argparse handles CLI strings, while YAML can produce ints/floats automatically but still needs validation (ranges, allowed values).",
+      "difficulty": "advanced",
+      "tags": [
+        "config",
+        "precedence",
+        "validation",
+        "defaults",
+        "parse-args"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have precision flags for training: `--fp16`, `--bf16`, and a default of `fp32` when neither is set. What is the most practical argparse pattern?\n\nAssume you want clean downstream code like `if args.precision == 'bf16': ...`.",
+      "question_type": "mc",
+      "options": [
+        "A. Use two independent boolean flags `--fp16` and `--bf16` and let the user set both; decide precedence in code.",
+        "B. Use a mutually exclusive group with `--fp16` and `--bf16`, and store into a single `args.precision` via `dest='precision'` and `action='store_const'`, with parser default `precision='fp32'`.",
+        "C. Use `nargs='?'` for `--precision` so it can be omitted or provided without a value.",
+        "D. Use `choices=['fp16','bf16']` on two boolean flags."
+      ],
+      "correct_answer": "B",
+      "explanation": "A mutually exclusive group prevents invalid combinations (both fp16 and bf16). Using `dest='precision'` with `store_const` yields a single canonical field (`args.precision`) while keeping ergonomic flags. Setting a default like `'fp32'` covers the case where neither flag is provided.",
+      "difficulty": "intermediate",
+      "tags": [
+        "mutually-exclusive",
+        "mixed-precision",
+        "defaults"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to ensure the user selects exactly one device option for a training script: `--cpu` or `--gpu`. How do you implement this in argparse?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Add both flags normally and check `if args.cpu == args.gpu` after parsing.",
+        "B. Use `parser.add_mutually_exclusive_group(required=True)` and add `--cpu` and `--gpu` to that group.",
+        "C. Use `choices=['cpu','gpu']` on two separate boolean flags.",
+        "D. Use subparsers: `train cpu` and `train gpu`."
+      ],
+      "correct_answer": "B",
+      "explanation": "A mutually exclusive group is the idiomatic way to enforce exactly one of several options. With `required=True`, argparse will error if neither is provided, and it will also error if both are provided. Post-parse checks work but are less maintainable and produce worse help/error messages.",
+      "difficulty": "beginner",
+      "tags": [
+        "mutually-exclusive",
+        "device-selection",
+        "validation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a single CLI entrypoint for an ML project with subcommands: `train`, `eval`, `predict`, `export`. Which argparse structure best supports this while keeping each subcommand’s arguments isolated and maintainable?\n\n(Assume Python 3.10+.)",
+      "question_type": "mc",
+      "options": [
+        "A. Create one `ArgumentParser` and add all arguments for all modes; use `if args.mode == 'train'` to decide which ones to read.",
+        "B. Use `add_subparsers(dest='command', required=True)` and create a separate subparser for each command, each with its own arguments and defaults.",
+        "C. Use `parse_known_args()` and treat the first positional as the command; manually parse the rest for each command.",
+        "D. Use mutually exclusive groups for `--train/--eval/--predict/--export` flags and attach arguments to each flag."
+      ],
+      "correct_answer": "B",
+      "explanation": "Subparsers are designed for CLIs with distinct commands. `add_subparsers(dest='command', required=True)` enforces that one subcommand is selected and cleanly scopes arguments per command (e.g., `train` has `--epochs`, `eval` has `--checkpoint`). This produces clearer help output, avoids invalid combinations, and keeps code modular (each subparser can be built in its own function/module).",
+      "difficulty": "beginner",
+      "tags": [
+        "subparsers",
+        "cli-structure",
+        "maintainability"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
     {
       "question_text": "Consider the following script:\n\n```python\nimport argparse\n\nparser = argparse.ArgumentParser(\n    description=\"A simple calculator program\",\n    usage=\"calc.py [options]\"\n)\n\n# (no arguments added)\n```\n\nWhen a user runs `python calc.py -h`, which statement is most accurate about what they will see?",
       "question_type": "mc",

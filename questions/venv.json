@@ -1,0 +1,2205 @@
+{
+  "metadata": {
+    "subject_slug": "venv",
+    "subject_name": "venv",
+    "exported_at": "2026-03-11T19:42:09.706933",
+    "question_count": 112,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You upgrade `transformers` and suddenly get runtime errors involving `tokenizers` or `torch` version constraints (e.g., `tokenizers>=0.15,<0.20` mismatch). The training job fails only on one machine.\n\nDescribe a dependency-conflict triage approach that produces a minimal reproducible fix. Mention at least three concrete commands/tools you would use in a venv and how you’d narrow the cause.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A solid triage approach:\n1) Capture the exact environment on both machines:\n   - `python -m pip freeze > freeze.txt`\n   - `python -m pip show transformers tokenizers torch`\n2) Check for broken requirements:\n   - `python -m pip check`\n3) Inspect dependency relationships:\n   - `python -m pip install pipdeptree` then `pipdeptree -p transformers -r`\n4) Reproduce in a clean venv:\n   - create a new venv, install only the top-level deps, then add packages incrementally.\n5) Bisect changes:\n   - pin `transformers==X` then try adjacent versions; or pin `tokenizers==...` to satisfy constraints.\n6) Lock/constraints fix:\n   - update `requirements.in` and regenerate a lock/constraints file; ensure CI and local both install from the same lock.\n\nGoal: identify which top-level requirement introduces the incompatible transitive dependency and then pin/upgrade/downgrade accordingly, verifying with `pip check` and a minimal script import test.",
+      "explanation": "This tests real-world ML dependency debugging: candidates should know how to (a) compare environments, (b) detect conflicts (`pip check`), (c) reason about transitive deps (pipdeptree), and (d) converge on a reproducible solution via pinning and lockfiles—rather than repeatedly reinstalling packages until it “works.”",
+      "difficulty": "advanced",
+      "tags": [
+        "dependency-conflicts",
+        "pip-check",
+        "pipdeptree",
+        "reproducibility",
+        "transformers",
+        "tokenizers",
+        "torch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your org hosts internal ML packages on a private index (e.g., Artifact Registry). You need developers and CI to install `myorg-ml-utils` without leaking long-lived credentials.\n\nWhich approach is best practice?",
+      "question_type": "mc",
+      "options": [
+        "A. Put the token directly in `requirements.txt` (e.g., `https://token@registry/...`) so installs always work.",
+        "B. Configure `pip` to use `--extra-index-url` (or `index-url`) pointing to the private registry, authenticate via short-lived tokens (OIDC/workload identity in CI, `gcloud auth application-default` or keyring locally), and keep secrets out of git; optionally use `pip.conf` in CI or environment variables.",
+        "C. Vendor the private wheel files into the repo under `third_party/` and commit them for reproducibility.",
+        "D. Require everyone to run `sudo pip install myorg-ml-utils` so it installs globally and avoids auth prompts."
+      ],
+      "correct_answer": "B",
+      "explanation": "Best practice is to keep credentials out of source control and use short-lived, automated auth. `pip` supports private indexes via `index-url/extra-index-url`, and modern orgs use OIDC/workload identity in CI and credential helpers/keyring locally. Committing tokens is a security incident waiting to happen; vendoring wheels can work in rare air-gapped cases but becomes a maintenance burden; `sudo pip` breaks isolation and reproducibility.",
+      "difficulty": "intermediate",
+      "tags": [
+        "private-index",
+        "pip-auth",
+        "ci-cd",
+        "security",
+        "artifact-registry"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re debugging a GPU issue in a venv: `pip install torch` worked, but in Python:\n\n```python\nimport torch\nprint(torch.cuda.is_available())  # False\n```\n\nWhich checklist is the most appropriate to distinguish “Python deps problem” vs “system/CUDA runtime problem”?",
+      "question_type": "mc",
+      "options": [
+        "A. Only run `pip freeze` and if torch is present, the GPU must work.",
+        "B. Check `torch.__version__`, `torch.version.cuda`, `torch.backends.cudnn.version()`, run `nvidia-smi`, verify driver supports the CUDA runtime, and look for missing shared libraries with `ldd`/error messages; confirm you installed the correct torch build (CPU vs CUDA).",
+        "C. Delete the venv and reinstall torch until `cuda.is_available()` becomes True.",
+        "D. Set `CUDA_HOME` to `/usr/local/cuda` and it will always fix the issue."
+      ],
+      "correct_answer": "B",
+      "explanation": "A venv can’t fix host driver/runtime mismatches. The right checklist inspects both Python-level signals (torch build and CUDA version it was compiled/packaged with) and system-level signals (GPU visibility via `nvidia-smi`, driver compatibility, and presence of required shared libs like cuDNN/cuBLAS). It also calls out a common ML pitfall: installing a CPU-only torch wheel/conda package by accident.",
+      "difficulty": "advanced",
+      "tags": [
+        "cuda",
+        "gpu-debugging",
+        "venv-mental-model",
+        "runtime-parity",
+        "torch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re creating a “golden path” setup for a new ML repo so that a new engineer can run one command and be productive.\n\nWrite a minimal but practical plan (commands + files) that covers:\n- Creating/using a venv\n- Installing deps + the repo\n- Selecting the right Jupyter kernel\n- Running a smoke test\n- A Makefile (or equivalent) target structure\n\nKeep it realistic for an ML team (training + notebooks).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One practical golden path:\nFiles:\n- `.gitignore` includes `.venv/`, `.ipynb_checkpoints/`, `__pycache__/`\n- `pyproject.toml` (project metadata) + `requirements.in` (or `requirements.txt`)\n- `Makefile`\n\nCommands (documented in README):\n1) `python3.11 -m venv .venv`\n2) `source .venv/bin/activate`\n3) `python -m pip install -U pip setuptools wheel`\n4) `python -m pip install -r requirements.txt` (or `pip-compile` + install lock)\n5) `python -m pip install -e .`\n6) Jupyter kernel:\n   - `python -m pip install ipykernel`\n   - `python -m ipykernel install --user --name myproj --display-name \"myproj (.venv)\"`\n7) Verify:\n   - `python -c \"import myproj; import torch; print(torch.__version__)\"`\n   - `python -m myproj.smoke_test`\n\nMakefile targets:\n- `make venv` (create `.venv`)\n- `make install` (install deps + `-e .`)\n- `make kernel` (register ipykernel)\n- `make smoke` (run `python -m myproj.smoke_test`)\n- `make test` (unit tests)\n- `make clean` (remove `.venv`/build artifacts)\n\nOptional: `make setup` that runs `venv install kernel smoke` for a single-command onboarding.",
+      "explanation": "A good golden path reduces ambiguity: it pins the Python version, couples pip to the interpreter, installs the repo as a package (often editable for dev), and ensures notebooks use the same interpreter via an explicit kernel. Smoke tests catch import/path issues early, which is critical in ML repos with both scripts and notebooks.",
+      "difficulty": "intermediate",
+      "tags": [
+        "golden-path",
+        "onboarding",
+        "makefile",
+        "jupyter-kernel",
+        "venv",
+        "smoke-test"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You trained a model in a venv and now need to deploy a FastAPI service. You want runtime parity between training export and serving, and you want builds to be reproducible.\n\nDescribe a practical deployment pattern using pinned dependencies (lock/constraints) and explain how you’d ensure the serving image matches the training environment. Include concrete commands or file artifacts you would produce.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A practical pattern:\n- Produce a pinned dependency set from training (ideally from a lockfile) and use it to build the serving image.\n- Artifacts/files: `pyproject.toml` (or `requirements.in`), a lock file such as `requirements.lock` (pip-tools output) or `poetry.lock`, plus optionally a `constraints.txt` to force exact versions.\n\nExample with pip-tools:\n1) Maintain `requirements.in` (top-level deps) and compile:\n   - `python -m pip install pip-tools`\n   - `pip-compile --generate-hashes -o requirements.lock requirements.in`\n2) In training and serving, install from the lock:\n   - `python -m pip install --require-hashes -r requirements.lock`\n3) Build serving container:\n   - `FROM python:3.11-slim`\n   - copy `requirements.lock` and install it\n   - copy your wheel (built from the repo) and install it: `pip install dist/myproj-*.whl`\n4) Verify parity by recording `pip freeze` (or `pip hash`/lock hashes), and optionally a runtime check endpoint that reports `pip freeze | sha256` and key libs (`torch`, `cuda` build) versions.\n\nKey idea: don’t rely on `pip install -e .` in serving; install an immutable wheel plus a locked dependency set so the deployed environment is reconstructible and matches what training used.",
+      "explanation": "This tests whether the candidate can connect venv practices to deployment: immutable artifacts + pinned deps are what make serving reproducible. The best answers mention: lock/constraints, wheels (not editable), verification (pip freeze hash), and Python version/base image pinning. In ML, parity issues often come from subtle version drift (torch/transformers/tokenizers) that only show up at inference time.",
+      "difficulty": "advanced",
+      "tags": [
+        "serving",
+        "reproducibility",
+        "lockfiles",
+        "constraints",
+        "training-serving-parity",
+        "containers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team is standardizing venv conventions for multiple ML repos used in local dev, remote dev (VS Code), and containers.\n\nWhich policy is the best default, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. Always commit the `.venv/` directory into git so everyone has identical dependencies.",
+        "B. Prefer an in-repo `.venv/` (gitignored) for discoverability and tooling integration; optionally allow centralized envs for disk savings; in containers, build the environment in the image rather than relying on a host `.venv` mount.",
+        "C. Always create venvs in a centralized directory like `~/.venvs/` and never allow in-repo envs, because in-repo envs break imports.",
+        "D. Avoid venvs; use system Python and rely on `pip install --user` for isolation."
+      ],
+      "correct_answer": "B",
+      "explanation": "In-repo `.venv` (gitignored) is a common ML-team default because it’s easy to find, reduces “wrong env” mistakes, and integrates well with IDEs and remote dev. Centralized envs can be acceptable when managed carefully, but they increase the chance of cross-repo contamination. Committing `.venv` is brittle (OS-specific binaries, huge diffs). In containers, you typically build dependencies into the image for reproducibility rather than bind-mounting a host venv.",
+      "difficulty": "intermediate",
+      "tags": [
+        "workflow",
+        "team-conventions",
+        "venv-location",
+        "remote-dev",
+        "containers",
+        "gitignore"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "What does a Python venv actually change at runtime, and what does it *not* isolate? Choose the best answer for an ML engineer working with GPU libraries.",
+      "question_type": "mc",
+      "options": [
+        "A. It fully isolates everything including CUDA drivers and system shared libraries, so GPU issues cannot be caused by the host once you use a venv.",
+        "B. It mainly changes `sys.prefix`/`sys.base_prefix`, the default `site-packages` location, and provides PATH shims for `python`/`pip`; it does not isolate OS-level shared libraries, GPU drivers, or kernel-level dependencies.",
+        "C. It only changes environment variables but Python still loads packages from the global site-packages by default.",
+        "D. It replaces the Python interpreter binary with a containerized interpreter, so it behaves like Docker."
+      ],
+      "correct_answer": "B",
+      "explanation": "A venv redirects Python’s import/install target to an environment-specific `site-packages` and adjusts `sys.prefix` and entrypoint shims so `python`/`pip` resolve to the venv. But it does not virtualize the OS: CUDA drivers, glibc, system-level shared libraries, and hardware access remain host-dependent. This matters in ML because `torch.cuda.is_available()` can fail due to driver/runtime mismatches even if Python packages are correct.",
+      "difficulty": "beginner",
+      "tags": [
+        "venv-mental-model",
+        "site-packages",
+        "sys-prefix",
+        "cuda",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You activate a venv and run the following:\n\n```bash\n$ which python\n/home/me/repo/.venv/bin/python\n$ which pip\n/usr/bin/pip\n$ pip -V\npip 23.0 from /usr/lib/python3/dist-packages/pip (python 3.10)\n$ python -V\nPython 3.11.7\n```\n\nYou then do `pip install -r requirements.txt` and later `python -c \"import myproj\"` fails.\n\nWhat is the most likely root cause and best fix?",
+      "question_type": "mc",
+      "options": [
+        "A. The venv is corrupted; delete `__pycache__` directories and try again.",
+        "B. `pip` is coming from the system interpreter, so packages were installed outside the venv; fix by using `python -m pip install ...` (or `.venv/bin/python -m pip ...`) and ensuring `pip` points to `.venv/bin/pip`.",
+        "C. `requirements.txt` is invalid; fix by switching to `environment.yml`.",
+        "D. The project should be run with `sudo` so it can import installed packages."
+      ],
+      "correct_answer": "B",
+      "explanation": "`which pip` and `pip -V` show pip is not from the activated venv, so the install likely went to the system site-packages. The canonical fix is to couple pip to the interpreter: `python -m pip install -r requirements.txt` (or `./.venv/bin/python -m pip ...`). You can also ensure activation scripts are correctly sourced and that the shell’s PATH isn’t overriding `pip`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip",
+        "venv",
+        "path-precedence",
+        "import-errors",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A colleague reports: “`pip install transformers` succeeded, but `import transformers` fails with `ModuleNotFoundError`.”\n\nWhich diagnostic flow is the best first-pass, end-to-end way to find the root cause in a venv-based workflow (local shell + notebooks)?",
+      "question_type": "mc",
+      "options": [
+        "A. Reinstall Python and reboot; if it still fails, delete the repo and reclone.",
+        "B. Check `pip list` and if the package is present, conclude the import error is due to a bug in the package.",
+        "C. Verify interpreter alignment (`which python`, `python -m pip -V`, `python -c \"import sys; print(sys.prefix)\"`), check user-site leakage (`python -m site`), confirm kernel interpreter in notebooks, then inspect `sys.path` and `pip show transformers` location; finally retry in a clean venv.",
+        "D. Set `PYTHONPATH` to the repo root so imports can find the package."
+      ],
+      "correct_answer": "C",
+      "explanation": "Most “pip installed but import fails” cases are environment alignment issues: pip ran against a different interpreter than the one executing Python, the notebook kernel points elsewhere, or user-site/system-site packages are interfering. A good diagnostic flow checks: (1) the exact Python executable used, (2) pip bound to that Python (`python -m pip -V`), (3) where the package was installed (`pip show`), (4) whether user-site is enabled and leaking packages, and (5) notebook kernel configuration. Only after confirming alignment should you consider package bugs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "debugging",
+        "pip",
+        "import-errors",
+        "venv",
+        "jupyter-kernel",
+        "user-site"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an ML team, onboarding often fails even when following a documented venv setup. List 5 common failure points in the “clone → venv → install → verify” process and how you would detect/resolve each. Include at least one GPU/CUDA-related failure point and at least one private index/auth-related failure point.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example set of common failure points with detection and fixes:\n1) Wrong Python version used to create venv: detect with `python -V` and `python -c \"import sys; print(sys.executable)\"`; fix by using `python3.11 -m venv .venv` (or pyenv/asdf) and recreating the venv.\n2) pip installs into a different interpreter than the one used to run: detect mismatch between `which pip` vs `which python` (or `python -m pip -V`); fix by always using `python -m pip ...` and ensuring activation.\n3) Private index/auth failure (401/403 or package not found): detect from pip error output and `pip config list`; fix by setting `--extra-index-url`/`--index-url`, configuring keyring/token, and ensuring CI uses a short-lived token (not committed).\n4) Build toolchain missing for native deps (e.g., tokenizers, xgboost): detect from wheel build errors; fix by installing system build deps (gcc, rust, python-dev) or using prebuilt wheels/compatible Python version.\n5) GPU/CUDA mismatch: detect with `nvidia-smi`, `python -c \"import torch; print(torch.version.cuda); print(torch.cuda.is_available())\"`, and import errors referencing `libcudnn`/`libcublas`; fix by selecting the correct torch CUDA build, ensuring driver compatibility, or using a container image with the right CUDA runtime.\nOther valid points: proxy/cert issues, constraints/lock file drift, OS-specific deps, wrong notebook kernel, stale `.venv` reused across branches.",
+      "explanation": "This tests whether the candidate can anticipate real onboarding friction in ML (native extensions, GPU stacks, private registries) and can propose concrete diagnostic commands rather than generic advice. Good answers tie each failure to a specific symptom and a deterministic fix.",
+      "difficulty": "intermediate",
+      "tags": [
+        "onboarding",
+        "handoff",
+        "debugging",
+        "private-index",
+        "cuda",
+        "native-deps"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to hand off a venv-based ML project to a new engineer. Which onboarding sequence is the most reliable “clone → create venv → install → verify” flow, and why?\n\nAssume Python 3.11 is required and the repo uses `requirements.txt` and has a small smoke test script `python -m myproj.smoke_test`.",
+      "question_type": "mc",
+      "options": [
+        "A. `git clone ...; cd repo; pip install -r requirements.txt; python -m myproj.smoke_test`",
+        "B. `git clone ...; cd repo; python3.11 -m venv .venv; source .venv/bin/activate; python -m pip install -U pip; pip install -r requirements.txt; pip install -e .; python -c \"import sys; print(sys.executable)\"; python -m myproj.smoke_test`",
+        "C. `git clone ...; cd repo; conda create -n repo python=3.11; pip install -r requirements.txt; pytest`",
+        "D. `git clone ...; cd repo; python -m venv venv; source venv/bin/activate; pip install -r requirements.txt; deactivate; python -m myproj.smoke_test`"
+      ],
+      "correct_answer": "B",
+      "explanation": "The reliable flow explicitly selects the required interpreter (`python3.11`), creates an isolated environment, uses `python -m pip` inside that interpreter, upgrades pip tooling, installs dependencies, and installs the repo (often editable for dev). It also includes a verification step that checks the active interpreter and runs a smoke test via `python -m ...` to ensure package imports resolve correctly. Options A and D risk installing into the wrong interpreter/environment. Option C may work, but it changes the toolchain (conda) and doesn’t show the venv-based handoff the prompt asks for.",
+      "difficulty": "beginner",
+      "tags": [
+        "onboarding",
+        "handoff",
+        "venv",
+        "pip",
+        "smoke-test",
+        "python-m-entrypoint"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate says: “I don’t want packaging in ML repos; I’ll just use `PYTHONPATH` and run scripts directly.”\n\nGive a practical argument (not theoretical) for why ML teams often prefer a package + entrypoints (e.g., `pip install -e .` + `python -m ...` or console scripts) over `PYTHONPATH` + `python path/to/script.py`. Include at least two failure modes you’ve seen that affect training reproducibility or serving parity.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong practical argument is that packaging + entrypoints makes imports, module resolution, and dependency installation behave the same across local dev, notebooks, CI, and production images. With `PYTHONPATH` + direct script execution, the import root depends on the current working directory, shell config, and notebook kernel, which leads to non-reproducible behavior.\n\nTwo common failure modes:\n1) Different import roots: running `python src/myproj/train.py` can make `src/myproj` behave like the top-level, while production imports `myproj` as a package; relative imports or implicit namespace assumptions break or silently import the wrong module.\n2) Hidden environment coupling: `PYTHONPATH` may be set in one shell but not in CI or in a Docker image, so training works locally but serving/CI fails with `ModuleNotFoundError`.\nAdditional practical issues include accidental shadowing (a local `tokenizers.py` overriding the real package), and notebooks using a different kernel/interpreter than the shell where `PYTHONPATH` was exported.",
+      "explanation": "Interviewers look for operational reasoning: packaging standardizes import semantics and makes builds/containers predictable. ML workflows involve many execution contexts (notebooks, distributed training, batch jobs, serving containers). `PYTHONPATH` is fragile across these contexts, while a package installation and module entrypoints provide consistent behavior and make it easier to produce immutable artifacts for serving.",
+      "difficulty": "intermediate",
+      "tags": [
+        "packaging",
+        "pythonpath",
+        "entrypoints",
+        "reproducibility",
+        "training-serving-parity"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You inherit an ML repo with this layout:\n\n```\nrepo/\n  src/myproj/\n    __init__.py\n    train.py\n  pyproject.toml\n  notebooks/\n```\n\nThe team wants training runs and serving images to be reproducible across machines, while still allowing fast iteration during development.\n\nCompare these approaches and choose the best default for the repo, plus when you’d use the others:\n1) `pip install -e .`\n2) setting `PYTHONPATH=src`\n3) running `python -m myproj.train`\n\nWhich statement is most accurate for ML workflows (training + serving)?",
+      "question_type": "mc",
+      "options": [
+        "A. Prefer `PYTHONPATH=src` because it avoids packaging overhead; use `pip install -e .` only for production builds.",
+        "B. Prefer `pip install -e .` for dev because it keeps imports consistent with packaging; prefer building a wheel/sdist for serving; use `python -m` to ensure module-relative imports work; avoid `PYTHONPATH` except for quick experiments.",
+        "C. Prefer `python -m` because it installs dependencies automatically; use `pip install -e .` only if imports fail.",
+        "D. Prefer `pip install -e .` for serving because editable installs are the most reproducible; avoid wheels because they can change behavior."
+      ],
+      "correct_answer": "B",
+      "explanation": "`pip install -e .` (editable) is a strong dev default because it exercises the package the same way it will be imported in production, while still reflecting code changes without reinstalls. For serving, you typically build an immutable artifact (wheel) and install with pinned deps to improve reproducibility and traceability. `python -m myproj.train` is not a packaging mechanism, but it is a good execution pattern because it runs the module in package context (helps with relative imports and avoids accidentally executing a file as a script with a different import root). `PYTHONPATH` works but is easy to forget, varies across shells/notebooks/CI, and often causes “works on my machine” import roots—so it’s best reserved for quick one-off debugging rather than a team standard.",
+      "difficulty": "intermediate",
+      "tags": [
+        "editable-install",
+        "packaging",
+        "reproducibility",
+        "pythonpath",
+        "python-m-entrypoint",
+        "training-serving-parity"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have two venvs on the same machine:\n- `train-venv` used for training (torch, deepspeed)\n- `serve-venv` used for inference (torch, fastapi)\n\nDisk usage is high because both environments contain large wheels and duplicated packages. What practical steps can reduce disk usage and speed up environment creation while keeping isolation?\n\nChoose one best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. Use a shared wheel cache/wheelhouse (pip cache, CI artifact) and install from it; consider splitting common deps into a base image or layered container; keep separate venvs but avoid re-downloading/rebuilding.",
+        "B. Symlink the entire `site-packages` directory between the two venvs so they share installed packages.",
+        "C. Disable pip’s cache so each venv is clean and smaller.",
+        "D. Put both training and serving dependencies into one venv to avoid duplication."
+      ],
+      "correct_answer": "A",
+      "explanation": "venvs duplicate installed packages by design. The practical way to reduce repeated work is to reuse build artifacts (wheel cache/wheelhouse) and/or use image layering (containers) so common dependencies are shared at the filesystem layer while venvs remain isolated. Symlinking `site-packages` breaks isolation and can cause subtle conflicts. Disabling cache slows installs. A single venv often leads to dependency bloat and conflicts between train and serve requirements.",
+      "difficulty": "intermediate",
+      "tags": [
+        "performance",
+        "disk-considerations",
+        "wheel-caching",
+        "multi-environment-strategy",
+        "ci-speedups"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team is debating standardizing on Conda or venv for ML projects. The project includes: PyTorch with CUDA, FAISS, OpenCV, and some audio/video preprocessing (ffmpeg). You also need consistent environments across Linux laptops and a training cluster.\n\nWhat decision-making framework would you apply, and what would you likely choose here? Explain tradeoffs (reproducibility, native libs, GPU, developer UX, deployment).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A solid framework: identify whether the project depends on non-Python system libraries and GPU stacks that must be reproducible (CUDA/cuDNN/NCCL, OpenCV/FFmpeg, FAISS). If yes, prefer Conda or containers to manage compiled deps and reduce ABI/library mismatch risk; use venv/pip primarily for pure-Python or when system deps are already standardized via base images. For this project, likely choose containers for training/serving images (with CUDA base) and either conda inside (for FAISS/OpenCV convenience) or pip/venv layered on top if wheels are reliable for the target OS. Tradeoffs: conda simplifies native deps but adds solver complexity; venv is simpler and standard but pushes native deps onto the OS; containers improve reproducibility across laptops/cluster but require image build discipline.",
+      "explanation": "In ML, the key distinction is not ‘venv vs conda’ in isolation—it’s who owns system dependencies. GPU and native libraries are frequent sources of runtime failures. A pragmatic choice often combines tools: containerize the system stack, then use venv/pip (or conda) for Python dependencies with pinned versions for reproducibility.",
+      "difficulty": "advanced",
+      "tags": [
+        "conda-vs-venv",
+        "gpu-stacks",
+        "system-dependencies",
+        "team-standardization",
+        "when-not-to-use-venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A training run started failing after you upgraded a few dependencies in your venv. You need a safe upgrade/rollback strategy that helps you quickly bisect which dependency caused the regression.\n\nWhich approach is best?\n\nChoose one.",
+      "question_type": "mc",
+      "options": [
+        "A. Record a known-good lock/snapshot (`requirements.lock` or `pip freeze`), upgrade in small steps, and use constraints/lockfiles to reproduce; to bisect, create fresh venvs from snapshots and narrow changes (e.g., binary search on version bumps).",
+        "B. Keep upgrading packages until the error disappears; don’t pin versions so you always get latest bug fixes.",
+        "C. Edit installed packages directly inside `site-packages` to undo changes.",
+        "D. Use `pip install --upgrade --no-deps` for everything to avoid dependency issues."
+      ],
+      "correct_answer": "A",
+      "explanation": "The practical ML-safe strategy is reproducibility-first: capture a known-good environment (lockfile or `pip freeze`), make controlled upgrades, and use fresh venvs to test changes. Bisecting is easiest when you can recreate environments deterministically. Unpinned upgrades produce non-reproducible states; editing `site-packages` is fragile; `--no-deps` often breaks installs by ignoring required dependency versions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "upgrade-rollback",
+        "bisecting-env-issues",
+        "reproducibility",
+        "venv",
+        "dependency-management"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect import shadowing in your venv-based ML project: `import datasets` loads a local `datasets.py` file instead of Hugging Face `datasets`, causing strange runtime behavior.\n\nWhat’s the fastest way to confirm what module is being imported and fix it in a robust way? Provide concrete commands/snippets.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Confirm by printing the module path: `python -c \"import datasets; print(datasets.__file__)\"` and/or `python -c \"import importlib.util; spec=importlib.util.find_spec('datasets'); print(spec.origin)\"`. Also inspect `sys.path` (`python -c \"import sys; print('\\n'.join(sys.path))\"`). Fix robustly by renaming/removing the conflicting local file/package (e.g., `datasets.py`), adopting a `src/` layout with editable install (`pip install -e .`), and ensuring scripts are executed in a way that doesn’t prepend an unintended directory to `sys.path` (e.g., use `python -m myproj.scripts.train` or entry points).",
+      "explanation": "Shadowing happens because Python’s import resolution prefers earlier entries on `sys.path` (often the current working directory). In ML repos with many scripts and notebooks, this is common and can silently change behavior. Printing `__file__`/spec origin is the quickest proof, and restructuring the repo (src-layout + editable install + module execution) prevents recurrence.",
+      "difficulty": "intermediate",
+      "tags": [
+        "import-shadowing",
+        "editable-installs",
+        "src-layout",
+        "environment-verification",
+        "ml-repos"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an ML repo, you want to develop a local package `myproj` while training scripts import it. The repo uses a `src/` layout:\n\n```\nrepo/\n  pyproject.toml\n  src/myproj/__init__.py\n  scripts/train.py\n```\n\nWhich approach best supports iterative development without import surprises?\n\nChoose one.",
+      "question_type": "mc",
+      "options": [
+        "A. Install the project into the venv in editable mode (e.g., `pip install -e .`) and keep imports referencing `myproj`; ensure `src/` layout is configured so you don’t accidentally import from the repo root.",
+        "B. Add `repo/src` to `PYTHONPATH` in your shell profile permanently for all projects.",
+        "C. Copy `src/myproj` into the venv’s site-packages directory manually after every change.",
+        "D. Run training only from inside `src/` so relative imports work."
+      ],
+      "correct_answer": "A",
+      "explanation": "Editable installs (`pip -e .`) are the standard way to develop a local package inside a venv while keeping imports stable. A `src/` layout helps prevent accidental import of the in-repo package when running from the repo root (reducing shadowing bugs). Setting global `PYTHONPATH` is brittle, manual copying is error-prone, and relying on working directory for imports causes inconsistent behavior across machines and CI.",
+      "difficulty": "beginner",
+      "tags": [
+        "editable-installs",
+        "src-layout",
+        "pip-e",
+        "import-shadowing",
+        "ml-repos"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a training venv and an inference venv for the same model. Beyond running `which python`, list a practical verification checklist you would run to ensure the environment is correct and reproducible before:\n1) a long training job, and\n2) deploying an inference service.\n\nInclude both Python-level and system-level checks relevant to ML (e.g., CUDA, BLAS/OpenMP, CPU/GPU availability, package versions, and import sanity).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A good checklist includes: Python version (`python -V`), venv activation sanity (`sys.executable`, `sys.prefix`), `pip --version`, `pip check`, `pip freeze` (or lockfile match), verify key libs versions (`torch.__version__`, `tensorflow.__version__`, `transformers.__version__`), verify GPU stack (`nvidia-smi`, `torch.cuda.is_available()`, CUDA runtime version, `torch.version.cuda`, cuDNN availability), deterministic flags/seed config, check CPU threading env vars (OMP_NUM_THREADS/MKL_NUM_THREADS), confirm BLAS/OpenMP backend to avoid performance regressions, validate that imports resolve to expected modules (no local shadowing), validate model artifact compatibility (serialization format, tokenizer versions), and system libs presence for media/IO (ffmpeg, libsndfile). For serving: additionally verify minimal dependency set, startup import time, `pip check` clean, ABI compatibility with the serving host image, and run a smoke test inference with representative inputs.",
+      "explanation": "ML failures often come from subtle mismatches: wrong CUDA runtime, different tokenizer/model library versions, broken dependency graph, or different OpenMP/BLAS backends causing performance or crashes. A robust checklist catches issues before hours-long training runs or production deploys and improves reproducibility and debugging.",
+      "difficulty": "intermediate",
+      "tags": [
+        "environment-verification",
+        "training-vs-inference",
+        "reproducibility",
+        "system-dependencies",
+        "gpu-stacks"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run training in a venv on Linux and get an error importing a package with native extensions:\n\n```\nImportError: /.../site-packages/xxx.so: version `GLIBCXX_3.4.29' not found (required by /.../xxx.so)\n```\n\nWhat is the most likely root cause and the most practical fix in an ML context?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. A mismatch between the system’s libstdc++ (or GCC runtime) and the binary wheel’s requirements; fix by using a compatible base image/OS, conda-provided runtimes, or rebuilding the extension against the target system.",
+        "B. venv is corrupted; delete the venv and reinstall the same requirements and it will always fix it.",
+        "C. Python minor version mismatch; rename the venv folder to match the Python version.",
+        "D. Missing `PYTHONPATH`; set `PYTHONPATH` to the site-packages directory."
+      ],
+      "correct_answer": "A",
+      "explanation": "Errors like missing `GLIBCXX_*` indicate the compiled extension was built against a newer C++ runtime than the host provides. venv doesn’t isolate system libraries like libstdc++/glibc. In ML, the practical fixes are to standardize the runtime environment (container with the right OS/toolchain), use conda which can ship compatible runtimes, or rebuild from source on the target machine. Merely recreating the venv won’t change system libs.",
+      "difficulty": "advanced",
+      "tags": [
+        "system-dependencies",
+        "native-libraries",
+        "libstdc++",
+        "glibc",
+        "troubleshooting",
+        "conda-vs-venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your CI pipeline creates a fresh venv and runs `pip install -r requirements.txt` on every commit. It’s slow and repeatedly downloads/builds packages like numpy, torch, and tokenizers.\n\nWhich change most directly improves speed while keeping venv isolation?\n\nChoose one.",
+      "question_type": "mc",
+      "options": [
+        "A. Cache pip’s download/wheel directories (and/or use a wheelhouse) keyed by Python version + lockfile hash; prefer wheels over source builds.",
+        "B. Run `pip install` with `--no-cache-dir` so it doesn’t waste time reading cache.",
+        "C. Use `pip install --force-reinstall` to ensure consistent installs.",
+        "D. Install dependencies globally on the CI runner and reuse them across jobs without isolation."
+      ],
+      "correct_answer": "A",
+      "explanation": "Most CI time is spent downloading/building dependencies. Caching pip’s wheel/download cache (or building a wheelhouse once and reusing it) speeds up installs while still installing into a fresh venv per job. Keying the cache by Python version, platform, and a lock/requirements hash avoids stale or incompatible caches. `--no-cache-dir` typically makes things slower; `--force-reinstall` increases work; global installs reduce isolation and can introduce hidden coupling between jobs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "performance",
+        "disk-considerations",
+        "wheel-caching",
+        "ci-speedups",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a multi-environment strategy for an ML project across the lifecycle (local dev, training on a cluster, and model serving). Use venvs where appropriate. Your answer should include:\n- how many environments you’d create and why\n- how you’d keep them consistent (lockfiles, constraints, etc.)\n- how you’d handle training vs serving dependency differences\n- what you’d do differently if training requires GPU libraries",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A strong answer proposes at least 3 environments: (1) dev/test (linters, notebooks, debugging tools), (2) train (minimal runtime + training frameworks, pinned), (3) serve (minimal inference runtime, pinned, often smaller). Use a shared base requirements/constraints (e.g., requirements.in + compiled lock via pip-tools/uv/pdm/poetry) with environment-specific extras (dev/train/serve). Keep Python version pinned and recorded. For GPU: use a container or conda env (or a base image) to provide CUDA/cuDNN/NCCL, then install Python deps into a venv within that image (or use conda fully). Ensure reproducibility with hashes/locks, CI to build each env, and artifact the lock + `pip freeze` snapshot with each model run. Train vs serve: avoid installing heavy training-only deps in serve, and validate that inference imports only required packages.",
+      "explanation": "ML workflows diverge across dev/train/serve. A single environment tends to bloat and becomes harder to reproduce or secure. Separating environments reduces dependency conflicts and makes serving images smaller. Consistency comes from pinning versions (lock/constraints) and standardizing Python versions. GPU stacks often require system-level dependencies that venv can’t manage, so you wrap venv inside a container/conda-managed base or use conda for the full stack.",
+      "difficulty": "intermediate",
+      "tags": [
+        "multi-environment-strategy",
+        "ml-lifecycle",
+        "when-not-to-use-venv",
+        "conda-vs-venv",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re starting a new ML project on a shared GPU server. The model uses PyTorch with CUDA, plus a few Python-only libs (transformers, datasets). When is it a bad idea to rely on a plain `python -m venv` for the whole setup, and what would you do instead?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. It’s bad when you need GPU-enabled binaries or system-level libs (CUDA/cuDNN/NCCL); prefer Conda (or container images) for the GPU stack, and optionally use venv for pure-Python layers.",
+        "B. It’s bad because venv can’t isolate Python packages; you must always use Conda for any ML project.",
+        "C. It’s bad only on Windows; on Linux venv always works for CUDA builds.",
+        "D. It’s bad because pip can’t install wheels inside venv; you should install everything globally with sudo pip."
+      ],
+      "correct_answer": "A",
+      "explanation": "venv isolates Python packages but does not solve system dependency management (CUDA runtime, cuDNN, NCCL, some OpenMP/MKL stacks). In ML, GPU builds often depend on specific system libraries/driver compatibility. Conda can manage many compiled dependencies, and containers (Docker/Singularity) are common for reproducible GPU stacks. A practical pattern is: container/conda for CUDA + system libs, then venv/pip for your Python app dependencies when appropriate.",
+      "difficulty": "beginner",
+      "tags": [
+        "when-not-to-use-venv",
+        "conda-vs-venv",
+        "gpu-stacks",
+        "system-dependencies"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "CI + private index: Your company hosts internal wheels (e.g., a custom `torch` build or proprietary feature store client) in a private package index. In CI, installs into a venv intermittently fail with 401/403 errors.\n\nWhich solution is MOST correct and secure?",
+      "question_type": "mc",
+      "options": [
+        "A. Hardcode the username/password in `requirements.txt` so developers can run it locally too",
+        "B. Use CI secrets to provide authentication (token) via environment variables and configure pip at runtime (e.g., `PIP_INDEX_URL`/`PIP_EXTRA_INDEX_URL` or a temporary `pip.conf`), then run `python -m pip install ...` inside the venv",
+        "C. Commit a `pip.conf` containing the token into the repo so CI can read it",
+        "D. Disable TLS verification so pip can connect without auth issues"
+      ],
+      "correct_answer": "B",
+      "explanation": "The secure pattern is: keep credentials out of git, inject them via CI secret management, and configure pip at runtime (env vars or ephemeral config file). Using `python -m pip` ensures the install targets the intended venv. Hardcoding tokens or committing config leaks credentials; disabling TLS is insecure and doesn’t solve authorization properly.",
+      "difficulty": "advanced",
+      "tags": [
+        "private-index",
+        "ci",
+        "pip-auth",
+        "secrets",
+        "venv-installs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Repo onboarding: You want new ML engineers to get running quickly and consistently (training + inference). What would you include in the repo (README + automation like Makefile/tasks) to communicate and enforce correct venv usage?\n\nProvide a concrete outline with at least 5 items, including commands.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A practical onboarding setup typically includes:\n1) README prerequisites: required Python version(s), OS notes, and how to install Python.\n2) A single “bootstrap” command, e.g. `make venv` or `make setup` that runs:\n   - `python3 -m venv .venv`\n   - `python -m pip install -U pip setuptools wheel`\n   - `python -m pip install -r requirements.txt` (or lock file)\n3) Clear activation instructions per OS:\n   - macOS/Linux: `source .venv/bin/activate`\n   - Windows PowerShell: `.venv\\Scripts\\Activate.ps1`\n4) Verification step: `python -c \"import sys; print(sys.executable)\"` and a smoke test like `python -c \"import torch; print(torch.__version__)\"`.\n5) Common tasks automated: `make test`, `make train`, `make serve`, `make lint`, each assuming the venv.\n6) Rebuild instructions: `make clean-venv` (delete `.venv`) and `make setup`.\n7) Notes for GPU/ML specifics: CUDA/CPU wheel selection, extra index URLs if needed, and how to pin/upgrade dependencies.\n",
+      "explanation": "Interviewers want to see that you can reduce environment drift across a team. The best answers emphasize: one command to set up, explicit OS-specific activation, a quick verification step, and automation that consistently uses the venv’s interpreter (often by calling `.venv/bin/python -m ...` inside tasks to avoid relying on activation).",
+      "difficulty": "intermediate",
+      "tags": [
+        "repo-setup",
+        "readme",
+        "makefile",
+        "onboarding",
+        "automation",
+        "venv-best-practices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Team dependency sharing: You want reproducible training runs across laptops and CI, but also want to be able to upgrade dependencies intentionally. Which approach is BEST and what should be committed to git?\n\nAssume you’re using pip (not conda/poetry).",
+      "question_type": "mc",
+      "options": [
+        "A. Commit only `pip freeze` output as `requirements.txt`; never keep any higher-level spec",
+        "B. Commit a high-level `requirements.in` (direct deps) and a compiled, fully pinned lock file (e.g., `requirements.txt` or `requirements.lock`) generated by pip-tools, optionally plus a `constraints.txt`; commit the input and the compiled output",
+        "C. Don’t commit dependency files; tell everyone to install whatever versions they want",
+        "D. Commit your entire `.venv/` directory to git so everyone has identical packages"
+      ],
+      "correct_answer": "B",
+      "explanation": "The common best practice is to separate intent (direct dependencies in `requirements.in`) from the resolved, reproducible environment (compiled pinned requirements/lock). Committing both enables deterministic installs in CI and for experiments while still allowing controlled upgrades by re-compiling. Committing `.venv` is large and platform-specific; committing only `pip freeze` loses intent and makes upgrades harder.",
+      "difficulty": "advanced",
+      "tags": [
+        "requirements-in",
+        "constraints",
+        "pip-tools",
+        "reproducibility",
+        "team-workflows"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You inherit a repo where `pip install -r requirements.txt` inside the venv fails with confusing errors after partial installs (e.g., dependency resolver conflicts, corrupted wheel cache, mixed CUDA wheels). What are practical guidelines for deciding when to rebuild the venv vs trying to repair it in place?\n\nAnswer as a short decision checklist.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Rebuild the venv (preferred) when:\n- You can’t easily reason about the current state (many manual installs/updates, unknown history).\n- You changed Python minor version (e.g., 3.10 → 3.11) or platform/arch, or swapped CUDA/torch builds.\n- Resolver conflicts persist after pinning/clean install attempts, or imports fail due to binary incompatibilities.\n- You suspect mixed environments (packages installed globally/user-site and in venv).\n\nTry repair first when:\n- It’s a small, well-scoped issue (one package upgrade/downgrade) and the environment is otherwise reproducible.\n- You can re-run a deterministic install (e.g., `python -m pip install -r requirements.lock.txt`) and it converges.\n\nPractical steps before deciding:\n- Check `python -m pip -V`, `python -c \"import sys; print(sys.executable)\"`, and `python -m pip check`.\n- If time-to-fix matters, deleting `.venv` and recreating is often faster and more reliable than surgery.",
+      "explanation": "venvs are meant to be disposable. ML stacks frequently include compiled wheels (numpy, torch, xgboost) where subtle ABI/CUDA mismatches cause hard-to-debug runtime failures. Rebuilding gives a clean slate and is often the most time-effective approach in interviews and real work.",
+      "difficulty": "intermediate",
+      "tags": [
+        "recreate-vs-repair",
+        "failure-modes",
+        "ml-binary-deps",
+        "pip-check",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re building a Docker image for a FastAPI model server. When (if ever) would you still create and use a `venv` inside the container instead of installing into the container’s system Python site-packages?\n\nGive 2–3 practical reasons and mention at least one tradeoff.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "You might still use a venv inside a container when:\n- You want isolation from the base image’s Python packages (e.g., the base image includes system packages that conflict with your pinned ML stack).\n- You run multiple Python apps/tools in one image (less ideal, but happens in research/monorepos) and want separation.\n- You need a predictable prefix for copying dependencies between stages (e.g., build stage installs into `/opt/venv` and you copy that directory into a slim runtime stage).\n\nTradeoffs:\n- Adds complexity and slightly more disk usage/layers; not strictly necessary because containers already provide OS-level isolation.\n- If you always run a single app per image, installing into system site-packages is often simpler; but you must still avoid polluting the base image and keep reproducibility via pinned requirements.",
+      "explanation": "The key interview insight is: containers isolate at the OS/filesystem level, but venvs isolate at the Python dependency level. In many production images, people skip venv and install to system Python for simplicity. However, multi-stage builds and base-image conflicts are common ML-serving realities where a venv (often at a fixed path like `/opt/venv`) is a pragmatic pattern.",
+      "difficulty": "intermediate",
+      "tags": [
+        "docker",
+        "venv-in-docker",
+        "ml-serving",
+        "tradeoffs",
+        "multi-stage-build"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Windows basics: A teammate on Windows can’t activate the venv and gets an execution policy error. Which answer is MOST correct and practical for a non-specialist ML engineer to suggest?",
+      "question_type": "mc",
+      "options": [
+        "A. Tell them venvs don’t work on Windows; they must use WSL",
+        "B. Use the activation script under `.venv\\Scripts\\activate` (PowerShell: `.venv\\Scripts\\Activate.ps1`) and, if blocked, set an appropriate PowerShell execution policy (e.g., `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`) or use `cmd.exe` activation (`.venv\\Scripts\\activate.bat`)",
+        "C. Run `sudo chmod +x .venv/Scripts/activate` to fix permissions",
+        "D. Copy the `site-packages` folder into `C:\\Python\\Lib\\site-packages` manually"
+      ],
+      "correct_answer": "B",
+      "explanation": "Windows uses `Scripts\\` instead of `bin/`, and PowerShell may block running activation scripts depending on execution policy. A practical fix is to use the correct activation script for the shell and adjust execution policy at the user scope (or use the `cmd.exe` `.bat` activator). The other options are incorrect or unsafe.",
+      "difficulty": "beginner",
+      "tags": [
+        "windows",
+        "activation",
+        "execution-policy",
+        "cross-platform"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Command fluency: On Linux/macOS, write the standard sequence of commands to:\n1) create a venv in `.venv`\n2) activate it\n3) install dependencies from `requirements.txt`\n4) export exact versions to a lock-style file\n5) delete and recreate the venv from scratch\n\nAssume Python 3 is installed as `python3`.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1) Create: `python3 -m venv .venv`\n2) Activate: `source .venv/bin/activate`\n3) Install: `python -m pip install -r requirements.txt`\n4) Export pinned snapshot: `python -m pip freeze > requirements.lock.txt` (or `requirements.txt` if that’s your convention)\n5) Recreate: `deactivate` (if active), then `rm -rf .venv` and repeat steps 1–3 (and optionally 4).",
+      "explanation": "Interviewers often look for the muscle memory plus the habit of using `python -m pip`. Freezing captures the resolved versions actually installed, which is useful for reproducing ML experiments and deployments. Recreating is the cleanest way to fix many environment issues because venvs are disposable by design.",
+      "difficulty": "beginner",
+      "tags": [
+        "standard-commands",
+        "create-venv",
+        "activate",
+        "pip-freeze",
+        "recreate-venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re debugging a model-serving repo and suspect the wrong environment is active. Which set of one-liners is the BEST quick checklist to confirm the active interpreter and where packages are coming from?",
+      "question_type": "mc",
+      "options": [
+        "A. `echo $VIRTUAL_ENV`; `pip list`; `ls -la`",
+        "B. `which python` (or `where python` on Windows); `python -c \"import sys; print(sys.executable); print(sys.prefix, sys.base_prefix)\"`; `python -m pip -V`; `python -m pip show <pkg>`",
+        "C. `python --version`; `pip --version`; `cat requirements.txt`",
+        "D. `git status`; `docker ps`; `nvidia-smi`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Option B directly verifies (1) which python executable is being used, (2) whether you’re in a venv via `sys.prefix` vs `sys.base_prefix`, and (3) which pip is attached to that python via `python -m pip -V`. `pip show` confirms the installed location of a package, which is often the fastest way to catch “installed into the wrong environment”.",
+      "difficulty": "beginner",
+      "tags": [
+        "debug-checklist",
+        "which-python",
+        "sys-executable",
+        "python-m-pip",
+        "pip-show"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is `python -m pip install ...` preferred over `pip install ...` in ML projects that use venvs? Give two concrete failure modes that can happen if you use `pip` directly.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`python -m pip` is preferred because it runs `pip` using the exact Python interpreter you specify, ensuring installs land in the intended environment.\n\nTwo concrete failure modes with `pip`:\n1) PATH mismatch: `pip` resolves to a different environment’s pip (system Python, another venv, conda), so packages install somewhere else; your script then can’t import them or imports a different version.\n2) Multiple Python versions: `pip` might be tied to Python 3.10 while your project runs Python 3.11 (or vice versa), causing ABI/wheel mismatches or installs into the wrong `site-packages`.\n(Also common: `sudo pip install ...` installs globally and breaks system packages; or `pip` points to user-site when you expected venv.)",
+      "explanation": "`pip` is just a command found via PATH; it doesn’t inherently know which `python` you will run. In ML, where version pinning matters (CUDA wheels, numpy/scipy ABI, torch extras), accidentally installing into the wrong environment leads to confusing runtime errors. `python -m pip` binds pip to the interpreter and avoids these class-of-bugs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-m-pip",
+        "pip",
+        "venv",
+        "failure-modes",
+        "ml-dependencies"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run `pip install -U numpy` and later discover your training script (run with `python`) is still using the old numpy version. Which explanation is MOST likely?\n\nAssume you are using venvs on a shared workstation.",
+      "question_type": "mc",
+      "options": [
+        "A. `pip` always installs into the global Python, regardless of venv activation",
+        "B. You likely ran a different `pip` than the `python` you used to run the script (PATH mismatch), so the package was installed into a different environment",
+        "C. `numpy` cannot be upgraded inside a venv; it must be upgraded system-wide",
+        "D. `python` caches imports across runs, so it kept the old numpy until reboot"
+      ],
+      "correct_answer": "B",
+      "explanation": "The most common cause is that `pip` and `python` are coming from different interpreters/environments (e.g., `pip` from system Python, `python` from the venv, or vice versa). This is exactly why `python -m pip ...` is recommended: it guarantees `pip` runs under the same interpreter you’ll use to run your code. Import caching doesn’t persist across separate processes, and venvs can upgrade packages normally.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip-vs-python",
+        "path-activation",
+        "debugging",
+        "python-m-pip"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In simple terms, what does activating a Python `venv` actually change for your running session and why does that matter for ML projects?\n\nDescribe at least:\n- what happens to `sys.prefix` / `sys.base_prefix`\n- where `site-packages` is resolved from\n- what changes in your shell (`PATH` / shims)\n\nYou can answer in bullet points.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Activating a venv primarily changes which Python executable and libraries your shell resolves, by:\n- Shell/PATH: it prepends the venv’s `bin/` (Linux/macOS) or `Scripts\\` (Windows) to `PATH`, so `python`, `pip`, and console scripts resolve to the venv versions first.\n- `sys.prefix` vs `sys.base_prefix`: inside the venv, `sys.prefix` points to the venv directory, while `sys.base_prefix` points to the base interpreter install. This is a quick programmatic indicator you’re in a venv (`sys.prefix != sys.base_prefix`).\n- `site-packages`: Python’s import path includes the venv’s `site-packages` directory (e.g., `.venv/lib/pythonX.Y/site-packages`), so imports and installed packages come from the venv rather than the system/global environment.\nThis matters for ML because it isolates dependencies (e.g., torch/tensorflow versions, CUDA-related wheels, numpy ABI) per project, avoiding conflicts between experiments/services.",
+      "explanation": "A venv is not a different Python language runtime; it’s a different *environment root* with its own `site-packages` and entry points. Activation is mostly a convenience: it adjusts your shell so you don’t have to type the full path to the venv’s python/pip. The runtime evidence shows up in `sys.prefix` and the import paths, which directly controls which versions of ML libraries are imported and which CLI tools (like `jupyter`, `uvicorn`, `pytest`) run.",
+      "difficulty": "beginner",
+      "tags": [
+        "venv-basics",
+        "sys-prefix",
+        "site-packages",
+        "path-activation",
+        "ml-dependency-isolation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You install your ML repo in editable mode (`pip install -e .`) and then see confusing behavior: imports resolve to the wrong module, or running `python train.py` behaves differently than `python -m package.train`. What is the best explanation and standardization approach?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Editable installs copy code into site-packages, so you must reinstall after every change",
+        "B. The issue is usually import shadowing and execution context (current working directory on `sys.path`); standardize on a `src/` layout, avoid top-level module name collisions, and run entry points via `python -m ...` or console scripts",
+        "C. Editable installs disable relative imports, so you must convert everything to absolute imports",
+        "D. This only happens in Jupyter; in scripts it is impossible"
+      ],
+      "correct_answer": "B",
+      "explanation": "Common failure modes in ML repos: a file like `torch.py` or `datasets.py` shadows real packages; running a script by filename places the script directory first on `sys.path`, changing import resolution; and non-`src` layouts can accidentally import from the repo root rather than the installed package. A robust approach is `src/` layout, clear package naming, and standardized execution via `python -m package.module` or installed console entry points (which behave consistently across terminals, CI, and notebooks).",
+      "difficulty": "advanced",
+      "tags": [
+        "editable-installs",
+        "import-shadowing",
+        "src-layout",
+        "execution-model",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an enterprise ML environment, dependencies are hosted on an internal package index/artifact registry. You need to install into a venv in CI. Which command/config is most appropriate and secure?\n",
+      "question_type": "mc",
+      "options": [
+        "A. `pip install -r requirements.txt --extra-index-url https://pypi.org/simple --trusted-host pypi.org`",
+        "B. `pip install -r requirements.txt --index-url https://<internal>/simple --extra-index-url https://pypi.org/simple` (and provide credentials via CI secrets or keyring), optionally pinning hashes or using constraints",
+        "C. `pip install -r requirements.txt --no-index` without any wheelhouse or internal index configured",
+        "D. Copy site-packages from a developer laptop into the CI venv to avoid networking"
+      ],
+      "correct_answer": "B",
+      "explanation": "Enterprise setups commonly require installing from an internal index (for vetted wheels, private packages, or cached artifacts) while optionally falling back to PyPI. Credentials should come from CI secrets (not hardcoded). `--trusted-host` should be used only when necessary (e.g., with internal TLS issues) and ideally avoided. For stronger reproducibility/security, teams add constraints and/or hash checking.",
+      "difficulty": "intermediate",
+      "tags": [
+        "private-index",
+        "artifact-registry",
+        "ci",
+        "pip",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a dependency layering approach for an ML project with: base runtime, training, inference, notebooks, and dev/test. It must support macOS CPU-only dev and Linux CUDA training. Provide a concrete example using either `pyproject.toml` extras or requirements/constraints files, and explain how you’d handle platform-specific overrides.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "One approach using `pyproject.toml` extras:\n- Base deps in `project.dependencies` (e.g., `numpy`, `pydantic`, `requests`).\n- Extras: `train` (e.g., `torch`, `torchvision`, `accelerate`, `datasets`), `inference` (e.g., `onnxruntime` or `fastapi`, `uvicorn`), `notebook` (e.g., `jupyterlab`, `ipykernel`), `dev` (e.g., `pytest`, `ruff`, `mypy`).\n- Platform-specific handling: use environment markers where possible (e.g., `onnxruntime; platform_system == 'Darwin'` vs `onnxruntime-gpu; platform_system == 'Linux'`), and/or maintain constraints files per platform (e.g., `constraints-linux-cuda.txt`, `constraints-macos-cpu.txt`) applied during install: `python -m pip install -e .[train,dev] -c constraints-linux-cuda.txt`.\nAlternative using requirements layering:\n- `requirements/base.in`, `requirements/train.in`, `requirements/infer.in`, `requirements/dev.in`, `requirements/notebook.in`.\n- Compile or curate `constraints-<platform>.txt` to keep CI stable.\n- Use separate index URLs for CUDA wheels if needed.\nKey idea: keep a small set of top-level deps per layer and use constraints/markers to manage platform divergence without duplicating everything.",
+      "explanation": "ML projects often need different dependency surfaces (training vs serving). Extras or layered requirement files let engineers install only what they need, reducing conflicts and install time. Cross-platform differences are best handled via environment markers when feasible, and constraints files when resolution differs (common with CUDA builds).",
+      "difficulty": "advanced",
+      "tags": [
+        "dependency-layering",
+        "pyproject",
+        "constraints",
+        "platform-overrides",
+        "cuda",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a team “golden path” that prevents kernel/pip confusion and makes onboarding fast. Which set of conventions is most effective?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Let each engineer choose any venv location/name; rely on tribal knowledge for activation and Jupyter setup",
+        "B. Standardize on `.venv/`, provide a single bootstrap command (Make/Just/script) that creates venv, installs the project, registers a Jupyter kernel, and always use `python -m pip` / `python -m <tool>`; add a `make doctor` check that prints `sys.executable` and `pip -V`",
+        "C. Avoid venv entirely; install everything with `sudo pip install` so paths never change",
+        "D. Only use notebooks; avoid installing the package to reduce complexity"
+      ],
+      "correct_answer": "B",
+      "explanation": "Teams succeed by reducing degrees of freedom: fixed venv path, scripted bootstrap, and consistent invocation patterns. Registering a Jupyter kernel from the venv avoids the common “notebook is using a different interpreter” problem. A diagnostic command (`doctor`) catches mismatches early. This mirrors what many ML teams do to keep research workflows predictable.",
+      "difficulty": "beginner",
+      "tags": [
+        "golden-path",
+        "team-workflows",
+        "jupyter",
+        "pip",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an ML repo, when would you prefer `pyproject.toml` (project metadata + extras) over a requirements.txt-only workflow, and how does that change how you install into a venv?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Prefer `pyproject.toml` when the repo is a real Python package (shared code across training/inference, multiple entry points, tests) and you want a single source of truth for dependencies, versioning, and optional groups (extras) like `.[train]`, `.[inference]`, `.[dev]`. This improves consistency across tools and enables editable installs cleanly. In a venv, instead of `pip install -r requirements.txt`, you typically run `pip install -e .[dev,train]` (or non-editable `pip install .[inference]`) and optionally apply constraints. requirements.txt-only can be fine for one-off scripts, but it often drifts and duplicates dependency intent across files.",
+      "explanation": "ML repos often evolve from notebooks to packages. `pyproject.toml` helps prevent dependency duplication and makes environment creation more modular via extras. It also aligns with modern packaging and reduces “works in notebook, fails in module” issues by encouraging proper installs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pyproject",
+        "packaging",
+        "extras",
+        "venv",
+        "team-workflows"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your training runs in a research environment (workstation/cluster). Inference runs in a serverless/container-based serving platform. How does venv typically fit into a “build once, run many” pipeline, and what’s the key parity risk?\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A common pattern is to build an artifact (wheel/sdist + pinned deps) once, then install it into a controlled runtime (often a container image) for repeated deployment. venv can be used during build/test (CI) and sometimes inside the image to isolate Python packages, but the serving platform usually relies on an immutable image or runtime layer rather than recreating environments ad hoc. The key parity risk is that venv alone doesn’t capture system/GPU dependencies and OS libraries; training may succeed on a workstation with extra libraries while inference fails in a minimal base image. The mitigation is to define dependencies as project metadata (pyproject) and build from the same base image (or at least the same OS + CUDA stack) used for serving, with CI validating import/runtime behavior.",
+      "explanation": "This targets the real-world gap between research and production: venv helps standardize Python deps, but production parity often depends on the base image and system libs. “Build once, run many” emphasizes producing a deployable artifact and validating it in an environment that matches serving.",
+      "difficulty": "advanced",
+      "tags": [
+        "inference",
+        "training",
+        "build-pipelines",
+        "runtime-parity",
+        "containers",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re iterating quickly on an ML project. You want teammates to get “close enough” environments without over-freezing every transitive dependency, but you still need CI stability. Which workflow best matches that goal?\n",
+      "question_type": "mc",
+      "options": [
+        "A. Commit `pip freeze > requirements.txt` on every change and require exact pins for all transitive dependencies",
+        "B. Use `requirements.in` for top-level deps with minimal pins, plus a `constraints.txt` (possibly generated/curated) used in CI to bound versions; allow local installs from `requirements.in` but enforce constraints in automated builds",
+        "C. Never pin versions; rely on `pip install -U` so everyone stays current",
+        "D. Store the entire `.venv/` directory in Git so everyone shares the same environment"
+      ],
+      "correct_answer": "B",
+      "explanation": "Fast-moving ML work benefits from separating intent from resolution. `requirements.in` (or pyproject deps) expresses direct dependencies and minimal pins (e.g., `torch>=2.3,<2.5`). A `constraints.txt` can cap or lock problematic transitive versions for CI stability without forcing everyone to fully lock locally. This reduces churn while still allowing reproducible automated builds.",
+      "difficulty": "intermediate",
+      "tags": [
+        "requirements-in",
+        "constraints",
+        "reproducibility",
+        "team-workflows",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "For ML reproducibility, when is a venv sufficient, and when do you generally need containers? Choose the best answer.\n",
+      "question_type": "mc",
+      "options": [
+        "A. venv is always sufficient because pip can install any system dependency as a wheel",
+        "B. Containers are only needed for web apps; ML workloads should always use venv for performance",
+        "C. venv is often sufficient for pure-Python or manylinux wheels on a stable host; containers become necessary when you must pin OS packages, glibc, GPU drivers/CUDA runtime compatibility, or ensure identical runtime across machines/CI/serving",
+        "D. Containers replace the need for dependency management; you should not use pip inside containers"
+      ],
+      "correct_answer": "C",
+      "explanation": "venv helps isolate Python packages but not the OS/userland. For ML, reproducibility often breaks on native deps (FFmpeg, libGL, libc versions) and especially on GPU stacks (driver/CUDA/cuDNN expectations). Containers let you pin OS packages and provide a consistent base image across training, CI, and inference. In practice, teams often use both: containers for system-level reproducibility plus venv/pip for Python dependency management inside the image.",
+      "difficulty": "intermediate",
+      "tags": [
+        "reproducibility",
+        "containers",
+        "cuda",
+        "system-libraries",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a repo with a venv. Locally, `pytest` passes in VS Code and in a terminal. In CI, it fails because it used a different Python and installed dependencies globally. Describe a robust, end-to-end approach to ensure the *same* Python/venv is used across: (1) local terminal, (2) VS Code, (3) Jupyter, and (4) CI runners.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use one source of truth for the interpreter path and always invoke tools through that interpreter. Concretely: create the venv in a deterministic location (e.g., `.venv/`), commit conventions (not the venv), and use `./.venv/bin/python -m pip` for installs and `./.venv/bin/python -m pytest` (or `python -m ...`) for execution. In VS Code, set `python.defaultInterpreterPath` to `.venv/bin/python` (or select it) and enable terminal activation. For Jupyter, install `ipykernel` in the venv and register a kernel tied to the venv (`python -m ipykernel install --user --name <env>`), then select that kernel in notebooks. In CI, explicitly create/activate the venv (or use `actions/setup-python` then `python -m venv .venv`) and run all commands via `.venv/bin/python -m ...` without relying on implicit PATH. Add sanity checks like printing `sys.executable` and `pip -V` during CI.",
+      "explanation": "The main failure mode is relying on implicit selection (PATH, editor defaults, global pip). A reliable strategy is to (a) standardize venv location, (b) use `python -m <tool>` so the tool is bound to that interpreter, and (c) explicitly configure each environment (VS Code interpreter, Jupyter kernel, CI steps). This reduces “pip confusion” and ensures consistent dependency resolution and runtime behavior.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-selection",
+        "jupyter",
+        "vscode",
+        "ci",
+        "venv",
+        "best-practices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate reports: “I selected the venv interpreter in VS Code, but when I run tests in the integrated terminal, it uses a different Python and installs packages into the wrong environment.” Which explanation and fix is most accurate?\n",
+      "question_type": "mc",
+      "options": [
+        "A. VS Code always uses the system Python for terminals; the only fix is to uninstall system Python",
+        "B. Interpreter selection affects the editor/language server and debug configs, but the terminal depends on shell activation/PATH; fix by activating the venv in the terminal (or configuring VS Code to auto-activate) and ensure `python`/`pip` resolve to the venv",
+        "C. This happens only on Windows; on Linux/macOS VS Code guarantees the same interpreter everywhere",
+        "D. The fix is to run `pip install -U pip` inside the system Python so it matches the venv"
+      ],
+      "correct_answer": "B",
+      "explanation": "A coherent mental model: different tools choose Python differently. VS Code’s interpreter selection drives the language server, linting, and often debugging, but the integrated terminal is just a shell—`python`/`pip` come from PATH and activation scripts. Mismatches occur when the venv isn’t activated (or when `pip` points to a different interpreter). Practical fixes: enable VS Code’s terminal auto-activation, use `python -m pip ...` to bind pip to the selected interpreter, and verify with `which python`, `python -c \"import sys; print(sys.executable)\"`.",
+      "difficulty": "beginner",
+      "tags": [
+        "vscode",
+        "tooling",
+        "python-selection",
+        "pip",
+        "venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You activate a venv and run a training script that fails with `ImportError: libsndfile.so.1: cannot open shared object file` (or similar). The package that depends on it (e.g., `soundfile`, `torchaudio`) is installed in the venv. Explain why this happens and list two practical ways an ML engineer would fix it.\n",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "This happens because venv does not bundle or isolate system shared libraries (e.g., `libsndfile.so`, `libstdc++`, `glibc`). Python wheels may rely on OS-level dependencies that must exist on the host. Fixes include: (1) install the missing system package via the OS package manager (e.g., `apt-get install libsndfile1` / `yum install libsndfile`), and/or (2) use a container/managed base image that includes the required system libs (or build an image that installs them). Other valid fixes: use a different wheel that is manylinux/self-contained, or use conda/mamba which can manage some native libs in the environment.",
+      "explanation": "venv isolates Python packages, not ELF shared libraries provided by the OS. Many ML/audio/vision libraries have native components or depend on system libraries. In production and CI, this is a major reason teams move from venv-only to container images (or conda) when native dependencies are involved.",
+      "difficulty": "intermediate",
+      "tags": [
+        "system-libraries",
+        "venv",
+        "ml-deps",
+        "containers",
+        "failure-modes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You created a Python venv and installed PyTorch with CUDA support, but `import torch; torch.cuda.is_available()` returns `False` on a Linux GPU machine. Which statement best describes what venv does *not* isolate and the most likely failure mode?\n",
+      "question_type": "mc",
+      "options": [
+        "A. venv isolates GPU drivers and CUDA toolkit versions, so the failure is likely due to a broken pip cache inside the venv",
+        "B. venv isolates only Python packages; GPU drivers/CUDA runtime are system-level, so the failure is likely due to missing/old NVIDIA driver or incompatible CUDA runtime on the host",
+        "C. venv isolates environment variables, so `CUDA_VISIBLE_DEVICES` is being reset to empty inside the venv",
+        "D. venv isolates the Linux kernel modules for NVIDIA, so the fix is to recreate the venv with `--system-site-packages`"
+      ],
+      "correct_answer": "B",
+      "explanation": "A venv primarily isolates Python-level packages and scripts (pip-installed wheels, console entry points). It does not isolate system libraries, kernel modules, NVIDIA drivers, or the host CUDA runtime stack. In ML, a common expectation mismatch is assuming that installing a CUDA-enabled wheel inside a venv guarantees GPU availability. If the host driver is missing/too old, or the CUDA runtime expectations don’t match what’s on the system, `torch.cuda.is_available()` can be false even though the Python package installed fine.",
+      "difficulty": "beginner",
+      "tags": [
+        "venv-basics",
+        "cuda",
+        "system-libraries",
+        "failure-modes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Native/system dependencies boundary: Your ML pipeline needs `ffmpeg` for video decoding and `libjpeg` for image processing. You’re using `venv` for Python deps. What is the correct way to manage/document these non-Python dependencies so the project is reproducible for teammates and CI?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Keep Python deps in the venv, but manage system deps outside it and document them explicitly. Provide OS-specific install instructions (e.g., `brew install ffmpeg jpeg` on macOS; `apt-get install ffmpeg libjpeg-dev` on Ubuntu) and/or automate via scripts (`scripts/setup_system_deps.sh`) or a devcontainer/Dockerfile. In CI, install the system packages in the runner image before creating the venv. For deployment, bake them into the container image. Clearly separate: system deps (apt/brew/yum/Dockerfile) vs Python deps (pip/lock/constraints) so failures are diagnosable and reproducible.",
+      "explanation": "`venv` does not install or isolate system libraries. Many ML packages rely on native libs at build or runtime, and missing them yields confusing import/runtime errors. The practical best practice is to codify system dependencies in a Dockerfile/devcontainer and/or OS-specific bootstrap scripts, while keeping Python dependency resolution in pip/lock tooling.",
+      "difficulty": "intermediate",
+      "tags": [
+        "native-deps",
+        "system-packages",
+        "ffmpeg",
+        "libjpeg",
+        "documentation",
+        "ci-cd"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Conda vs venv decision: Your team trains on Linux GPUs, develops on macOS laptops, and deploys inference in containers. Which decision rubric is most appropriate?",
+      "question_type": "mc",
+      "options": [
+        "A. Always use venv everywhere; it is the official Python tool so it will handle CUDA and system libraries best.",
+        "B. Use conda/mamba for local dev/training environments that need native libs and GPU stacks; use containers for deployment; venv is fine for lightweight pure-Python services or tooling.",
+        "C. Use only system Python with `pip install --user` to avoid environment duplication.",
+        "D. Use virtualenv only on macOS and conda only on Linux because venv is unsupported on Linux."
+      ],
+      "correct_answer": "B",
+      "explanation": "ML stacks often depend on native libraries and GPU tooling. Conda/mamba helps manage Python + native dependencies across macOS/Linux and reduces compilation pain. Containers are the standard for deployment reproducibility (and often GPU runtime alignment). venv remains useful when dependencies are mostly Python wheels and you don’t need to manage non-Python libraries.",
+      "difficulty": "beginner",
+      "tags": [
+        "conda-vs-venv",
+        "decision-rubric",
+        "gpu",
+        "containers",
+        "cross-platform"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Editable installs + src-layout: You have a repo like:\n\n```\nrepo/\n  src/myproj/__init__.py\n  src/myproj/train.py\n  notebooks/experiment.ipynb\n```\n\nA teammate runs `python src/myproj/train.py` and it works, but imports fail when running from other directories or in notebooks. What is the recommended practice to make imports consistent across scripts, notebooks, and tests?",
+      "question_type": "mc",
+      "options": [
+        "A. Add `sys.path.append(\"../src\")` at the top of every script and notebook.",
+        "B. Export `PYTHONPATH=src` in the shell before running anything.",
+        "C. Install the project into the venv (preferably `pip install -e .`) and run entry points as modules (e.g., `python -m myproj.train`) so imports resolve via the installed package.",
+        "D. Copy the `myproj` folder from `src/` into the repo root so Python finds it."
+      ],
+      "correct_answer": "C",
+      "explanation": "The robust approach is to treat your code as an installable package. With a `src/` layout, editable install (`pip install -e .`) makes `myproj` importable regardless of working directory. Running with `python -m myproj.train` ensures module semantics and consistent relative imports. PYTHONPATH/sys.path hacks are brittle and commonly break in notebooks, CI, and production.",
+      "difficulty": "intermediate",
+      "tags": [
+        "editable-install",
+        "src-layout",
+        "imports",
+        "notebooks",
+        "packaging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Dependency management for ML repos: You have different dependency needs for (a) training, (b) inference/serving, and (c) development (lint/tests/notebooks). How would you structure this using extras/groups, and what tradeoffs would you consider?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a small runtime base plus optional groups. Example with extras: base deps in `pyproject.toml` (or `requirements.txt`) include only what inference needs (e.g., `numpy`, `pydantic`, `fastapi`, minimal model runtime). Add extras like `.[train]` (adds `torch`, `datasets`, `accelerate`, `wandb`), `.[dev]` (adds `pytest`, `ruff`, `mypy`, `ipykernel`, `jupyter`). Install patterns: serving images use `pip install .` or `pip install .[cpu]`; training envs use `pip install .[train,dev]`. Tradeoffs: extras keep one package with multiple profiles and reduce duplication, but you must document combinations and keep locks/constraints per profile. For GPU dependencies, you may still need separate extras/locks because wheels/index URLs differ by platform/CUDA.",
+      "explanation": "Interviewers look for separation of concerns: inference environments should be smaller and more stable; training/dev environments can be heavier. Extras/groups are a practical way to encode these profiles while keeping a single codebase. The key ML nuance is GPU/CPU and platform-specific wheels, which often forces multiple locks or documented install commands.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dependency-management",
+        "extras",
+        "train-vs-infer",
+        "dev-deps",
+        "ml-stacks"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Day-1 operational workflow: You want a new teammate to run training, inference, and tests reliably without depending on shell activation. Which set of commands/conventions best achieves this in a typical ML repo?",
+      "question_type": "mc",
+      "options": [
+        "A. Tell them to `source .venv/bin/activate` once and then always run `python train.py`; no other conventions needed.",
+        "B. Use explicit interpreter paths (or `python -m ...`) in Makefile/tasks: create venv with `python -m venv .venv`, install with `.venv/bin/python -m pip install -r ...`, run with `.venv/bin/python -m package.train`, tests with `.venv/bin/python -m pytest`.",
+        "C. Set `alias python=.venv/bin/python` in their shell profile so it always works for all repos.",
+        "D. Put `.venv/bin` at the front of system PATH permanently."
+      ],
+      "correct_answer": "B",
+      "explanation": "Relying on activation is fragile (CI, cron, IDEs, subprocesses). A repo-friendly pattern is to use explicit `.venv/bin/python -m ...` (or a task runner/Makefile that does so). It makes the interpreter selection unambiguous, prevents installing/running against the wrong Python, and gives teammates a repeatable “day-1” path: create venv, install, run training/inference/tests.",
+      "difficulty": "beginner",
+      "tags": [
+        "day1-workflow",
+        "no-activation",
+        "makefile",
+        "python-m",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Notebook-first workflow: Your training script `train.py` works in the venv, but a Jupyter notebook imports a different `torch` version and fails at runtime. What is an end-to-end, repo-friendly way to ensure notebooks run against the same environment as scripts (without PYTHONPATH hacks)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Install the project into the venv (preferably editable) and register a kernel from that venv. Steps: (1) Create venv and install deps: `.venv/bin/python -m pip install -U pip` then `.venv/bin/python -m pip install -e .[dev]` (or equivalent). (2) Install ipykernel in the same venv: `.venv/bin/python -m pip install ipykernel`. (3) Register a kernel: `.venv/bin/python -m ipykernel install --user --name repo-venv --display-name \"repo (.venv)\"`. (4) In Jupyter, select the \"repo (.venv)\" kernel. This ensures `sys.executable` and imports match the training scripts. Avoid PYTHONPATH modifications by using a proper package layout (often `src/` layout) so imports work consistently in scripts and notebooks.",
+      "explanation": "Notebook issues usually come from the notebook server using a different interpreter than your venv. Registering an ipykernel from the venv makes the notebook use the same interpreter and site-packages. Packaging (including editable installs) prevents brittle relative-import/PYTHONPATH workarounds and keeps training/inference code importable from anywhere in the repo.",
+      "difficulty": "intermediate",
+      "tags": [
+        "notebooks",
+        "ipykernel",
+        "kernel-selection",
+        "editable-install",
+        "src-layout",
+        "workflow"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to share a reproducible environment for a team: some devs are on macOS (CPU), others on Linux (GPU). `pip freeze > requirements.txt` has been flaky. Propose a practical approach using constraints/lock files and platform markers, and explain how you’d handle GPU vs CPU dependencies.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a layered spec: (1) Maintain a human-edited direct-deps file (e.g., `requirements.in` or `pyproject.toml` dependencies) that lists only top-level deps. (2) Generate pinned lock/constraints per target platform (e.g., `constraints-linux-cuda.txt`, `constraints-linux-cpu.txt`, `constraints-macos.txt`) using a resolver/locker (pip-tools `pip-compile`, uv lock, or Poetry). (3) In the base requirements, use PEP 508 markers for OS-specific deps (e.g., `tensorflow-macos; platform_system == \"Darwin\"`). For GPU/CPU splits, either provide separate extras (e.g., `.[gpu]` vs `.[cpu]`) or separate lock/constraints files, and document the install commands: `python -m pip install -r requirements.txt -c constraints-linux-cuda.txt`. For PyTorch, prefer the official index/extra index URL per platform and lock that choice in documentation/automation. Keep CI building at least one lock per target to detect resolver drift.",
+      "explanation": "A single `pip freeze` captures a machine snapshot (including transitive deps) but is not portable across OS/architectures and can encode local artifacts. A lock/constraints strategy makes intent explicit (direct deps) and reproducibility enforceable (pinned transitive deps), while allowing multiple targets (mac/Linux, CPU/GPU). Markers and separate locks are the practical way to reconcile cross-platform differences in ML stacks.",
+      "difficulty": "advanced",
+      "tags": [
+        "reproducibility",
+        "constraints",
+        "lockfiles",
+        "platform-markers",
+        "cross-platform",
+        "gpu-cpu"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "When would you *not* use `venv` for an ML project, and what would you choose instead? Provide a concise rubric that covers CUDA/toolchains and non-Python dependencies.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Avoid venv when the project depends heavily on non-Python system libraries/toolchains that must be managed together (e.g., CUDA/cuDNN/NCCL versions, GPU-enabled PyTorch/TensorFlow builds tied to specific drivers, compiled libs requiring specific glibc/GCC, multi-language stacks with Java/R, or OS-level packages like ffmpeg/libjpeg). In those cases prefer: (1) Conda/mamba when you need to manage Python + native dependencies across platforms on developer machines; (2) Containers (Docker/Podman) for reproducible runtime images and consistent CUDA/user-space libs across machines/CI; optionally combine conda inside containers. Use venv when dependencies are mostly pure-Python or wheels are available and system deps are minimal and stable.",
+      "explanation": "Interviewers want to see you choose tools based on dependency boundaries. `venv` only isolates Python packages; it does not manage CUDA drivers, system libraries, or compilers. Conda can manage native libs (via conda-forge) and reduce “works on my machine” issues. Containers provide the strongest reproducibility and are common for GPU training/inference deployment.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tool-choice",
+        "conda-vs-venv",
+        "cuda",
+        "native-deps",
+        "containers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect `pip` is installing into the wrong environment. You run:\n\n```bash\n$ which python\n/home/user/repo/.venv/bin/python\n$ which pip\n/usr/bin/pip\n\n$ pip install -U numpy\n```\n\nWhat is the best practice to ensure packages install into the same environment as the interpreter you will run?",
+      "question_type": "mc",
+      "options": [
+        "A. Always run `sudo pip install ...` so it can write to the environment.",
+        "B. Use `pip3` instead of `pip` to force the right Python.",
+        "C. Use `python -m pip install ...` and verify `sys.executable` points to the venv.",
+        "D. Set `PYTHONPATH` to include `.venv/lib/python*/site-packages`."
+      ],
+      "correct_answer": "C",
+      "explanation": "`pip` on PATH can be a shim pointing at a different interpreter than `python`. The robust pattern is `python -m pip ...` because it binds pip to that exact interpreter. For debugging, `python -c \"import sys; print(sys.executable)\"` confirms which interpreter will import installed packages. This prevents a frequent ML workflow issue where training scripts fail to import packages that were installed elsewhere.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip-gotchas",
+        "path-confusion",
+        "python-m-pip",
+        "sys-executable"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You use a Python version manager (pyenv/asdf) and accidentally create a venv with one interpreter, then later run scripts with another. Given the following:\n\n```bash\n$ pyenv versions\n  system\n* 3.11.6 (set by /repo/.python-version)\n  3.10.13\n\n$ python -V\nPython 3.11.6\n\n$ python -m venv .venv\n\n# Later, after changing versions\n$ pyenv local 3.10.13\n$ python -V\nPython 3.10.13\n\n$ source .venv/bin/activate\n(.venv) $ python -V\nPython 3.11.6\n```\n\nWhat is the most accurate explanation of what happened and the correct fix?",
+      "question_type": "mc",
+      "options": [
+        "A. Activation always forces the system Python; fix by reinstalling pyenv.",
+        "B. The venv is tied to the interpreter used at creation time; fix by recreating the venv with the intended interpreter after switching versions.",
+        "C. venv dynamically tracks .python-version; fix by running `pyenv rehash`.",
+        "D. This is caused by pip caching wheels; fix by clearing `~/.cache/pip`."
+      ],
+      "correct_answer": "B",
+      "explanation": "A venv records the base interpreter path at creation time and uses it when you run `.venv/bin/python` (activation just changes PATH). If you change pyenv/asdf versions later, the existing venv still points to the old interpreter. The practical fix is: select the desired interpreter first (e.g., `pyenv local 3.10.13`), then recreate the venv (`rm -rf .venv && python -m venv .venv`) and reinstall dependencies. This is a common failure mode in ML repos when different teammates use different Python versions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "version-management",
+        "pyenv",
+        "asdf",
+        "interpreter-mismatch",
+        "venv-basics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Multiple venvs for one repo: You want separate environments for (1) lightweight inference/runtime, (2) training with GPU deps, and (3) dev tooling (lint/test). What operational pattern would you recommend to avoid cross-contamination and make onboarding easy? Include naming, automation, and how you’d ensure commands use the right venv.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Pattern:\n- Use explicit, named venv directories (or a central `.venvs/`): e.g., `.venvs/runtime`, `.venvs/train-cu121`, `.venvs/dev`.\n- Separate requirement sets: `requirements-runtime.in`, `requirements-train.in`, `requirements-dev.in` (or extras in packaging: `.[dev]`, `.[train]`). Generate pinned outputs/locks per env.\n- Provide automation: `Makefile`/task runner targets like `make venv-dev`, `make venv-train`, `make test`, `make train` that call the correct interpreter explicitly (e.g., `.venvs/dev/bin/python -m pytest`, `.venvs/train.../bin/python -m mypkg.train`).\n- Add guardrails: commands print/validate `sys.executable` and fail if not in the expected venv.\n- Document the workflow and keep creation deterministic (pin Python version via `pyenv`/tooling, or use containers for training).\nThis avoids cross-contamination by never relying on whichever venv happens to be activated, and it makes onboarding a single command per environment.",
+      "explanation": "ML repos often need incompatible dependency sets (training vs runtime). The key is operational discipline: explicit env naming, separate dependency specs, automation that uses the venv’s interpreter directly, and guardrails to prevent accidentally running training in the dev env (or vice versa).",
+      "difficulty": "advanced",
+      "tags": [
+        "multiple-venvs",
+        "dev-vs-prod",
+        "automation",
+        "tooling",
+        "best-practices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Environment variables in practice: You’re trying to import a compiled dependency (e.g., `torch`, `opencv`, `xgboost`) and get a shared library error (e.g., `libcudart.so not found` or `GLIBCXX_... not found`). How would you reason about when to use `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH`/`PATH` or `PYTHONPATH`, and what safer alternatives you’d prefer in an ML codebase?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Reasoning:\n- `PYTHONPATH` affects Python module resolution; it won’t fix missing native `.so/.dll` dependencies. It’s usually a last resort because it can cause accidental imports from the wrong place.\n- `LD_LIBRARY_PATH` (Linux) / `DYLD_LIBRARY_PATH` (macOS) / `PATH` (Windows DLL search) affect dynamic linker resolution for native libraries. They can “fix” missing shared libs but are brittle and can mask ABI mismatches.\nSafer alternatives:\n- Prefer installing correct wheels/versions that bundle or correctly depend on needed runtimes (e.g., matching PyTorch CUDA build).\n- Use containers to control system libraries and CUDA runtime; rely on driver + container CUDA compatibility.\n- Use conda when you need to manage non-Python shared libraries reproducibly.\n- If you must set env vars, scope them to a launcher script or task runner (not global shell profiles) and document them; avoid committing permanent `PYTHONPATH` hacks.\n- For local project imports, use editable installs instead of `PYTHONPATH`.\n- For native libs, ensure the correct system packages are installed (e.g., `libstdc++` version) rather than overriding linker paths globally.",
+      "explanation": "This tests whether candidates distinguish Python import-path issues from dynamic-linker issues—crucial in ML where many packages ship native code. The best answers emphasize minimizing global env-var hacks and choosing packaging/container/conda strategies that make environments deterministic.",
+      "difficulty": "advanced",
+      "tags": [
+        "env-vars",
+        "ld_library_path",
+        "pythonpath",
+        "native-deps",
+        "cuda",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Reproducibility beyond `requirements.txt`: In an ML project, what additional environment details would you capture (and how) to make a run reproducible across machines, especially with GPU training? Mention at least Python version, platform, and CUDA/driver aspects, and include one practical approach using constraints/lock files.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Capture at minimum:\n- Python version and implementation: `python --version` and `python -c \"import platform; print(platform.platform())\"`.\n- OS/arch: `uname -a` (or platform info) and CPU/GPU model.\n- GPU/CUDA/driver/runtime: `nvidia-smi` (driver + GPU), and framework-specific CUDA build info (e.g., `python -c \"import torch; print(torch.__version__, torch.version.cuda)\"`).\n- Exact Python deps: a lock or fully pinned set, not just ranges. Options include `pip-tools` (`pip-compile` to produce a pinned requirements file) or a lockfile approach from a tool like Poetry/uv; use constraints files (`-c constraints.txt`) to enforce known-good versions across multiple requirement sets.\n- For training runs: record git commit, dataset version, and key env vars that affect dynamic linking (`LD_LIBRARY_PATH`) or imports (`PYTHONPATH`)—ideally minimizing reliance on them.\nPractical pattern: keep `requirements.in` (top-level deps) → generate `requirements.txt` (fully pinned) with `pip-compile`, and optionally separate `constraints.txt` for CUDA/framework pins shared across projects.",
+      "explanation": "ML reproducibility fails frequently due to differences in Python minor versions, platform wheels, and GPU driver/CUDA compatibility. Lock/constraints patterns reduce “dependency drift,” and capturing GPU/driver details is essential because the same pip packages can behave differently depending on the runtime stack.",
+      "difficulty": "advanced",
+      "tags": [
+        "pip-freeze",
+        "lockfiles",
+        "constraints",
+        "reproducibility",
+        "cuda",
+        "platform"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your ML repo has a package `mypkg/` and training scripts. What is the best practice for making imports stable during development, and why?\n\nA) Add the repo root to `PYTHONPATH` in your shell profile\nB) Use `pip install -e .` (editable install) with a proper `pyproject.toml`/package layout (often `src/` layout) so imports resolve consistently\nC) Copy the package into the venv’s `site-packages` manually\nD) Use relative imports everywhere (e.g., `from ..utils import x`) even in scripts",
+      "question_type": "mc",
+      "options": [
+        "A) Add the repo root to `PYTHONPATH` in your shell profile",
+        "B) Use `pip install -e .` (editable install) with a proper `pyproject.toml`/package layout (often `src/` layout) so imports resolve consistently",
+        "C) Copy the package into the venv’s `site-packages` manually",
+        "D) Use relative imports everywhere (e.g., `from ..utils import x`) even in scripts"
+      ],
+      "correct_answer": "B",
+      "explanation": "Editable installs make your project importable in a way that matches how it will be used in production (installed as a package), without relying on fragile `PYTHONPATH` hacks. A `src/` layout helps prevent accidentally importing from the working directory in ways that differ from installed behavior—common in ML repos with many scripts.",
+      "difficulty": "intermediate",
+      "tags": [
+        "editable-installs",
+        "packaging",
+        "src-layout",
+        "imports",
+        "best-practices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Choosing environments: For an ML team that needs GPU support and some non-Python libraries (e.g., `ffmpeg`, `libjpeg`, CUDA toolkits), when is `venv` a better choice than `conda`, and when is `conda` typically better than `venv`? Provide a practical decision guideline.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`venv` is a good choice when: you can rely on system/driver-provided CUDA and OS packages, you want to stay close to standard Python packaging (`pip`, wheels), you deploy into containers where OS deps are handled by the image, and you want simpler, faster environments with fewer moving parts.\n`conda` is typically better when: you need to manage non-Python native dependencies in the same environment (e.g., `ffmpeg`, MKL, `libstdc++` variants), you need a consistent toolchain across developer machines, or you’re targeting platforms where wheels are scarce. Conda can also help when binary compatibility is painful.\nGuideline: if the repo is containerized and production uses pip/wheels, prefer `venv` for alignment; if the team frequently needs OS-level libs and reproducible native stacks on laptops/workstations, conda can reduce friction. Standardize one approach per team to reduce “works on my machine” issues.",
+      "explanation": "Interviewers look for tradeoffs grounded in ML reality: CUDA/toolchain and native libs are the biggest differentiators. A strong answer also mentions team standardization and deployment alignment (containers vs local dev).",
+      "difficulty": "intermediate",
+      "tags": [
+        "conda-vs-venv",
+        "cuda",
+        "non-python-deps",
+        "team-practices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Supply-chain/security: In an ML project with many dependencies, what are practical steps you’d take to reduce risk when using `pip` in a venv?\n\nA) `pip install` directly from random GitHub gists because it’s faster\nB) Prefer pinned versions, use hashes (`--require-hashes`) or lock files, use a trusted index (internal mirror), and review/limit direct VCS/URL installs\nC) Disable TLS verification to avoid certificate issues\nD) Run `pip` with `sudo` so installs can’t be tampered with",
+      "question_type": "mc",
+      "options": [
+        "A) `pip install` directly from random GitHub gists because it’s faster",
+        "B) Prefer pinned versions, use hashes (`--require-hashes`) or lock files, use a trusted index (internal mirror), and review/limit direct VCS/URL installs",
+        "C) Disable TLS verification to avoid certificate issues",
+        "D) Run `pip` with `sudo` so installs can’t be tampered with"
+      ],
+      "correct_answer": "B",
+      "explanation": "ML dependency graphs are large, so the attack surface is bigger. Practical mitigations include: pinning versions, verifying artifacts via hashes, using an internal index/mirror, avoiding arbitrary URLs/VCS refs (or pinning to commits), and using dependency scanning. `sudo` and disabling TLS increase risk.",
+      "difficulty": "intermediate",
+      "tags": [
+        "security",
+        "supply-chain",
+        "pip",
+        "hashes",
+        "indexes"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "When working with heavy ML stacks (PyTorch/TensorFlow + CUDA), which rubric is most appropriate for deciding “repair the venv” vs “recreate the venv”?\n\nA) Always repair; recreating is unprofessional\nB) Always recreate; repairing never works\nC) Repair for pure-Python dependency issues; recreate when binary wheels / CUDA / Python minor version changes or when the environment is inconsistent and time-to-fix exceeds time-to-recreate\nD) Recreate only if `pip freeze` is empty",
+      "question_type": "mc",
+      "options": [
+        "A) Always repair; recreating is unprofessional",
+        "B) Always recreate; repairing never works",
+        "C) Repair for pure-Python dependency issues; recreate when binary wheels / CUDA / Python minor version changes or when the environment is inconsistent and time-to-fix exceeds time-to-recreate",
+        "D) Recreate only if `pip freeze` is empty"
+      ],
+      "correct_answer": "C",
+      "explanation": "For ML, many failures come from binary compatibility (CUDA versions, manylinux, ABI, Python minor versions). If you changed Python 3.10→3.11, upgraded CUDA, or see conflicting compiled deps, recreating is often faster and more reliable than trying to surgically unwind. Repair is reasonable for simple version pin fixes, accidental installs, or missing pure-Python packages.",
+      "difficulty": "intermediate",
+      "tags": [
+        "recreate-vs-repair",
+        "cuda",
+        "binary-wheels",
+        "ml-deps"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run `make train` and it calls `pytest` and then `python train.py`. Locally it works, but in CI `pytest` imports packages from the wrong environment. What concrete steps would you take to debug and fix this in a way that’s robust across shells/CI runners?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Debug:\n- Print interpreter and PATH in CI: `which python`, `python -c \"import sys; print(sys.executable)\"`, `which pytest`, `pytest --version`.\n- Ensure `pytest` resolves to the venv: prefer `python -m pytest -q` in the Makefile.\n- Ensure installs are tied to that interpreter: `python -m pip install -r requirements.txt`.\nFix:\n- In the Makefile/task runner, avoid bare `pytest`/`pip`/`jupyter`; instead use `$(VENV)/bin/python -m pytest` (or `python -m pytest` after explicitly selecting the venv python).\n- Optionally add a guard target that fails fast if `sys.executable` is not under `.venv/`.\n- In CI, explicitly create/activate venv (or use the venv python path) and avoid relying on interactive activation scripts.",
+      "explanation": "CI often doesn’t run the same shell init scripts and may have preinstalled tooling. The robust pattern is: treat the venv’s `python` as the single source of truth and run tools as modules under it, so PATH order and shell activation become irrelevant.",
+      "difficulty": "advanced",
+      "tags": [
+        "tooling",
+        "ci",
+        "makefiles",
+        "interpreter-mismatch",
+        "python-m"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an ML repo, teammates run `pytest`, `python -m mypkg.train`, and `jupyter lab`. Which approach most reliably ensures these tools use the venv’s interpreter?\n\nA) Rely on activation and run `pip install` globally to be safe\nB) Use absolute paths like `/usr/bin/python` to avoid ambiguity\nC) Invoke tools via the venv interpreter (e.g., `python -m pytest`, `python -m jupyter lab`) and/or use `python -m pip` for installs\nD) Set `PYTHONPATH` to the repo root and skip installing the project",
+      "question_type": "mc",
+      "options": [
+        "A) Rely on activation and run `pip install` globally to be safe",
+        "B) Use absolute paths like `/usr/bin/python` to avoid ambiguity",
+        "C) Invoke tools via the venv interpreter (e.g., `python -m pytest`, `python -m jupyter lab`) and/or use `python -m pip` for installs",
+        "D) Set `PYTHONPATH` to the repo root and skip installing the project"
+      ],
+      "correct_answer": "C",
+      "explanation": "Activation can be bypassed (CI, IDEs, task runners), and `pytest`/`jupyter` on PATH may come from another environment. Running `python -m <tool>` guarantees the tool is executed in the context of that interpreter. The same logic applies to installs: `python -m pip` ties pip to the interpreter you’ll run.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tooling",
+        "python-m",
+        "pytest",
+        "jupyter",
+        "best-practices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Create a concise diagnostic checklist (a flow) for the scenario: “`pip install` worked but `import` fails” in an ML repo. Your flow must explicitly cover: site-packages location, interpreter mismatch, user-site leakage, and Jupyter kernel mismatch. Include the concrete commands you would run.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A canonical flow:\n1) Confirm the interpreter you’re running: `python -c \"import sys; print(sys.executable); import site; print(site.getsitepackages()); print(site.getusersitepackages())\"`.\n2) Confirm pip is tied to that interpreter: `python -m pip -V` (shows pip location and Python version). Avoid plain `pip` until verified.\n3) Verify the package is installed where that interpreter looks: `python -m pip show <pkg>` and check `Location:` matches one of the reported site-packages paths. Also check `python -c \"import pkg; print(pkg.__file__)\"` if import works partially.\n4) Check for user-site leakage / wrong install target: look for `--user` installs or `PIP_USER=1`, and whether user-site is enabled. Validate with `python -c \"import site; print(site.ENABLE_USER_SITE); print(site.getusersitepackages())\"`. If the package installed into user-site but user-site is disabled (or vice versa), imports can fail or resolve unexpectedly.\n5) If using Jupyter, confirm the kernel interpreter: in a notebook run `import sys; sys.executable`. On CLI: `jupyter kernelspec list` and inspect the `kernel.json` `argv` path. Install/register the kernel from the venv: `python -m ipykernel install --user --name <name> --display-name \"Python (<name>)\"`.\n6) If still failing, check name mismatch / extras: ensure you’re importing the right module name (e.g., `opencv-python` -> `cv2`).",
+      "explanation": "This is a high-signal ML interview question because ML engineers routinely switch between CLI training scripts and notebooks. The key is turning a fuzzy symptom into a deterministic set of checks that identify: (1) which interpreter is executing, (2) where pip installed, (3) whether user-site is interfering, and (4) whether Jupyter is pointing at a different interpreter than your shell.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pip",
+        "diagnostics",
+        "site-packages",
+        "user-site",
+        "jupyter",
+        "kernel-mismatch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You activated a venv and ran `pip install torch`, it succeeded, but `python -c \"import torch\"` fails with `ModuleNotFoundError`. Which diagnostic step is the best *first* step to confirm whether `pip` and `python` are targeting the same interpreter?\n\nA) Reinstall Python system-wide\nB) Run `which pip` and `which python`\nC) Run `pip cache purge`\nD) Delete the venv and recreate it immediately",
+      "question_type": "mc",
+      "options": [
+        "A) Reinstall Python system-wide",
+        "B) Run `which pip` and `which python`",
+        "C) Run `pip cache purge`",
+        "D) Delete the venv and recreate it immediately"
+      ],
+      "correct_answer": "B",
+      "explanation": "The most common root cause is interpreter mismatch: `pip` installed into a different environment than the `python` doing the import. Checking `which` (or `where` on Windows) is the fastest sanity check. A more robust follow-up is `python -m pip -V` and `python -c \"import sys; print(sys.executable)\"` to confirm they match.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip",
+        "interpreter-mismatch",
+        "diagnostics",
+        "basics"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "At a high level, what does `python -m venv .venv` create, how does “activation” change what runs, and what does a venv *not* isolate (that can still bite ML engineers)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "It creates an isolated Python environment directory containing (a) a copy/symlink of the Python interpreter and launchers (e.g., `bin/python` or `Scripts/python.exe`), (b) a `site-packages` directory for that environment, and (c) metadata like `pyvenv.cfg` pointing to the “base” Python. Activation is just shell convenience: it prepends the venv’s `bin/` (or `Scripts/`) to `PATH` and sets variables so `python`/`pip` resolve to the venv’s executables. A venv does not fully isolate non-Python system dependencies (CUDA drivers, system libraries, `glibc`, `libstdc++`), environment variables like `LD_LIBRARY_PATH`, or OS-level packages; it also doesn’t prevent you from accidentally using a different interpreter if you invoke it explicitly (e.g., `/usr/bin/python`).",
+      "explanation": "Interviewers often want to see that you understand venv is primarily about *Python interpreter + site-packages selection*, not containerization. For ML, the “not isolated” parts matter: GPU/CUDA runtime, system libs, and environment variables can still cause import/runtime failures even if the Python packages are correct.",
+      "difficulty": "beginner",
+      "tags": [
+        "basics",
+        "activation",
+        "path",
+        "isolation",
+        "ml-runtime",
+        "cuda"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You upgraded PyTorch to try a new feature and now your environment breaks due to CUDA/driver mismatch or SciPy/NumPy incompatibilities. Pip can’t cleanly resolve a rollback.\n\nDescribe a robust upgrade/rollback workflow for fragile ML stacks in venvs that goes beyond “just run pip install”. Include how you would (a) stage upgrades, (b) roll back quickly, and (c) keep GPU/CUDA compatibility in mind.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Workflow: (a) Stage upgrades in a fresh venv (or a copy via recreating from spec), not in the known-good env. Keep the known-good venv intact. Use a constraints/lockfile (or generated freeze) to record the exact working set. For torch, choose the correct wheel index/build matching CUDA (or CPU-only) and verify with a small sanity script. (b) Roll back by switching venvs (known-good vs candidate) or recreating from the last known-good lock/constraints snapshot; avoid trying to ‘undo’ a complex set of binary upgrades in-place. Keep versioned lock snapshots (e.g., `constraints-2026-03-01.txt`). (c) GPU/CUDA: record and validate `nvidia-smi` (driver), torch build CUDA version, and ensure they’re compatible; prefer official torch installation commands for the specific CUDA build. If the driver can’t support the desired CUDA runtime, either pick a torch build targeting an older CUDA, or move to containerized builds with a compatible base image. Always verify `torch.cuda.is_available()` and run a minimal GPU op.\n\nKey idea: treat venvs as disposable artifacts and use reproducible specs + parallel environments for safe experimentation.",
+      "explanation": "Torch/CUDA and SciPy/NumPy are sensitive to binary compatibility. In-place upgrades often leave a partially upgraded environment that is hard to reason about. Using parallel venvs plus versioned constraints/lock snapshots makes upgrades reversible and reduces downtime. Explicitly validating the CUDA/driver/torch matrix prevents common ‘installed but unusable’ GPU setups.",
+      "difficulty": "advanced",
+      "tags": [
+        "upgrade-rollback",
+        "torch",
+        "cuda",
+        "constraints",
+        "recreate-vs-repair",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect a venv is “contaminated” because `pip install` seems to affect a different environment, and imports sometimes resolve to user-site packages. Which set of checks and mitigations is most appropriate?\n\nA. Checks: `pip -V`, `python -m pip -V`, `python -c \"import site; print(site.getusersitepackages())\"`; Mitigations: use `python -m pip`, disable user-site if needed (`PYTHONNOUSERSITE=1`), and ensure you’re not using `--user`.\nB. Checks: `pip list`; Mitigations: always run `sudo pip install`.\nC. Checks: `which pip`; Mitigations: delete `/usr/bin/python`.\nD. Checks: `conda info`; Mitigations: switch to conda (always fixes it).",
+      "question_type": "mc",
+      "options": [
+        "A. Checks: `pip -V`, `python -m pip -V`, `python -c \"import site; print(site.getusersitepackages())\"`; Mitigations: use `python -m pip`, disable user-site if needed (`PYTHONNOUSERSITE=1`), and ensure you’re not using `--user`.",
+        "B. Checks: `pip list`; Mitigations: always run `sudo pip install`.",
+        "C. Checks: `which pip`; Mitigations: delete `/usr/bin/python`.",
+        "D. Checks: `conda info`; Mitigations: switch to conda (always fixes it)."
+      ],
+      "correct_answer": "A",
+      "explanation": "`pip -V` shows which Python/pip pair you’re using; `python -m pip` guarantees pip runs under the intended interpreter. User-site packages can leak in (especially if `--user` was used or user-site is enabled), causing ‘contamination.’ Disabling user-site for debugging and avoiding `--user` inside venvs are practical mitigations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "mixed-installs",
+        "contamination",
+        "pip",
+        "user-site",
+        "verify-venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A training script fails with `ModuleNotFoundError` for a package that is clearly present in your repo. A teammate suggests setting `PYTHONPATH=.`. Another suggests installing the package into the venv.\n\nWhich is the better long-term fix for an ML codebase, and what are two common import/path pitfalls you would check first (e.g., shadowing)?\n\nA. Better fix: set `PYTHONPATH=.`; pitfalls: none.\nB. Better fix: install the package into the venv (editable if developing); pitfalls: module shadowing by a local file/folder name and running from inconsistent working directories.\nC. Better fix: copy the package into site-packages manually; pitfalls: none.\nD. Better fix: use `sudo` to install globally; pitfalls: pip cache corruption.",
+      "question_type": "mc",
+      "options": [
+        "A. Better fix: set `PYTHONPATH=.`; pitfalls: none.",
+        "B. Better fix: install the package into the venv (editable if developing); pitfalls: module shadowing by a local file/folder name and running from inconsistent working directories.",
+        "C. Better fix: copy the package into site-packages manually; pitfalls: none.",
+        "D. Better fix: use `sudo` to install globally; pitfalls: pip cache corruption."
+      ],
+      "correct_answer": "B",
+      "explanation": "Installing (preferably editable during development) makes imports consistent regardless of where you run the script from. `PYTHONPATH` is a brittle workaround that often leaks into production and causes hard-to-debug differences. Common pitfalls: (1) shadowing—e.g., a local `torch.py`, `numpy.py`, or a folder named like a dependency; (2) inconsistent working directory causing different `sys.path[0]` and import resolution.",
+      "difficulty": "beginner",
+      "tags": [
+        "diagnosing-import-issues",
+        "PYTHONPATH",
+        "shadowing",
+        "editable-installs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team has an internal ML utilities package inside the same repo (e.g., `ml_utils/`) used by training scripts and notebooks. You keep getting “works on my machine” issues because some people run from the repo root and others from subdirectories.\n\nExplain how editable installs (`pip install -e .`) and a `src/` layout help, and outline the minimal packaging files/config you’d add to make this robust in a venv.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use an editable install so imports resolve via the environment’s installed package metadata rather than relying on the current working directory being on `sys.path`. A `src/` layout (e.g., `src/ml_utils/...`) prevents accidentally importing from the repo root due to path shadowing, and ensures tests/scripts import the installed package.\n\nMinimal setup: add `pyproject.toml` with build backend (e.g., setuptools) and project metadata (name, version, dependencies). Place package code under `src/` and configure package discovery (e.g., `tool.setuptools.packages.find` with `where = [\"src\"]`). Then in the venv run `python -m pip install -e .` (optionally with extras like `.[dev]`). This makes training scripts, notebooks, and CI import the same package consistently.",
+      "explanation": "ML repos often mix scripts, notebooks, and libraries. Relying on `PYTHONPATH` or the working directory leads to fragile imports and subtle version drift. Editable installs align local development with how code is imported in production/CI, while `src/` layout reduces accidental imports from unintended locations.",
+      "difficulty": "intermediate",
+      "tags": [
+        "editable-installs",
+        "src-layout",
+        "packaging",
+        "path-hygiene"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a clean requirements strategy for an ML repo with optional components: base library, dev tools, training (GPU), inference (CPU), and notebooks. Which approach best supports venv-based workflows and reduces dependency conflicts?\n\nA. One giant `requirements.txt` for everything.\nB. Separate requirement files (e.g., `requirements/base.txt`, `dev.txt`, `train.txt`, `infer.txt`) and use constraints layering (e.g., a shared `constraints.txt` or lock) when installing.\nC. Put all dependencies in `PYTHONPATH` and avoid pip installs.\nD. Only use `pip freeze` output as `requirements.txt` and commit it as the source of truth.",
+      "question_type": "mc",
+      "options": [
+        "A. One giant `requirements.txt` for everything.",
+        "B. Separate requirement files (e.g., `requirements/base.txt`, `dev.txt`, `train.txt`, `infer.txt`) and use constraints layering (e.g., a shared `constraints.txt` or lock) when installing.",
+        "C. Put all dependencies in `PYTHONPATH` and avoid pip installs.",
+        "D. Only use `pip freeze` output as `requirements.txt` and commit it as the source of truth."
+      ],
+      "correct_answer": "B",
+      "explanation": "Splitting requirements by use-case keeps venvs smaller and avoids unnecessary conflicts (e.g., training-only GPU deps in inference). Constraints/locks ensure compatibility and reproducibility across machines while still letting you compose environments (base + train, base + dev, etc.). `pip freeze` is useful for capturing a snapshot, but it’s not a maintainable spec by itself.",
+      "difficulty": "intermediate",
+      "tags": [
+        "requirements-strategy",
+        "constraints",
+        "multiple-venvs",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You maintain a repo that supports (1) training on GPU, (2) CPU-only inference microservice, and (3) notebooks for exploration. You decide to use multiple venvs to keep dependencies smaller and reduce conflicts.\n\nWhat is the most common failure mode when using Jupyter with multiple venvs, and what is the correct fix?\n\nA. Failure mode: `pip` can’t install in venv; Fix: run `sudo pip install`.\nB. Failure mode: Notebook uses the wrong interpreter/kernel; Fix: install an IPython kernel from each venv and select it explicitly.\nC. Failure mode: Python can’t find CUDA; Fix: set `PYTHONPATH` to the CUDA libraries.\nD. Failure mode: venv activation breaks git; Fix: avoid activation and always use system Python.",
+      "question_type": "mc",
+      "options": [
+        "A. Failure mode: `pip` can’t install in venv; Fix: run `sudo pip install`.",
+        "B. Failure mode: Notebook uses the wrong interpreter/kernel; Fix: install an IPython kernel from each venv and select it explicitly.",
+        "C. Failure mode: Python can’t find CUDA; Fix: set `PYTHONPATH` to the CUDA libraries.",
+        "D. Failure mode: venv activation breaks git; Fix: avoid activation and always use system Python."
+      ],
+      "correct_answer": "B",
+      "explanation": "Jupyter selects a kernel (interpreter) that may not match your currently activated shell venv, leading to ‘it works in terminal but not in notebook’ issues. The fix is to install and register a kernel per venv (e.g., `python -m ipykernel install --user --name ...`) and select the right kernel in the notebook UI.",
+      "difficulty": "beginner",
+      "tags": [
+        "multiple-venvs",
+        "jupyter",
+        "kernel-confusion"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate reports: “Training crashes on my machine but not yours.” They attach only `requirements.txt`. What additional environment details would you request to make the bug report minimally reproducible for an ML stack? Provide a concise checklist.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Checklist beyond `requirements.txt`: (1) Python version and executable path (`python -c \"import sys; print(sys.version); print(sys.executable)\"`). (2) OS and architecture (`uname -a` / `platform.platform()`), and whether running in Docker/WSL. (3) `pip -V` and `pip freeze` from the active environment. (4) GPU/driver/CUDA details: `nvidia-smi` output, torch CUDA availability (`python -c \"import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available())\"`). (5) How the environment was created (venv/conda/pyenv), and exact commands used to install deps. (6) Any relevant env vars affecting imports/builds (`PYTHONPATH`, `CUDA_HOME`, `LD_LIBRARY_PATH`, `PIP_INDEX_URL`, proxies). (7) For native builds: compiler version and build logs if any packages were compiled from source. (8) Repro steps + minimal script + dataset/model version or a small synthetic reproduction.",
+      "explanation": "ML failures often depend on factors not captured in requirements: Python ABI, OS/arch, GPU driver/CUDA runtime, and environment variables. Collecting interpreter path and pip metadata prevents the common ‘wrong venv’ issue. Capturing GPU/toolchain info is critical for torch/cuda mismatches and for diagnosing binary wheel selection.",
+      "difficulty": "intermediate",
+      "tags": [
+        "minimal-repro",
+        "bug-reporting",
+        "torch",
+        "cuda",
+        "verify-venv"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re setting up a new training environment. You need to decide how tightly to pin versions for Python, NumPy/SciPy, and PyTorch. Which strategy is most appropriate for a production-ish training pipeline where reproducibility matters but you still want manageable upgrades?\n\nA. Pin only top-level packages loosely (e.g., `torch>=2.0`) and let pip resolve everything each time.\nB. Pin Python and CUDA toolchain, pin torch/torchvision exactly, and use a constraints/lock approach to control transitive deps; allow periodic planned upgrades.\nC. Never pin anything; rely on Docker base images to handle it.\nD. Pin every transitive dependency manually in `requirements.txt` by editing it by hand after each install.",
+      "question_type": "mc",
+      "options": [
+        "A. Pin only top-level packages loosely (e.g., `torch>=2.0`) and let pip resolve everything each time.",
+        "B. Pin Python and CUDA toolchain, pin torch/torchvision exactly, and use a constraints/lock approach to control transitive deps; allow periodic planned upgrades.",
+        "C. Never pin anything; rely on Docker base images to handle it.",
+        "D. Pin every transitive dependency manually in `requirements.txt` by editing it by hand after each install."
+      ],
+      "correct_answer": "B",
+      "explanation": "For ML, compatibility is a matrix: Python version, platform, CUDA/cuDNN, torch build, and NumPy/SciPy wheels all interact. Pinning Python + CUDA/toolchain and exact torch versions stabilizes the hardest-to-debug parts. Using constraints/lockfiles controls transitive deps without hand-editing every package. Planned upgrades reduce risk while keeping security/bugfixes manageable.",
+      "difficulty": "advanced",
+      "tags": [
+        "pinning",
+        "compatibility",
+        "torch",
+        "cuda",
+        "numpy",
+        "scipy"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your ML project’s venv started failing with errors like:\n\n- `ImportError: numpy.core.multiarray failed to import`\n- `RuntimeError: module compiled against API version ...`\n\nYou suspect binary wheel incompatibility after an OS update or Python minor upgrade. Describe when you would delete and recreate the venv vs attempting to repair it in-place. Include a safe rebuild procedure that avoids losing important info.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Recreate when the environment is likely inconsistent at the binary level (NumPy/SciPy/torch ABI issues), when Python version changed (even a minor upgrade can invalidate compiled wheels), when site-packages has mixed origins (system/user/venv), or when repeated upgrades/downgrades left dependency resolution inconsistent. Repair is reasonable for small, pure-Python dependency changes or a single broken package.\n\nSafe rebuild: (1) capture state: `python -c \"import sys; print(sys.version); import platform; print(platform.platform())\"`, `pip -V`, `pip freeze > requirements.lock.txt`, and any CUDA info (`nvidia-smi`, `nvcc --version` if relevant). (2) remove the venv directory (don’t reuse): `rm -rf .venv` (or equivalent). (3) recreate with the intended Python: `python3.11 -m venv .venv` (or `pyenv`/conda-managed Python). (4) activate and upgrade tooling: `python -m pip install -U pip setuptools wheel`. (5) reinstall using pinned/constraints files (or lockfile) rather than ad-hoc installs. (6) run a quick sanity check: import numpy/torch, print versions, and run a small tensor op. Keep the captured freeze/logs attached to the bug report for reproducibility.",
+      "explanation": "In ML stacks, many failures come from compiled extensions (NumPy/SciPy/torch) that are sensitive to Python version, platform, and underlying libraries. Once ABI mismatches happen, ‘repair’ can be time-consuming and unreliable. A disciplined rebuild is often faster and produces a clean, explainable baseline—especially important for debugging and for teammates/CI parity.",
+      "difficulty": "intermediate",
+      "tags": [
+        "recreate-vs-repair",
+        "binary-wheels",
+        "numpy",
+        "scipy",
+        "torch"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re debugging a training job that fails only on one teammate’s machine. They claim they’re in the correct venv. You ask them to run a short snippet and paste the output. Which snippet best helps diagnose venv + site-packages + user-site contamination in one go?\n\nA.\n```bash\npython -c \"import sys; print(sys.version)\"\n```\n\nB.\n```bash\npython -c \"import sys, site; print(sys.executable); print(site.getsitepackages()); print(site.getusersitepackages()); print(sys.path)\"\n```\n\nC.\n```bash\npip freeze\n```\n\nD.\n```bash\npython -c \"import os; print(os.environ['VIRTUAL_ENV'])\"\n```",
+      "question_type": "mc",
+      "options": [
+        "A. `python -c \"import sys; print(sys.version)\"`",
+        "B. `python -c \"import sys, site; print(sys.executable); print(site.getsitepackages()); print(site.getusersitepackages()); print(sys.path)\"`",
+        "C. `pip freeze`",
+        "D. `python -c \"import os; print(os.environ['VIRTUAL_ENV'])\"`"
+      ],
+      "correct_answer": "B",
+      "explanation": "This prints (1) the executing interpreter (`sys.executable`), (2) where site-packages are coming from (system/venv), (3) whether user-site is in play, and (4) the full import search path (`sys.path`). `pip freeze` is useful but can be run against the wrong pip. `VIRTUAL_ENV` can be set even if `python` isn’t actually from that venv (e.g., shell misconfiguration).",
+      "difficulty": "intermediate",
+      "tags": [
+        "verify-venv",
+        "import-site",
+        "sys.path",
+        "user-site",
+        "contamination"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You activated a venv, but you suspect your shell is still using the system Python. What is the fastest, most reliable single command to confirm the interpreter path of the currently running Python process?\n\nA. `python -V`\nB. `which python`\nC. `python -c \"import sys; print(sys.executable)\"`\nD. `pip list`",
+      "question_type": "mc",
+      "options": [
+        "A. `python -V`",
+        "B. `which python`",
+        "C. `python -c \"import sys; print(sys.executable)\"`",
+        "D. `pip list`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`sys.executable` reports the absolute path of the interpreter that is actually executing the code, which is the most reliable confirmation. `which python` is a quick shell-level check but can be misleading with aliases, shell hashing, or wrappers. `python -V` only shows version, not which environment. `pip list` doesn’t confirm which interpreter is running.",
+      "difficulty": "beginner",
+      "tags": [
+        "verify-venv",
+        "sys.executable",
+        "which-python"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Native dependency troubleshooting boundaries: You’re in a venv and `import torch` fails with an error like `libcudnn.so.8: cannot open shared object file` or `GLIBCXX_3.4.29 not found`. What is the most correct response?\n\nA. Recreate the venv; venv corruption is the likely cause.\nB. This is a Python packaging issue only; fix it by upgrading pip.\nC. This indicates missing or incompatible system-level/native libraries (CUDA/cuDNN/libstdc++/glibc). Venv can’t fix it; you need to align drivers/CUDA runtime or use a container/conda package that bundles compatible libs.\nD. Add the missing library name to `requirements.txt` and reinstall.",
+      "question_type": "mc",
+      "options": [
+        "A. Recreate the venv; venv corruption is the likely cause.",
+        "B. This is a Python packaging issue only; fix it by upgrading pip.",
+        "C. This indicates missing or incompatible system-level/native libraries (CUDA/cuDNN/libstdc++/glibc). Venv can’t fix it; you need to align drivers/CUDA runtime or use a container/conda package that bundles compatible libs.",
+        "D. Add the missing library name to `requirements.txt` and reinstall."
+      ],
+      "correct_answer": "C",
+      "explanation": "Errors referencing `*.so` files or GLIBCXX versions typically come from the system dynamic linker and native ABI compatibility, not Python-level dependency resolution. Venv doesn’t manage system libraries or GPU drivers. The right triage is to check driver/CUDA compatibility, library presence on `LD_LIBRARY_PATH`, and consider using a known-good CUDA base container or conda distribution that includes compatible binaries.",
+      "difficulty": "intermediate",
+      "tags": [
+        "native-libs",
+        "cuda",
+        "troubleshooting",
+        "venv-boundaries",
+        "system-deps"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Deterministic builds & lock-like workflows with `venv`/pip: Which statement is most accurate?\n\nA. `pip freeze` is always the best lockfile; committing it guarantees cross-platform deterministic installs.\nB. Hash-checking mode (`--require-hashes`) can improve determinism and supply-chain safety, but you must maintain hashes for all pinned artifacts; constraints/lock workflows are often better than raw `pip freeze` for cross-machine installs.\nC. Deterministic installs are impossible with pip; only conda can do this.\nD. Using `latest` versions (no pins) is the most reproducible because everyone gets the newest packages.",
+      "question_type": "mc",
+      "options": [
+        "A. `pip freeze` is always the best lockfile; committing it guarantees cross-platform deterministic installs.",
+        "B. Hash-checking mode (`--require-hashes`) can improve determinism and supply-chain safety, but you must maintain hashes for all pinned artifacts; constraints/lock workflows are often better than raw `pip freeze` for cross-machine installs.",
+        "C. Deterministic installs are impossible with pip; only conda can do this.",
+        "D. Using `latest` versions (no pins) is the most reproducible because everyone gets the newest packages."
+      ],
+      "correct_answer": "B",
+      "explanation": "`pip freeze` captures the current environment, including transitive deps and sometimes platform-specific packages, which can be harmful when used as a universal spec across OS/arch/CUDA variants. Hash-checking mode makes installs more deterministic and secure but requires strict pinning and hash maintenance. A common practical pattern is: maintain minimal intent files, generate pinned requirements/constraints for a target platform, and use constraints + CI/container builds for repeatability.",
+      "difficulty": "advanced",
+      "tags": [
+        "deterministic-builds",
+        "pip-freeze",
+        "hash-checking",
+        "constraints",
+        "supply-chain"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Dev vs runtime separation: You have an ML repo with training code, experiments, and an inference service. Propose a venv-based approach to keep production/runtime dependencies minimal while keeping developer tooling flexible. Mention how you’d structure requirement files and how you’d prevent dev-only packages from leaking into production images.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use separate dependency groups/files: e.g., `requirements.in` (runtime/inference minimal), `requirements-dev.in` (adds tooling like `pytest`, `ruff`, notebooks, profiling), and optionally `requirements-train.in` (training-only extras like `wandb`, `deepspeed`, `accelerate`). Compile/pin into `requirements.txt`/constraints per target (runtime vs dev vs train). Build production images by installing only the runtime requirements (and possibly a constraints file) into a fresh venv inside the container, and enforce via CI checks (e.g., ensure the Dockerfile uses `requirements.txt` not `requirements-dev.txt`). For local development, create a dev venv that installs runtime + dev extras. This reduces attack surface and image size, speeds cold starts, and avoids shipping unnecessary native deps.",
+      "explanation": "Interviewers want to see that you can separate concerns: experimentation environments tend to accumulate heavy and conflicting dependencies, while production should be small and stable. Venv can support this with multiple requirement sets and clean builds, especially when paired with containers/CI.",
+      "difficulty": "advanced",
+      "tags": [
+        "dev-vs-prod",
+        "inference",
+        "training",
+        "requirements-structure",
+        "containers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You run `pip install -r requirements.txt` in a venv and get a resolver error like “Cannot install A==1.0 because B requires A>=2.0” (or a long backtracking message). What is the best strategy to diagnose and resolve the conflict without randomly trying versions?\n\nA. Re-run the same command multiple times; pip will eventually find a solution.\nB. Immediately add `--no-deps` to force-install everything; conflicts don’t matter at runtime.\nC. Identify the conflicting requirements, inspect the dependency constraints (e.g., with `pip index versions`, `pip show`, or reading project metadata), then adjust by pinning/relaxing *one* constraint at a time, possibly using a constraints file; consider upgrading/downgrading the top-level package that introduced the constraint.\nD. Delete the venv and reinstall the same requirements; the conflict will disappear in a clean environment.",
+      "question_type": "mc",
+      "options": [
+        "A. Re-run the same command multiple times; pip will eventually find a solution.",
+        "B. Immediately add `--no-deps` to force-install everything; conflicts don’t matter at runtime.",
+        "C. Identify the conflicting requirements, inspect the dependency constraints (e.g., with `pip index versions`, `pip show`, or reading project metadata), then adjust by pinning/relaxing one constraint at a time, possibly using a constraints file; consider upgrading/downgrading the top-level package that introduced the constraint.",
+        "D. Delete the venv and reinstall the same requirements; the conflict will disappear in a clean environment."
+      ],
+      "correct_answer": "C",
+      "explanation": "Pip’s resolver is deterministic given inputs; repeating won’t help. `--no-deps` often creates broken installs that fail at import/runtime. Cleaning the venv may remove leftover state but won’t fix an inherent constraint conflict. The practical approach is to find the minimal conflicting constraints and change them deliberately—often by choosing compatible versions of top-level libraries (common in ML: `torch`/`torchvision`, `transformers`/`tokenizers`, `numpy` constraints). Constraints files let you guide resolution without over-freezing everything.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dependency-conflicts",
+        "pip-resolver",
+        "constraints",
+        "diagnosis"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Reproducibility across OS/arch/CUDA: Explain what you can and cannot reproduce with a pip-only `venv`. Specifically address Python version, OS/architecture, and CUDA/driver constraints. What extra artifacts or documentation would you add to make an ML environment reproducible in practice?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "With pip-only venv you can reproduce: Python package set and versions *for a given Python version and platform*, assuming wheels exist or builds are consistent. You cannot fully reproduce: the Python interpreter version unless you also specify/provision it (pyenv/asdf/installer), OS/arch-specific binary compatibility (Linux vs macOS vs Windows; x86_64 vs arm64), and CUDA/driver stack (NVIDIA driver version, CUDA runtime availability, cuDNN/NCCL). Many ML packages select different wheels by platform and CUDA variant; pip may install a CPU wheel on one machine and a CUDA wheel on another depending on indexes and availability. To improve reproducibility: pin the Python version (e.g., `.python-version`, `runtime.txt`, or documented requirement), record OS/arch and GPU details, document CUDA + driver requirements, use containers for runtime parity (Docker image with CUDA base), use constraints/lock-like files, and for critical deployments build and publish a tested wheelhouse or container image.",
+      "explanation": "Pip+venv is necessary but not sufficient for ML reproducibility because the hardest variability is below Python: OS ABI, GPU drivers, and native libs. Interviewers look for candidates who can articulate these boundaries and propose pragmatic solutions (constraints + containers + documentation).",
+      "difficulty": "advanced",
+      "tags": [
+        "reproducibility",
+        "os-arch",
+        "cuda",
+        "pip-wheels",
+        "containers"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to hand off an environment spec for a team that runs both CPU-only laptops and CUDA-enabled servers. Which approach is most interview-appropriate and practical?\n\nA. Share only `pip freeze` output; it works everywhere and is always best.\nB. Share a minimal `requirements.txt` with broad ranges (e.g., `torch>=2`) and let each person resolve independently.\nC. Provide (1) a minimal top-level requirements file for intent, (2) a pinned/constraints or lock-like file for reproducibility, and (3) separate documented install instructions for CPU vs CUDA (e.g., extra index URL or specific wheel tags), including Python version expectations.\nD. Tell the team to use system Python and install packages globally so everyone matches the server.",
+      "question_type": "mc",
+      "options": [
+        "A. Share only `pip freeze` output; it works everywhere and is always best.",
+        "B. Share a minimal `requirements.txt` with broad ranges (e.g., `torch>=2`) and let each person resolve independently.",
+        "C. Provide (1) a minimal top-level requirements file for intent, (2) a pinned/constraints or lock-like file for reproducibility, and (3) separate documented install instructions for CPU vs CUDA (e.g., extra index URL or specific wheel tags), including Python version expectations.",
+        "D. Tell the team to use system Python and install packages globally so everyone matches the server."
+      ],
+      "correct_answer": "C",
+      "explanation": "Teams need both readability (what you depend on) and reproducibility (what exact versions were known-good). CPU vs GPU installs often differ for `torch`, `jax`, `tensorflow`, and CUDA wheels; documenting the install path matters as much as listing packages. A constraints/lock-like file helps keep installs consistent while still allowing platform-specific wheels.",
+      "difficulty": "intermediate",
+      "tags": [
+        "team-handoff",
+        "requirements",
+        "constraints",
+        "gpu-cpu",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a working training environment in a `venv`. Mid-project you see advice to upgrade `pip`, `setuptools`, and `wheel`. What is a safe upgrade/downgrade workflow that minimizes the risk of breaking the environment? Include specific commands and a rollback strategy.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Safe workflow: (1) Capture current state: `python -m pip freeze > requirements-freeze.txt` and record Python version (`python -V`) and platform info. (2) Prefer upgrading build tooling only when needed (e.g., build failures, resolver bugs). If upgrading, do it explicitly and incrementally: `python -m pip install --upgrade pip` then `python -m pip install --upgrade setuptools wheel`. (3) Re-run a quick import/test suite: `python -c \"import torch; import numpy\"` and run key scripts. (4) If dependency resolution is sensitive, use a constraints file: keep your project deps pinned and only allow tooling upgrades. (5) Rollback strategy: the most reliable rollback is recreating the venv from a known-good spec: delete `.venv`, recreate with the same Python version, then `python -m pip install -r requirements-freeze.txt` (or a lock/constraints-based install). Optionally, before changes, create a copy/snapshot by duplicating the venv directory (not always portable) or using a requirements lock plus artifact cache.",
+      "explanation": "In ML projects, breaking an environment can waste GPU time and block teammates. Upgrading pip/build tooling can fix resolver/build issues but can also change build isolation or resolver behavior. The safest rollback is reproducible recreation, not “undoing” in place. Capturing the environment state and having a reinstall path is the key habit.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pip",
+        "upgrade-strategy",
+        "rollback",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Remote execution context check: You SSH into a GPU box and run training via a scheduler (e.g., Slurm) or a non-interactive script. Which practice best ensures the job uses the intended `venv`?\n\nA. Rely on your interactive shell having the venv activated; the job inherits it automatically.\nB. In the job script, call the venv’s Python explicitly (e.g., `/path/to/.venv/bin/python train.py`) or source the activation script within the job script.\nC. Install your dependencies globally on the GPU box to avoid activation issues.\nD. Use `pip install --user` so the packages are always available regardless of venv.",
+      "question_type": "mc",
+      "options": [
+        "A. Rely on your interactive shell having the venv activated; the job inherits it automatically.",
+        "B. In the job script, call the venv’s Python explicitly (e.g., `/path/to/.venv/bin/python train.py`) or source the activation script within the job script.",
+        "C. Install your dependencies globally on the GPU box to avoid activation issues.",
+        "D. Use `pip install --user` so the packages are always available regardless of venv."
+      ],
+      "correct_answer": "B",
+      "explanation": "Non-interactive jobs often do not source your shell init files and won’t inherit the interactive activation state. The robust approach is to explicitly run the venv interpreter or source the activation script inside the job script. This avoids accidental use of system Python and reduces hard-to-debug dependency drift on shared GPU machines.",
+      "difficulty": "beginner",
+      "tags": [
+        "remote-dev",
+        "ssh",
+        "slurm",
+        "execution-context",
+        "venv-activation"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In VS Code, a teammate says they “activated the venv” in the terminal, but running/debugging still uses the global Python and imports the wrong `torch` version. What are the most likely causes and the concrete steps to ensure VS Code uses the venv for running scripts (not Jupyter)?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Likely causes: VS Code selected a different interpreter than the shell’s activated one; the workspace has a cached interpreter path; launch/debug configuration points to a specific Python path; remote context mismatch (local VS Code vs remote interpreter). Steps: (1) Use Command Palette → “Python: Select Interpreter” and choose the venv’s interpreter (e.g., `.venv/bin/python` or `.venv\\Scripts\\python.exe`). (2) Verify bottom-right status bar shows the venv interpreter. (3) Check `.vscode/settings.json` for `python.defaultInterpreterPath` (or legacy `python.pythonPath`) and set it to the venv interpreter. (4) Check `.vscode/launch.json`—ensure it doesn’t hardcode a different `python` path; rely on selected interpreter. (5) In Remote-SSH/Dev Containers, select the interpreter in the remote context and confirm `which python`/`python -c \"import sys; print(sys.executable)\"` matches the venv. (6) Restart the Python language server / reload window if it keeps using cached paths.",
+      "explanation": "Terminal activation only affects that shell process. VS Code running/debugging uses the interpreter configured for the workspace (and remote context), which can diverge from the terminal. ML engineers frequently hit this when switching between CPU/GPU envs or multiple repos; verifying `sys.executable` is the fastest sanity check.",
+      "difficulty": "intermediate",
+      "tags": [
+        "vscode",
+        "interpreter-selection",
+        "execution-context",
+        "remote-dev"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re starting a new ML project. Which choice best describes when you should prefer `venv` over conda/mamba/poetry?\n\nA. Prefer `venv` when you need to manage CUDA toolkit and GPU drivers inside the environment.\nB. Prefer `venv` when dependencies are mostly pure-Python or pip wheels, you want minimal tooling, and system/CUDA dependencies are managed outside (container/OS), while conda/mamba is better when you need to manage native libs (CUDA/MKL) reproducibly.\nC. Prefer `venv` only for production inference; conda/mamba is always better for training.\nD. Prefer `venv` when you need cross-platform lockfiles with fully deterministic resolution; poetry is not suitable for that.",
+      "question_type": "mc",
+      "options": [
+        "A. Prefer `venv` when you need to manage CUDA toolkit and GPU drivers inside the environment.",
+        "B. Prefer `venv` when dependencies are mostly pure-Python or pip wheels, you want minimal tooling, and system/CUDA dependencies are managed outside (container/OS), while conda/mamba is better when you need to manage native libs (CUDA/MKL) reproducibly.",
+        "C. Prefer `venv` only for production inference; conda/mamba is always better for training.",
+        "D. Prefer `venv` when you need cross-platform lockfiles with fully deterministic resolution; poetry is not suitable for that."
+      ],
+      "correct_answer": "B",
+      "explanation": "`venv` is a lightweight way to isolate Python packages, ideal when pip wheels cover most needs and native dependencies are handled elsewhere (e.g., Docker image with CUDA runtime, system packages). Conda/mamba shines when you must reproducibly manage native libraries and toolchains (CUDA, MKL, compilers) across machines. Poetry can help with dependency management/locking but still relies on the underlying system for many native requirements and may not solve CUDA/toolkit concerns by itself.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tool-choice",
+        "conda-vs-venv",
+        "cuda",
+        "native-libs",
+        "team-reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In the context of an AI/ML project, what does Python's `venv` *actually* isolate, and what does it *not* isolate? Give two examples of each (isolate vs not isolate) and explain how this helps reduce “works on my machine” issues.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`venv` isolates the Python interpreter environment at the package level: installed Python packages (site-packages), console entry points/scripts (e.g., `pip`, `python`, `pytest`), and dependency versions used by that interpreter. It does not isolate OS-level/system libraries (e.g., `glibc`, `libstdc++`, `libcuda`, `cudnn`), hardware/driver stack (NVIDIA driver/CUDA runtime availability), environment variables, or non-Python tools/compilers. Examples of what it isolates: (1) having `torch==2.1.0` in one project and `torch==2.2.0` in another without conflict; (2) having a project-specific `black`/`ruff` version. Examples of what it does not isolate: (1) missing system `libcudnn.so` or incompatible NVIDIA driver; (2) a missing compiler/build tools needed to compile a package from source. It reduces “works on my machine” by keeping Python dependency versions consistent per project, but it cannot guarantee OS/CUDA/driver parity—those must be documented/managed separately (containers, conda, system packages).",
+      "explanation": "ML engineers often conflate “environment” with “everything.” `venv` is strong at isolating Python dependencies, which is the most common source of conflicts during experimentation. However, ML stacks commonly depend on native libraries (CUDA, cuDNN, MKL, OpenMP) and drivers. Knowing the boundary helps you choose the right tool (e.g., container/conda) and communicate issues quickly.",
+      "difficulty": "beginner",
+      "tags": [
+        "venv-basics",
+        "isolation-boundaries",
+        "works-on-my-machine",
+        "native-libs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A new hire needs a one-command setup for an ML repo that ensures the correct Python version is used when creating the venv. Describe what you would put in a `Makefile` or `./scripts/setup.sh` to standardize onboarding, including at least: Python version check, venv creation, pip tooling upgrade, and installing editable + optional dev dependencies.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Include steps like:\n- Check Python version early and fail with a clear message (e.g., require 3.10/3.11): `python3.10 -V` or a small snippet that asserts `sys.version_info`.\n- Create venv with the intended interpreter: `python3.10 -m venv .venv`.\n- Use the venv interpreter explicitly for installs: `.venv/bin/python -m pip install -U pip setuptools wheel`.\n- Install the project (editable) and dependencies: `.venv/bin/python -m pip install -r requirements.txt` and `.venv/bin/python -m pip install -e .`.\n- Optional dev extras: `.venv/bin/python -m pip install -r dev-requirements.txt` or `.venv/bin/python -m pip install -e '.[dev]'`.\n- Add a smoke check: `.venv/bin/python -c \"import sys; print(sys.executable); import pkg; print('ok')\"`.\nThis avoids relying on activation state and prevents mixed installs.",
+      "explanation": "Standardized onboarding reduces environment drift across a team. Explicit interpreter selection at venv creation time addresses wheel availability/compatibility. Using the venv’s python for all pip operations and adding a smoke test catches common issues early (wrong python, missing imports, partial installs).",
+      "difficulty": "intermediate",
+      "tags": [
+        "team-onboarding",
+        "automation",
+        "python-version",
+        "editable-install",
+        "best-practices"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team wants reproducible environments for an ML repo. Explain a pinning strategy that goes beyond `pip freeze`, including when to use `requirements.txt` vs `constraints.txt`, how to separate dev vs runtime dependencies, and one reason `pip freeze` can be harmful in a cross-platform ML project.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A solid strategy: keep a minimal, human-curated `requirements.in`/`requirements.txt` (runtime) with direct dependencies and key pins (e.g., torch/numpy) and optionally a separate `dev-requirements.txt` for tooling (pytest, black, jupyter). Use a `constraints.txt` to pin transitive dependencies deterministically across installs without forcing them to be direct requirements. In CI and onboarding, install with `python -m pip install -r requirements.txt -c constraints.txt` (and similarly for dev).\n`pip freeze` can be harmful because it captures the full transitive set from one machine, often including platform-specific wheels/markers and versions that don’t exist or aren’t appropriate on another OS/Python/CUDA combination, causing unnecessary conflicts and churn. It can also accidentally pin temporary/implicit dependencies that you didn’t intend to lock.",
+      "explanation": "ML stacks are sensitive to version combinations, but freezing everything from a single environment is often too rigid and not portable. Using constraints provides determinism while keeping direct requirements intentional and maintainable. Separating dev/runtime reduces production surface area and avoids forcing heavy tools onto runtime environments.",
+      "difficulty": "advanced",
+      "tags": [
+        "reproducibility",
+        "requirements",
+        "constraints",
+        "dev-vs-runtime",
+        "pip-freeze"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You installed `torch` in a venv on a GPU machine, but training fails and `torch.cuda.is_available()` returns `False`. Outline a practical debugging sequence to distinguish: (1) venv/package issues vs (2) CUDA runtime/library path issues vs (3) driver/hardware issues. Mention relevant checks (commands or Python snippets).",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A practical sequence:\n1) Confirm you’re running the venv interpreter: `python -c \"import sys; print(sys.executable)\"` and `python -m pip -V`.\n2) Confirm torch is the one you installed and see what it expects: `python -c \"import torch; print(torch.__version__); print(torch.version.cuda); print(torch.__file__)\"`.\n3) Check GPU/driver visibility outside Python: `nvidia-smi` (does it see the GPU? driver version?). If this fails, it’s a system/driver issue, not venv.\n4) Check whether the installed torch build is CPU-only or mismatched: if `torch.version.cuda` is `None`, you likely installed a CPU wheel; reinstall the correct CUDA-enabled wheel for your platform/index.\n5) Check runtime library path issues: inspect `LD_LIBRARY_PATH` (Linux) and whether CUDA libs are discoverable; in Python, you can also try `python -c \"import ctypes; ctypes.CDLL('libcuda.so.1')\"` (Linux) to see if the driver library can be loaded.\n6) If torch expects CUDA X but driver is too old/new, resolve driver/runtime mismatch (upgrade driver or install a torch build compatible with the driver/CUDA runtime).",
+      "explanation": "GPU failures often get misattributed to “venv problems,” but they can be caused by (a) wrong interpreter/pip, (b) installing a CPU-only torch build, (c) missing/hidden shared libraries due to `LD_LIBRARY_PATH`, or (d) driver/hardware issues. The sequence above narrows the layer where the failure occurs using both system-level checks and torch’s own metadata.",
+      "difficulty": "advanced",
+      "tags": [
+        "gpu",
+        "torch",
+        "cuda",
+        "LD_LIBRARY_PATH",
+        "venv-debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In CI for an ML project using venv + pip, which workflow best supports fast, deterministic builds while still being debuggable?",
+      "question_type": "mc",
+      "options": [
+        "A. Always run `pip install -U` without pinning, so you get the latest security fixes",
+        "B. Create a venv, upgrade pip tooling, install from pinned requirements/constraints, cache pip wheels/downloads, and add a smoke test that prints `sys.executable` and imports key packages",
+        "C. Skip venv in CI and install globally to simplify PATH issues",
+        "D. Run `pip freeze` in CI and commit the output on every build"
+      ],
+      "correct_answer": "B",
+      "explanation": "Good CI hygiene: create an isolated venv, keep installer tooling current, use deterministic dependency specs (pins/constraints), cache pip artifacts to speed builds, and add smoke checks (interpreter path + imports) to catch mismatches early. Unpinned upgrades reduce reproducibility; global installs increase contamination; committing `pip freeze` from CI tends to introduce platform-specific noise and churn.",
+      "difficulty": "advanced",
+      "tags": [
+        "ci",
+        "deterministic-installs",
+        "caching",
+        "smoke-tests",
+        "path-hygiene"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re debugging an “import works in one shell but not another” issue. Which environment variable is most likely to masquerade as a venv problem by changing Python import resolution, and how would you test whether it’s the culprit?",
+      "question_type": "mc",
+      "options": [
+        "A. `CUDA_VISIBLE_DEVICES`; test by printing `nvidia-smi`",
+        "B. `PYTHONPATH`; test by echoing it and running Python with it unset to see if imports change",
+        "C. `LD_LIBRARY_PATH`; test by reinstalling pip",
+        "D. `JUPYTER_PATH`; test by deleting `.venv`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`PYTHONPATH` directly alters `sys.path`, often causing imports to resolve to unexpected directories (or to succeed/fail depending on the shell). A good test is to compare `python -c \"import sys; print(sys.path)\"` across shells and temporarily run with `PYTHONPATH=` (or `env -u PYTHONPATH ...`) to see if behavior changes. This distinguishes an environment-variable issue from a true venv/package installation issue.",
+      "difficulty": "intermediate",
+      "tags": [
+        "PYTHONPATH",
+        "env-vars",
+        "venv-debugging",
+        "imports"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A candidate says: “venv is broken; my notebook can’t import the package but my terminal can.” Which explanation best fits a common real-world cause, and what’s the best first fix?",
+      "question_type": "mc",
+      "options": [
+        "A. venvs don’t work with Jupyter; you must use conda",
+        "B. The notebook kernel is using a different interpreter than the terminal; install/register an ipykernel from the venv and select that kernel",
+        "C. `pip freeze` is outdated; rerun it to fix imports",
+        "D. The only fix is deleting `~/.cache`"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is commonly a kernel/interpreter mismatch, not a broken venv. The terminal may be using `.venv/bin/python`, while Jupyter is running a different Python. Fix by installing `ipykernel` in the venv (`python -m pip install ipykernel`) and registering/selecting the venv kernel (e.g., `python -m ipykernel install --user --name <env>`), then choosing it in the notebook UI.",
+      "difficulty": "intermediate",
+      "tags": [
+        "jupyter",
+        "interpreter-mismatch",
+        "venv-debugging",
+        "path-hygiene"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You activate a venv and install a package, but `import mypkg` still fails. Which check is the most reliable way to confirm that the interpreter running your script is the one from the venv (not a different Python found earlier on PATH)?",
+      "question_type": "mc",
+      "options": [
+        "A. `echo $VIRTUAL_ENV`",
+        "B. `which pip`",
+        "C. `python -c \"import sys; print(sys.executable)\"`",
+        "D. `pip list`"
+      ],
+      "correct_answer": "C",
+      "explanation": "`sys.executable` tells you exactly which Python binary is executing your code—this is the ground truth. `VIRTUAL_ENV` can be set even if you later run a different python; `which pip` can be misleading if PATH is odd; `pip list` only reflects whatever pip you invoked, which might not match the python running your script.",
+      "difficulty": "beginner",
+      "tags": [
+        "path-hygiene",
+        "sys-executable",
+        "venv-debugging",
+        "mixed-installs"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "An ML repo uses a `src/` layout and recommends `pip install -e .` for development. What does an editable install change compared to a normal install, and how can it affect imports when running training scripts from different working directories?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "With `pip install -e .` (editable), the package is installed in a way that references the source tree (typically via a `.pth` file or editable backend), so code changes are reflected without reinstalling. In a `src/` layout, it ensures imports resolve to the package under `src/` rather than accidentally importing a local folder/module due to the current working directory. Without editable (or without installing at all), running scripts from various directories can lead to `ModuleNotFoundError` or importing the wrong module (e.g., picking up a top-level `utils.py` in the CWD). Editable installs make training scripts and notebooks more consistent across working directories.",
+      "explanation": "AI/ML repos often include multiple entry points (train.py, notebooks, tools). Editable installs reduce friction during experimentation while keeping import resolution consistent. They also encourage packaging discipline over relying on `PYTHONPATH` hacks.",
+      "difficulty": "intermediate",
+      "tags": [
+        "editable-install",
+        "src-layout",
+        "imports",
+        "pip"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You see this in a project’s setup instructions:\n\n```bash\npython -m venv .venv\nsource .venv/bin/activate\npython -m pip install -U pip setuptools wheel\npython -m pip install -r requirements.txt\n```\n\nWhy is upgrading `pip/setuptools/wheel` inside the venv considered best practice for ML repos, and what kinds of failures does it prevent?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Upgrading these tools inside the venv ensures the installer can (1) resolve modern dependency metadata (PEP 517/518/660), (2) correctly select and install manylinux/macos wheels, and (3) build packages with native extensions when needed. It prevents failures like: pip being too old to understand `pyproject.toml` builds, failing to install the correct wheel tags, attempting unnecessary source builds, or breaking editable installs. In ML, this is especially relevant for packages like numpy/scipy, tokenizers, and some CUDA-related Python packages where wheel selection/build tooling matters.",
+      "explanation": "A venv starts with whatever pip/setuptools/wheel versions were bundled with the base Python. ML dependency stacks evolve quickly; modern packaging standards and wheel tags often require newer tooling. Upgrading inside the venv keeps the environment self-contained and avoids relying on system/global tooling.",
+      "difficulty": "intermediate",
+      "tags": [
+        "best-practices",
+        "pip-setuptools-wheel",
+        "native-deps",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate created a venv with Python 3.12 and runs `pip install -r requirements.txt`. Installation fails for `torch==2.1.*` and `scipy` with messages about building from source / no matching distribution. What is the most likely root cause and the best practical fix for an AI/ML repo?",
+      "question_type": "mc",
+      "options": [
+        "A. The venv is corrupted; delete it and recreate with the same Python 3.12",
+        "B. The repo should always use `--no-binary :all:` to force source builds for reproducibility",
+        "C. Wheels for some ML packages may not be available for Python 3.12; use a supported Python version (e.g., 3.10/3.11) and recreate the venv with that interpreter",
+        "D. Use `sudo` so pip can compile and install system-wide dependencies"
+      ],
+      "correct_answer": "C",
+      "explanation": "Many ML packages rely on prebuilt wheels; when wheels aren’t available for a Python version/ABI, pip falls back to source builds that often fail without compilers/BLAS/CUDA toolchains. In practice, AI/ML repos pin to Python versions with good wheel coverage (commonly 3.10/3.11). Recreating the venv with a supported interpreter is usually the fastest, most reliable fix.",
+      "difficulty": "intermediate",
+      "tags": [
+        "python-version",
+        "wheels",
+        "native-deps",
+        "torch",
+        "scipy"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In a venv, which installation command pattern best avoids cross-environment contamination and “pip installed into the wrong Python” issues?",
+      "question_type": "mc",
+      "options": [
+        "A. `pip install -r requirements.txt` (after activating the venv)",
+        "B. `sudo pip install -r requirements.txt` (ensures permissions)",
+        "C. `python -m pip install -r requirements.txt` (using the venv’s python)",
+        "D. `pip3 install -r requirements.txt` (matches Python 3)"
+      ],
+      "correct_answer": "C",
+      "explanation": "`python -m pip ...` binds pip to the exact interpreter you’re invoking, which is the most reliable way to avoid mixing global and venv installs. `sudo` is a red flag (it usually installs globally and can break system Python). `pip`/`pip3` depend on PATH resolution and can silently target another environment.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-m-pip",
+        "best-practices",
+        "avoid-sudo",
+        "path-hygiene"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You join an ML repo that requires Python 3.10 because some dependencies don’t have wheels for 3.12 yet. How would you create a venv with a specific Python version, and how would you verify that both the interpreter and pip you’re using belong to that venv?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Install/locate the required interpreter (e.g., python3.10), then create the venv with it: `python3.10 -m venv .venv` (or an absolute path like `/usr/bin/python3.10 -m venv .venv`). Activate it (or use the venv’s python directly). Verify with: `python -V` (or `python -c \"import sys; print(sys.version)\"`), `python -c \"import sys; print(sys.executable)\"` to confirm the venv path, and use `python -m pip -V` to ensure pip is tied to that interpreter. Optionally check `which python`/`which pip` (Unix) or `where python` (Windows), but prefer `sys.executable` and `python -m pip -V` as the source of truth.",
+      "explanation": "In ML repos, Python version selection is often driven by wheel availability (e.g., torch, numpy, scipy). Creating the venv with the desired interpreter ensures the environment is built around that Python ABI. Verifying via `sys.executable` and `python -m pip -V` prevents a common class of issues where `pip` points to a different interpreter than `python`, leading to “installed but cannot import” problems.",
+      "difficulty": "beginner",
+      "tags": [
+        "python-version",
+        "venv-creation",
+        "path-hygiene",
+        "python-m-pip"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Scenario: You have two terminals.\n- Terminal A: venv activated, you run `pip install -r requirements.txt` successfully.\n- Terminal B: you run `python train.py` but it fails with `ModuleNotFoundError: No module named 'sklearn'`.\n\nWhat is the most likely cause and best practice to prevent it?",
+      "question_type": "mc",
+      "options": [
+        "A. `pip install` installs packages only for Jupyter, not for scripts; you must use `conda install` for scripts",
+        "B. Terminal B is using a different interpreter (not the venv); prevent by activating the venv in every shell and/or using explicit interpreter paths like `.venv/bin/python train.py` (or `python -m pip` / `python -m ...` patterns)",
+        "C. `sklearn` cannot be installed in a venv; it requires system-wide installation",
+        "D. The fix is to set `PYTHONPATH` to the venv’s site-packages directory permanently"
+      ],
+      "correct_answer": "B",
+      "explanation": "The common issue is mixing environments: packages were installed into the venv (Terminal A), but Terminal B is running system Python (or a different venv). Best practices include activating the venv in each terminal, using `python -m pip` to ensure pip matches the interpreter, and optionally running scripts via the venv’s explicit python path (or using tooling like `make`, `tox`, or `uv` scripts) to reduce human error. Permanently setting `PYTHONPATH` is brittle and can mask problems.",
+      "difficulty": "beginner",
+      "tags": [
+        "system_python_conflicts",
+        "debugging",
+        "install_dependencies",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Provide the exact commands to create a Jupyter kernel for a venv named `.venv` so that notebooks use the venv’s Python.\n\nAssume you already created the venv. Include the steps to install the kernel and how you would verify in a notebook that it’s using the right interpreter.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n1) Activate the venv:\n- macOS/Linux:\n```bash\nsource .venv/bin/activate\n```\n- Windows PowerShell:\n```powershell\n.\\.venv\\Scripts\\Activate.ps1\n```\n\n2) Install Jupyter kernel support in the venv:\n```bash\npip install ipykernel\n```\n\n3) Register the kernel:\n```bash\npython -m ipykernel install --user --name myproj-venv --display-name \"Python (myproj-venv)\"\n```\n\n4) In Jupyter, select kernel: `Python (myproj-venv)`.\n\n5) Verify in a notebook cell:\n```python\nimport sys\nprint(sys.executable)\n```\nIt should point to `.venv/bin/python` (macOS/Linux) or `.venv\\Scripts\\python.exe` (Windows).",
+      "explanation": "Installing `ipykernel` and registering a kernel spec ensures the notebook runs the venv’s interpreter, independent of how Jupyter was launched. Verifying with `sys.executable` is a practical way to confirm you’re not accidentally using system Python (a common cause of missing-package errors).",
+      "difficulty": "intermediate",
+      "tags": [
+        "jupyter",
+        "ipykernel",
+        "create_activate",
+        "debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You created a venv and installed dependencies, but Jupyter Notebook shows a kernel that still runs the system Python, causing `ModuleNotFoundError` for packages you installed in the venv.\n\nWhat is the most correct fix?",
+      "question_type": "mc",
+      "options": [
+        "A. Rename the venv folder to `jupyter/` so Jupyter detects it automatically",
+        "B. Install `ipykernel` inside the venv and register a kernel spec pointing to the venv’s Python, then select that kernel in Jupyter",
+        "C. Run `pip install jupyter` globally (outside the venv) so it can see all venv packages",
+        "D. Delete `requirements.txt` and reinstall packages with `--user`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Jupyter kernels are separate from your shell activation. The robust approach is: activate the venv, install `ipykernel`, then register it (e.g., `python -m ipykernel install --user --name <name> --display-name \"Python (<name>)\"`). Then, in the notebook UI, choose that kernel. Renaming folders or installing globally doesn’t reliably bind the notebook to the venv interpreter.",
+      "difficulty": "intermediate",
+      "tags": [
+        "jupyter",
+        "ipykernel",
+        "wrong_kernel_debugging"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "A teammate cloned your repo and ran:\n```bash\npython -m venv .venv\nsource .venv/bin/activate\npip install -r requirements.txt\n```\nBut installation fails on their machine with errors related to platform-specific wheels (e.g., `torch`, `tensorflow`, `xformers`) or CUDA variants.\n\nWhich is the best explanation and mitigation strategy?",
+      "question_type": "mc",
+      "options": [
+        "A. venvs cannot install binary packages; only pure-Python packages work, so you must use Docker instead",
+        "B. `requirements.txt` always guarantees identical installs across OS/GPUs; the failure indicates their pip is broken",
+        "C. Some packages have OS/CPU/GPU-specific wheels and/or require different indexes/builds; mitigate by documenting platform-specific install steps (e.g., PyTorch CUDA index URL), using environment markers/constraints, or using a higher-level lock tool for multi-platform support",
+        "D. The fix is to copy your entire `.venv` directory into their repo so they get the same binaries"
+      ],
+      "correct_answer": "C",
+      "explanation": "AI/ML stacks often depend on compiled wheels that differ by OS, Python version, CPU vs GPU, and CUDA version. A single `requirements.txt` may not be portable across platforms or GPU setups. Common mitigations include: providing separate requirements files (cpu/gpu), using pip extra index URLs for PyTorch CUDA wheels, adding environment markers, using constraints files, or using tooling that can manage multi-platform locks. Copying a venv directory is fragile and often breaks across machines.",
+      "difficulty": "advanced",
+      "tags": [
+        "reproduce_environment",
+        "platform_specific_wheels",
+        "cuda_torch_variants",
+        "pitfalls"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re debugging a model training environment and need to verify exactly which version of PyTorch and CUDA-related build you installed in the venv.\n\nWhat commands would you run to inspect the installed package version and where it’s installed? Provide at least two commands and what you’d look for in the output.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n1) Check version/build from Python:\n```bash\npython -c \"import torch; print(torch.__version__); print(torch.version.cuda); print(torch.cuda.is_available())\"\n```\nLook for a version suffix like `+cu121` (or `cpu`) and whether CUDA is detected.\n\n2) Check package metadata and install location:\n```bash\npip show torch\n```\nLook for `Version:` and `Location:` (should be inside the venv site-packages path).\n\nOptional:\n```bash\npip list | grep -E \"torch|nvidia|cuda\"\n```\n(or Windows: `pip list | findstr torch`) to see related packages.",
+      "explanation": "For AI/ML, it’s common to need both the Python-level view (e.g., `torch.__version__`, CUDA availability) and the packaging-level view (`pip show` reveals the installed location and version). This helps diagnose issues like installing a CPU-only wheel on a GPU machine, or accidentally using a global/site package instead of the venv.",
+      "difficulty": "intermediate",
+      "tags": [
+        "install_dependencies",
+        "debugging",
+        "cuda_torch_variants"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "Inside an activated venv, you want to capture an exact snapshot of installed Python packages to share with teammates.\n\nWhich command is the best fit for generating a `requirements.txt` from the current environment?",
+      "question_type": "mc",
+      "options": [
+        "A. `pip list > requirements.txt`",
+        "B. `pip freeze > requirements.txt`",
+        "C. `python -m venv freeze > requirements.txt`",
+        "D. `pip show --all > requirements.txt`"
+      ],
+      "correct_answer": "B",
+      "explanation": "`pip freeze` outputs packages in a format directly consumable by `pip install -r requirements.txt` (typically pinned versions like `numpy==...`). `pip list` is human-friendly but not the standard requirements format. `venv freeze` doesn’t exist, and `pip show` is per-package metadata rather than a complete, installable lock-style list.",
+      "difficulty": "beginner",
+      "tags": [
+        "pip_freeze",
+        "requirements_txt",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You’re onboarding a teammate to run your training code. Write the minimal, cross-platform friendly steps (commands) to:\n1) create a venv,\n2) activate it,\n3) install dependencies from `requirements.txt`,\n4) run `train.py`,\n5) deactivate.\n\nInclude separate activation commands for macOS/Linux and Windows PowerShell.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Example:\n\n1) Create venv:\n```bash\npython -m venv .venv\n```\n\n2) Activate:\n- macOS/Linux (bash/zsh):\n```bash\nsource .venv/bin/activate\n```\n- Windows PowerShell:\n```powershell\n.\\.venv\\Scripts\\Activate.ps1\n```\n\n3) Install deps:\n```bash\npython -m pip install --upgrade pip\npip install -r requirements.txt\n```\n\n4) Run:\n```bash\npython train.py\n```\n\n5) Deactivate:\n```bash\ndeactivate\n```",
+      "explanation": "A good answer demonstrates the standard workflow: create with `python -m venv`, activate using OS-appropriate scripts, install using pip inside the venv (often upgrading pip first), run using the venv’s `python`, then `deactivate`. Using `python -m pip` helps ensure pip corresponds to the active interpreter, which reduces “wrong pip” issues.",
+      "difficulty": "intermediate",
+      "tags": [
+        "create_activate",
+        "install_dependencies",
+        "reproducibility",
+        "cross_platform"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to create and activate a venv for a new ML repo on different OSes.\n\nWhich set of commands is correct?\n\nAssume the venv directory name is `.venv`.",
+      "question_type": "mc",
+      "options": [
+        "A. Create: `python -m venv .venv` | Activate (macOS/Linux): `source .venv/bin/activate` | Activate (Windows PowerShell): `.\\.venv\\Scripts\\Activate.ps1` | Deactivate: `deactivate`",
+        "B. Create: `pip -m venv .venv` | Activate (macOS/Linux): `activate .venv/bin` | Activate (Windows PowerShell): `source .venv/Scripts/activate` | Deactivate: `exit`",
+        "C. Create: `python -m virtualenv .venv` | Activate (macOS/Linux): `python .venv/bin/activate` | Activate (Windows PowerShell): `activate .venv\\Scripts` | Deactivate: `rm -rf .venv`",
+        "D. Create: `conda create -n .venv python` | Activate (macOS/Linux): `conda activate .venv` | Activate (Windows PowerShell): `conda enable .venv` | Deactivate: `conda deactivate`"
+      ],
+      "correct_answer": "A",
+      "explanation": "`python -m venv .venv` is the standard-library way to create a venv. Activation differs by OS/shell: `source .venv/bin/activate` on macOS/Linux, and on Windows PowerShell it’s typically `.\\.venv\\Scripts\\Activate.ps1` (cmd.exe uses `.venv\\Scripts\\activate.bat`). `deactivate` exits the environment without deleting it. Options B/C contain incorrect commands, and D describes conda, not venv.",
+      "difficulty": "beginner",
+      "tags": [
+        "create_activate",
+        "cross_platform"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "You suspect your training script is accidentally using system Python packages instead of your project venv.\n\nWhat is the most reliable quick check to confirm the currently active interpreter is from the venv?",
+      "question_type": "mc",
+      "options": [
+        "A. Run `pip install -U pip` and see if it succeeds",
+        "B. Run `python -c \"import sys; print(sys.executable)\"` and verify it points inside the venv directory",
+        "C. Run `ls` and check whether a `venv/` folder exists",
+        "D. Run `python -V` and ensure the version is at least 3.10"
+      ],
+      "correct_answer": "B",
+      "explanation": "The definitive check is the interpreter path (`sys.executable`). If it points to something like `<project>/venv/bin/python` (macOS/Linux) or `<project>\\venv\\Scripts\\python.exe` (Windows), you are running the venv’s interpreter. Merely having a venv folder or a certain Python version doesn’t prove it’s active, and upgrading pip doesn’t validate which interpreter is in use.",
+      "difficulty": "beginner",
+      "tags": [
+        "venv_basics",
+        "debugging",
+        "system_python_conflicts"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    },
+    {
+      "question_text": "In an AI/ML project, why is using a Python venv important?\n\nChoose the best answer.",
+      "question_type": "mc",
+      "options": [
+        "A. It makes Python code run faster by compiling packages ahead of time",
+        "B. It isolates dependencies per project to improve reproducibility and avoid conflicts with system/global Python packages",
+        "C. It automatically installs GPU drivers and CUDA libraries required for deep learning frameworks",
+        "D. It encrypts your model files and training data by default"
+      ],
+      "correct_answer": "B",
+      "explanation": "A venv creates an isolated Python environment (its own site-packages and executables) so different projects can use different library versions without clobbering each other. This matters in AI/ML because dependency stacks (numpy/pandas/scikit-learn/torch/tensorflow) are version-sensitive, and reproducibility is critical for rerunning training/inference later or on another machine. venv does not inherently speed execution, install GPU drivers, or provide encryption.",
+      "difficulty": "beginner",
+      "tags": [
+        "venv_basics",
+        "dependency_isolation",
+        "reproducibility"
+      ],
+      "source": "claude_api",
+      "is_active": true
+    }
+  ]
+}
