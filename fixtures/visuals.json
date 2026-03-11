@@ -35460,5 +35460,1189 @@
     "created_at": "2026-03-11T16:30:13.183Z",
     "updated_at": "2026-03-11T16:30:13.183Z"
   }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 592,
+  "fields": {
+    "subject": 65,
+    "title": "Request/Response Lifecycle",
+    "slug": "fastapi-request-response-lifecycle",
+    "description": "How a request flows through FastAPI from ASGI server to response",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Initial State",
+        "explanation": "A FastAPI application runs on an **ASGI server** (like Uvicorn). When a client sends an HTTP request, it enters the ASGI pipeline and flows through multiple layers before reaching your endpoint handler.",
+        "diagram_data": "flowchart TB\n    Client[\"Client Browser/App\"]\n    ASGI[\"ASGI Server\\n(Uvicorn/Hypercorn)\"]\n    App[\"FastAPI Application\"]\n    Handler[\"Endpoint Handler\"]\n    \n    Client -.->|HTTP Request| ASGI\n    ASGI -.-> App\n    App -.-> Handler\n    \n    style Client fill:#e1e1e1,stroke:#666\n    style ASGI fill:#e1e1e1,stroke:#666\n    style App fill:#e1e1e1,stroke:#666\n    style Handler fill:#e1e1e1,stroke:#666"
+      },
+      {
+        "step_number": 1,
+        "title": "Request Hits ASGI Server",
+        "explanation": "The **ASGI server** (Uvicorn) receives the raw HTTP request. It parses headers, method, path, and body into an ASGI scope dictionary. This is the entry point for all async Python web frameworks.",
+        "diagram_data": "flowchart TB\n    Client[\"Client Browser/App\"]\n    ASGI[\"ASGI Server\\n(Uvicorn/Hypercorn)\"]\n    App[\"FastAPI Application\"]\n    Handler[\"Endpoint Handler\"]\n    \n    Client ==>|\"POST /users\\nHeaders, Body\"| ASGI\n    ASGI -.-> App\n    App -.-> Handler\n    \n    style Client fill:#4ade80,stroke:#166534\n    style ASGI fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style App fill:#e1e1e1,stroke:#666\n    style Handler fill:#e1e1e1,stroke:#666"
+      },
+      {
+        "step_number": 2,
+        "title": "Middleware Processing",
+        "explanation": "Request passes through the **middleware stack** in order. Each middleware can inspect/modify the request, or short-circuit the response. Common middleware: CORS, authentication, logging, compression.",
+        "diagram_data": "flowchart TB\n    Client[\"Client\"]\n    ASGI[\"ASGI Server\"]\n    MW1[\"CORS Middleware\"]\n    MW2[\"Auth Middleware\"]\n    MW3[\"Logging Middleware\"]\n    App[\"FastAPI Router\"]\n    \n    Client --> ASGI\n    ASGI ==> MW1\n    MW1 ==> MW2\n    MW2 ==> MW3\n    MW3 -.-> App\n    \n    style MW1 fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style MW2 fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style MW3 fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Client fill:#4ade80,stroke:#166534\n    style ASGI fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 3,
+        "title": "Route Matching",
+        "explanation": "FastAPI's **router** matches the request path and method to a registered endpoint. It uses Starlette's routing under the hood. Path parameters are extracted (e.g., `/users/{user_id}`).",
+        "diagram_data": "flowchart TB\n    Request[\"POST /users/123\"]\n    Router[\"FastAPI Router\"]\n    Route1[\"GET /users\"]\n    Route2[\"POST /users/{user_id}\"]\n    Route3[\"DELETE /users/{user_id}\"]\n    Match[\"Match Found!\\nuser_id=123\"]\n    \n    Request ==> Router\n    Router --> Route1\n    Router ==>|\"✓ Match\"| Route2\n    Router --> Route3\n    Route2 ==> Match\n    \n    style Request fill:#4ade80,stroke:#166534\n    style Router fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Route2 fill:#4ade80,stroke:#166534,stroke-width:3px\n    style Match fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Dependency Resolution",
+        "explanation": "Before calling the handler, FastAPI resolves all **dependencies** declared with `Depends()`. Dependencies form a tree and are resolved recursively. Results are cached within the request.",
+        "diagram_data": "flowchart TB\n    Handler[\"create_user()\"]\n    Dep1[\"Depends(get_db)\"]\n    Dep2[\"Depends(get_current_user)\"]\n    Dep3[\"Depends(get_token)\"]\n    DB[(\"Database Session\")]\n    User[\"Current User\"]\n    \n    Handler --> Dep1\n    Handler --> Dep2\n    Dep2 --> Dep3\n    Dep1 ==>|\"Resolved\"| DB\n    Dep3 ==>|\"Resolved\"| Dep2\n    Dep2 ==>|\"Resolved\"| User\n    \n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Dep1 fill:#60a5fa,stroke:#2563eb\n    style Dep2 fill:#60a5fa,stroke:#2563eb\n    style Dep3 fill:#60a5fa,stroke:#2563eb\n    style DB fill:#4ade80,stroke:#166534\n    style User fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 5,
+        "title": "Request Validation",
+        "explanation": "FastAPI uses **Pydantic** to validate path parameters, query parameters, headers, and request body against your type hints. Invalid data triggers automatic 422 Validation Error responses.",
+        "diagram_data": "flowchart TB\n    Body[\"{name: 'John', age: 'invalid'}\"]\n    Pydantic[\"Pydantic Validation\"]\n    Schema[\"class User:\\n  name: str\\n  age: int\"]\n    Valid[\"Valid Data\"]\n    Error[\"422 Validation Error\"]\n    \n    Body ==> Pydantic\n    Schema --> Pydantic\n    Pydantic -->|\"✓ Valid\"| Valid\n    Pydantic ==>|\"✗ 'invalid' not int\"| Error\n    \n    style Body fill:#fbbf24,stroke:#d97706\n    style Pydantic fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Schema fill:#60a5fa,stroke:#2563eb\n    style Error fill:#f87171,stroke:#dc2626,stroke-width:3px"
+      },
+      {
+        "step_number": 6,
+        "title": "Handler Execution",
+        "explanation": "With dependencies resolved and data validated, the **endpoint handler** executes. For `async def` handlers, FastAPI awaits them directly. For regular `def` handlers, they run in a thread pool.",
+        "diagram_data": "flowchart TB\n    Handler[\"@app.post('/users')\\nasync def create_user(...)\"]\n    Logic[\"Business Logic\\ndb.add(user)\\nawait db.commit()\"]\n    Result[\"Return Value\\nUserResponse(id=1, ...)\"]\n    \n    Handler ==>|\"await\"| Logic\n    Logic ==> Result\n    \n    style Handler fill:#4ade80,stroke:#166534,stroke-width:3px\n    style Logic fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Result fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "Response Serialization",
+        "explanation": "The return value is serialized using the **response_model** Pydantic schema. Fields are filtered based on `response_model_exclude`, `response_model_include`. JSON encoding handles datetime, UUID, etc.",
+        "diagram_data": "flowchart TB\n    Return[\"UserResponse(\\n  id=1,\\n  name='John',\\n  password='secret'\\n)\"]\n    Model[\"response_model=UserOut\\nexclude={'password'}\"]\n    JSON[\"{\\n  'id': 1,\\n  'name': 'John'\\n}\"]\n    \n    Return ==> Model\n    Model ==>|\"Serialize & Filter\"| JSON\n    \n    style Return fill:#60a5fa,stroke:#2563eb\n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style JSON fill:#4ade80,stroke:#166534,stroke-width:3px"
+      },
+      {
+        "step_number": 8,
+        "title": "Response Returns",
+        "explanation": "The JSON response travels back through middleware (in reverse order), then through ASGI server to the client. Middleware can modify response headers, compress body, or log the response.",
+        "diagram_data": "flowchart TB\n    Handler[\"Handler\"]\n    MW3[\"Logging MW\\n(log response)\"]\n    MW2[\"Auth MW\"]\n    MW1[\"CORS MW\\n(add headers)\"]\n    ASGI[\"ASGI Server\"]\n    Client[\"Client\"]\n    \n    Handler ==>|\"200 OK\"| MW3\n    MW3 ==> MW2\n    MW2 ==> MW1\n    MW1 ==> ASGI\n    ASGI ==>|\"HTTP Response\"| Client\n    \n    style Handler fill:#4ade80,stroke:#166534\n    style MW3 fill:#60a5fa,stroke:#2563eb\n    style MW2 fill:#60a5fa,stroke:#2563eb\n    style MW1 fill:#60a5fa,stroke:#2563eb\n    style ASGI fill:#4ade80,stroke:#166534\n    style Client fill:#4ade80,stroke:#166534,stroke-width:3px"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:42:01.824Z",
+    "updated_at": "2026-03-11T16:42:01.824Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 593,
+  "fields": {
+    "subject": 65,
+    "title": "Path Operations & Routing",
+    "slug": "fastapi-path-operations-routing",
+    "description": "Understanding FastAPI decorators, path/query parameters, and request body handling",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Path Operation Decorators",
+        "explanation": "FastAPI uses **decorators** to register endpoint handlers. Each decorator corresponds to an HTTP method: `@app.get()`, `@app.post()`, `@app.put()`, `@app.delete()`, `@app.patch()`, etc.",
+        "diagram_data": "flowchart TB\n    App[\"FastAPI()\"]\n    Get[\"@app.get('/items')\"]\n    Post[\"@app.post('/items')\"]\n    Put[\"@app.put('/items/{id}')\"]\n    Delete[\"@app.delete('/items/{id}')\"]\n    \n    App --> Get\n    App --> Post\n    App --> Put\n    App --> Delete\n    \n    style App fill:#4ade80,stroke:#166534,stroke-width:3px\n    style Get fill:#60a5fa,stroke:#2563eb\n    style Post fill:#fbbf24,stroke:#d97706\n    style Put fill:#a78bfa,stroke:#7c3aed\n    style Delete fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 1,
+        "title": "Path Parameters",
+        "explanation": "**Path parameters** are extracted from the URL using curly braces `{param}`. They must be declared as function arguments with type hints. FastAPI validates and converts them automatically.",
+        "diagram_data": "flowchart LR\n    URL[\"/users/123/posts/456\"]\n    Path[\"/users/{user_id}/posts/{post_id}\"]\n    Func[\"def get_post(\\n  user_id: int,\\n  post_id: int\\n)\"]\n    Values[\"user_id = 123\\npost_id = 456\"]\n    \n    URL --> Path\n    Path --> Func\n    Func --> Values\n    \n    style URL fill:#4ade80,stroke:#166534\n    style Path fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Func fill:#60a5fa,stroke:#2563eb\n    style Values fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 2,
+        "title": "Query Parameters",
+        "explanation": "**Query parameters** are function arguments NOT in the path. They come from `?key=value` in the URL. Use `Optional` or default values to make them optional.",
+        "diagram_data": "flowchart LR\n    URL[\"/items?skip=10&limit=20\"]\n    Func[\"def get_items(\\n  skip: int = 0,\\n  limit: int = 10\\n)\"]\n    Values[\"skip = 10\\nlimit = 20\"]\n    \n    URL --> Func\n    Func --> Values\n    \n    subgraph Optional[\"Optional with defaults\"]\n        Func\n    end\n    \n    style URL fill:#4ade80,stroke:#166534\n    style Func fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Values fill:#4ade80,stroke:#166534\n    style Optional fill:#f0f0f0,stroke:#666"
+      },
+      {
+        "step_number": 3,
+        "title": "Request Body",
+        "explanation": "**Request body** is declared using Pydantic models as type hints. FastAPI reads JSON from the request body, validates it against the model, and passes the parsed object to your handler.",
+        "diagram_data": "flowchart TB\n    JSON[\"{\\n  'name': 'Widget',\\n  'price': 29.99\\n}\"]\n    Model[\"class Item(BaseModel):\\n  name: str\\n  price: float\"]\n    Func[\"def create_item(\\n  item: Item\\n)\"]\n    Access[\"item.name → 'Widget'\\nitem.price → 29.99\"]\n    \n    JSON --> Model\n    Model --> Func\n    Func --> Access\n    \n    style JSON fill:#60a5fa,stroke:#2563eb\n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Func fill:#60a5fa,stroke:#2563eb\n    style Access fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Combining Parameters",
+        "explanation": "You can combine **path, query, and body** parameters in a single endpoint. FastAPI automatically determines which is which based on the function signature and type hints.",
+        "diagram_data": "flowchart TB\n    Request[\"PUT /items/5?notify=true\\nBody: {name: 'New'}\"]\n    Func[\"def update_item(\\n  item_id: int,      # path\\n  notify: bool,      # query\\n  item: ItemUpdate   # body\\n)\"]\n    Path[\"item_id = 5\"]\n    Query[\"notify = True\"]\n    Body[\"item = ItemUpdate(...)\"]\n    \n    Request --> Func\n    Func --> Path\n    Func --> Query\n    Func --> Body\n    \n    style Request fill:#4ade80,stroke:#166534\n    style Func fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Path fill:#f87171,stroke:#dc2626\n    style Query fill:#60a5fa,stroke:#2563eb\n    style Body fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 5,
+        "title": "Path Parameter Validation",
+        "explanation": "Use **Path()** for advanced path parameter validation: constraints, metadata, examples. You can set `ge`, `le`, `gt`, `lt` for numeric constraints, or regex patterns for strings.",
+        "diagram_data": "flowchart TB\n    Func[\"def get_item(\\n  item_id: int = Path(\\n    ...,\\n    ge=1,\\n    le=1000,\\n    title='Item ID'\\n  )\\n)\"]\n    Valid[\"/items/500 → ✓\"]\n    Invalid1[\"/items/0 → 422\"]\n    Invalid2[\"/items/9999 → 422\"]\n    \n    Func --> Valid\n    Func --> Invalid1\n    Func --> Invalid2\n    \n    style Func fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Valid fill:#4ade80,stroke:#166534\n    style Invalid1 fill:#f87171,stroke:#dc2626\n    style Invalid2 fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 6,
+        "title": "Query Parameter Validation",
+        "explanation": "Use **Query()** for query parameter validation and metadata. Supports `min_length`, `max_length`, `regex` for strings, numeric constraints, and deprecation warnings.",
+        "diagram_data": "flowchart TB\n    Func[\"def search(\\n  q: str = Query(\\n    ...,\\n    min_length=3,\\n    max_length=50,\\n    regex='^[a-z]+$'\\n  )\\n)\"]\n    Valid[\"?q=hello → ✓\"]\n    Short[\"?q=ab → 422\\n'too short'\"]\n    Invalid[\"?q=Hello123 → 422\\n'regex mismatch'\"]\n    \n    Func --> Valid\n    Func --> Short\n    Func --> Invalid\n    \n    style Func fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Valid fill:#4ade80,stroke:#166534\n    style Short fill:#f87171,stroke:#dc2626\n    style Invalid fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 7,
+        "title": "Multiple Values",
+        "explanation": "Query parameters can accept **multiple values** using `list[]` type hints. This handles URLs like `?tag=python&tag=fastapi`. Path params with regex can capture complex patterns.",
+        "diagram_data": "flowchart TB\n    URL[\"?tag=python&tag=fastapi&tag=api\"]\n    Func[\"def get_items(\\n  tag: list[str] = Query([])\\n)\"]\n    Result[\"tag = ['python', 'fastapi', 'api']\"]\n    \n    URL --> Func\n    Func --> Result\n    \n    style URL fill:#4ade80,stroke:#166534\n    style Func fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Result fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 8,
+        "title": "Route Priority",
+        "explanation": "Routes are matched in **declaration order**. Put specific routes before parameterized ones. `/users/me` must come before `/users/{user_id}` or it will never match.",
+        "diagram_data": "flowchart TB\n    Request[\"/users/me\"]\n    Route1[\"@app.get('/users/me')\\n# FIRST - specific\"]\n    Route2[\"@app.get('/users/{user_id}')\\n# SECOND - generic\"]\n    Match[\"Matches /users/me\"]\n    NoMatch[\"Never reached for 'me'\"]\n    \n    Request --> Route1\n    Route1 ==>|\"✓ Match\"| Match\n    Route2 -.->|\"Would match 'me' as ID\"| NoMatch\n    \n    style Request fill:#4ade80,stroke:#166534\n    style Route1 fill:#4ade80,stroke:#166534,stroke-width:3px\n    style Route2 fill:#e1e1e1,stroke:#666\n    style Match fill:#4ade80,stroke:#166534\n    style NoMatch fill:#f87171,stroke:#dc2626"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:42:01.826Z",
+    "updated_at": "2026-03-11T16:42:01.826Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 594,
+  "fields": {
+    "subject": 65,
+    "title": "Dependency Injection System",
+    "slug": "fastapi-dependency-injection",
+    "description": "How FastAPI's Depends() works for reusable components and dependency trees",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What is Dependency Injection?",
+        "explanation": "**Dependency Injection** is a pattern where functions receive their dependencies as parameters rather than creating them. FastAPI's `Depends()` automates this, calling dependency functions and passing results to your handlers.",
+        "diagram_data": "flowchart TB\n    subgraph Without[\"Without DI\"]\n        H1[\"def handler():\\n  db = get_db()\\n  user = get_user()\"]\n    end\n    \n    subgraph With[\"With FastAPI DI\"]\n        H2[\"def handler(\\n  db = Depends(get_db),\\n  user = Depends(get_user)\\n)\"]\n    end\n    \n    Without --> With\n    \n    style Without fill:#f87171,stroke:#dc2626\n    style With fill:#4ade80,stroke:#166534\n    style H1 fill:#fecaca,stroke:#dc2626\n    style H2 fill:#bbf7d0,stroke:#166534"
+      },
+      {
+        "step_number": 1,
+        "title": "Basic Dependency",
+        "explanation": "A dependency is any **callable** (function, class, lambda). FastAPI calls it before your handler, and injects the return value as a parameter. Dependencies can have their own parameters too.",
+        "diagram_data": "flowchart TB\n    Dep[\"def get_db():\\n  db = SessionLocal()\\n  try:\\n    yield db\\n  finally:\\n    db.close()\"]\n    Handler[\"def get_users(\\n  db = Depends(get_db)\\n):\\n  return db.query(User)\"]\n    Call[\"1. FastAPI calls get_db()\\n2. Yields db session\\n3. Injects into handler\\n4. Handler executes\\n5. Finally closes db\"]\n    \n    Dep --> Handler\n    Handler --> Call\n    \n    style Dep fill:#60a5fa,stroke:#2563eb\n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Call fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 2,
+        "title": "Dependency Tree",
+        "explanation": "Dependencies can depend on other dependencies, forming a **tree**. FastAPI resolves them in the correct order. Each dependency is called once per request and cached.",
+        "diagram_data": "flowchart TB\n    Handler[\"create_post()\"]\n    Auth[\"Depends(get_current_user)\"]\n    DB[\"Depends(get_db)\"]\n    Token[\"Depends(get_token)\"]\n    Settings[\"Depends(get_settings)\"]\n    \n    Handler --> Auth\n    Handler --> DB\n    Auth --> Token\n    Auth --> DB\n    Token --> Settings\n    \n    style Handler fill:#4ade80,stroke:#166534,stroke-width:3px\n    style Auth fill:#fbbf24,stroke:#d97706\n    style DB fill:#60a5fa,stroke:#2563eb\n    style Token fill:#a78bfa,stroke:#7c3aed\n    style Settings fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 3,
+        "title": "Class Dependencies",
+        "explanation": "Classes can be dependencies too. FastAPI calls `__init__` and injects the instance. This is useful for dependencies with multiple parameters or shared state.",
+        "diagram_data": "flowchart TB\n    Class[\"class Pagination:\\n  def __init__(\\n    self,\\n    skip: int = 0,\\n    limit: int = 10\\n  ):\\n    self.skip = skip\\n    self.limit = limit\"]\n    Handler[\"def get_items(\\n  pagination: Pagination = Depends()\\n):\\n  return items[p.skip:p.skip+p.limit]\"]\n    URL[\"?skip=20&limit=5\"]\n    Result[\"pagination.skip = 20\\npagination.limit = 5\"]\n    \n    URL --> Class\n    Class --> Handler\n    Handler --> Result\n    \n    style Class fill:#60a5fa,stroke:#2563eb,stroke-width:3px\n    style Handler fill:#fbbf24,stroke:#d97706\n    style URL fill:#4ade80,stroke:#166534\n    style Result fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Yield Dependencies",
+        "explanation": "Use **yield** for dependencies that need cleanup (database sessions, file handles, locks). Code after yield runs after the response is sent. Essential for resource management.",
+        "diagram_data": "flowchart TB\n    subgraph Lifecycle[\"Dependency Lifecycle\"]\n        Before[\"1. Setup\\ndb = SessionLocal()\"]\n        Yield[\"2. yield db\\n(handler runs)\"]\n        After[\"3. Cleanup\\ndb.close()\"]\n    end\n    \n    Before --> Yield\n    Yield --> After\n    \n    Handler[\"Handler executes\\nwith db session\"]\n    Yield -.->|\"Inject\"| Handler\n    Handler -.->|\"Done\"| After\n    \n    style Before fill:#60a5fa,stroke:#2563eb\n    style Yield fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style After fill:#4ade80,stroke:#166534\n    style Handler fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 5,
+        "title": "Path Operation Dependencies",
+        "explanation": "Apply dependencies to **all routes** in a path operation using the `dependencies` parameter. Useful for authentication checks that don't need return values.",
+        "diagram_data": "flowchart TB\n    Router[\"router = APIRouter(\\n  dependencies=[\\n    Depends(verify_token),\\n    Depends(log_request)\\n  ]\\n)\"]\n    Route1[\"@router.get('/users')\"]\n    Route2[\"@router.post('/users')\"]\n    Route3[\"@router.delete('/users/{id}')\"]\n    \n    Router --> Route1\n    Router --> Route2\n    Router --> Route3\n    \n    Check[\"verify_token runs\\nfor ALL routes\"]\n    Router -.-> Check\n    \n    style Router fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Route1 fill:#60a5fa,stroke:#2563eb\n    style Route2 fill:#60a5fa,stroke:#2563eb\n    style Route3 fill:#60a5fa,stroke:#2563eb\n    style Check fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Global Dependencies",
+        "explanation": "Apply dependencies to the **entire application** using the `dependencies` parameter on `FastAPI()`. These run for every single request to your API.",
+        "diagram_data": "flowchart TB\n    App[\"app = FastAPI(\\n  dependencies=[\\n    Depends(verify_api_key)\\n  ]\\n)\"]\n    All[\"All Routes\"]\n    R1[\"/users\"]\n    R2[\"/items\"]\n    R3[\"/orders\"]\n    Check[\"verify_api_key()\\nruns on EVERY request\"]\n    \n    App --> All\n    All --> R1\n    All --> R2\n    All --> R3\n    App -.-> Check\n    \n    style App fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Check fill:#4ade80,stroke:#166534,stroke-width:3px"
+      },
+      {
+        "step_number": 7,
+        "title": "Dependency Caching",
+        "explanation": "By default, dependencies are **cached per request**. If multiple handlers/dependencies use `Depends(get_db)`, the same instance is reused. Use `use_cache=False` to disable.",
+        "diagram_data": "flowchart TB\n    Handler[\"handler()\"]\n    Dep1[\"Depends(get_db)\"]\n    Dep2[\"Depends(get_user)\"]\n    SubDep[\"get_user uses\\nDepends(get_db)\"]\n    DB[(\"Single DB Session\\n(cached)\")]\n    \n    Handler --> Dep1\n    Handler --> Dep2\n    Dep2 --> SubDep\n    Dep1 --> DB\n    SubDep --> DB\n    \n    Note[\"Same session\\nreused!\"]\n    DB -.-> Note\n    \n    style Handler fill:#4ade80,stroke:#166534\n    style DB fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Note fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 8,
+        "title": "Testing with Dependencies",
+        "explanation": "Override dependencies in tests using `app.dependency_overrides`. Map original dependency to mock function. This makes testing easy without hitting real databases or services.",
+        "diagram_data": "flowchart TB\n    Real[\"def get_db():\\n  return real_database\"]\n    Mock[\"def mock_db():\\n  return fake_database\"]\n    Override[\"app.dependency_overrides[\\n  get_db\\n] = mock_db\"]\n    Test[\"# Tests use mock_db\\nclient.get('/users')\"]\n    \n    Real --> Override\n    Mock --> Override\n    Override --> Test\n    \n    style Real fill:#f87171,stroke:#dc2626\n    style Mock fill:#4ade80,stroke:#166534\n    style Override fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Test fill:#60a5fa,stroke:#2563eb"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:42:01.826Z",
+    "updated_at": "2026-03-11T16:42:01.826Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 595,
+  "fields": {
+    "subject": 65,
+    "title": "Pydantic Model Validation",
+    "slug": "fastapi-pydantic-validation",
+    "description": "Request body validation, response models, and automatic serialization",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Pydantic Overview",
+        "explanation": "FastAPI uses **Pydantic** for data validation. Define models with type hints, and Pydantic handles validation, conversion, and serialization automatically. Invalid data triggers 422 errors.",
+        "diagram_data": "flowchart TB\n    JSON[\"{\\n  'name': 'Widget',\\n  'price': 29.99,\\n  'qty': '10'\\n}\"]\n    Model[\"class Item(BaseModel):\\n  name: str\\n  price: float\\n  qty: int\"]\n    Valid[\"Item(\\n  name='Widget',\\n  price=29.99,\\n  qty=10  # converted!\\n)\"]\n    \n    JSON --> Model\n    Model --> Valid\n    \n    style JSON fill:#60a5fa,stroke:#2563eb\n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Valid fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 1,
+        "title": "Required vs Optional Fields",
+        "explanation": "Fields without defaults are **required**. Use `Optional` or `| None` with a default of `None` for optional fields. Use `= ...` to explicitly mark as required.",
+        "diagram_data": "flowchart TB\n    Model[\"class User(BaseModel):\\n  name: str              # required\\n  email: str             # required\\n  bio: str | None = None # optional\\n  age: int = 18          # default\"]\n    \n    Valid[\"{name: 'John', email: 'j@x.com'}\"]\n    Missing[\"{name: 'John'}\"]\n    \n    Valid -->|\"✓ Valid\"| OK[\"bio=None, age=18\"]\n    Missing -->|\"✗ Invalid\"| Err[\"422: email required\"]\n    \n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Valid fill:#4ade80,stroke:#166534\n    style Missing fill:#f87171,stroke:#dc2626\n    style OK fill:#4ade80,stroke:#166534\n    style Err fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 2,
+        "title": "Field Validation",
+        "explanation": "Use **Field()** for constraints: `min_length`, `max_length`, `ge`, `le`, `gt`, `lt`, `regex`, `multiple_of`. Also adds metadata for OpenAPI docs (title, description, example).",
+        "diagram_data": "flowchart TB\n    Model[\"class Product(BaseModel):\\n  name: str = Field(\\n    min_length=1,\\n    max_length=50\\n  )\\n  price: float = Field(\\n    gt=0,\\n    description='USD'\\n  )\\n  sku: str = Field(\\n    regex='^[A-Z]{3}[0-9]{4}$'\\n  )\"]\n    \n    Valid[\"name='Widget'\\nprice=29.99\\nsku='ABC1234'\"]\n    Invalid[\"name=''\\nprice=-10\\nsku='abc'\"]\n    \n    Model --> Valid\n    Model --> Invalid\n    \n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Valid fill:#4ade80,stroke:#166534\n    style Invalid fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 3,
+        "title": "Nested Models",
+        "explanation": "Pydantic models can contain other models for **nested validation**. Use `list[Model]` for arrays of nested objects. Validation happens recursively.",
+        "diagram_data": "flowchart TB\n    JSON[\"{\\n  'name': 'Order 1',\\n  'items': [\\n    {'name': 'A', 'qty': 2},\\n    {'name': 'B', 'qty': 1}\\n  ]\\n}\"]\n    \n    Item[\"class Item(BaseModel):\\n  name: str\\n  qty: int\"]\n    Order[\"class Order(BaseModel):\\n  name: str\\n  items: list[Item]\"]\n    \n    JSON --> Order\n    Order --> Item\n    \n    Result[\"Order(\\n  name='Order 1',\\n  items=[Item(...), Item(...)]\\n)\"]\n    Order --> Result\n    \n    style JSON fill:#60a5fa,stroke:#2563eb\n    style Order fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Item fill:#a78bfa,stroke:#7c3aed\n    style Result fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Custom Validators",
+        "explanation": "Use **@field_validator** for custom validation logic. Access other fields with **@model_validator**. Raise `ValueError` to fail validation with a custom message.",
+        "diagram_data": "flowchart TB\n    Model[\"class User(BaseModel):\\n  password: str\\n  password_confirm: str\\n\\n  @model_validator(mode='after')\\n  def passwords_match(self):\\n    if self.password != self.password_confirm:\\n      raise ValueError('No match')\\n    return self\"]\n    \n    Valid[\"{pw: 'secret', confirm: 'secret'}\"]\n    Invalid[\"{pw: 'secret', confirm: 'wrong'}\"]\n    \n    Valid -->|\"✓\"| OK[\"Validation passes\"]\n    Invalid -->|\"✗\"| Err[\"422: No match\"]\n    \n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Valid fill:#4ade80,stroke:#166534\n    style Invalid fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 5,
+        "title": "Response Models",
+        "explanation": "Use **response_model** to define output schema. FastAPI filters the response to include only declared fields. Great for hiding sensitive data like passwords.",
+        "diagram_data": "flowchart TB\n    DB[\"User from DB:\\n  id=1\\n  email='j@x.com'\\n  password='hashed'\\n  created_at=...\"]\n    \n    Model[\"class UserOut(BaseModel):\\n  id: int\\n  email: str\"]\n    \n    Route[\"@app.get('/user',\\n  response_model=UserOut\\n)\"]\n    \n    Response[\"{\\n  'id': 1,\\n  'email': 'j@x.com'\\n}\\n# password hidden!\"]\n    \n    DB --> Route\n    Model --> Route\n    Route --> Response\n    \n    style DB fill:#f87171,stroke:#dc2626\n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Response fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Multiple Models Pattern",
+        "explanation": "Use separate models for **Create, Update, Read** operations. Create model has required fields, Update model has all optional, Read model includes DB fields like id.",
+        "diagram_data": "flowchart TB\n    Base[\"class UserBase(BaseModel):\\n  email: str\\n  name: str\"]\n    \n    Create[\"class UserCreate(UserBase):\\n  password: str\"]\n    Update[\"class UserUpdate(BaseModel):\\n  email: str | None = None\\n  name: str | None = None\"]\n    Read[\"class UserRead(UserBase):\\n  id: int\\n  created_at: datetime\"]\n    \n    Base --> Create\n    Base --> Read\n    \n    style Base fill:#60a5fa,stroke:#2563eb,stroke-width:3px\n    style Create fill:#4ade80,stroke:#166534\n    style Update fill:#fbbf24,stroke:#d97706\n    style Read fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 7,
+        "title": "Config & JSON Aliases",
+        "explanation": "Use **model_config** (Pydantic v2) for model-wide settings. `from_attributes=True` enables ORM mode. Use `alias` to map JSON keys to different Python names.",
+        "diagram_data": "flowchart TB\n    JSON[\"{\\n  'user-name': 'john',\\n  'emailAddress': 'j@x.com'\\n}\"]\n    \n    Model[\"class User(BaseModel):\\n  model_config = ConfigDict(\\n    from_attributes=True\\n  )\\n  name: str = Field(alias='user-name')\\n  email: str = Field(alias='emailAddress')\"]\n    \n    Python[\"User(\\n  name='john',\\n  email='j@x.com'\\n)\"]\n    \n    JSON --> Model\n    Model --> Python\n    \n    style JSON fill:#60a5fa,stroke:#2563eb\n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Python fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 8,
+        "title": "Validation Error Format",
+        "explanation": "When validation fails, FastAPI returns a **422 Unprocessable Entity** with detailed errors. Each error includes location (body/query/path), field name, message, and error type.",
+        "diagram_data": "flowchart TB\n    Request[\"{\\n  'name': '',\\n  'price': -10\\n}\"]\n    \n    Response[\"422 Unprocessable Entity\\n{\\n  'detail': [\\n    {\\n      'loc': ['body', 'name'],\\n      'msg': 'min_length is 1',\\n      'type': 'string_too_short'\\n    },\\n    {\\n      'loc': ['body', 'price'],\\n      'msg': 'greater than 0',\\n      'type': 'greater_than'\\n    }\\n  ]\\n}\"]\n    \n    Request --> Response\n    \n    style Request fill:#f87171,stroke:#dc2626\n    style Response fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:44:20.822Z",
+    "updated_at": "2026-03-11T16:44:20.822Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 596,
+  "fields": {
+    "subject": 65,
+    "title": "Authentication Flow",
+    "slug": "fastapi-authentication",
+    "description": "OAuth2, JWT tokens, API keys, and security dependencies",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Security Options",
+        "explanation": "FastAPI supports multiple **authentication methods**: OAuth2 with Password/Bearer tokens, API Keys (header, query, cookie), HTTP Basic Auth, and OpenID Connect. Choose based on your use case.",
+        "diagram_data": "flowchart TB\n    Auth[\"FastAPI Security\"]\n    OAuth[\"OAuth2\\nPassword + Bearer\"]\n    API[\"API Key\\nHeader/Query/Cookie\"]\n    Basic[\"HTTP Basic\\nUsername:Password\"]\n    OIDC[\"OpenID Connect\\nGoogle, Auth0, etc.\"]\n    \n    Auth --> OAuth\n    Auth --> API\n    Auth --> Basic\n    Auth --> OIDC\n    \n    style Auth fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style OAuth fill:#4ade80,stroke:#166534\n    style API fill:#60a5fa,stroke:#2563eb\n    style Basic fill:#a78bfa,stroke:#7c3aed\n    style OIDC fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 1,
+        "title": "OAuth2 Password Flow",
+        "explanation": "The **OAuth2 Password flow** is common for first-party apps. User sends username/password to `/token` endpoint, receives JWT access token, then uses it for subsequent requests.",
+        "diagram_data": "flowchart TB\n    Client[\"Client App\"]\n    Login[\"POST /token\\nusername=john\\npassword=secret\"]\n    Verify[\"Verify credentials\\nHash password check\"]\n    Token[\"Generate JWT\\n{sub: 'john', exp: ...}\"]\n    Response[\"{\\n  access_token: 'eyJ...',\\n  token_type: 'bearer'\\n}\"]\n    \n    Client --> Login\n    Login --> Verify\n    Verify --> Token\n    Token --> Response\n    Response --> Client\n    \n    style Login fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Token fill:#4ade80,stroke:#166534\n    style Response fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 2,
+        "title": "JWT Token Structure",
+        "explanation": "**JWT (JSON Web Tokens)** have three parts: Header (algorithm), Payload (claims like user_id, expiration), and Signature (verification). They're base64-encoded and signed.",
+        "diagram_data": "flowchart TB\n    JWT[\"eyJhbGc.eyJzdWI.SflKx\"]\n    \n    Header[\"Header:\\n{\\n  'alg': 'HS256',\\n  'typ': 'JWT'\\n}\"]\n    Payload[\"Payload:\\n{\\n  'sub': 'user123',\\n  'exp': 1699999999,\\n  'role': 'admin'\\n}\"]\n    Sig[\"Signature:\\nHMAC-SHA256(\\n  header + payload,\\n  SECRET_KEY\\n)\"]\n    \n    JWT --> Header\n    JWT --> Payload\n    JWT --> Sig\n    \n    style JWT fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Header fill:#60a5fa,stroke:#2563eb\n    style Payload fill:#4ade80,stroke:#166534\n    style Sig fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 3,
+        "title": "OAuth2PasswordBearer",
+        "explanation": "**OAuth2PasswordBearer** extracts the token from the `Authorization: Bearer <token>` header. Use it as a dependency to get the raw token string.",
+        "diagram_data": "flowchart TB\n    Request[\"GET /users/me\\nAuthorization: Bearer eyJ...\"]\n    \n    Scheme[\"oauth2_scheme = OAuth2PasswordBearer(\\n  tokenUrl='token'\\n)\"]\n    \n    Handler[\"async def get_me(\\n  token: str = Depends(oauth2_scheme)\\n):\\n  # token = 'eyJ...'\"]\n    \n    Request --> Scheme\n    Scheme --> Handler\n    \n    style Request fill:#4ade80,stroke:#166534\n    style Scheme fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Handler fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 4,
+        "title": "get_current_user Dependency",
+        "explanation": "Create a **get_current_user** dependency that decodes the JWT, validates it, and returns the user object. This is the standard pattern for authenticated endpoints.",
+        "diagram_data": "flowchart TB\n    Token[\"token = 'eyJ...'\"]\n    Decode[\"jwt.decode(\\n  token,\\n  SECRET_KEY,\\n  algorithms=['HS256']\\n)\"]\n    Payload[\"{sub: 'john', exp: ...}\"]\n    Query[\"db.query(User).filter(\\n  User.username == 'john'\\n).first()\"]\n    User[\"User object\"]\n    \n    Token --> Decode\n    Decode --> Payload\n    Payload --> Query\n    Query --> User\n    \n    style Token fill:#60a5fa,stroke:#2563eb\n    style Decode fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style User fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 5,
+        "title": "Protected Endpoints",
+        "explanation": "Use `Depends(get_current_user)` on any endpoint that requires authentication. The user object is automatically injected. Unauthenticated requests get 401 Unauthorized.",
+        "diagram_data": "flowchart TB\n    Dep[\"async def get_current_user(...):\\n  # decode token, get user\\n  return user\"]\n    \n    Handler[\"@app.get('/users/me')\\nasync def read_me(\\n  user: User = Depends(get_current_user)\\n):\\n  return user\"]\n    \n    Success[\"200 OK\\n{id: 1, name: 'john'}\"]\n    Fail[\"401 Unauthorized\\n{detail: 'Not authenticated'}\"]\n    \n    Dep --> Handler\n    Handler -->|\"Valid token\"| Success\n    Handler -->|\"Invalid/missing\"| Fail\n    \n    style Dep fill:#60a5fa,stroke:#2563eb\n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Success fill:#4ade80,stroke:#166534\n    style Fail fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 6,
+        "title": "Role-Based Access Control",
+        "explanation": "Extend authentication with **role checks**. Create dependency functions that verify the user has required roles/permissions. Raise HTTPException for forbidden access.",
+        "diagram_data": "flowchart TB\n    User[\"get_current_user\"]\n    Admin[\"def require_admin(\\n  user: User = Depends(get_current_user)\\n):\\n  if user.role != 'admin':\\n    raise HTTPException(403)\\n  return user\"]\n    \n    Handler[\"@app.delete('/users/{id}')\\nasync def delete_user(\\n  user: User = Depends(require_admin)\\n)\"]\n    \n    User --> Admin\n    Admin --> Handler\n    \n    style User fill:#60a5fa,stroke:#2563eb\n    style Admin fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Handler fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "API Key Authentication",
+        "explanation": "For service-to-service auth, use **API Keys**. FastAPI provides `APIKeyHeader`, `APIKeyQuery`, and `APIKeyCookie` for different locations.",
+        "diagram_data": "flowchart TB\n    Scheme[\"api_key_header = APIKeyHeader(\\n  name='X-API-Key',\\n  auto_error=False\\n)\"]\n    \n    Dep[\"async def get_api_key(\\n  key: str = Depends(api_key_header)\\n):\\n  if key != API_KEY:\\n    raise HTTPException(403)\\n  return key\"]\n    \n    Request[\"GET /data\\nX-API-Key: sk-12345\"]\n    \n    Request --> Scheme\n    Scheme --> Dep\n    \n    style Scheme fill:#60a5fa,stroke:#2563eb\n    style Dep fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Request fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 8,
+        "title": "Complete Auth Flow",
+        "explanation": "The complete flow: Client authenticates at `/token`, receives JWT, includes it in subsequent requests. Server validates token, extracts user, checks permissions, then executes handler.",
+        "diagram_data": "flowchart TB\n    Login[\"1. POST /token\\n   username + password\"]\n    JWT[\"2. Receive JWT\"]\n    Request[\"3. GET /protected\\n   Authorization: Bearer\"]\n    Validate[\"4. Validate JWT\"]\n    GetUser[\"5. Load User\"]\n    CheckRole[\"6. Check Permissions\"]\n    Execute[\"7. Execute Handler\"]\n    Response[\"8. Return Response\"]\n    \n    Login --> JWT\n    JWT --> Request\n    Request --> Validate\n    Validate --> GetUser\n    GetUser --> CheckRole\n    CheckRole --> Execute\n    Execute --> Response\n    \n    style Login fill:#60a5fa,stroke:#2563eb\n    style JWT fill:#4ade80,stroke:#166534\n    style Validate fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Execute fill:#4ade80,stroke:#166534"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:44:20.824Z",
+    "updated_at": "2026-03-11T16:44:20.824Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 597,
+  "fields": {
+    "subject": 65,
+    "title": "Middleware Pipeline",
+    "slug": "fastapi-middleware",
+    "description": "Request/response interception, middleware ordering, and common patterns",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What is Middleware?",
+        "explanation": "**Middleware** intercepts every request before it reaches your endpoint, and every response before it's sent to the client. Used for logging, CORS, authentication, compression, timing, etc.",
+        "diagram_data": "flowchart LR\n    Client[\"Client\"]\n    MW1[\"Middleware 1\"]\n    MW2[\"Middleware 2\"]\n    MW3[\"Middleware 3\"]\n    App[\"Endpoint\"]\n    \n    Client -->|\"Request\"| MW1\n    MW1 --> MW2\n    MW2 --> MW3\n    MW3 --> App\n    App -->|\"Response\"| MW3\n    MW3 --> MW2\n    MW2 --> MW1\n    MW1 --> Client\n    \n    style MW1 fill:#fbbf24,stroke:#d97706\n    style MW2 fill:#60a5fa,stroke:#2563eb\n    style MW3 fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 1,
+        "title": "Adding Middleware",
+        "explanation": "Use **@app.middleware('http')** decorator or `app.add_middleware()`. The decorated function receives the request and a `call_next` function to continue the chain.",
+        "diagram_data": "flowchart TB\n    Decorator[\"@app.middleware('http')\\nasync def my_middleware(\\n  request: Request,\\n  call_next\\n):\\n  # before request\\n  response = await call_next(request)\\n  # after response\\n  return response\"]\n    \n    AddMethod[\"app.add_middleware(\\n  MyMiddlewareClass,\\n  param1='value'\\n)\"]\n    \n    style Decorator fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style AddMethod fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 2,
+        "title": "Execution Order",
+        "explanation": "Middleware executes in **reverse order** of registration for requests, and registration order for responses. Last added middleware is closest to your endpoint.",
+        "diagram_data": "flowchart TB\n    Add[\"# Registration order:\\napp.add_middleware(A)  # First\\napp.add_middleware(B)  # Second\\napp.add_middleware(C)  # Third\"]\n    \n    subgraph Request[\"Request Flow\"]\n        direction LR\n        R1[\"A\"] --> R2[\"B\"] --> R3[\"C\"] --> Endpoint\n    end\n    \n    subgraph Response[\"Response Flow\"]\n        direction LR\n        Endpoint2[\"Endpoint\"] --> S3[\"C\"] --> S2[\"B\"] --> S1[\"A\"]\n    end\n    \n    style Add fill:#e1e1e1,stroke:#666\n    style R1 fill:#fbbf24,stroke:#d97706\n    style R3 fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 3,
+        "title": "Timing Middleware",
+        "explanation": "A common pattern: measure **request processing time** and add it to response headers. Capture start time before `call_next`, calculate duration after.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.middleware('http')\\nasync def timing(request, call_next):\\n  start = time.time()\\n  response = await call_next(request)\\n  duration = time.time() - start\\n  response.headers['X-Process-Time'] = str(duration)\\n  return response\"]\n    \n    Request[\"GET /users\"]\n    Response[\"200 OK\\nX-Process-Time: 0.045\"]\n    \n    Request --> Code\n    Code --> Response\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Response fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "CORS Middleware",
+        "explanation": "**CORSMiddleware** handles Cross-Origin Resource Sharing. Configure allowed origins, methods, headers, and credentials. Essential for browser-based API clients.",
+        "diagram_data": "flowchart TB\n    Code[\"from fastapi.middleware.cors import CORSMiddleware\\n\\napp.add_middleware(\\n  CORSMiddleware,\\n  allow_origins=['https://app.com'],\\n  allow_credentials=True,\\n  allow_methods=['*'],\\n  allow_headers=['*'],\\n)\"]\n    \n    Preflight[\"OPTIONS /api/users\\nOrigin: https://app.com\"]\n    Response[\"200 OK\\nAccess-Control-Allow-Origin: https://app.com\\nAccess-Control-Allow-Methods: GET, POST, ...\"]\n    \n    Code --> Preflight\n    Preflight --> Response\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Preflight fill:#60a5fa,stroke:#2563eb\n    style Response fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 5,
+        "title": "GZip Middleware",
+        "explanation": "**GZipMiddleware** compresses responses larger than a minimum size. Reduces bandwidth for JSON/HTML responses. Client must send `Accept-Encoding: gzip`.",
+        "diagram_data": "flowchart TB\n    Code[\"from fastapi.middleware.gzip import GZipMiddleware\\n\\napp.add_middleware(\\n  GZipMiddleware,\\n  minimum_size=1000  # bytes\\n)\"]\n    \n    Original[\"Response: 50KB JSON\"]\n    Compressed[\"Response: 8KB gzipped\\nContent-Encoding: gzip\"]\n    \n    Code --> Original\n    Original --> Compressed\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Original fill:#f87171,stroke:#dc2626\n    style Compressed fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Request ID Middleware",
+        "explanation": "Add a **unique request ID** to every request for tracing and debugging. Include it in logs and response headers. Essential for distributed systems.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.middleware('http')\\nasync def request_id(request, call_next):\\n  req_id = str(uuid4())\\n  request.state.request_id = req_id\\n  response = await call_next(request)\\n  response.headers['X-Request-ID'] = req_id\\n  return response\"]\n    \n    Request[\"GET /users\"]\n    Log[\"logger.info(\\n  'Processing',\\n  request_id=request.state.request_id\\n)\"]\n    Response[\"X-Request-ID: abc-123-def\"]\n    \n    Request --> Code\n    Code --> Log\n    Code --> Response\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Log fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 7,
+        "title": "Error Handling in Middleware",
+        "explanation": "Middleware can **catch exceptions** from downstream handlers. Wrap `call_next` in try/except to handle errors uniformly, log them, and return custom error responses.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.middleware('http')\\nasync def error_handler(request, call_next):\\n  try:\\n    return await call_next(request)\\n  except Exception as e:\\n    logger.error(f'Error: {e}')\\n    return JSONResponse(\\n      status_code=500,\\n      content={'error': 'Internal error'}\\n    )\"]\n    \n    Handler[\"raise ValueError()\"]\n    Response[\"500 Internal Error\\n{error: 'Internal error'}\"]\n    \n    Handler --> Code\n    Code --> Response\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Handler fill:#f87171,stroke:#dc2626\n    style Response fill:#fbbf24,stroke:#d97706"
+      },
+      {
+        "step_number": 8,
+        "title": "Middleware vs Dependencies",
+        "explanation": "**Middleware** runs on ALL requests regardless of route. **Dependencies** run only on matched routes. Use middleware for cross-cutting concerns, dependencies for route-specific logic.",
+        "diagram_data": "flowchart TB\n    subgraph MW[\"Middleware\"]\n        direction TB\n        MW1[\"✓ All requests\"]\n        MW2[\"✓ Before routing\"]\n        MW3[\"✓ Access raw request\"]\n        MW4[\"✗ No dependency injection\"]\n    end\n    \n    subgraph Dep[\"Dependencies\"]\n        direction TB\n        D1[\"✓ Per-route\"]\n        D2[\"✓ After routing\"]\n        D3[\"✓ Full DI support\"]\n        D4[\"✓ Access path params\"]\n    end\n    \n    style MW fill:#fbbf24,stroke:#d97706\n    style Dep fill:#4ade80,stroke:#166534"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:44:20.825Z",
+    "updated_at": "2026-03-11T16:44:20.825Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 598,
+  "fields": {
+    "subject": 65,
+    "title": "Background Tasks",
+    "slug": "fastapi-background-tasks",
+    "description": "BackgroundTasks for fire-and-forget operations and comparison with Celery",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What are Background Tasks?",
+        "explanation": "**Background tasks** run after the response is sent to the client. Use them for operations that don't need to block the response: sending emails, writing logs, cleanup tasks, notifications.",
+        "diagram_data": "flowchart LR\n    Request[\"POST /order\"]\n    Handler[\"Process order\\nReturn 201\"]\n    Response[\"201 Created\"]\n    BG[\"Background:\\nSend email\\nUpdate analytics\"]\n    \n    Request --> Handler\n    Handler --> Response\n    Handler -.->|\"After response\"| BG\n    \n    style Request fill:#60a5fa,stroke:#2563eb\n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Response fill:#4ade80,stroke:#166534\n    style BG fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 1,
+        "title": "Using BackgroundTasks",
+        "explanation": "Inject **BackgroundTasks** as a dependency, then call `add_task()` with a function and arguments. The task runs after the response is sent.",
+        "diagram_data": "flowchart TB\n    Handler[\"@app.post('/signup')\\nasync def signup(\\n  email: str,\\n  background_tasks: BackgroundTasks\\n):\\n  user = create_user(email)\\n  background_tasks.add_task(\\n    send_welcome_email,\\n    email\\n  )\\n  return {'status': 'created'}\"]\n    \n    Timeline[\"1. Create user\\n2. Return response\\n3. Send email (background)\"]\n    \n    Handler --> Timeline\n    \n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Timeline fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 2,
+        "title": "Multiple Tasks",
+        "explanation": "Add **multiple background tasks** in a single handler. They execute in order, one after another. Each task is a separate function call.",
+        "diagram_data": "flowchart TB\n    Handler[\"background_tasks.add_task(send_email, user.email)\\nbackground_tasks.add_task(notify_admin, user)\\nbackground_tasks.add_task(update_metrics, 'signup')\\nreturn {'ok': True}\"]\n    \n    Seq[\"After response:\\n1. send_email()\\n2. notify_admin()\\n3. update_metrics()\"]\n    \n    Handler --> Seq\n    \n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Seq fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 3,
+        "title": "Tasks with Parameters",
+        "explanation": "Pass **arguments to tasks** as positional or keyword arguments after the function. The task function receives them when executed.",
+        "diagram_data": "flowchart TB\n    TaskDef[\"def write_log(\\n  message: str,\\n  level: str = 'INFO'\\n):\\n  logger.log(level, message)\"]\n    \n    AddTask[\"background_tasks.add_task(\\n  write_log,\\n  'User created',  # positional\\n  level='DEBUG'    # keyword\\n)\"]\n    \n    Exec[\"Executes:\\nwrite_log('User created', level='DEBUG')\"]\n    \n    TaskDef --> AddTask\n    AddTask --> Exec\n    \n    style TaskDef fill:#60a5fa,stroke:#2563eb\n    style AddTask fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Exec fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Tasks in Dependencies",
+        "explanation": "Background tasks work in **dependencies** too. Add tasks from a dependency function, and they'll run after the response. Useful for cleanup or logging.",
+        "diagram_data": "flowchart TB\n    Dep[\"async def log_request(\\n  request: Request,\\n  background_tasks: BackgroundTasks\\n):\\n  background_tasks.add_task(\\n    log_to_db,\\n    request.url.path,\\n    request.method\\n  )\"]\n    \n    Handler[\"@app.get('/users')\\nasync def get_users(\\n  _: None = Depends(log_request)\\n):\\n  return users\"]\n    \n    Dep --> Handler\n    \n    style Dep fill:#60a5fa,stroke:#2563eb,stroke-width:3px\n    style Handler fill:#fbbf24,stroke:#d97706"
+      },
+      {
+        "step_number": 5,
+        "title": "Async Task Functions",
+        "explanation": "Task functions can be **async or sync**. Async tasks run on the event loop. Sync tasks run in a thread pool. Both work seamlessly with BackgroundTasks.",
+        "diagram_data": "flowchart TB\n    Async[\"async def send_email(to: str):\\n  async with aiosmtplib.SMTP() as smtp:\\n    await smtp.send(...)\"]\n    \n    Sync[\"def write_file(path: str, data: str):\\n  with open(path, 'w') as f:\\n    f.write(data)\"]\n    \n    Add[\"background_tasks.add_task(send_email, 'a@b.com')\\nbackground_tasks.add_task(write_file, '/tmp/log', 'data')\"]\n    \n    Async --> Add\n    Sync --> Add\n    \n    style Async fill:#4ade80,stroke:#166534\n    style Sync fill:#60a5fa,stroke:#2563eb\n    style Add fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 6,
+        "title": "Limitations",
+        "explanation": "BackgroundTasks are **fire-and-forget**. No retries, no result tracking, no persistence. If the server crashes, tasks are lost. For critical tasks, use Celery or similar.",
+        "diagram_data": "flowchart TB\n    subgraph Limitations[\"BackgroundTasks Limitations\"]\n        L1[\"✗ No retry on failure\"]\n        L2[\"✗ No result storage\"]\n        L3[\"✗ Lost on server restart\"]\n        L4[\"✗ No task scheduling\"]\n    end\n    \n    subgraph Good[\"Good For\"]\n        G1[\"✓ Sending emails\"]\n        G2[\"✓ Writing logs\"]\n        G3[\"✓ Quick cleanup\"]\n        G4[\"✓ Non-critical tasks\"]\n    end\n    \n    style Limitations fill:#fecaca,stroke:#dc2626\n    style Good fill:#bbf7d0,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "BackgroundTasks vs Celery",
+        "explanation": "**BackgroundTasks**: simple, in-process, no infrastructure. **Celery**: distributed, persistent, retries, scheduling. Choose based on requirements.",
+        "diagram_data": "flowchart TB\n    subgraph BG[\"BackgroundTasks\"]\n        B1[\"In-process\"]\n        B2[\"No extra infra\"]\n        B3[\"Fire-and-forget\"]\n        B4[\"Simple use cases\"]\n    end\n    \n    subgraph Celery[\"Celery\"]\n        C1[\"Distributed workers\"]\n        C2[\"Redis/RabbitMQ broker\"]\n        C3[\"Retries & monitoring\"]\n        C4[\"Complex workflows\"]\n    end\n    \n    Simple[\"Simple email?\"] --> BG\n    Complex[\"Payment processing?\"] --> Celery\n    \n    style BG fill:#4ade80,stroke:#166534\n    style Celery fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 8,
+        "title": "Error Handling",
+        "explanation": "Background task **errors don't affect the response** (already sent). Wrap tasks in try/except to handle errors gracefully and log failures.",
+        "diagram_data": "flowchart TB\n    Task[\"async def risky_task():\\n  try:\\n    await do_something()\\n  except Exception as e:\\n    logger.error(f'Task failed: {e}')\\n    # Optionally: send alert, retry logic\"]\n    \n    Handler[\"Handler returns 200\"]\n    Error[\"Task fails silently\\n(response already sent)\"]\n    Log[\"Error logged for debugging\"]\n    \n    Handler --> Task\n    Task -->|\"Exception\"| Error\n    Error --> Log\n    \n    style Task fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Handler fill:#4ade80,stroke:#166534\n    style Error fill:#f87171,stroke:#dc2626"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:46:31.574Z",
+    "updated_at": "2026-03-11T16:46:31.574Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 599,
+  "fields": {
+    "subject": 65,
+    "title": "WebSocket Connections",
+    "slug": "fastapi-websockets",
+    "description": "Real-time bidirectional communication with WebSocket lifecycle and broadcasting",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What are WebSockets?",
+        "explanation": "**WebSockets** provide full-duplex, persistent connections between client and server. Unlike HTTP (request/response), both sides can send messages anytime. Perfect for chat, live updates, gaming.",
+        "diagram_data": "flowchart LR\n    subgraph HTTP[\"HTTP\"]\n        C1[\"Client\"] -->|\"Request\"| S1[\"Server\"]\n        S1 -->|\"Response\"| C1\n    end\n    \n    subgraph WS[\"WebSocket\"]\n        C2[\"Client\"] <-->|\"Bidirectional\"| S2[\"Server\"]\n    end\n    \n    style HTTP fill:#e1e1e1,stroke:#666\n    style WS fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 1,
+        "title": "Basic WebSocket Endpoint",
+        "explanation": "Use **@app.websocket()** decorator. Accept the connection with `await websocket.accept()`, then loop to receive and send messages.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.websocket('/ws')\\nasync def websocket_endpoint(\\n  websocket: WebSocket\\n):\\n  await websocket.accept()\\n  while True:\\n    data = await websocket.receive_text()\\n    await websocket.send_text(f'Echo: {data}')\"]\n    \n    Flow[\"1. Client connects\\n2. Server accepts\\n3. Loop: receive → send\\n4. Connection persists\"]\n    \n    Code --> Flow\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Flow fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 2,
+        "title": "Connection Lifecycle",
+        "explanation": "WebSocket connections have a lifecycle: **connect → open → messages → close**. Handle each phase properly for robust applications.",
+        "diagram_data": "flowchart TB\n    Connect[\"Client: new WebSocket('/ws')\"]\n    Accept[\"Server: await websocket.accept()\"]\n    Open[\"Connection Open\"]\n    Send[\"send_text() / send_json()\"]\n    Receive[\"receive_text() / receive_json()\"]\n    Close[\"Connection Closed\"]\n    \n    Connect --> Accept\n    Accept --> Open\n    Open --> Send\n    Open --> Receive\n    Send --> Open\n    Receive --> Open\n    Open -->|\"disconnect\"| Close\n    \n    style Connect fill:#60a5fa,stroke:#2563eb\n    style Accept fill:#4ade80,stroke:#166534\n    style Open fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Close fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 3,
+        "title": "Handling Disconnection",
+        "explanation": "Clients can disconnect unexpectedly. Use **try/except** with `WebSocketDisconnect` to handle graceful and abrupt disconnections.",
+        "diagram_data": "flowchart TB\n    Code[\"from fastapi import WebSocketDisconnect\\n\\n@app.websocket('/ws')\\nasync def ws(websocket: WebSocket):\\n  await websocket.accept()\\n  try:\\n    while True:\\n      data = await websocket.receive_text()\\n      await websocket.send_text(data)\\n  except WebSocketDisconnect:\\n    print('Client disconnected')\"]\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 4,
+        "title": "Connection Manager Pattern",
+        "explanation": "For multiple clients, use a **ConnectionManager** class to track active connections. Enable broadcasting messages to all or specific clients.",
+        "diagram_data": "flowchart TB\n    Manager[\"class ConnectionManager:\\n  def __init__(self):\\n    self.connections: list[WebSocket] = []\\n\\n  async def connect(self, ws: WebSocket):\\n    await ws.accept()\\n    self.connections.append(ws)\\n\\n  def disconnect(self, ws: WebSocket):\\n    self.connections.remove(ws)\\n\\n  async def broadcast(self, message: str):\\n    for conn in self.connections:\\n      await conn.send_text(message)\"]\n    \n    style Manager fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 5,
+        "title": "Broadcasting Messages",
+        "explanation": "With ConnectionManager, **broadcast** a message to all connected clients. One client sends, everyone receives. Essential for chat rooms and live updates.",
+        "diagram_data": "flowchart TB\n    Client1[\"Client 1\\nsends: 'Hello'\"]\n    Server[\"ConnectionManager\\nbroadcast('Hello')\"]\n    Client2[\"Client 2\\nreceives: 'Hello'\"]\n    Client3[\"Client 3\\nreceives: 'Hello'\"]\n    Client4[\"Client 4\\nreceives: 'Hello'\"]\n    \n    Client1 --> Server\n    Server --> Client1\n    Server --> Client2\n    Server --> Client3\n    Server --> Client4\n    \n    style Server fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Client1 fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Path & Query Parameters",
+        "explanation": "WebSocket routes support **path and query parameters** just like HTTP routes. Use them for room IDs, user tokens, or other connection-specific data.",
+        "diagram_data": "flowchart TB\n    URL[\"ws://server/ws/room123?token=abc\"]\n    \n    Code[\"@app.websocket('/ws/{room_id}')\\nasync def ws(\\n  websocket: WebSocket,\\n  room_id: str,\\n  token: str = Query(None)\\n):\\n  # room_id = 'room123'\\n  # token = 'abc'\"]\n    \n    URL --> Code\n    \n    style URL fill:#60a5fa,stroke:#2563eb\n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 7,
+        "title": "JSON Messages",
+        "explanation": "Use **receive_json()** and **send_json()** for structured data. Pydantic models can validate incoming JSON messages.",
+        "diagram_data": "flowchart TB\n    Receive[\"data = await websocket.receive_json()\\n# data = {'type': 'chat', 'msg': 'Hi'}\"]\n    \n    Process[\"if data['type'] == 'chat':\\n  message = data['msg']\"]\n    \n    Send[\"await websocket.send_json({\\n  'type': 'response',\\n  'status': 'ok'\\n})\"]\n    \n    Receive --> Process\n    Process --> Send\n    \n    style Receive fill:#60a5fa,stroke:#2563eb\n    style Process fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Send fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 8,
+        "title": "Dependencies in WebSockets",
+        "explanation": "WebSocket endpoints support **dependencies**, but with limitations. Use them for authentication, database access, but note that yield dependencies behave differently.",
+        "diagram_data": "flowchart TB\n    Auth[\"async def get_user(\\n  websocket: WebSocket,\\n  token: str = Query(...)\\n):\\n  user = verify_token(token)\\n  if not user:\\n    await websocket.close(code=4001)\\n    raise WebSocketException(...)\\n  return user\"]\n    \n    Handler[\"@app.websocket('/ws')\\nasync def ws(\\n  websocket: WebSocket,\\n  user: User = Depends(get_user)\\n):\\n  # user authenticated\"]\n    \n    Auth --> Handler\n    \n    style Auth fill:#60a5fa,stroke:#2563eb,stroke-width:3px\n    style Handler fill:#fbbf24,stroke:#d97706"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:46:31.576Z",
+    "updated_at": "2026-03-11T16:46:31.576Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 600,
+  "fields": {
+    "subject": 65,
+    "title": "ASGI & Uvicorn",
+    "slug": "fastapi-asgi-uvicorn",
+    "description": "Understanding the async server gateway interface and Uvicorn configuration",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What is ASGI?",
+        "explanation": "**ASGI (Asynchronous Server Gateway Interface)** is the spec for async Python web apps. It's the successor to WSGI, supporting async/await, WebSockets, and HTTP/2. FastAPI is an ASGI framework.",
+        "diagram_data": "flowchart TB\n    subgraph Sync[\"WSGI (Sync)\"]\n        Flask[\"Flask\"]\n        Django[\"Django (traditional)\"]\n    end\n    \n    subgraph Async[\"ASGI (Async)\"]\n        FastAPI[\"FastAPI\"]\n        Starlette[\"Starlette\"]\n        DjangoAsync[\"Django (async)\"]\n    end\n    \n    WSGI[\"WSGI Servers\\nGunicorn, uWSGI\"] --> Sync\n    ASGI[\"ASGI Servers\\nUvicorn, Hypercorn\"] --> Async\n    \n    style Sync fill:#e1e1e1,stroke:#666\n    style Async fill:#4ade80,stroke:#166534,stroke-width:3px"
+      },
+      {
+        "step_number": 1,
+        "title": "ASGI Application Interface",
+        "explanation": "An ASGI app is a callable that receives **scope** (connection info), **receive** (to get messages), and **send** (to send messages). FastAPI abstracts this away.",
+        "diagram_data": "flowchart TB\n    Interface[\"async def app(\\n  scope: dict,   # connection info\\n  receive: Callable,  # get messages\\n  send: Callable      # send messages\\n)\"]\n    \n    Scope[\"scope = {\\n  'type': 'http',\\n  'method': 'GET',\\n  'path': '/users',\\n  'headers': [...]\\n}\"]\n    \n    Interface --> Scope\n    \n    FastAPI[\"FastAPI handles this\\nfor you automatically!\"]\n    Interface -.-> FastAPI\n    \n    style Interface fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style FastAPI fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 2,
+        "title": "Uvicorn Overview",
+        "explanation": "**Uvicorn** is the recommended ASGI server for FastAPI. It's lightning-fast, built on uvloop and httptools. Use it in development and production.",
+        "diagram_data": "flowchart TB\n    Uvicorn[\"Uvicorn\"]\n    uvloop[\"uvloop\\n(fast event loop)\"]\n    httptools[\"httptools\\n(fast HTTP parser)\"]\n    websockets[\"websockets\\n(WS support)\"]\n    \n    Uvicorn --> uvloop\n    Uvicorn --> httptools\n    Uvicorn --> websockets\n    \n    Features[\"Features:\\n• Hot reload\\n• HTTP/1.1 & WebSocket\\n• Multiple workers\\n• SSL/TLS support\"]\n    Uvicorn --> Features\n    \n    style Uvicorn fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 3,
+        "title": "Running Uvicorn",
+        "explanation": "Run Uvicorn from command line or programmatically. Use `--reload` for development (auto-restart on code changes).",
+        "diagram_data": "flowchart TB\n    CLI[\"# Command line\\nuvicorn main:app --reload --port 8000\"]\n    \n    Code[\"# Programmatic\\nimport uvicorn\\n\\nif __name__ == '__main__':\\n  uvicorn.run(\\n    'main:app',\\n    host='0.0.0.0',\\n    port=8000,\\n    reload=True\\n  )\"]\n    \n    CLI --> Server[\"Server running at\\nhttp://127.0.0.1:8000\"]\n    Code --> Server\n    \n    style CLI fill:#60a5fa,stroke:#2563eb\n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Server fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Worker Processes",
+        "explanation": "For production, run **multiple worker processes** to utilize all CPU cores. Each worker handles requests independently. Use `--workers` flag.",
+        "diagram_data": "flowchart TB\n    CMD[\"uvicorn main:app --workers 4\"]\n    \n    Master[\"Master Process\"]\n    W1[\"Worker 1\\n(handles requests)\"]\n    W2[\"Worker 2\\n(handles requests)\"]\n    W3[\"Worker 3\\n(handles requests)\"]\n    W4[\"Worker 4\\n(handles requests)\"]\n    \n    CMD --> Master\n    Master --> W1\n    Master --> W2\n    Master --> W3\n    Master --> W4\n    \n    style CMD fill:#60a5fa,stroke:#2563eb\n    style Master fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style W1 fill:#4ade80,stroke:#166534\n    style W2 fill:#4ade80,stroke:#166534\n    style W3 fill:#4ade80,stroke:#166534\n    style W4 fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 5,
+        "title": "Gunicorn + Uvicorn",
+        "explanation": "In production, use **Gunicorn as process manager** with Uvicorn workers. Gunicorn handles worker lifecycle, Uvicorn handles ASGI. Best of both worlds.",
+        "diagram_data": "flowchart TB\n    CMD[\"gunicorn main:app \\\\\\n  -w 4 \\\\\\n  -k uvicorn.workers.UvicornWorker \\\\\\n  --bind 0.0.0.0:8000\"]\n    \n    Gunicorn[\"Gunicorn\\n(process manager)\"]\n    U1[\"Uvicorn Worker 1\"]\n    U2[\"Uvicorn Worker 2\"]\n    U3[\"Uvicorn Worker 3\"]\n    U4[\"Uvicorn Worker 4\"]\n    \n    CMD --> Gunicorn\n    Gunicorn --> U1\n    Gunicorn --> U2\n    Gunicorn --> U3\n    Gunicorn --> U4\n    \n    style CMD fill:#60a5fa,stroke:#2563eb\n    style Gunicorn fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 6,
+        "title": "Event Loop",
+        "explanation": "Uvicorn runs an **asyncio event loop**. All async code executes on this loop. Use `uvloop` (default on Unix) for 2-4x better performance than default asyncio.",
+        "diagram_data": "flowchart TB\n    Loop[\"Event Loop\"]\n    T1[\"Task: handle request 1\"]\n    T2[\"Task: handle request 2\"]\n    T3[\"Task: await db query\"]\n    T4[\"Task: send response\"]\n    \n    Loop --> T1\n    Loop --> T2\n    Loop --> T3\n    Loop --> T4\n    \n    Note[\"Single thread,\\nmultiple concurrent tasks\\n(cooperative multitasking)\"]\n    Loop -.-> Note\n    \n    style Loop fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Note fill:#e1e1e1,stroke:#666"
+      },
+      {
+        "step_number": 7,
+        "title": "Configuration Options",
+        "explanation": "Uvicorn has many **configuration options**: host, port, SSL, timeouts, headers, access logs, and more. Configure via CLI flags or config file.",
+        "diagram_data": "flowchart TB\n    Config[\"uvicorn main:app\\n  --host 0.0.0.0\\n  --port 8000\\n  --workers 4\\n  --ssl-keyfile key.pem\\n  --ssl-certfile cert.pem\\n  --timeout-keep-alive 30\\n  --access-log\\n  --log-level info\"]\n    \n    subgraph Options[\"Common Options\"]\n        O1[\"--reload: dev mode\"]\n        O2[\"--workers: parallelism\"]\n        O3[\"--ssl-*: HTTPS\"]\n        O4[\"--log-level: verbosity\"]\n    end\n    \n    Config --> Options\n    \n    style Config fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 8,
+        "title": "Lifespan Events",
+        "explanation": "Use **lifespan events** for startup/shutdown logic: initialize database pools, load ML models, close connections. Defined with async context manager.",
+        "diagram_data": "flowchart TB\n    Code[\"from contextlib import asynccontextmanager\\n\\n@asynccontextmanager\\nasync def lifespan(app: FastAPI):\\n  # Startup\\n  await init_db()\\n  load_model()\\n  yield\\n  # Shutdown\\n  await close_db()\\n\\napp = FastAPI(lifespan=lifespan)\"]\n    \n    Flow[\"Server start → Startup code → Ready\\nServer stop → Shutdown code → Exit\"]\n    \n    Code --> Flow\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Flow fill:#4ade80,stroke:#166534"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:46:31.576Z",
+    "updated_at": "2026-03-11T16:46:31.576Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 601,
+  "fields": {
+    "subject": 65,
+    "title": "APIRouter Organization",
+    "slug": "fastapi-apirouter",
+    "description": "Modular app structure with routers, prefixes, and tags",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Why Use Routers?",
+        "explanation": "**APIRouter** allows you to split your FastAPI app into multiple files/modules. Each router handles a group of related endpoints. Essential for large applications.",
+        "diagram_data": "flowchart TB\n    subgraph Monolithic[\"Without Routers\"]\n        Main1[\"main.py\\n500+ lines\\nall endpoints\"]\n    end\n    \n    subgraph Modular[\"With Routers\"]\n        Main2[\"main.py\"]\n        Users[\"routers/users.py\"]\n        Items[\"routers/items.py\"]\n        Orders[\"routers/orders.py\"]\n        Main2 --> Users\n        Main2 --> Items\n        Main2 --> Orders\n    end\n    \n    style Monolithic fill:#f87171,stroke:#dc2626\n    style Modular fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 1,
+        "title": "Creating a Router",
+        "explanation": "Create an **APIRouter** instance and define routes using the same decorators as FastAPI app. Export the router to include in main app.",
+        "diagram_data": "flowchart TB\n    File[\"# routers/users.py\"]\n    Code[\"from fastapi import APIRouter\\n\\nrouter = APIRouter()\\n\\n@router.get('/users')\\nasync def get_users():\\n  return []\\n\\n@router.post('/users')\\nasync def create_user(user: User):\\n  return user\"]\n    \n    File --> Code\n    \n    style File fill:#60a5fa,stroke:#2563eb\n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 2,
+        "title": "Including Routers",
+        "explanation": "Use **app.include_router()** to mount routers on the main app. Routes from the router become part of the application.",
+        "diagram_data": "flowchart TB\n    Main[\"# main.py\\nfrom fastapi import FastAPI\\nfrom routers import users, items\\n\\napp = FastAPI()\\n\\napp.include_router(users.router)\\napp.include_router(items.router)\"]\n    \n    Routes[\"/users\\n/users/{id}\\n/items\\n/items/{id}\"]\n    \n    Main --> Routes\n    \n    style Main fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Routes fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 3,
+        "title": "Path Prefixes",
+        "explanation": "Add a **prefix** to all routes in a router. Define routes without the prefix, it's added automatically when including.",
+        "diagram_data": "flowchart TB\n    Router[\"# routers/users.py\\n@router.get('/')      # becomes /api/v1/users/\\n@router.get('/{id}')  # becomes /api/v1/users/{id}\"]\n    \n    Include[\"app.include_router(\\n  users.router,\\n  prefix='/api/v1/users'\\n)\"]\n    \n    Result[\"/api/v1/users/\\n/api/v1/users/{id}\"]\n    \n    Router --> Include\n    Include --> Result\n    \n    style Router fill:#60a5fa,stroke:#2563eb\n    style Include fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Result fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Tags for Documentation",
+        "explanation": "Use **tags** to group routes in OpenAPI docs. Set tags on the router or per-route. Routes appear grouped in Swagger UI.",
+        "diagram_data": "flowchart TB\n    Router[\"router = APIRouter(\\n  prefix='/users',\\n  tags=['Users']\\n)\"]\n    \n    Include[\"# Or when including:\\napp.include_router(\\n  router,\\n  tags=['Users']\\n)\"]\n    \n    Swagger[\"Swagger UI:\\n▼ Users\\n  GET /users\\n  POST /users\\n  GET /users/{id}\"]\n    \n    Router --> Swagger\n    Include --> Swagger\n    \n    style Router fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Swagger fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 5,
+        "title": "Router Dependencies",
+        "explanation": "Apply **dependencies to all routes** in a router. Perfect for authentication that applies to an entire module.",
+        "diagram_data": "flowchart TB\n    Router[\"router = APIRouter(\\n  prefix='/admin',\\n  tags=['Admin'],\\n  dependencies=[\\n    Depends(require_admin)\\n  ]\\n)\"]\n    \n    Routes[\"@router.get('/stats')\\n@router.delete('/users/{id}')\\n@router.post('/broadcast')\\n\\n# All require admin!\"]\n    \n    Router --> Routes\n    \n    style Router fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Routes fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Nested Routers",
+        "explanation": "Routers can **include other routers** for hierarchical organization. Build API versions or nested resources naturally.",
+        "diagram_data": "flowchart TB\n    V1[\"v1_router = APIRouter(prefix='/v1')\"]\n    Users[\"users_router\"]\n    Items[\"items_router\"]\n    \n    V1 -->|\"include_router\"| Users\n    V1 -->|\"include_router\"| Items\n    \n    App[\"app.include_router(v1_router)\"]\n    V1 --> App\n    \n    Result[\"/v1/users/...\\n/v1/items/...\"]\n    App --> Result\n    \n    style V1 fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Users fill:#60a5fa,stroke:#2563eb\n    style Items fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 7,
+        "title": "Project Structure",
+        "explanation": "Organize routers in a **routers/** directory with `__init__.py` for clean imports. Group related endpoints in separate files.",
+        "diagram_data": "flowchart TB\n    Root[\"app/\"]\n    Main[\"main.py\"]\n    Routers[\"routers/\"]\n    Init[\"__init__.py\"]\n    Users[\"users.py\"]\n    Items[\"items.py\"]\n    Auth[\"auth.py\"]\n    \n    Root --> Main\n    Root --> Routers\n    Routers --> Init\n    Routers --> Users\n    Routers --> Items\n    Routers --> Auth\n    \n    InitCode[\"# routers/__init__.py\\nfrom .users import router as users_router\\nfrom .items import router as items_router\"]\n    Init -.-> InitCode\n    \n    style Root fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Routers fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 8,
+        "title": "Complete Example",
+        "explanation": "A complete router setup with prefix, tags, dependencies, and responses. This is a production-ready pattern.",
+        "diagram_data": "flowchart TB\n    Router[\"router = APIRouter(\\n  prefix='/items',\\n  tags=['Items'],\\n  dependencies=[Depends(verify_token)],\\n  responses={404: {'description': 'Not found'}}\\n)\"]\n    \n    Include[\"app.include_router(\\n  router,\\n  prefix='/api/v1'\\n)\"]\n    \n    Final[\"Final routes:\\n/api/v1/items/\\n/api/v1/items/{id}\\n\\nAll authenticated\\nAll tagged 'Items'\\nAll have 404 response\"]\n    \n    Router --> Include\n    Include --> Final\n    \n    style Router fill:#60a5fa,stroke:#2563eb\n    style Include fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Final fill:#4ade80,stroke:#166534"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:49:28.025Z",
+    "updated_at": "2026-03-11T16:49:28.025Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 602,
+  "fields": {
+    "subject": 65,
+    "title": "Exception Handling",
+    "slug": "fastapi-exception-handling",
+    "description": "Custom exception handlers, HTTPException, and validation errors",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Exception Types",
+        "explanation": "FastAPI handles several **exception types**: HTTPException (your explicit errors), RequestValidationError (Pydantic failures), and Python exceptions (500 errors by default).",
+        "diagram_data": "flowchart TB\n    Exceptions[\"Exceptions\"]\n    HTTP[\"HTTPException\\n(4xx, 5xx you raise)\"]\n    Validation[\"RequestValidationError\\n(422 from Pydantic)\"]\n    Python[\"Exception\\n(500 Internal Error)\"]\n    \n    Exceptions --> HTTP\n    Exceptions --> Validation\n    Exceptions --> Python\n    \n    style Exceptions fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style HTTP fill:#60a5fa,stroke:#2563eb\n    style Validation fill:#f87171,stroke:#dc2626\n    style Python fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 1,
+        "title": "HTTPException",
+        "explanation": "Raise **HTTPException** to return error responses. Set status code, detail message, and optional headers. FastAPI converts it to JSON response.",
+        "diagram_data": "flowchart TB\n    Code[\"from fastapi import HTTPException\\n\\n@app.get('/items/{id}')\\nasync def get_item(id: int):\\n  item = db.get(id)\\n  if not item:\\n    raise HTTPException(\\n      status_code=404,\\n      detail='Item not found',\\n      headers={'X-Error': 'true'}\\n    )\\n  return item\"]\n    \n    Response[\"404 Not Found\\n{\\n  'detail': 'Item not found'\\n}\\nX-Error: true\"]\n    \n    Code --> Response\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Response fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 2,
+        "title": "Custom Exception Classes",
+        "explanation": "Create **custom exception classes** for domain-specific errors. They can carry extra data. Register handlers to format responses.",
+        "diagram_data": "flowchart TB\n    Exception[\"class ItemNotFoundError(Exception):\\n  def __init__(self, item_id: int):\\n    self.item_id = item_id\"]\n    \n    Raise[\"# In handler:\\nraise ItemNotFoundError(item_id=42)\"]\n    \n    Handler[\"# Needs custom handler\\n# (next slide)\"]\n    \n    Exception --> Raise\n    Raise --> Handler\n    \n    style Exception fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Raise fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 3,
+        "title": "Exception Handlers",
+        "explanation": "Use **@app.exception_handler()** to define custom responses for exception types. The handler receives request and exception, returns a Response.",
+        "diagram_data": "flowchart TB\n    Handler[\"@app.exception_handler(ItemNotFoundError)\\nasync def item_not_found_handler(\\n  request: Request,\\n  exc: ItemNotFoundError\\n):\\n  return JSONResponse(\\n    status_code=404,\\n    content={\\n      'error': 'item_not_found',\\n      'item_id': exc.item_id\\n    }\\n  )\"]\n    \n    Response[\"404 Not Found\\n{\\n  'error': 'item_not_found',\\n  'item_id': 42\\n}\"]\n    \n    Handler --> Response\n    \n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Response fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Override Default Handlers",
+        "explanation": "Override FastAPI's **built-in handlers** for HTTPException or RequestValidationError to customize error response format across your entire API.",
+        "diagram_data": "flowchart TB\n    Override[\"from fastapi.exceptions import RequestValidationError\\n\\n@app.exception_handler(RequestValidationError)\\nasync def validation_handler(\\n  request: Request,\\n  exc: RequestValidationError\\n):\\n  return JSONResponse(\\n    status_code=422,\\n    content={\\n      'message': 'Validation failed',\\n      'errors': exc.errors()\\n    }\\n  )\"]\n    \n    Result[\"Custom 422 format\\nfor ALL validation errors\"]\n    \n    Override --> Result\n    \n    style Override fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Result fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 5,
+        "title": "Validation Error Details",
+        "explanation": "**RequestValidationError** contains detailed error info. Access `.errors()` to get list of validation failures with location, message, and type.",
+        "diagram_data": "flowchart TB\n    Input[\"{\\n  'name': '',\\n  'price': 'invalid'\\n}\"]\n    \n    Errors[\"exc.errors() = [\\n  {\\n    'loc': ('body', 'name'),\\n    'msg': 'min_length is 1',\\n    'type': 'string_too_short'\\n  },\\n  {\\n    'loc': ('body', 'price'),\\n    'msg': 'value is not a valid float',\\n    'type': 'float_parsing'\\n  }\\n]\"]\n    \n    Input --> Errors\n    \n    style Input fill:#f87171,stroke:#dc2626\n    style Errors fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 6,
+        "title": "Catch-All Handler",
+        "explanation": "Add a **catch-all handler** for unhandled exceptions. Log the error, return a generic 500 response. Never expose internal errors to clients.",
+        "diagram_data": "flowchart TB\n    Handler[\"@app.exception_handler(Exception)\\nasync def catch_all(\\n  request: Request,\\n  exc: Exception\\n):\\n  logger.error(f'Unhandled: {exc}')\\n  return JSONResponse(\\n    status_code=500,\\n    content={\\n      'error': 'internal_error',\\n      'message': 'Something went wrong'\\n    }\\n  )\"]\n    \n    Safe[\"Sensitive info\\nstays in logs,\\nnot in response\"]\n    \n    Handler --> Safe\n    \n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Safe fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "Starlette HTTPException",
+        "explanation": "FastAPI's HTTPException extends Starlette's. To catch **both**, handle Starlette's exception. Important when using Starlette middleware that raises exceptions.",
+        "diagram_data": "flowchart TB\n    Starlette[\"from starlette.exceptions import HTTPException as StarletteHTTPException\"]\n    \n    Handler[\"@app.exception_handler(StarletteHTTPException)\\nasync def http_exception_handler(\\n  request: Request,\\n  exc: StarletteHTTPException\\n):\\n  return JSONResponse(\\n    status_code=exc.status_code,\\n    content={'detail': exc.detail}\\n  )\"]\n    \n    Catches[\"Catches BOTH:\\n• FastAPI HTTPException\\n• Starlette HTTPException\"]\n    \n    Starlette --> Handler\n    Handler --> Catches\n    \n    style Starlette fill:#60a5fa,stroke:#2563eb\n    style Handler fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 8,
+        "title": "Error Response Pattern",
+        "explanation": "Define a **consistent error format** across your API. Include error code, message, and optional details. Document it in OpenAPI.",
+        "diagram_data": "flowchart TB\n    Schema[\"class ErrorResponse(BaseModel):\\n  error_code: str\\n  message: str\\n  details: dict | None = None\"]\n    \n    Example[\"{\\n  'error_code': 'ITEM_NOT_FOUND',\\n  'message': 'Item with ID 42 not found',\\n  'details': {\\n    'item_id': 42,\\n    'searched_at': '2024-01-01'\\n  }\\n}\"]\n    \n    Route[\"@app.get('/items/{id}',\\n  responses={\\n    404: {'model': ErrorResponse}\\n  }\\n)\"]\n    \n    Schema --> Example\n    Schema --> Route\n    \n    style Schema fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Example fill:#4ade80,stroke:#166534"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:49:28.027Z",
+    "updated_at": "2026-03-11T16:49:28.027Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 603,
+  "fields": {
+    "subject": 65,
+    "title": "OpenAPI Auto-Documentation",
+    "slug": "fastapi-openapi-docs",
+    "description": "How Swagger/ReDoc documentation is generated from your code",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Automatic Documentation",
+        "explanation": "FastAPI **automatically generates** OpenAPI (Swagger) documentation from your code. Type hints, docstrings, and decorators become API docs. Zero extra work.",
+        "diagram_data": "flowchart LR\n    Code[\"Your Code\\n• Type hints\\n• Pydantic models\\n• Decorators\\n• Docstrings\"]\n    \n    OpenAPI[\"OpenAPI Schema\\n/openapi.json\"]\n    \n    Swagger[\"Swagger UI\\n/docs\"]\n    ReDoc[\"ReDoc\\n/redoc\"]\n    \n    Code --> OpenAPI\n    OpenAPI --> Swagger\n    OpenAPI --> ReDoc\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style OpenAPI fill:#60a5fa,stroke:#2563eb\n    style Swagger fill:#4ade80,stroke:#166534\n    style ReDoc fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 1,
+        "title": "Documentation URLs",
+        "explanation": "Three documentation endpoints are available by default: **/docs** (Swagger UI), **/redoc** (ReDoc), and **/openapi.json** (raw schema).",
+        "diagram_data": "flowchart TB\n    App[\"FastAPI app\"]\n    \n    Docs[\"/docs\\nSwagger UI\\nInteractive testing\"]\n    ReDoc[\"/redoc\\nReDoc UI\\nClean reading\"]\n    JSON[\"/openapi.json\\nRaw OpenAPI schema\\nFor code generation\"]\n    \n    App --> Docs\n    App --> ReDoc\n    App --> JSON\n    \n    style App fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Docs fill:#4ade80,stroke:#166534\n    style ReDoc fill:#60a5fa,stroke:#2563eb\n    style JSON fill:#a78bfa,stroke:#7c3aed"
+      },
+      {
+        "step_number": 2,
+        "title": "API Metadata",
+        "explanation": "Configure **API metadata** in the FastAPI constructor: title, description, version, terms of service, contact, license. Appears in docs header.",
+        "diagram_data": "flowchart TB\n    Code[\"app = FastAPI(\\n  title='My API',\\n  description='A cool API',\\n  version='1.0.0',\\n  contact={\\n    'name': 'Support',\\n    'email': 'help@api.com'\\n  },\\n  license_info={\\n    'name': 'MIT'\\n  }\\n)\"]\n    \n    Header[\"Swagger UI Header:\\nMy API v1.0.0\\nA cool API\\nSupport: help@api.com\"]\n    \n    Code --> Header\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Header fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 3,
+        "title": "Operation Documentation",
+        "explanation": "Document individual endpoints with **docstrings** (description), **summary**, **response_description**, and **operation_id**. All appear in OpenAPI spec.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.get(\\n  '/users/{id}',\\n  summary='Get user by ID',\\n  response_description='The user object'\\n)\\nasync def get_user(id: int):\\n  '''\\n  Retrieve a single user by their ID.\\n\\n  - **id**: The unique user identifier\\n  '''\\n  return user\"]\n    \n    Docs[\"Swagger shows:\\nGET /users/{id}\\n'Get user by ID'\\n\\nDescription from docstring\\nResponse description shown\"]\n    \n    Code --> Docs\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Docs fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "Tags for Grouping",
+        "explanation": "Use **tags** to organize endpoints into groups. Define tag metadata for descriptions. Routes appear grouped in Swagger sidebar.",
+        "diagram_data": "flowchart TB\n    Tags[\"app = FastAPI()\\n\\ntags_metadata = [\\n  {\\n    'name': 'Users',\\n    'description': 'User management'\\n  },\\n  {\\n    'name': 'Items',\\n    'description': 'Item operations'\\n  }\\n]\\n\\napp.openapi_tags = tags_metadata\"]\n    \n    Routes[\"@app.get('/users', tags=['Users'])\\n@app.get('/items', tags=['Items'])\"]\n    \n    Swagger[\"▼ Users\\n  GET /users\\n  POST /users\\n▼ Items\\n  GET /items\"]\n    \n    Tags --> Routes\n    Routes --> Swagger\n    \n    style Tags fill:#60a5fa,stroke:#2563eb\n    style Routes fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Swagger fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 5,
+        "title": "Response Documentation",
+        "explanation": "Document **multiple response types** using the `responses` parameter. Define status codes, descriptions, and response models.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.get(\\n  '/items/{id}',\\n  response_model=Item,\\n  responses={\\n    404: {\\n      'description': 'Item not found',\\n      'model': ErrorResponse\\n    },\\n    500: {\\n      'description': 'Server error'\\n    }\\n  }\\n)\"]\n    \n    Docs[\"Swagger shows:\\n200: Item schema\\n404: ErrorResponse schema\\n500: Server error\"]\n    \n    Code --> Docs\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Docs fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Schema Examples",
+        "explanation": "Add **examples** to Pydantic models or individual fields. Examples appear in Swagger UI request/response bodies.",
+        "diagram_data": "flowchart TB\n    Model[\"class Item(BaseModel):\\n  model_config = ConfigDict(\\n    json_schema_extra={\\n      'examples': [\\n        {\\n          'name': 'Widget',\\n          'price': 29.99,\\n          'in_stock': True\\n        }\\n      ]\\n    }\\n  )\\n  name: str\\n  price: float\\n  in_stock: bool\"]\n    \n    Swagger[\"Try it out:\\n{\\n  'name': 'Widget',\\n  'price': 29.99,\\n  'in_stock': true\\n}\"]\n    \n    Model --> Swagger\n    \n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Swagger fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "Deprecating Endpoints",
+        "explanation": "Mark endpoints as **deprecated** to indicate they'll be removed. Shows strikethrough in docs. Clients can still use them.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.get(\\n  '/old-endpoint',\\n  deprecated=True,\\n  summary='Use /new-endpoint instead'\\n)\\nasync def old_endpoint():\\n  return {'msg': 'Still works'}\"]\n    \n    Swagger[\"~~GET /old-endpoint~~\\n(strikethrough)\\n'Use /new-endpoint instead'\"]\n    \n    Code --> Swagger\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Swagger fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 8,
+        "title": "Custom OpenAPI Schema",
+        "explanation": "Override **openapi()** method to customize the generated schema. Add security schemes, servers, or modify any part of the spec.",
+        "diagram_data": "flowchart TB\n    Code[\"def custom_openapi():\\n  if app.openapi_schema:\\n    return app.openapi_schema\\n  schema = get_openapi(\\n    title='My API',\\n    version='1.0.0',\\n    routes=app.routes\\n  )\\n  # Customize schema here\\n  schema['servers'] = [\\n    {'url': 'https://api.example.com'}\\n  ]\\n  app.openapi_schema = schema\\n  return schema\\n\\napp.openapi = custom_openapi\"]\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:49:28.029Z",
+    "updated_at": "2026-03-11T16:49:28.029Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 604,
+  "fields": {
+    "subject": 65,
+    "title": "Database Patterns",
+    "slug": "fastapi-database-patterns",
+    "description": "SQLAlchemy integration, async sessions, and dependency injection for databases",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Database Options",
+        "explanation": "FastAPI works with any database. Common choices: **SQLAlchemy** (ORM), **databases** (async), **SQLModel** (FastAPI creator's ORM), or raw drivers (asyncpg, motor).",
+        "diagram_data": "flowchart TB\n    FastAPI[\"FastAPI\"]\n    SQLAlchemy[\"SQLAlchemy\\n(sync + async)\"]\n    SQLModel[\"SQLModel\\n(Pydantic + SQLAlchemy)\"]\n    Databases[\"databases\\n(async query builder)\"]\n    Raw[\"Raw drivers\\n(asyncpg, motor)\"]\n    \n    FastAPI --> SQLAlchemy\n    FastAPI --> SQLModel\n    FastAPI --> Databases\n    FastAPI --> Raw\n    \n    style FastAPI fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style SQLAlchemy fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 1,
+        "title": "SQLAlchemy Setup",
+        "explanation": "Create **engine** and **sessionmaker**. Use `create_engine` for sync, `create_async_engine` for async. Session handles transactions.",
+        "diagram_data": "flowchart TB\n    Engine[\"from sqlalchemy import create_engine\\nfrom sqlalchemy.orm import sessionmaker\\n\\nengine = create_engine(\\n  'postgresql://user:pass@localhost/db',\\n  pool_size=5,\\n  max_overflow=10\\n)\\n\\nSessionLocal = sessionmaker(\\n  bind=engine,\\n  autocommit=False,\\n  autoflush=False\\n)\"]\n    \n    style Engine fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 2,
+        "title": "Declarative Models",
+        "explanation": "Define **SQLAlchemy models** using declarative base. Models map to database tables. Define columns with types and constraints.",
+        "diagram_data": "flowchart TB\n    Base[\"from sqlalchemy.orm import DeclarativeBase\\n\\nclass Base(DeclarativeBase):\\n  pass\"]\n    \n    Model[\"class User(Base):\\n  __tablename__ = 'users'\\n\\n  id: Mapped[int] = mapped_column(primary_key=True)\\n  email: Mapped[str] = mapped_column(unique=True)\\n  name: Mapped[str]\\n  is_active: Mapped[bool] = mapped_column(default=True)\"]\n    \n    Base --> Model\n    \n    style Base fill:#60a5fa,stroke:#2563eb\n    style Model fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 3,
+        "title": "Database Dependency",
+        "explanation": "Create a **get_db dependency** that yields a session. Use `yield` for proper cleanup - session closes after request, even on errors.",
+        "diagram_data": "flowchart TB\n    Dep[\"def get_db():\\n  db = SessionLocal()\\n  try:\\n    yield db\\n  finally:\\n    db.close()\"]\n    \n    Handler[\"@app.get('/users')\\nasync def get_users(\\n  db: Session = Depends(get_db)\\n):\\n  return db.query(User).all()\"]\n    \n    Flow[\"1. Session created\\n2. Handler uses db\\n3. Session closed\\n   (even on error)\"]\n    \n    Dep --> Handler\n    Handler --> Flow\n    \n    style Dep fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Flow fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 4,
+        "title": "CRUD Operations",
+        "explanation": "Implement **Create, Read, Update, Delete** operations. Use session methods: `add`, `query`, `commit`, `delete`. Return Pydantic models.",
+        "diagram_data": "flowchart TB\n    Create[\"# Create\\nuser = User(email='a@b.com', name='Alice')\\ndb.add(user)\\ndb.commit()\\ndb.refresh(user)\"]\n    \n    Read[\"# Read\\nuser = db.query(User).filter(\\n  User.id == user_id\\n).first()\"]\n    \n    Update[\"# Update\\nuser.name = 'Bob'\\ndb.commit()\"]\n    \n    Delete[\"# Delete\\ndb.delete(user)\\ndb.commit()\"]\n    \n    style Create fill:#4ade80,stroke:#166534\n    style Read fill:#60a5fa,stroke:#2563eb\n    style Update fill:#fbbf24,stroke:#d97706\n    style Delete fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 5,
+        "title": "Async SQLAlchemy",
+        "explanation": "For async, use **create_async_engine** and **async_sessionmaker**. Sessions are async context managers. Use `await` for queries.",
+        "diagram_data": "flowchart TB\n    Engine[\"from sqlalchemy.ext.asyncio import (\\n  create_async_engine,\\n  async_sessionmaker,\\n  AsyncSession\\n)\\n\\nengine = create_async_engine(\\n  'postgresql+asyncpg://user:pass@host/db'\\n)\\n\\nasync_session = async_sessionmaker(\\n  engine, expire_on_commit=False\\n)\"]\n    \n    Dep[\"async def get_db():\\n  async with async_session() as session:\\n    yield session\"]\n    \n    Engine --> Dep\n    \n    style Engine fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Dep fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Async Queries",
+        "explanation": "Async queries use **select()** and **await session.execute()**. Access results with `.scalars()` for ORM objects. Different syntax than sync.",
+        "diagram_data": "flowchart TB\n    Sync[\"# Sync\\nusers = db.query(User).filter(\\n  User.is_active == True\\n).all()\"]\n    \n    Async[\"# Async\\nfrom sqlalchemy import select\\n\\nresult = await session.execute(\\n  select(User).where(\\n    User.is_active == True\\n  )\\n)\\nusers = result.scalars().all()\"]\n    \n    Sync --> Async\n    \n    style Sync fill:#e1e1e1,stroke:#666\n    style Async fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 7,
+        "title": "Pydantic + SQLAlchemy",
+        "explanation": "Convert between **SQLAlchemy models** and **Pydantic schemas**. Use `model_config = ConfigDict(from_attributes=True)` for automatic conversion.",
+        "diagram_data": "flowchart TB\n    SQLAlchemy[\"# SQLAlchemy model\\nclass UserDB(Base):\\n  id: Mapped[int]\\n  email: Mapped[str]\\n  password: Mapped[str]\"]\n    \n    Pydantic[\"# Pydantic schema\\nclass UserOut(BaseModel):\\n  model_config = ConfigDict(\\n    from_attributes=True\\n  )\\n  id: int\\n  email: str\\n  # password excluded!\"]\n    \n    Convert[\"# Convert\\nuser_db = db.query(UserDB).first()\\nuser_out = UserOut.model_validate(user_db)\"]\n    \n    SQLAlchemy --> Convert\n    Pydantic --> Convert\n    \n    style SQLAlchemy fill:#60a5fa,stroke:#2563eb\n    style Pydantic fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Convert fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 8,
+        "title": "Transactions",
+        "explanation": "SQLAlchemy sessions **auto-commit on close** by default. Use explicit `commit()` and `rollback()` for control. Handle errors properly.",
+        "diagram_data": "flowchart TB\n    Pattern[\"async def create_order(\\n  db: AsyncSession,\\n  order: OrderCreate\\n):\\n  try:\\n    db_order = Order(**order.dict())\\n    db.add(db_order)\\n    \\n    # Update inventory\\n    for item in order.items:\\n      await update_stock(db, item)\\n    \\n    await db.commit()\\n    return db_order\\n  except Exception:\\n    await db.rollback()\\n    raise\"]\n    \n    style Pattern fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:52:30.213Z",
+    "updated_at": "2026-03-11T16:52:30.213Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 605,
+  "fields": {
+    "subject": 65,
+    "title": "CORS Configuration",
+    "slug": "fastapi-cors",
+    "description": "Cross-Origin Resource Sharing setup and common configurations",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "What is CORS?",
+        "explanation": "**CORS (Cross-Origin Resource Sharing)** is a browser security feature. It blocks requests from different origins by default. Your API must explicitly allow cross-origin requests.",
+        "diagram_data": "flowchart TB\n    Browser[\"Browser at\\nhttps://app.com\"]\n    API[\"API at\\nhttps://api.com\"]\n    \n    Request[\"fetch('https://api.com/data')\"]\n    Block[\"CORS Error!\\nBlocked by browser\"]\n    \n    Browser --> Request\n    Request -->|\"Different origin\"| Block\n    \n    Note[\"Same-origin: OK\\nDifferent origin: Needs CORS\"]\n    \n    style Browser fill:#60a5fa,stroke:#2563eb\n    style API fill:#4ade80,stroke:#166534\n    style Block fill:#f87171,stroke:#dc2626,stroke-width:3px"
+      },
+      {
+        "step_number": 1,
+        "title": "Adding CORSMiddleware",
+        "explanation": "Use **CORSMiddleware** to handle CORS. Configure allowed origins, methods, headers, and credentials. Add it early in middleware stack.",
+        "diagram_data": "flowchart TB\n    Code[\"from fastapi.middleware.cors import CORSMiddleware\\n\\napp.add_middleware(\\n  CORSMiddleware,\\n  allow_origins=['https://app.com'],\\n  allow_credentials=True,\\n  allow_methods=['*'],\\n  allow_headers=['*'],\\n)\"]\n    \n    Result[\"API now accepts requests\\nfrom https://app.com\"]\n    \n    Code --> Result\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Result fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 2,
+        "title": "Preflight Requests",
+        "explanation": "For complex requests, browsers send a **preflight OPTIONS request** first. CORS middleware handles this automatically, responding with allowed methods/headers.",
+        "diagram_data": "flowchart TB\n    Browser[\"Browser\"]\n    Preflight[\"OPTIONS /api/data\\nOrigin: https://app.com\\nAccess-Control-Request-Method: POST\"]\n    Response[\"200 OK\\nAccess-Control-Allow-Origin: https://app.com\\nAccess-Control-Allow-Methods: POST, GET\"]\n    Actual[\"POST /api/data\\n(actual request)\"]\n    \n    Browser --> Preflight\n    Preflight --> Response\n    Response --> Actual\n    \n    style Preflight fill:#60a5fa,stroke:#2563eb\n    style Response fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Actual fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 3,
+        "title": "Allow All Origins",
+        "explanation": "Use `allow_origins=['*']` to allow **any origin**. Simple but less secure. Cannot use with `allow_credentials=True`.",
+        "diagram_data": "flowchart TB\n    AllOrigins[\"allow_origins=['*']\"]\n    \n    Any[\"Allows:\\nhttps://good-site.com ✓\\nhttps://evil-site.com ✓\\nhttp://localhost ✓\"]\n    \n    Warning[\"⚠️ Cannot combine with\\nallow_credentials=True\"]\n    \n    AllOrigins --> Any\n    AllOrigins --> Warning\n    \n    style AllOrigins fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Warning fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 4,
+        "title": "Specific Origins",
+        "explanation": "List **specific allowed origins** for production. Include protocol and port. Each origin is checked exactly.",
+        "diagram_data": "flowchart TB\n    Code[\"allow_origins=[\\n  'https://app.example.com',\\n  'https://admin.example.com',\\n  'http://localhost:3000',  # dev\\n]\"]\n    \n    Allowed[\"✓ https://app.example.com\\n✓ https://admin.example.com\\n✓ http://localhost:3000\"]\n    \n    Blocked[\"✗ https://evil.com\\n✗ https://app.example.com:8080\\n✗ http://app.example.com\"]\n    \n    Code --> Allowed\n    Code --> Blocked\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Allowed fill:#4ade80,stroke:#166534\n    style Blocked fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 5,
+        "title": "Origin Regex",
+        "explanation": "Use **allow_origin_regex** for pattern matching. Useful for subdomains or dynamic origins. Regex is matched against full origin URL.",
+        "diagram_data": "flowchart TB\n    Code[\"app.add_middleware(\\n  CORSMiddleware,\\n  allow_origin_regex=r'https://.*\\.example\\.com',\\n  allow_methods=['*'],\\n)\"]\n    \n    Matches[\"Matches:\\n✓ https://app.example.com\\n✓ https://api.example.com\\n✓ https://dev.staging.example.com\"]\n    \n    Code --> Matches\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Matches fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Credentials",
+        "explanation": "Set **allow_credentials=True** to allow cookies/auth headers. Requires specific origins (not `*`). Browser sends credentials with requests.",
+        "diagram_data": "flowchart TB\n    Code[\"app.add_middleware(\\n  CORSMiddleware,\\n  allow_origins=['https://app.com'],\\n  allow_credentials=True,  # ✓\\n)\"]\n    \n    JS[\"// Frontend JS\\nfetch('/api/data', {\\n  credentials: 'include'  // send cookies\\n})\"]\n    \n    Works[\"Cookies and\\nAuth headers\\nsent with request\"]\n    \n    Code --> JS\n    JS --> Works\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style JS fill:#60a5fa,stroke:#2563eb\n    style Works fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "Exposed Headers",
+        "explanation": "By default, browsers hide most response headers. Use **expose_headers** to make custom headers accessible to JavaScript.",
+        "diagram_data": "flowchart TB\n    Code[\"app.add_middleware(\\n  CORSMiddleware,\\n  allow_origins=['*'],\\n  expose_headers=[\\n    'X-Request-ID',\\n    'X-Total-Count',\\n    'X-Page-Number'\\n  ]\\n)\"]\n    \n    JS[\"// Frontend can access:\\nresponse.headers.get('X-Request-ID')\\nresponse.headers.get('X-Total-Count')\"]\n    \n    Code --> JS\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style JS fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 8,
+        "title": "Common Configuration",
+        "explanation": "A **production-ready CORS configuration** with specific origins, credentials, and reasonable defaults.",
+        "diagram_data": "flowchart TB\n    Code[\"# Production config\\norigins = [\\n  os.getenv('FRONTEND_URL'),\\n  'https://app.example.com',\\n]\\n\\napp.add_middleware(\\n  CORSMiddleware,\\n  allow_origins=origins,\\n  allow_credentials=True,\\n  allow_methods=['GET', 'POST', 'PUT', 'DELETE'],\\n  allow_headers=['Authorization', 'Content-Type'],\\n  expose_headers=['X-Request-ID'],\\n  max_age=600,  # cache preflight 10 min\\n)\"]\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:52:30.215Z",
+    "updated_at": "2026-03-11T16:52:30.215Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 606,
+  "fields": {
+    "subject": 65,
+    "title": "Async vs Sync Endpoints",
+    "slug": "fastapi-async-sync",
+    "description": "When to use async def vs def and how FastAPI handles each",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Two Types of Endpoints",
+        "explanation": "FastAPI supports both **async def** (runs on event loop) and regular **def** (runs in thread pool). Choose based on what your endpoint does.",
+        "diagram_data": "flowchart TB\n    subgraph Async[\"async def endpoint()\"]\n        A1[\"Runs on event loop\"]\n        A2[\"Non-blocking I/O\"]\n        A3[\"Use with await\"]\n    end\n    \n    subgraph Sync[\"def endpoint()\"]\n        S1[\"Runs in thread pool\"]\n        S2[\"Blocking is OK\"]\n        S3[\"No await needed\"]\n    end\n    \n    style Async fill:#4ade80,stroke:#166534\n    style Sync fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 1,
+        "title": "When to Use Async",
+        "explanation": "Use **async def** when calling async libraries: aiohttp, asyncpg, motor, aioredis, httpx (async mode). The event loop handles concurrency.",
+        "diagram_data": "flowchart TB\n    Async[\"Use async def when:\"]\n    \n    DB[\"Async database\\n(asyncpg, motor)\"]\n    HTTP[\"Async HTTP\\n(httpx, aiohttp)\"]\n    Redis[\"Async cache\\n(aioredis)\"]\n    Files[\"Async files\\n(aiofiles)\"]\n    \n    Async --> DB\n    Async --> HTTP\n    Async --> Redis\n    Async --> Files\n    \n    Example[\"async def get_data():\\n  data = await httpx.get(url)\\n  return data\"]\n    \n    style Async fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Example fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 2,
+        "title": "When to Use Sync",
+        "explanation": "Use **def** when calling blocking/sync libraries: SQLAlchemy (sync), requests, file operations, CPU-bound work. FastAPI runs it in a thread pool.",
+        "diagram_data": "flowchart TB\n    Sync[\"Use def when:\"]\n    \n    DB[\"Sync database\\n(SQLAlchemy sync)\"]\n    HTTP[\"Sync HTTP\\n(requests)\"]\n    CPU[\"CPU-bound\\n(pandas, numpy)\"]\n    Files[\"Regular file I/O\"]\n    \n    Sync --> DB\n    Sync --> HTTP\n    Sync --> CPU\n    Sync --> Files\n    \n    Example[\"def process_data():\\n  df = pd.read_csv('data.csv')\\n  return df.to_dict()\"]\n    \n    style Sync fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Example fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 3,
+        "title": "How FastAPI Handles Sync",
+        "explanation": "For **def** endpoints, FastAPI runs them in an **external thread pool**. This prevents blocking the event loop while still allowing concurrent requests.",
+        "diagram_data": "flowchart TB\n    Request1[\"Request 1\"]\n    Request2[\"Request 2\"]\n    EventLoop[\"Event Loop\"]\n    ThreadPool[\"Thread Pool\"]\n    T1[\"Thread 1\\nhandles req 1\"]\n    T2[\"Thread 2\\nhandles req 2\"]\n    \n    Request1 --> EventLoop\n    Request2 --> EventLoop\n    EventLoop --> ThreadPool\n    ThreadPool --> T1\n    ThreadPool --> T2\n    \n    style EventLoop fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style ThreadPool fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 4,
+        "title": "The Blocking Problem",
+        "explanation": "Never use **blocking calls in async def**! They freeze the entire event loop. All other requests wait until the blocking call completes.",
+        "diagram_data": "flowchart TB\n    Bad[\"# BAD - blocks event loop!\\nasync def bad_endpoint():\\n  time.sleep(10)  # BLOCKS!\\n  data = requests.get(url)  # BLOCKS!\\n  return data\"]\n    \n    Frozen[\"Event loop FROZEN\\nAll requests wait 10+ seconds\"]\n    \n    Bad --> Frozen\n    \n    style Bad fill:#f87171,stroke:#dc2626,stroke-width:3px\n    style Frozen fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 5,
+        "title": "Correct Patterns",
+        "explanation": "Match your function type to your I/O type. **Async I/O → async def**. **Sync I/O → def**. Never mix blocking calls with async def.",
+        "diagram_data": "flowchart TB\n    subgraph Good[\"✓ Correct\"]\n        G1[\"async def + await httpx.get()\"]\n        G2[\"def + requests.get()\"]\n        G3[\"async def + await asyncpg.fetch()\"]\n        G4[\"def + sqlalchemy.query()\"]\n    end\n    \n    subgraph Bad[\"✗ Wrong\"]\n        B1[\"async def + requests.get()\"]\n        B2[\"async def + time.sleep()\"]\n    end\n    \n    style Good fill:#4ade80,stroke:#166534\n    style Bad fill:#f87171,stroke:#dc2626"
+      },
+      {
+        "step_number": 6,
+        "title": "run_in_threadpool",
+        "explanation": "If you must call sync code from async, use **run_in_threadpool**. It runs the sync function in a thread, returning a coroutine you can await.",
+        "diagram_data": "flowchart TB\n    Code[\"from starlette.concurrency import run_in_threadpool\\n\\nasync def endpoint():\\n  # Run sync function in thread pool\\n  result = await run_in_threadpool(\\n    sync_heavy_function,\\n    arg1,\\n    arg2\\n  )\\n  return result\"]\n    \n    How[\"Sync function runs in thread\\nEvent loop stays responsive\"]\n    \n    Code --> How\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style How fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "Performance Comparison",
+        "explanation": "**Async** is more efficient for I/O-bound work (handles thousands of concurrent connections). **Sync** is fine for CPU-bound or simple endpoints.",
+        "diagram_data": "flowchart TB\n    subgraph AsyncPerf[\"Async Performance\"]\n        A1[\"Single thread\\nThousands of connections\"]\n        A2[\"No thread overhead\"]\n        A3[\"Best for I/O-bound\"]\n    end\n    \n    subgraph SyncPerf[\"Sync Performance\"]\n        S1[\"Thread per request\"]\n        S2[\"Limited by thread pool\"]\n        S3[\"Fine for CPU-bound\"]\n    end\n    \n    style AsyncPerf fill:#4ade80,stroke:#166534\n    style SyncPerf fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 8,
+        "title": "Decision Guide",
+        "explanation": "Quick decision guide: **async def** for async I/O and high concurrency. **def** for sync libraries, CPU work, or when unsure (safer default).",
+        "diagram_data": "flowchart TB\n    Start[\"What does your endpoint do?\"]\n    \n    AsyncIO[\"Calls async libraries?\\n(httpx, asyncpg)\"]\n    SyncIO[\"Calls sync libraries?\\n(requests, SQLAlchemy sync)\"]\n    CPU[\"CPU-bound work?\\n(pandas, ML inference)\"]\n    Simple[\"Simple logic?\\nNo I/O?\"]\n    \n    UseAsync[\"Use async def\"]\n    UseSync[\"Use def\"]\n    \n    Start --> AsyncIO\n    Start --> SyncIO\n    Start --> CPU\n    Start --> Simple\n    \n    AsyncIO -->|\"Yes\"| UseAsync\n    SyncIO -->|\"Yes\"| UseSync\n    CPU -->|\"Yes\"| UseSync\n    Simple -->|\"Either works\"| UseSync\n    \n    style UseAsync fill:#4ade80,stroke:#166534\n    style UseSync fill:#60a5fa,stroke:#2563eb"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:52:30.216Z",
+    "updated_at": "2026-03-11T16:52:30.216Z"
+  }
+},
+{
+  "model": "visuals.visualtopic",
+  "pk": 607,
+  "fields": {
+    "subject": 65,
+    "title": "Response Streaming",
+    "slug": "fastapi-streaming",
+    "description": "StreamingResponse, file downloads, and Server-Sent Events",
+    "rendering_type": "mermaid",
+    "steps": [
+      {
+        "step_number": 0,
+        "title": "Why Streaming?",
+        "explanation": "**Streaming** sends response data in chunks instead of all at once. Essential for large files, real-time data, and memory efficiency. Client receives data progressively.",
+        "diagram_data": "flowchart LR\n    subgraph Normal[\"Normal Response\"]\n        N1[\"Server builds\\nentire response\"]\n        N2[\"Send all at once\"]\n        N3[\"Client waits\"]\n        N1 --> N2 --> N3\n    end\n    \n    subgraph Stream[\"Streaming Response\"]\n        S1[\"Send chunk 1\"]\n        S2[\"Send chunk 2\"]\n        S3[\"Send chunk N\"]\n        S1 --> S2 --> S3\n    end\n    \n    style Normal fill:#e1e1e1,stroke:#666\n    style Stream fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 1,
+        "title": "StreamingResponse",
+        "explanation": "Use **StreamingResponse** with a generator function. Yields chunks of data. Set media_type for content type. Memory-efficient for large data.",
+        "diagram_data": "flowchart TB\n    Code[\"from fastapi.responses import StreamingResponse\\n\\nasync def generate_data():\\n  for i in range(1000):\\n    yield f'data chunk {i}\\\\n'\\n    await asyncio.sleep(0.01)\\n\\n@app.get('/stream')\\nasync def stream():\\n  return StreamingResponse(\\n    generate_data(),\\n    media_type='text/plain'\\n  )\"]\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 2,
+        "title": "File Downloads",
+        "explanation": "Stream **large files** without loading into memory. Use `FileResponse` for simple cases, `StreamingResponse` for dynamic content or very large files.",
+        "diagram_data": "flowchart TB\n    FileResp[\"# Simple file download\\nfrom fastapi.responses import FileResponse\\n\\n@app.get('/download/{filename}')\\nasync def download(filename: str):\\n  return FileResponse(\\n    path=f'/files/{filename}',\\n    filename=filename,\\n    media_type='application/octet-stream'\\n  )\"]\n    \n    StreamFile[\"# Stream large file\\nasync def iter_file(path: str):\\n  async with aiofiles.open(path, 'rb') as f:\\n    while chunk := await f.read(8192):\\n      yield chunk\"]\n    \n    style FileResp fill:#4ade80,stroke:#166534\n    style StreamFile fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 3,
+        "title": "Server-Sent Events (SSE)",
+        "explanation": "**SSE** streams events from server to client over HTTP. Perfect for notifications, live updates, progress bars. Client uses EventSource API.",
+        "diagram_data": "flowchart TB\n    Code[\"async def event_generator():\\n  while True:\\n    data = await get_new_data()\\n    yield f'data: {json.dumps(data)}\\\\n\\\\n'\\n    await asyncio.sleep(1)\\n\\n@app.get('/events')\\nasync def sse():\\n  return StreamingResponse(\\n    event_generator(),\\n    media_type='text/event-stream'\\n  )\"]\n    \n    Client[\"// Client JavaScript\\nconst events = new EventSource('/events');\\nevents.onmessage = (e) => {\\n  console.log(JSON.parse(e.data));\\n};\"]\n    \n    Code --> Client\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Client fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 4,
+        "title": "SSE Event Format",
+        "explanation": "SSE has a specific format: **event**, **data**, **id**, **retry** fields. Each message ends with double newline. Data field is required.",
+        "diagram_data": "flowchart TB\n    Format[\"# SSE Format\\nevent: message\\n   # event type (optional)\\ndata: {'text': 'hello'}\\n   # payload (required)\\nid: 123\\n   # event ID (optional)\\nretry: 5000\\n   # reconnect ms (optional)\\n\\n   # double newline = end of event\"]\n    \n    Code[\"yield f'''event: notification\\ndata: {json.dumps(payload)}\\nid: {event_id}\\n\\n'''\"]\n    \n    Format --> Code\n    \n    style Format fill:#60a5fa,stroke:#2563eb\n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px"
+      },
+      {
+        "step_number": 5,
+        "title": "Streaming JSON Lines",
+        "explanation": "Stream **newline-delimited JSON** for large datasets. Each line is a complete JSON object. Common for log streaming and bulk data export.",
+        "diagram_data": "flowchart TB\n    Code[\"async def generate_ndjson():\\n  async for record in database.stream_all():\\n    yield json.dumps(record) + '\\\\n'\\n\\n@app.get('/export')\\nasync def export_data():\\n  return StreamingResponse(\\n    generate_ndjson(),\\n    media_type='application/x-ndjson'\\n  )\"]\n    \n    Output[\"{\\\"id\\\": 1, \\\"name\\\": \\\"Alice\\\"}\\n{\\\"id\\\": 2, \\\"name\\\": \\\"Bob\\\"}\\n{\\\"id\\\": 3, \\\"name\\\": \\\"Charlie\\\"}\\n...\"]\n    \n    Code --> Output\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Output fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 6,
+        "title": "Progress Streaming",
+        "explanation": "Stream **progress updates** for long-running operations. Client shows progress bar. Useful for file processing, ML training, bulk operations.",
+        "diagram_data": "flowchart TB\n    Code[\"async def process_with_progress():\\n  total = 100\\n  for i in range(total):\\n    await process_item(i)\\n    progress = (i + 1) / total * 100\\n    yield f'data: {{\\\"progress\\\": {progress}}}\\\\n\\\\n'\\n  yield 'data: {\\\"status\\\": \\\"complete\\\"}\\\\n\\\\n'\"]\n    \n    Client[\"Progress: [████████░░] 80%\"]\n    \n    Code --> Client\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Client fill:#4ade80,stroke:#166534"
+      },
+      {
+        "step_number": 7,
+        "title": "Headers and Caching",
+        "explanation": "Set appropriate **headers** for streaming. Disable buffering, set content type, handle caching. Some headers must be set before streaming starts.",
+        "diagram_data": "flowchart TB\n    Code[\"@app.get('/stream')\\nasync def stream():\\n  return StreamingResponse(\\n    generate_data(),\\n    media_type='text/event-stream',\\n    headers={\\n      'Cache-Control': 'no-cache',\\n      'Connection': 'keep-alive',\\n      'X-Accel-Buffering': 'no',  # nginx\\n    }\\n  )\"]\n    \n    Notes[\"• no-cache: Don't cache stream\\n• keep-alive: Persistent connection\\n• X-Accel-Buffering: Disable nginx buffering\"]\n    \n    Code --> Notes\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Notes fill:#60a5fa,stroke:#2563eb"
+      },
+      {
+        "step_number": 8,
+        "title": "Error Handling",
+        "explanation": "Handle **errors in generators** carefully. Once streaming starts, you can't change status code. Send error as data or use background cleanup.",
+        "diagram_data": "flowchart TB\n    Code[\"async def safe_generator():\\n  try:\\n    async for item in source:\\n      yield format_item(item)\\n  except Exception as e:\\n    # Can't change status code now!\\n    # Send error as event instead\\n    yield f'event: error\\\\ndata: {str(e)}\\\\n\\\\n'\\n  finally:\\n    # Cleanup resources\\n    await source.close()\"]\n    \n    Warning[\"⚠️ Status code set before\\nfirst chunk is sent\"]\n    \n    Code --> Warning\n    \n    style Code fill:#fbbf24,stroke:#d97706,stroke-width:3px\n    style Warning fill:#f87171,stroke:#dc2626"
+      }
+    ],
+    "difficulty": "intermediate",
+    "estimated_time_minutes": 5,
+    "tags": [],
+    "status": "draft",
+    "source": "manual",
+    "created_at": "2026-03-11T16:52:30.216Z",
+    "updated_at": "2026-03-11T16:52:30.216Z"
+  }
 }
 ]
