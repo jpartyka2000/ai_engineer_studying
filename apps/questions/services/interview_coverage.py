@@ -555,14 +555,88 @@ Respond with JSON containing a "questions" array. Each question needs:
         num_questions: int = 10,
         difficulty: str | None = None,
         role: str = "AI/ML engineer",
+        batch_size: int = 10,
     ) -> list[Question]:
         """
         Generate questions for a specific subtopic.
+
+        Uses batching for large requests to avoid token limits.
 
         Args:
             subject: The subject area.
             subtopic: The specific subtopic to generate questions for.
             num_questions: Number of questions to generate.
+            difficulty: Optional difficulty filter.
+            role: Target role for the questions.
+            batch_size: Maximum questions per API call (default 10).
+
+        Returns:
+            List of saved Question instances.
+        """
+        # For small requests, no batching needed
+        if num_questions <= batch_size:
+            return self._generate_subtopic_batch(
+                subject, subtopic, num_questions, difficulty, role
+            )
+
+        # Batch large requests
+        all_saved = []
+        remaining = num_questions
+        batch_num = 0
+
+        while remaining > 0:
+            batch_num += 1
+            current_batch_size = min(remaining, batch_size)
+
+            logger.info(
+                "Generating batch %d: %d questions for subtopic '%s' (%d remaining)",
+                batch_num,
+                current_batch_size,
+                subtopic,
+                remaining,
+            )
+
+            try:
+                saved = self._generate_subtopic_batch(
+                    subject, subtopic, current_batch_size, difficulty, role
+                )
+                all_saved.extend(saved)
+                remaining -= current_batch_size
+
+                logger.info(
+                    "Batch %d complete: saved %d questions (total: %d)",
+                    batch_num,
+                    len(saved),
+                    len(all_saved),
+                )
+
+            except LLMAPIError as e:
+                logger.error("Batch %d failed: %s", batch_num, str(e))
+                # If we have some questions, return them; otherwise re-raise
+                if all_saved:
+                    logger.warning(
+                        "Returning %d questions from successful batches", len(all_saved)
+                    )
+                    break
+                raise
+
+        return all_saved
+
+    def _generate_subtopic_batch(
+        self,
+        subject: Subject,
+        subtopic: str,
+        num_questions: int,
+        difficulty: str | None,
+        role: str,
+    ) -> list[Question]:
+        """
+        Generate a single batch of subtopic questions.
+
+        Args:
+            subject: The subject area.
+            subtopic: The specific subtopic to generate questions for.
+            num_questions: Number of questions to generate in this batch.
             difficulty: Optional difficulty filter.
             role: Target role for the questions.
 

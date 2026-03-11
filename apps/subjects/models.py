@@ -48,6 +48,10 @@ class Subject(models.Model):
         default=False,
         help_text=_("Whether 'Can I Math?' mode is available for this subject"),
     )
+    supports_systemdesign = models.BooleanField(
+        default=False,
+        help_text=_("Whether 'Design Your System' mode is available for this subject"),
+    )
     coding_language = models.CharField(
         max_length=20,
         blank=True,
@@ -104,4 +108,6 @@ class Subject(models.Model):
             modes.append("visuals")
         if self.supports_math:
             modes.append("math")
+        if self.supports_systemdesign:
+            modes.append("systemdesign")
         return modes

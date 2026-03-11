@@ -43,6 +43,22 @@ class Command(BaseCommand):
         self.seed_lightgbm_tree_growth_visual()
         self.seed_lightgbm_parallel_training_visual()
         self.seed_system_design_visuals()
+        # Additional System Design visuals
+        self.seed_load_balancing_strategies_visual()
+        self.seed_caching_strategies_visual()
+        self.seed_database_sharding_visual()
+        self.seed_database_replication_visual()
+        self.seed_message_queue_patterns_visual()
+        self.seed_consistent_hashing_visual()
+        self.seed_cap_theorem_visual()
+        self.seed_rate_limiting_visual()
+        self.seed_microservices_vs_monolith_visual()
+        self.seed_api_gateway_pattern_visual()
+        self.seed_event_driven_architecture_visual()
+        self.seed_circuit_breaker_pattern_visual()
+        self.seed_cdn_architecture_visual()
+        self.seed_service_discovery_visual()
+        self.seed_dns_global_load_balancing_visual()
         self.seed_gpu_generations_visual()
         self.seed_gpu_architecture_visual()
         self.seed_mixed_precision_training_visual()
@@ -2347,6 +2363,1819 @@ class Command(BaseCommand):
                         "title": "Logging & Monitoring",
                         "explanation": "Every prediction is **logged** for debugging, monitoring, and model retraining. Metrics like latency, throughput, and prediction distribution are tracked.",
                         "diagram_data": 'graph TB\n    Server["Model Server"]\n    Server --> Log["Prediction Logs<br/>(input, output, latency)"]\n    Server --> Metrics["Metrics<br/>(Prometheus)"]\n    Log --> DW["Data Warehouse<br/>(Retraining)"]\n    Metrics --> Alert["Alerting<br/>(PagerDuty)"]\n    Metrics --> Dash["Dashboard<br/>(Grafana)"]\n    style Log fill:#FFFACD\n    style Metrics fill:#E6E6FA',
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_load_balancing_strategies_visual(self):
+        """Seed Load Balancing Strategies visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="load-balancing-strategies",
+            defaults={
+                "title": "Load Balancing Strategies",
+                "description": "Learn different load balancing algorithms and when to use each one",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["system-design", "load-balancing", "scalability", "high-availability"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Load Balancing?",
+                        "explanation": "A **load balancer** distributes incoming traffic across multiple servers to ensure no single server is overwhelmed. This improves **availability**, **reliability**, and **performance**.",
+                        "diagram_data": """graph LR
+    Client[Clients] --> LB[Load Balancer]
+    LB --> S1[Server 1]
+    LB --> S2[Server 2]
+    LB --> S3[Server 3]
+    style LB fill:#90EE90
+    style S1 fill:#ADD8E6
+    style S2 fill:#ADD8E6
+    style S3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Round Robin",
+                        "explanation": "**Round Robin** distributes requests sequentially across servers. Simple and works well when all servers have equal capacity.\n\n**Pros:** Simple, fair distribution\n**Cons:** Ignores server load and capacity differences",
+                        "diagram_data": """graph LR
+    subgraph "Round Robin Sequence"
+        R1[Request 1] --> S1[Server 1]
+        R2[Request 2] --> S2[Server 2]
+        R3[Request 3] --> S3[Server 3]
+        R4[Request 4] --> S1
+        R5[Request 5] --> S2
+    end
+    style S1 fill:#ADD8E6
+    style S2 fill:#ADD8E6
+    style S3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Weighted Round Robin",
+                        "explanation": "**Weighted Round Robin** assigns weights to servers based on capacity. Higher-capacity servers receive more requests.\n\n**Example:** Server A (weight 3) gets 3x more traffic than Server C (weight 1)",
+                        "diagram_data": """graph TB
+    LB[Load Balancer] --> |"weight: 3"| A[Server A<br/>8 CPU, 32GB]
+    LB --> |"weight: 2"| B[Server B<br/>4 CPU, 16GB]
+    LB --> |"weight: 1"| C[Server C<br/>2 CPU, 8GB]
+    style A fill:#90EE90
+    style B fill:#FFFACD
+    style C fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Least Connections",
+                        "explanation": "**Least Connections** routes to the server with the fewest active connections. Best for requests with varying processing times.\n\n**Pros:** Adapts to server load\n**Cons:** Doesn't account for connection weight",
+                        "diagram_data": """graph TB
+    LB[Load Balancer]
+    LB --> |"5 connections"| S1[Server 1]
+    LB --> |"2 connections"| S2[Server 2]
+    LB --> |"8 connections"| S3[Server 3]
+    New[New Request] --> LB
+    LB -.-> |"Routes here"| S2
+    style S2 fill:#90EE90
+    style New fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "IP Hash",
+                        "explanation": "**IP Hash** uses the client's IP address to determine which server handles the request. Ensures the same client always reaches the same server (session persistence).\n\n**Use case:** Stateful applications, shopping carts",
+                        "diagram_data": """graph LR
+    subgraph "IP Hash Routing"
+        C1[Client 192.168.1.1] --> |"hash % 3 = 0"| S1[Server 1]
+        C2[Client 192.168.1.2] --> |"hash % 3 = 1"| S2[Server 2]
+        C3[Client 192.168.1.3] --> |"hash % 3 = 2"| S3[Server 3]
+        C1b[Same Client] --> |"same hash"| S1
+    end
+    style C1 fill:#FFB6C1
+    style C1b fill:#FFB6C1
+    style S1 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Least Response Time",
+                        "explanation": "**Least Response Time** combines active connections with server response time. Routes to the server that can respond fastest.\n\n**Pros:** Optimizes for user experience\n**Cons:** Requires health monitoring overhead",
+                        "diagram_data": """graph TB
+    LB[Load Balancer<br/>monitors response times]
+    LB --> |"50ms avg"| S1[Server 1<br/>High load]
+    LB --> |"15ms avg"| S2[Server 2<br/>Low load]
+    LB --> |"35ms avg"| S3[Server 3<br/>Medium]
+    New[New Request] --> LB
+    LB -.-> |"Fastest!"| S2
+    style S2 fill:#90EE90
+    style LB fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Choosing the Right Strategy",
+                        "explanation": "Choose based on your application's needs:\n\n| Strategy | Best For |\n|----------|----------|\n| Round Robin | Equal servers, stateless apps |\n| Weighted | Mixed server capacities |\n| Least Connections | Long-lived connections |\n| IP Hash | Session persistence needed |\n| Least Response Time | Latency-sensitive apps |",
+                        "diagram_data": """graph TB
+    subgraph "Decision Tree"
+        Q1{Need session<br/>persistence?}
+        Q1 --> |Yes| IP[IP Hash]
+        Q1 --> |No| Q2{Servers have<br/>equal capacity?}
+        Q2 --> |No| W[Weighted]
+        Q2 --> |Yes| Q3{Long-lived<br/>connections?}
+        Q3 --> |Yes| LC[Least Connections]
+        Q3 --> |No| RR[Round Robin]
+    end
+    style IP fill:#ADD8E6
+    style W fill:#FFFACD
+    style LC fill:#90EE90
+    style RR fill:#FFB6C1""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_caching_strategies_visual(self):
+        """Seed Caching Strategies visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="caching-strategies",
+            defaults={
+                "title": "Caching Strategies",
+                "description": "Understand different caching patterns: cache-aside, write-through, write-back, and read-through",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 12,
+                "tags": ["system-design", "caching", "redis", "performance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Caching?",
+                        "explanation": "**Caching** stores frequently accessed data in fast storage (memory) to reduce latency and database load. A well-designed cache can handle 100x more requests than hitting the database directly.",
+                        "diagram_data": """graph LR
+    App[Application] --> |"1ms"| Cache[(Cache<br/>Redis/Memcached)]
+    App --> |"50ms"| DB[(Database<br/>PostgreSQL)]
+    style Cache fill:#90EE90
+    style DB fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Cache-Aside (Lazy Loading)",
+                        "explanation": "**Cache-Aside** is the most common pattern. The application checks the cache first; on a miss, it loads from the database and populates the cache.\n\n**Pros:** Only requested data is cached\n**Cons:** Cache miss penalty, potential stale data",
+                        "diagram_data": """graph TB
+    subgraph "Cache Hit"
+        A1[App] --> |"1. Get"| C1[(Cache)]
+        C1 --> |"2. Data"| A1
+    end
+    subgraph "Cache Miss"
+        A2[App] --> |"1. Get"| C2[(Cache)]
+        C2 --> |"2. Miss"| A2
+        A2 --> |"3. Query"| DB[(Database)]
+        DB --> |"4. Data"| A2
+        A2 --> |"5. Set"| C2
+    end
+    style C1 fill:#90EE90
+    style C2 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Write-Through",
+                        "explanation": "**Write-Through** writes data to both cache and database synchronously. Ensures cache is always consistent with database.\n\n**Pros:** Data always consistent\n**Cons:** Higher write latency, cache may hold unused data",
+                        "diagram_data": """graph LR
+    App[Application] --> |"1. Write"| Cache[(Cache)]
+    Cache --> |"2. Write"| DB[(Database)]
+    Cache --> |"3. Confirm"| App
+    style Cache fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Write-Back (Write-Behind)",
+                        "explanation": "**Write-Back** writes to cache immediately but delays database writes. Data is written to DB asynchronously in batches.\n\n**Pros:** Low write latency, batch DB writes\n**Cons:** Risk of data loss if cache fails",
+                        "diagram_data": """graph LR
+    App[Application] --> |"1. Write"| Cache[(Cache)]
+    Cache --> |"2. ACK"| App
+    Cache -.-> |"3. Async batch"| DB[(Database)]
+    style Cache fill:#ADD8E6
+    style DB fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Read-Through",
+                        "explanation": "**Read-Through** has the cache itself load data from the database on a miss. The application only talks to the cache.\n\n**Pros:** Simpler application code\n**Cons:** Cache must know how to load data",
+                        "diagram_data": """graph LR
+    App[Application] --> |"1. Get"| Cache[(Cache)]
+    Cache --> |"2. Load on miss"| DB[(Database)]
+    DB --> |"3. Data"| Cache
+    Cache --> |"4. Return"| App
+    style Cache fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Cache Invalidation",
+                        "explanation": "**Cache invalidation** is one of the hardest problems in CS. Common strategies:\n\n- **TTL (Time-To-Live):** Expire after N seconds\n- **Event-based:** Invalidate on write\n- **Version tags:** Include version in cache key",
+                        "diagram_data": """graph TB
+    subgraph "TTL Expiration"
+        K1["user:123"] --> |"TTL: 300s"| Exp[Expires automatically]
+    end
+    subgraph "Event-based"
+        Write[User Update] --> |"Delete"| K2["user:123"]
+        K2 --> Gone[Cache cleared]
+    end
+    subgraph "Versioning"
+        K3["user:123:v2"] --> Data[Current data]
+        K4["user:123:v1"] --> Old[Stale - ignored]
+    end
+    style Exp fill:#FFFACD
+    style Gone fill:#FFB6C1
+    style Data fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Choosing the Right Strategy",
+                        "explanation": "| Pattern | Read Heavy | Write Heavy | Consistency |\n|---------|------------|-------------|-------------|\n| Cache-Aside | Best | OK | Eventual |\n| Write-Through | Good | OK | Strong |\n| Write-Back | Good | Best | Eventual |\n| Read-Through | Best | N/A | Eventual |",
+                        "diagram_data": """graph TB
+    Q1{Heavy writes?}
+    Q1 --> |Yes| Q2{Need strong<br/>consistency?}
+    Q1 --> |No| CA[Cache-Aside]
+    Q2 --> |Yes| WT[Write-Through]
+    Q2 --> |No| WB[Write-Back]
+    style CA fill:#90EE90
+    style WT fill:#ADD8E6
+    style WB fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_database_sharding_visual(self):
+        """Seed Database Sharding visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="database-sharding",
+            defaults={
+                "title": "Database Sharding",
+                "description": "Learn how to horizontally partition data across multiple database instances",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["system-design", "database", "sharding", "scalability"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Sharding?",
+                        "explanation": "**Sharding** splits a large database into smaller, faster pieces called **shards**. Each shard holds a subset of the data and runs on its own server, enabling horizontal scaling.",
+                        "diagram_data": """graph TB
+    subgraph "Before: Single DB"
+        DB1[(Database<br/>100M rows)]
+    end
+    subgraph "After: Sharded"
+        S1[(Shard 1<br/>33M rows)]
+        S2[(Shard 2<br/>33M rows)]
+        S3[(Shard 3<br/>34M rows)]
+    end
+    DB1 --> |"Shard"| S1
+    DB1 --> S2
+    DB1 --> S3
+    style DB1 fill:#FFB6C1
+    style S1 fill:#90EE90
+    style S2 fill:#90EE90
+    style S3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Horizontal vs Vertical Partitioning",
+                        "explanation": "**Horizontal (Sharding):** Split rows across databases\n**Vertical:** Split columns/tables across databases\n\nSharding is typically what people mean when scaling databases horizontally.",
+                        "diagram_data": """graph TB
+    subgraph "Horizontal Sharding"
+        H1[(Users A-M)]
+        H2[(Users N-Z)]
+    end
+    subgraph "Vertical Partitioning"
+        V1[(Users table)]
+        V2[(Orders table)]
+        V3[(Products table)]
+    end
+    style H1 fill:#ADD8E6
+    style H2 fill:#ADD8E6
+    style V1 fill:#FFFACD
+    style V2 fill:#FFFACD
+    style V3 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Choosing a Shard Key",
+                        "explanation": "The **shard key** determines which shard holds each record. A good shard key:\n- Distributes data evenly\n- Minimizes cross-shard queries\n- Aligns with query patterns\n\n**Examples:** user_id, tenant_id, geographic region",
+                        "diagram_data": """graph LR
+    subgraph "Shard by user_id"
+        U1[user_id: 1-1000] --> S1[(Shard 1)]
+        U2[user_id: 1001-2000] --> S2[(Shard 2)]
+        U3[user_id: 2001-3000] --> S3[(Shard 3)]
+    end
+    style S1 fill:#90EE90
+    style S2 fill:#90EE90
+    style S3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Range-Based Sharding",
+                        "explanation": "**Range sharding** assigns data based on value ranges. Simple but can lead to hotspots if data isn't evenly distributed.\n\n**Problem:** If most new users have IDs 9000+, Shard 3 gets all the traffic!",
+                        "diagram_data": """graph TB
+    Router[Shard Router]
+    Router --> |"ID 1-3000"| S1[(Shard 1<br/>Old users)]
+    Router --> |"ID 3001-6000"| S2[(Shard 2<br/>Medium)]
+    Router --> |"ID 6001+"| S3[(Shard 3<br/>HOT!)]
+    style S3 fill:#FFB6C1
+    style S1 fill:#E6E6FA
+    style S2 fill:#E6E6FA""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Hash-Based Sharding",
+                        "explanation": "**Hash sharding** uses a hash function to distribute data evenly: `shard = hash(key) % num_shards`. Better distribution but harder to add shards.",
+                        "diagram_data": """graph LR
+    K1[user_id: 12345] --> |"hash % 3 = 1"| S2[(Shard 2)]
+    K2[user_id: 67890] --> |"hash % 3 = 0"| S1[(Shard 1)]
+    K3[user_id: 11111] --> |"hash % 3 = 2"| S3[(Shard 3)]
+    style S1 fill:#90EE90
+    style S2 fill:#90EE90
+    style S3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Cross-Shard Queries",
+                        "explanation": "Queries that span multiple shards are expensive. They require **scatter-gather**: query all shards, then merge results.\n\n**Design tip:** Structure data so most queries hit a single shard.",
+                        "diagram_data": """graph TB
+    Q["SELECT * FROM orders<br/>WHERE user_id IN (1, 5000)"]
+    Q --> S1[(Shard 1)]
+    Q --> S2[(Shard 2)]
+    S1 --> |"Results"| Merge[Merge Layer]
+    S2 --> |"Results"| Merge
+    Merge --> Result[Final Result]
+    style Q fill:#FFFACD
+    style Merge fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Rebalancing Shards",
+                        "explanation": "When adding new shards or fixing hotspots, data must be **rebalanced**. This is complex and risky.\n\n**Strategies:**\n- Consistent hashing (minimizes data movement)\n- Virtual shards (logical shards mapped to physical)",
+                        "diagram_data": """graph TB
+    subgraph "Before: 3 Shards"
+        S1[(Shard 1<br/>33%)]
+        S2[(Shard 2<br/>33%)]
+        S3[(Shard 3<br/>33%)]
+    end
+    subgraph "After: 4 Shards"
+        N1[(Shard 1<br/>25%)]
+        N2[(Shard 2<br/>25%)]
+        N3[(Shard 3<br/>25%)]
+        N4[(Shard 4<br/>25%)]
+    end
+    S1 -.-> |"Move 8%"| N4
+    S2 -.-> |"Move 8%"| N4
+    S3 -.-> |"Move 8%"| N4
+    style N4 fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_database_replication_visual(self):
+        """Seed Database Replication visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="database-replication",
+            defaults={
+                "title": "Database Replication",
+                "description": "Understand master-slave, master-master, and synchronous vs asynchronous replication",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["system-design", "database", "replication", "high-availability"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Replication?",
+                        "explanation": "**Database replication** copies data across multiple servers for:\n- **High availability:** If one server fails, others take over\n- **Read scaling:** Distribute read queries across replicas\n- **Geographic distribution:** Place data closer to users",
+                        "diagram_data": """graph TB
+    Primary[(Primary DB)]
+    Primary --> R1[(Replica 1)]
+    Primary --> R2[(Replica 2)]
+    Primary --> R3[(Replica 3)]
+    style Primary fill:#90EE90
+    style R1 fill:#ADD8E6
+    style R2 fill:#ADD8E6
+    style R3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Master-Slave (Primary-Replica)",
+                        "explanation": "**Master-Slave** is the most common pattern:\n- **Master:** Handles all writes\n- **Slaves:** Handle reads, replicate from master\n\nSimple but master is a single point of failure for writes.",
+                        "diagram_data": """graph LR
+    App[Application]
+    App --> |"Writes"| M[(Master)]
+    App --> |"Reads"| S1[(Slave 1)]
+    App --> |"Reads"| S2[(Slave 2)]
+    M --> |"Replicate"| S1
+    M --> |"Replicate"| S2
+    style M fill:#FFB6C1
+    style S1 fill:#ADD8E6
+    style S2 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Master-Master (Multi-Primary)",
+                        "explanation": "**Master-Master** allows writes to any node. More complex but no single point of failure.\n\n**Challenge:** Conflict resolution when same data is modified on multiple masters simultaneously.",
+                        "diagram_data": """graph LR
+    App1[App Region A] --> |"Read/Write"| M1[(Master 1)]
+    App2[App Region B] --> |"Read/Write"| M2[(Master 2)]
+    M1 <--> |"Bi-directional<br/>replication"| M2
+    style M1 fill:#90EE90
+    style M2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Synchronous Replication",
+                        "explanation": "**Synchronous:** Write is confirmed only after ALL replicas acknowledge. Guarantees consistency but adds latency.\n\n**Use when:** Data loss is unacceptable (financial transactions)",
+                        "diagram_data": """graph LR
+    App[App] --> |"1. Write"| M[(Master)]
+    M --> |"2. Replicate"| S[(Slave)]
+    S --> |"3. ACK"| M
+    M --> |"4. Confirm"| App
+    style M fill:#90EE90
+    style S fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Asynchronous Replication",
+                        "explanation": "**Asynchronous:** Write confirmed immediately; replication happens in background. Lower latency but risk of data loss.\n\n**Use when:** Performance matters more than perfect consistency",
+                        "diagram_data": """graph LR
+    App[App] --> |"1. Write"| M[(Master)]
+    M --> |"2. Confirm"| App
+    M -.-> |"3. Async replicate"| S[(Slave)]
+    style M fill:#90EE90
+    style S fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Replication Lag",
+                        "explanation": "**Replication lag** is the delay between master write and replica update. Can cause:\n- **Stale reads:** User writes, then reads from replica, sees old data\n- **Solutions:** Read-your-writes consistency, sticky sessions",
+                        "diagram_data": """graph TB
+    subgraph "Replication Lag Problem"
+        U[User] --> |"1. Write name=Bob"| M[(Master)]
+        M --> |"2. OK"| U
+        U --> |"3. Read name"| S[(Slave<br/>Lag: 2s)]
+        S --> |"4. name=Alice"| U
+    end
+    Note["User sees stale data!"]
+    style S fill:#FFB6C1
+    style Note fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Failover Strategies",
+                        "explanation": "When master fails, a replica must be **promoted**:\n\n- **Manual:** DBA promotes replica (slower, safer)\n- **Automatic:** Cluster detects failure, elects new master\n\n**Tools:** PostgreSQL Patroni, MySQL Group Replication",
+                        "diagram_data": """graph TB
+    subgraph "Before Failover"
+        M1[(Master)] --> S1[(Slave 1)]
+        M1 --> S2[(Slave 2)]
+    end
+    subgraph "After Failover"
+        X[Master FAILED]
+        S1b[(New Master<br/>was Slave 1)] --> S2b[(Slave 2)]
+    end
+    M1 -.-> |"Fails"| X
+    S1 -.-> |"Promoted"| S1b
+    style X fill:#FFB6C1
+    style S1b fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_message_queue_patterns_visual(self):
+        """Seed Message Queue Patterns visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="message-queue-patterns",
+            defaults={
+                "title": "Message Queue Patterns",
+                "description": "Learn pub/sub, point-to-point, fan-out, and competing consumers patterns",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["system-design", "message-queue", "kafka", "rabbitmq", "async"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Message Queues?",
+                        "explanation": "**Message queues** decouple services by enabling asynchronous communication:\n- **Decoupling:** Services don't need to know about each other\n- **Buffering:** Handle traffic spikes gracefully\n- **Reliability:** Messages persist if consumers are down",
+                        "diagram_data": """graph LR
+    P[Producer] --> Q[(Message Queue)]
+    Q --> C[Consumer]
+    style Q fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Point-to-Point",
+                        "explanation": "**Point-to-Point:** Each message is consumed by exactly ONE consumer. Used for task distribution.\n\n**Use case:** Job processing, order fulfillment",
+                        "diagram_data": """graph LR
+    P[Producer] --> Q[(Queue)]
+    Q --> |"Msg 1"| C1[Consumer 1]
+    Q --> |"Msg 2"| C2[Consumer 2]
+    Q --> |"Msg 3"| C1
+    style Q fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Publish-Subscribe (Pub/Sub)",
+                        "explanation": "**Pub/Sub:** Each message is delivered to ALL subscribers. Used for broadcasting events.\n\n**Use case:** Notifications, event streaming, real-time updates",
+                        "diagram_data": """graph LR
+    P[Publisher] --> T((Topic))
+    T --> S1[Subscriber 1]
+    T --> S2[Subscriber 2]
+    T --> S3[Subscriber 3]
+    style T fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Fan-Out Pattern",
+                        "explanation": "**Fan-Out:** One message triggers multiple parallel processes. Combines pub/sub with work queues.\n\n**Use case:** Order placed triggers: inventory update, email, analytics",
+                        "diagram_data": """graph TB
+    Order[Order Service] --> Ex((Exchange))
+    Ex --> Q1[(Inventory Queue)]
+    Ex --> Q2[(Email Queue)]
+    Ex --> Q3[(Analytics Queue)]
+    Q1 --> W1[Inventory Worker]
+    Q2 --> W2[Email Worker]
+    Q3 --> W3[Analytics Worker]
+    style Ex fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Competing Consumers",
+                        "explanation": "**Competing Consumers:** Multiple consumers read from the same queue for parallel processing. Messages are load-balanced across consumers.\n\n**Use case:** Scaling workers horizontally",
+                        "diagram_data": """graph LR
+    P[Producer<br/>1000 msg/s] --> Q[(Queue)]
+    Q --> C1[Consumer 1<br/>200 msg/s]
+    Q --> C2[Consumer 2<br/>200 msg/s]
+    Q --> C3[Consumer 3<br/>200 msg/s]
+    Q --> C4[Consumer 4<br/>200 msg/s]
+    Q --> C5[Consumer 5<br/>200 msg/s]
+    style Q fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Dead Letter Queue",
+                        "explanation": "**Dead Letter Queue (DLQ):** Captures messages that fail processing repeatedly. Prevents poison messages from blocking the queue.\n\n**Use case:** Error handling, debugging failed messages",
+                        "diagram_data": """graph LR
+    Q[(Main Queue)] --> C[Consumer]
+    C --> |"Success"| Done[Processed]
+    C --> |"Fail x3"| DLQ[(Dead Letter Queue)]
+    DLQ --> Alert[Alert/Manual Review]
+    style DLQ fill:#FFB6C1
+    style Alert fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Message Queue Comparison",
+                        "explanation": "| Feature | RabbitMQ | Kafka | SQS |\n|---------|----------|-------|-----|\n| Model | Queue | Log | Queue |\n| Ordering | Per-queue | Per-partition | Best-effort |\n| Replay | No | Yes | No |\n| Throughput | Medium | Very High | High |",
+                        "diagram_data": """graph TB
+    subgraph "RabbitMQ"
+        R1[Traditional queuing]
+        R2[Complex routing]
+        R3[Message acknowledgment]
+    end
+    subgraph "Kafka"
+        K1[Event streaming]
+        K2[High throughput]
+        K3[Message replay]
+    end
+    subgraph "SQS"
+        S1[Managed service]
+        S2[Simple setup]
+        S3[AWS integration]
+    end
+    style R1 fill:#ADD8E6
+    style K1 fill:#90EE90
+    style S1 fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_consistent_hashing_visual(self):
+        """Seed Consistent Hashing visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="consistent-hashing",
+            defaults={
+                "title": "Consistent Hashing",
+                "description": "Understand how consistent hashing enables scalable distributed systems",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["system-design", "consistent-hashing", "distributed-systems", "scalability"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem with Simple Hashing",
+                        "explanation": "With simple hash-based distribution (`server = hash(key) % N`), adding or removing a server remaps almost ALL keys. This causes massive cache misses.",
+                        "diagram_data": """graph TB
+    subgraph "3 Servers: hash % 3"
+        K1[key1: hash=7] --> |"7%3=1"| S1[Server 1]
+        K2[key2: hash=12] --> |"12%3=0"| S0[Server 0]
+    end
+    subgraph "4 Servers: hash % 4"
+        K1b[key1: hash=7] --> |"7%4=3"| S3[Server 3]
+        K2b[key2: hash=12] --> |"12%4=0"| S0b[Server 0]
+    end
+    style S1 fill:#FFB6C1
+    style S3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "The Hash Ring",
+                        "explanation": "**Consistent hashing** arranges all possible hash values in a **ring** (0 to 2^32-1). Both servers and keys are hashed onto this ring. A key is assigned to the first server clockwise from its position.",
+                        "diagram_data": """graph TB
+    subgraph "Hash Ring"
+        direction TB
+        Ring((Ring 0 to 2^32))
+        S1[Server A<br/>pos: 1000]
+        S2[Server B<br/>pos: 4000]
+        S3[Server C<br/>pos: 7000]
+        K1[Key X<br/>pos: 500]
+        K2[Key Y<br/>pos: 5500]
+    end
+    K1 -.-> |"clockwise"| S1
+    K2 -.-> |"clockwise"| S3
+    style S1 fill:#ADD8E6
+    style S2 fill:#ADD8E6
+    style S3 fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Adding a Server",
+                        "explanation": "When a new server joins, it only takes keys from its immediate neighbor. Other keys are unaffected!\n\n**Result:** Only K/N keys move (K=total keys, N=servers)",
+                        "diagram_data": """graph LR
+    subgraph "Before"
+        B1[Server A] --> |"handles"| R1[Keys 0-5000]
+        B2[Server B] --> R2[Keys 5001-10000]
+    end
+    subgraph "After: Server C joins at 3000"
+        A1[Server A] --> |"handles"| AR1[Keys 0-3000]
+        A2[Server C NEW] --> AR2[Keys 3001-5000]
+        A3[Server B] --> AR3[Keys 5001-10000]
+    end
+    style A2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Removing a Server",
+                        "explanation": "When a server leaves, its keys move to the next server clockwise. Again, only a fraction of keys are affected.",
+                        "diagram_data": """graph LR
+    subgraph "Before"
+        B1[Server A<br/>Keys 0-3000]
+        B2[Server B<br/>Keys 3001-6000]
+        B3[Server C<br/>Keys 6001-9000]
+    end
+    subgraph "After: Server B removed"
+        A1[Server A<br/>Keys 0-3000]
+        A2[Server C<br/>Keys 3001-9000]
+    end
+    B2 -.-> |"Keys move to C"| A2
+    style B2 fill:#FFB6C1
+    style A2 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Virtual Nodes",
+                        "explanation": "**Problem:** With few servers, distribution can be uneven.\n**Solution:** Each physical server gets multiple **virtual nodes** spread around the ring, ensuring even distribution.",
+                        "diagram_data": """graph TB
+    subgraph "Physical Servers"
+        PS1[Server A]
+        PS2[Server B]
+    end
+    subgraph "Virtual Nodes on Ring"
+        V1[A-1 pos:1000]
+        V2[B-1 pos:2500]
+        V3[A-2 pos:4000]
+        V4[B-2 pos:5500]
+        V5[A-3 pos:7000]
+        V6[B-3 pos:8500]
+    end
+    PS1 --> V1
+    PS1 --> V3
+    PS1 --> V5
+    PS2 --> V2
+    PS2 --> V4
+    PS2 --> V6
+    style V1 fill:#ADD8E6
+    style V3 fill:#ADD8E6
+    style V5 fill:#ADD8E6
+    style V2 fill:#90EE90
+    style V4 fill:#90EE90
+    style V6 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Real-World Usage",
+                        "explanation": "Consistent hashing is used by:\n- **Cassandra:** Partitions data across nodes\n- **DynamoDB:** Distributes data and load\n- **Memcached:** Client-side key distribution\n- **CDNs:** Route requests to edge servers",
+                        "diagram_data": """graph TB
+    CH[Consistent Hashing]
+    CH --> Cassandra[(Cassandra)]
+    CH --> Dynamo[(DynamoDB)]
+    CH --> MC[(Memcached)]
+    CH --> CDN[CDN Edge Routing]
+    style CH fill:#90EE90
+    style Cassandra fill:#ADD8E6
+    style Dynamo fill:#ADD8E6
+    style MC fill:#ADD8E6
+    style CDN fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_cap_theorem_visual(self):
+        """Seed CAP Theorem visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cap-theorem",
+            defaults={
+                "title": "CAP Theorem",
+                "description": "Understand the tradeoffs between Consistency, Availability, and Partition Tolerance",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["system-design", "cap-theorem", "distributed-systems", "consistency"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is CAP?",
+                        "explanation": "The **CAP Theorem** states that a distributed system can only guarantee TWO of three properties:\n- **C**onsistency: All nodes see the same data\n- **A**vailability: Every request gets a response\n- **P**artition tolerance: System works despite network failures",
+                        "diagram_data": """graph TB
+    subgraph "CAP Triangle"
+        C((Consistency))
+        A((Availability))
+        P((Partition<br/>Tolerance))
+        C --- A
+        A --- P
+        P --- C
+    end
+    Note[Pick any 2!]
+    style C fill:#ADD8E6
+    style A fill:#90EE90
+    style P fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Consistency",
+                        "explanation": "**Consistency** means every read returns the most recent write. All nodes agree on the current state.\n\n**Strong consistency:** After a write completes, all subsequent reads see that write.",
+                        "diagram_data": """graph LR
+    Client[Client] --> |"Write X=5"| N1[(Node 1)]
+    N1 --> |"Sync"| N2[(Node 2)]
+    Client2[Any Client] --> |"Read X"| N2
+    N2 --> |"X=5"| Client2
+    style N1 fill:#90EE90
+    style N2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Availability",
+                        "explanation": "**Availability** means every request receives a response, even if some nodes are down.\n\n**High availability:** System responds to all requests without errors (though data might be stale).",
+                        "diagram_data": """graph TB
+    Client[Client] --> LB[Load Balancer]
+    LB --> N1[(Node 1<br/>OK)]
+    LB --> N2[(Node 2<br/>DOWN)]
+    LB --> N3[(Node 3<br/>OK)]
+    N1 --> |"Response"| Client
+    style N2 fill:#FFB6C1
+    style N1 fill:#90EE90
+    style N3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Partition Tolerance",
+                        "explanation": "**Partition tolerance** means the system continues operating when network partitions occur (nodes can't communicate).\n\n**Reality:** Network partitions WILL happen. You must choose between C and A during partitions.",
+                        "diagram_data": """graph TB
+    subgraph "DC 1"
+        N1[(Node 1)]
+        N2[(Node 2)]
+    end
+    subgraph "DC 2"
+        N3[(Node 3)]
+        N4[(Node 4)]
+    end
+    N1 <--> N2
+    N3 <--> N4
+    N2 -.X .- |"Network Partition!"| N3
+    style N2 fill:#FFB6C1
+    style N3 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "CP Systems",
+                        "explanation": "**CP (Consistency + Partition tolerance):** During a partition, the system refuses requests rather than return stale data.\n\n**Examples:** MongoDB, HBase, Redis Cluster\n**Use when:** Correctness is critical (financial systems)",
+                        "diagram_data": """graph TB
+    subgraph "CP System During Partition"
+        Client[Client] --> N1[(Node 1<br/>Has latest)]
+        N1 -.X .- N2[(Node 2<br/>Outdated)]
+        Client2[Client] --> |"Request"| N2
+        N2 --> |"ERROR: Unavailable"| Client2
+    end
+    style N2 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "AP Systems",
+                        "explanation": "**AP (Availability + Partition tolerance):** During a partition, all nodes respond but may return different (stale) data.\n\n**Examples:** Cassandra, DynamoDB, CouchDB\n**Use when:** Availability matters more than perfect consistency",
+                        "diagram_data": """graph TB
+    subgraph "AP System During Partition"
+        C1[Client 1] --> |"Write X=5"| N1[(Node 1<br/>X=5)]
+        N1 -.X .- N2[(Node 2<br/>X=3)]
+        C2[Client 2] --> |"Read X"| N2
+        N2 --> |"X=3 stale"| C2
+    end
+    style N1 fill:#90EE90
+    style N2 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Real-World Database Choices",
+                        "explanation": "| Database | CAP Choice | Notes |\n|----------|------------|-------|\n| PostgreSQL | CA* | Single node, no partition tolerance |\n| MongoDB | CP | Blocks writes if primary unavailable |\n| Cassandra | AP | Tunable consistency |\n| DynamoDB | AP | Eventual consistency default |",
+                        "diagram_data": """graph TB
+    subgraph "CP Databases"
+        Mongo[(MongoDB)]
+        HBase[(HBase)]
+        Zookeeper[(Zookeeper)]
+    end
+    subgraph "AP Databases"
+        Cassandra[(Cassandra)]
+        Dynamo[(DynamoDB)]
+        Couch[(CouchDB)]
+    end
+    style Mongo fill:#ADD8E6
+    style HBase fill:#ADD8E6
+    style Zookeeper fill:#ADD8E6
+    style Cassandra fill:#90EE90
+    style Dynamo fill:#90EE90
+    style Couch fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_rate_limiting_visual(self):
+        """Seed Rate Limiting Algorithms visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="rate-limiting-algorithms",
+            defaults={
+                "title": "Rate Limiting Algorithms",
+                "description": "Learn token bucket, leaky bucket, and sliding window rate limiting",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["system-design", "rate-limiting", "api", "security"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Rate Limiting?",
+                        "explanation": "**Rate limiting** controls how many requests a client can make in a time period:\n- **Prevent abuse:** Stop DDoS attacks and scraping\n- **Fair usage:** Ensure resources for all users\n- **Cost control:** Limit expensive API calls",
+                        "diagram_data": """graph LR
+    C1[Client] --> |"100 req/s"| RL{Rate Limiter}
+    RL --> |"10 req/s allowed"| API[API Server]
+    RL --> |"90 req/s rejected"| X[429 Too Many Requests]
+    style RL fill:#FFFACD
+    style X fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Token Bucket",
+                        "explanation": "**Token Bucket:** Tokens are added at a fixed rate. Each request consumes a token. If no tokens, request is rejected.\n\n**Allows bursts:** Bucket can accumulate tokens up to max capacity.",
+                        "diagram_data": """graph TB
+    subgraph "Token Bucket"
+        Bucket[(Bucket<br/>capacity: 10)]
+        Fill[Refill: 1 token/sec]
+        Fill --> Bucket
+    end
+    Req[Request] --> |"Takes 1 token"| Bucket
+    Bucket --> |"Token available"| Allow[ALLOW]
+    Bucket --> |"Bucket empty"| Deny[DENY]
+    style Allow fill:#90EE90
+    style Deny fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Leaky Bucket",
+                        "explanation": "**Leaky Bucket:** Requests fill a bucket that leaks at a constant rate. Smooths out traffic bursts.\n\n**Key difference from token bucket:** Processes requests at a fixed rate, no bursting.",
+                        "diagram_data": """graph TB
+    Req[Incoming Requests] --> Bucket[(Queue/Bucket)]
+    Bucket --> |"Fixed rate: 10/sec"| Process[Process]
+    Bucket --> |"Bucket full"| Overflow[REJECT]
+    style Bucket fill:#ADD8E6
+    style Overflow fill:#FFB6C1
+    style Process fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Fixed Window Counter",
+                        "explanation": "**Fixed Window:** Count requests in fixed time windows (e.g., per minute). Simple but has edge case: 2x burst at window boundary.",
+                        "diagram_data": """graph LR
+    subgraph "Window 1: 00:00-01:00"
+        W1[Count: 8/10]
+    end
+    subgraph "Window 2: 01:00-02:00"
+        W2[Count: 3/10]
+    end
+    subgraph "Problem: Boundary Burst"
+        B1[00:59 - 10 requests]
+        B2[01:01 - 10 requests]
+        Note[20 requests in 2 seconds!]
+    end
+    style W1 fill:#90EE90
+    style W2 fill:#90EE90
+    style Note fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Sliding Window Log",
+                        "explanation": "**Sliding Window Log:** Store timestamp of each request. Count requests in the last N seconds. Accurate but memory-intensive.",
+                        "diagram_data": """graph TB
+    subgraph "Request Log"
+        L1[12:00:01]
+        L2[12:00:15]
+        L3[12:00:45]
+        L4[12:00:58]
+        L5[12:01:02]
+    end
+    Now[Now: 12:01:10]
+    Window[Window: last 60s]
+    Count[Count requests after 12:00:10]
+    Result[4 requests in window]
+    Now --> Window
+    Window --> Count
+    Count --> Result
+    style Result fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Sliding Window Counter",
+                        "explanation": "**Sliding Window Counter:** Hybrid approach. Uses weighted average of current and previous window counts. Good balance of accuracy and efficiency.",
+                        "diagram_data": """graph TB
+    subgraph "Calculation"
+        Prev[Previous window: 8 requests]
+        Curr[Current window: 4 requests]
+        Pos[Position: 30% into current]
+        Formula["Count = 8×0.7 + 4×1.0 = 9.6"]
+    end
+    Result{9.6 < 10 limit}
+    Result --> Allow[ALLOW]
+    style Allow fill:#90EE90
+    style Formula fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Comparison",
+                        "explanation": "| Algorithm | Memory | Accuracy | Burst Handling |\n|-----------|--------|----------|----------------|\n| Token Bucket | Low | Good | Allows bursts |\n| Leaky Bucket | Low | Good | Smooths bursts |\n| Fixed Window | Low | Poor | Boundary issues |\n| Sliding Log | High | Perfect | Flexible |\n| Sliding Counter | Medium | Good | Balanced |",
+                        "diagram_data": """graph TB
+    Q1{Need to allow<br/>traffic bursts?}
+    Q1 --> |Yes| TB[Token Bucket]
+    Q1 --> |No| Q2{Need smooth<br/>output rate?}
+    Q2 --> |Yes| LB[Leaky Bucket]
+    Q2 --> |No| Q3{Memory<br/>constrained?}
+    Q3 --> |Yes| SC[Sliding Counter]
+    Q3 --> |No| SL[Sliding Log]
+    style TB fill:#90EE90
+    style LB fill:#ADD8E6
+    style SC fill:#FFFACD
+    style SL fill:#E6E6FA""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_microservices_vs_monolith_visual(self):
+        """Seed Microservices vs Monolith visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="microservices-vs-monolith",
+            defaults={
+                "title": "Microservices vs Monolith",
+                "description": "Compare monolithic and microservices architectures and when to use each",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["system-design", "microservices", "architecture", "monolith"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Monolithic Architecture",
+                        "explanation": "A **monolith** is a single deployable unit containing all application functionality. All code runs in one process.\n\n**Pros:** Simple to develop, test, deploy initially\n**Cons:** Hard to scale, single point of failure, tech lock-in",
+                        "diagram_data": """graph TB
+    subgraph "Monolith"
+        UI[UI Layer]
+        BL[Business Logic]
+        DAL[Data Access]
+        UI --> BL
+        BL --> DAL
+    end
+    DAL --> DB[(Database)]
+    style UI fill:#ADD8E6
+    style BL fill:#ADD8E6
+    style DAL fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Microservices Architecture",
+                        "explanation": "**Microservices** split the application into small, independent services. Each service owns its data and can be deployed separately.\n\n**Pros:** Independent scaling, tech flexibility, fault isolation\n**Cons:** Distributed complexity, network latency, data consistency",
+                        "diagram_data": """graph TB
+    Client[Client] --> GW[API Gateway]
+    GW --> US[User Service]
+    GW --> OS[Order Service]
+    GW --> PS[Product Service]
+    US --> UDB[(User DB)]
+    OS --> ODB[(Order DB)]
+    PS --> PDB[(Product DB)]
+    style US fill:#90EE90
+    style OS fill:#FFFACD
+    style PS fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Scaling Comparison",
+                        "explanation": "**Monolith scaling:** Must scale entire application, even if only one feature is overloaded.\n\n**Microservices scaling:** Scale only the services that need it. More efficient resource usage.",
+                        "diagram_data": """graph TB
+    subgraph "Monolith Scaling"
+        M1[Full App]
+        M2[Full App]
+        M3[Full App]
+    end
+    subgraph "Microservices Scaling"
+        U1[User x1]
+        O1[Order x1]
+        P1[Product x3]
+        P2[Product]
+        P3[Product]
+    end
+    Note["Product service gets 3x traffic"]
+    style P1 fill:#90EE90
+    style P2 fill:#90EE90
+    style P3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Service Communication",
+                        "explanation": "Microservices communicate via:\n- **Synchronous:** REST, gRPC (request-response)\n- **Asynchronous:** Message queues (event-driven)\n\n**Rule:** Prefer async for loose coupling",
+                        "diagram_data": """graph LR
+    subgraph "Synchronous"
+        A1[Service A] --> |"HTTP/gRPC"| B1[Service B]
+        B1 --> |"Response"| A1
+    end
+    subgraph "Asynchronous"
+        A2[Service A] --> |"Event"| Q[(Message Queue)]
+        Q --> |"Event"| B2[Service B]
+    end
+    style Q fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Data Management",
+                        "explanation": "**Monolith:** Single shared database, ACID transactions easy.\n\n**Microservices:** Each service owns its data. Cross-service transactions require sagas or eventual consistency.",
+                        "diagram_data": """graph TB
+    subgraph "Monolith: Shared DB"
+        App[Application] --> DB[(Single Database)]
+    end
+    subgraph "Microservices: DB per Service"
+        S1[Service 1] --> DB1[(DB 1)]
+        S2[Service 2] --> DB2[(DB 2)]
+        S1 -.-> |"Event"| S2
+    end
+    style DB fill:#ADD8E6
+    style DB1 fill:#90EE90
+    style DB2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "When to Use Each",
+                        "explanation": "**Start with monolith when:**\n- Small team (< 10 developers)\n- MVP or prototype\n- Domain not well understood\n\n**Consider microservices when:**\n- Large team with clear ownership\n- Need independent scaling\n- Different tech stacks needed",
+                        "diagram_data": """graph TB
+    Q1{Team size?}
+    Q1 --> |"Small < 10"| Mono[Monolith]
+    Q1 --> |"Large 50+"| Micro[Microservices]
+    Q1 --> |"Medium"| Q2{Need independent<br/>deployments?}
+    Q2 --> |No| Mono
+    Q2 --> |Yes| Q3{Clear service<br/>boundaries?}
+    Q3 --> |No| Mono
+    Q3 --> |Yes| Micro
+    style Mono fill:#ADD8E6
+    style Micro fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_api_gateway_pattern_visual(self):
+        """Seed API Gateway Pattern visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="api-gateway-pattern",
+            defaults={
+                "title": "API Gateway Pattern",
+                "description": "Learn how API gateways provide routing, authentication, and aggregation",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["system-design", "api-gateway", "microservices", "routing"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is an API Gateway?",
+                        "explanation": "An **API Gateway** is a single entry point for all client requests. It handles cross-cutting concerns like authentication, rate limiting, and routing to backend services.",
+                        "diagram_data": """graph LR
+    Mobile[Mobile App] --> GW[API Gateway]
+    Web[Web App] --> GW
+    Partner[Partner API] --> GW
+    GW --> S1[Service 1]
+    GW --> S2[Service 2]
+    GW --> S3[Service 3]
+    style GW fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Request Routing",
+                        "explanation": "The gateway routes requests to appropriate services based on URL path, headers, or other criteria.\n\n**Example:**\n- `/users/*` → User Service\n- `/orders/*` → Order Service",
+                        "diagram_data": """graph LR
+    Client[Client] --> GW[API Gateway]
+    GW --> |"/users/123"| US[User Service]
+    GW --> |"/orders/456"| OS[Order Service]
+    GW --> |"/products"| PS[Product Service]
+    style GW fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Authentication & Authorization",
+                        "explanation": "The gateway validates tokens and enforces access control BEFORE requests reach services. Services trust the gateway's authentication.",
+                        "diagram_data": """graph LR
+    Client[Client] --> |"JWT Token"| GW[API Gateway]
+    GW --> |"1. Validate token"| Auth[(Auth Service)]
+    Auth --> |"Valid"| GW
+    GW --> |"2. Forward + user context"| Service[Backend Service]
+    style GW fill:#90EE90
+    style Auth fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Rate Limiting",
+                        "explanation": "The gateway enforces rate limits per client, API key, or endpoint. Protects backend services from overload.",
+                        "diagram_data": """graph TB
+    Client[Client] --> GW{API Gateway}
+    GW --> |"Under limit"| Allow[Forward to Service]
+    GW --> |"Over limit"| Deny[429 Too Many Requests]
+    subgraph "Rate Limit Config"
+        R1["Free tier: 100/min"]
+        R2["Pro tier: 1000/min"]
+    end
+    style Allow fill:#90EE90
+    style Deny fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Response Aggregation",
+                        "explanation": "The gateway can combine responses from multiple services into a single response. Reduces client round-trips.\n\n**Example:** Product page needs data from Product, Inventory, and Review services.",
+                        "diagram_data": """graph TB
+    Client[Client] --> |"GET /product/123"| GW[API Gateway]
+    GW --> PS[Product Service]
+    GW --> IS[Inventory Service]
+    GW --> RS[Review Service]
+    PS --> |"name, price"| GW
+    IS --> |"stock: 50"| GW
+    RS --> |"rating: 4.5"| GW
+    GW --> |"Combined response"| Client
+    style GW fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Popular API Gateways",
+                        "explanation": "| Gateway | Type | Best For |\n|---------|------|----------|\n| Kong | Open source | Kubernetes, plugins |\n| AWS API Gateway | Managed | AWS ecosystem |\n| Nginx | Open source | High performance |\n| Envoy | Open source | Service mesh |",
+                        "diagram_data": """graph TB
+    subgraph "Open Source"
+        Kong[Kong]
+        Nginx[Nginx]
+        Envoy[Envoy]
+    end
+    subgraph "Managed"
+        AWS[AWS API Gateway]
+        GCP[Google Cloud Endpoints]
+        Azure[Azure API Management]
+    end
+    style Kong fill:#ADD8E6
+    style AWS fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_event_driven_architecture_visual(self):
+        """Seed Event-Driven Architecture visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="event-driven-architecture",
+            defaults={
+                "title": "Event-Driven Architecture",
+                "description": "Learn event sourcing, CQRS, and eventual consistency patterns",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "advanced",
+                "estimated_time_minutes": 12,
+                "tags": ["system-design", "event-driven", "cqrs", "event-sourcing"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is Event-Driven Architecture?",
+                        "explanation": "**Event-Driven Architecture (EDA)** uses events to trigger and communicate between services. Services are loosely coupled and react to events asynchronously.",
+                        "diagram_data": """graph LR
+    OS[Order Service] --> |"OrderPlaced"| EB((Event Bus))
+    EB --> IS[Inventory Service]
+    EB --> NS[Notification Service]
+    EB --> AS[Analytics Service]
+    style EB fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Events vs Commands",
+                        "explanation": "**Events:** Facts that happened (past tense) - \"OrderPlaced\"\n**Commands:** Instructions to do something - \"PlaceOrder\"\n\nEvents are immutable and can have multiple consumers. Commands have one handler.",
+                        "diagram_data": """graph TB
+    subgraph "Command"
+        C[PlaceOrder] --> |"Single handler"| OS[Order Service]
+    end
+    subgraph "Event"
+        E[OrderPlaced] --> IS[Inventory]
+        E --> NS[Notifications]
+        E --> AS[Analytics]
+    end
+    style C fill:#ADD8E6
+    style E fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Event Sourcing",
+                        "explanation": "**Event Sourcing** stores all changes as a sequence of events. Current state is derived by replaying events.\n\n**Benefits:** Full audit trail, can rebuild state, time travel debugging",
+                        "diagram_data": """graph TB
+    subgraph "Event Store"
+        E1[AccountCreated<br/>balance: 0]
+        E2[MoneyDeposited<br/>amount: 100]
+        E3[MoneyWithdrawn<br/>amount: 30]
+        E1 --> E2 --> E3
+    end
+    Replay[Replay events] --> State[Current State<br/>balance: 70]
+    style State fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "CQRS Pattern",
+                        "explanation": "**CQRS (Command Query Responsibility Segregation)** separates read and write models. Writes go to event store, reads from optimized views.\n\n**Use when:** Read and write patterns differ significantly",
+                        "diagram_data": """graph TB
+    Client[Client]
+    Client --> |"Commands"| WM[Write Model]
+    Client --> |"Queries"| RM[Read Model]
+    WM --> ES[(Event Store)]
+    ES --> |"Project events"| RM
+    RM --> RDB[(Read DB<br/>Optimized views)]
+    style WM fill:#FFB6C1
+    style RM fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Eventual Consistency",
+                        "explanation": "In EDA, data is **eventually consistent**. After an event, it takes time for all services to update. The system reaches consistency eventually.\n\n**Trade-off:** Higher availability, but temporary inconsistency",
+                        "diagram_data": """graph TB
+    T1["T=0: Order placed"]
+    T2["T=100ms: Order DB updated"]
+    T3["T=200ms: Inventory updated"]
+    T4["T=300ms: Email sent"]
+    T5["T=300ms: ALL CONSISTENT"]
+    T1 --> T2 --> T3 --> T4 --> T5
+    style T1 fill:#FFB6C1
+    style T5 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Saga Pattern",
+                        "explanation": "**Sagas** manage distributed transactions across services using compensating actions. If step 3 fails, undo steps 1 and 2.\n\n**Example:** Order fails payment → Cancel inventory reservation → Refund",
+                        "diagram_data": """graph LR
+    subgraph "Happy Path"
+        S1[Create Order] --> S2[Reserve Inventory] --> S3[Charge Payment]
+    end
+    subgraph "Compensation"
+        S3 --> |"Failed"| C2[Release Inventory]
+        C2 --> C1[Cancel Order]
+    end
+    style S3 fill:#FFB6C1
+    style C1 fill:#FFFACD
+    style C2 fill:#FFFACD""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_circuit_breaker_pattern_visual(self):
+        """Seed Circuit Breaker Pattern visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="circuit-breaker-pattern",
+            defaults={
+                "title": "Circuit Breaker Pattern",
+                "description": "Learn how circuit breakers prevent cascading failures in distributed systems",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["system-design", "circuit-breaker", "resilience", "fault-tolerance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "The Problem: Cascading Failures",
+                        "explanation": "When a service fails, callers wait for timeouts, exhausting resources. This failure cascades through the system, taking down healthy services.",
+                        "diagram_data": """graph LR
+    A[Service A] --> |"Timeout..."| B[Service B<br/>DOWN]
+    A --> |"Threads blocked"| A
+    C[Service C] --> A
+    C --> |"Also blocked"| C
+    style B fill:#FFB6C1
+    style A fill:#FFFACD
+    style C fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Circuit Breaker States",
+                        "explanation": "A **circuit breaker** has three states:\n- **Closed:** Normal operation, requests pass through\n- **Open:** Failures detected, requests fail immediately\n- **Half-Open:** Testing if service recovered",
+                        "diagram_data": """stateDiagram-v2
+    [*] --> Closed
+    Closed --> Open: Failure threshold exceeded
+    Open --> HalfOpen: Timeout expires
+    HalfOpen --> Closed: Success
+    HalfOpen --> Open: Failure""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Closed State",
+                        "explanation": "In **Closed** state, requests flow normally. The breaker counts failures. When failures exceed a threshold (e.g., 5 in 10 seconds), it trips to Open.",
+                        "diagram_data": """graph LR
+    Req[Request] --> CB{Circuit Breaker<br/>CLOSED}
+    CB --> |"Pass through"| Service[Service]
+    Service --> |"Success"| CB
+    Service --> |"Failure"| Count[Failure Counter]
+    Count --> |"5 failures"| Trip[TRIP TO OPEN]
+    style CB fill:#90EE90
+    style Trip fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Open State",
+                        "explanation": "In **Open** state, requests fail immediately without calling the service. This gives the failing service time to recover and prevents resource exhaustion.",
+                        "diagram_data": """graph LR
+    Req[Request] --> CB{Circuit Breaker<br/>OPEN}
+    CB --> |"Fail fast"| Error[Return Error/Fallback]
+    CB -.X .- Service[Service<br/>Not called]
+    Timer[Recovery Timer<br/>30 seconds] --> HO[Try Half-Open]
+    style CB fill:#FFB6C1
+    style Error fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "Half-Open State",
+                        "explanation": "After a timeout, the breaker enters **Half-Open** state. It allows a limited number of test requests. If they succeed, circuit closes. If they fail, circuit opens again.",
+                        "diagram_data": """graph TB
+    CB{Circuit Breaker<br/>HALF-OPEN}
+    CB --> |"Test request"| Service[Service]
+    Service --> |"Success"| Close[CLOSE Circuit]
+    Service --> |"Failure"| Open[OPEN Circuit]
+    style CB fill:#FFFACD
+    style Close fill:#90EE90
+    style Open fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Fallback Strategies",
+                        "explanation": "When the circuit is open, provide a **fallback**:\n- Return cached data\n- Return default value\n- Call alternative service\n- Return degraded response",
+                        "diagram_data": """graph TB
+    Req[Request] --> CB{Circuit Open?}
+    CB --> |No| Service[Call Service]
+    CB --> |Yes| Fallback{Fallback Strategy}
+    Fallback --> Cache[Return Cached]
+    Fallback --> Default[Return Default]
+    Fallback --> Alt[Call Backup Service]
+    style Cache fill:#90EE90
+    style Default fill:#90EE90
+    style Alt fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_cdn_architecture_visual(self):
+        """Seed CDN Architecture visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="cdn-architecture",
+            defaults={
+                "title": "CDN Architecture",
+                "description": "Learn how Content Delivery Networks improve performance with edge caching",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["system-design", "cdn", "caching", "performance"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "What is a CDN?",
+                        "explanation": "A **Content Delivery Network (CDN)** is a distributed network of servers that cache content closer to users. Reduces latency by serving from nearby edge servers instead of distant origin.",
+                        "diagram_data": """graph TB
+    subgraph "Without CDN"
+        U1[User in Tokyo] --> |"200ms"| Origin1[Origin: US]
+    end
+    subgraph "With CDN"
+        U2[User in Tokyo] --> |"20ms"| Edge[Edge: Tokyo]
+        Edge -.-> |"Cache miss"| Origin2[Origin: US]
+    end
+    style Edge fill:#90EE90
+    style U1 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "CDN Architecture",
+                        "explanation": "CDN consists of:\n- **Origin Server:** Your main server with original content\n- **Edge Servers (PoPs):** Distributed globally, cache content\n- **DNS:** Routes users to nearest edge",
+                        "diagram_data": """graph TB
+    DNS[DNS] --> |"Route to nearest"| User[User]
+    User --> Edge1[Edge: Europe]
+    User --> Edge2[Edge: Asia]
+    User --> Edge3[Edge: Americas]
+    Edge1 --> Origin[(Origin Server)]
+    Edge2 --> Origin
+    Edge3 --> Origin
+    style Origin fill:#ADD8E6
+    style Edge1 fill:#90EE90
+    style Edge2 fill:#90EE90
+    style Edge3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Cache Hit vs Miss",
+                        "explanation": "**Cache Hit:** Content found at edge, served immediately.\n**Cache Miss:** Edge fetches from origin, caches it, then serves.\n\nHigh hit ratio = better performance.",
+                        "diagram_data": """graph LR
+    subgraph "Cache HIT"
+        U1[User] --> |"Request"| E1[Edge]
+        E1 --> |"Cached!"| U1
+    end
+    subgraph "Cache MISS"
+        U2[User] --> |"1. Request"| E2[Edge]
+        E2 --> |"2. Fetch"| O[Origin]
+        O --> |"3. Response"| E2
+        E2 --> |"4. Cache + serve"| U2
+    end
+    style E1 fill:#90EE90
+    style E2 fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Cache Invalidation",
+                        "explanation": "When content changes, caches must be updated:\n- **TTL:** Content expires after set time\n- **Purge:** Manually invalidate specific URLs\n- **Versioning:** Use versioned URLs (style.v2.css)",
+                        "diagram_data": """graph TB
+    subgraph "TTL-based"
+        C1[Cached Content] --> |"TTL: 1 hour"| Expire[Auto-expire]
+    end
+    subgraph "Purge"
+        Admin[Admin] --> |"Purge /logo.png"| CDN[CDN API]
+        CDN --> |"Invalidate"| All[All Edges]
+    end
+    subgraph "Versioning"
+        URL1["/style.v1.css"] --> Old[Old version]
+        URL2["/style.v2.css"] --> New[New version]
+    end
+    style Expire fill:#FFFACD
+    style New fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "What to Cache",
+                        "explanation": "**Good for CDN:**\n- Static assets (images, CSS, JS)\n- Video/audio files\n- API responses (with care)\n\n**Not for CDN:**\n- User-specific data\n- Real-time data\n- Sensitive information",
+                        "diagram_data": """graph TB
+    subgraph "Cache on CDN"
+        S1[Images]
+        S2[CSS/JS]
+        S3[Videos]
+        S4[Fonts]
+    end
+    subgraph "Don't Cache"
+        D1[User profiles]
+        D2[Shopping carts]
+        D3[Real-time prices]
+    end
+    style S1 fill:#90EE90
+    style S2 fill:#90EE90
+    style S3 fill:#90EE90
+    style S4 fill:#90EE90
+    style D1 fill:#FFB6C1
+    style D2 fill:#FFB6C1
+    style D3 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Popular CDN Providers",
+                        "explanation": "| Provider | Strengths |\n|----------|----------|\n| CloudFlare | DDoS protection, free tier |\n| AWS CloudFront | AWS integration |\n| Akamai | Enterprise, largest network |\n| Fastly | Edge computing, real-time purge |",
+                        "diagram_data": """graph TB
+    subgraph "CDN Providers"
+        CF[CloudFlare<br/>DDoS + Free tier]
+        AWS[CloudFront<br/>AWS integration]
+        AK[Akamai<br/>Enterprise scale]
+        FA[Fastly<br/>Edge compute]
+    end
+    style CF fill:#ADD8E6
+    style AWS fill:#FFFACD
+    style AK fill:#E6E6FA
+    style FA fill:#90EE90""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_service_discovery_visual(self):
+        """Seed Service Discovery visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="service-discovery",
+            defaults={
+                "title": "Service Discovery",
+                "description": "Learn how services find each other in dynamic distributed systems",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 8,
+                "tags": ["system-design", "service-discovery", "microservices", "consul"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "Why Service Discovery?",
+                        "explanation": "In dynamic environments (Kubernetes, cloud), services scale up/down and IPs change. **Service discovery** helps services find each other without hardcoded addresses.",
+                        "diagram_data": """graph TB
+    subgraph "The Problem"
+        A[Service A] --> |"order-svc:???"| Q[Where is Order Service?]
+        O1[Order Instance 1<br/>10.0.1.5]
+        O2[Order Instance 2<br/>10.0.1.8]
+        O3[Order Instance 3<br/>10.0.1.12]
+    end
+    style Q fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "Service Registry",
+                        "explanation": "A **service registry** is a database of available services and their locations. Services register on startup and deregister on shutdown.",
+                        "diagram_data": """graph TB
+    subgraph "Service Registry"
+        Registry[(Registry<br/>Consul/Eureka)]
+    end
+    S1[Order Service<br/>10.0.1.5:8080] --> |"Register"| Registry
+    S2[Order Service<br/>10.0.1.8:8080] --> |"Register"| Registry
+    S3[User Service<br/>10.0.2.1:8080] --> |"Register"| Registry
+    style Registry fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "Client-Side Discovery",
+                        "explanation": "In **client-side discovery**, the client queries the registry and load balances across available instances itself.\n\n**Pros:** Client controls LB logic\n**Cons:** Client complexity, language-specific",
+                        "diagram_data": """graph LR
+    Client[API Gateway] --> |"1. Query"| Registry[(Registry)]
+    Registry --> |"2. [10.0.1.5, 10.0.1.8]"| Client
+    Client --> |"3. Choose & call"| S1[Order 10.0.1.5]
+    style Client fill:#FFFACD
+    style Registry fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Server-Side Discovery",
+                        "explanation": "In **server-side discovery**, client calls a load balancer that queries the registry and routes the request.\n\n**Pros:** Simpler clients\n**Cons:** Extra network hop",
+                        "diagram_data": """graph LR
+    Client[Client] --> |"1. Request"| LB[Load Balancer]
+    LB --> |"2. Query"| Registry[(Registry)]
+    Registry --> |"3. Instances"| LB
+    LB --> |"4. Route"| S1[Order Service]
+    style LB fill:#90EE90
+    style Registry fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "DNS-Based Discovery",
+                        "explanation": "**DNS-based discovery** uses DNS to resolve service names to IPs. Simple but limited (no health checking, TTL caching issues).\n\n**Examples:** Kubernetes DNS, AWS Route 53",
+                        "diagram_data": """graph LR
+    Client[Client] --> |"order-service.default.svc"| DNS[DNS Server]
+    DNS --> |"10.0.1.5, 10.0.1.8"| Client
+    Client --> |"Request"| S1[Order Service]
+    style DNS fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "Health Checking",
+                        "explanation": "The registry must know if services are healthy. Services send **heartbeats** or registry performs **health checks**. Unhealthy instances are removed.",
+                        "diagram_data": """graph TB
+    Registry[(Registry)]
+    S1[Healthy] --> |"Heartbeat"| Registry
+    S2[Healthy] --> |"Heartbeat"| Registry
+    S3[Unhealthy] -.X .-|"No heartbeat"| Registry
+    Registry --> |"Remove"| Remove[Deregister S3]
+    style S1 fill:#90EE90
+    style S2 fill:#90EE90
+    style S3 fill:#FFB6C1""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Popular Solutions",
+                        "explanation": "| Solution | Type | Best For |\n|----------|------|----------|\n| Consul | Registry + DNS | Multi-DC |\n| Eureka | Registry | Spring ecosystem |\n| Kubernetes | DNS + Service | K8s native |\n| etcd | Key-value store | Custom solutions |",
+                        "diagram_data": """graph TB
+    subgraph "Dedicated Registry"
+        Consul[Consul]
+        Eureka[Eureka]
+    end
+    subgraph "Platform Built-in"
+        K8s[Kubernetes DNS]
+        ECS[AWS ECS Service Discovery]
+    end
+    style Consul fill:#90EE90
+    style K8s fill:#ADD8E6""",
+                    },
+                ],
+            },
+        )
+        self.stdout.write(f"  {'Created' if created else 'Updated'}: {topic.title}")
+
+    def seed_dns_global_load_balancing_visual(self):
+        """Seed DNS & Global Load Balancing visual."""
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
+        topic, created = VisualTopic.objects.update_or_create(
+            subject=subject,
+            slug="dns-global-load-balancing",
+            defaults={
+                "title": "DNS & Global Load Balancing",
+                "description": "Learn how DNS routes traffic globally with GeoDNS and latency-based routing",
+                "rendering_type": VisualTopic.RenderingType.MERMAID,
+                "difficulty": "intermediate",
+                "estimated_time_minutes": 10,
+                "tags": ["system-design", "dns", "global-load-balancing", "geo-routing"],
+                "status": VisualTopic.Status.PUBLISHED,
+                "source": "manual",
+                "steps": [
+                    {
+                        "step_number": 0,
+                        "title": "DNS Basics",
+                        "explanation": "**DNS (Domain Name System)** translates domain names to IP addresses. When you visit example.com, DNS resolves it to an IP like 93.184.216.34.",
+                        "diagram_data": """graph LR
+    Browser[Browser] --> |"example.com?"| DNS[DNS Server]
+    DNS --> |"93.184.216.34"| Browser
+    Browser --> |"Connect"| Server[Web Server<br/>93.184.216.34]
+    style DNS fill:#ADD8E6""",
+                    },
+                    {
+                        "step_number": 1,
+                        "title": "DNS Resolution Chain",
+                        "explanation": "DNS resolution involves multiple servers:\n1. **Recursive Resolver:** Your ISP's DNS\n2. **Root Server:** Points to TLD server\n3. **TLD Server:** Points to authoritative server\n4. **Authoritative:** Has the actual IP",
+                        "diagram_data": """graph TB
+    Client[Client] --> |"1. example.com?"| Resolver[Recursive Resolver]
+    Resolver --> |"2. .com?"| Root[Root Server]
+    Root --> |"3. Ask .com TLD"| TLD[TLD Server]
+    TLD --> |"4. Ask example.com NS"| Auth[Authoritative]
+    Auth --> |"5. 93.184.216.34"| Resolver
+    Resolver --> |"6. Cache + return"| Client
+    style Auth fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 2,
+                        "title": "GeoDNS",
+                        "explanation": "**GeoDNS** returns different IPs based on the client's geographic location. Routes users to the nearest data center for lower latency.",
+                        "diagram_data": """graph TB
+    DNS[GeoDNS]
+    EU[User in Europe] --> |"api.example.com"| DNS
+    DNS --> |"52.28.0.1"| EU
+    US[User in USA] --> |"api.example.com"| DNS
+    DNS --> |"34.102.0.1"| US
+    Asia[User in Asia] --> |"api.example.com"| DNS
+    DNS --> |"13.115.0.1"| Asia
+    EU --> DC1[(EU Data Center)]
+    US --> DC2[(US Data Center)]
+    Asia --> DC3[(Asia Data Center)]
+    style DNS fill:#FFFACD""",
+                    },
+                    {
+                        "step_number": 3,
+                        "title": "Latency-Based Routing",
+                        "explanation": "**Latency-based routing** measures actual latency to each endpoint and routes to the fastest, regardless of geography. Better than GeoDNS when network paths vary.",
+                        "diagram_data": """graph TB
+    DNS[Latency-Based DNS]
+    User[User] --> |"Measure latency"| DNS
+    DNS --> |"EU: 50ms"| Check1[EU Endpoint]
+    DNS --> |"US: 30ms"| Check2[US Endpoint]
+    DNS --> |"Asia: 80ms"| Check3[Asia Endpoint]
+    DNS --> |"Route to US"| User
+    style Check2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 4,
+                        "title": "DNS Failover",
+                        "explanation": "**DNS failover** monitors endpoint health and removes unhealthy endpoints from DNS responses. Provides basic high availability.",
+                        "diagram_data": """graph TB
+    DNS[DNS + Health Check]
+    DNS --> |"Check"| DC1[DC1: Healthy]
+    DNS --> |"Check"| DC2[DC2: DOWN]
+    DNS --> |"Check"| DC3[DC3: Healthy]
+    User[User Query] --> DNS
+    DNS --> |"Returns DC1, DC3 only"| User
+    style DC2 fill:#FFB6C1
+    style DC1 fill:#90EE90
+    style DC3 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 5,
+                        "title": "TTL Considerations",
+                        "explanation": "**TTL (Time-To-Live)** controls how long DNS responses are cached.\n\n- **Long TTL:** Better performance, slower failover\n- **Short TTL:** Faster failover, more DNS queries\n\n**Typical:** 60-300 seconds for dynamic routing",
+                        "diagram_data": """graph TB
+    subgraph "Long TTL: 1 hour"
+        L1[Fewer DNS queries]
+        L2[Slow failover]
+        L3[Good for stable services]
+    end
+    subgraph "Short TTL: 60s"
+        S1[More DNS queries]
+        S2[Fast failover]
+        S3[Good for dynamic routing]
+    end
+    style L1 fill:#90EE90
+    style L2 fill:#FFB6C1
+    style S1 fill:#FFB6C1
+    style S2 fill:#90EE90""",
+                    },
+                    {
+                        "step_number": 6,
+                        "title": "Global Load Balancing Solutions",
+                        "explanation": "| Solution | Features |\n|----------|----------|\n| AWS Route 53 | GeoDNS, latency, failover |\n| Cloudflare | Fast propagation, DDoS |\n| Google Cloud DNS | Low latency, anycast |\n| NS1 | Advanced traffic steering |",
+                        "diagram_data": """graph TB
+    subgraph "Cloud Providers"
+        R53[AWS Route 53]
+        GCDNS[Google Cloud DNS]
+        Azure[Azure Traffic Manager]
+    end
+    subgraph "Specialized"
+        CF[Cloudflare DNS]
+        NS1[NS1]
+        DNSimple[DNSimple]
+    end
+    style R53 fill:#FFFACD
+    style CF fill:#ADD8E6""",
                     },
                 ],
             },

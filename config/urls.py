@@ -18,4 +18,5 @@ urlpatterns = [
     path("argument/", include("apps.argument.urls")),
     path("readiness/", include("apps.readiness.urls")),
     path("equations/", include("apps.equations.urls")),
+    path("systemdesign/", include("apps.systemdesign.urls")),
 ]

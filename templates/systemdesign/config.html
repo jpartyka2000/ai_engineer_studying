@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Design Your System - {{ subject.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="{% url 'home' %}" class="hover:text-blue-600">Home</a>
+            <span class="mx-2">/</span>
+            <a href="{% url 'subjects:detail' subject.slug %}" class="hover:text-blue-600">{{ subject.name }}</a>
+            <span class="mx-2">/</span>
+            <span class="text-gray-700">Design Your System</span>
+        </nav>
+        <h1 class="text-3xl font-bold text-gray-900">Design Your System</h1>
+        <p class="text-gray-600 mt-2">
+            Practice system design interviews by drawing architecture diagrams and discussing your approach with an AI interviewer.
+        </p>
+    </div>
+
+    <!-- Resume Session Banner -->
+    {% if in_progress_session %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="font-semibold text-yellow-800">Session In Progress</h3>
+                <p class="text-yellow-700 text-sm">
+                    You have an unfinished session: {{ in_progress_session.effective_challenge_title }}
+                    ({{ in_progress_session.time_remaining_seconds|divisibleby:60 }} minutes remaining)
+                </p>
+            </div>
+            <a href="{% url 'systemdesign:session' pk=in_progress_session.pk %}"
+               class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
+                Resume Session
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Surprise Challenge Card -->
+    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-6 mb-8 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">Surprise Challenge</h2>
+                <p class="text-purple-100 mb-4">
+                    Get a randomly generated challenge to test your adaptability.
+                    Great for practicing with unfamiliar problems!
+                </p>
+                <div class="flex gap-3">
+                    <form action="{% url 'systemdesign:surprise' %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="difficulty" value="beginner">
+                        <button type="submit" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors">
+                            Beginner (15 min)
+                        </button>
+                    </form>
+                    <form action="{% url 'systemdesign:surprise' %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="difficulty" value="intermediate">
+                        <button type="submit" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors">
+                            Intermediate (30 min)
+                        </button>
+                    </form>
+                    <form action="{% url 'systemdesign:surprise' %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="difficulty" value="advanced">
+                        <button type="submit" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors">
+                            Advanced (45 min)
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="text-6xl">🎲</div>
+        </div>
+    </div>
+
+    <!-- Beginner Challenges -->
+    {% if beginner_challenges %}
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm mr-2">Beginner</span>
+            15 minutes
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for challenge in beginner_challenges %}
+            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <h3 class="font-semibold text-gray-900 mb-2">{{ challenge.title }}</h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ challenge.description|truncatewords:30 }}</p>
+                <div class="flex flex-wrap gap-1 mb-4">
+                    {% for tag in challenge.tags|slice:":3" %}
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                <form action="{% url 'systemdesign:start' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="challenge_slug" value="{{ challenge.slug }}">
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        Start Challenge
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Intermediate Challenges -->
+    {% if intermediate_challenges %}
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm mr-2">Intermediate</span>
+            30 minutes
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for challenge in intermediate_challenges %}
+            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <h3 class="font-semibold text-gray-900 mb-2">{{ challenge.title }}</h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ challenge.description|truncatewords:30 }}</p>
+                <div class="flex flex-wrap gap-1 mb-4">
+                    {% for tag in challenge.tags|slice:":3" %}
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                <form action="{% url 'systemdesign:start' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="challenge_slug" value="{{ challenge.slug }}">
+                    <button type="submit" class="w-full bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 transition-colors">
+                        Start Challenge
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Advanced Challenges -->
+    {% if advanced_challenges %}
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm mr-2">Advanced</span>
+            45 minutes
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for challenge in advanced_challenges %}
+            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <h3 class="font-semibold text-gray-900 mb-2">{{ challenge.title }}</h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ challenge.description|truncatewords:30 }}</p>
+                <div class="flex flex-wrap gap-1 mb-4">
+                    {% for tag in challenge.tags|slice:":3" %}
+                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                <form action="{% url 'systemdesign:start' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="challenge_slug" value="{{ challenge.slug }}">
+                    <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors">
+                        Start Challenge
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- No Challenges Message -->
+    {% if not beginner_challenges and not intermediate_challenges and not advanced_challenges %}
+    <div class="text-center py-12 text-gray-500">
+        <p class="text-lg">No challenges available yet.</p>
+        <p class="text-sm mt-2">Try the Surprise Challenge above or check back later!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

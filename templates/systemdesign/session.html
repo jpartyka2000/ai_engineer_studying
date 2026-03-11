@@ -1,0 +1,1197 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ challenge_title }} - Design Your System{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Canvas container */
+    #canvas-container {
+        position: relative;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    /* Toolbar */
+    .toolbar-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        transition: all 0.15s;
+        cursor: pointer;
+        min-width: 60px;
+    }
+    .toolbar-btn:hover {
+        background-color: #e5e7eb;
+    }
+    .toolbar-btn.active {
+        background-color: #3b82f6;
+        color: white;
+    }
+    .toolbar-btn .icon {
+        font-size: 1.25rem;
+        margin-bottom: 0.125rem;
+    }
+    .toolbar-btn .label {
+        font-size: 0.625rem;
+        text-transform: uppercase;
+    }
+
+    /* Chat messages */
+    .chat-message {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        max-width: 85%;
+        margin-bottom: 0.5rem;
+    }
+    .chat-message.user {
+        background-color: #3b82f6;
+        color: white;
+        margin-left: auto;
+    }
+    .chat-message.assistant {
+        background-color: #f3f4f6;
+        color: #1f2937;
+    }
+    .chat-message.system {
+        background-color: #fef3c7;
+        color: #92400e;
+        text-align: center;
+        max-width: 100%;
+        font-size: 0.875rem;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+        display: flex;
+        gap: 4px;
+        padding: 0.75rem 1rem;
+    }
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        animation: typing 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+
+    /* Timer warning */
+    .timer-warning {
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Analysis panel */
+    .analysis-item {
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .analysis-strength { background-color: #d1fae5; color: #065f46; }
+    .analysis-concern { background-color: #fee2e2; color: #991b1b; }
+    .analysis-suggestion { background-color: #dbeafe; color: #1e40af; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="h-screen flex flex-col bg-gray-100">
+    <!-- Top Bar -->
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <h1 class="text-lg font-semibold text-gray-900">{{ challenge_title }}</h1>
+            <span class="text-sm text-gray-500">{{ session.get_difficulty_display }}</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Timer -->
+            <div id="timer" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span id="timer-display" class="font-mono text-lg font-semibold">--:--</span>
+            </div>
+
+            <!-- Actions -->
+            <button id="analyze-btn" onclick="triggerAnalysis()"
+                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                Analyze Design
+            </button>
+            <button id="submit-btn" onclick="confirmSubmit()"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                Submit Design
+            </button>
+            <button onclick="confirmAbandon()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                Abandon
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Left: Canvas Area (60%) -->
+        <div class="w-3/5 flex flex-col p-4">
+            <!-- Toolbar -->
+            <div class="bg-white rounded-lg p-2 mb-2 flex flex-wrap gap-1 border border-gray-200">
+                <button class="toolbar-btn active" data-tool="select" onclick="selectTool('select')">
+                    <span class="icon">🖱️</span>
+                    <span class="label">Select</span>
+                </button>
+                <div class="w-px bg-gray-200 mx-1"></div>
+                <button class="toolbar-btn" data-tool="service" onclick="addShape('service')">
+                    <span class="icon">📦</span>
+                    <span class="label">Service</span>
+                </button>
+                <button class="toolbar-btn" data-tool="database" onclick="addShape('database')">
+                    <span class="icon">🗄️</span>
+                    <span class="label">Database</span>
+                </button>
+                <button class="toolbar-btn" data-tool="cache" onclick="addShape('cache')">
+                    <span class="icon">⚡</span>
+                    <span class="label">Cache</span>
+                </button>
+                <button class="toolbar-btn" data-tool="queue" onclick="addShape('queue')">
+                    <span class="icon">📬</span>
+                    <span class="label">Queue</span>
+                </button>
+                <button class="toolbar-btn" data-tool="loadbalancer" onclick="addShape('loadbalancer')">
+                    <span class="icon">⚖️</span>
+                    <span class="label">Load Bal.</span>
+                </button>
+                <button class="toolbar-btn" data-tool="cdn" onclick="addShape('cdn')">
+                    <span class="icon">🌐</span>
+                    <span class="label">CDN</span>
+                </button>
+                <button class="toolbar-btn" data-tool="client" onclick="addShape('client')">
+                    <span class="icon">👤</span>
+                    <span class="label">Client</span>
+                </button>
+                <div class="w-px bg-gray-200 mx-1"></div>
+                <button class="toolbar-btn" data-tool="arrow" onclick="selectTool('arrow')">
+                    <span class="icon">➡️</span>
+                    <span class="label">Arrow</span>
+                </button>
+                <button class="toolbar-btn" data-tool="line" onclick="selectTool('line')">
+                    <span class="icon">📏</span>
+                    <span class="label">Line</span>
+                </button>
+                <button class="toolbar-btn" data-tool="text" onclick="selectTool('text')">
+                    <span class="icon">T</span>
+                    <span class="label">Text</span>
+                </button>
+                <div class="w-px bg-gray-200 mx-1"></div>
+                <button class="toolbar-btn" onclick="deleteSelected()">
+                    <span class="icon">🗑️</span>
+                    <span class="label">Delete</span>
+                </button>
+                <button class="toolbar-btn" onclick="clearCanvas()">
+                    <span class="icon">🧹</span>
+                    <span class="label">Clear</span>
+                </button>
+            </div>
+
+            <!-- Canvas -->
+            <div id="canvas-container" class="flex-1">
+                <canvas id="design-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Right: Chat + Requirements (40%) -->
+        <div class="w-2/5 flex flex-col bg-white border-l border-gray-200">
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200">
+                <button id="tab-chat" onclick="switchTab('chat')"
+                        class="flex-1 px-4 py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                    Chat
+                </button>
+                <button id="tab-requirements" onclick="switchTab('requirements')"
+                        class="flex-1 px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    Requirements
+                </button>
+                <button id="tab-analysis" onclick="switchTab('analysis')"
+                        class="flex-1 px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    Analysis
+                </button>
+            </div>
+
+            <!-- Chat Panel -->
+            <div id="panel-chat" class="flex-1 flex flex-col overflow-hidden">
+                <!-- Messages -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-2">
+                    {% for msg in messages %}
+                    <div class="chat-message {{ msg.role }}">
+                        {{ msg.content|linebreaksbr }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Input -->
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex gap-2 mb-2">
+                        <button onclick="requestClarification()"
+                                class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200">
+                            Clarify Requirements
+                        </button>
+                        <button onclick="requestHint()"
+                                class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200">
+                            Get Hint
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="chat-input"
+                               placeholder="Ask a question or explain your design..."
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               onkeypress="if(event.key === 'Enter') sendMessage()">
+                        <button onclick="sendMessage()"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requirements Panel -->
+            <div id="panel-requirements" class="flex-1 overflow-y-auto p-4 hidden">
+                <h3 class="font-semibold text-gray-900 mb-3">Functional Requirements</h3>
+                <ul class="list-disc pl-5 mb-4 space-y-1 text-sm text-gray-700">
+                    {% for req in functional_requirements %}
+                    <li>{{ req }}</li>
+                    {% empty %}
+                    <li class="text-gray-400">No specific requirements provided</li>
+                    {% endfor %}
+                </ul>
+
+                <h3 class="font-semibold text-gray-900 mb-3">Non-Functional Requirements</h3>
+                <ul class="list-disc pl-5 mb-4 space-y-1 text-sm text-gray-700">
+                    {% for req in non_functional_requirements %}
+                    <li>{{ req }}</li>
+                    {% empty %}
+                    <li class="text-gray-400">No specific requirements provided</li>
+                    {% endfor %}
+                </ul>
+
+                <h3 class="font-semibold text-gray-900 mb-3">Constraints</h3>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                    {% for constraint in constraints %}
+                    <li>{{ constraint }}</li>
+                    {% empty %}
+                    <li class="text-gray-400">No specific constraints provided</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Analysis Panel -->
+            <div id="panel-analysis" class="flex-1 overflow-y-auto p-4 hidden">
+                <div id="analysis-content">
+                    {% if latest_analysis %}
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500 mb-2">
+                            Last analyzed: {{ latest_analysis.created_at|timesince }} ago
+                        </p>
+
+                        <h4 class="font-medium text-gray-900 mb-2">Components Detected</h4>
+                        <div class="flex flex-wrap gap-1 mb-4">
+                            {% for comp in latest_analysis.identified_components %}
+                            <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">{{ comp }}</span>
+                            {% empty %}
+                            <span class="text-gray-400 text-sm">None detected</span>
+                            {% endfor %}
+                        </div>
+
+                        {% if latest_analysis.strengths %}
+                        <h4 class="font-medium text-green-700 mb-2">Strengths</h4>
+                        {% for s in latest_analysis.strengths %}
+                        <div class="analysis-item analysis-strength text-sm">{{ s }}</div>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% if latest_analysis.concerns %}
+                        <h4 class="font-medium text-red-700 mb-2 mt-3">Concerns</h4>
+                        {% for c in latest_analysis.concerns %}
+                        <div class="analysis-item analysis-concern text-sm">{{ c }}</div>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% if latest_analysis.suggestions %}
+                        <h4 class="font-medium text-blue-700 mb-2 mt-3">Suggestions</h4>
+                        {% for s in latest_analysis.suggestions %}
+                        <div class="analysis-item analysis-suggestion text-sm">{{ s }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-8">
+                        No analysis yet. Click "Analyze Design" to get feedback.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+        <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-2"></h3>
+        <p id="modal-message" class="text-gray-600 mb-4"></p>
+        <div class="flex justify-end gap-3">
+            <button onclick="closeModal()" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+                Cancel
+            </button>
+            <button id="modal-confirm" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Fabric.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+<script>
+// Configuration
+const SESSION_ID = {{ session.pk }};
+const CSRF_TOKEN = '{{ csrf_token }}';
+const INITIAL_TIME = {{ time_remaining }};
+const TIME_LIMIT = {{ time_limit }};
+const CANVAS_STATE = {{ canvas_state_json|safe }};
+
+// URLs
+const URLS = {
+    saveCanvas: '{% url "systemdesign:save_canvas" pk=session.pk %}',
+    analyze: '{% url "systemdesign:analyze" pk=session.pk %}',
+    sendMessage: '{% url "systemdesign:send_message" pk=session.pk %}',
+    requestHint: '{% url "systemdesign:hint" pk=session.pk %}',
+    getTime: '{% url "systemdesign:time" pk=session.pk %}',
+    submit: '{% url "systemdesign:submit" pk=session.pk %}',
+    abandon: '{% url "systemdesign:abandon" pk=session.pk %}',
+    results: '{% url "systemdesign:results" pk=session.pk %}',
+};
+
+// State
+let canvas;
+let currentTool = 'select';
+let timeRemaining = INITIAL_TIME;
+let timerInterval;
+let autoSaveInterval;
+let isDrawingLine = false;
+let lineStartPoint = null;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    initCanvas();
+    initTimer();
+    initAutoSave();
+
+    // Load saved state if available
+    if (CANVAS_STATE && Object.keys(CANVAS_STATE).length > 0) {
+        canvas.loadFromJSON(CANVAS_STATE, function() {
+            canvas.renderAll();
+        });
+    }
+});
+
+// Canvas initialization
+function initCanvas() {
+    const container = document.getElementById('canvas-container');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    canvas = new fabric.Canvas('design-canvas', {
+        width: width,
+        height: height,
+        backgroundColor: '#ffffff',
+        selection: true,
+    });
+
+    // Handle resize
+    window.addEventListener('resize', function() {
+        const newWidth = container.clientWidth;
+        const newHeight = container.clientHeight;
+        canvas.setDimensions({ width: newWidth, height: newHeight });
+    });
+
+    // Double-click to edit text
+    canvas.on('mouse:dblclick', function(opt) {
+        if (opt.target && opt.target.type === 'i-text') {
+            opt.target.enterEditing();
+        }
+    });
+
+    // Line/arrow drawing
+    canvas.on('mouse:down', function(opt) {
+        if (currentTool === 'arrow' || currentTool === 'line') {
+            isDrawingLine = true;
+            const pointer = canvas.getPointer(opt.e);
+            lineStartPoint = { x: pointer.x, y: pointer.y };
+        }
+    });
+
+    canvas.on('mouse:up', function(opt) {
+        if (isDrawingLine && lineStartPoint) {
+            const pointer = canvas.getPointer(opt.e);
+            drawLine(lineStartPoint, pointer, currentTool === 'arrow');
+            isDrawingLine = false;
+            lineStartPoint = null;
+        }
+    });
+}
+
+// Shape creation
+function addShape(type) {
+    const center = { x: canvas.width / 2, y: canvas.height / 2 };
+    let shape;
+
+    switch (type) {
+        case 'service':
+            shape = createServiceBox('Service', center);
+            break;
+        case 'database':
+            shape = createDatabase('Database', center);
+            break;
+        case 'cache':
+            shape = createCache('Cache', center);
+            break;
+        case 'queue':
+            shape = createQueue('Queue', center);
+            break;
+        case 'loadbalancer':
+            shape = createLoadBalancer('LB', center);
+            break;
+        case 'cdn':
+            shape = createCDN('CDN', center);
+            break;
+        case 'client':
+            shape = createClient('Client', center);
+            break;
+    }
+
+    if (shape) {
+        canvas.add(shape);
+        canvas.setActiveObject(shape);
+        canvas.renderAll();
+    }
+}
+
+function createServiceBox(label, pos) {
+    const rect = new fabric.Rect({
+        width: 100,
+        height: 60,
+        fill: '#dbeafe',
+        stroke: '#3b82f6',
+        strokeWidth: 2,
+        rx: 5,
+        ry: 5,
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const text = new fabric.IText(label, {
+        fontSize: 14,
+        fontFamily: 'Arial',
+        fill: '#1e40af',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    return new fabric.Group([rect, text], {
+        left: pos.x,
+        top: pos.y,
+        originX: 'center',
+        originY: 'center',
+    });
+}
+
+function createDatabase(label, pos) {
+    const ellipse1 = new fabric.Ellipse({
+        rx: 40,
+        ry: 12,
+        fill: '#fef3c7',
+        stroke: '#f59e0b',
+        strokeWidth: 2,
+        originX: 'center',
+        originY: 'center',
+        top: -25,
+    });
+
+    const rect = new fabric.Rect({
+        width: 80,
+        height: 50,
+        fill: '#fef3c7',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const ellipse2 = new fabric.Ellipse({
+        rx: 40,
+        ry: 12,
+        fill: '#fef3c7',
+        stroke: '#f59e0b',
+        strokeWidth: 2,
+        originX: 'center',
+        originY: 'center',
+        top: 25,
+    });
+
+    const sides = new fabric.Line([-40, -25, -40, 25], {
+        stroke: '#f59e0b',
+        strokeWidth: 2,
+    });
+
+    const sides2 = new fabric.Line([40, -25, 40, 25], {
+        stroke: '#f59e0b',
+        strokeWidth: 2,
+    });
+
+    const text = new fabric.IText(label, {
+        fontSize: 12,
+        fontFamily: 'Arial',
+        fill: '#92400e',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    return new fabric.Group([rect, ellipse2, sides, sides2, ellipse1, text], {
+        left: pos.x,
+        top: pos.y,
+        originX: 'center',
+        originY: 'center',
+    });
+}
+
+function createCache(label, pos) {
+    const rect = new fabric.Rect({
+        width: 80,
+        height: 50,
+        fill: '#dcfce7',
+        stroke: '#22c55e',
+        strokeWidth: 2,
+        rx: 10,
+        ry: 10,
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const text = new fabric.IText('⚡ ' + label, {
+        fontSize: 12,
+        fontFamily: 'Arial',
+        fill: '#15803d',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    return new fabric.Group([rect, text], {
+        left: pos.x,
+        top: pos.y,
+        originX: 'center',
+        originY: 'center',
+    });
+}
+
+function createQueue(label, pos) {
+    const rect = new fabric.Rect({
+        width: 100,
+        height: 40,
+        fill: '#fce7f3',
+        stroke: '#ec4899',
+        strokeWidth: 2,
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const text = new fabric.IText('📬 ' + label, {
+        fontSize: 12,
+        fontFamily: 'Arial',
+        fill: '#be185d',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    return new fabric.Group([rect, text], {
+        left: pos.x,
+        top: pos.y,
+        originX: 'center',
+        originY: 'center',
+    });
+}
+
+function createLoadBalancer(label, pos) {
+    const points = [
+        { x: 0, y: -30 },
+        { x: 35, y: 0 },
+        { x: 0, y: 30 },
+        { x: -35, y: 0 },
+    ];
+
+    const diamond = new fabric.Polygon(points, {
+        fill: '#e0e7ff',
+        stroke: '#6366f1',
+        strokeWidth: 2,
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const text = new fabric.IText(label, {
+        fontSize: 12,
+        fontFamily: 'Arial',
+        fill: '#4338ca',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    return new fabric.Group([diamond, text], {
+        left: pos.x,
+        top: pos.y,
+        originX: 'center',
+        originY: 'center',
+    });
+}
+
+function createCDN(label, pos) {
+    const circle = new fabric.Circle({
+        radius: 35,
+        fill: '#f3e8ff',
+        stroke: '#a855f7',
+        strokeWidth: 2,
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const text = new fabric.IText('🌐 ' + label, {
+        fontSize: 12,
+        fontFamily: 'Arial',
+        fill: '#7c3aed',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    return new fabric.Group([circle, text], {
+        left: pos.x,
+        top: pos.y,
+        originX: 'center',
+        originY: 'center',
+    });
+}
+
+function createClient(label, pos) {
+    const circle = new fabric.Circle({
+        radius: 25,
+        fill: '#f1f5f9',
+        stroke: '#64748b',
+        strokeWidth: 2,
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const text = new fabric.IText('👤', {
+        fontSize: 20,
+        originX: 'center',
+        originY: 'center',
+    });
+
+    return new fabric.Group([circle, text], {
+        left: pos.x,
+        top: pos.y,
+        originX: 'center',
+        originY: 'center',
+    });
+}
+
+function drawLine(start, end, withArrow) {
+    const line = new fabric.Line([start.x, start.y, end.x, end.y], {
+        stroke: '#374151',
+        strokeWidth: 2,
+        selectable: true,
+    });
+
+    canvas.add(line);
+
+    if (withArrow) {
+        const angle = Math.atan2(end.y - start.y, end.x - start.x);
+        const headLength = 15;
+
+        const arrow = new fabric.Triangle({
+            width: 12,
+            height: headLength,
+            fill: '#374151',
+            left: end.x,
+            top: end.y,
+            angle: (angle * 180 / Math.PI) + 90,
+            originX: 'center',
+            originY: 'center',
+        });
+
+        canvas.add(arrow);
+    }
+
+    canvas.renderAll();
+}
+
+function selectTool(tool) {
+    currentTool = tool;
+
+    // Update toolbar UI
+    document.querySelectorAll('.toolbar-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.tool === tool) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Set canvas mode
+    if (tool === 'select') {
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+    } else if (tool === 'text') {
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        // Add text on next click
+        canvas.once('mouse:down', function(opt) {
+            const pointer = canvas.getPointer(opt.e);
+            const text = new fabric.IText('Text', {
+                left: pointer.x,
+                top: pointer.y,
+                fontSize: 16,
+                fontFamily: 'Arial',
+                fill: '#374151',
+            });
+            canvas.add(text);
+            canvas.setActiveObject(text);
+            text.enterEditing();
+            selectTool('select');
+        });
+    }
+}
+
+function deleteSelected() {
+    const active = canvas.getActiveObjects();
+    if (active.length) {
+        active.forEach(obj => canvas.remove(obj));
+        canvas.discardActiveObject();
+        canvas.renderAll();
+    }
+}
+
+function clearCanvas() {
+    if (confirm('Clear the entire canvas?')) {
+        canvas.clear();
+        canvas.backgroundColor = '#ffffff';
+        canvas.renderAll();
+    }
+}
+
+// Timer
+function initTimer() {
+    updateTimerDisplay();
+    timerInterval = setInterval(function() {
+        timeRemaining--;
+        updateTimerDisplay();
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            handleTimeUp();
+        }
+    }, 1000);
+
+    // Sync with server every 30 seconds
+    setInterval(syncTimer, 30000);
+}
+
+function updateTimerDisplay() {
+    const display = document.getElementById('timer-display');
+    const timer = document.getElementById('timer');
+
+    const minutes = Math.floor(Math.max(0, timeRemaining) / 60);
+    const seconds = Math.max(0, timeRemaining) % 60;
+    display.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Warning colors
+    if (timeRemaining <= 60) {
+        timer.classList.add('bg-red-100', 'timer-warning');
+        timer.classList.remove('bg-gray-100', 'bg-yellow-100');
+    } else if (timeRemaining <= 300) {
+        timer.classList.add('bg-yellow-100');
+        timer.classList.remove('bg-gray-100', 'bg-red-100', 'timer-warning');
+    }
+}
+
+async function syncTimer() {
+    try {
+        const resp = await fetch(URLS.getTime);
+        const data = await resp.json();
+        timeRemaining = data.time_remaining;
+
+        if (data.is_time_up) {
+            handleTimeUp();
+        }
+    } catch (e) {
+        console.error('Timer sync failed:', e);
+    }
+}
+
+function handleTimeUp() {
+    alert('Time is up! Your design will be submitted automatically.');
+    submitDesign(true);
+}
+
+// Auto-save
+function initAutoSave() {
+    autoSaveInterval = setInterval(saveCanvas, 30000);
+}
+
+async function saveCanvas() {
+    try {
+        const state = canvas.toJSON();
+        const png = canvas.toDataURL('image/png');
+
+        await fetch(URLS.saveCanvas, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN,
+            },
+            body: JSON.stringify({
+                canvas_state: state,
+                canvas_png: png,
+            }),
+        });
+    } catch (e) {
+        console.error('Auto-save failed:', e);
+    }
+}
+
+// Chat
+async function sendMessage(messageType = 'general') {
+    const input = document.getElementById('chat-input');
+    const content = input.value.trim();
+
+    if (!content) return;
+
+    // Add user message to UI
+    addMessageToUI(content, 'user');
+    input.value = '';
+
+    // Show typing indicator
+    const typingId = showTypingIndicator();
+
+    try {
+        const resp = await fetch(URLS.sendMessage, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN,
+            },
+            body: JSON.stringify({
+                content: content,
+                message_type: messageType,
+            }),
+        });
+
+        const data = await resp.json();
+
+        if (data.stream_url) {
+            // Remove typing indicator and stream response
+            removeTypingIndicator(typingId);
+            streamResponse(data.stream_url);
+        }
+    } catch (e) {
+        removeTypingIndicator(typingId);
+        addMessageToUI('Error: Could not send message', 'system');
+        console.error('Send message failed:', e);
+    }
+}
+
+function streamResponse(url) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-message assistant';
+    document.getElementById('chat-messages').appendChild(msgDiv);
+
+    const eventSource = new EventSource(url);
+
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+
+        if (data.chunk) {
+            msgDiv.innerHTML += data.chunk.replace(/\n/g, '<br>');
+            scrollChatToBottom();
+        }
+
+        if (data.done) {
+            eventSource.close();
+        }
+
+        if (data.error) {
+            msgDiv.innerHTML += '<br><em>Error: ' + data.error + '</em>';
+            eventSource.close();
+        }
+    };
+
+    eventSource.onerror = function() {
+        eventSource.close();
+    };
+}
+
+function addMessageToUI(content, role) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-message ' + role;
+    msgDiv.innerHTML = content.replace(/\n/g, '<br>');
+    document.getElementById('chat-messages').appendChild(msgDiv);
+    scrollChatToBottom();
+}
+
+function showTypingIndicator() {
+    const id = 'typing-' + Date.now();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'chat-message assistant typing-indicator';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    document.getElementById('chat-messages').appendChild(div);
+    scrollChatToBottom();
+    return id;
+}
+
+function removeTypingIndicator(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function scrollChatToBottom() {
+    const container = document.getElementById('chat-messages');
+    container.scrollTop = container.scrollHeight;
+}
+
+function requestClarification() {
+    document.getElementById('chat-input').value = 'Can you clarify the requirements?';
+    sendMessage('clarification');
+}
+
+async function requestHint() {
+    const typingId = showTypingIndicator();
+
+    try {
+        const resp = await fetch(URLS.requestHint, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+            },
+        });
+
+        const data = await resp.json();
+        removeTypingIndicator(typingId);
+
+        if (data.stream_url) {
+            addMessageToUI('Can you give me a hint?', 'user');
+            streamResponse(data.stream_url);
+        }
+    } catch (e) {
+        removeTypingIndicator(typingId);
+        console.error('Request hint failed:', e);
+    }
+}
+
+// Tabs
+function switchTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+        btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+        btn.classList.add('text-gray-500');
+    });
+    document.getElementById('tab-' + tab).classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+    document.getElementById('tab-' + tab).classList.remove('text-gray-500');
+
+    // Update panels
+    document.querySelectorAll('[id^="panel-"]').forEach(panel => {
+        panel.classList.add('hidden');
+    });
+    document.getElementById('panel-' + tab).classList.remove('hidden');
+}
+
+// Analysis
+async function triggerAnalysis() {
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing...';
+
+    try {
+        const png = canvas.toDataURL('image/png');
+        const state = canvas.toJSON();
+
+        const resp = await fetch(URLS.analyze, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN,
+            },
+            body: JSON.stringify({
+                canvas_png: png,
+                canvas_state: state,
+            }),
+        });
+
+        const data = await resp.json();
+
+        if (data.analysis) {
+            updateAnalysisPanel(data.analysis);
+            switchTab('analysis');
+        }
+    } catch (e) {
+        console.error('Analysis failed:', e);
+        alert('Analysis failed. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Analyze Design';
+    }
+}
+
+function updateAnalysisPanel(analysis) {
+    const content = document.getElementById('analysis-content');
+
+    let html = `
+        <div class="mb-4">
+            <p class="text-sm text-gray-500 mb-2">Just now</p>
+
+            <h4 class="font-medium text-gray-900 mb-2">Components Detected</h4>
+            <div class="flex flex-wrap gap-1 mb-4">
+                ${analysis.components.map(c => `<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">${c}</span>`).join('')}
+            </div>
+    `;
+
+    if (analysis.strengths && analysis.strengths.length) {
+        html += `<h4 class="font-medium text-green-700 mb-2">Strengths</h4>`;
+        html += analysis.strengths.map(s => `<div class="analysis-item analysis-strength text-sm">${s}</div>`).join('');
+    }
+
+    if (analysis.concerns && analysis.concerns.length) {
+        html += `<h4 class="font-medium text-red-700 mb-2 mt-3">Concerns</h4>`;
+        html += analysis.concerns.map(c => `<div class="analysis-item analysis-concern text-sm">${c}</div>`).join('');
+    }
+
+    if (analysis.suggestions && analysis.suggestions.length) {
+        html += `<h4 class="font-medium text-blue-700 mb-2 mt-3">Suggestions</h4>`;
+        html += analysis.suggestions.map(s => `<div class="analysis-item analysis-suggestion text-sm">${s}</div>`).join('');
+    }
+
+    if (analysis.overall_impression) {
+        html += `<p class="mt-4 text-gray-600 italic">${analysis.overall_impression}</p>`;
+    }
+
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+// Submit and abandon
+function confirmSubmit() {
+    showModal(
+        'Submit Design',
+        'Are you sure you want to submit your design for scoring? You cannot make changes after submission.',
+        function() {
+            submitDesign(false);
+        }
+    );
+}
+
+async function submitDesign(timedOut) {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+        const png = canvas.toDataURL('image/png');
+        const state = canvas.toJSON();
+
+        const resp = await fetch(URLS.submit, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN,
+            },
+            body: JSON.stringify({
+                canvas_png: png,
+                canvas_state: state,
+            }),
+        });
+
+        const data = await resp.json();
+
+        if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else if (data.error) {
+            alert('Submission failed: ' + data.error);
+            btn.disabled = false;
+            btn.textContent = 'Submit Design';
+        }
+    } catch (e) {
+        console.error('Submit failed:', e);
+        alert('Submission failed. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Submit Design';
+    }
+}
+
+function confirmAbandon() {
+    showModal(
+        'Abandon Session',
+        'Are you sure you want to abandon this session? Your progress will not be scored.',
+        function() {
+            document.getElementById('abandon-form').submit();
+        }
+    );
+}
+
+// Modal
+function showModal(title, message, onConfirm) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-message').textContent = message;
+    document.getElementById('modal-confirm').onclick = function() {
+        closeModal();
+        onConfirm();
+    };
+    document.getElementById('confirm-modal').classList.remove('hidden');
+    document.getElementById('confirm-modal').classList.add('flex');
+}
+
+function closeModal() {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    document.getElementById('confirm-modal').classList.remove('flex');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Delete key
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            deleteSelected();
+        }
+    }
+
+    // Escape to deselect
+    if (e.key === 'Escape') {
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        closeModal();
+    }
+});
+</script>
+
+<!-- Hidden form for abandon -->
+<form id="abandon-form" action="{% url 'systemdesign:abandon' pk=session.pk %}" method="post" style="display:none;">
+    {% csrf_token %}
+</form>
+{% endblock %}
