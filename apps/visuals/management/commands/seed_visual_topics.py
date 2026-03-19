@@ -15692,16 +15692,16 @@ class Command(BaseCommand):
                         "explanation": "Let's trace through a complete mini-example showing how predictions improve over 3 iterations.",
                         "diagram_data": """graph TB
     subgraph "Data: y = [10, 20, 15]"
-        I0["Iter 0: F₀ = 15 for all<br/>Errors: [-5, 5, 0]"]
-        I1["Iter 1: Tree predicts [-4, 4, 0]<br/>F₁ = 15 + 0.5×[-4,4,0] = [13, 17, 15]<br/>Errors: [-3, 3, 0]"]
-        I2["Iter 2: Tree predicts [-2.5, 2.5, 0]<br/>F₂ = [13,17,15] + 0.5×[-2.5,2.5,0]<br/>= [11.75, 18.25, 15]<br/>Errors: [-1.75, 1.75, 0]"]
-        I3["Iter 3: Continue...<br/>Errors shrink each iteration!"]
+        I0["Init: F₀ = mean = 15 for all<br/>Residuals: [-5, 5, 0]"]
+        I1["Tree 1 predicts [-4, 4, 0]<br/>F₁ = 15 + 0.5×[-4,4,0] = [13, 17, 15]<br/>Residuals: [-3, 3, 0]"]
+        I2["Tree 2 predicts [-2.5, 2.5, 0]<br/>F₂ = [13,17,15] + 0.5×[-2.5,2.5,0]<br/>= [11.75, 18.25, 15]<br/>Residuals: [-1.75, 1.75, 0]"]
+        I3["Tree 3, 4, ... Continue<br/>Residuals shrink each tree!"]
     end
     I0 --> I1 --> I2 --> I3
     subgraph "Error Reduction"
-        E0["Iter 0: MSE = 16.67"]
-        E1["Iter 1: MSE = 6.00"]
-        E2["Iter 2: MSE = 2.04"]
+        E0["Init: MSE = 16.67"]
+        E1["After Tree 1: MSE = 6.00"]
+        E2["After Tree 2: MSE = 2.04"]
         E3["Converging to 0!"]
     end
     style I0 fill:#FFCDD2
