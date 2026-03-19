@@ -15498,15 +15498,15 @@ class Command(BaseCommand):
                         "explanation": "**Gradient Boosting** builds an ensemble of weak learners (usually decision trees) sequentially. Each new tree learns to correct the mistakes of the previous ensemble. The final prediction is the sum of all trees' predictions.",
                         "diagram_data": """graph LR
     subgraph "Gradient Boosting Ensemble"
-        T1["Tree 1"] --> |"+"|  Sum1["Sum"]
-        T2["Tree 2"] --> |"+"| Sum1
-        T3["Tree 3"] --> |"+"| Sum1
-        T4["..."] --> |"+"| Sum1
-        TN["Tree N"] --> |"+"| Sum1
+        T1["Tree 1"] --> |+| Sum1["Sum"]
+        T2["Tree 2"] --> |+| Sum1
+        T3["Tree 3"] --> |+| Sum1
+        T4["..."] --> |+| Sum1
+        TN["Tree N"] --> |+| Sum1
         Sum1 --> Pred["Final Prediction"]
     end
     subgraph "Key Insight"
-        K["Each tree corrects errors<br/>of previous trees"]
+        K["Each tree corrects errors of previous trees"]
     end
     style T1 fill:#4CAF50,color:white
     style T2 fill:#81C784
