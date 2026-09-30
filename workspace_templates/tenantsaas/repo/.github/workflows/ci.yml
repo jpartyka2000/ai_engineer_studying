@@ -1,0 +1,59 @@
+# CI for the tenantsaas billing platform.
+#
+# Keep this in step with ci/run_ci.sh, which is the executable mirror of these
+# steps and is what runs locally.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: tenantsaas
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+
+    env:
+      TZ: UTC
+      PYTHONHASHSEED: random
+      CI: "true"
+      DJANGO_SETTINGS_MODULE: config.settings
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tenantsaas
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations to a clean database
+        run: python manage.py migrate --noinput
+
+      - name: Run the test suite
+        run: python -m pytest -p no:cacheprovider -q
+
+      - name: Run the security suite
+        run: python -m pytest -p no:cacheprovider -q -m security

@@ -1,0 +1,56 @@
+# Services for the tenantsaas exercise.
+#
+# Host ports come from the adjacent .env, which the harness generates with a port
+# allocated from 55000-55999. Compose substitutes ${WS_POSTGRES_PORT} natively, so
+# no templating step is needed and this file is directly runnable by an author.
+#
+# Note that only the PUBLISHED port moves. Inside this network the app still
+# reaches the database at db:5432, so the application's own configuration looks
+# exactly as it would in production.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tenantsaas}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${WS_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Anything in here runs once, on first boot of an empty volume.
+      - ./seed:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-tenantsaas}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    image: aiprep-tenantsaas:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # db:5432 rather than the published port: this is container-to-container.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-tenantsaas}
+      DJANGO_SETTINGS_MODULE: config.settings
+      PYTHONPATH: /app
+      # RDS-shaped configuration. Amazon RDS cannot run locally, so it is emulated
+      # as Postgres plus the artifacts a real RDS deployment would carry.
+      RDS_INSTANCE_IDENTIFIER: ${RDS_INSTANCE_IDENTIFIER:-tenantsaas-prod-1}
+      RDS_PARAMETER_GROUP: ${RDS_PARAMETER_GROUP:-tenantsaas-pg16-custom}
+      RDS_IAM_AUTH_ENABLED: ${RDS_IAM_AUTH_ENABLED:-true}
+      RDS_READ_REPLICA_ENDPOINT: ${RDS_READ_REPLICA_ENDPOINT:-tenantsaas-prod-1-ro.local:5432}
+    volumes:
+      # Bind-mounted so edits in your own editor take effect without a rebuild.
+      - .:/app
+    ports:
+      - "${WS_APP_PORT:-55800}:8000"
+    # Keeps the container alive for `docker compose exec` even if runserver exits.
+    command: ["sh", "-c", "python manage.py runserver 0.0.0.0:8000 || sleep infinity"]
+
+volumes:
+  pgdata:

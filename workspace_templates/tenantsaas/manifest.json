@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "seed_commits": [
+    {
+      "message": "chore: initial project scaffold\n\nDjango project, Docker setup and CI skeleton. No application code yet.",
+      "author": "Priya Raman <priya.raman@example.com>",
+      "date": "2025-01-14T09:20:00Z",
+      "paths": [
+        "manage.py",
+        "config/__init__.py",
+        "config/settings.py",
+        "config/wsgi.py",
+        "requirements.txt",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".gitignore",
+        ".env.example",
+        "pytest.ini",
+        "Makefile"
+      ]
+    },
+    {
+      "message": "feat(tenants): add Tenant model and API-key middleware\n\nTenants are the isolation boundary. The middleware resolves the\nX-Api-Key header and stashes the tenant in a ContextVar so service\ncode does not have to thread it through every signature.",
+      "author": "Priya Raman <priya.raman@example.com>",
+      "date": "2025-01-28T14:05:00Z",
+      "paths": [
+        "tenants/__init__.py",
+        "tenants/apps.py",
+        "tenants/models.py",
+        "tenants/context.py",
+        "tenants/middleware.py",
+        "tenants/migrations/__init__.py",
+        "tenants/migrations/0001_initial.py"
+      ]
+    },
+    {
+      "message": "feat(projects): add Project model\n\nProjects are per-tenant; slugs are unique within a tenant rather than\nglobally so two customers can both have a project called 'website'.",
+      "author": "Danilo Costa <danilo.costa@example.com>",
+      "date": "2025-02-11T11:42:00Z",
+      "paths": [
+        "projects/__init__.py",
+        "projects/apps.py",
+        "projects/models.py",
+        "projects/migrations/__init__.py",
+        "projects/migrations/0001_initial.py"
+      ]
+    },
+    {
+      "message": "feat(billing): add LineItem and Invoice with period totals\n\nBilling periods are inclusive at both ends. Credits are negative line\nitems rather than a separate table.",
+      "author": "Danilo Costa <danilo.costa@example.com>",
+      "date": "2025-03-04T16:18:00Z",
+      "paths": [
+        "billing/__init__.py",
+        "billing/apps.py",
+        "billing/models.py",
+        "billing/services.py",
+        "billing/migrations/__init__.py",
+        "billing/migrations/0001_initial.py"
+      ]
+    },
+    {
+      "message": "feat(api): expose projects, usage and invoice endpoints",
+      "author": "Mei Tanaka <mei.tanaka@example.com>",
+      "date": "2025-03-25T10:31:00Z",
+      "paths": ["api/__init__.py", "api/apps.py", "api/views.py", "config/urls.py"]
+    },
+    {
+      "message": "test: cover billing periods, the API contract and tenant isolation",
+      "author": "Mei Tanaka <mei.tanaka@example.com>",
+      "date": "2025-04-08T13:07:00Z",
+      "paths": [
+        "tests/__init__.py",
+        "tests/conftest.py",
+        "tests/test_billing.py",
+        "tests/test_api.py",
+        "tests/test_tenants.py"
+      ]
+    },
+    {
+      "message": "ci: run migrations and the test suite against Postgres\n\nci/run_ci.sh mirrors the workflow so the same steps can be run locally.",
+      "author": "Priya Raman <priya.raman@example.com>",
+      "date": "2025-04-22T09:55:00Z",
+      "paths": [".github/workflows/ci.yml", "ci/run_ci.sh"]
+    },
+    {
+      "message": "feat(tenants): add deterministic demo data seeder\n\nFixed RNG seed so every environment gets identical data.",
+      "author": "Danilo Costa <danilo.costa@example.com>",
+      "date": "2025-06-17T15:12:00Z",
+      "paths": [
+        "tenants/management/__init__.py",
+        "tenants/management/commands/__init__.py",
+        "tenants/management/commands/seed_demo_data.py"
+      ]
+    },
+    {
+      "message": "docs: document the tenant boundary and the inclusive-period rule",
+      "author": "Mei Tanaka <mei.tanaka@example.com>",
+      "date": "2025-09-02T12:40:00Z",
+      "paths": ["README.md", "ARCHITECTURE.md", "NOTES.md"]
+    }
+  ],
+  "seed_branches": [],
+  "env": {
+    "required": ["WS_POSTGRES_PORT", "WS_APP_PORT"],
+    "extra": {
+      "POSTGRES_DB": "tenantsaas",
+      "POSTGRES_USER": "postgres",
+      "POSTGRES_PASSWORD": "postgres",
+      "DEBUG": "1",
+      "SECRET_KEY": "dev-only-not-a-real-secret",
+      "RDS_INSTANCE_IDENTIFIER": "tenantsaas-prod-1",
+      "RDS_PARAMETER_GROUP": "tenantsaas-pg16-custom",
+      "RDS_IAM_AUTH_ENABLED": "true",
+      "RDS_READ_REPLICA_ENDPOINT": "tenantsaas-prod-1-ro.local:5432"
+    },
+    "requires_anthropic_key": false
+  },
+  "ports": {
+    "postgres": 5432,
+    "app": 8000
+  },
+  "db_seeds": {},
+  "setup_commands": [
+    "docker compose up -d --wait",
+    "make migrate",
+    "make seed",
+    "make test   # 9 failures expected before you start"
+  ],
+  "grading": {
+    "diff_exclude": ["*.lock", "seed/*"],
+    "include_full_files": ["billing/services.py"]
+  }
+}
