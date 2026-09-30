@@ -137,12 +137,20 @@ class CheckRunSummary:
 
     @property
     def objective_status(self) -> str:
-        """Whether the objective half of the grade could be determined."""
-        if not self.outcomes:
+        """Whether the objective half of the grade could be determined.
+
+        Checks of kind ``llm`` are excluded: they are deliberately delegated to the
+        evaluator rather than executed here, so counting them as "did not run" would
+        mean any exercise declaring one could never report ``COMPLETE`` -- which in
+        turn would silently skip the ``min(objective, model)`` reconciliation and let
+        a model score stand unchecked.
+        """
+        mechanical = [o for o in self.outcomes if o.kind != CheckKind.LLM]
+        if not mechanical:
             return ObjectiveStatus.INDETERMINATE
-        if all(not outcome.ran for outcome in self.outcomes):
+        if all(not outcome.ran for outcome in mechanical):
             return ObjectiveStatus.INDETERMINATE
-        if any(not outcome.ran for outcome in self.outcomes):
+        if any(not outcome.ran for outcome in mechanical):
             return ObjectiveStatus.PARTIAL
         return ObjectiveStatus.COMPLETE
 

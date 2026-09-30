@@ -375,6 +375,44 @@ def test_objective_status_is_indeterminate_with_no_checks_at_all():
     assert CheckRunSummary().objective_status == ObjectiveStatus.INDETERMINATE
 
 
+def test_a_skipped_llm_check_does_not_make_the_signal_partial():
+    """Regression test: llm checks are delegated, not failures to run.
+
+    Counting them as "did not run" meant any exercise declaring one could never
+    report COMPLETE, which silently skipped the min(objective, model)
+    reconciliation and let the model's correctness score stand unchecked.
+    """
+    summary = CheckRunSummary(
+        outcomes=[
+            outcome("R1", passed=True),
+            CheckOutcome(
+                check_id="S2",
+                kind=str(CheckKind.LLM),
+                status=str(CheckStatus.SKIPPED),
+                passed=False,
+                required=False,
+                stretch=True,
+            ),
+        ]
+    )
+    assert summary.objective_status == ObjectiveStatus.COMPLETE
+
+
+def test_a_summary_of_only_llm_checks_is_indeterminate():
+    """Nothing mechanical ran, so there is no objective signal to reconcile."""
+    summary = CheckRunSummary(
+        outcomes=[
+            CheckOutcome(
+                check_id="R7",
+                kind=str(CheckKind.LLM),
+                status=str(CheckStatus.SKIPPED),
+                passed=False,
+            )
+        ]
+    )
+    assert summary.objective_status == ObjectiveStatus.INDETERMINATE
+
+
 def test_tampering_detected_is_driven_by_offending_paths():
     summary = CheckRunSummary(tampered_paths=["tests/security/test_x.py"])
     assert summary.tampering_detected
