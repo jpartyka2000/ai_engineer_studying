@@ -355,21 +355,20 @@ class CheckRunner:
 
     # -- command execution -------------------------------------------------
 
-    def _wrap(self, shell_command: str) -> list[str]:
-        """Build the argv that runs a shell command in the right place."""
+    def _wrap(self, shell_command: str, env: dict[str, str] | None = None) -> list[str]:
+        """Build the argv that runs a shell command in the right place.
+
+        Container-bound variables must be passed as ``-e`` flags. Setting them on the
+        subprocess environment only configures the local ``docker`` CLI -- the process
+        inside the container never sees them, which silently made ``CI_ENV`` a no-op for
+        every containerised check.
+        """
         if self.use_container and self.compose_project:
-            return [
-                "docker",
-                "compose",
-                "-p",
-                self.compose_project,
-                "exec",
-                "-T",
-                APP_SERVICE,
-                "bash",
-                "-lc",
-                shell_command,
-            ]
+            argv = ["docker", "compose", "-p", self.compose_project, "exec", "-T"]
+            for key, value in sorted((env or {}).items()):
+                argv += ["-e", f"{key}={value}"]
+            argv += [APP_SERVICE, "bash", "-lc", shell_command]
+            return argv
         return ["bash", "-lc", shell_command]
 
     def run_command(
@@ -387,7 +386,7 @@ class CheckRunner:
             ``None`` when the command timed out or could not be launched at all,
             which the caller must treat as indeterminate rather than failed.
         """
-        argv = self._wrap(shell_command)
+        argv = self._wrap(shell_command, env)
         limit = timeout if timeout is not None else settings.WORKSPACE_CHECK_TIMEOUT_SECONDS
         self.command_log.append(shell_command)
 

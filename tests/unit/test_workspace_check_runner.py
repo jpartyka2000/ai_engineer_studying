@@ -6,6 +6,7 @@ positive is expensive and a false negative makes the whole system gameable).
 """
 
 import textwrap
+from pathlib import Path
 
 import pytest
 
@@ -489,3 +490,47 @@ def test_run_all_isolates_a_harness_error_to_one_check(tmp_path):
     assert summary.outcomes[0].status == CheckStatus.ERROR
     assert "harness error" in summary.outcomes[0].actual
     assert summary.outcomes[1].passed
+
+
+# ---------------------------------------------------------------------------
+# Command wrapping: container-bound environment
+# ---------------------------------------------------------------------------
+
+
+def test_container_env_is_passed_as_docker_flags():
+    """Env for a containerised check must reach the container, not the docker CLI.
+
+    Setting it only on the subprocess environment configures the local `docker`
+    binary; the process inside the container never sees it, which made CI_ENV -- the
+    whole mechanism behind reproducing CI-shaped flakiness -- silently do nothing.
+    """
+    runner = CheckRunner(Path("/tmp/ws"), compose_project="proj", use_container=True)
+    argv = runner._wrap("pytest", {"PYTHONHASHSEED": "random", "CI": "true"})
+
+    assert argv[:7] == ["docker", "compose", "-p", "proj", "exec", "-T", "-e"]
+    assert "CI=true" in argv
+    assert "PYTHONHASHSEED=random" in argv
+    # The command still comes last, after the service name.
+    assert argv[-3:] == ["bash", "-lc", "pytest"]
+
+
+def test_container_wrapping_adds_no_flags_without_env():
+    runner = CheckRunner(Path("/tmp/ws"), compose_project="proj", use_container=True)
+    assert runner._wrap("pytest") == [
+        "docker",
+        "compose",
+        "-p",
+        "proj",
+        "exec",
+        "-T",
+        "app",
+        "bash",
+        "-lc",
+        "pytest",
+    ]
+
+
+def test_local_wrapping_ignores_env_flags():
+    """Outside a container the subprocess environment is the right mechanism."""
+    runner = CheckRunner(Path("/tmp/ws"), use_container=False)
+    assert runner._wrap("pytest", {"CI": "true"}) == ["bash", "-lc", "pytest"]
