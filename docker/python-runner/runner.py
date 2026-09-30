@@ -15,58 +15,59 @@ Security measures:
 import json
 import signal
 import sys
-import traceback
 from io import StringIO
 from typing import Any
 
 
 # Modules that are explicitly blocked from import
-BLOCKED_MODULES = frozenset({
-    "os",
-    "subprocess",
-    "socket",
-    "shutil",
-    "pathlib",
-    "multiprocessing",
-    "threading",
-    "ctypes",
-    "pickle",
-    "shelve",
-    "marshal",
-    "importlib",
-    "builtins",
-    "__builtins__",
-    "sys",
-    "code",
-    "codeop",
-    "compile",
-    "exec",
-    "eval",
-    "requests",
-    "urllib",
-    "http",
-    "ftplib",
-    "smtplib",
-    "telnetlib",
-    "ssl",
-    "asyncio",
-    "concurrent",
-    "gc",
-    "resource",
-    "signal",
-    "pty",
-    "tty",
-    "termios",
-    "fcntl",
-    "mmap",
-    "sysconfig",
-    "platform",
-    "getpass",
-    "pwd",
-    "grp",
-    "spwd",
-    "crypt",
-})
+BLOCKED_MODULES = frozenset(
+    {
+        "os",
+        "subprocess",
+        "socket",
+        "shutil",
+        "pathlib",
+        "multiprocessing",
+        "threading",
+        "ctypes",
+        "pickle",
+        "shelve",
+        "marshal",
+        "importlib",
+        "builtins",
+        "__builtins__",
+        "sys",
+        "code",
+        "codeop",
+        "compile",
+        "exec",
+        "eval",
+        "requests",
+        "urllib",
+        "http",
+        "ftplib",
+        "smtplib",
+        "telnetlib",
+        "ssl",
+        "asyncio",
+        "concurrent",
+        "gc",
+        "resource",
+        "signal",
+        "pty",
+        "tty",
+        "termios",
+        "fcntl",
+        "mmap",
+        "sysconfig",
+        "platform",
+        "getpass",
+        "pwd",
+        "grp",
+        "spwd",
+        "crypt",
+    }
+)
 
 # Safe builtins that user code can access
 SAFE_BUILTINS = {
@@ -132,41 +133,77 @@ SAFE_BUILTINS = {
     "True": True,
     "False": False,
     "None": None,
+    # Required for `class` statements. CPython compiles every class definition
+    # into a __build_class__ call, so without this ANY submitted code defining a
+    # class fails with "__build_class__ not found" - which rules out the standard
+    # ListNode / TreeNode / design-question patterns. Defining a class grants no
+    # file, network or process access, so this does not widen the sandbox.
+    "__build_class__": __build_class__,
+    "__name__": "__sandbox__",
+    # Instance attribute access on user-defined classes needs these.
+    "getattr": getattr,
+    "setattr": setattr,
+    "hasattr": hasattr,
 }
 
 # Safe modules that can be imported
-SAFE_MODULES = frozenset({
-    "math",
-    "random",
-    "string",
-    "re",
-    "json",
-    "collections",
-    "itertools",
-    "functools",
-    "operator",
-    "copy",
-    "heapq",
-    "bisect",
-    "datetime",
-    "decimal",
-    "fractions",
-    "statistics",
-    "typing",
-    "dataclasses",
-    "abc",
-    "numbers",
-    "enum",
-})
+SAFE_MODULES = frozenset(
+    {
+        "math",
+        "random",
+        "string",
+        "re",
+        "json",
+        "collections",
+        "itertools",
+        "functools",
+        "operator",
+        "copy",
+        "heapq",
+        "bisect",
+        "datetime",
+        "decimal",
+        "fractions",
+        "statistics",
+        "typing",
+        "dataclasses",
+        "abc",
+        "numbers",
+        "enum",
+        # Data-science libraries. These are only importable if they are also
+        # installed in the image (see docker/python-runner/Dockerfile). Neither
+        # provides file, network or process access, so allowing them does not
+        # widen the sandbox's escape surface.
+        "numpy",
+        "pandas",
+    }
+)
+
+# Import the heavy data-science libraries once at container start rather than
+# inside each execution. Two reasons:
+#   1. `import pandas` costs roughly a second; paying that per test case would
+#      consume a large share of the (default 5s) execution timeout.
+#   2. Pre-importing puts them in sys.modules, so the restricted __import__
+#      inside the sandbox resolves them from cache.
+# Best-effort: the runner must still work in an image built without them.
+_PRELOADED = []
+for _mod in ("numpy", "pandas"):
+    try:
+        __import__(_mod)
+        _PRELOADED.append(_mod)
+    except ImportError:
+        pass
 
 
 class TimeoutError(Exception):
     """Raised when code execution times out."""
+
     pass
 
 
 class SecurityError(Exception):
     """Raised when code attempts a forbidden operation."""
+
     pass
 
 
@@ -177,7 +214,9 @@ def timeout_handler(signum: int, frame: Any) -> None:
 
 def create_restricted_import(allowed_modules: frozenset[str]):
     """Create a restricted __import__ function."""
-    original_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
+    original_import = (
+        __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
+    )
 
     def restricted_import(
         name: str,
@@ -318,11 +357,15 @@ def main():
         input_json = sys.stdin.read()
         input_data = json.loads(input_json)
     except json.JSONDecodeError as e:
-        print(json.dumps({
-            "success": False,
-            "error": f"Invalid JSON input: {e}",
-            "error_type": "input",
-        }))
+        print(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": f"Invalid JSON input: {e}",
+                    "error_type": "input",
+                }
+            )
+        )
         sys.exit(1)
 
     # Extract parameters
