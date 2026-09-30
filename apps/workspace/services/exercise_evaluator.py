@@ -38,7 +38,29 @@ from apps.workspace.services.prompt_budget import build_grading_prompt
 
 logger = logging.getLogger(__name__)
 
-RUBRIC_VERSION: Final[str] = "2026.03-1"
+#: Bumped whenever SYSTEM_PROMPT changes in a way that moves scores, so a stored grade
+#: can always be traced to the rubric that produced it and two rubrics' results are
+#: never silently averaged together.
+#:
+#: 2026.03-2 -- stopped a missing writeup being charged three times. It was deducted in
+#: documentation (by design), again in completeness via the Definition of Done's NOTES.md
+#: item, and again in engineering via commit-message quality, which gave documentation an
+#: effective weight near 45% against its allotted 25%. Undocumented-but-correct work was
+#: landing at F..C where the spec asks for C+..B-.
+#:
+#: 2026.03-3 -- -2 closed most of the completeness leak but not all: telling the model not
+#: to deduct for the writeup left it still seeing an unmet `llm:` item on the Definition
+#: of Done, and completeness stayed near 75 on code whose documented twin scored 98. Now
+#: instructs it to skip those items entirely. Affects only submissions with no writeup;
+#: for anything that filled NOTES.md the item is satisfied either way, so -2 and -3 agree.
+#:
+#: Note on the documentation anchor: -2 also told the model that an unfilled NOTES.md
+#: "lands around 25-35 rather than near zero". It ignored that completely -- five
+#: judgments stayed at 8-28, mean unchanged -- almost certainly because the same prompt
+#: says "Do not inflate", and raising a score against its own judgment reads as inflation.
+#: The instruction is left in as a ceiling-raiser but must not be relied on: the honest
+#: value is about 15, and the conformance band is set from that rather than from the hope.
+RUBRIC_VERSION: Final[str] = "2026.03-3"
 
 #: Score imputed for dimensions that cannot be estimated without model judgment.
 #: Matches the "competent junior" calibration anchor in the system prompt, and is
@@ -49,7 +71,11 @@ SYSTEM_PROMPT: Final[str] = """\
 You are a staff-level engineer conducting a post-mortem review of a time-boxed change \
 made to a production codebase by a mid-level engineer.
 
-Score each dimension 0-100, independently.
+Score each dimension 0-100, INDEPENDENTLY. The four are combined by fixed weights in \
+code, so a flaw charged in two dimensions is charged twice and weighs far more than it \
+was allotted. The specific mistake to avoid: a missing or thin writeup belongs to \
+DOCUMENTATION alone. Do not let it lower CORRECTNESS, ENGINEERING QUALITY or \
+COMPLETENESS as well.
 
 1. CORRECTNESS -- is the stated problem actually solved, at the root cause?
    Automated acceptance checks have already run; their results appear in the prompt \
@@ -61,19 +87,32 @@ implementation is a cheat, score LOW and set symptom_patch_suspected to true.
 
 2. ENGINEERING QUALITY -- root cause versus symptom; a minimal, surgical diff; \
 following the repository's existing conventions and layering; no collateral damage; \
-sensible error handling; tests added or updated; sane commit granularity.
+sensible error handling; tests added or updated; sane commit granularity. Commits are \
+judged here for GRANULARITY -- whether the work is split into coherent steps -- not for \
+how well their messages explain the change, which is documentation.
 
 3. DOCUMENTATION AND EXPLANATION -- score all five sub-dimensions in \
-documentation_breakdown. An absent or unfilled NOTES.md is a severe deduction. \
-Comment NOISE that merely restates the code is not documentation and must not raise \
-this score.
+documentation_breakdown. This is the ONLY dimension where a missing writeup is charged. \
+An absent or unfilled NOTES.md costs most of it, but not all: the diff, any comments in \
+it, and the commit messages still explain something, so that case lands around 25-35 \
+rather than near zero. Reserve single digits for a submission that explains nothing \
+anywhere. Comment NOISE that merely restates the code is not documentation and must not \
+raise this score.
 
-4. COMPLETENESS -- every item in the Definition of Done, including the secondary \
-asks, not just the headline fix.
+4. COMPLETENESS -- how much of the WORK in the Definition of Done was done, including \
+the secondary asks rather than only the headline fix. Score this over the Definition of \
+Done items about the CODE only. **Skip every item concerning NOTES.md, the writeup or \
+the explanation -- typically the one prefixed `llm:` -- as though it were not on the \
+list.** Those are dimension 3, and counting an unmet writeup item here charges the same \
+omission twice. A change that does everything asked of the code is COMPLETE, and scores \
+the same here whether or not anything was written down.
 
 CALIBRATION: 70 is a competent junior. 85 is solid mid-level. 95 and above is what a \
-staff engineer would ship. Do not inflate. A change that works but is undocumented \
-should score around 90 on correctness and around 30 on documentation.
+staff engineer would ship. Do not inflate. A change that works, does everything the \
+code was asked to do, and is undocumented should score around 90 on correctness, around \
+30 on documentation, and NOT be marked down on engineering quality or completeness for \
+the missing writeup -- which lands it in the C+/B- range overall. That is the intended \
+cost of not explaining your work: substantial, and short of failing.
 
 TIME: the prompt states how long was available and how much was used. Calibrate SCOPE \
 expectations to the time box -- do not penalise a well-diagnosed partial fix for being \
