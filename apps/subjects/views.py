@@ -2,11 +2,10 @@
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Avg, Count, Q, Sum
-from django.db.models.functions import Coalesce
 from django.views.generic import DetailView
 
 from apps.coding.models import CodingResponse, CodingSession
-from apps.exam.models import ExamAnswer, ExamSession
+from apps.exam.models import ExamSession
 
 from .models import Subject
 
@@ -106,9 +105,7 @@ class SubjectStatsView(LoginRequiredMixin, DetailView):
 
         total_correct = aggregates["total_correct"] or 0
         total_answered = aggregates["total_answered"] or 0
-        accuracy = (
-            round((total_correct / total_answered) * 100) if total_answered > 0 else 0
-        )
+        accuracy = round((total_correct / total_answered) * 100) if total_answered > 0 else 0
 
         return {
             "total_sessions": aggregates["total_sessions"],
@@ -172,9 +169,7 @@ class SubjectStatsView(LoginRequiredMixin, DetailView):
 
         correct_count = response_aggregates["correct_count"] or 0
         total_count = response_aggregates["total_count"] or 0
-        accuracy = (
-            round((correct_count / total_count) * 100) if total_count > 0 else 0
-        )
+        accuracy = round((correct_count / total_count) * 100) if total_count > 0 else 0
 
         return {
             "total_sessions": sessions.count(),
@@ -204,7 +199,10 @@ class SubjectStatsView(LoginRequiredMixin, DetailView):
             total_weight = exam_weight + coding_weight
             if total_weight > 0:
                 overall_accuracy = round(
-                    (exam_stats["accuracy"] * exam_weight + coding_stats["accuracy"] * coding_weight)
+                    (
+                        exam_stats["accuracy"] * exam_weight
+                        + coding_stats["accuracy"] * coding_weight
+                    )
                     / total_weight
                 )
 
@@ -256,11 +254,7 @@ class SubjectStatsView(LoginRequiredMixin, DetailView):
 
             total_correct = exam_correct + coding_correct
             total_attempts = exam_total + coding_total
-            accuracy = (
-                round((total_correct / total_attempts) * 100)
-                if total_attempts > 0
-                else 0
-            )
+            accuracy = round((total_correct / total_attempts) * 100) if total_attempts > 0 else 0
 
             breakdown[difficulty] = {
                 "correct": total_correct,
@@ -287,12 +281,14 @@ class SubjectStatsView(LoginRequiredMixin, DetailView):
                 if session.total_answered > 0
                 else 0
             )
-            history.append({
-                "type": "exam",
-                "date": session.completed_at.isoformat() if session.completed_at else "",
-                "score": score_pct,
-                "label": f"Exam ({session.difficulty[:3].title()})",
-            })
+            history.append(
+                {
+                    "type": "exam",
+                    "date": session.completed_at.isoformat() if session.completed_at else "",
+                    "score": score_pct,
+                    "label": f"Exam ({session.difficulty[:3].title()})",
+                }
+            )
 
         # Get recent coding sessions
         coding_sessions = CodingSession.objects.filter(
@@ -304,12 +300,14 @@ class SubjectStatsView(LoginRequiredMixin, DetailView):
         for session in coding_sessions:
             response = session.responses.order_by("-submission_number").first()
             score = response.overall_score if response else 0
-            history.append({
-                "type": "coding",
-                "date": session.completed_at.isoformat() if session.completed_at else "",
-                "score": score,
-                "label": f"Code ({session.difficulty[:3].title()})",
-            })
+            history.append(
+                {
+                    "type": "coding",
+                    "date": session.completed_at.isoformat() if session.completed_at else "",
+                    "score": score,
+                    "label": f"Code ({session.difficulty[:3].title()})",
+                }
+            )
 
         # Sort by date and take last 10
         history.sort(key=lambda x: x["date"], reverse=True)

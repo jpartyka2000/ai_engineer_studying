@@ -27,9 +27,7 @@ class ExamConfigView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        subject = get_object_or_404(
-            Subject, slug=kwargs["subject_slug"], is_active=True
-        )
+        subject = get_object_or_404(Subject, slug=kwargs["subject_slug"], is_active=True)
         context["subject"] = subject
 
         # Get available question count for each difficulty
@@ -64,9 +62,7 @@ def start_exam(request, subject_slug):
     difficulty = request.POST.get("difficulty", "intermediate")
     practice_mode = request.POST.get("practice_mode") == "1"
     try:
-        question_count = int(
-            request.POST.get("question_count", subject.default_question_count)
-        )
+        question_count = int(request.POST.get("question_count", subject.default_question_count))
     except ValueError:
         question_count = subject.default_question_count
 
@@ -75,9 +71,7 @@ def start_exam(request, subject_slug):
 
     # Handle interview mode specially
     if difficulty == "interview":
-        selected_ids = _get_interview_questions(
-            request, subject, question_count, subject_slug
-        )
+        selected_ids = _get_interview_questions(request, subject, question_count, subject_slug)
         if selected_ids is None:
             # Error occurred, redirect handled in helper
             return redirect("exam:config", subject_slug=subject_slug)
@@ -304,7 +298,9 @@ class ExamQuestionView(LoginRequiredMixin, DetailView):
         result = []
         seen_normalized = set()
 
-        for _, q in scored_questions:
+        # Named _score rather than _ so it does not shadow the gettext_lazy alias
+        # imported at module level.
+        for _score, q in scored_questions:
             # Normalize question text for comparison
             normalized = self._normalize_question_text(q.question_text)
 
@@ -327,10 +323,11 @@ class ExamQuestionView(LoginRequiredMixin, DetailView):
     def _normalize_question_text(self, text):
         """Normalize question text for similarity comparison."""
         import re
+
         # Lowercase, remove punctuation, collapse whitespace
         text = text.lower()
-        text = re.sub(r'[^\w\s]', '', text)
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r"[^\w\s]", "", text)
+        text = re.sub(r"\s+", " ", text).strip()
         return text
 
     def _is_similar(self, text1, text2, threshold=0.6):
@@ -523,7 +520,7 @@ def create_llm_questions(request, subject_slug, pk, question_id):
         )
 
     # Split by lines starting with hyphen, strip the hyphen and whitespace
-    import re
+
     # Match lines that start with optional whitespace followed by a hyphen
     lines = user_questions_text.split("\n")
     user_questions = []
@@ -571,7 +568,7 @@ For each question, provide:
 
 Respond with valid JSON only."""
 
-    questions_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(user_questions)])
+    questions_list = "\n".join([f"{i + 1}. {q}" for i, q in enumerate(user_questions)])
 
     prompt = f"""Context - Original Exam Question:
 ---
@@ -653,11 +650,11 @@ For each question, provide a detailed answer. Respond with a JSON object:
             f'<div class="flex items-center">'
             f'<svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
             f'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>'
-            f'</svg>'
+            f"</svg>"
             f'<span class="text-green-700 font-medium">Generated {len(answers_data)} answer(s)'
-            f'{f", saved {saved_count} new question(s)" if saved_count > 0 else ""}</span>'
-            f'</div>'
-            f'</div>'
+            f"{f', saved {saved_count} new question(s)' if saved_count > 0 else ''}</span>"
+            f"</div>"
+            f"</div>"
         )
 
         # Display each Q&A
@@ -672,35 +669,37 @@ For each question, provide a detailed answer. Respond with a JSON object:
             html_parts.append(
                 f'<div class="border border-gray-200 rounded-lg p-4 mb-3">'
                 f'<div class="font-medium text-gray-900 mb-2">'
-                f'<span class="text-purple-600">Q{i+1}:</span> {q_text}'
-                f'</div>'
+                f'<span class="text-purple-600">Q{i + 1}:</span> {q_text}'
+                f"</div>"
                 f'<div class="text-gray-700 text-sm mb-2">'
                 f'<span class="font-medium text-gray-900">Answer:</span> {rendered_answer}'
-                f'</div>'
+                f"</div>"
             )
 
             if key_points:
-                html_parts.append('<div class="mt-2"><span class="text-xs font-medium text-gray-500">Key Points:</span><ul class="list-disc list-inside text-sm text-gray-600 mt-1">')
+                html_parts.append(
+                    '<div class="mt-2"><span class="text-xs font-medium text-gray-500">Key Points:</span><ul class="list-disc list-inside text-sm text-gray-600 mt-1">'
+                )
                 for pt in key_points:
                     rendered_pt = render_code_blocks(pt)
-                    html_parts.append(f'<li>{rendered_pt}</li>')
-                html_parts.append('</ul></div>')
+                    html_parts.append(f"<li>{rendered_pt}</li>")
+                html_parts.append("</ul></div>")
 
-            html_parts.append('</div>')
+            html_parts.append("</div>")
 
         if saved_count == 0 and len(answers_data) > 0:
             html_parts.append(
                 '<div class="text-xs text-gray-500 mt-2">'
-                'Note: Questions were not saved (they may already exist in the question bank).'
-                '</div>'
+                "Note: Questions were not saved (they may already exist in the question bank)."
+                "</div>"
             )
 
-        return HttpResponse(''.join(html_parts))
+        return HttpResponse("".join(html_parts))
 
     except LLMAPIError as e:
         logger.exception("Failed to generate LLM questions: %s", e)
         return HttpResponse(
             f'<div class="bg-red-50 border border-red-200 rounded-lg p-4">'
             f'<span class="text-red-700">Failed to generate questions: {str(e)}</span>'
-            f'</div>'
+            f"</div>"
         )

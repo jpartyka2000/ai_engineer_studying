@@ -6,7 +6,6 @@ from typing import Iterator
 from apps.core.services.llm_service import LLMAPIError, get_llm_service
 from apps.systemdesign.models import (
     DiagramAnalysis,
-    SystemDesignMessage,
     SystemDesignSession,
 )
 
@@ -126,7 +125,7 @@ The candidate is asking for clarification on the requirements. Answer their ques
 
 ## Current Diagram State
 Components in their diagram: {components}
-Overall impression: {latest_analysis.overall_impression or 'No analysis yet'}"""
+Overall impression: {latest_analysis.overall_impression or "No analysis yet"}"""
 
         # Get conversation history
         conversation_history = session.get_conversation_history(max_tokens=30000)

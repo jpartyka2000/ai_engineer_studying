@@ -1,6 +1,5 @@
 """Service for generating math problems using LLM APIs (Claude or OpenAI)."""
 
-import hashlib
 import logging
 
 from pydantic import BaseModel, Field, field_validator
@@ -222,10 +221,9 @@ Respond with JSON containing a "problems" array."""
         saved = []
 
         for gen_p in problems:
-            # Generate hash for deduplication
-            content = f"{subject.id}:{gen_p.topic}:{gen_p.problem_latex}:{gen_p.correct_answer_latex}"
-            source_hash = hashlib.sha256(content.encode()).hexdigest()
-
+            # Deduplication is by exact problem/answer match below. MathProblem has
+            # no source_hash field, so the hash this loop used to compute was dead
+            # code copied from the coding app's pattern.
             # Check if exists
             if MathProblem.objects.filter(
                 subject=subject,

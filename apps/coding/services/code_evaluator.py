@@ -13,7 +13,6 @@ from apps.coding.models import (
 from apps.coding.schemas import CodeEvaluation
 from apps.coding.services.code_runner import (
     CodeRunnerError,
-    CodeRunnerService,
     TestResult,
     get_code_runner,
 )
@@ -303,11 +302,9 @@ You must respond with valid JSON only."""
 
             # Calculate correctness based on tests
             if total_tests > 0:
-                test_pass_rate = tests_passed / total_tests
                 # If all tests pass, code is correct
                 test_based_correctness = tests_passed == total_tests
             else:
-                test_pass_rate = 0
                 test_based_correctness = None
 
         else:
@@ -333,9 +330,7 @@ You must respond with valid JSON only."""
             prompt = self._build_docker_evaluation_prompt(challenge, submitted_code)
             system_prompt = self.DOCKER_SYSTEM_PROMPT
         else:
-            prompt = self._build_evaluation_prompt(
-                challenge, submitted_code, test_context
-            )
+            prompt = self._build_evaluation_prompt(challenge, submitted_code, test_context)
             system_prompt = self.SYSTEM_PROMPT
 
         try:
@@ -420,13 +415,12 @@ You must respond with valid JSON only."""
             # If Claude fails but we have test results, return partial evaluation
             if coding_response and total_tests > 0:
                 coding_response.is_correct = test_based_correctness
-                coding_response.overall_score = int(
-                    (tests_passed / total_tests) * 100
-                ) if total_tests > 0 else 0
+                coding_response.overall_score = (
+                    int((tests_passed / total_tests) * 100) if total_tests > 0 else 0
+                )
                 coding_response.correctness_score = coding_response.overall_score
                 coding_response.summary_feedback = (
-                    f"Tests: {tests_passed}/{total_tests} passed. "
-                    "Claude evaluation unavailable."
+                    f"Tests: {tests_passed}/{total_tests} passed. Claude evaluation unavailable."
                 )
                 coding_response.evaluated_at = timezone.now()
                 coding_response.save()

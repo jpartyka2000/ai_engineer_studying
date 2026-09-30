@@ -110,7 +110,6 @@ class ClaudeService:
             ClaudeAPIError: If the API call fails or JSON parsing fails.
         """
         import json
-        import re
 
         # Add JSON instruction to system message
         json_system = (system_message or "") + (
@@ -134,7 +133,7 @@ class ClaudeService:
             # Find the end of the first line (the language identifier)
             first_newline = cleaned_response.find("\n")
             if first_newline != -1:
-                cleaned_response = cleaned_response[first_newline + 1:]
+                cleaned_response = cleaned_response[first_newline + 1 :]
 
         # Remove closing code fence
         if cleaned_response.endswith("```"):
@@ -275,7 +274,7 @@ class ClaudeService:
         if cleaned_response.startswith("```"):
             first_newline = cleaned_response.find("\n")
             if first_newline != -1:
-                cleaned_response = cleaned_response[first_newline + 1:]
+                cleaned_response = cleaned_response[first_newline + 1 :]
 
         if cleaned_response.endswith("```"):
             cleaned_response = cleaned_response[:-3].rstrip()

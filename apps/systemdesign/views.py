@@ -7,7 +7,7 @@ import logging
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse, StreamingHttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -17,7 +17,6 @@ from apps.subjects.models import Subject
 
 from .models import (
     DiagramAnalysis,
-    SystemDesignChallenge,
     SystemDesignMessage,
     SystemDesignScore,
     SystemDesignSession,
@@ -258,20 +257,22 @@ def analyze_diagram(request: HttpRequest, pk: int) -> JsonResponse:
             analysis_type=DiagramAnalysis.AnalysisType.ON_DEMAND,
         )
 
-        return JsonResponse({
-            "status": "success",
-            "analysis": {
-                "id": analysis.id,
-                "components": analysis.identified_components,
-                "connections": analysis.identified_connections,
-                "strengths": analysis.strengths,
-                "concerns": analysis.concerns,
-                "suggestions": analysis.suggestions,
-                "overall_impression": analysis.overall_impression,
-                "scores": analysis.preliminary_scores,
-                "created_at": analysis.created_at.isoformat(),
+        return JsonResponse(
+            {
+                "status": "success",
+                "analysis": {
+                    "id": analysis.id,
+                    "components": analysis.identified_components,
+                    "connections": analysis.identified_connections,
+                    "strengths": analysis.strengths,
+                    "concerns": analysis.concerns,
+                    "suggestions": analysis.suggestions,
+                    "overall_impression": analysis.overall_impression,
+                    "scores": analysis.preliminary_scores,
+                    "created_at": analysis.created_at.isoformat(),
+                },
             }
-        })
+        )
 
     except Exception as e:
         logger.exception("Failed to analyze diagram: %s", str(e))
@@ -319,12 +320,14 @@ def send_message(request: HttpRequest, pk: int) -> JsonResponse:
             kwargs={"pk": session.pk, "message_id": assistant_message.pk},
         )
 
-        return JsonResponse({
-            "status": "success",
-            "user_message_id": user_message.pk,
-            "assistant_message_id": assistant_message.pk,
-            "stream_url": stream_url,
-        })
+        return JsonResponse(
+            {
+                "status": "success",
+                "user_message_id": user_message.pk,
+                "assistant_message_id": assistant_message.pk,
+                "stream_url": stream_url,
+            }
+        )
 
     except Exception as e:
         logger.exception("Failed to send message: %s", str(e))
@@ -349,14 +352,20 @@ def stream_response(request: HttpRequest, pk: int, message_id: int) -> Streaming
     )
 
     # Get the user message (the one before this assistant message)
-    user_message = session.messages.filter(
-        created_at__lt=assistant_message.created_at,
-        role=SystemDesignMessage.Role.USER,
-    ).order_by("-created_at").first()
+    user_message = (
+        session.messages.filter(
+            created_at__lt=assistant_message.created_at,
+            role=SystemDesignMessage.Role.USER,
+        )
+        .order_by("-created_at")
+        .first()
+    )
 
     if not user_message:
+
         def error_generator():
             yield 'data: {"error": "No user message found"}\n\n'
+
         return StreamingHttpResponse(
             error_generator(),
             content_type="text/event-stream",
@@ -374,18 +383,18 @@ def stream_response(request: HttpRequest, pk: int, message_id: int) -> Streaming
                 include_diagram_context=True,
             ):
                 full_response += chunk
-                yield f'data: {json.dumps({"chunk": chunk})}\n\n'
+                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
             # Save the complete response
             assistant_message.content = full_response
             assistant_message.token_count_estimate = len(full_response) // 4
             assistant_message.save(update_fields=["content", "token_count_estimate"])
 
-            yield f'data: {json.dumps({"done": True})}\n\n'
+            yield f"data: {json.dumps({'done': True})}\n\n"
 
         except Exception as e:
             logger.exception("Streaming error: %s", str(e))
-            yield f'data: {json.dumps({"error": str(e)})}\n\n'
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
     response = StreamingHttpResponse(
         event_stream(),
@@ -428,12 +437,14 @@ def request_hint(request: HttpRequest, pk: int) -> JsonResponse:
         kwargs={"pk": session.pk, "message_id": assistant_message.pk},
     )
 
-    return JsonResponse({
-        "status": "success",
-        "user_message_id": user_message.pk,
-        "assistant_message_id": assistant_message.pk,
-        "stream_url": stream_url,
-    })
+    return JsonResponse(
+        {
+            "status": "success",
+            "user_message_id": user_message.pk,
+            "assistant_message_id": assistant_message.pk,
+            "stream_url": stream_url,
+        }
+    )
 
 
 @login_required
@@ -446,11 +457,13 @@ def get_time_remaining(request: HttpRequest, pk: int) -> JsonResponse:
         user=request.user,
     )
 
-    return JsonResponse({
-        "time_remaining": session.time_remaining_seconds,
-        "is_time_up": session.is_time_up,
-        "status": session.status,
-    })
+    return JsonResponse(
+        {
+            "time_remaining": session.time_remaining_seconds,
+            "is_time_up": session.is_time_up,
+            "status": session.status,
+        }
+    )
 
 
 @login_required
@@ -494,11 +507,13 @@ def submit_design(request: HttpRequest, pk: int) -> JsonResponse:
         scorer = get_scoring_service()
         score = scorer.score_session(session)
 
-        return JsonResponse({
-            "status": "success",
-            "redirect_url": reverse("systemdesign:results", kwargs={"pk": session.pk}),
-            "overall_score": score.overall_score,
-        })
+        return JsonResponse(
+            {
+                "status": "success",
+                "redirect_url": reverse("systemdesign:results", kwargs={"pk": session.pk}),
+                "overall_score": score.overall_score,
+            }
+        )
 
     except Exception as e:
         logger.exception("Failed to submit design: %s", str(e))

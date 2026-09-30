@@ -1,6 +1,5 @@
 """Service for analyzing system design diagrams using vision API."""
 
-import base64
 import logging
 import tempfile
 from pathlib import Path
@@ -135,6 +134,7 @@ If the diagram is empty or unreadable, return appropriate empty arrays and low s
 
             # Update session's last analysis timestamp
             from django.utils import timezone
+
             session.last_analysis_at = timezone.now()
             session.save(update_fields=["last_analysis_at"])
 
@@ -146,8 +146,14 @@ If the diagram is empty or unreadable, return appropriate empty arrays and low s
 
     def _build_analysis_prompt(self, session: SystemDesignSession) -> str:
         """Build the analysis prompt with challenge context."""
-        fr = "\n".join(f"- {r}" for r in session.effective_functional_requirements) or "Not specified"
-        nfr = "\n".join(f"- {r}" for r in session.effective_non_functional_requirements) or "Not specified"
+        fr = (
+            "\n".join(f"- {r}" for r in session.effective_functional_requirements)
+            or "Not specified"
+        )
+        nfr = (
+            "\n".join(f"- {r}" for r in session.effective_non_functional_requirements)
+            or "Not specified"
+        )
         constraints = "\n".join(f"- {c}" for c in session.effective_constraints) or "Not specified"
 
         return self.ANALYSIS_PROMPT_TEMPLATE.format(
@@ -171,9 +177,7 @@ If the diagram is empty or unreadable, return appropriate empty arrays and low s
             "concerns": response.get("concerns", []) or [],
             "suggestions": response.get("suggestions", []) or [],
             "overall_impression": response.get("overall_impression", "") or "",
-            "preliminary_scores": self._normalize_scores(
-                response.get("preliminary_scores", {})
-            ),
+            "preliminary_scores": self._normalize_scores(response.get("preliminary_scores", {})),
         }
 
     def _normalize_scores(self, scores: dict | None) -> dict[str, int]:
@@ -209,7 +213,6 @@ If the diagram is empty or unreadable, return appropriate empty arrays and low s
             True if auto-analysis should be triggered.
         """
         from django.utils import timezone
-        from datetime import timedelta
 
         # Don't analyze if session is not in progress
         if session.status != session.Status.IN_PROGRESS:
