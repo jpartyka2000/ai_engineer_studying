@@ -1,0 +1,73 @@
+Architectural optimization reduces what you spend; cost management is how you find out where it went and stop it drifting back. Both come up in interviews about cloud economics.
+
+**The billing hierarchy.** Understanding this is prerequisite to everything else.
+
+```
+Billing account (EA / MCA / MPA)
+  └── Billing profile / Enrollment
+        └── Invoice section / Department
+              └── Subscription
+                    └── Resource group
+                          └── Resource
+```
+
+Management groups sit alongside, layered over subscriptions, and are how you apply policy at scale. This hierarchy is what reservation and savings plan **scope** refers to — "shared" scope means the benefit can apply anywhere in the billing scope rather than being trapped in one subscription.
+
+**Microsoft Cost Management — the four tools you actually use.**
+
+1. **Cost analysis** — the interactive explorer. Group by resource group, service, meter, location, or tag; filter; and change the granularity. The single most useful view is **grouped by meter** on one service, because that is where you discover that Log Analytics ingestion, not compute, is your biggest container cost.
+2. **Budgets** — a spend threshold with alert actions at configurable percentages. Critically, **budgets alert; they do not stop spending.** If you need a hard stop you have to wire the alert to an action group that runs automation. Say this explicitly if asked — assuming budgets cap spend is a common misconception.
+3. **Cost alerts** — anomaly detection and scheduled alerts, including credit and quota alerts.
+4. **Azure Advisor** — recommendations across cost, reliability, security, performance, and operational excellence. The cost recommendations include idle and underutilized resources, right-sizing, and **reservation** purchase recommendations (VMs only). Savings plan recommendations appear in Advisor and the purchase experience.
+
+**Exports and analysis at scale.** For anything beyond ad hoc questions, export usage data (to storage, then to a warehouse or the Cost Management Power BI app). The **Azure Retail Prices API** lets you query list prices programmatically, which is how you build a cost model before deploying anything — including spot prices, where `meterName` and `skuName` both contain `Spot`.
+
+**Tagging — the foundation, and the thing everyone does badly.** Cost allocation is only as good as your tags. A workable minimum:
+
+| Tag | Purpose |
+|---|---|
+| `env` | prod / staging / dev — the first cut on any cost question |
+| `owner` | who to ask |
+| `cost-center` | chargeback |
+| `application` | which system |
+| `data-classification` | compliance |
+
+Three practical facts:
+- **Tags do not inherit by default** from subscription or resource group to resource. You either enforce them or use Cost Management's built-in grouping by resource group as a proxy.
+- Use **Azure Policy** to require tags (`deny` on missing tags) and to **append or modify** tags from the resource group. This is the only approach that works at scale; asking people to tag manually does not.
+- Some resources do not support tags, and child resources often do not inherit from parents.
+
+**Azure Policy for cost governance.** Beyond tagging, policy is how you prevent expensive mistakes rather than discovering them on the invoice:
+- **Allowed SKUs** — deny VM sizes nobody should be deploying (nobody needs an M-series in a dev subscription).
+- **Allowed locations** — prevents accidental deployment to an expensive or non-compliant region, and prevents cross-region egress surprises.
+- **Deny public IPs** or specific expensive resource types.
+- **Require auto-shutdown** or specific tags on dev/test resources.
+
+**The non-production levers, which are usually the easiest win.**
+- **Dev/Test pricing** — EA/MCA customers with the right offer types get discounted rates and **no Windows or SQL license charges** on non-production subscriptions.
+- **Auto-shutdown schedules** on VMs. A dev VM running 40 hours a week instead of 168 costs roughly a quarter as much.
+- **Scale non-prod Container Apps to zero** — dev and staging environments are the ideal `minReplicas: 0` candidates, and the monthly free grant may cover them entirely.
+- **Separate subscriptions for non-prod**, which also multiplies per-subscription free grants like ACA's 180,000 vCPU-seconds.
+
+**The meters people forget.** In rough order of how often they surprise people:
+
+1. **Log Analytics / Application Insights ingestion** — per GB ingested plus retention. For a verbose containerized app this genuinely can exceed compute. Reduce log verbosity in production and review retention.
+2. **Egress / data transfer** — internet egress and cross-region transfer. Co-locate services with their dependencies.
+3. **Managed disks** — provisioned, not consumed. A 1 TiB P30 costs the same empty or full. **Orphaned disks from deleted VMs** are pure waste and extremely common; the `Deallocate` spot eviction policy manufactures them.
+4. **Public IPs** — standard SKU static IPs bill hourly whether attached or not.
+5. **Load balancers and NAT Gateway** — hourly plus per-GB processed.
+6. **Snapshots and backups** — grow silently without a retention policy.
+7. **The Dedicated plan management fee** in Container Apps, triggered by a Dedicated profile, a private endpoint, or planned maintenance.
+
+**A FinOps loop that actually works.**
+
+1. **Visibility** — tags enforced by policy, exports flowing, dashboards per team.
+2. **Allocation** — every cost has an owner. Unallocated spend is where waste hides.
+3. **Optimization** — Advisor recommendations, plus the architectural work (right-size, scale to zero, jobs over always-on, bin packing).
+4. **Commitment** — reserve and savings-plan the *optimized* baseline, in that order. Never commit before optimizing; savings plans are non-refundable and reservation refunds are capped at $50,000 per rolling 12 months.
+5. **Prevention** — policy on SKUs, regions, and tags so the next mistake does not happen.
+6. **Review** — monthly, with utilization checks on existing reservations and savings plans. An under-utilized commitment is waste you already paid for.
+
+That ordering is the substance. Most cost programs invert steps 3 and 4, commit to an unoptimized baseline, and then cannot unwind it.
+
+**Interview framing.** "I'd run it as a loop: visibility through policy-enforced tags and exports, allocation so every cost has an owner, then optimization, then commitment, then prevention through Azure Policy on allowed SKUs and regions. Two things I'd emphasize: budgets alert but don't stop spending, so a hard cap needs automation wired to the alert; and you optimize before you commit, because savings plans are non-refundable and reservation refunds are capped. The meter people always forget is Log Analytics ingestion — on a chatty containerized app it can outgrow the compute bill."

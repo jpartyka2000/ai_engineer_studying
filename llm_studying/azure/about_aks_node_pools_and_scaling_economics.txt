@@ -1,0 +1,64 @@
+If Container Apps is not enough and you move to AKS, the cost model changes shape entirely: you are back to paying for **nodes**, and the engineering problem becomes keeping those nodes full.
+
+**What you pay for on AKS.**
+- **Worker nodes** — ordinary VMs, priced by SKU, and the dominant cost.
+- **Control plane** — free on the Free tier; the **Standard** tier charges per cluster per hour and adds a financially-backed uptime SLA. Premium adds long-term support.
+- **Everything else** — managed disks, load balancers, public IPs, egress, Log Analytics for Container Insights.
+
+The key structural difference from ACA Consumption: **there is a cost floor.** An idle AKS cluster still runs its system node pool. An idle ACA app on Consumption costs nothing. That floor is why ACA wins decisively for intermittent workloads and why AKS needs genuine scale to be worth it.
+
+**Node pools.** A cluster has one or more node pools, each a group of identically-sized nodes.
+- **System node pool** — runs cluster-critical pods (CoreDNS, metrics-server). Must exist, must be Linux, and cannot scale to zero.
+- **User node pools** — your workloads. These **can** scale to zero.
+
+The standard cost pattern: keep the system pool minimal (a small D-series, 1–3 nodes for HA), and put the real workload on user pools that can scale to zero or run on spot.
+
+**Heterogeneous pools are the main lever.** Create multiple user pools with different SKUs and route workloads with node selectors, labels, taints, and tolerations:
+- a general-purpose D pool for most services
+- a memory-optimized E pool for caches and in-memory workloads
+- an F pool for compute-bound services
+- an **NC/ND GPU pool**, tainted so only GPU workloads land there
+- a **spot pool** for interruptible work
+
+Without this, everything lands on one SKU and you pay the maximum common denominator — the AKS equivalent of Container Apps' 1:2 ratio trap.
+
+**Spot node pools.** AKS supports spot node pools directly, with the same 30-second eviction and no SLA. Nodes get a taint (`kubernetes.azure.com/scalesetpriority=spot:NoSchedule`) so only workloads that tolerate it are scheduled there. The architecture is the same as for VMs: a standard (ideally reserved) baseline pool plus a spot pool for elastic capacity, so eviction degrades rather than fails you. Remember spot pools cannot be B-series and cannot be covered by reservations.
+
+**Three layers of autoscaling, and they must agree.**
+
+1. **HPA (Horizontal Pod Autoscaler)** — more pod replicas on CPU/memory or custom metrics.
+2. **KEDA** — event-driven pod scaling on queue depth, Kafka lag, and so on. This is the same KEDA that Container Apps has built in; on AKS you install and manage it (available as an AKS add-on).
+3. **Cluster Autoscaler** or **Node Autoprovisioning (NAP)** — more *nodes* when pods cannot be scheduled. NAP (Karpenter-based) picks appropriate SKUs automatically rather than scaling fixed-size pools, which is a genuine improvement for heterogeneous workloads.
+
+The failure mode to understand: **HPA without a node autoscaler** gives you pending pods and no new capacity. **A node autoscaler without correct pod resource requests** gives you wildly wrong node counts, because the scheduler bin-packs on *requests*, not actual usage.
+
+**Requests and limits are the cost control.** This is the single highest-leverage AKS cost item:
+- **Requests** are what the scheduler reserves. Set them too high and nodes look full while sitting idle — you pay for nodes doing nothing. This is the most common source of AKS waste.
+- **Limits** cap actual consumption. Memory limits are enforced by OOM kill; CPU limits throttle.
+
+The practical advice: set requests close to real p50–p75 usage, set memory limits near the real ceiling, and be cautious with CPU limits (throttling causes latency problems that look like application bugs). Then use the **Vertical Pod Autoscaler** in recommendation mode, or Container Insights data, to find over-requested workloads.
+
+**AKS Automatic.** Azure preconfigures and manages node management, scaling, security defaults, and upgrades. It narrows the operational gap with Container Apps considerably and is the sensible default for teams who want Kubernetes APIs without running the cluster themselves. It does not change the fundamental cost floor.
+
+**Bin packing is the whole game.** Node cost is fixed once the node exists, so utilization is everything:
+- Pick node SKUs that divide cleanly into your pod sizes. A pod requesting 3 vCPU on a 4-vCPU node wastes 25% by construction.
+- Prefer **fewer larger nodes** for packing efficiency, **more smaller nodes** for failure-domain granularity and finer autoscaling steps. Larger nodes also amortize the per-node OS and DaemonSet overhead better.
+- Account for the reserved allocatable overhead — kubelet, OS, and eviction thresholds take a slice of every node, proportionally more on small nodes.
+- Use pod disruption budgets and topology spread so consolidation does not break availability.
+
+**Reservations and savings plans on AKS.** Worker nodes are ordinary VMs, so they are covered by **Reserved VM Instances** and by **savings plan for compute**. Reserve the baseline node count you are confident about; leave the autoscaling headroom on demand or on spot. Right-size the node SKU *before* reserving it — reserving an oversized node SKU locks in the waste.
+
+**The ACA vs AKS cost comparison, honestly.**
+
+| | Container Apps | AKS |
+|---|---|---|
+| Cost floor | **zero** | control plane tier + system node pool |
+| Billing unit | vCPU-s / GiB-s per replica (Consumption) or per node (Dedicated) | per node, always |
+| Idle cost | zero at zero replicas | full node cost |
+| Utilization responsibility | platform's, on Consumption | **yours** |
+| Commitment discount | savings plan only | reservations **and** savings plan |
+| Ops effort to stay efficient | low | ongoing |
+
+The honest summary: ACA is cheaper until you are big enough and steady enough that node-level bin packing beats per-second serverless pricing — and it stays operationally cheaper regardless, because keeping nodes full is continuous work.
+
+**Interview framing.** "On AKS you're back to paying for nodes, so the job is keeping them full. The three things I'd focus on: pod resource **requests**, because the scheduler bin-packs on requests and over-requesting means paying for idle nodes; heterogeneous node pools with taints and tolerations so memory, compute, and GPU workloads land on the right SKU instead of everything paying the maximum common denominator; and a spot pool behind a reserved baseline. And I'd make sure the three autoscaling layers agree — HPA or KEDA for pods, cluster autoscaler or node autoprovisioning for nodes, because HPA without a node autoscaler just gives you pending pods."

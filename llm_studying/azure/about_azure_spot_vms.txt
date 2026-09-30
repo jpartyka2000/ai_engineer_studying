@@ -1,0 +1,63 @@
+Azure Spot Virtual Machines let you use Azure's **unused capacity** at significant savings, with the catch that Azure will **evict** them whenever it needs the capacity back. There is **no SLA** and no high-availability guarantee.
+
+**The eviction contract.** Azure evicts spot VMs with **30 seconds' notice**. You can opt in to in-VM notification via **Azure Scheduled Events**, delivered on a best-effort basis up to 30 seconds before eviction. Thirty seconds is the number to remember — it dictates what your workload must be able to do: checkpoint, drain, or requeue, and nothing more elaborate.
+
+**Two eviction triggers.**
+1. **Capacity** — Azure needs the capacity for pay-as-you-go workloads.
+2. **Price** — the spot price rises above your configured max price.
+
+**Two eviction policies.**
+
+**Deallocate** (default) — the VM moves to stopped-deallocated. You can redeploy later, but **there is no guarantee allocation will succeed**. Deallocated VMs **still count against your quota** and you **still pay storage costs** for the underlying disks.
+
+**Delete** — the VM and its underlying disks are deleted, so storage charges stop.
+
+The choice is really about whether the VM has state worth keeping. Stateless scale-set members should almost always use **delete**, otherwise you accumulate deallocated VMs silently consuming quota and disk spend. That quota consumption is a genuinely common operational surprise.
+
+**Max price behavior.** You set a max price in USD with up to five decimal places (`0.98765` = $0.98765/hour). The behavior table:
+
+| Situation | Outcome |
+|---|---|
+| Max price ≥ current price | VM deploys if capacity and quota allow |
+| Max price < current price | VM does not deploy; you get an error |
+| Price rises above your max | VM is evicted, with ~30s scheduled-event attempt |
+| Price later falls back below your max | VM is **not** automatically restarted — you restart it, at the then-current price |
+| Max price = **-1** | Never evicted for price reasons. You pay the current spot price up to the standard price, and **never above standard price** |
+| Changing max price | You must **deallocate** the VM first |
+
+**Set max price to `-1` unless you have a specific reason not to.** It removes price-based eviction entirely while guaranteeing you never pay more than the standard rate — you are then only exposed to capacity evictions, which is the risk you actually signed up for. Setting a low max price adds a second eviction cause for marginal benefit.
+
+**Limitations that matter.**
+- **B-series is not supported.** You cannot combine burstable and spot pricing.
+- **Promo versions** of any size are not supported (Dv2, NV, NC, H promo sizes).
+- Available in any region **except** Microsoft Azure operated by 21Vianet.
+- Supported offer types: Enterprise Agreement, pay-as-you-go offer code 003P, Sponsored (0036P/0136P, not in Fairfax), and CSP via Partner Center.
+- **Spot has a separate quota pool**, shared between standalone VMs and scale set instances. You request increases through the normal quota process.
+- **You cannot convert an existing VM to spot** — the flag is creation-time only. And you cannot convert a spot VM back to standard.
+
+**Researching before you commit.** Both price history and eviction rates are available before deployment, which is the professional way to pick a SKU and region:
+
+- **Portal** — after checking "Run with Azure Spot discount," a link appears to view pricing history and compare nearby regions, as a table or chart. **Eviction rates are quoted per hour**: a 10% eviction rate means a 10% chance of eviction in the next hour, based on the last 7 days.
+- **Azure Resource Graph** — query the `SpotResources` table programmatically for 90 days of pricing history and 28 days of eviction rates:
+
+```kql
+SpotResources
+| where type =~ 'microsoft.compute/skuspotevictionrate/location'
+| where sku.name in~ ('standard_d2s_v4', 'standard_d4s_v4')
+| where location in~ ('eastus', 'southcentralus')
+| project skuName = tostring(sku.name), location,
+          spotEvictionRate = tostring(properties.evictionRate)
+| order by skuName asc, location asc
+```
+
+This is the highest-value practical tip in the whole topic: **shop for a low-eviction-rate SKU/region pair** instead of picking a size and hoping. A less popular size in a less popular region often has both a better price and a dramatically lower eviction rate.
+
+**Good workloads.** Batch processing, dev/test environments, large compute workloads, CI build agents, rendering, data processing pipelines, ML training **with checkpointing**, and stateless web tier capacity **behind** a standard-VM baseline.
+
+**Bad workloads.** Anything needing an SLA, stateful services without fast recovery, databases, single-instance production services, and anything where 30 seconds is not enough to gracefully stop.
+
+**The standard architecture.** Do not run entirely on spot. Run a **baseline** of standard (ideally reserved) instances that guarantees minimum viable capacity, and add spot instances on top for elastic capacity. Use scale sets with mixed priority so the orchestrator maintains the baseline. If spot capacity vanishes, you degrade rather than fail. The docs put it bluntly: if you need capacity right away, use standard VMs rather than spot.
+
+**How spot composes with other discounts.** Spot **cannot** be combined with reservations or savings plans — reserved capacity and opportunistic capacity are mutually exclusive by definition. And it cannot be combined with B-series. So spot is an alternative to commitment discounts for the interruptible portion of your estate, not an addition to them.
+
+**Interview framing.** "Spot gives you Azure's spare capacity at a large discount with 30 seconds' eviction notice and no SLA. Three things I'd get right in a design: set max price to -1 so you're only exposed to capacity eviction and never pay above standard rate; use the delete eviction policy for stateless workloads, because deallocated VMs still consume quota and still bill for disks; and query eviction rates in Azure Resource Graph to pick a SKU and region with a low rate rather than guessing. Architecturally you run a reserved baseline plus spot on top — never all spot — and note spot can't be combined with reservations, savings plans, or B-series."

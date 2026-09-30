@@ -1,0 +1,81 @@
+Azure organizes VM sizes into **types** (by intended workload), then **series** (similar hardware and features), then **sizes** (a specific vCPU/memory/accelerator configuration). Knowing the family taxonomy is how you get to a shortlist quickly.
+
+**General purpose** — balanced CPU-to-memory, roughly 1:4.
+
+| Family | Intended workload |
+|---|---|
+| **A** | Entry-level, economical (Av2-series) |
+| **B** | **Burstable** — Bsv2, Basv2, Bpsv2 |
+| **D** | Enterprise applications, relational databases, in-memory caching, data analytics |
+| **DC** | D-family with **confidential computing** |
+
+The D family is where most workloads land, and it has the widest spread of variants: `Dsv7/Ddsv7` (Intel), `Dasv7/Dadsv7` (AMD), `Dpsv6/Dpdsv6` (**ARM**), plus `Dlsv7/Dldsv7` and `Dalsv7` low-memory variants.
+
+**Compute optimized** — high CPU-to-memory, roughly 1:2.
+
+| Family | Intended workload |
+|---|---|
+| **F** | Medium-traffic web servers, network appliances, batch processes, application servers |
+| **FX** | EDA, large-memory relational databases, medium-to-large caches, in-memory analytics |
+
+**Memory optimized** — high memory-to-CPU, roughly 1:8 and beyond.
+
+| Family | Intended workload |
+|---|---|
+| **E** | Relational databases, medium-to-large caches, in-memory analytics |
+| **Eb** | E-family with **high remote storage performance** |
+| **EC** | E-family with **confidential computing** |
+| **M** | **Extremely large** databases, very large memory (up to multi-TiB) |
+
+The M family is the SAP HANA / giant-SQL tier: `Mbsv3`, `Msv3`/`Mdsv3` in medium, high, and very-high memory variants.
+
+**Storage optimized** — high local disk throughput and IOPS.
+
+| Family | Intended workload |
+|---|---|
+| **L** | High disk throughput and IO, big data, SQL and NoSQL databases, data warehousing, large transactional databases |
+
+**GPU accelerated.**
+
+| Family | Intended workload | Notable series |
+|---|---|---|
+| **NC** | Compute-intensive, graphics-intensive, visualization | NCads_H100_v5, NC_A100_v4, NCasT4_v3, NC_RTXPRO6000BSE_v6 |
+| **ND** | **Large memory** compute-intensive — the training tier | ND GB300-v6, ND GB200-v6, ND_MI300X_v5, ND-H200-v5, ND-H100-v5 |
+| **NG** | Virtual desktop (VDI), cloud gaming | NGads V620 |
+| **NV** | Virtual desktop, single-precision compute, video encoding and rendering | NVadsA10_v5, NVads V710 v5 |
+
+The NC/ND distinction is the one to get right: **NC for inference and single-node compute, ND for large-memory multi-GPU training.** GB200/GB300 and H200/MI300X live in ND.
+
+**FPGA accelerated.**
+
+| Family | Intended workload |
+|---|---|
+| **NP** | Machine learning inference, video transcoding, database search and analytics |
+
+**High performance compute (HPC).**
+
+| Family | Intended workload |
+|---|---|
+| **HB** | High memory bandwidth — fluid dynamics, weather modeling |
+| **HC** | High density compute — finite element analysis, molecular dynamics, computational chemistry (HC-series retiring May 31, 2027) |
+| **HX** | Large memory capacity, EDA |
+
+HPC sizes typically carry the `r` additive feature for RDMA/InfiniBand — that is what makes tightly-coupled MPI workloads viable.
+
+**The selection heuristic, in the order to apply it.**
+
+1. **Start from the binding resource.** Memory-bound → E. CPU-bound → F. Balanced → D. Local-disk-bound → L. Need a GPU → N. MPI/InfiniBand → H.
+2. **Then pick the memory ratio within the family** using the additive letters: `l` for less memory per core, `m` for more, `f` for a flat 1:1.
+3. **Then pick the processor** — `a` for AMD or `p` for ARM to cut cost, no letter for Intel. Verify your workload's architecture compatibility before choosing ARM.
+4. **Then decide on a local temp disk** — `d` or not.
+5. **Then take the newest version available in your region.** Newer generations usually improve price/performance outright; there is rarely a reason to deploy a v3 when a v6 exists.
+6. **Then check quota and regional availability**, which is what actually blocks deployments.
+
+**The economics angle.** Family choice is a bigger cost lever than most tuning. Consider 16 vCPU with 32 GiB required:
+- `E16` gives 128 GiB — you are paying for ~96 GiB you do not need.
+- `D16` gives 64 GiB — still 32 GiB of overshoot.
+- `F16` gives 32 GiB — right on the nose, at the compute-optimized price.
+
+Choosing F here rather than reflexively reaching for D can be a large saving. The same logic in reverse is why memory-heavy Container Apps workloads belong on a Dedicated **E-series** profile rather than climbing the Consumption CPU ladder to get RAM.
+
+**Interview framing.** "I'd start from the binding resource — E for memory, F for compute, D for balanced, L for local disk, N for GPU with NC for inference and ND for large-memory training, H for InfiniBand HPC. Then I'd tune within the family using the additive letters for memory ratio and processor, preferring AMD or ARM for cost. The mistake I'd call out is defaulting to D-series: if you need 16 cores and only 32 GiB, F-series is the right size and D-series means paying for memory you'll never touch."

@@ -1,0 +1,46 @@
+Azure Container Apps (ACA) is Azure's serverless container platform. It runs containerized microservices and jobs with automatic scaling — including scale to zero — without exposing you to Kubernetes.
+
+**The one-line positioning.** ACA is "Kubernetes with the Kubernetes taken away." It is built on Kubernetes plus a set of open-source components, but it deliberately does **not** give you access to the Kubernetes API or control plane. If you need those, the docs are explicit: use AKS instead.
+
+**What it is built from.** Four open-source pieces do the heavy lifting, and knowing which does what is the fastest way to understand ACA's feature list:
+
+- **Kubernetes** — the underlying orchestrator (hidden from you).
+- **KEDA** (Kubernetes Event-driven Autoscaling) — every scale rule you write is a KEDA scaler. This is why ACA can scale on queue depth, Kafka lag, or Redis list length and not just CPU.
+- **Envoy** — the ingress proxy. This is where HTTP routing, TLS termination, and traffic splitting between revisions happen.
+- **Dapr** (Distributed Application Runtime) — optional sidecar providing service invocation, pub/sub, state stores, and bindings.
+
+**Core concepts, in the order you meet them.**
+
+1. **Environment** — the security and networking boundary. Apps in the same environment share a virtual network and can talk to each other by name. This is the unit that gets deployed into your VNet.
+2. **Workload profile** — the compute your apps run on inside an environment. Consumption (serverless), Dedicated (reserved VM pool you pick), or Flex (preview). An environment always has a default Consumption profile; you add others.
+3. **Container app** — one microservice. Has ingress config, scale rules, secrets, and a container template.
+4. **Revision** — an immutable snapshot of a container app. Changing the `template` section creates a new revision. You can run multiple revisions at once and split traffic between them.
+5. **Replica** — a running instance of a revision. Scaling out means more replicas.
+6. **Container** — the actual image. Usually one per app, optionally with sidecar and init containers.
+
+**What you get without configuring anything.** HTTPS ingress with a free managed certificate, a stable FQDN, automatic load balancing across replicas, service discovery between apps in the environment, log aggregation to Log Analytics, health probes, automatic restart on crash, and horizontal autoscaling with a default rule of 0–10 replicas on HTTP concurrency.
+
+**Container requirements.**
+- Any Linux-based **x86-64** (`linux/amd64`) image. No Windows containers, no ARM.
+- Any public or private registry; authenticate with a secret or (better) a managed identity holding `AcrPull`.
+- **No privileged containers** and no host-level access.
+- Image size: up to **8 GB** total per replica on Consumption. Dedicated profiles support larger images, but since multiple apps share a profile instance's disk, the real limit varies with what else is running there.
+
+**Jobs.** Beyond long-running apps, ACA runs **jobs**: containers that start, do work, and exit. Three trigger types — manual, scheduled (cron), and event-driven (a KEDA scaler creates an execution per batch of events). A non-zero exit code marks the execution failed, with configurable retries. Jobs have no ingress, so they incur no request charges.
+
+**Functions on Container Apps.** You can run the Azure Functions programming model on ACA, which auto-generates KEDA scale rules from your triggers and bindings. Useful when you want Functions' developer ergonomics but ACA's networking and co-location with your other microservices.
+
+**What ACA is good at.**
+- Microservice fleets where you want service discovery and traffic splitting but not cluster ops.
+- Event-driven workers that should sit at zero replicas most of the day.
+- HTTP APIs with bursty, unpredictable traffic.
+- Background and scheduled jobs.
+- Blue/green and canary rollouts, which are a first-class feature via revisions and traffic weights.
+
+**What it is not good for.**
+- You need Kubernetes APIs, CRDs, operators, or a service mesh of your choosing → AKS.
+- You need Windows containers or GPUs outside the supported regions → AKS or VMs.
+- Single-purpose web app with no microservice topology → App Service is simpler.
+- One-off container with no scaling or certificates needed → Azure Container Instances is a smaller building block.
+
+**The interview soundbite.** "Container Apps is the serverless middle ground: App Service is too web-app-shaped, ACI is too low-level, AKS is too much operational surface. ACA gives you Kubernetes-style microservices — service discovery, revisions, traffic splitting, KEDA event scaling, scale to zero — with no cluster to run, at the cost of no access to the Kubernetes API."

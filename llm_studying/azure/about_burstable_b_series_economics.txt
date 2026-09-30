@@ -1,0 +1,51 @@
+The B-series is Azure's burstable VM family, and it has the most distinctive economics of any family: you buy a **fraction** of a core's sustained performance plus the right to burst above it using accumulated credits.
+
+**The model.** Each B-series size has a **baseline CPU percentage** it is guaranteed. When the VM runs below baseline it accrues **CPU credits**; when it runs above baseline it spends them. Run out of credits and performance is throttled back to baseline. Credits accrue up to a documented maximum and are lost when the VM is deallocated.
+
+So a B-series size is really three numbers: baseline percentage, credit accrual rate per hour, and maximum credit bank. A small size might have a baseline around 20–40% of a core with a bank sized for a few hours of full-speed burst.
+
+**The current series.**
+- **Bsv2** — Intel-based
+- **Basv2** — AMD-based (`a`)
+- **Bpsv2** — **ARM**-based (`p`), the cheapest per vCPU
+
+All are `s` (Premium SSD capable). Note there is no `d` variant, so no local temp disk.
+
+**Where B-series is the correct, obvious answer.**
+- Dev and test machines used interactively a few hours a day.
+- Build agents and CI runners that are idle between jobs.
+- Low-traffic web servers and internal tools.
+- Small databases with bursty query patterns.
+- Jump boxes and bastion hosts.
+- Microservices with low average utilization and occasional spikes.
+
+The common shape: **low average utilization with tolerance for occasional throttling.** In exchange the price per vCPU is well below D-series, often dramatically so at the small sizes.
+
+**Where B-series is a trap.**
+- **Sustained CPU load.** If you run above baseline continuously you exhaust credits and get throttled to baseline permanently — you have bought a slow VM at a discount rather than a fast VM cheaply.
+- **Latency-sensitive production traffic.** Throttling is invisible in your application metrics until it manifests as a mysterious latency cliff. It is one of the harder performance mysteries to diagnose if you do not know the VM is burstable.
+- **Anything needing predictable performance for an SLA.**
+- **Spot VMs** — this is a hard limitation: **B-series is not supported for Azure Spot Virtual Machines.** You cannot combine burstable pricing with spot pricing.
+
+**The diagnostic.** Monitor the **CPU Credits Remaining** and **CPU Credits Consumed** metrics, not just CPU percentage. A VM pegged at exactly its baseline with zero credits remaining is a throttled VM, and the CPU percentage graph alone looks deceptively like a flat, healthy plateau. If you take one operational fact from this note, it is: **alert on credits remaining approaching zero.**
+
+**The decision rule.** Compute your workload's average CPU utilization over a representative week.
+- Comfortably **below** the size's baseline, with spikes → B-series is right, and often a 2–5× saving.
+- Near or **above** baseline → move to D-series (or F-series if compute-bound). A throttled B-series is worse value than a correctly sized D-series.
+
+**How it compares to the other cost mechanisms.** Azure gives you several ways to pay less for compute, and they address different situations:
+
+| Mechanism | Trade you make | Best for |
+|---|---|---|
+| **B-series** | performance ceiling when credits run out | low average utilization |
+| **Spot** | can be evicted with 30 seconds' notice | interruptible batch work |
+| **Reservations** | 1- or 3-year commitment to a specific SKU/region | steady, predictable usage |
+| **Savings plan** | 1- or 3-year commitment to hourly spend | steady spend, changing shape |
+| **Right-sizing** | nothing — pure win | always do this first |
+| **ARM/AMD (`p`/`a`)** | architecture compatibility | anything that runs on them |
+
+These compose. A B-series VM can be covered by a reservation or savings plan. A spot VM cannot be B-series, and spot cannot be combined with a reservation.
+
+**Relation to Container Apps.** There is no burstable workload profile in ACA — Dedicated profiles are D (general purpose) and E (memory optimized) only. The Consumption plan is the conceptual analogue: instead of buying a fraction of a core with burst credits, you buy per-second allocation with scale to zero. If you find yourself wanting B-series economics for a container workload, Consumption is the answer, not a Dedicated profile.
+
+**Interview framing.** "B-series buys a baseline fraction of a core plus burst credits. It's the right choice when average utilization is genuinely below baseline — dev boxes, CI runners, internal tools — and a trap when load is sustained, because you exhaust credits and get throttled to baseline indefinitely. The operational detail people miss is that you have to monitor CPU Credits Remaining, not CPU percentage, because a throttled VM looks like a flat healthy plateau. And B-series can't be used with Spot."

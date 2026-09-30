@@ -1,0 +1,49 @@
+Constrained vCPU VM sizes are one of the most counter-intuitive things in Azure: you pay for a large VM but deliberately **disable** most of its cores. It exists entirely because of per-core software licensing, and it can save enormous amounts of money.
+
+**The problem it solves.** Commercial database software — SQL Server, Oracle — is licensed **per core**. Meanwhile, a large database wants a lot of **memory** and a lot of **storage I/O**, and comparatively little CPU.
+
+Normally these move together. To get 1 TiB of RAM you have to buy a size with a lot of vCPUs, and then you owe license fees on every one of those cores. The license can be several times the infrastructure cost, so you end up paying a fortune to license cores your database never uses.
+
+**The mechanism.** A constrained size takes a large VM and caps the **active** vCPU count while keeping the **full** memory, storage bandwidth, and network bandwidth of the original size. You are licensed only for the active cores.
+
+The name encodes it: `M8-2ms_v2` means the M-series 8-vCPU size with **only 2 vCPUs active** — but it keeps all of the 8-vCPU size's memory and I/O. Reading the naming grammar, the `8-2` sits in the `[# of vCPUs] + [Constrained vCPUs]` positions.
+
+**The economics.** Azure charges you the infrastructure price of the **full** size — you do not get a compute discount for constraining. What changes is that you now need licenses for 2 cores instead of 8.
+
+The arithmetic works because the license dwarfs the compute. If SQL Server Enterprise licensing costs several times the VM's hourly compute rate, cutting licensed cores by 4× is a far bigger saving than the VM cost you are "wasting." That is the whole trade: **pay Microsoft for idle cores in infrastructure, so you do not pay for them in licenses.**
+
+**When it applies.**
+- SQL Server or Oracle on a VM, licensed per core, where you need the memory/IO of a big size but not the CPU.
+- Any per-core licensed commercial software with the same profile.
+
+**When it does not.**
+- Open-source databases (PostgreSQL, MySQL) — no per-core license, so constraining just wastes money. Buy the right-sized VM instead.
+- Anything CPU-bound.
+- Containerized workloads generally — Container Apps has no constrained-vCPU concept at all.
+
+**Azure Hybrid Benefit — the other half of licensing economics.** Reservations and savings plans cover **compute only**; they explicitly do not cover software licensing. Azure Hybrid Benefit is the instrument for the license half: it lets you apply existing on-premises Windows Server and SQL Server licenses with Software Assurance to Azure VMs, so you pay the Linux-equivalent compute rate rather than the Windows rate.
+
+For a Windows SQL Server VM, the full cost stack is:
+
+| Component | Covered by |
+|---|---|
+| VM compute | Reservation or savings plan (up to 72% off) |
+| Windows Server license | Azure Hybrid Benefit |
+| SQL Server license | Azure Hybrid Benefit, and reduced by constrained vCPU |
+| Managed disks | Disk Storage reservations (Premium SSD **P30 or larger** only) |
+| Networking / egress | nothing — pay as you go |
+
+Getting only the reservation and stopping there is the classic mistake: you have optimized the smallest layer of a four-layer bill.
+
+**Dev/Test pricing** is the third licensing lever. EA and MCA customers with the right offer types get discounted rates on non-production subscriptions, notably **no Windows or SQL license charges** on dev/test workloads. Combined with auto-shutdown schedules, non-production compute should be a small fraction of production cost. If your dev estate costs anything like production, look here first.
+
+**Putting the levers in order for a licensed database workload.**
+
+1. **Right-size the memory and IO requirement** honestly — this sets the size family (M or E, probably with `b` for remote storage bandwidth).
+2. **Constrain the vCPUs** to the minimum the workload actually needs, to cut licensed cores.
+3. **Apply Azure Hybrid Benefit** if you own licenses with Software Assurance.
+4. **Reserve** the VM — it is a steady 24/7 workload by definition, which is the ideal reservation target.
+5. **Reserve disk capacity** if you are on Premium SSD P30 or larger.
+6. **Use Dev/Test pricing** for the non-production copies, plus shutdown schedules.
+
+**Interview framing.** "Constrained vCPU sizes let you keep a large VM's memory and I/O while disabling most of its cores. You still pay the full infrastructure price — there's no compute discount — but you only license the active cores. Since per-core SQL Server or Oracle licensing typically dwarfs the compute cost, cutting licensed cores 4× more than pays for the idle infrastructure. It's purely a licensing optimization, so it's pointless for PostgreSQL or anything containerized. And it pairs with Azure Hybrid Benefit, because reservations and savings plans cover compute only and leave the license untouched."

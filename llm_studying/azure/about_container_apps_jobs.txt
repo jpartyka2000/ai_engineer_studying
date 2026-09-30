@@ -1,0 +1,68 @@
+Container Apps **jobs** run containers that start, do work, and exit — as opposed to apps, which run continuously and serve requests. Jobs are the right primitive for batch processing, scheduled maintenance, queue draining, and ML inference batches.
+
+**Three trigger types.**
+
+**Manual** — you start an execution on demand, via CLI, API, or portal. Good for admin tasks, backfills, and database migrations tied to a deployment.
+
+```bash
+az containerapp job start --name my-job --resource-group rg
+```
+
+**Schedule** — a cron expression. Note that the schedule is evaluated in **UTC**, which is a reliable source of off-by-hours bugs around daylight saving.
+
+```bash
+az containerapp job create \
+  --name nightly-report --resource-group rg --environment env \
+  --trigger-type Schedule --cron-expression "0 2 * * *" \
+  --image myacr.azurecr.io/report:abc123 \
+  --cpu 0.5 --memory 1Gi
+```
+
+**Event** — a KEDA **ScaledJob** scaler creates executions in response to events. This is the distinguishing feature versus a plain cron container: one execution per batch of messages, scaling the number of concurrent executions with the backlog.
+
+```bash
+az containerapp job create \
+  --name queue-worker --resource-group rg --environment env \
+  --trigger-type Event \
+  --image myacr.azurecr.io/worker:abc123 \
+  --min-executions 0 --max-executions 50 \
+  --polling-interval 30 \
+  --scale-rule-name sb-rule --scale-rule-type azure-servicebus \
+  --scale-rule-metadata "queueName=orders" "namespace=my-ns" "messageCount=20" \
+  --scale-rule-auth "connection=connection-string-secret"
+```
+
+**Jobs vs apps — the differences that matter.**
+
+| | App | Job |
+|---|---|---|
+| Lifetime | runs continuously | starts, exits |
+| Ingress | yes, HTTP/TCP | **none** |
+| HTTP/TCP scale rules | yes | **no** |
+| KEDA object | ScaledObject | ScaledJob |
+| Request charges | yes | **no** (no ingress) |
+| Idle billing rate | possible | **never** |
+| Success/failure | restart on crash | non-zero exit = failed execution |
+
+**Failure semantics.** A container exiting non-zero marks the execution failed. You configure `--replica-retry-limit` for retries and `--replica-timeout` as a hard ceiling on execution duration. Set the timeout deliberately: without it, a hung job holds resources and bills for them until something else intervenes.
+
+**Parallelism within an execution.** A job execution can run multiple replicas (`--parallelism`), with `--replica-completion-count` controlling how many must succeed for the execution to count as successful. This is the Kubernetes Job model — useful for sharded work where each replica takes a slice.
+
+**Billing.** In the Consumption plan, job resources are charged at the **active** rate for the duration of the execution. Idle rates never apply, because a completed execution stops consuming resources entirely — there is nothing to discount. No request charges. On the Dedicated plan, jobs bill the same way apps do: through the workload profile instances they run on.
+
+This makes jobs unusually well-suited to serverless economics. A nightly job that runs for 4 minutes costs 4 minutes of vCPU-seconds and GiB-seconds. The equivalent always-on worker costs 24 hours. For infrequent batch work the saving versus a permanently running container is enormous — and it is the single strongest argument for jobs over a cron loop inside a long-lived app.
+
+**When to use a job vs an app with a scale rule.** Both can drain a queue. Choose:
+
+- **Job** when work is naturally bounded — a discrete unit that finishes. Clean exit codes, retry semantics, a timeout, and no idle cost between runs.
+- **App with a KEDA scale rule** when the worker should stay warm, has expensive startup (a loaded model, a JIT warm-up, a connection pool), or when you want it to hold a minimum replica for latency reasons.
+
+The cost comparison is the deciding factor more often than the semantics: if startup cost is low and work is intermittent, the job wins outright because it returns to zero instantly rather than waiting out a 300-second cool down.
+
+**Practical notes.**
+- Jobs share the environment with apps, so they get the same VNet, secrets, managed identity, and Log Analytics wiring.
+- Use managed identity for scale rule auth rather than connection-string secrets.
+- Job execution history is queryable (`az containerapp job execution list`), which is your primary debugging surface since there is no ingress to probe.
+- The same image can back both an app and a job; drive the difference with the container `command`/`args`.
+
+**Interview framing.** "Jobs are ACA's run-to-completion primitive with three triggers — manual, cron, and event-driven via KEDA ScaledJobs. Because they have no ingress they incur no request charges, and because an execution ends they are always billed at the active rate with no idle concept — which is fine, since they stop billing entirely when they exit. The economic case is straightforward: a 4-minute nightly job bills 4 minutes, not 24 hours."

@@ -1,0 +1,33 @@
+Networking in Container Apps is configured at two levels: the **environment** (the VNet boundary, shared by all apps in it) and the **app** (ingress). Several cost-relevant items hide in here.
+
+**The environment is the network boundary.** All apps in an environment share a virtual network and can reach each other. When you create an environment you either let Azure manage the VNet or supply your own subnet. Requirements differ by environment type, and the **Flex profile requires a subnet of at least `/25`** — size subnets generously up front, because you cannot resize an environment's subnet afterward without recreating it.
+
+**Ingress options per app.**
+
+- **External** — reachable from the internet. Gets a public FQDN and a free managed TLS certificate.
+- **Internal** — reachable only from inside the environment (and the VNet). The right setting for backend services.
+- **Disabled** — no ingress at all. Correct for workers and jobs — **but remember that an app with ingress disabled and no scale rule and no minimum replica will scale to zero and never restart.**
+
+Transport can be `http`, `http2`, `tcp`, or `auto`. TCP ingress unlocks non-HTTP protocols but gives up the HTTP-layer features (path routing, traffic splitting by weight behaves differently).
+
+**Service discovery.** Apps in an environment reach each other by app name over internal ingress — `http://my-backend` resolves within the environment. No service registry to run, no sidecar required for basic name resolution. This is one of the concrete things ACA gives you that ACI does not.
+
+**Envoy does the work.** Ingress is Envoy: TLS termination, load balancing across replicas, HTTP/2, session affinity when enabled, and the revision traffic splitting described in the revisions notes.
+
+**Egress and network controls (workload profile environments only).** Workload profile environments expose additional networking features that Consumption-only environments do not, notably **user-defined routes (UDR)** to steer egress through a firewall or NVA, and NAT Gateway support for stable outbound IPs. If you need to force traffic through an inspection appliance, this is the mechanism — and the docs point to it as the supported alternative to configuring KEDA HTTP proxies, which ACA does not allow.
+
+**Private endpoints — and a billing consequence.** You can put a private endpoint in front of an environment so it is reachable only over private networking. Note the cost coupling from the billing docs: **private endpoints and planned maintenance trigger the Dedicated plan management fee regardless of whether your apps run on Consumption or Dedicated.** So a fully serverless environment picks up a fixed monthly charge the moment you enable a private endpoint. Budget for it deliberately.
+
+**Cost items that live in networking.**
+
+1. **The Dedicated plan management fee** via private endpoints or planned maintenance, as above.
+2. **Your own VNet** — the docs note that bringing your own virtual network or using other Azure resources may add charges.
+3. **NAT Gateway**, if used for stable egress IPs, is billed per hour plus per GB processed. On a chatty egress workload the data processing charge can be the larger half.
+4. **Data transfer** — cross-region and internet egress are billed normally. Keeping apps in the same region as their dependencies is a real cost control, not just a latency one.
+5. **Request charges** apply only to requests from **outside** the environment. Internal service-to-service calls are not billed as requests. This meaningfully favors putting chatty microservices in the **same** environment rather than splitting them across environments.
+
+That last point is worth stating as a design rule: splitting a chatty microservice graph across two environments converts free internal traffic into billable external requests, plus adds latency. Split environments for isolation reasons (prod vs non-prod, separate compliance boundaries), not for organizational tidiness.
+
+**Health probes and networking.** Probe requests are **not billable**, so you can probe at a sensible frequency without cost anxiety. But probes do count toward the idle-billing test indirectly: a replica must be receiving **less than 1,000 bytes/second** and using **less than 0.01 vCPU** to be idle. Very aggressive probing on a heavyweight health endpoint can keep a replica out of the idle rate.
+
+**Interview framing.** "The environment is the network boundary — shared VNet, name-based service discovery, and internal traffic that isn't billed as requests. Ingress is Envoy with free managed TLS. Two things I'd flag on cost: enabling a private endpoint pulls in the Dedicated plan management fee even on an all-Consumption environment, and splitting chatty services across environments turns free internal calls into billable external requests."

@@ -1,0 +1,52 @@
+Container Apps supports GPUs in two distinct ways, with very different economics. For anyone doing ML inference on Azure, the difference is the whole story.
+
+**Option 1: Serverless GPU (Consumption profile).** Scale-to-zero GPU compute, billed per replica.
+
+| Profile | vCPU | Memory | GPU |
+|---|---|---|---|
+| Consumption-GPU-NC8as-T4 | 8 | 56 GiB | NVIDIA T4 |
+| Consumption-GPU-NC24-A100 | 24 | 220 GiB | NVIDIA A100 |
+
+Available in a documented region list (West US, Australia East, Sweden Central and others — check current availability, it expands).
+
+**Option 2: Dedicated GPU workload profiles.** Reserved GPU nodes, billed per node.
+
+| Profile | vCPU | Memory | GPU |
+|---|---|---|---|
+| NC24-A100 | 24 | 220 GiB | A100 |
+| NC48-A100 | 48 | 440 GiB | A100 |
+| NC96-A100 | 96 | 880 GiB | A100 |
+
+Regions are narrow — West US 3 and North Europe. Two hard operational constraints:
+- **GPU-enabled Dedicated profiles must be configured when you create the environment.** You cannot add one to an existing environment.
+- Capacity is allocated **case-by-case**; you must **submit a support ticket** to request GPU quota.
+
+**The billing difference is the decision.**
+
+Serverless GPU bills **GPU-seconds** alongside vCPU-seconds and GiB-seconds, per replica, and **can scale to zero**. Dedicated GPU bills per node continuously plus the Dedicated plan management fee.
+
+And one critical asymmetry from the billing docs: **idle usage charges do not apply to serverless GPU apps — they are always billed at the active rate.** So the reduced idle rate, which cushions a CPU app held at a minimum replica, does not exist for GPU. For GPU workloads the choice is binary: you are at zero replicas paying nothing, or you are at the active rate. There is no cheap standby.
+
+That makes `minReplicas: 0` far more important for GPU than for CPU apps. A GPU replica parked at minimum "just in case" is billed at full active rate around the clock.
+
+**The cold-start tension, sharpened.** GPU inference has the worst cold-start profile of any common workload:
+- The image is large — CUDA runtime plus framework plus weights can approach the 8 GB Consumption image limit.
+- Model weights must load into GPU memory.
+- Frameworks often compile or warm up kernels on first inference.
+
+So scale-to-zero GPU can mean tens of seconds to minutes before the first response. Mitigations:
+- **Keep weights out of the image** and load from a mounted Azure Files / Blob volume, so the image stays small and pulls fast. This trades image pull time for network load time, which is usually a win.
+- **Warm up explicitly** during the startup probe — run a dummy inference so the first real request does not pay compilation cost. Give the `startup` probe a generous `initialDelaySeconds`.
+- **Accept asynchronous latency** where possible: put requests on a queue and drive a **job** or a KEDA-scaled app from queue depth. Batch inference tolerates cold start in a way an interactive endpoint does not.
+
+**Choosing between the two options.**
+
+Use **serverless GPU** when: traffic is intermittent or bursty; you can tolerate cold start or hide it behind a queue; you are prototyping; or utilization is well under roughly half the day. Scale to zero dominates everything else in the calculation.
+
+Use **Dedicated GPU** when: you need sustained GPU utilization; you need larger configurations (48 or 96 vCPU with multiple A100s); you need consistent low latency with no cold starts; or you want multiple GPU apps sharing node capacity. Accept the environment-creation-time constraint and the quota ticket.
+
+Consider **AKS instead** when: you need a GPU SKU ACA does not offer (H100, H200, MI300X, GB200 — the ND family), finer scheduling control, MIG partitioning, or multi-node distributed training. ACA's GPU menu is deliberately narrow; the full Azure GPU range lives on VMs and AKS.
+
+**Requirements.** Run a current **CUDA** base image — the docs call this out explicitly for GPU-enabled profiles. Linux `linux/amd64` only, as everywhere in ACA.
+
+**Interview framing.** "ACA gives you two GPU paths. Serverless GPU on Consumption scales to zero and bills GPU-seconds per replica, but note idle rates never apply to GPU — so it's either zero or full active rate, which makes scale-to-zero essential rather than optional. Dedicated GPU profiles give you bigger A100 configurations and no cold starts, but bill per node, are region-limited, need a quota ticket, and must be configured at environment creation. The real engineering problem either way is cold start, and the standard answer is to keep weights out of the image, warm up in the startup probe, and put a queue in front so latency is asynchronous."

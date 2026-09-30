@@ -1,0 +1,66 @@
+A repeatable method for picking an Azure VM size, and the traps at each step. This is a common interview scenario question: "we're migrating this workload to Azure — what size do you pick and why?"
+
+**Step 1 — Identify the binding resource.** Everything follows from this. Profile the workload and find what actually runs out first:
+
+| Binding resource | Family |
+|---|---|
+| Memory | **E** (or **M** for extreme) |
+| CPU | **F** |
+| Balanced | **D** |
+| Local disk IOPS/throughput | **L** |
+| GPU inference | **NC** |
+| GPU large-memory training | **ND** |
+| Remote storage bandwidth | **Eb** |
+| MPI / InfiniBand | **HB / HC / HX** |
+| Low average utilization | **B** |
+
+The trap: **defaulting to D-series**. If you need 16 vCPU and 32 GiB, D16 gives you 64 GiB and you pay for 32 GiB you will never touch. F16 gives exactly 32 GiB at compute-optimized pricing.
+
+**Step 2 — Tune the ratio inside the family** with additive letters: `l` for less memory per core, `m` for more, `f` for a flat 1:1. `Dlsv6` is the cheapest way to buy D-series cores when you do not need 4 GiB each.
+
+**Step 3 — Pick the processor.** `p` = ARM (cheapest), `a` = AMD (cheaper than Intel), no letter = Intel. Check compatibility before choosing ARM — this is a real constraint for compiled dependencies and any container image that is not multi-arch. (Note: irrelevant for Container Apps, which requires `linux/amd64`.)
+
+**Step 4 — Decide on a local temp disk.** `d` includes one. Without it you need a managed disk for scratch space, which costs separately. With it, remember the temp disk is **ephemeral** — it does not survive deallocation.
+
+**Step 5 — Take the newest version available.** v6 or v7 over v5 over v3. Newer generations typically improve price/performance outright. There is rarely a good reason to deploy an old generation except regional availability.
+
+**Step 6 — Check quota and regional availability.** This is what actually blocks deployments. Quota is per-region, per-family, and spot has its own separate pool. Check before you design around a SKU.
+
+**Step 7 — Choose the pricing mechanism.**
+
+| Workload pattern | Mechanism |
+|---|---|
+| 24/7, stable SKU and region | **Reservation** (up to 72%) |
+| Steady spend, changing shape/service | **Savings plan** |
+| Interruptible batch | **Spot** (max price -1) |
+| Low average utilization, bursty | **B-series** |
+| Non-production | **Dev/Test pricing** + auto-shutdown |
+| Per-core licensed database | **Constrained vCPU** + Hybrid Benefit |
+
+**Step 8 — Validate empirically.** Deploy, load test at realistic concurrency, and watch CPU, memory, disk latency, and network together. Then resize. Azure makes resizing easy (a reboot), so the first choice is a hypothesis, not a commitment — **as long as you have not already reserved it.** That ordering matters: right-size first, reserve second.
+
+**The traps, collected.**
+
+1. **Sizing from peak instead of steady state**, then reserving the peak size. You lock in waste for one to three years.
+2. **Reserving before right-sizing.** Refunds are capped at $50,000 in a rolling 12 months, and savings plans cannot be refunded at all.
+3. **Ignoring the license layer.** For Windows/SQL, compute may be the minority of the bill. Reservations and savings plans cover compute **only**.
+4. **Forgetting storage and egress.** Premium disks, snapshots, and cross-region transfer are separate meters. Disk reservations only cover Premium SSD **P30 or larger**.
+5. **Using B-series for sustained load.** Credits exhaust and you are throttled to baseline permanently. Monitor **CPU Credits Remaining**, not CPU percentage.
+6. **All-spot architectures.** No SLA, 30-second eviction. Run a reserved baseline plus spot on top.
+7. **Not checking spot eviction rates** before choosing a SKU/region. Query `SpotResources` in Azure Resource Graph.
+8. **Assuming vCPUs are physical cores.** They are usually hyperthreads. A 4 vCPU VM is roughly 2 physical cores.
+9. **Overlooking accelerated networking**, which is free on supported sizes and substantially reduces latency and CPU overhead. Enable it.
+10. **Not considering whether it should be a VM at all.** Which leads to the last step.
+
+**Step 0, really — should this be a VM?** Ask before sizing anything:
+
+- Stateless containerized microservice → **Container Apps**. Scale to zero means the cost floor is zero, which no VM can match.
+- Web app → **App Service**.
+- Event-driven function → **Azure Functions**.
+- Needs the Kubernetes API → **AKS**.
+- Batch job → Container Apps **jobs**, or Azure Batch.
+- Genuinely needs OS control, a specific kernel, Windows containers, a GPU SKU outside ACA's menu, or per-core licensed software → **VM**.
+
+The most expensive VM is the one that did not need to exist. A "lift and shift" VM running a stateless Linux web service is usually the wrong answer once you account for the idle hours you cannot scale away.
+
+**Interview framing.** "I'd start by asking whether it needs to be a VM at all — a stateless container has a zero cost floor on Container Apps that no VM can match. If it does need a VM, I identify the binding resource to pick the family, tune the memory ratio and processor with the additive letters for cost, take the newest generation, then validate with a load test and resize. Pricing mechanism comes last and follows the usage pattern: reserve the 24/7 floor, savings-plan the steady-but-changing part, spot the interruptible work. The ordering discipline that matters most is right-size before you commit, because savings plans can't be refunded and reservation refunds are capped."

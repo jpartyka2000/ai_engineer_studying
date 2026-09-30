@@ -1,0 +1,52 @@
+A workload profile determines the type and amount of compute and memory available to container apps in an environment. Choosing profiles is the single most consequential cost decision in Azure Container Apps, so this is the topic to know cold.
+
+**Three profile types.**
+
+**Consumption** — serverless. Apps scale in and out on demand and can scale to zero. You pay only for resources your running replicas use. Best for bursty or unpredictable workloads. Every environment includes a default Consumption profile.
+
+**Dedicated** — reserved compute in your own dedicated pool. You pick the VM size and type, deploy multiple apps onto the profile, and pay **per profile instance** regardless of how busy the apps are. More cost-effective for steady workloads, and the only path to memory-optimized, confidential, and dedicated-GPU compute.
+
+**Flex** (preview) — a blend. Billed like Consumption **plus the Dedicated plan management fee**, but runs in a single-tenant compute pool with planned maintenance windows, dedicated networking, and larger replica sizes. Requires a subnet of at least `/25`. Critically, **Flex apps cannot scale to zero**.
+
+**Consumption profile details.**
+
+| Profile | vCPU | Memory | Allocation |
+|---|---|---|---|
+| Consumption | 0.25–4 | 0.5–8 GiB | per replica |
+| Consumption-GPU-NC8as-T4, Consumption-GPU-NC24-A100 | 8–24 | 56–220 GiB | per replica |
+
+Note "**per replica**" — on Consumption you are billed for what each replica is allocated, so the billing unit tracks your app directly.
+
+**Dedicated profile details.**
+
+| Classification | Profiles | vCPU | Memory | Allocation |
+|---|---|---|---|---|
+| General Purpose | **D4, D8, D16, D32** | 4–32 | 16–128 GiB | per node |
+| Memory Optimized | **E4, E8, E16, E32** | 4–32 | 32–256 GiB | per node |
+| Confidential Compute | DC4–DC96 | 4–96 | 16–384 GiB | per node |
+| GPU | NC24-A100, NC48-A100, NC96-A100 | 24–96 | 220–880 GiB | per node |
+
+Note "**per node**" — this is the crux of Dedicated economics. You pay for the node whether your apps use it or not.
+
+The D/E naming mirrors Azure VM families: **D = general purpose** at roughly 1:4 vCPU-to-GiB, **E = memory optimized** at roughly 1:8. The number is the vCPU count. So E16 is 16 vCPU / 128 GiB, and D16 is 16 vCPU / 64 GiB.
+
+**Flex profile details.** 0.25–4 vCPU, 0.5–**16 GiB**, per replica. Note the memory ceiling is double Consumption's 8 GiB — that "larger replica sizes" benefit is concrete.
+
+**Two facts that trip people up.**
+
+1. **Usable resources are less than the profile's nominal allocation.** The runtime reserves some compute on every profile instance. So you cannot pack a D4 (4 vCPU / 16 GiB) with exactly 4 vCPU of apps — you will fail to schedule. Leave headroom.
+
+2. **Dedicated profiles scale out too.** When demand exceeds the current instances, the system adds more profile instances; when it falls, instances are removed. You control this with min and max instance counts, and **billing follows the number of running instances**. So "Dedicated" means dedicated hardware, not a fixed bill.
+
+**GPU caveats.** GPU-enabled Dedicated profiles must be configured **when you create the environment** — you cannot add one later. They are region-limited (A100 dedicated profiles in West US 3 and North Europe) and capacity is allocated case-by-case, requiring a support ticket to request quota. Serverless GPU on Consumption is available in a separate, broader region list and does support scale to zero. If you use GPU profiles, run a current CUDA base image.
+
+**The mental model for choosing.**
+
+- Traffic is spiky, or idles near zero for long stretches → **Consumption**. Scale to zero means you pay nothing at idle, and that dominates every other consideration.
+- Traffic is steady and high enough to keep a node busy → **Dedicated**. You stop paying the serverless premium and get predictable cost.
+- You need more than 4 vCPU or 8 GiB in a single replica → **Dedicated** (Consumption caps at 4/8).
+- You need a memory-heavy replica (in-memory cache, a loaded ML model) → **Dedicated E-series**.
+- You need single-tenancy, planned maintenance windows, or 16 GiB replicas but still want consumption billing → **Flex**, accepting that you cannot scale to zero and you pay the management fee.
+- Confidential computing or dedicated GPU → **Dedicated**, and check region availability first.
+
+**Mixing is allowed and normal.** Different apps in the same environment can use different profiles and therefore different plans. The standard pattern: bursty public-facing APIs on Consumption, the steady always-on core service on a Dedicated profile, batch jobs back on Consumption.

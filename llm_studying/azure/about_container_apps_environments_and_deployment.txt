@@ -1,0 +1,87 @@
+The **environment** is the outermost Container Apps concept and the one with the most irreversible decisions attached. Getting it right at creation time avoids painful migrations.
+
+**What an environment is.** A secure boundary around a group of container apps. Apps in the same environment:
+- share a **virtual network**
+- can reach each other by name (service discovery)
+- write to the **same Log Analytics workspace**
+- share the same set of **workload profiles**
+
+Apps in *different* environments are isolated from each other and cannot use internal service discovery across the boundary.
+
+**Two environment types.**
+
+**Workload profiles environment** (the default, and what you should use) — supports both Consumption and Dedicated plans, larger replica sizes, and extra networking features including **user-defined routes** and NAT Gateway.
+
+**Consumption-only environment** (the older type) — Consumption plan only, and apps are capped at **2 vCPU / 4 GiB** rather than 4 / 8. If you hit that ceiling unexpectedly, the environment type is why.
+
+**Decisions made at creation time that you cannot change later.** This list is the practical value of this note:
+
+1. **Region.** Moving means recreating.
+2. **Virtual network and subnet.** You cannot resize an environment's subnet afterward. Size generously — and note the **Flex profile requires at least a `/25`**.
+3. **Environment type** (workload profiles vs consumption-only).
+4. **GPU-enabled Dedicated workload profiles** — the docs are explicit that these **must be configured when creating an environment**. You cannot add one later.
+5. Whether the environment is internal-only (no public ingress endpoint at all).
+
+Non-GPU Dedicated profiles *can* be added to an existing workload-profiles environment, so the irreversible profile decision is specifically the GPU one.
+
+**How many environments should you have?** The tension is isolation versus cost and latency.
+
+**Reasons to split:**
+- **Production vs non-production.** Always separate. Different networking, different access, different blast radius.
+- Separate compliance or data-residency boundaries.
+- Different regions for latency or DR.
+- Genuinely independent systems with no shared traffic.
+
+**Reasons not to split:**
+- **Internal traffic is not billed as requests.** Only requests from **outside** the environment are billable. Splitting a chatty microservice graph across two environments converts free internal calls into billable external requests — and adds network latency and TLS overhead.
+- Service discovery by name only works within an environment. Across environments you need explicit URLs and authentication.
+- Each environment is its own management surface: its own profiles, its own Log Analytics workspace, its own VNet plumbing.
+- Fixed per-environment costs (a private endpoint, or any Dedicated profile, triggers the **Dedicated plan management fee**) are multiplied by each environment that needs them.
+
+**The sound default:** one environment per (application system × lifecycle stage × region). Not one per microservice — that is the anti-pattern, and it is expensive in both money and latency.
+
+**Deployment mechanics.**
+
+```bash
+# create the environment
+az containerapp env create \
+  --name my-env --resource-group rg --location eastus \
+  --enable-workload-profiles true \
+  --infrastructure-subnet-resource-id "$SUBNET_ID" \
+  --logs-destination log-analytics \
+  --logs-workspace-id "$WORKSPACE_ID"
+
+# add a Dedicated profile for steady workloads
+az containerapp env workload-profile add \
+  --name my-env --resource-group rg \
+  --workload-profile-name steady-d4 \
+  --workload-profile-type D4 \
+  --min-nodes 1 --max-nodes 3
+
+# deploy an app onto Consumption (the default profile)
+az containerapp create \
+  --name my-api --resource-group rg --environment my-env \
+  --image myacr.azurecr.io/api:abc123 \
+  --target-port 8080 --ingress external \
+  --cpu 0.5 --memory 1Gi \
+  --min-replicas 0 --max-replicas 20 \
+  --registry-server myacr.azurecr.io --registry-identity system
+
+# deploy an app onto the Dedicated profile
+az containerapp create \
+  --name core-service --resource-group rg --environment my-env \
+  --workload-profile-name steady-d4 \
+  --image myacr.azurecr.io/core:abc123 \
+  --target-port 8080 --ingress internal \
+  --cpu 1.0 --memory 2Gi --min-replicas 2
+```
+
+Note `--min-nodes` / `--max-nodes` on the Dedicated profile: profiles scale out, and **billing follows running instances**, so these bounds are a direct cost control.
+
+**Infrastructure as code.** Bicep or Terraform, not CLI, for anything real. The environment and its profiles are long-lived infrastructure; the apps on top change per deploy. A common split: environment and profiles in one IaC stack owned by platform, apps deployed by CI/CD pipelines that only update the image tag.
+
+**Image tagging discipline.** The docs are direct about this: avoid static tags like `latest`, because they cause caching problems and make apps hard to troubleshoot. Use a **unique tag per deployment** — a Git SHA or timestamp. This matters more on ACA than elsewhere, because revisions are immutable snapshots: if two revisions both point at `:latest`, you have lost the ability to reason about or roll back to what was actually running.
+
+**Registry authentication.** Prefer **managed identity** over a username and password. Enable the identity on the app, grant it `AcrPull` on the registry, and set the registry's `identity` property to the user-assigned identity resource ID or `system`. Do not configure a username and password when using managed identity. One caveat from the docs: **init containers on the Dedicated plan or in a Consumption-only environment cannot access managed identity at runtime.**
+
+**Interview framing.** "The environment is the VNet and security boundary, and it's where the irreversible decisions live — region, subnet size, environment type, and GPU profiles all have to be right at creation. I'd default to one environment per system per lifecycle stage per region, not one per microservice, because internal traffic inside an environment isn't billed as requests while cross-environment calls are, plus you'd lose name-based service discovery and multiply the fixed per-environment fees."

@@ -1,0 +1,1875 @@
+{
+  "metadata": {
+    "subject_slug": "azure",
+    "subject_name": "Microsoft Azure",
+    "exported_at": "2026-09-28T22:34:13.332054",
+    "question_count": 92,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "An AKS cluster runs workloads with pods requesting 3 vCPU each on nodes with 4 vCPU. The team wants to improve cost efficiency. Explain the bin packing problem here and describe two strategies to address it.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The bin packing problem is that a 3 vCPU pod on a 4 vCPU node wastes 25% of capacity by construction - no second pod can fit in the remaining 1 vCPU. Strategies include: (1) Choose node SKUs that divide cleanly into pod sizes, such as 8 vCPU nodes that can fit two 3 vCPU pods with room for overhead, or adjust pod requests to better match node sizes. (2) Use larger nodes for better packing efficiency, as they amortize per-node overhead (kubelet, OS, DaemonSets) and provide more flexibility for bin packing multiple pods. (3) Right-size pod resource requests based on actual p50-p75 usage using VPA recommendations or Container Insights data to reduce over-requesting.",
+      "explanation": "Node cost is fixed once the node exists, so utilization is everything. When pods don't divide cleanly into node capacity, you're paying for unused resources. The scheduler bin-packs based on requests, not actual usage, so both node SKU selection and accurate pod resource requests are critical for cost efficiency.",
+      "difficulty": "advanced",
+      "tags": [
+        "bin packing",
+        "resource optimization",
+        "node sizing",
+        "pod requests",
+        "AKS cost optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company runs a mix of workloads on AKS: general web services, Redis caches requiring high memory, ML inference requiring GPUs, and batch processing jobs that can tolerate interruption. Which node pool architecture best optimizes costs?",
+      "question_type": "mc",
+      "options": [
+        "A. A single large node pool with GPU-enabled N-series VMs to handle all workload types",
+        "B. Two pools: one system pool and one large user pool with D-series VMs for all workloads",
+        "C. Multiple heterogeneous pools: minimal system pool, D-series for general workloads, E-series for caches, NC/ND GPU pool with taints, and a spot pool for batch jobs",
+        "D. Separate AKS clusters for each workload type to ensure complete isolation"
+      ],
+      "correct_answer": "C",
+      "explanation": "Without heterogeneous pools, everything lands on one SKU and you pay the maximum common denominator. The optimal architecture uses: a minimal system pool (small D-series, 1-3 nodes), general-purpose D pool for web services, memory-optimized E pool for caches, GPU pool (NC/ND) with taints so only GPU workloads land there, and a spot pool for interruptible batch work. Node selectors, labels, taints, and tolerations route workloads to appropriate pools.",
+      "difficulty": "advanced",
+      "tags": [
+        "node pools",
+        "heterogeneous pools",
+        "spot instances",
+        "GPU workloads",
+        "taints and tolerations",
+        "AKS architecture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the correct ordering of steps in a FinOps cost optimization loop, and why it's important to optimize before committing to reservations or savings plans.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The correct FinOps loop order is: (1) Visibility - enforce tags via policy, set up exports and dashboards; (2) Allocation - ensure every cost has an owner; (3) Optimization - implement Advisor recommendations, right-size resources, scale to zero, use jobs over always-on; (4) Commitment - purchase reservations and savings plans for the optimized baseline; (5) Prevention - use Azure Policy for allowed SKUs, regions, and required tags; (6) Review - monthly utilization checks. You must optimize before committing because savings plans are non-refundable and reservation refunds are capped at $50,000 per rolling 12 months. Committing to an unoptimized baseline locks in waste you've already paid for and cannot easily unwind.",
+      "explanation": "Many organizations make the mistake of inverting steps 3 and 4, committing to reservations or savings plans before optimizing their workloads. This is problematic because: savings plans are completely non-refundable, reservation refunds have a $50,000 cap per rolling 12 months, and an under-utilized commitment represents waste you've already paid for. By optimizing first, you establish a true baseline of necessary resources, then commit only to what you actually need.",
+      "difficulty": "advanced",
+      "tags": [
+        "finops",
+        "cost-optimization",
+        "reservations",
+        "savings-plans",
+        "governance-loop"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the recommended layering strategy for optimizing Azure costs before purchasing reservations. What steps should be taken and in what order?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The recommended layering strategy is: 1) Right-size VMs first (never reserve an oversized VM as you'd lock in waste), 2) Shut down idle resources using dev/test schedules and auto-shutdown, 3) Move interruptible workloads to Spot VMs, 4) Identify your genuine 24/7 floor (workloads that will exist in a year), 5) Reserve that floor using 3-year terms for confident workloads and 1-year for less certain ones, 6) Use savings plans for the steady-but-changing remainder.",
+      "explanation": "Reservations should be the last step in cost optimization, not the first. The strategy ensures you're not locking in waste by reserving oversized or unnecessary resources. You should only reserve your consistent base usage (the floor), not your peak or average. This approach maximizes savings while minimizing the risk of committing to resources you don't actually need long-term.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-reservations",
+        "cost-optimization",
+        "strategy",
+        "right-sizing",
+        "savings-plans"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An organization is planning to purchase an Azure savings plan for compute to cover their Azure Container Apps workloads. They have not yet optimized their container configurations and are considering committing to their current average hourly spend. What is wrong with this approach, and what should they do instead?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "They should optimize their architecture first (scale to zero, use jobs over always-on services, right-size allocations) to establish their true irreducible hourly baseline, then commit to that floor amount. Committing before optimizing locks in waste that cannot be refunded since savings plans have no cancellation or refund option.",
+      "explanation": "For Container Apps specifically, the correct sequence is: (1) architect for cost first through optimizations like scale-to-zero, using jobs instead of always-on services, right-sizing allocations, and packing Dedicated profiles; (2) establish what the irreducible hourly baseline actually is; (3) commit to that number. Since savings plans cannot be cancelled or refunded, committing to current average spend before optimization means paying for inefficiencies that could have been eliminated. The commitment should be to the confident floor, not the unoptimized average.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-savings-plan",
+        "container-apps",
+        "cost-optimization",
+        "commitment-sizing",
+        "architecture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why setting the max price to -1 is the recommended configuration for Azure Spot VMs, and describe what pricing behavior this enables.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Setting max price to -1 removes price-based eviction entirely while guaranteeing you never pay more than the standard (pay-as-you-go) rate. With this setting, you pay the current spot price which fluctuates but will never exceed the standard price. This means you are only exposed to capacity-based evictions (when Azure needs the capacity back for pay-as-you-go workloads), which is the core trade-off of using Spot VMs. Setting a specific low max price adds a second eviction cause (price threshold) for marginal cost benefit, increasing your eviction risk unnecessarily.",
+      "explanation": "The -1 max price setting is recommended because it simplifies your eviction exposure to just capacity events while still providing cost savings. You get spot pricing (which is always at or below standard pricing) without the additional risk of price-triggered evictions. This is the optimal configuration unless you have a specific budget constraint that requires capping the hourly cost below the standard rate.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-spot-vms",
+        "max-price",
+        "pricing",
+        "eviction-triggers",
+        "best-practices"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the correct order of the VM selection heuristic when choosing an Azure VM size, and describe what each additive letter in the VM naming convention represents (specifically: 'l', 'm', 'a', 'p', 'd', and 'r').",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The VM selection heuristic should be applied in this order: 1) Start from the binding resource (E for memory-bound, F for CPU-bound, D for balanced, L for local-disk-bound, N for GPU, H for HPC/InfiniBand). 2) Pick the memory ratio within the family. 3) Pick the processor type. 4) Decide on local temp disk. 5) Choose the newest version available in your region. 6) Check quota and regional availability.\n\nAdditive letters: 'l' = less memory per core, 'm' = more memory per core, 'a' = AMD processor, 'p' = ARM processor, 'd' = includes local temp disk, 'r' = RDMA/InfiniBand support for HPC.",
+      "explanation": "Understanding the selection heuristic prevents the common mistake of defaulting to D-series for everything. Starting with the binding resource ensures you're in the right family, then the additive letters let you fine-tune. AMD ('a') and ARM ('p') processors typically offer cost savings over Intel (no letter), but ARM requires architecture compatibility verification. The 'r' additive is critical for HPC workloads requiring tightly-coupled MPI communication over InfiniBand.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-vm",
+        "vm-naming",
+        "selection-heuristic",
+        "additive-letters",
+        "best-practices"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are optimizing Azure costs for a containerized workload that:\n- Runs on multi-architecture container images (supports both AMD64 and ARM64)\n- Is CPU-intensive but requires minimal memory\n- Needs local scratch disk space for temporary files\n- Must support Premium SSD for persistent storage\n\nWhich VM size naming pattern would provide the most cost-effective option?\n\nA. `Standard_D8s_v6`\nB. `Standard_D8plds_v6`\nC. `Standard_D8ads_v6`\nD. `Standard_D8als_v6`",
+      "question_type": "mc",
+      "options": [
+        "A. Standard_D8s_v6",
+        "B. Standard_D8plds_v6",
+        "C. Standard_D8ads_v6",
+        "D. Standard_D8als_v6"
+      ],
+      "correct_answer": "B",
+      "explanation": "Option B (`D8plds_v6`) is optimal because: `p` indicates ARM processor which is typically cheaper than x86, `l` provides reduced memory ratio (cheaper when you don't need much RAM, perfect for CPU-intensive workloads), `d` includes the required local temp disk, and `s` ensures Premium SSD compatibility. Option A lacks cost optimizations. Option C uses AMD (`a`) which is cheaper than Intel but more expensive than ARM. Option D has AMD and low memory but lacks the local temp disk (`d`) that the workload requires.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure",
+        "vm-naming",
+        "cost-optimization",
+        "arm",
+        "containers"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain what the Azure VM size `Standard_M8-2ms_v2` represents, including what the `8-2` notation specifically means and why this configuration exists.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Standard_M8-2ms_v2 is an M-family (memory-optimized) VM with constrained vCPUs. The `8-2` notation means the VM has 8 vCPUs worth of memory and I/O bandwidth, but only 2 vCPUs are actually active. The `m` indicates memory intensive (highest vCPU-to-memory ratio in the series), `s` means Premium Storage capable, and v2 is the version. This constrained vCPU configuration exists primarily as a licensing optimization — it allows customers to get the memory capacity of a larger VM while paying for fewer software licenses (like SQL Server or Oracle) that are typically charged per-core.",
+      "explanation": "The constrained vCPU feature is a cost optimization for software licensing. Many enterprise applications charge per-core licensing fees. By offering VMs with reduced active vCPUs but full memory/IO capacity, Azure allows customers to run memory-intensive licensed workloads at lower licensing costs. The M-family is specifically designed for memory-intensive workloads like large databases, making it a common target for this licensing optimization.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure",
+        "vm-naming",
+        "constrained-vcpu",
+        "m-series",
+        "licensing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A production web application running on a B2s VM shows CPU utilization consistently at exactly 40% (the VM's baseline) with response times that have mysteriously increased over the past week. The CPU percentage graph shows a flat, stable line. What is the most likely cause and how would you confirm it?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The VM has exhausted its CPU credits and is being throttled to baseline. To confirm, check the 'CPU Credits Remaining' metric - if it shows zero or near-zero, the VM is throttled. The flat CPU percentage at exactly baseline is deceptive because it looks healthy but actually indicates the VM cannot burst above baseline due to credit exhaustion.",
+      "explanation": "This is a classic B-series trap. When a burstable VM exhausts its credits, it gets throttled to exactly its baseline percentage and cannot exceed it. The CPU percentage graph looks like a 'healthy plateau' but is actually showing a performance ceiling. The key diagnostic is monitoring CPU Credits Remaining, not CPU percentage. A VM pegged at baseline with zero credits is a throttled VM experiencing degraded performance, which explains the increased response times.",
+      "difficulty": "advanced",
+      "tags": [
+        "B-series",
+        "throttling",
+        "CPU credits",
+        "performance troubleshooting",
+        "monitoring"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company wants to run a batch processing workload on Azure VMs that can tolerate interruptions. They plan to use Spot VMs exclusively with no fallback. What is the primary risk with this architecture?\n\nExplain the recommended approach for using Spot VMs in production workloads.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "All-spot architectures have no SLA and face 30-second eviction notices, meaning the entire workload could be interrupted with no capacity guarantee. The recommended approach is to run a reserved baseline of VMs to handle minimum required capacity, then add Spot VMs on top for additional scaling. You should also check spot eviction rates before choosing a SKU/region by querying SpotResources in Azure Resource Graph.",
+      "explanation": "Spot VMs offer significant cost savings (up to 90%) but come with the risk of eviction with only 30 seconds notice. Building an architecture entirely on Spot VMs means you have no guaranteed capacity and no SLA. The best practice is a hybrid approach: use reserved instances or pay-as-you-go for your baseline capacity that must always be available, and use Spot VMs for additional burst capacity or truly interruptible work.",
+      "difficulty": "advanced",
+      "tags": [
+        "Azure Spot VMs",
+        "cost optimization",
+        "high availability",
+        "VM pricing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A solutions architect is optimizing costs for a production SQL Server Enterprise workload on Azure. The workload requires 1 TiB of RAM but is not CPU-intensive. They have applied a 3-year VM reservation but are still seeing high costs. Which combination of additional optimizations should they prioritize?\n\n| Component | Current State |\n|---|---|\n| VM | E96ds_v5 (96 vCPUs, 672 GiB RAM) with reservation |\n| SQL Server | Pay-as-you-go licensing |\n| Storage | Premium SSD P50 |\n| Windows Server | Pay-as-you-go licensing |",
+      "question_type": "mc",
+      "options": [
+        "A) Switch to a constrained vCPU VM size, apply Azure Hybrid Benefit for both Windows and SQL Server, and reserve disk capacity",
+        "B) Downgrade to a smaller VM to reduce compute costs, and switch to Standard SSD",
+        "C) Apply Azure Hybrid Benefit for Windows only, since reservations already cover SQL Server licensing",
+        "D) Move to Azure SQL Database to eliminate all licensing concerns"
+      ],
+      "correct_answer": "A",
+      "explanation": "The architect has made the classic mistake of optimizing only the compute layer. Reservations cover compute only — they do NOT cover software licensing. For a SQL Server workload: (1) Use a constrained vCPU size (like M-series with constrained cores) to reduce licensed cores while keeping the memory needed; (2) Apply Azure Hybrid Benefit for both Windows Server and SQL Server licenses if they have Software Assurance; (3) Reserve disk capacity for Premium SSD P30 or larger. Option B would sacrifice needed memory. Option C incorrectly assumes reservations cover SQL licensing. Option D may not be appropriate for all workloads and doesn't address the current optimization question.",
+      "difficulty": "advanced",
+      "tags": [
+        "constrained-vcpu",
+        "azure-hybrid-benefit",
+        "reservations",
+        "sql-server-licensing",
+        "cost-optimization",
+        "disk-reservations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is running an Azure Container Apps environment using only Consumption workload profiles. They want to enable a private endpoint for secure access. What billing impact should they expect?",
+      "question_type": "mc",
+      "options": [
+        "A. No additional cost since they are using Consumption profiles",
+        "B. A small per-request fee for traffic through the private endpoint",
+        "C. The Dedicated plan management fee will be charged regardless of using Consumption profiles",
+        "D. Only the standard Azure Private Link hourly charges apply"
+      ],
+      "correct_answer": "C",
+      "explanation": "Private endpoints and planned maintenance trigger the Dedicated plan management charge regardless of whether your apps run on Consumption or Dedicated workload profiles. This is a commonly overlooked cost - enabling a private endpoint on an otherwise all-Consumption environment adds a fixed monthly management fee.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps",
+        "billing",
+        "private-endpoints",
+        "dedicated-plan",
+        "management-fee"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An application requires 6 GiB of memory but only uses minimal CPU. On Azure Container Apps Consumption plan, the team has configured 3.0 vCPU to get the required memory.\n\nWhat is the recommended solution to avoid paying for unused CPU cores?",
+      "question_type": "mc",
+      "options": [
+        "A. Use multiple smaller replicas that share the memory requirement across instances",
+        "B. Move the app to a Dedicated E-series profile which has approximately 1:8 vCPU to memory ratio",
+        "C. Enable idle billing to reduce costs when CPU is not being used",
+        "D. Configure a savings plan specifically for memory-intensive workloads"
+      ],
+      "correct_answer": "B",
+      "explanation": "This describes the 'memory-bound trap' in Consumption plans. The Consumption tier has a fixed 1 vCPU : 2 GiB ratio, meaning to get 6 GiB of memory, you must allocate 3.0 vCPU even if the CPU sits idle. This results in paying for 2.5 unused cores. The solution is to move to a Dedicated E-series profile, which offers approximately a 1:8 ratio (1 vCPU : 8 GiB), allowing you to get the memory you need without over-provisioning CPU.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-container-apps",
+        "dedicated-profiles",
+        "memory-bound",
+        "E-series",
+        "consumption-plan"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is running a memory-intensive data processing application that requires 6 GiB of RAM but uses minimal CPU (less than 0.5 vCPU actual utilization). They are currently on the Consumption plan. Why might this be uneconomical, and what is the recommended alternative?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "On the Consumption plan, the fixed 1:2 vCPU-to-memory ratio means getting 6 GiB of RAM requires provisioning 3.0 vCPU, and you are billed for all 3.0 vCPU-seconds even if CPU usage is minimal. The recommended alternative is a Dedicated E-series profile, which offers approximately a 1:8 vCPU-to-memory ratio, allowing you to get more memory without over-buying CPU.",
+      "explanation": "The Consumption plan's fixed ratio is the most common reason memory-heavy workloads become uneconomical. Since you cannot buy memory without buying CPU at the 1:2 ratio, an app needing 6 GiB must take 3.0 vCPU to get it. The Dedicated E-series profiles solve this problem by offering a roughly 1:8 ratio, making them much more cost-effective for memory-bound workloads.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-container-apps",
+        "cost-optimization",
+        "dedicated-profiles",
+        "e-series",
+        "memory-intensive"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer is trying to deploy a Container App with 3 vCPU and 6 GiB memory but receives an error that the maximum allowed is 2 vCPU and 4 GiB. What is the most likely cause of this limitation?",
+      "question_type": "mc",
+      "options": [
+        "A. The Consumption plan has an absolute maximum of 2 vCPU / 4 GiB",
+        "B. The environment is a \"Consumption only\" environment type rather than a workload-profiles environment",
+        "C. The container image exceeds the 8 GB image size limit",
+        "D. Init containers are consuming the remaining resource allocation"
+      ],
+      "correct_answer": "B",
+      "explanation": "While the Consumption plan generally supports up to 4 vCPU / 8 GiB per replica, apps running in a \"Consumption only\" environment (the older environment type) are limited to 2 vCPU and 4 GiB. The default workload-profiles environment allows the full 4 vCPU / 8 GiB ceiling. If you need more than 2/4 and are hitting this limit, the environment type is the cause.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-container-apps",
+        "consumption-only-environment",
+        "workload-profiles",
+        "resource-limits"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is reviewing their Azure Container Apps costs and notices that Log Analytics charges are nearly equal to their compute costs. Which combination of mitigations should they implement?",
+      "question_type": "mc",
+      "options": [
+        "A. Increase compute resources and enable DEBUG logging for better diagnostics",
+        "B. Set log level to INFO/WARN, avoid logging full request/response bodies, and review retention settings",
+        "C. Switch to the Dedicated plan and disable the OpenTelemetry agent",
+        "D. Remove all logging and rely solely on Application Insights sampling"
+      ],
+      "correct_answer": "B",
+      "explanation": "Log Analytics bills per GB ingested plus retention, and verbose apps can generate log bills that rival compute costs. The recommended mitigations are: setting production log level to INFO or WARN rather than DEBUG, not logging full request and response bodies, reviewing workspace retention settings, and considering the Basic Logs tier for high-volume low-query-value tables. Increasing DEBUG logging or removing all logging would be counterproductive approaches.",
+      "difficulty": "advanced",
+      "tags": [
+        "log-analytics",
+        "cost-optimization",
+        "observability",
+        "azure-container-apps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the trade-offs of using Dapr in Azure Container Apps. Include at least two benefits and two costs, and describe a scenario where using Dapr would be justified versus one where calling services directly would be simpler.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Benefits of Dapr include: (1) Portability - you can swap brokers/stores through component configuration without code changes, (2) Removes broker-specific SDKs from application code, (3) Provides mTLS between sidecars automatically, (4) Uniform patterns across different programming languages. Costs include: (1) A sidecar in every replica consuming CPU and memory that counts toward your allocation and bill, (2) An extra network hop per call adding latency, (3) An additional abstraction layer to debug when issues occur, (4) Actors cannot scale to zero. Dapr is justified for large polyglot systems where uniform patterns across languages are valuable. Calling services directly (e.g., Service Bus SDK) is simpler for small systems with a single language where the abstraction overhead isn't worth the portability benefits.",
+      "explanation": "This question tests understanding of when to apply Dapr versus direct service integration. The key insight is that Dapr's value increases with system complexity and language diversity, while its costs (sidecar overhead, debugging complexity) are constant. For small, single-language systems, the abstraction adds complexity without proportional benefit.",
+      "difficulty": "advanced",
+      "tags": [
+        "dapr",
+        "architecture",
+        "trade-offs",
+        "microservices",
+        "azure-container-apps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team has deployed a microservices application where each of the 15 services runs in its own separate Container Apps environment. They notice unexpectedly high costs and increased latency between services. What is the most likely cause and recommended solution?\n\nA. The services need larger CPU allocations; consolidate into fewer environments with higher resource limits\nB. Internal traffic between environments is billed as external requests; consolidate services into a single environment per lifecycle stage\nC. Each environment requires a separate Log Analytics workspace which increases costs; share workspaces across environments\nD. The Consumption plan has lower limits; migrate all environments to Dedicated workload profiles",
+      "question_type": "mc",
+      "options": [
+        "A. The services need larger CPU allocations; consolidate into fewer environments with higher resource limits",
+        "B. Internal traffic between environments is billed as external requests; consolidate services into a single environment per lifecycle stage",
+        "C. Each environment requires a separate Log Analytics workspace which increases costs; share workspaces across environments",
+        "D. The Consumption plan has lower limits; migrate all environments to Dedicated workload profiles"
+      ],
+      "correct_answer": "B",
+      "explanation": "Creating one environment per microservice is explicitly called out as an anti-pattern. Internal traffic within an environment is free and uses name-based service discovery, while cross-environment calls are billed as external requests and add network latency plus TLS overhead. The recommended pattern is one environment per (application system × lifecycle stage × region), not one per microservice. This also multiplies fixed per-environment costs and management overhead.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps",
+        "environment",
+        "cost-optimization",
+        "microservices",
+        "billing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are designing a queue-processing system using Azure Container Apps. The worker has an expensive startup cost due to loading a large ML model into memory. Messages arrive sporadically throughout the day. Should you use a Container Apps job or a Container App with a KEDA scale rule, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Use a Container App with a KEDA scale rule. When the worker has expensive startup costs (like loading a large ML model), you want the worker to stay warm between message batches rather than cold-starting for each execution. An app can maintain minimum replicas for latency and avoid the repeated initialization overhead. Jobs are better suited when startup cost is low and work is intermittent, as they return to zero instantly.",
+      "explanation": "The choice between jobs and apps for queue processing depends on startup costs and work patterns. Apps with KEDA scale rules are preferred when: the worker should stay warm, has expensive startup (loaded models, JIT warm-up, connection pools), or when you need minimum replicas for latency. Jobs are better when work is naturally bounded, startup is cheap, and work is intermittent—because they return to zero instantly rather than waiting through a cool-down period.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps-jobs",
+        "keda",
+        "scale-rules",
+        "architecture-decisions",
+        "ml-inference"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team has deployed an Azure Container Apps environment using only Consumption plan workloads. They want to enable a private endpoint to restrict access to their apps over private networking only. What billing impact should they expect?",
+      "question_type": "mc",
+      "options": [
+        "A. No additional charges since they are using Consumption plan",
+        "B. The Dedicated plan management fee will be triggered regardless of using Consumption plan",
+        "C. Only data transfer charges for private endpoint traffic",
+        "D. A one-time setup fee for the private endpoint configuration"
+      ],
+      "correct_answer": "B",
+      "explanation": "Private endpoints and planned maintenance trigger the Dedicated plan management fee regardless of whether your apps run on Consumption or Dedicated. This means a fully serverless environment picks up a fixed monthly charge the moment you enable a private endpoint. This is an important cost consideration that should be budgeted for deliberately when planning to use private endpoints.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps",
+        "private-endpoints",
+        "billing",
+        "dedicated-plan",
+        "consumption-plan"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is running three active revisions in their Container App with `activeRevisionsMode: multiple`. Each revision has `minReplicas: 1` configured. The traffic distribution is: rev-1 at 0%, rev-2 at 10%, and rev-3 at 90%. How many replicas are guaranteed to be running at minimum, and what is the billing implication?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "At minimum, 3 replicas are guaranteed to be running (one per revision), and the team is billed for all three replicas regardless of traffic distribution. The revision at 0% traffic still maintains its minimum replica and incurs cost.",
+      "explanation": "Minimum replicas are configured per-revision, not per-application. Each active revision with `minReplicas: 1` maintains at least one replica running. Traffic weight does not affect minimum replica counts — a revision at 0% traffic with minReplicas: 1 still runs one replica. This is why deactivating old revisions after successful rollout is important; inactive revisions cost nothing, but active ones with nonzero minimums continue to incur charges.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps",
+        "revisions",
+        "scaling",
+        "minReplicas",
+        "billing",
+        "azure"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A Container App has a Service Bus scale rule configured with `messageCount: 5`, minReplicas: 0, and maxReplicas: 20. The queue currently has 50 messages and 1 replica running. According to the scaling algorithm and rate limits, what is the maximum number of replicas the app can scale to in the next scaling step?\n\n```\ndesiredReplicas = ceil(currentMetricValue / targetMetricValue)\nScale limit = min(maxReplicas, desiredReplicas, max(4, 2 × currentReplicas))\n```",
+      "question_type": "mc",
+      "options": [
+        "A. 2 replicas",
+        "B. 4 replicas",
+        "C. 10 replicas",
+        "D. 20 replicas"
+      ],
+      "correct_answer": "B",
+      "explanation": "Using the algorithm: desiredReplicas = ceil(50/5) = 10. However, the built-in rate limit applies: min(maxReplicas, desiredReplicas, max(4, 2 × currentReplicas)) = min(20, 10, max(4, 2×1)) = min(20, 10, 4) = 4. The geometric scale-up pattern (1, 4, 8, 16, 32...) combined with the rate limit of max(4, 2×current) means from 1 replica, the maximum next step is 4 replicas.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps",
+        "keda",
+        "scaling-algorithm",
+        "service-bus",
+        "rate-limiting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why the cool down period of 300 seconds in Azure Container Apps only affects scaling from 1 replica to 0, and describe a scenario where misunderstanding this behavior could lead to unexpected costs.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The cool down period only takes effect when scaling from the final replica to zero replicas. It does not gate the removal of any other replicas (e.g., scaling from 10 to 5 replicas). This is commonly misunderstood. A cost scenario: An operator believes the 300-second cool down protects against thrashing at all replica counts, so they set a very low concurrentRequests threshold (e.g., 2) thinking the cool down will prevent excessive scaling. In reality, the app scales out aggressively with each small traffic spike, and since all replicas bill at the active rate once above minimum, costs increase significantly. The scale-down stabilization window (300 seconds) helps with scale-down, but the cool down specifically only applies to the 1-to-0 transition.",
+      "explanation": "The cool down period is specifically designed to prevent the app from scaling to zero too quickly after becoming idle, ensuring it can handle returning traffic without cold start delays. However, intermediate scaling decisions (e.g., 10→5 replicas) are governed by the scale-down stabilization window instead. This distinction is critical for cost optimization because replicas above the minimum all bill at the active rate.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps",
+        "keda",
+        "cool-down",
+        "cost-optimization",
+        "scaling-behavior"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the cost model differences between Azure Container Apps (Consumption) and Azure Kubernetes Service, and describe the scenario where each service has a cost advantage.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Azure Container Apps on Consumption has a zero cost floor because it can scale to zero—an idle app costs nothing. AKS has a cost floor consisting of the control plane plus at least one node in the system node pool, which continues to incur charges even when idle. ACA has a cost advantage for intermittent or spiky workloads where the application is frequently idle, as you only pay when running. AKS has a cost advantage for steady, high-utilization workloads where the serverless premium (per-request/per-second billing) would exceed the cost of reserved compute capacity. The general principle is: serverless for spiky workloads, reserved for steady workloads.",
+      "explanation": "The key insight is understanding the cost floor concept. ACA Consumption can scale to zero, meaning zero charges when idle, making it ideal for variable workloads. AKS always has baseline costs (control plane + nodes), but this fixed cost becomes more economical than serverless billing when utilization is consistently high. This is the same logic that applies to Consumption vs Dedicated profiles within ACA itself.",
+      "difficulty": "advanced",
+      "tags": [
+        "Azure Container Apps",
+        "AKS",
+        "cost optimization",
+        "scale to zero",
+        "serverless"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An organization wants to add GPU-enabled Dedicated profiles to their existing Azure Container Apps environment that was created 6 months ago in East US. They need A100 GPUs for machine learning inference. Explain why this request cannot be fulfilled and what steps would be required to use A100 dedicated GPU profiles.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "GPU-enabled Dedicated profiles must be configured when you create the environment - they cannot be added later. Additionally, A100 dedicated profiles are only available in West US 3 and North Europe, not East US. To use A100 dedicated GPU profiles, the organization would need to: 1) Create a new Container Apps environment in either West US 3 or North Europe, 2) Configure the GPU profile during environment creation, 3) Submit a support ticket to request GPU quota since capacity is allocated case-by-case, and 4) Migrate their applications to the new environment.",
+      "explanation": "This question tests understanding of two GPU-related constraints: the immutability of GPU configuration after environment creation, and the limited regional availability of dedicated GPU profiles. The A100 dedicated profiles are specifically limited to West US 3 and North Europe, and unlike most Azure resources, GPU quota requires a support ticket rather than standard quota increases.",
+      "difficulty": "advanced",
+      "tags": [
+        "container-apps",
+        "workload-profiles",
+        "GPU",
+        "dedicated",
+        "A100",
+        "regional-availability"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are designing a GPU-based ML inference service on Azure Container Apps using serverless GPU. The service experiences cold starts of 60+ seconds due to large model weights in the container image. \n\nDescribe two specific mitigation strategies to reduce cold start time and explain why each helps.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Two effective strategies are: (1) Keep weights out of the image and load from a mounted Azure Files or Blob volume — this keeps the image small for faster pulls, trading image pull time for network load time which is usually faster. (2) Warm up explicitly during the startup probe by running a dummy inference — this ensures framework kernel compilation happens before the first real request, and requires setting a generous initialDelaySeconds on the startup probe. Other valid strategies include using asynchronous processing with a queue to hide cold start latency from users.",
+      "explanation": "GPU inference has the worst cold-start profile because: (1) images are large with CUDA runtime, frameworks, and weights approaching the 8GB limit, (2) model weights must load into GPU memory, and (3) frameworks often compile kernels on first inference. Moving weights to external storage reduces image size for faster pulls. Warming up in the startup probe front-loads compilation costs. Using queues decouples request arrival from response time, making cold starts acceptable for batch workloads.",
+      "difficulty": "advanced",
+      "tags": [
+        "cold-start",
+        "serverless-gpu",
+        "ml-inference",
+        "optimization",
+        "container-apps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is designing a system with the following requirements:\n- Multiple microservices that need to communicate with each other by name\n- Event-driven workers that should scale to zero when idle\n- Canary deployments with 10% traffic to new versions\n- No dedicated operations team to manage Kubernetes clusters\n\nWhich combination of Azure Container Apps features addresses these requirements?\n\n```\nRequirement 1: Service-to-service communication\nRequirement 2: Scale to zero\nRequirement 3: Canary deployments\nRequirement 4: No cluster management\n```",
+      "question_type": "mc",
+      "options": [
+        "A) VNet integration, KEDA scalers, Blue/green via App Service slots, Managed Kubernetes",
+        "B) Environment-based service discovery, KEDA event-driven scaling, Revision traffic splitting, Serverless platform",
+        "C) Dapr service mesh, Manual scaling rules, Container versioning, AKS autopilot mode",
+        "D) DNS-based routing, CPU-based autoscaling only, Rolling updates, Dedicated VM pools"
+      ],
+      "correct_answer": "B",
+      "explanation": "ACA addresses all requirements: (1) Apps in the same Environment share a virtual network and can communicate by name (service discovery). (2) KEDA enables scale-to-zero for event-driven workloads. (3) Revisions with traffic weights enable canary/blue-green deployments as a first-class feature. (4) ACA is serverless—it's 'Kubernetes with the Kubernetes taken away,' meaning no cluster operations required. The other options mix features from different services or describe capabilities ACA doesn't have.",
+      "difficulty": "advanced",
+      "tags": [
+        "azure-container-apps",
+        "architecture",
+        "service-discovery",
+        "traffic-splitting",
+        "KEDA",
+        "serverless"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the fundamental difference between AKS and Azure Container Apps (Consumption tier) regarding cost when workloads are idle?",
+      "question_type": "mc",
+      "options": [
+        "A. AKS costs nothing when idle, while Container Apps charges for reserved capacity",
+        "B. AKS has a cost floor due to the system node pool, while Container Apps Consumption costs zero at zero replicas",
+        "C. Both services cost the same when idle because they use the same underlying infrastructure",
+        "D. Container Apps has a higher idle cost because it includes a managed control plane"
+      ],
+      "correct_answer": "B",
+      "explanation": "AKS always has a cost floor because the system node pool cannot scale to zero - it must exist to run cluster-critical pods like CoreDNS and metrics-server. In contrast, Azure Container Apps on the Consumption tier costs nothing when there are zero replicas running. This is why ACA wins decisively for intermittent workloads.",
+      "difficulty": "beginner",
+      "tags": [
+        "AKS",
+        "Container Apps",
+        "cost optimization",
+        "idle costs",
+        "node pools"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the maximum discount that Azure Reservations can provide compared to pay-as-you-go pricing?",
+      "question_type": "mc",
+      "options": [
+        "A. Up to 50%",
+        "B. Up to 62%",
+        "C. Up to 72%",
+        "D. Up to 80%"
+      ],
+      "correct_answer": "C",
+      "explanation": "Azure Reservations can reduce resource costs by up to 72% compared to pay-as-you-go pricing. This represents the deepest discount Azure offers on steady compute workloads, achieved through committing to one-year or three-year usage of a specific resource type.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure-reservations",
+        "cost-optimization",
+        "discounts"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What happens to unused Azure savings plan commitment within a given hour?",
+      "question_type": "mc",
+      "options": [
+        "A. It rolls over to the next hour automatically",
+        "B. It expires and does not roll over",
+        "C. It is refunded at the end of the billing cycle",
+        "D. It accumulates and can be used at month-end"
+      ],
+      "correct_answer": "B",
+      "explanation": "Unused commitment for an hour expires and does not roll over. This is a critical aspect of savings plans that drives the recommendation to commit to your 'floor' (minimum expected usage) rather than your average. An hour where you under-run your commitment means that money is effectively lost, which is why conservative commitment sizing is important.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure-savings-plan",
+        "commitment",
+        "billing",
+        "cost-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the eviction notice period for Azure Spot VMs?",
+      "question_type": "mc",
+      "options": [
+        "A. 60 seconds",
+        "B. 30 seconds",
+        "C. 2 minutes",
+        "D. 5 minutes"
+      ],
+      "correct_answer": "B",
+      "explanation": "Azure evicts Spot VMs with 30 seconds' notice. This is delivered via Azure Scheduled Events on a best-effort basis. This short timeframe dictates what workloads are appropriate for Spot VMs - they must be able to checkpoint, drain, or requeue within this window.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure-spot-vms",
+        "eviction",
+        "scheduled-events"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which Azure VM family is specifically designed for burstable workloads where you accumulate credits during low-usage periods?",
+      "question_type": "mc",
+      "options": [
+        "A) D-series (General purpose)",
+        "B) B-series (Burstable)",
+        "C) F-series (Compute optimized)",
+        "D) E-series (Memory optimized)"
+      ],
+      "correct_answer": "B",
+      "explanation": "The B-series (including Bsv2, Basv2, Bpsv2) is Azure's burstable VM family. These VMs are designed for workloads that don't need continuous full CPU performance, allowing you to accumulate CPU credits during idle periods and burst above baseline when needed. This makes them cost-effective for variable workloads like dev/test environments or low-traffic web servers.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure-vm",
+        "b-series",
+        "burstable",
+        "general-purpose"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Azure VM naming conventions, what does the lowercase letter `d` indicate in a VM size name like `Standard_D8ds_v5`?",
+      "question_type": "mc",
+      "options": [
+        "A. The VM uses an AMD-based processor",
+        "B. The VM includes a local temporary disk",
+        "C. The VM is optimized for AI training and inference",
+        "D. The VM has encrypted confidential TDX capabilities"
+      ],
+      "correct_answer": "B",
+      "explanation": "In Azure VM naming conventions, the lowercase `d` in the additive features section indicates that the VM includes a local temporary disk. This is distinct from the uppercase `D` which can appear as a sub-family indicator meaning 'AI training and inference optimized'. The presence or absence of `d` affects cost — non-`d` sizes are cheaper, but if your workload needs scratch space, you'll need the `d` variant or pay for a managed disk instead.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure",
+        "vm-naming",
+        "local-disk",
+        "additive-features"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What three numbers fundamentally define a B-series VM size?",
+      "question_type": "mc",
+      "options": [
+        "A. vCPU count, memory size, and disk IOPS",
+        "B. Baseline CPU percentage, credit accrual rate per hour, and maximum credit bank",
+        "C. Network bandwidth, storage throughput, and burst duration",
+        "D. Core frequency, cache size, and thermal design power"
+      ],
+      "correct_answer": "B",
+      "explanation": "A B-series VM size is defined by three key numbers: the baseline CPU percentage (the guaranteed sustained performance), the credit accrual rate per hour (how fast credits accumulate when running below baseline), and the maximum credit bank (the cap on stored credits). These three values determine the economics of the burstable model - how much sustained performance you get, how quickly you can save up for bursts, and how long you can burst at full speed.",
+      "difficulty": "beginner",
+      "tags": [
+        "B-series",
+        "burstable VMs",
+        "CPU credits",
+        "Azure VM sizing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What does the 'p' suffix indicate in an Azure VM SKU name (e.g., Dpsv5)?",
+      "question_type": "mc",
+      "options": [
+        "A. Premium storage support",
+        "B. ARM-based processor (Ampere)",
+        "C. Persistent local disk included",
+        "D. Performance-optimized networking"
+      ],
+      "correct_answer": "B",
+      "explanation": "The 'p' suffix indicates an ARM-based processor, which is typically the cheapest processor option. The processor hierarchy is: 'p' = ARM (cheapest), 'a' = AMD (cheaper than Intel), no letter = Intel. However, before choosing ARM, you must check compatibility for compiled dependencies and ensure container images are multi-arch, as ARM has real constraints for some workloads.",
+      "difficulty": "beginner",
+      "tags": [
+        "Azure VM",
+        "VM naming convention",
+        "ARM processor",
+        "SKU naming"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary purpose of Azure's constrained vCPU VM sizes?",
+      "question_type": "mc",
+      "options": [
+        "A) To reduce Azure compute infrastructure costs by disabling unused cores",
+        "B) To reduce per-core software licensing costs while retaining full memory and I/O capacity",
+        "C) To improve VM performance by dedicating fewer cores to the workload",
+        "D) To enable containerized workloads to run more efficiently"
+      ],
+      "correct_answer": "B",
+      "explanation": "Constrained vCPU VM sizes exist specifically to address per-core software licensing economics. You still pay the full infrastructure price for the VM (no compute discount), but by disabling cores, you only need to license the active cores. Since software like SQL Server Enterprise can cost several times the VM's hourly rate per core, reducing licensed cores provides massive savings. This is purely a licensing optimization, not a compute cost or performance optimization.",
+      "difficulty": "beginner",
+      "tags": [
+        "constrained-vcpu",
+        "licensing",
+        "azure-vm-sizing",
+        "cost-optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Azure Container Apps Consumption plan, what does the billing meter for resource consumption actually measure?",
+      "question_type": "mc",
+      "options": [
+        "A. Resources actually utilized by your application during execution",
+        "B. Resources allocated to your application, regardless of actual utilization",
+        "C. Peak resource usage during each billing hour",
+        "D. Average resource consumption across all replicas"
+      ],
+      "correct_answer": "B",
+      "explanation": "Azure Container Apps bills for resources *allocated*, not resources *used*. If you configure 1.0 vCPU and your app only uses 5% CPU, you are still billed for 1.0 vCPU-seconds. This is why right-sizing your resource requests matters - the platform does not bill based on actual utilization.",
+      "difficulty": "beginner",
+      "tags": [
+        "container-apps",
+        "billing",
+        "consumption-plan",
+        "resource-allocation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "According to Azure Container Apps cost optimization best practices, what is described as \"the single biggest lever on the platform\" for reducing spend?",
+      "question_type": "mc",
+      "options": [
+        "A. Applying a 3-year Azure savings plan for compute",
+        "B. Setting minReplicas: 0 on every app that tolerates a cold start",
+        "C. Converting to Dedicated profiles with E-series nodes",
+        "D. Reducing Log Analytics ingestion verbosity"
+      ],
+      "correct_answer": "B",
+      "explanation": "Scale to zero (minReplicas: 0) is described as 'the single biggest lever on the platform' because it results in the complete absence of a charge, not just a discount. This applies to apps that can tolerate cold starts, such as internal tools, admin APIs, dev/staging environments, and webhook receivers. While savings plans and other optimizations help, they only reduce costs rather than eliminating them entirely.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure-container-apps",
+        "cost-optimization",
+        "scale-to-zero",
+        "minReplicas"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the fixed ratio of vCPU to memory in Azure Container Apps on the Consumption plan?",
+      "question_type": "mc",
+      "options": [
+        "A. 1 vCPU : 1 GiB",
+        "B. 1 vCPU : 2 GiB",
+        "C. 1 vCPU : 4 GiB",
+        "D. 1 vCPU : 8 GiB"
+      ],
+      "correct_answer": "B",
+      "explanation": "Azure Container Apps on the Consumption plan enforces a fixed ratio of 1 vCPU : 2 GiB of memory. This ratio is maintained across all allowed combinations, starting from 0.25 vCPU / 0.5 GiB up to 4 vCPU / 8 GiB. This fixed ratio means you cannot allocate memory independently of CPU, which can be problematic for memory-heavy workloads.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure-container-apps",
+        "consumption-plan",
+        "cpu-memory-ratio",
+        "resource-allocation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the minimum subnet size required when creating a Container Apps environment that uses the Flex workload profile?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "/25",
+      "explanation": "The Flex profile requires at least a /25 subnet. This is important because the virtual network and subnet cannot be resized after the environment is created - it's one of the irreversible decisions made at creation time. The documentation recommends sizing generously to avoid hitting this limitation later.",
+      "difficulty": "beginner",
+      "tags": [
+        "container-apps",
+        "networking",
+        "subnet",
+        "flex-profile"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What are the three trigger types available for Azure Container Apps jobs?",
+      "question_type": "mc",
+      "options": [
+        "A) HTTP, Timer, and Queue",
+        "B) Manual, Schedule, and Event",
+        "C) Webhook, Cron, and Message",
+        "D) API, Timer, and KEDA"
+      ],
+      "correct_answer": "B",
+      "explanation": "Azure Container Apps jobs support three trigger types: Manual (started on demand via CLI, API, or portal), Schedule (using cron expressions evaluated in UTC), and Event (using KEDA ScaledJob scalers that create executions in response to events like queue messages).",
+      "difficulty": "beginner",
+      "tags": [
+        "container-apps-jobs",
+        "triggers",
+        "azure-container-apps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Azure Container Apps, what is the minimum subnet size required for a Flex profile environment?",
+      "question_type": "mc",
+      "options": [
+        "A. /27",
+        "B. /26",
+        "C. /25",
+        "D. /24"
+      ],
+      "correct_answer": "C",
+      "explanation": "The Flex profile requires a subnet of at least /25. This is important to size correctly upfront because you cannot resize an environment's subnet afterward without recreating the entire environment. A /25 subnet provides 128 IP addresses, which is necessary to accommodate the scaling needs of Container Apps in a Flex profile environment.",
+      "difficulty": "beginner",
+      "tags": [
+        "container-apps",
+        "networking",
+        "subnet",
+        "flex-profile",
+        "vnet"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Azure Container Apps, which type of change creates a new revision?",
+      "question_type": "mc",
+      "options": [
+        "A. Updating a secret's value in the configuration",
+        "B. Modifying the container image in the template section",
+        "C. Changing traffic weight percentages between revisions",
+        "D. Updating registry credentials"
+      ],
+      "correct_answer": "B",
+      "explanation": "Changes to the `template` section — including container image, environment variables, resource allocation, probes, scale rules, volume mounts, and container command — are 'revision-scope' changes that create a new revision. In contrast, changes to `configuration` (ingress settings, secrets values, registry credentials, traffic weights) are 'application-scope' changes that apply to all revisions immediately without creating a new revision.",
+      "difficulty": "beginner",
+      "tags": [
+        "container-apps",
+        "revisions",
+        "template-vs-configuration",
+        "azure"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Azure Container Apps, when multiple scale rules are defined, how does the platform determine when to scale out?",
+      "question_type": "mc",
+      "options": [
+        "A. All rule conditions must be met simultaneously (AND logic)",
+        "B. The first condition of any rule being met triggers scaling (OR logic)",
+        "C. Rules are evaluated in priority order and only the first matching rule applies",
+        "D. The platform averages the metrics across all rules to determine scaling"
+      ],
+      "correct_answer": "B",
+      "explanation": "When multiple scale rules are defined in Azure Container Apps, they are OR'd together, not AND'd. This means the app scales once the first condition of any rule is met. This is important to understand because it affects how aggressively your app will scale out when you have multiple triggers configured.",
+      "difficulty": "beginner",
+      "tags": [
+        "container-apps",
+        "keda",
+        "scale-rules",
+        "scaling-behavior"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the defining limitation of Azure Container Apps compared to Azure Kubernetes Service?",
+      "question_type": "mc",
+      "options": [
+        "A. Azure Container Apps cannot run containerized applications",
+        "B. Azure Container Apps does not provide direct access to the underlying Kubernetes APIs",
+        "C. Azure Container Apps cannot scale applications automatically",
+        "D. Azure Container Apps does not support microservices architectures"
+      ],
+      "correct_answer": "B",
+      "explanation": "The defining limitation of Azure Container Apps, as stated plainly in Microsoft's documentation, is that ACA does not provide direct access to the underlying Kubernetes APIs. If you need the Kubernetes API and control plane access (for CRDs, operators, DaemonSets, etc.), you must use AKS instead. ACA still supports containerized applications, automatic scaling (including scale to zero), and microservices architectures.",
+      "difficulty": "beginner",
+      "tags": [
+        "Azure Container Apps",
+        "AKS",
+        "Kubernetes API",
+        "compute services comparison"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which workload profile type in Azure Container Apps allows applications to scale to zero replicas?",
+      "question_type": "mc",
+      "options": [
+        "A. Consumption and Flex profiles",
+        "B. Dedicated and Flex profiles",
+        "C. Consumption profile only",
+        "D. All three profile types (Consumption, Dedicated, and Flex)"
+      ],
+      "correct_answer": "C",
+      "explanation": "Only the Consumption profile supports scaling to zero replicas. This is a critical distinction - Flex profiles, despite having consumption-style billing, explicitly cannot scale to zero. Dedicated profiles maintain running nodes regardless of app activity. The ability to scale to zero is what makes Consumption ideal for bursty or unpredictable workloads where you want to pay nothing during idle periods.",
+      "difficulty": "beginner",
+      "tags": [
+        "container-apps",
+        "workload-profiles",
+        "consumption",
+        "scale-to-zero"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which GPU configurations are available with the serverless (Consumption) GPU profile in Azure Container Apps?",
+      "question_type": "mc",
+      "options": [
+        "A) NVIDIA T4 and NVIDIA A100",
+        "B) NVIDIA H100 and NVIDIA A100",
+        "C) NVIDIA T4 and NVIDIA V100",
+        "D) NVIDIA A100 and NVIDIA MI300X"
+      ],
+      "correct_answer": "A",
+      "explanation": "The serverless GPU Consumption profiles offer two configurations: Consumption-GPU-NC8as-T4 (with NVIDIA T4, 8 vCPU, 56 GiB memory) and Consumption-GPU-NC24-A100 (with NVIDIA A100, 24 vCPU, 220 GiB memory). More advanced GPUs like H100, H200, MI300X, or GB200 are not available in ACA and require AKS or direct VM deployment.",
+      "difficulty": "beginner",
+      "tags": [
+        "serverless-gpu",
+        "container-apps",
+        "nvidia",
+        "gpu-configurations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In Azure Container Apps, what is the relationship between a Revision and a Replica?",
+      "question_type": "mc",
+      "options": [
+        "A) A Revision is a running instance of a Replica",
+        "B) A Replica is an immutable snapshot of a Revision's configuration",
+        "C) A Revision is an immutable snapshot of a container app, and Replicas are running instances of that Revision",
+        "D) Revisions and Replicas are the same thing with different names for different contexts"
+      ],
+      "correct_answer": "C",
+      "explanation": "In ACA's hierarchy, a Revision is an immutable snapshot created whenever you change the template section of a container app. A Replica is a running instance of a Revision—scaling out means creating more Replicas of the same Revision. You can run multiple Revisions simultaneously and split traffic between them, with each Revision having its own set of Replicas.",
+      "difficulty": "beginner",
+      "tags": [
+        "azure-container-apps",
+        "revisions",
+        "replicas",
+        "core-concepts"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team has configured HPA (Horizontal Pod Autoscaler) on their AKS cluster but has not enabled the Cluster Autoscaler. When traffic increases and HPA tries to scale out pods, what will happen?",
+      "question_type": "mc",
+      "options": [
+        "A. New pods will automatically provision new nodes using the default VM SKU",
+        "B. Pods will remain in Pending state because no new nodes will be created to accommodate them",
+        "C. The HPA will automatically fall back to vertical scaling instead",
+        "D. Azure will temporarily provision spot instances to handle the overflow"
+      ],
+      "correct_answer": "B",
+      "explanation": "HPA without a node autoscaler gives you pending pods and no new capacity. HPA only creates more pod replicas, but if there's no capacity on existing nodes to schedule them, the pods remain in Pending state indefinitely. You need the Cluster Autoscaler or Node Autoprovisioning to add new nodes when pods cannot be scheduled.",
+      "difficulty": "intermediate",
+      "tags": [
+        "HPA",
+        "Cluster Autoscaler",
+        "autoscaling",
+        "AKS",
+        "pod scheduling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team lead asks you to set up an Azure Budget to automatically stop spending when their department exceeds $5,000 per month. What should you tell them?",
+      "question_type": "mc",
+      "options": [
+        "A. Azure Budgets can be configured with a hard spending cap that automatically stops all resource consumption",
+        "B. Azure Budgets only send alerts; to stop spending, you must wire the alert to an action group that runs automation",
+        "C. Azure Budgets automatically deallocate VMs but cannot stop other resource types",
+        "D. Azure Budgets require Azure Policy to enforce spending limits at the subscription level"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is a common misconception that budgets cap spend - they do not. Azure Budgets only alert at configurable percentage thresholds. If you need a hard stop on spending, you must connect the budget alert to an action group that triggers automation (such as an Azure Function or Logic App) to deallocate or delete resources. This is an important distinction for cost governance.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-budgets",
+        "cost-management",
+        "action-groups",
+        "cost-governance"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your organization has purchased Azure Reserved VM Instances with 'shared' scope. What does this mean for how the reservation benefit is applied?",
+      "question_type": "mc",
+      "options": [
+        "A. The reservation benefit is shared equally across all VMs in the subscription where it was purchased",
+        "B. The reservation benefit can apply to eligible VMs anywhere within the billing scope, not trapped in one subscription",
+        "C. Multiple teams can manually request allocation of the reservation benefit through a ticketing system",
+        "D. The reservation discount is split proportionally based on each subscription's VM usage"
+      ],
+      "correct_answer": "B",
+      "explanation": "In Azure's billing hierarchy, 'shared' scope means the reservation benefit can automatically apply to any eligible resource anywhere within the billing scope (such as an EA enrollment or billing profile), rather than being restricted to a single subscription. This maximizes utilization of the reservation by allowing Azure to find matching resources across your entire organization.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-reservations",
+        "billing-hierarchy",
+        "reservation-scope",
+        "cost-optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A containerized application running on Azure Container Apps has unexpectedly high monthly costs. Upon investigation, you discover that compute costs are relatively low. Based on common cost surprises in Azure, which meter is most likely causing the high costs?",
+      "question_type": "mc",
+      "options": [
+        "A. Container registry storage",
+        "B. Log Analytics / Application Insights ingestion",
+        "C. Virtual network peering",
+        "D. Azure DNS queries"
+      ],
+      "correct_answer": "B",
+      "explanation": "Log Analytics and Application Insights ingestion charges (per GB ingested plus retention) are one of the most commonly overlooked cost drivers in Azure. For verbose containerized applications, logging costs can genuinely exceed compute costs. The solution is to reduce log verbosity in production and review retention policies. This is specifically called out as 'the meter people always forget' for containerized workloads.",
+      "difficulty": "intermediate",
+      "tags": [
+        "log-analytics",
+        "application-insights",
+        "container-apps",
+        "hidden-costs",
+        "cost-analysis"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company purchases a Reserved VM Instance for a Windows Server VM running SQL Server. Which costs does this reservation cover?\n\nA. VM compute, Windows license, and SQL Server license\nB. VM compute, storage, and networking\nC. VM compute only (cloud services compute costs)\nD. VM compute and Windows license only",
+      "question_type": "mc",
+      "options": [
+        "A. VM compute, Windows license, and SQL Server license",
+        "B. VM compute, storage, and networking",
+        "C. VM compute only (cloud services compute costs)",
+        "D. VM compute and Windows license only"
+      ],
+      "correct_answer": "C",
+      "explanation": "A Reserved VM Instance covers only the virtual machine and cloud services compute costs. It does NOT cover software/OS licensing (Windows, SQL Server), networking, or storage. For Windows VMs and SQL Server, you need Azure Hybrid Benefit separately to address licensing costs. On a Windows SQL Server VM, the license cost can easily exceed the compute cost, so a reservation alone leaves most of the bill untouched.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-reservations",
+        "reserved-vm-instance",
+        "cost-coverage",
+        "licensing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your organization made several reservation purchases that didn't align with actual usage patterns. You need to refund these reservations. What is the maximum refund amount allowed for Azure Reservations?",
+      "question_type": "mc",
+      "options": [
+        "A. $25,000 USD per reservation",
+        "B. $50,000 USD per reservation in a rolling 12-month window",
+        "C. $50,000 USD across all reservations in a rolling 12-month window",
+        "D. $100,000 USD across all reservations per calendar year"
+      ],
+      "correct_answer": "C",
+      "explanation": "The refund cap for Azure Reservations is $50,000 USD in a rolling 12-month window, and this cap applies across ALL reservations in the scope of your agreement with Microsoft, not per individual reservation. This is a critical risk factor to understand—a large mis-purchased reservation cannot simply be unwound due to this limitation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-reservations",
+        "refunds",
+        "limitations",
+        "cost-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company runs workloads across Azure Virtual Machines, Azure Container Apps, and Azure App Service. They expect to migrate some VM workloads to Container Apps over the next year and may change regions. They want a single cost optimization instrument. Which approach is most appropriate?\n\nA. Purchase separate reservations for each service and region\nB. Purchase a savings plan for compute\nC. Purchase a savings plan for databases\nD. Use only pay-as-you-go pricing until migrations complete",
+      "question_type": "mc",
+      "options": [
+        "A. Purchase separate reservations for each service and region",
+        "B. Purchase a savings plan for compute",
+        "C. Purchase a savings plan for databases",
+        "D. Use only pay-as-you-go pricing until migrations complete"
+      ],
+      "correct_answer": "B",
+      "explanation": "A savings plan for compute is ideal when spend is steady but its 'shape' changes — such as during migrations, re-platforming, or scaling across regions. It covers VMs, Container Apps, and App Service under one instrument, and benefits apply automatically across eligible services and regions. Reservations would require exchanges for service or region changes, and there is no reservation option for Container Apps.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-savings-plan",
+        "reservations",
+        "migration",
+        "cost-optimization",
+        "container-apps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the critical difference between Azure savings plans and reservations regarding cancellation policy?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Savings plans cannot be cancelled or refunded at all, while reservations allow exchanges and refunds up to $50,000 in a rolling 12-month period.",
+      "explanation": "This asymmetry is crucial for commitment sizing decisions. Reservations provide flexibility through exchanges and refunds (up to $50,000 over 12 months), allowing adjustments if workload needs change. Savings plans offer no such safety net — the commitment is genuinely irreversible. This is the strongest argument for committing conservatively to a savings plan, ensuring you only commit to your confident usage floor.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-savings-plan",
+        "reservations",
+        "refund-policy",
+        "commitment",
+        "risk-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company is running stateless web application instances in a Virtual Machine Scale Set using Azure Spot VMs. They notice their vCPU quota is being consumed even though many VMs show as stopped. What is the most likely cause and recommended solution?\n\nA. The VMs are using the Deallocate eviction policy; switch to Delete policy\nB. The VMs are using the Delete eviction policy; switch to Deallocate policy\nC. Spot VMs don't count against quota; check for other VM deployments\nD. This is expected behavior; request a quota increase",
+      "question_type": "mc",
+      "options": [
+        "A. The VMs are using the Deallocate eviction policy; switch to Delete policy",
+        "B. The VMs are using the Delete eviction policy; switch to Deallocate policy",
+        "C. Spot VMs don't count against quota; check for other VM deployments",
+        "D. This is expected behavior; request a quota increase"
+      ],
+      "correct_answer": "A",
+      "explanation": "When using the Deallocate eviction policy (which is the default), evicted VMs move to stopped-deallocated state but still count against your quota AND continue to incur storage costs for underlying disks. For stateless scale-set members, the Delete policy should be used to avoid accumulating deallocated VMs that silently consume quota and disk spend. This is a genuinely common operational surprise.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-spot-vms",
+        "eviction-policy",
+        "quota",
+        "scale-sets"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to select an Azure Spot VM SKU and region for a batch processing workload. The following Azure Resource Graph query returns eviction rates:\n\n```kql\nSpotResources\n| where type =~ 'microsoft.compute/skuspotevictionrate/location'\n| where sku.name in~ ('standard_d2s_v4', 'standard_d4s_v4')\n| where location in~ ('eastus', 'southcentralus')\n| project skuName = tostring(sku.name), location,\n          spotEvictionRate = tostring(properties.evictionRate)\n```\n\nWhat does a 10% eviction rate indicate?",
+      "question_type": "mc",
+      "options": [
+        "A. 10% of deployed Spot VMs will be evicted over their lifetime",
+        "B. 10% chance of eviction in the next hour, based on the last 7 days",
+        "C. 10% of the region's Spot capacity is currently in use",
+        "D. 10% price discount compared to standard VM pricing"
+      ],
+      "correct_answer": "B",
+      "explanation": "Eviction rates in Azure are quoted per hour. A 10% eviction rate means there is a 10% chance of eviction in the next hour, based on data from the last 7 days. Azure Resource Graph provides 28 days of eviction rate history and 90 days of pricing history, allowing you to make informed decisions about SKU and region selection.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-spot-vms",
+        "eviction-rate",
+        "azure-resource-graph",
+        "capacity-planning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to deploy a machine learning training workload that requires multiple GPUs with large memory capacity for training large language models. Which Azure VM family should you choose?\n\nA) NC-series\nB) NG-series\nC) ND-series\nD) NV-series",
+      "question_type": "mc",
+      "options": [
+        "A) NC-series",
+        "B) NG-series",
+        "C) ND-series",
+        "D) NV-series"
+      ],
+      "correct_answer": "C",
+      "explanation": "The ND-series is specifically designed for large-memory, compute-intensive workloads and represents Azure's training tier for ML/AI. It includes the most powerful GPU configurations like GB200/GB300, H200, and MI300X. The key distinction is: NC is for inference and single-node compute, while ND is for large-memory multi-GPU training scenarios like LLMs. NG is for VDI/gaming, and NV is for virtual desktops and video encoding.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-vm",
+        "gpu",
+        "nd-series",
+        "machine-learning",
+        "training"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your application requires 16 vCPUs and exactly 32 GiB of RAM. Following Azure's VM selection best practices for cost optimization, which VM family provides the most economical choice without over-provisioning memory?",
+      "question_type": "mc",
+      "options": [
+        "A) E16 (Memory optimized with ~128 GiB)",
+        "B) D16 (General purpose with ~64 GiB)",
+        "C) F16 (Compute optimized with ~32 GiB)",
+        "D) B16 (Burstable with variable memory)"
+      ],
+      "correct_answer": "C",
+      "explanation": "The F-series (compute optimized) has a CPU-to-memory ratio of roughly 1:2, meaning F16 provides approximately 32 GiB of RAM—exactly what's needed. Choosing E16 would give ~128 GiB (paying for ~96 GiB unused), and D16 would give ~64 GiB (32 GiB unused). This is a key cost optimization insight: defaulting to D-series when F-series fits your memory requirements means paying for memory you'll never use.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-vm",
+        "cost-optimization",
+        "f-series",
+        "vm-sizing",
+        "memory-ratio"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the Azure VM size `Standard_NV16as_v4`, which of the following correctly describes this VM?",
+      "question_type": "mc",
+      "options": [
+        "A. N family, network optimized sub-family, 16 vCPU, ARM processor, Premium Storage capable, version 4",
+        "B. N family, visualization sub-family, 16 vCPU, AMD processor, Premium Storage capable, version 4",
+        "C. N family, visualization sub-family, 16 vCPU, ARM processor, Premium Storage capable, version 4",
+        "D. N family, compute intensive sub-family, 16 vCPU, AMD processor, Premium Storage capable, version 4"
+      ],
+      "correct_answer": "B",
+      "explanation": "Breaking down `NV16as_v4`: N is the family, V is the sub-family indicating visualization/graphics optimization, 16 is the vCPU count, `a` means AMD-based processor (not ARM, which would be `p`), `s` means Premium Storage capable, and v4 is the version. The sub-family `V` specifically means visualization and graphics optimized, while `C` would indicate compute intensive for N-family VMs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure",
+        "vm-naming",
+        "gpu-vms",
+        "visualization",
+        "amd"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which combination of Azure cost optimization mechanisms is NOT possible?",
+      "question_type": "mc",
+      "options": [
+        "A. B-series VM with a 1-year reservation",
+        "B. B-series VM with a savings plan",
+        "C. B-series VM as an Azure Spot Virtual Machine",
+        "D. D-series Spot VM with right-sizing"
+      ],
+      "correct_answer": "C",
+      "explanation": "B-series VMs cannot be used with Azure Spot Virtual Machines - this is a hard limitation. The other combinations are all valid: B-series can be covered by reservations or savings plans, and D-series Spot VMs can certainly be right-sized. The restriction exists because both B-series and Spot are already discounted mechanisms with their own trade-offs (performance throttling vs. eviction risk), and Azure doesn't allow combining them.",
+      "difficulty": "intermediate",
+      "tags": [
+        "B-series",
+        "Spot VMs",
+        "reservations",
+        "savings plans",
+        "cost optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is choosing between a B2s VM and a D2s_v5 VM for a CI/CD build agent that runs automated builds approximately 4 hours per day with high CPU usage during builds, but is completely idle the remaining 20 hours. Which VM family is more appropriate and why?",
+      "question_type": "mc",
+      "options": [
+        "A. D2s_v5, because CI builds require sustained high CPU performance and B-series would throttle during builds",
+        "B. B2s, because the low average utilization (4 hours of 24) allows credit accumulation during idle periods to fund the burst during builds",
+        "C. D2s_v5, because B-series cannot be used for development and test workloads",
+        "D. B2s, because it has faster single-core performance than D-series"
+      ],
+      "correct_answer": "B",
+      "explanation": "B-series is ideal for this scenario. CI/CD build agents are explicitly listed as a perfect use case for B-series. The key insight is that during the 20 idle hours, the VM accumulates CPU credits that can be spent during the 4 hours of active building. The workload has low average utilization with tolerance for the builds to potentially slow down if credits are exhausted. This pattern - idle between jobs with burst activity - is exactly what B-series economics are designed for, often providing 2-5x savings over D-series.",
+      "difficulty": "intermediate",
+      "tags": [
+        "B-series",
+        "D-series",
+        "CI/CD",
+        "build agents",
+        "workload analysis",
+        "cost optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are migrating a workload to Azure that requires 16 vCPUs and 32 GiB of memory. The workload is CPU-intensive with minimal memory requirements beyond the 32 GiB. Which VM family would be most cost-effective?",
+      "question_type": "mc",
+      "options": [
+        "A. D-series (D16) - General purpose with balanced compute and memory",
+        "B. F-series (F16) - Compute optimized with 32 GiB memory",
+        "C. E-series (E16) - Memory optimized for high memory workloads",
+        "D. B-series (B16) - Burstable for variable workloads"
+      ],
+      "correct_answer": "B",
+      "explanation": "F-series is the correct choice for CPU-bound workloads. The F16 provides exactly 16 vCPUs and 32 GiB of memory at compute-optimized pricing. Choosing D16 would give you 64 GiB of memory, meaning you'd pay for 32 GiB you'll never use. This is a common trap - defaulting to D-series when a more specialized family matches your binding resource better.",
+      "difficulty": "intermediate",
+      "tags": [
+        "Azure VM",
+        "VM sizing",
+        "F-series",
+        "D-series",
+        "compute optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your team has deployed a B-series VM for a web application. After a few weeks, users report consistent slowness during business hours. Monitoring shows CPU usage averaging 85% throughout the day. The team is confused because the VM has 4 vCPUs. What is the most likely cause, and what metric should they monitor?",
+      "question_type": "mc",
+      "options": [
+        "A. The VM needs more memory; monitor Memory Available Bytes",
+        "B. CPU credits are exhausted from sustained load; monitor CPU Credits Remaining",
+        "C. Network bandwidth is saturated; monitor Network Bytes Total",
+        "D. The temp disk has run out of space; monitor Disk Free Space"
+      ],
+      "correct_answer": "B",
+      "explanation": "B-series VMs are designed for burstable workloads with low average utilization. When used for sustained high CPU load (85% average), the CPU credits exhaust and the VM is throttled to its baseline performance permanently until credits rebuild. The correct metric to monitor is 'CPU Credits Remaining', not CPU percentage. For sustained workloads, a different VM family (like D-series or F-series) should be used instead of B-series.",
+      "difficulty": "intermediate",
+      "tags": [
+        "B-series",
+        "burstable VMs",
+        "CPU credits",
+        "VM monitoring",
+        "performance troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company is running PostgreSQL on Azure VMs and considering switching to constrained vCPU sizes to reduce costs. What should you advise?",
+      "question_type": "mc",
+      "options": [
+        "A) Use constrained vCPU sizes to reduce both compute and licensing costs",
+        "B) Avoid constrained vCPU sizes because PostgreSQL has no per-core licensing, so you would just waste money on idle infrastructure",
+        "C) Use constrained vCPU sizes only if the database is memory-intensive",
+        "D) Constrained vCPU sizes are not available for Linux workloads like PostgreSQL"
+      ],
+      "correct_answer": "B",
+      "explanation": "Constrained vCPU sizes only make economic sense when you have per-core licensed software like SQL Server or Oracle. PostgreSQL is open-source with no per-core licensing, so constraining vCPUs would mean paying for the full infrastructure cost while getting fewer usable cores — pure waste. For PostgreSQL, you should simply right-size the VM to match your actual requirements.",
+      "difficulty": "intermediate",
+      "tags": [
+        "constrained-vcpu",
+        "postgresql",
+        "open-source",
+        "cost-optimization",
+        "licensing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Given the VM name `M8-2ms_v2`, explain what the '8-2' portion indicates and describe the economic trade-off this VM represents.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The '8-2' indicates this is an M-series VM based on the 8-vCPU size but with only 2 vCPUs active. The VM retains all the memory, storage bandwidth, and network bandwidth of the full 8-vCPU size. The economic trade-off is that you pay the full infrastructure price for an 8-vCPU VM (no compute discount), but you only need to license 2 cores instead of 8. This is profitable when per-core software licensing (like SQL Server Enterprise) costs significantly more than the compute infrastructure, making the 'wasted' compute cost far less than the licensing savings.",
+      "explanation": "The naming convention encodes the constrained vCPU configuration: the first number (8) is the base VM size, and the second number (2) is the active vCPU count. You pay Microsoft for 6 idle cores in infrastructure costs so you don't have to pay for them in software licenses — a trade that makes sense when licensing costs dwarf compute costs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "constrained-vcpu",
+        "vm-naming",
+        "licensing-economics",
+        "azure-vm-sizing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer has a Container Apps revision configured with `minReplicas: 2`. Currently, the app has scaled to 5 replicas due to load. Which statement accurately describes the billing for this scenario?",
+      "question_type": "mc",
+      "options": [
+        "A. 2 replicas are billed at idle rate, 3 replicas are billed at active rate",
+        "B. All 5 replicas are billed at the active rate",
+        "C. Only the 3 additional replicas above minimum are billed",
+        "D. 2 replicas are free due to the minimum configuration, 3 are billed at active rate"
+      ],
+      "correct_answer": "B",
+      "explanation": "When a revision scales above its minimum replica count, ALL running replicas are billed at the active rate - not just the extra ones. The idle rate only applies when the revision is scaled exactly to its minimum AND meets all other idle criteria (not processing requests, using less than 0.01 vCPU, receiving less than 1,000 bytes/second of network traffic).",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "billing",
+        "idle-rate",
+        "active-rate",
+        "scaling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why an application with a background polling service that consumes 0.02 vCPU continuously would never qualify for idle billing rates in Azure Container Apps, even when no HTTP requests are being processed.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "For a replica to qualify for idle billing rates, it must meet ALL of the following criteria simultaneously: the replica must be running at the minimum replica count, every container must be started and running, it must not be processing any HTTP requests, it must be using less than 0.01 vCPU cores, and it must be receiving less than 1,000 bytes per second of network traffic. Since the background poller uses 0.02 vCPU, it exceeds the 0.01 vCPU threshold, disqualifying it from idle rates regardless of request activity.",
+      "explanation": "The idle billing criteria are strict and require ALL conditions to be met. The 0.01 vCPU threshold is specifically designed to identify truly idle workloads. A chatty background poller or health-check loop that burns more than 0.01 vCPU will keep the replica at the active rate permanently. This is why idle billing is 'easy to lose by accident' - any minimal background processing can exceed this very low threshold.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "billing",
+        "idle-rate",
+        "cpu-threshold",
+        "background-processing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team has an Azure Container App provisioned at 2.0 vCPU / 4.0 GiB that consistently runs at 8% CPU utilization. They're considering right-sizing to 0.5 vCPU / 1.0 GiB.\n\nWhich statement best explains why this change would reduce costs?",
+      "question_type": "mc",
+      "options": [
+        "A. Azure Container Apps bills based on peak CPU usage, so lower peaks mean lower bills",
+        "B. Azure Container Apps bills for allocated resources, not actual usage, so over-provisioning wastes money",
+        "C. Smaller containers have a lower per-vCPU rate than larger containers",
+        "D. Azure provides automatic discounts when utilization exceeds 50% of allocated resources"
+      ],
+      "correct_answer": "B",
+      "explanation": "Azure Container Apps charges based on what you allocate, not what you actually use. An app provisioned at 2.0 vCPU running at 8% utilization is paying for resources it doesn't need. By right-sizing to 0.5 vCPU (which would put utilization around 32%), the team would pay approximately 4× less while still having adequate capacity. This is why load testing and selecting the smallest combination that handles your p95 with headroom is recommended.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-container-apps",
+        "cost-optimization",
+        "right-sizing",
+        "resource-allocation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A development team has deployed a new version of their Azure Container App using traffic splitting. After confirming the new revision works correctly, they set the old revision to 0% traffic but left it with minReplicas: 1. Two other revisions from previous deployments also remain active with minReplicas: 1 each.\n\nExplain the cost impact of this configuration and what action should be taken to optimize costs.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The cost impact is that minimum replicas are charged per revision, so having three active revisions each with minReplicas: 1 means three replicas are being billed continuously, even though two revisions receive no traffic. The team should deactivate the old revisions after successful rollout rather than leaving them at 0% traffic with a live minimum. This would reduce continuous billing from 3 replicas to just 1 replica.",
+      "explanation": "This is a common oversight in Azure Container Apps deployments. Minimum replicas are configured per revision, not per app. When teams leave old revisions active (even at 0% traffic) with minReplicas > 0, those replicas continue to bill. The correct practice is to deactivate old revisions after confirming a successful deployment, which stops their billing entirely while still allowing rollback if needed by reactivating them.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-container-apps",
+        "cost-optimization",
+        "revisions",
+        "traffic-splitting",
+        "minReplicas"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer has a Container App with a main container configured for 1.0 vCPU / 2.0 GiB and wants to add a logging sidecar that requires 0.25 vCPU / 0.5 GiB. What must the total app provisioning be set to?\n\n```json\n{\n  \"name\": \"main\",\n  \"resources\": { \"cpu\": 1.0, \"memory\": \"2Gi\" }\n},\n{\n  \"name\": \"sidecar\",\n  \"resources\": { \"cpu\": 0.25, \"memory\": \"0.5Gi\" }\n}\n```",
+      "question_type": "mc",
+      "options": [
+        "A. 1.0 vCPU / 2.0 GiB (sidecar resources are free)",
+        "B. 1.25 vCPU / 2.5 GiB (sum of all containers)",
+        "C. 1.5 vCPU / 3.0 GiB (rounded up to next tier)",
+        "D. 2.0 vCPU / 4.0 GiB (doubled for sidecar overhead)"
+      ],
+      "correct_answer": "B",
+      "explanation": "In Azure Container Apps, the CPU and memory allocation applies to the sum across all containers in the app, including the main container and any sidecars. Adding a 0.25 vCPU / 0.5 GiB sidecar to a 1.0 vCPU / 2.0 GiB main container means the total is 1.25 vCPU / 2.5 GiB, which is one of the allowed combinations on the Consumption plan.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-container-apps",
+        "sidecars",
+        "resource-allocation",
+        "multi-container"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is a key limitation of using Dapr actors in Azure Container Apps?",
+      "question_type": "mc",
+      "options": [
+        "A. Actors cannot communicate with other Dapr-enabled apps",
+        "B. Actors do not support scale to zero because actor state is in-memory",
+        "C. Actors require a separate Dapr control plane to be deployed",
+        "D. Actors can only use Redis as their state store"
+      ],
+      "correct_answer": "B",
+      "explanation": "Dapr actors do not support scale to zero because actor state is in-memory and not tied to identity or lifetime. This means the platform cannot safely drop to zero replicas. If you use actors, you are committing to a minimum replica count and its ongoing cost. This is an important consideration when designing systems that need to minimize costs during idle periods.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dapr",
+        "actors",
+        "scale-to-zero",
+        "azure-container-apps",
+        "limitations"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are performing a canary deployment and need to compare error rates between your old and new revisions. Which KQL technique is most important for this analysis?\n\n```kql\nContainerAppConsoleLogs_CL\n| where ContainerAppName_s == \"my-api\"\n| where ??? \n| where Log_s contains \"ERROR\"\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Filter by ReplicaName_s to isolate specific containers",
+        "B. Filter by RevisionName_s to separate logs from each revision",
+        "C. Filter by TimeGenerated to look at recent logs only",
+        "D. Use summarize to aggregate all errors across the application"
+      ],
+      "correct_answer": "B",
+      "explanation": "Filtering by RevisionName_s is the key technique during a canary rollout. This allows you to compare error rates between the old and new revision separately, rather than looking at an average that could hide problems with the new revision. Without this filter, a spike in errors from the new revision might be diluted by the larger traffic volume still going to the old revision.",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability",
+        "kql",
+        "log-analytics",
+        "canary-deployment",
+        "azure-container-apps"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which of the following decisions can be changed after a Container Apps environment has been created?",
+      "question_type": "mc",
+      "options": [
+        "A. The Azure region where the environment is deployed",
+        "B. Adding a non-GPU Dedicated workload profile",
+        "C. The virtual network subnet size",
+        "D. The environment type (workload profiles vs consumption-only)"
+      ],
+      "correct_answer": "B",
+      "explanation": "Non-GPU Dedicated workload profiles can be added to an existing workload-profiles environment after creation. However, region, subnet size, environment type, and GPU-enabled Dedicated profiles are all irreversible decisions that must be made at creation time. This is a key distinction to understand when planning Container Apps infrastructure.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "environment",
+        "workload-profiles",
+        "azure-infrastructure"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following deployment command:\n\n```bash\naz containerapp create \\\n  --name my-api --resource-group rg --environment my-env \\\n  --image myacr.azurecr.io/api:latest \\\n  --target-port 8080 --ingress external \\\n  --cpu 0.5 --memory 1Gi \\\n  --min-replicas 0 --max-replicas 20\n```\n\nWhat problem does this command introduce, and why is it particularly problematic for Azure Container Apps?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Using the static tag 'latest' instead of a unique tag per deployment (like a Git SHA or timestamp) causes caching problems and makes apps hard to troubleshoot. This is especially problematic for Container Apps because revisions are immutable snapshots - if multiple revisions point to ':latest', you lose the ability to reason about or roll back to what was actually running.",
+      "explanation": "The documentation explicitly warns against using static tags like 'latest'. Container Apps revisions are immutable snapshots, so using ':latest' means you cannot determine what code was actually running in a specific revision. A unique tag per deployment (Git SHA or timestamp) enables proper version tracking, troubleshooting, and rollback capabilities. This discipline matters more on ACA than other platforms precisely because of the immutable revision model.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "deployment",
+        "image-tagging",
+        "revisions",
+        "best-practices"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is running a nightly batch job that processes data for 4 minutes each night using Azure Container Apps jobs on the Consumption plan. A colleague suggests moving this to an always-on Container App instead. What is the primary economic argument against this suggestion?\n\n```bash\naz containerapp job create \\\n  --name nightly-report --resource-group rg --environment env \\\n  --trigger-type Schedule --cron-expression \"0 2 * * *\" \\\n  --image myacr.azurecr.io/report:abc123 \\\n  --cpu 0.5 --memory 1Gi\n```",
+      "question_type": "mc",
+      "options": [
+        "A) Jobs cannot use managed identity, making them less secure",
+        "B) Jobs bill only for the 4 minutes of active execution, while an always-on app would bill for 24 hours",
+        "C) Jobs have faster startup times than apps",
+        "D) Jobs automatically retry on failure while apps do not"
+      ],
+      "correct_answer": "B",
+      "explanation": "The economic case for jobs is straightforward: a 4-minute nightly job bills for only 4 minutes of vCPU-seconds and GiB-seconds. An always-on worker would bill for 24 hours. Jobs have no idle billing rate because completed executions stop consuming resources entirely. For infrequent batch work, the savings versus a permanently running container is enormous.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps-jobs",
+        "billing",
+        "consumption-plan",
+        "cost-optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have deployed an event-triggered Container Apps job to process messages from an Azure Service Bus queue. The job occasionally hangs due to a bug in third-party code. What two configuration settings should you use to prevent hung jobs from consuming resources indefinitely?\n\n```bash\naz containerapp job create \\\n  --name queue-worker --resource-group rg --environment env \\\n  --trigger-type Event \\\n  --image myacr.azurecr.io/worker:abc123 \\\n  --min-executions 0 --max-executions 50 \\\n  # What settings are missing?\n```",
+      "question_type": "mc",
+      "options": [
+        "A) --polling-interval and --scale-rule-metadata",
+        "B) --replica-retry-limit and --replica-timeout",
+        "C) --parallelism and --replica-completion-count",
+        "D) --cpu and --memory"
+      ],
+      "correct_answer": "B",
+      "explanation": "To prevent hung jobs from holding resources and billing indefinitely, you should configure --replica-retry-limit (for automatic retries on failure) and --replica-timeout (as a hard ceiling on execution duration). The documentation emphasizes setting the timeout deliberately: without it, a hung job holds resources and bills for them until something else intervenes. A container exiting non-zero marks the execution as failed, and these settings control the retry and timeout behavior.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps-jobs",
+        "failure-handling",
+        "replica-timeout",
+        "configuration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company has deployed multiple microservices in Azure Container Apps. Service A makes approximately 10 million requests per day to Service B. An architect proposes splitting these services into separate Container Apps environments for better organizational structure. What is the primary cost concern with this approach?\n\nA. Internal service-to-service calls within an environment are not billed as requests, but calls between environments are billed as external requests\nB. Each environment requires a separate NAT Gateway, doubling egress costs\nC. Private endpoints are required for cross-environment communication\nD. Health probe requests between environments are billed at premium rates",
+      "question_type": "mc",
+      "options": [
+        "A. Internal service-to-service calls within an environment are not billed as requests, but calls between environments are billed as external requests",
+        "B. Each environment requires a separate NAT Gateway, doubling egress costs",
+        "C. Private endpoints are required for cross-environment communication",
+        "D. Health probe requests between environments are billed at premium rates"
+      ],
+      "correct_answer": "A",
+      "explanation": "Request charges apply only to requests from outside the environment. Internal service-to-service calls are not billed as requests. Splitting chatty microservices across two environments converts free internal traffic into billable external requests, plus adds latency. This is a significant cost consideration - environments should be split for isolation reasons (prod vs non-prod, compliance boundaries), not for organizational tidiness.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "networking",
+        "cost-optimization",
+        "microservices",
+        "billing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why an Azure Container App configured with ingress disabled, no scale rules, and no minimum replicas presents a problem. What happens to such an app, and what is the recommended approach for worker-style applications that don't need HTTP ingress?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "An app with ingress disabled, no scale rule, and no minimum replica will scale to zero and never restart. This is problematic because there is no trigger (HTTP request or scale rule event) to bring the app back up. For worker-style applications that don't need HTTP ingress, you should either: (1) set a minimum replica count of at least 1 to ensure the app always runs, or (2) configure appropriate scale rules (such as queue-based or event-based triggers) that will cause the app to scale up when there is work to process.",
+      "explanation": "Container Apps uses ingress requests and scale rules as triggers to scale replicas. Without ingress and without scale rules, there's no mechanism to trigger scaling up from zero. The minimum replica setting acts as a floor, ensuring at least that many replicas are always running. For background workers and jobs, you typically want either a minimum replica guarantee or event-driven scaling rules to ensure work gets processed.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "ingress",
+        "scaling",
+        "workers",
+        "replicas"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A production team rotated a database connection string stored as a secret in their Container App. They updated the secret value but users are still connecting with the old credentials. What is the most likely cause and solution?\n\nA. The secret update failed; they need to delete and recreate the secret\nB. Secrets are cached at the ingress level; they need to restart the ingress controller\nC. Updating a secret doesn't create a new revision, and containers read secrets at startup; they need to force a new revision or restart replicas\nD. Traffic is still routing to an old revision; they need to update traffic weights",
+      "question_type": "mc",
+      "options": [
+        "A. The secret update failed; they need to delete and recreate the secret",
+        "B. Secrets are cached at the ingress level; they need to restart the ingress controller",
+        "C. Updating a secret doesn't create a new revision, and containers read secrets at startup; they need to force a new revision or restart replicas",
+        "D. Traffic is still routing to an old revision; they need to update traffic weights"
+      ],
+      "correct_answer": "C",
+      "explanation": "This is a common production surprise. Secret value changes are 'application-scope' changes that do not create a new revision. Since containers read secrets at startup, a rotated secret is not picked up until replicas restart. The team must force a new revision or manually restart the replicas to pick up the new secret value.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "secrets",
+        "revisions",
+        "troubleshooting",
+        "azure"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team wants to implement a canary deployment for their Container App. They deploy a new revision and want to test it with a small percentage of traffic before full rollout. Which sequence correctly describes the canary pattern in Azure Container Apps?\n\n```bash\n# Step they're planning:\naz containerapp ingress traffic set \\\n  --name my-api --resource-group rg \\\n  --revision-weight my-api--rev-old=90 my-api--rev-new=10\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Deploy new revision at 10% traffic immediately, monitor, increase to 100%, then delete old revision",
+        "B. Deploy new revision at 0% traffic, let it pass health probes and warm up, then gradually increase traffic percentage while monitoring, rollback by setting back to 0% if issues occur",
+        "C. Deploy new revision, use revision labels to test, then immediately flip traffic 100% to new revision",
+        "D. Deploy new revision at 50% traffic, compare metrics between revisions, then choose which to keep"
+      ],
+      "correct_answer": "B",
+      "explanation": "The proper canary pattern in Container Apps is: 1) Deploy the new revision with 0% traffic so it starts, passes health probes, and warms up without taking production load. 2) Shift 5-10% traffic and monitor error rate and latency specifically for the new revision. 3) Increase progressively. 4) On trouble, set the new revision back to 0% for instant rollback without redeployment, since the old revision is still running. This approach leverages the fact that multiple revisions can run simultaneously.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "canary-deployment",
+        "traffic-splitting",
+        "deployment-strategies",
+        "azure"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer has deployed a background worker Container App with ingress disabled and no custom scale rules defined. The app worked initially but has stopped processing messages. What is the most likely cause?",
+      "question_type": "mc",
+      "options": [
+        "A. The app crashed due to an unhandled exception and needs to be restarted manually",
+        "B. The app scaled to zero replicas and has no trigger to scale back up",
+        "C. The polling interval of 30 seconds is too slow to detect new work",
+        "D. The cool down period of 300 seconds is preventing the app from starting"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is a classic 'silent worker stopped' incident. When ingress is disabled and no custom scale rule or minReplicas is defined, the default HTTP scaling rule cannot trigger because there's no ingress endpoint. The app scales to zero and has no mechanism to scale back up. The solution is to either define a custom scale rule (e.g., Service Bus queue scaler) or set minReplicas >= 1.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "keda",
+        "scaling",
+        "background-worker",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company has a containerized microservices application with the following requirements:\n- Event-driven scaling based on Azure Service Bus queue depth\n- Scale to zero during off-hours to minimize costs\n- Service discovery between microservices\n- No need for custom Kubernetes operators or CRDs\n\nWhich Azure compute service is the most appropriate choice?",
+      "question_type": "mc",
+      "options": [
+        "A. Azure Container Instances (ACI)",
+        "B. Azure Kubernetes Service (AKS) Standard",
+        "C. Azure Container Apps (ACA)",
+        "D. Azure App Service"
+      ],
+      "correct_answer": "C",
+      "explanation": "Azure Container Apps is the ideal choice here. It provides built-in KEDA for event-driven scaling from queues, native scale-to-zero capability (meaning zero cost when idle), and Kubernetes-style service discovery—all without requiring cluster operations. Since there's no need for the Kubernetes API (no CRDs or operators), AKS would add unnecessary operational overhead. ACI lacks orchestration features like scaling and service discovery. App Service is optimized for web apps, not microservice fleets.",
+      "difficulty": "intermediate",
+      "tags": [
+        "Azure Container Apps",
+        "KEDA",
+        "scale to zero",
+        "microservices",
+        "decision tree"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An organization is evaluating Azure Container Apps for their workload but discovers it won't meet their needs. Which of the following is NOT a limitation of Azure Container Apps?",
+      "question_type": "mc",
+      "options": [
+        "A. Windows containers are not supported",
+        "B. Privileged containers and host-level access are not available",
+        "C. Event-driven scaling using KEDA is not supported",
+        "D. CPU/memory on Consumption is locked to a 1:2 ratio with a max of 4 vCPU / 8 GiB"
+      ],
+      "correct_answer": "C",
+      "explanation": "Event-driven scaling using KEDA is actually a built-in feature of Azure Container Apps, not a limitation. ACA has KEDA integrated by default, making it easy to scale based on events like queue messages. The actual limitations include: no Windows containers (Linux linux/amd64 only), no privileged containers or host-level access, and the Consumption profile is locked to a 1:2 CPU:memory ratio with a maximum of 4 vCPU and 8 GiB memory.",
+      "difficulty": "intermediate",
+      "tags": [
+        "Azure Container Apps",
+        "KEDA",
+        "limitations",
+        "Windows containers"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company runs an in-memory caching service that requires 96 GiB of memory per replica and experiences consistent, predictable traffic 24/7. Which workload profile should they choose?\n\nA. Consumption profile\nB. Dedicated E16 profile\nC. Flex profile\nD. Dedicated D32 profile",
+      "question_type": "mc",
+      "options": [
+        "A. Consumption profile",
+        "B. Dedicated E16 profile",
+        "C. Flex profile",
+        "D. Dedicated D32 profile"
+      ],
+      "correct_answer": "B",
+      "explanation": "The E-series (Memory Optimized) Dedicated profiles are designed for memory-heavy workloads. E16 provides 16 vCPU and 128 GiB of memory, which can accommodate the 96 GiB requirement. Consumption is capped at 8 GiB per replica, Flex at 16 GiB - both insufficient. D32 provides only 128 GiB but at a 1:4 vCPU-to-memory ratio (general purpose), while E-series offers 1:8, making E16 more cost-effective for memory-intensive workloads. The steady traffic pattern also favors Dedicated over Consumption billing.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "workload-profiles",
+        "dedicated",
+        "memory-optimized",
+        "E-series"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a D4 Dedicated profile (4 vCPU / 16 GiB) and attempt to deploy applications totaling exactly 4 vCPU of resource requests. What will happen?",
+      "question_type": "mc",
+      "options": [
+        "A. The deployment succeeds because the apps fit exactly within the profile allocation",
+        "B. The deployment fails because the runtime reserves some compute on every profile instance",
+        "C. The deployment succeeds but performance will be degraded",
+        "D. The system automatically scales out to add another D4 instance"
+      ],
+      "correct_answer": "B",
+      "explanation": "The deployment will fail to schedule. A key fact that trips people up is that usable resources are less than the profile's nominal allocation because the runtime reserves some compute on every profile instance. You cannot pack a D4 with exactly 4 vCPU of apps - you must leave headroom for the system overhead. This is why capacity planning for Dedicated profiles requires accounting for this reserved compute.",
+      "difficulty": "intermediate",
+      "tags": [
+        "container-apps",
+        "workload-profiles",
+        "dedicated",
+        "resource-allocation",
+        "scheduling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is a critical billing difference between serverless GPU apps and CPU apps in Azure Container Apps?",
+      "question_type": "mc",
+      "options": [
+        "A) GPU apps are always cheaper than CPU apps at any scale",
+        "B) Idle usage charges do not apply to serverless GPU apps — they are always billed at the active rate",
+        "C) GPU apps receive a 50% discount during off-peak hours",
+        "D) GPU apps can only be billed monthly, not per-second"
+      ],
+      "correct_answer": "B",
+      "explanation": "Unlike CPU apps which have a reduced idle rate for replicas held at minimum, serverless GPU apps are always billed at the active rate. This means there is no 'cheap standby' option for GPU workloads — you either pay nothing at zero replicas or pay the full active rate. This makes minReplicas: 0 far more important for GPU apps than for CPU apps.",
+      "difficulty": "intermediate",
+      "tags": [
+        "serverless-gpu",
+        "container-apps",
+        "billing",
+        "azure-pricing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team wants to add a Dedicated GPU workload profile to their existing Azure Container Apps environment. What constraint will they encounter?\n\nThe environment was created 3 months ago with only CPU workload profiles.",
+      "question_type": "mc",
+      "options": [
+        "A) They can add it but must wait 24 hours for provisioning",
+        "B) They can add it only during a maintenance window",
+        "C) GPU-enabled Dedicated profiles must be configured when you create the environment — they cannot add one to an existing environment",
+        "D) They can add it but must first scale all existing apps to zero"
+      ],
+      "correct_answer": "C",
+      "explanation": "This is a hard operational constraint for Dedicated GPU profiles in Azure Container Apps: GPU-enabled Dedicated profiles must be configured at environment creation time. You cannot add a Dedicated GPU profile to an existing environment. The team would need to create a new environment with the GPU profile configured from the start.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dedicated-gpu",
+        "container-apps",
+        "workload-profiles",
+        "azure-constraints"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary purpose of KEDA in Azure Container Apps?",
+      "question_type": "mc",
+      "options": [
+        "A) Providing the underlying container orchestration",
+        "B) Handling HTTP routing and TLS termination",
+        "C) Enabling event-driven autoscaling based on various metrics like queue depth or Kafka lag",
+        "D) Providing service invocation and pub/sub capabilities"
+      ],
+      "correct_answer": "C",
+      "explanation": "KEDA (Kubernetes Event-driven Autoscaling) is the component responsible for autoscaling in ACA. Every scale rule you write in ACA is actually a KEDA scaler, which is why ACA can scale based on diverse metrics like queue depth, Kafka lag, or Redis list length—not just CPU. Kubernetes (A) handles orchestration, Envoy (B) handles HTTP routing and TLS, and Dapr (D) provides service invocation and pub/sub.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-container-apps",
+        "KEDA",
+        "autoscaling",
+        "event-driven"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer wants to deploy a Windows-based container application with GPU support to Azure. They are considering Azure Container Apps. Is this a suitable choice?\n\nExplain why or why not, and suggest an alternative if ACA is not appropriate.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "No, Azure Container Apps is not suitable. ACA only supports Linux-based x86-64 (linux/amd64) images—it does not support Windows containers or ARM architectures. GPU support is also limited to specific regions. For Windows containers or broader GPU support, Azure Kubernetes Service (AKS) or Azure Virtual Machines would be appropriate alternatives.",
+      "explanation": "Azure Container Apps has specific container requirements: it only runs Linux-based x86-64 images, with no support for Windows containers or ARM architectures. Additionally, GPU support is limited to certain regions. When these requirements cannot be met, the documentation explicitly recommends AKS as the alternative, which provides full Kubernetes API access and broader platform support.",
+      "difficulty": "intermediate",
+      "tags": [
+        "azure-container-apps",
+        "container-requirements",
+        "windows-containers",
+        "GPU",
+        "AKS"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

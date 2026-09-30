@@ -1,0 +1,76 @@
+Container Apps scales horizontally through declarative rules implemented by **KEDA**. Scaling is the combination of three things: **limits**, **rules**, and **behavior**.
+
+**Limits.**
+
+| Limit | Default | Min | Max |
+|---|---|---|---|
+| Minimum replicas per revision | 0 | 0 | 1,000 |
+| Maximum replicas per revision | 10 | 1 | 1,000 |
+
+**Rules — three trigger categories.**
+
+- **HTTP** — concurrent HTTP requests. The `concurrentRequests` threshold defaults to **10**. Every 15 seconds the platform computes concurrency as requests in the last 15 seconds divided by 15.
+- **TCP** — concurrent TCP connections, via `concurrentConnections`, same default of 10 and the same 15-second window.
+- **Custom** — any ScaledObject-based KEDA scaler. Includes CPU, memory, and event sources such as Azure Service Bus, Event Hubs, Apache Kafka, and Redis.
+
+If you define multiple rules, the app **scales once the first condition of any rule is met** — rules are OR'd, not AND'd.
+
+Jobs do **not** support HTTP or TCP scale rules; event-driven jobs use ScaledJob-based scalers instead.
+
+**The default rule, and the trap inside it.** With no rule defined, you get HTTP with min 0 and max 10. The documented warning is important: **if ingress is disabled and you define neither `minReplicas` nor a custom scale rule, your app scales to zero and has no way to start back up.** A background worker with no ingress must have either a custom scale rule or `minReplicas >= 1`. This is the classic "my worker silently stopped" incident.
+
+**Behavior — the numbers that explain what you observe.**
+
+| Behavior | Value |
+|---|---|
+| Polling interval | 30 seconds |
+| Cool down period | 300 seconds |
+| Scale up stabilization window | 0 seconds |
+| Scale down stabilization window | 300 seconds |
+| Scale up step | 1, 4, 8, 16, 32, … up to max |
+| Scale down step | 100% of replicas that need to shut down |
+| Algorithm | `desiredReplicas = ceil(currentMetricValue / targetMetricValue)` |
+
+Reading these together:
+- **Scale up is aggressive** (0-second stabilization) and **geometric** — 1, then 4, then 8, 16, 32. Scale down is deliberately slow (300-second window) to avoid thrashing.
+- **Polling interval does not apply to HTTP and TCP rules** — those use the 15-second concurrency calculation.
+- The **cool down period only takes effect when scaling in from the final replica to 0.** It does not gate removal of any other replica. People misread this constantly.
+
+**Worked example from the docs.** For a Service Bus rule with `messageCount: 5`, min 0, max 20:
+
+1. Check the queue every 30 seconds.
+2. Queue length 0 → keep waiting.
+3. Queue length > 0 → scale to 1.
+4. Queue length 50 → `desiredReplicas = ceil(50/5) = 10`.
+5. Scale to `min(maxReplicas, desiredReplicas, max(4, 2 × currentReplicas))` — note the built-in rate limit on how fast it can grow.
+6. Repeat.
+
+Scaling down requires the condition to hold for 300 seconds, then once the queue hits 0 KEDA waits a further 300-second cool down before going to zero.
+
+**Converting a KEDA scaler to an ACA rule** is mechanical: the scaler's `type` becomes `custom.type`, its `metadata` becomes `custom.metadata`, and each `secretTargetRef` in the KEDA `TriggerAuthentication` becomes an entry in the rule's `auth` array — `parameter` maps to `triggerParameter`, and the secret key maps to `secretRef`.
+
+```bash
+az containerapp create \
+  --name my-worker --resource-group rg --environment env \
+  --image myacr.azurecr.io/worker:abc123 \
+  --min-replicas 0 --max-replicas 30 \
+  --scale-rule-name sb-rule \
+  --scale-rule-type azure-servicebus \
+  --scale-rule-metadata "queueName=orders" "namespace=my-ns" "messageCount=5" \
+  --scale-rule-auth "connection=connection-string-secret"
+```
+
+**Authentication: prefer managed identity.** Scale rules support secrets, but rules for Azure Queue Storage, Service Bus, and Event Hubs also support **managed identity** — set `identity: 'system'` or a user-assigned identity resource ID on the rule. The docs recommend managed identity wherever possible so you are not storing connection strings as app secrets.
+
+**Two configuration requirements that cause silent failures.**
+- Set `properties.configuration.activeRevisionsMode` to `single` when using non-HTTP event scale rules.
+- Adding or editing a scale rule **creates a new revision**. In "multiple revisions" mode the old revision stays live with the old rules, so you must manage traffic allocation — otherwise you have two revisions scaling on different rules at once.
+
+**Known limitations.**
+- **No vertical scaling.** Resizing means a new revision.
+- Replica counts are a **target, not a guarantee**.
+- **Dapr actors do not support scale to zero**, because actor state is in-memory and not tied to identity or lifetime.
+- During platform upgrades you may **temporarily see more replicas than expected** — new replicas are pre-warmed before traffic shifts, then extras are removed. Don't alarm on it.
+- .NET apps need data protection configured explicitly when running multi-replica.
+
+**Cost tie-in.** No usage charges at zero replicas. Replicas held at the minimum and genuinely quiet may bill at the reduced **idle** rate, but the moment a revision scales above its minimum, *every* replica bills at the active rate. So scale rule tuning is cost tuning: a too-low `concurrentRequests` threshold scales out early, and pushes every replica to the active rate.

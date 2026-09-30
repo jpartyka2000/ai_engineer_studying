@@ -1,0 +1,53 @@
+Two features that round out Container Apps as a microservices platform: **Dapr** for distributed application patterns, and the observability stack for seeing what is happening.
+
+## Dapr
+
+Dapr (Distributed Application Runtime) is an optional sidecar that provides distributed-systems building blocks over HTTP or gRPC, so your application code does not embed broker-specific or store-specific SDKs.
+
+**Enabling it** is per-app: set `dapr.enabled`, an `appId` (the name other apps use to call you), the app port, and the protocol. ACA runs and manages the sidecar for you — there is no Dapr control plane to operate.
+
+**The building blocks you will actually use.**
+
+- **Service invocation** — call another app by its Dapr `appId` and get service discovery, retries, and mTLS between sidecars for free. Note ACA already has name-based service discovery without Dapr; Dapr adds the resilience and mTLS layer.
+- **Pub/sub** — publish and subscribe against a broker (Service Bus, Event Hubs, Redis) through a uniform API. Swapping brokers becomes a component config change rather than a code change.
+- **State management** — key/value state in a configured store (Cosmos DB, Redis, Blob) with optional concurrency and consistency options.
+- **Bindings** — input and output connectors to external systems without their SDKs.
+- **Secrets** — read secrets from Key Vault through the sidecar.
+
+**Components** are the configuration that binds an abstract block to a concrete backend. In ACA they are environment-level resources, optionally scoped to specific apps. That scoping matters: an unscoped component is available to every app in the environment, which is usually not what you want.
+
+**The real trade-off.** Dapr buys portability and removes broker SDKs from your code. The costs are: a sidecar in every replica consuming CPU and memory (which counts toward your app's CPU/memory combination and therefore your bill), an extra network hop per call, and a second abstraction to debug when something misbehaves. For a small system, calling Service Bus directly is simpler. For a large polyglot system where you want uniform patterns across languages, Dapr earns its keep.
+
+**One hard limitation worth remembering: Dapr actors do not support scale to zero.** Actor state is in-memory and not tied to identity or lifetime, so the platform cannot safely drop to zero replicas. If you use actors, you are committing to a minimum replica and its ongoing cost.
+
+## Observability
+
+**Log Analytics** is the default destination. Container `stdout`/`stderr` goes to the `ContainerAppConsoleLogs_CL` table and platform events to `ContainerAppSystemLogs_CL`. KQL is how you query them:
+
+```kql
+ContainerAppConsoleLogs_CL
+| where ContainerAppName_s == "my-api"
+| where RevisionName_s == "my-api--rev-43"
+| where Log_s contains "ERROR"
+| project TimeGenerated, ReplicaName_s, Log_s
+| order by TimeGenerated desc
+```
+
+Filtering by `RevisionName_s` is the key move during a canary rollout — it is how you compare error rates between the old and new revision rather than looking at an average that hides the problem.
+
+**The cost warning, because it is the most commonly missed line item.** Log Analytics bills **per GB ingested** plus retention. A verbose app at scale can generate a log bill that rivals or exceeds its compute bill. Mitigations: set production log level to INFO or WARN rather than DEBUG, do not log full request and response bodies, review the workspace retention setting, and consider the Basic Logs tier for high-volume low-query-value tables. This belongs in any serious ACA cost review.
+
+**The managed OpenTelemetry agent** is the modern path for traces and metrics, and the docs are explicit that it **runs at no extra compute cost** — on both Consumption and Dedicated plans. Configure it on the environment to export traces and metrics to Application Insights or an OTLP-compatible endpoint. Given it is free and standards-based, it should be the default choice over hand-rolled instrumentation export.
+
+**Application Insights** gives you distributed tracing, dependency maps, and live metrics. In a microservice environment it is what turns "the checkout is slow" into "the inventory service's database call is slow." Its ingestion is billed like Log Analytics, so the same verbosity discipline applies — and sampling is the main control.
+
+**Metrics worth alerting on.**
+- **Replica count** — versus your configured min and max. A revision pinned at max is either under-provisioned or being hammered.
+- **CPU and memory usage** versus allocation — the input to right-sizing, and directly a cost signal.
+- **Request count and latency percentiles**, per revision.
+- **Restart count** — a replica restart loop is usually a probe misconfiguration or an OOM.
+- **Job execution success and failure counts**, plus duration against the replica timeout.
+
+**Debugging surfaces.** `az containerapp logs show --follow` for live tailing, `az containerapp exec` for a shell into a replica, the revision and replica views in the portal, and `az containerapp job execution list` for jobs, which have no ingress to probe.
+
+**Interview framing.** "Dapr gives you pub/sub, state, bindings, and service invocation as a managed sidecar, so you get portability and mTLS without broker SDKs in your code — paying for it with a sidecar in every replica, an extra hop, and no scale-to-zero if you use actors. For observability, logs go to Log Analytics queried with KQL, and the managed OpenTelemetry agent is free on both plans so there's no reason not to use it. The thing I'd flag on any cost review is Log Analytics ingestion — on a chatty app it can outgrow the compute bill, and the fix is log level discipline and retention settings, not more compute tuning."

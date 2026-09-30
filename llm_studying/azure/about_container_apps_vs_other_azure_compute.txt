@@ -1,0 +1,60 @@
+"Which Azure compute service should this run on?" is a near-certain interview question. Microsoft's own comparison doc gives the positioning; what follows is that positioning plus the decision logic.
+
+**Azure Container Apps.** Serverless microservices and jobs based on containers. Optimized for general-purpose containers, especially applications spanning many microservices. Powered by Kubernetes, Dapr, KEDA, and Envoy. Supports Kubernetes-style features — service discovery, traffic splitting, revisions — plus event-driven scaling from queues with scale to zero, and on-demand/scheduled/event-driven jobs.
+
+The defining limitation, stated plainly in the docs: **ACA does not provide direct access to the underlying Kubernetes APIs.** If you need the Kubernetes API and control plane, use AKS.
+
+**Azure Kubernetes Service (AKS).** Fully managed Kubernetes with **direct access to the Kubernetes API**; runs any Kubernetes workload. Two experience models:
+- **AKS Standard** — the cluster is in your subscription and you manage configuration and operations.
+- **AKS Automatic** — Azure preconfigures and manages node management, scaling, security defaults, and upgrades for a more hands-off, production-ready experience.
+
+AKS Automatic is the important recent development for this comparison, because it narrows the "ACA is easier" gap considerably.
+
+**Azure Container Instances (ACI).** A single pod of Hyper-V isolated containers on demand. Explicitly a **lower-level building block**: scale, load balancing, and certificates are **not** provided. To run five instances you create five container instances. Often consumed indirectly by other services — AKS layers orchestration on top of ACI via virtual nodes. Choose it when you want a less opinionated primitive.
+
+**Azure App Service.** Fully managed hosting for **web applications** — websites and web APIs — deployable as code or containers. Optimized for web apps. If you are building a web app, this is the ideal option.
+
+**Azure Functions.** Serverless FaaS, optimized for **event-driven applications using the functions programming model**. Shares ACA's scaling and event-integration characteristics but optimized for ephemeral functions. The programming model ships as a base container image, so it is portable to other container platforms — and can run *on* Container Apps.
+
+**Azure Red Hat OpenShift.** Jointly engineered and supported OpenShift. The answer when your organization already runs OpenShift.
+
+**The decision tree.**
+
+1. **Is it a plain web app or API with no microservice topology?** → App Service. Simplest operational story, mature deployment slots, easy custom domains.
+2. **Is it event-triggered, short-lived, glue-shaped logic?** → Functions. The trigger/binding model removes real boilerplate.
+3. **Do you need the Kubernetes API — CRDs, operators, a specific service mesh, DaemonSets, node-level control?** → AKS. This is a hard requirement, not a preference; ACA cannot satisfy it.
+4. **Is it a fleet of containerized microservices where you want service discovery, revisions, and event scaling but not cluster ops?** → Container Apps.
+5. **Do you need one container, once, with no scaling or certificates?** → ACI.
+6. **Already an OpenShift shop?** → ARO.
+
+**The ACA vs AKS comparison in detail,** since it is the one that actually gets argued:
+
+| | Container Apps | AKS |
+|---|---|---|
+| Kubernetes API access | **no** | yes |
+| Cluster upgrades | Microsoft handles | you (Standard) / Azure (Automatic) |
+| Scale to zero | **built in** | needs KEDA + cluster autoscaler setup |
+| Event-driven scaling | KEDA built in | install KEDA yourself |
+| Ingress | Envoy, managed, free TLS cert | install and run an ingress controller |
+| Service mesh | no choice | any |
+| Windows containers | **no** | yes |
+| GPU | limited SKUs and regions | full VM SKU range |
+| Node-level control | none | full |
+| Cost floor | **zero** (scale to zero) | control plane + at least one node |
+| Operational burden | low | moderate to high |
+
+The cost floor row is the one to lead with. An idle AKS cluster still costs you a system node pool; an idle ACA app on Consumption costs nothing.
+
+**Things ACA does not support** (worth naming unprompted):
+- Kubernetes API / control plane access.
+- **Windows containers** — Linux `linux/amd64` only.
+- ARM images.
+- Privileged containers or host-level access.
+- Vertical autoscaling.
+- Arbitrary CPU/memory — Consumption is locked to a 1:2 ratio, max 4 vCPU / 8 GiB.
+- Scale to zero with Dapr actors, or on the Flex profile.
+- Custom KEDA proxy settings.
+
+**Cost framing across the options.** ACA Consumption and Functions both go to zero, so they win on intermittent workloads. App Service and AKS have a floor — a plan or a node pool — so they win once utilization is steady and high enough that the serverless premium exceeds the reserved cost. ACI bills per container-second with no orchestration overhead but no scaling either, so it is cheap for genuinely one-shot work and expensive to operate at any scale. The general shape: **serverless for spiky, reserved for steady**, and the same logic recurs inside ACA as Consumption vs Dedicated.
+
+**Interview soundbite.** "The forcing question is whether you need the Kubernetes API. If yes, AKS, full stop. If no, and it's a microservice fleet, Container Apps gives you the Kubernetes-shaped features — service discovery, revisions and traffic splitting, KEDA scaling to zero — with no cluster to operate. App Service if it's just a web app, Functions if it's event-driven glue, ACI if you want a single low-level container. And note AKS Automatic has narrowed the ease-of-use gap, so the argument is increasingly about API access and cost floor rather than difficulty."

@@ -1,0 +1,69 @@
+Azure VM size names encode the machine's full specification. Being able to read `Standard_E96bds_v5` out loud and say what it is separates people who have operated Azure from people who have only clicked through the portal.
+
+**The grammar.**
+
+```
+[Family] + [Sub-family]* + [# of vCPUs] + [Constrained vCPUs]* + [Additive Features] + [Accelerator Type]* + [Memory Capacity]* + [Version]
+```
+
+Starred fields are optional. Everything is prefixed `Standard_`.
+
+**Field by field.**
+
+- **Family** — the series letter(s): D, E, F, B, L, M, N, H, A.
+- **Sub-family** — specialized differentiation:
+  - `B` = memory bandwidth optimized
+  - `C` = confidential (DC, EC series) **or** compute intensive (HC, NC series) — same letter, two meanings, disambiguated by the family
+  - `D` = AI training and inference optimized
+  - `G` = cloud gaming and remote desktop optimized
+  - `V` = visualization and graphics optimized
+  - `X` = extra memory
+- **# of vCPUs** — the vCPU count.
+- **Constrained vCPUs** — for constrained-vCPU sizes, written as `8-2` meaning a size with 8 vCPUs' worth of memory and I/O but only 2 vCPUs active. Licensing trick; see the constrained-vCPU note.
+- **Additive features** — lowercase letters, the part worth memorizing:
+
+| Letter | Meaning |
+|---|---|
+| `a` | AMD-based processor |
+| `b` | remote storage bandwidth optimized |
+| `d` | includes a **local temporary disk** |
+| `e` | encrypted; confidential TDX capabilities |
+| `f` | **flat** 1:1 ratio of vCPU to memory |
+| `i` | isolated size (you get the whole physical host) |
+| `l` | **low** memory; decreased vCPU-to-memory ratio |
+| `m` | **memory intensive**; highest vCPU-to-memory ratio in the series |
+| `n` | network optimized; increased vCPU-to-network-bandwidth ratio |
+| `o` | increased vCPU to local SSD capacity ratio |
+| `p` | **ARM-based** processor |
+| `r` | includes RDMA (InfiniBand) secondary network |
+| `s` | compatible with any **Premium SSD** type |
+| `t` | **tiny** memory; smallest vCPU-to-memory ratio in the size |
+
+- **Accelerator type** — the GPU/accelerator model, present only on specialized SKUs launched from Q3 2020 onward: `T4`, `A100`, `H100`, `MI300X`, `V620`.
+- **Memory capacity** — M-series only, memory rounded to the nearest TiB.
+- **Version** — `v2`, `v5`, `v6`, `v7`. Higher generally means newer CPU, better price/performance.
+
+**Worked examples from the docs.**
+
+`M48ds_1_v3` → M family, 48 vCPU, `d` local temp disk, `s` Premium Storage capable, memory capacity ≈ 1 TiB (974 GiB), version 3.
+
+`NV16as_v4` → N family, `V` sub-family (visualization), 16 vCPU, `a` AMD, `s` Premium Storage, v4.
+
+`NC4as_T4_v3` → N family, `C` sub-family (compute intensive), 4 vCPU, `a` AMD, `s` Premium Storage, **T4** accelerator, v3.
+
+`M8-2ms_v2` → M family, **8 vCPU worth of memory/IO with only 2 active** (constrained), `m` memory intensive, `s` Premium Storage, v2.
+
+`E96bds_v5` → Eb family, 96 vCPU, `b` remote storage bandwidth optimized, `d` local temp disk, `s` Premium Storage, v5. (The docs flag this as a SQL Server preferred option — which follows directly from `b` plus `d`.)
+
+**Why this pays off in practice.**
+
+1. **`p` means ARM, and ARM is cheaper.** `Dpsv6`, `Dplsv6`, `Epsv6` are Ampere-based and typically materially cheaper per vCPU than x86 equivalents. If your container image is multi-arch, that is free money. If it is `linux/amd64` only — as **all** Container Apps images must be — ARM is unavailable to you.
+2. **`a` means AMD, and AMD is usually cheaper than Intel** at the same size. Often a drop-in substitution.
+3. **`l` means less memory for the same cores, and costs less.** `Dlsv6` versus `Dsv6` is the cheapest way to buy CPU when your workload genuinely does not need 4 GiB per core.
+4. **`d` versus no `d`** decides whether you get a local temp disk. Non-`d` sizes are cheaper; if your workload wants scratch space, you need `d`, otherwise you will be paying for a managed disk instead.
+5. **`s` is nearly universal now** on current generations, but its absence on an older SKU means no Premium SSD — a real constraint.
+6. **`i` (isolated)** gives you the whole physical host. Expensive, and used for compliance isolation requirements rather than performance.
+
+**The reading procedure.** Given `Standard_D8alds_v6`: D family (general purpose), 8 vCPU, `a` AMD, `l` low memory, `d` local temp disk, `s` Premium Storage, v6. So: an 8-core AMD general-purpose VM with a reduced memory ratio and a temp disk — the budget-conscious compute-leaning choice in the D family.
+
+**Interview framing.** "Azure SKU names are fully descriptive: family, vCPU count, then lowercase additive-feature letters, then accelerator and version. The four letters worth knowing for cost are `p` for ARM and `a` for AMD, both cheaper than Intel; `l` for reduced memory ratio, cheaper again; and `d` for whether a local temp disk is included. So `D8alds_v6` reads as an 8-core AMD general-purpose v6 with low memory and a temp disk — and three of those letters are there because someone was optimizing the bill."

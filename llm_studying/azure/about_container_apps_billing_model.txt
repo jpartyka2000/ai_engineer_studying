@@ -1,0 +1,52 @@
+Billing in Azure Container Apps depends on your plan type, which follows from the workload profile your app uses. Getting this right is most of cost control on the platform.
+
+**Consumption plan: two charge types.**
+
+1. **Resource consumption** — resources *allocated* to your app, per second, metered as **vCPU-seconds** and **GiB-seconds** (plus **GPU-seconds** for serverless GPU).
+2. **HTTP requests** — the count of requests your app receives.
+
+Note the word *allocated*, not *used*. If you configure 1.0 vCPU and the app sits at 5% CPU, you are billed for 1.0 vCPU-seconds. Right-sizing the request matters; the platform does not bill you for actual utilization.
+
+**The monthly free grant, per subscription, per calendar month:**
+- First **180,000 vCPU-seconds**
+- First **360,000 GiB-seconds**
+- First **2 million HTTP requests**
+
+Free usage does not appear on the bill at all. Put 180,000 vCPU-seconds in perspective: that is 50 vCPU-hours. An app pinned at 0.25 vCPU with one replica running continuously uses about 0.25 × 730 hours = 182.5 vCPU-hours a month, so a single always-on quarter-core app already exceeds the grant roughly 3.6×. The grant comfortably covers dev/test and genuinely low-traffic apps; it does not make production free.
+
+**Active vs idle rates — the feature people miss.** Replicas are billed at the **active** rate by default, but a replica can enter an **idle** state billed at a reduced rate. Eligibility is strict. The revision must be:
+- configured with a **minimum replica count greater than zero**, and
+- currently **scaled to that minimum**.
+
+And then, per replica, *all* of these must hold:
+- every container in the replica has started and is running,
+- the replica is **not processing any HTTP requests**,
+- the replica is using **less than 0.01 vCPU cores**,
+- the replica is receiving **less than 1,000 bytes per second** of network traffic.
+
+Consequences worth internalizing:
+- The moment a revision scales **above** its minimum, **all** running replicas bill at the active rate — not just the extra ones.
+- A chatty background poller or a health-check loop that burns more than 0.01 vCPU will keep you at the active rate forever. Idle billing is easy to lose by accident.
+- Idle charges **never** apply to serverless GPU apps; those are always active-rate.
+- Idle charges never apply to jobs, since a finished execution stops consuming resources entirely.
+
+**Scale to zero is the real lever.** When a revision is at zero replicas, there are **no resource consumption charges at all**. Idle rate is a discount; zero is free. Any app that can tolerate cold starts should have `minReplicas: 0`.
+
+**Request charges.** Only requests arriving from **outside** the Container Apps environment are billable — internal service-to-service traffic within the environment is not. **Health probe requests are not billable.** Jobs incur no request charges because they do not support ingress.
+
+**Dedicated plan: a completely different shape.** You are billed for **workload profile instances, not individual applications**. Charges are:
+
+- **Fixed:** a **Dedicated plan management fee**, charged if you have one or more Dedicated workload profiles in the environment. No Dedicated profile means no management charge.
+- **Variable:** cost per running profile instance. As profiles scale out you pay for more instances; as they scale in, billing drops.
+
+The strategic implication: because you pay per node regardless of app utilization, the docs' advice is to **pack the node**. Evaluate your apps so they use as much of the profile's available resources as possible. One small app alone on a D16 is the worst possible configuration on this platform.
+
+**The management fee catches people.** It applies not only to Dedicated profiles but to certain features — **private endpoints and planned maintenance** trigger the Dedicated plan management charge *regardless of whether your apps run on Consumption or Dedicated*. So enabling a private endpoint on an otherwise all-Consumption environment adds a fixed monthly cost. Flex profiles are billed like Consumption **plus** this same management fee.
+
+**Free extras.** The managed OpenTelemetry agent runs at no additional compute cost, on both plans.
+
+**Things that bill outside ACA.** Bringing your own virtual network, and any other Azure resources your app touches, add their own charges. Log Analytics ingestion for your container logs is a commonly overlooked line item and can rival compute cost for a chatty app.
+
+**Dynamic sessions,** if you use them, have their own model: code interpreter sessions bill per allocated session in **one-hour increments** from allocation to deallocation; custom container session pools bill under the **Dedicated** plan and run on dedicated **E16** instances, with instance count driven by active and ready sessions (`az containerapp sessionpool show --query "properties.nodeCount"`).
+
+**The break-even question, framed properly.** Consumption bills allocated resources per second with scale-to-zero; Dedicated bills whole nodes continuously plus a management fee. So Dedicated wins when your *average* utilization across the day is high enough that per-second serverless pricing for that same load exceeds node cost. Concretely: a service that needs 8 replicas at 0.5 vCPU around the clock is 4 vCPU of steady demand — that is a candidate to consolidate onto a Dedicated D4 or D8 alongside other steady apps. A service that needs 40 replicas for two hours and zero for twenty-two is emphatically Consumption.

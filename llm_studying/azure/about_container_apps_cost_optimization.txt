@@ -1,0 +1,34 @@
+A practical, ordered playbook for reducing Azure Container Apps spend. The ordering matters — the early items dominate.
+
+**1. Get to zero wherever you can.** Scale to zero is not a discount, it is the absence of a charge. `minReplicas: 0` on every app that tolerates a cold start is the single biggest lever on the platform. Candidates: internal tools, admin APIs, dev and staging environments, webhook receivers, anything with a diurnal traffic pattern.
+
+The cost of getting to zero is cold start. Mitigate it rather than abandoning it: shrink the image (the Consumption limit is 8 GB, but a 2 GB image is slow to pull), avoid heavyweight runtime initialization, and set a `startup` probe so a slow boot is not mistaken for failure.
+
+**2. Convert always-on workers into jobs.** An always-on container that polls a queue every minute costs 24 hours a day. The same work as a scheduled or event-driven **job** costs only the execution time. A 4-minute nightly job bills 4 minutes. This is often a 100×+ reduction on that workload and requires no architectural cleverness — just the right primitive.
+
+**3. Right-size the CPU/memory combination.** You are billed for what you **allocate**, not what you use. An app provisioned at 2.0 vCPU / 4.0 GiB and running at 8% CPU is burning 4× what 0.5 vCPU / 1.0 GiB would. Load test, then pick the smallest combination in the table that holds your p95 with headroom. Start at 0.25 or 0.5 and work up.
+
+**4. Watch for the memory-bound trap.** Consumption's fixed **1 vCPU : 2 GiB** ratio means buying RAM forces you to buy CPU. If you have climbed to 3.0 vCPU purely to get 6 GiB and the CPU sits idle, you are paying for 2.5 unused cores. That is the signal to move the app to a Dedicated **E-series** profile, where the ratio is roughly 1:8.
+
+**5. Protect idle billing — or don't count on it.** The reduced idle rate requires `minReplicas > 0`, the revision currently at that minimum, and per replica: all containers started, no HTTP requests in flight, **under 0.01 vCPU**, and **under 1,000 bytes/second** of network traffic. A background timer, a metrics push loop, or an aggressive health endpoint will break the vCPU or bytes threshold and silently hold you at the active rate. Either engineer for genuine quiescence or plan on active-rate pricing. And remember: the instant a revision scales above its minimum, **all** its replicas bill active.
+
+**6. Tune scale rules as a cost control.** The HTTP `concurrentRequests` default is **10**, which is low for most services — a modest API can comfortably handle far more concurrency per replica. Too low a threshold scales out early, multiplying replicas and pushing everything to the active rate. Raise it to what your app actually sustains, verified by load test. Also cap `maxReplicas` deliberately: the platform allows up to 1,000, and an unbounded maximum plus a runaway upstream is a genuine budget incident.
+
+**7. Consolidate steady load onto Dedicated profiles, and pack them.** Dedicated bills **per node**, so an under-filled node is pure waste — one small app alone on a D16 is the worst configuration available. Identify apps with steady, predictable demand, add up their real resource needs, and place them together on the smallest profile that fits (remembering the runtime reserves some capacity, so leave headroom). Then set sensible min/max profile instance counts, because Dedicated profiles scale out and billing follows running instances.
+
+**8. Apply a savings plan.** **Azure Container Apps is covered by Azure savings plan for compute.** If you have a predictable baseline of ACA spend, a 1- or 3-year hourly-commitment savings plan discounts it automatically. This stacks on top of architectural optimization — do the architecture first so you commit to a smaller, correctly-sized baseline, then commit. Note savings plans **cannot be cancelled or refunded**, so commit only to your confident floor.
+
+**9. Audit the fixed and adjacent charges.** These do not show up in per-replica thinking:
+- **Dedicated plan management fee** — triggered by any Dedicated profile, and also by **private endpoints** and **planned maintenance** even on an all-Consumption environment. Flex profiles pay it too.
+- **Log Analytics ingestion** — for a verbose app this can rival compute cost. Reduce log verbosity in production, and review the workspace retention setting.
+- **NAT Gateway** — hourly plus per-GB processed.
+- **Data transfer** — keep apps in the same region as their dependencies.
+- **Container registry** — storage and, on Premium, geo-replication.
+
+**10. Keep the free grant in view, but don't plan around it.** Per subscription per calendar month: **180,000 vCPU-seconds, 360,000 GiB-seconds, 2 million HTTP requests**. That is about 50 vCPU-hours — roughly one always-on 0.25 vCPU app for a quarter of the month. It makes dev/test effectively free; it does not make production free. And because it is per **subscription**, splitting environments across subscriptions multiplies the grant, which is a legitimate (if slightly cheeky) consideration for many small non-prod environments.
+
+**11. Don't leave revisions parked.** Minimum replicas are **per revision**. Three active revisions each holding `minReplicas: 1` means three replicas billed continuously. After a successful rollout, **deactivate** the old revision rather than leaving it at 0% traffic with a live minimum.
+
+**The prioritized summary.** Scale to zero → jobs instead of always-on workers → right-size allocation → fix the memory-ratio trap → tune scale thresholds and cap maximums → consolidate steady load onto packed Dedicated profiles → savings plan the baseline → audit fixed fees and logging.
+
+**Interview framing.** "I'd go after it in order of magnitude. Scale to zero and converting always-on workers to jobs are order-of-magnitude wins. Right-sizing allocation is a 2–4× win, because you're billed on allocated resources, not used. Then the structural decision: steady workloads consolidate onto Dedicated profiles that you pack tightly, because Dedicated bills per node. Only after the architecture is right do you put a savings plan on the baseline — ACA is savings-plan-eligible, and those can't be refunded, so you commit to the floor, not the average."

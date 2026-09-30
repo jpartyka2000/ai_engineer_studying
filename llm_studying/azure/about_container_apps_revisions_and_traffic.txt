@@ -1,0 +1,52 @@
+A revision is an immutable snapshot of a container app. Revisions plus traffic weights are how Container Apps does blue/green and canary deployments without any extra tooling.
+
+**What creates a new revision.** Changes to the `template` section — the container image, environment variables, resource allocation, probes, scale rules, volume mounts, the container command. These are "revision-scope" changes.
+
+**What does not.** Changes to `configuration` — ingress settings, secrets values, registry credentials, traffic weights. These are "application-scope" changes and apply to all revisions immediately.
+
+That split has a sharp edge: **updating a secret's value does not restart your app or create a revision.** Containers read secrets at startup, so a rotated secret is not picked up until replicas restart. You have to force a new revision (or restart) to pick it up. This is a very common production surprise.
+
+**Two activeRevisionsMode settings.**
+
+**`single`** (default) — only the latest revision is active; previous revisions are deactivated automatically. Simple, and **required when using non-HTTP event scale rules**.
+
+**`multiple`** — several revisions run simultaneously and you control the traffic split explicitly. This is what enables canary and blue/green.
+
+**Traffic splitting.** In multiple mode, assign percentage weights across revisions:
+
+```bash
+az containerapp ingress traffic set \
+  --name my-api --resource-group rg \
+  --revision-weight my-api--rev-42=90 my-api--rev-43=10
+```
+
+`latestRevision: true` can be used instead of naming a revision, so weights follow whatever the newest revision is.
+
+**The canary pattern.**
+1. Deploy the new revision with **0%** traffic. It starts, passes health probes, and warms up while taking no production load.
+2. Shift 5–10% and watch error rate and latency for the new revision specifically.
+3. Increase progressively.
+4. On trouble, set the new revision back to 0% — an instant rollback with no redeploy, because the old revision is still running.
+
+**Blue/green** is the same mechanism with a hard cut: old at 100%, new at 0%, verify, then flip to 0/100 in one step.
+
+**Revision labels** give a revision its own stable hostname independent of traffic weights. That lets you hit a specific revision directly for smoke tests before it receives any production traffic, and you can move a label between revisions.
+
+**Session affinity** can be enabled on ingress so a client sticks to one replica. Use it sparingly — it undermines even load distribution and interacts badly with scale-in, since losing a replica drops its sessions.
+
+**Interaction with scaling — the part that bites.** Each revision has its **own** scale rules and its **own** replica counts. Consequences:
+
+- In multiple mode, adding a scale trigger creates a new revision while the old revision **keeps its old rules and keeps running**. You now have two revisions scaling on different logic. Manage traffic allocation deliberately.
+- Minimum replicas are **per revision**. Three active revisions each with `minReplicas: 1` means three replicas always running, and you are billed for all of them. A long-lived canary is a standing cost.
+- Traffic weight is not a scaling signal in the way people assume: a revision at 10% traffic scales according to the concurrency *it* sees, so it will hold fewer replicas — but it still honors its own minimum.
+
+**Deactivating old revisions matters.** Inactive revisions cost nothing, but active ones with a nonzero minimum do. After a successful rollout, deactivate the previous revision rather than leaving it parked at 0% traffic with a minimum replica count.
+
+**Health probes shape rollout safety.** Three types, same semantics as Kubernetes:
+- **startup** — gates the other probes; give slow starters generous `initialDelaySeconds`.
+- **readiness** — controls whether a replica receives traffic. This is what makes a 0%-traffic canary safe, and what prevents a half-initialized replica from serving.
+- **liveness** — restarts a wedged container.
+
+Get readiness wrong and traffic splitting gives you a false sense of safety, because a replica that is not actually ready can still be counted in.
+
+**Interview framing.** "Revisions are immutable snapshots; `template` changes make a new one, `configuration` changes do not. Run in multiple-revisions mode and you get canary and blue/green natively via traffic weights, with instant rollback because the old revision is still live. Two gotchas: secret updates don't create a revision so they aren't picked up until replicas restart, and minimum replicas are per-revision, so every parked revision with a minimum is a line on your bill."

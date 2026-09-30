@@ -1,0 +1,45 @@
+Azure Reservations give you a billing discount in exchange for committing to **one-year or three-year** usage of a specific resource type. They are the deepest discount Azure offers on steady compute.
+
+**The headline.** Reservations can reduce resource costs by **up to 72%** versus pay-as-you-go. They provide a **billing discount only** and do not affect the runtime state of your resources — nothing about your VM changes, only the invoice.
+
+**Payment.** Up front or monthly, and **the total cost is identical either way** with no extra fee for monthly. Monthly payments are for a complete month, not prorated to the calendar — buy on January 15 and the next charge lands around February 15.
+
+**How the discount applies.** After purchase, the discount automatically applies to usage matching the attributes you chose: **SKU, region (where applicable), and scope**. All reservations except Azure Databricks are applied on an **hourly** basis. You do not attach a reservation to a specific VM; it floats and covers whatever matching usage exists in that hour.
+
+That hourly, floating behavior has a practical implication: a reservation for one D4s_v5 in East US covers *some* D4s_v5 in East US each hour. If you shut a VM down and start another of the same size and region, the reservation covers the new one automatically.
+
+**Scope** determines where the savings land — single resource group, single subscription, shared across a billing scope, or management group. **Shared scope is the sensible default** for most organizations: it lets the reservation apply anywhere in the billing account, so an unused reservation in one subscription still gets consumed elsewhere rather than being wasted.
+
+**What a Reserved VM Instance actually covers.** This is where people over-estimate savings. A VM reservation covers **only the virtual machine and cloud services compute costs**. It does **not** cover:
+- software / OS licensing (Windows, SQL Server)
+- networking
+- storage
+
+For Windows VMs and SQL Database, the reservation does not touch the software cost — you address that separately with **Azure Hybrid Benefit**, which lets you apply on-premises licenses with Software Assurance. On a Windows SQL Server VM, the license can easily exceed the compute, so a reservation alone leaves most of the bill untouched. Reservation + Hybrid Benefit together is the real play.
+
+Other services follow the same pattern: SQL Database and Managed Instance reservations cover compute but not license, networking, or storage. Cosmos DB reservations cover provisioned throughput but not storage or networking. Disk Storage reservations cover **only Premium SSDs of P30 or larger**. Databricks reservations cover DBU usage only — the underlying compute, storage, and networking bill separately.
+
+**Instance size flexibility.** Within a VM series, a reservation can apply across sizes in the same size-flexibility group, scaled by a ratio. A reservation for one D8s can cover two D4s of the same series. This is a large part of what makes reservations tolerable in a changing estate, and it is adjustable after purchase.
+
+**Flexibility and exit.**
+- You can **exchange** a reservation for another of the same type.
+- You can **refund** up to **$50,000 USD in a rolling 12-month window**. That cap applies across **all** reservations in the scope of your agreement with Microsoft, not per reservation.
+
+That refund cap is the key risk number. A large mis-purchased reservation cannot simply be unwound; you are limited by that window.
+
+**Deciding what to buy.** Reservations should cover your **consistent base usage**, not your peak or your average. Recommendations come from **Azure Advisor** (VMs only), the portal purchase experience, the Cost Management Power BI app, and APIs. Advisor's recommendation is based on your observed usage, which makes it a reasonable starting point — but validate it against known upcoming changes, since Advisor cannot know you are migrating that workload next quarter.
+
+**Who can manage them.** By default: the purchaser, the account administrator of the billing subscription used, and EA/MCA billing administrators. Additional people need explicit permission.
+
+**The layering strategy.** Reservations are the last step, not the first:
+
+1. **Right-size** — never reserve an oversized VM. You would be locking in waste for three years.
+2. **Shut down what is idle** — dev/test schedules, auto-shutdown.
+3. **Move interruptible work to Spot.**
+4. **Identify the genuine 24/7 floor** — the workloads that will still exist in a year.
+5. **Reserve that floor.** Use 3-year terms for workloads you are confident about, 1-year where you are less sure.
+6. **Use a savings plan** for the steady-but-changing remainder.
+
+**Reservations vs savings plans, in one line each.** Reservations lock savings to a specific resource, size, and region for a **deeper** discount, and work best when usage is stable and predictable. Savings plans commit **dollars per hour** and apply automatically across eligible services and regions, which suits changing or dynamic workloads. You can **trade in** eligible reservations for a savings plan.
+
+**Interview framing.** "Reservations are up to 72% off for a 1- or 3-year commitment to a specific SKU and region, applied hourly as a pure billing discount. Three things I'd flag: they cover compute only — not OS license, storage, or networking, so on a Windows SQL VM you need Azure Hybrid Benefit alongside; instance size flexibility lets one reservation cover different sizes in the same series; and the refund cap is $50,000 in a rolling 12 months across your whole agreement, so a bad purchase isn't easily unwound. Right-size before you reserve, and reserve the floor, not the average."
