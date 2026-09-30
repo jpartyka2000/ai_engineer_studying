@@ -1,0 +1,30 @@
+--- a/reporting/exports.py
++++ b/reporting/exports.py
+@@ -26,6 +26,10 @@
+ def resolve_project(tenant_id: int, slug: str) -> Project:
+     """Look up one of a tenant's projects by slug.
+ 
++    Scoped to the tenant in SQL. Slugs are only unique within a tenant, so an
++    unscoped lookup would hand back another customer's project -- and everything
++    downstream would then faithfully export their data.
++
+     Args:
+         tenant_id: The requesting tenant.
+         slug: The project slug from the request.
+@@ -34,11 +38,13 @@
+         The matching :class:`~projects.models.Project`.
+ 
+     Raises:
+-        ProjectNotFound: If no project has that slug.
++        ProjectNotFound: If this tenant has no project with that slug. Deliberately
++            indistinguishable from "exists but belongs to someone else", so the
++            response cannot be used to enumerate other tenants' projects.
+     """
+-    project = Project.objects.filter(slug=slug).first()
++    project = Project.objects.filter(tenant_id=tenant_id, slug=slug).first()
+     if project is None:
+-        logger.info("project %r not found", slug)
++        logger.info("project %r not found for tenant %s", slug, tenant_id)
+         raise ProjectNotFound(slug)
+     return project
+ 

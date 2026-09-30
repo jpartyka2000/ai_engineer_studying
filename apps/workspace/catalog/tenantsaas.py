@@ -1,56 +1,62 @@
 """Exercises built on the ``tenantsaas`` base application.
 
-Each entry is a ``(base_app, mutations)`` pair rather than its own codebase, which
-is what makes a catalog of fifty exercises authorable.
+Each entry is a ``(base_app, mutations)`` pair rather than its own codebase, which is
+what makes a catalog of fifty authorable.
 
-The ``baseline`` on each exercise is **measured by the verification harness**, never
-guessed. Verification asserts exact set equality against it: a superset of failing
-tests means the injected defect broke more than intended, which makes the exercise
-unfair and renders the regression check meaningless.
+Baselines live in ``baselines.json`` because they are **measured**, not authored:
+the verification harness applies each mutation, records exactly which tests fail,
+and asserts exact set equality on every later run. A hand-written baseline would
+make that check meaningless, and a superset of failures would mean the injected
+defect broke more than intended.
 """
+
+import json
+from pathlib import Path
+from typing import Any
 
 from apps.workspace.enums import BaseApp, CheckKind, Database, Difficulty, ExerciseType
 
-# Measured on the pristine template, then re-measured after applying the mutation.
-# 32 tests total: 9 fail under the defect, 23 keep passing.
-EX001_FAILING = [
-    "tests/test_api.py::test_usage_summary_returns_period_totals",
-    "tests/test_api.py::test_create_invoice_returns_201_with_the_invoice",
-    "tests/test_billing.py::test_period_includes_items_on_the_final_day",
-    "tests/test_billing.py::test_period_returns_exactly_the_expected_count",
-    "tests/test_billing.py::test_totals_sum_positive_charges_into_the_subtotal",
-    "tests/test_billing.py::test_totals_apply_credits_to_the_total",
-    "tests/test_billing.py::test_totals_count_every_line_item",
-    "tests/test_billing.py::test_a_single_day_period_bills_that_day",
-    "tests/test_billing.py::test_build_invoice_persists_the_totals",
-]
+_BASELINES: dict[str, dict[str, Any]] = json.loads(
+    (Path(__file__).parent / "baselines.json").read_text(encoding="utf-8")
+)
 
-EX001_PASSING = [
-    "tests/test_api.py::test_healthz_needs_no_api_key",
-    "tests/test_api.py::test_a_missing_api_key_is_rejected",
-    "tests/test_api.py::test_an_unknown_api_key_is_rejected",
-    "tests/test_api.py::test_an_inactive_tenant_is_rejected",
-    "tests/test_api.py::test_projects_lists_only_the_callers_projects",
-    "tests/test_api.py::test_usage_summary_rejects_bad_periods[params0]",
-    "tests/test_api.py::test_usage_summary_rejects_bad_periods[params1]",
-    "tests/test_api.py::test_usage_summary_rejects_bad_periods[params2]",
-    "tests/test_api.py::test_usage_summary_rejects_bad_periods[params3]",
-    "tests/test_api.py::test_create_invoice_rejects_a_non_json_body",
-    "tests/test_api.py::test_create_invoice_rejects_a_get",
-    "tests/test_api.py::test_invoices_lists_only_the_callers_invoices",
-    "tests/test_billing.py::test_period_includes_items_on_the_first_day",
-    "tests/test_billing.py::test_period_excludes_items_after_the_period",
-    "tests/test_billing.py::test_totals_are_zero_for_a_period_with_no_usage",
-    "tests/test_billing.py::test_build_invoice_is_idempotent",
-    "tests/test_billing.py::test_invoices_never_mix_tenants",
-    "tests/test_tenants.py::test_for_current_tenant_scopes_to_the_active_tenant",
-    "tests/test_tenants.py::test_for_current_tenant_fails_closed_without_a_tenant",
-    "tests/test_tenants.py::test_for_tenant_scopes_explicitly",
-    "tests/test_tenants.py::test_middleware_clears_the_context_after_a_request",
-    "tests/test_tenants.py::test_tenant_context_restores_the_previous_value",
-    "tests/test_tenants.py::test_project_slugs_are_unique_per_tenant_not_globally",
-]
 
+def baseline(slug: str) -> dict[str, Any]:
+    """Return the measured pre-fix baseline for an exercise.
+
+    Args:
+        slug: The exercise slug.
+
+    Returns:
+        A dict with ``failing_nodes``, ``passing_nodes`` and ``metrics``.
+
+    Raises:
+        KeyError: If no baseline has been measured, which should fail the seed
+            command rather than silently ship an ungradeable exercise.
+    """
+    data = _BASELINES[slug]
+    return {
+        "failing_nodes": data["failing_nodes"],
+        "passing_nodes": data["passing_nodes"],
+        "metrics": data.get("metrics", {}),
+    }
+
+
+#: Protected in most exercises: the tests are the proof, so editing them is tampering.
+STANDARD_PROTECTED = ["tests/**", "pytest.ini"]
+
+#: Shared context: the two places the inclusive-period and tenant-scope rules are
+#: written down, which is what a reviewer needs to judge whether a fix fits.
+ARCHITECTURE_EXCERPT = {
+    "path": "ARCHITECTURE.md",
+    "line_range": "20-50",
+    "why": "States the tenant-boundary rules, including that scoping must happen in SQL.",
+}
+
+
+# ---------------------------------------------------------------------------
+# ex-001 -- fix a critical bug fast
+# ---------------------------------------------------------------------------
 
 EX001 = {
     "slug": "ex-001-invoice-drops-final-day",
@@ -72,42 +78,41 @@ EX001 = {
 **Reported by:** Finance, via #billing-oncall
 
 Finance reconciled March invoices against the metering data this morning and found
-that **every invoice is missing the last day of the period**. Across all tenants
-that is roughly $40k of usage that was never billed.
+that **every invoice is missing the last day of the period**. Across all tenants that
+is roughly $40k of usage that was never billed.
 
 One customer noticed the other direction too: they queried
-`/usage?period_start=2026-03-10&period_end=2026-03-10` for a single day and got
-zero, even though they know they had usage that day.
+`/usage?period_start=2026-03-10&period_end=2026-03-10` for a single day and got zero,
+even though they know they had usage that day.
 
 ### Reproducing it
 
 ```bash
 docker compose up -d --wait
 make migrate
-make seed
 make test
 ```
 
-Nine tests fail. `tests/test_billing.py::test_period_includes_items_on_the_final_day`
-is the most direct expression of the problem.
+`tests/test_billing.py::test_period_includes_items_on_the_final_day` is the most
+direct expression of the problem.
 
 ### What we know
 
 - Billing periods are **inclusive at both ends**. An invoice for 1–31 March covers
   usage recorded right up to `23:59:59` on the 31st. `ARCHITECTURE.md` and the
   `Invoice.period_end` field both say so.
-- The metering pipeline is fine. The rows are in the database — you can see them
-  with `make psql`.
+- The metering pipeline is fine. The rows are in the database — see them with
+  `make psql`.
 - This is not a tenant-isolation problem; the isolation suite is green.
 
 ### Watch out for
 
-Whatever you change, the fix has to hold for a **single-day period**, where
-`period_start == period_end`. That case is currently returning nothing at all, and
-it is the one most likely to still be broken by a fix that looks right.
+The fix has to hold for a **single-day period**, where `period_start == period_end`.
+That case currently returns nothing at all, and it is the one most likely to still be
+broken by a fix that looks right.
 
-Finance wants to re-run March billing today, so they need to know whether the
-totals can be trusted — write that down in `NOTES.md` as well as fixing the code.
+Finance wants to re-run March billing today, so they need to know whether the totals
+can be trusted — write that down in `NOTES.md` as well as fixing the code.
 """,
     "definition_of_done": [
         "R1: tests/test_billing.py::test_period_includes_items_on_the_final_day passes",
@@ -117,14 +122,8 @@ totals can be trusted — write that down in `NOTES.md` as well as fixing the co
         "llm: NOTES.md explains the root cause, not just the symptom",
     ],
     "focus_paths": ["billing/services.py"],
-    "protected_paths": [
-        "tests/**",
-        "pytest.ini",
-        "ci/run_ci.sh",
-    ],
-    "mutations": [
-        {"op": "apply_patch", "patch": "mutation.patch"},
-    ],
+    "protected_paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
     "checks": [
         {
             "id": "R1",
@@ -161,7 +160,7 @@ totals can be trusted — write that down in `NOTES.md` as well as fixing the co
         {
             "id": "R5",
             "kind": CheckKind.FILE_UNCHANGED,
-            "paths": ["tests/**", "pytest.ini", "ci/run_ci.sh"],
+            "paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
             "weight": 0,
             "required": True,
             "description": "Protected test and config files are untouched",
@@ -175,8 +174,8 @@ totals can be trusted — write that down in `NOTES.md` as well as fixing the co
             "required": False,
             "stretch": True,
             "description": (
-                "The exclusive datetime comparison is gone entirely, rather than "
-                "being patched around by widening the bound"
+                "The exclusive datetime comparison is gone entirely rather than "
+                "patched around by widening the bound"
             ),
         },
         {
@@ -185,17 +184,10 @@ totals can be trusted — write that down in `NOTES.md` as well as fixing the co
             "weight": 1,
             "required": False,
             "stretch": True,
-            "description": (
-                "Added a test of their own that pins the inclusive-period contract, "
-                "and it fails against the unfixed code"
-            ),
+            "description": "Added a test that pins the inclusive-period contract",
         },
     ],
-    "baseline": {
-        "failing_nodes": EX001_FAILING,
-        "passing_nodes": EX001_PASSING,
-        "metrics": {},
-    },
+    "baseline": baseline("ex-001-invoice-drops-final-day"),
     "context_excerpts": [
         {
             "path": "billing/models.py",
@@ -205,59 +197,808 @@ totals can be trusted — write that down in `NOTES.md` as well as fixing the co
                 "the contract the fix has to honour."
             ),
         },
-        {
-            "path": "ARCHITECTURE.md",
-            "line_range": "55-65",
-            "why": "States the inclusive-period rule and flags it as the easiest thing to break.",
-        },
+        ARCHITECTURE_EXCERPT,
     ],
     "hints": [
-        "Reproduce it narrowly first: `make test-fast` then read the assertion in "
+        "Reproduce it narrowly first: `make test-fast`, then read the assertion in "
         "test_period_includes_items_on_the_final_day. What exactly is missing?",
         "Look at the types on both sides of the comparison in "
         "billing/services.py::line_items_for_period. One is a timestamp; the other is not.",
-        "Django logs a RuntimeWarning about a naive datetime during the test run. "
-        "That warning is pointing straight at the coercion that loses the final day.",
+        "Django logs a RuntimeWarning about a naive datetime during the run. That "
+        "warning points straight at the coercion that loses the final day.",
     ],
     "grading_notes": """\
 **Root cause.** `billing/services.py::line_items_for_period` filters
 `created_at__gte=period_start, created_at__lt=period_end`. `created_at` is a
 `DateTimeField` while the bounds are `date` objects, so the database coerces each
 bound to midnight. Two consequences: `__lt=period_end` excludes everything on the
-final day, and a single-day period becomes the empty range
-`[midnight, midnight)`.
+final day, and a single-day period becomes the empty range `[midnight, midnight)`.
 
-**The expected fix** is to compare dates against dates —
-`created_at__date__gte=period_start, created_at__date__lte=period_end` — or,
-equivalently, to convert `period_end` to an aware datetime at the end of that day
-and keep an exclusive upper bound. Either is correct.
+**The expected fix** compares dates against dates --
+`created_at__date__gte` / `created_at__date__lte` -- or converts `period_end` to an
+aware end-of-day datetime and keeps an exclusive upper bound. Either is correct.
 
-**The single most important quality signal:** did they make the *inclusive contract*
-explicit, or did they just nudge a bound until the tests went green? A fix of
-`period_end + timedelta(days=1)` with `__lt` passes every test while leaving the
-type confusion in place, so the next person hits the same trap. Treat that as a
-symptom patch: cap correctness at ~70 and set `symptom_patch_suspected`.
+**The most important quality signal:** did they make the *inclusive contract*
+explicit, or nudge a bound until the tests went green? `period_end + timedelta(days=1)`
+with `__lt` passes everything while leaving the type confusion in place, so the next
+person hits the same trap. Treat that as a symptom patch: cap correctness around 70
+and set `symptom_patch_suspected`.
 
-**Common wrong turns:**
+**Common wrong turns:** `created_at__lte=period_end` alone (still midnight-coerced,
+so it includes one instant of the final day); filtering in Python after the query
+(correct numbers, but throws away the index and loads the whole table -- mark
+engineering down); editing the fixture in `tests/conftest.py` so the 23:30 item lands
+earlier (tampering, hard F); redefining `period_end` as exclusive and updating the
+docs (contradicts the brief and would silently change every historical invoice).
 
-1. `created_at__lte=period_end` alone — still midnight-coerced, so it now includes
-   exactly one instant of the final day and almost nothing else. Tests still fail;
-   if they stopped here they did not re-run.
-2. Filtering in Python after the query (`[i for i in items if i.created_at.date() <= period_end]`)
-   — produces correct numbers but throws away the index and loads the whole table.
-   Note it as a correctness-by-accident outcome and mark engineering down.
-3. Editing the fixture in `tests/conftest.py` so the 23:30 item lands earlier in the
-   day. That is tampering with a protected file and is a hard F.
-4. Changing `Invoice.period_end`'s semantics to exclusive and updating the docs to
-   match. This contradicts the brief, `ARCHITECTURE.md` and Finance's expectation,
-   and would silently change every historical invoice. Correctness low.
-
-**On documentation.** The brief explicitly asks whether Finance can trust the
-totals. A good `NOTES.md` answers that directly — the under-billing was systematic,
-so March needs re-running, and the fix is safe to backfill. An answer that only
-describes the code change has missed what was asked.
+**On documentation.** The brief asks whether Finance can trust the totals. A good
+`NOTES.md` answers that: the under-billing was systematic, March needs re-running,
+and the fix is safe to backfill. An answer that only describes the code change has
+missed what was asked.
 """,
 }
 
 
-EXERCISES: list[dict] = [EX001]
+# ---------------------------------------------------------------------------
+# ex-002 -- fix a severe latency issue
+# ---------------------------------------------------------------------------
+
+EX002 = {
+    "slug": "ex-002-project-summary-n-plus-one",
+    "exercise_number": 2,
+    "title": "The usage dashboard times out for our largest customer",
+    "exercise_type": ExerciseType.LATENCY,
+    "base_app": BaseApp.TENANTSAAS,
+    "difficulty": Difficulty.INTERMEDIATE,
+    "defect_class": "n_plus_one",
+    "time_limit_minutes": 35,
+    "expected_time_minutes": 22,
+    "databases": [Database.POSTGRES],
+    "needs_docker": True,
+    "tags": ["django", "postgres", "orm", "performance", "n+1"],
+    "brief_md": """\
+## INC-2410 — `/reporting/usage` times out for Initech
+
+**Severity:** SEV-3
+**Reported by:** Support, escalated from Initech
+
+Initech has 400 projects. Their usage dashboard now takes over 30 seconds and the
+load balancer cuts it off. Smaller customers are fine, which is why this went
+unnoticed for a month.
+
+Our p95 alert never fired because the endpoint is fast for the 95% of tenants who
+have fewer than ten projects.
+
+### Reproducing it
+
+```bash
+docker compose up -d --wait
+make migrate
+python bench/bench_queries.py
+```
+
+The benchmark seeds a tenant with 40 projects and reports **how many SQL queries**
+the summary issues. Query count is the number to watch, not wall-clock: it is
+deterministic and it is what actually scales with the customer.
+
+### What "fixed" looks like
+
+The query count must be **small and constant** — it must not grow with the number of
+projects. A tenant with 400 projects should cost the same number of round trips as
+one with 4.
+
+```bash
+make test                      # includes the perf guards
+python bench/bench_queries.py  # queries should be <= 3
+```
+
+### Constraints
+
+- The response shape must not change. The dashboard is already shipped against it,
+  and `tests/test_reporting.py` pins the totals, the ordering, and the fact that a
+  project with no usage still appears with zeroes.
+- Do not fix this with a cache. The numbers must be live; Finance reconciles against
+  them.
+""",
+    "definition_of_done": [
+        "R1: the query count no longer scales with the number of projects",
+        "R2: the query count is identical for 12 and 24 projects",
+        "R3: bench/bench_queries.py reports 3 queries or fewer",
+        "R4: the whole suite is green, with the response shape unchanged",
+        "llm: NOTES.md explains why the original cost grew with project count",
+    ],
+    "focus_paths": ["reporting/services.py"],
+    "protected_paths": [*STANDARD_PROTECTED, "bench/**"],
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
+    "checks": [
+        {
+            "id": "R1",
+            "kind": CheckKind.PYTEST,
+            "target": (
+                "tests/test_reporting.py::test_summary_does_not_scale_queries_with_project_count"
+            ),
+            "weight": 3,
+            "required": True,
+            "description": "The query count no longer scales with project count",
+        },
+        {
+            "id": "R2",
+            "kind": CheckKind.PYTEST,
+            "target": "tests/test_reporting.py::test_summary_query_count_is_flat_as_projects_grow",
+            "weight": 3,
+            "required": True,
+            "description": "Doubling the projects does not change the query count",
+        },
+        {
+            "id": "R3",
+            "kind": CheckKind.BENCHMARK,
+            "target": "python bench/bench_queries.py --json",
+            "expect": {"metric": "queries", "op": "<=", "threshold": 3},
+            "weight": 3,
+            "required": True,
+            "description": "The benchmark reports 3 queries or fewer for 40 projects",
+        },
+        {
+            "id": "R4",
+            "kind": CheckKind.PYTEST_SUITE,
+            "weight": 3,
+            "required": True,
+            "description": "No regressions: the response shape and totals are unchanged",
+        },
+        {
+            "id": "R5",
+            "kind": CheckKind.FILE_UNCHANGED,
+            "paths": [*STANDARD_PROTECTED, "bench/**"],
+            "weight": 0,
+            "required": True,
+            "description": "Tests and the benchmark are untouched",
+        },
+        {
+            "id": "S1",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "Solved it in SQL with a single aggregate rather than by prefetching "
+                "and summing in Python, which would still load every row"
+            ),
+        },
+    ],
+    "baseline": baseline("ex-002-project-summary-n-plus-one"),
+    "context_excerpts": [
+        {
+            "path": "reporting/services.py",
+            "line_range": "95-125",
+            "why": (
+                "top_spending_category and tenant_line_item_totals in the same module "
+                "show the aggregate style this codebase already uses."
+            ),
+        },
+        {
+            "path": "bench/bench_queries.py",
+            "line_range": "1-30",
+            "why": "Explains why the benchmark measures query counts rather than time.",
+        },
+    ],
+    "hints": [
+        "Run `python bench/bench_queries.py` and compare the query count to the "
+        "project count. What relationship do you see?",
+        "`project_usage_summary` issues one aggregate per project. Django can compute "
+        "both aggregates for every project in a single query.",
+        "Look at `Count` and `Sum` with a `filter=` argument, and at the "
+        "`models_q_for_period` helper that is already in the module but unused.",
+    ],
+    "grading_notes": """\
+**Root cause.** `reporting/services.py::project_usage_summary` loops over
+`Project.objects.filter(tenant_id=...)` and issues a separate `.aggregate()` per
+project. That is a textbook N+1: 1 query for the projects plus 1 per project, so cost
+grows linearly with the customer's size.
+
+**The expected fix** is a single annotated query --
+`.annotate(item_count=Count("line_items", filter=Q(...)), item_total=Sum(...))` --
+using the `models_q_for_period` helper that is already in the module and left unused
+by the regression. That is a real clue, and noticing it is a good sign.
+
+**What to watch for:**
+
+1. **`prefetch_related` plus Python summation.** This does fix the query count and
+   will pass R1-R3, but it loads every line item for every project into memory, so it
+   trades a query problem for a memory problem. Correct, but mark engineering down and
+   say why.
+2. **Caching.** The brief forbids it explicitly; Finance reconciles against these
+   numbers. If they cached, correctness should reflect that they solved a different
+   problem than the one asked.
+3. **Dropping the zero-usage projects.** The easy way to make the aggregate simpler is
+   an inner join, which silently removes projects with no usage.
+   `test_summary_includes_a_project_with_no_usage` catches this; if they broke it and
+   did not notice, that is a regression.
+4. **Changing the response shape.** The dashboard is shipped against it.
+
+**The strongest signal** is whether they measured. The benchmark exists; a good
+`NOTES.md` quotes the before and after query counts rather than asserting the fix is
+faster. Someone who says "reduced from 41 queries to 1" has understood the problem.
+""",
+}
+
+
+# ---------------------------------------------------------------------------
+# ex-003 -- tenant isolation
+# ---------------------------------------------------------------------------
+
+EX003 = {
+    "slug": "ex-003-export-leaks-across-tenants",
+    "exercise_number": 3,
+    "title": "SEV-1: a customer downloaded another customer's usage export",
+    "exercise_type": ExerciseType.TENANT_ISOLATION,
+    "base_app": BaseApp.TENANTSAAS,
+    "difficulty": Difficulty.ADVANCED,
+    "defect_class": "unscoped_lookup_by_natural_key",
+    "time_limit_minutes": 40,
+    "expected_time_minutes": 26,
+    "databases": [Database.POSTGRES],
+    "needs_docker": True,
+    "tags": ["django", "postgres", "security", "multi-tenancy", "authorization"],
+    "brief_md": """\
+## INC-2455 — cross-tenant data exposure in project export
+
+**Severity:** SEV-1
+**Reported by:** A customer, by email, with a screenshot
+
+Globex downloaded `/reporting/export/website` and got a CSV containing **Acme's**
+line items. Both customers happen to have a project called "website".
+
+Legal has been notified. We need the hole closed today and a written account of what
+was exposed and to whom.
+
+### Reproducing it
+
+```bash
+docker compose up -d --wait
+make migrate
+make test
+```
+
+`tests/test_exports.py` is the relevant suite. Note the asymmetry in what fails —
+that is a clue about the mechanism, not noise.
+
+### What we know
+
+- Project slugs are unique **per tenant**, not globally. `projects/models.py` has the
+  constraint. Two customers having a "website" project is expected and supported.
+- `ARCHITECTURE.md` states the rule: scoping happens in SQL, and
+  `TenantScopedQuerySet.for_current_tenant()` **fails closed** by design.
+- The middleware is fine. `request.tenant` is correct on every request.
+
+### What "fixed" looks like
+
+1. A tenant can only ever resolve and export **their own** projects.
+2. Asking for a slug that belongs to someone else must be **indistinguishable** from
+   asking for one that does not exist — otherwise the response becomes an oracle for
+   enumerating other customers' projects.
+3. The fix generalises. If someone adds another lookup-by-slug next month, it should
+   be hard to reintroduce this.
+
+Write down in `NOTES.md` exactly what was exposed, to whom, and whether any other
+code path has the same weakness. Legal will read it.
+""",
+    "definition_of_done": [
+        "R1: a tenant never resolves another tenant's project",
+        "R2: a slug owned by someone else is indistinguishable from one that does not exist",
+        "R3: each tenant's export contains only their own rows",
+        "R4: the whole suite is green",
+        "R5: bash ci/run_ci.sh exits 0, including the security job",
+        "llm: NOTES.md states what was exposed, to whom, and whether anything else is affected",
+    ],
+    "focus_paths": ["reporting/exports.py"],
+    "protected_paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
+    "checks": [
+        {
+            "id": "R1",
+            "kind": CheckKind.PYTEST,
+            "target": "tests/test_exports.py::test_resolve_never_returns_another_tenants_project",
+            "weight": 4,
+            "required": True,
+            "description": "A tenant never resolves another tenant's project",
+        },
+        {
+            "id": "R2",
+            "kind": CheckKind.PYTEST,
+            "target": "tests/test_exports.py::test_resolve_raises_for_a_slug_owned_by_someone_else",
+            "weight": 3,
+            "required": True,
+            "description": "Someone else's slug is indistinguishable from a missing one",
+        },
+        {
+            "id": "R3",
+            "kind": CheckKind.PYTEST,
+            "target": "tests/test_exports.py::test_export_for_each_tenant_is_disjoint",
+            "weight": 3,
+            "required": True,
+            "description": "Each tenant's export is disjoint from the other's",
+        },
+        {
+            "id": "R4",
+            "kind": CheckKind.PYTEST_SUITE,
+            "weight": 3,
+            "required": True,
+            "description": "No regressions against the pre-change baseline",
+        },
+        {
+            "id": "R5",
+            "kind": CheckKind.CMD,
+            "target": "bash ci/run_ci.sh",
+            "expect": {"exit_code": 0},
+            "weight": 2,
+            "required": True,
+            "description": "CI passes, including the separate security job",
+        },
+        {
+            "id": "R6",
+            "kind": CheckKind.FILE_UNCHANGED,
+            "paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
+            "weight": 0,
+            "required": True,
+            "description": "Protected test and CI files are untouched",
+        },
+        {
+            "id": "S1",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "Made the fix structural -- routed the lookup through the scoped "
+                "queryset so the next lookup-by-slug is scoped by default -- rather "
+                "than adding one tenant_id to one filter"
+            ),
+        },
+        {
+            "id": "S2",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": "Audited the rest of the codebase for the same weakness",
+        },
+    ],
+    "baseline": baseline("ex-003-export-leaks-across-tenants"),
+    "context_excerpts": [
+        {
+            "path": "tenants/models.py",
+            "line_range": "8-40",
+            "why": (
+                "TenantScopedQuerySet already exists and fails closed. The question is "
+                "whether the fix reuses it or bolts a filter on."
+            ),
+        },
+        {
+            "path": "projects/models.py",
+            "line_range": "28-38",
+            "why": "The per-tenant slug uniqueness constraint is what makes this exploitable.",
+        },
+        ARCHITECTURE_EXCERPT,
+    ],
+    "hints": [
+        "Read the failing tests carefully. Only some of them fail — work out why the "
+        "leak is asymmetric between the two tenants.",
+        "`reporting/exports.py::resolve_project` looks a project up by slug. What is "
+        "missing from that query, given slugs are only unique within a tenant?",
+        "The downstream export already filters line items by tenant. That is why the "
+        "damage is limited to whichever project object was resolved — and why fixing "
+        "the resolution fixes the leak.",
+    ],
+    "grading_notes": """\
+**Root cause.** `reporting/exports.py::resolve_project` does
+`Project.objects.filter(slug=slug).first()` with no tenant predicate. Slugs are unique
+per tenant, so when two customers share a slug the query returns whichever row the
+database yields first -- which may belong to a different tenant. Everything downstream
+then faithfully exports that project's data.
+
+**Why the failures are asymmetric, and why it matters.** Default ordering is by name,
+so the earlier-created row usually wins. Acme asking for "website" happens to get its
+own; Globex gets Acme's. That is exactly how this kind of bug survives review -- it
+does not reproduce for the person testing it. A candidate who notices and explains the
+asymmetry has understood the mechanism.
+
+**The expected fix** scopes the lookup: `Project.objects.filter(tenant_id=tenant_id,
+slug=slug)`, or better `Project.objects.for_tenant(tenant_id).filter(slug=slug)`,
+reusing the queryset that already exists.
+
+**The decisive quality signal is whether the fix FAILS CLOSED and GENERALISES.**
+Adding one `tenant_id=` to one filter closes this instance. Routing the lookup through
+`TenantScopedQuerySet` makes the next lookup scoped by default. Strongly prefer the
+second and say so.
+
+**Disqualifying approaches:**
+
+1. **Filtering after the query.** Resolving the project unscoped and then checking
+   `project.tenant_id == tenant_id` in Python is *not* a fix in the sense that matters:
+   the row already crossed the trust boundary, and a timing or error-message
+   difference still leaks existence. Correctness low.
+2. **Raising a distinguishable error** ("this project belongs to another tenant").
+   Turns the endpoint into an enumeration oracle. `test_resolve_raises_for_a_slug_owned
+   _by_someone_else` catches it.
+3. **Making slugs globally unique.** Contradicts the shipped constraint and would
+   break existing customers.
+4. **Editing tests/test_exports.py.** Tampering, hard F.
+
+**On documentation.** This is a SEV-1 with legal involvement. A good `NOTES.md` states
+what was exposed (one project's line items, including descriptions and amounts), to
+whom, the direction of the leak, and whether any other code path resolves by natural
+key without scoping. An answer that only describes the one-line change has not done
+the job that was asked.
+""",
+}
+
+
+# ---------------------------------------------------------------------------
+# ex-004 -- add analytics / statistical features
+# ---------------------------------------------------------------------------
+
+EX004 = {
+    "slug": "ex-004-implement-revenue-analytics",
+    "exercise_number": 4,
+    "title": "Finance needs confidence intervals on plan conversion",
+    "exercise_type": ExerciseType.ANALYTICS_FEATURES,
+    "base_app": BaseApp.TENANTSAAS,
+    "difficulty": Difficulty.INTERMEDIATE,
+    "defect_class": "missing_statistical_implementation",
+    "time_limit_minutes": 40,
+    "expected_time_minutes": 26,
+    "databases": [Database.POSTGRES],
+    "needs_docker": True,
+    "tags": ["python", "statistics", "analytics", "confidence-intervals"],
+    "brief_md": """\
+## FEAT-882 — put error bars on the conversion dashboard
+
+**Requested by:** Finance
+**Priority:** this sprint
+
+Finance reports plan-conversion rates per cohort, and last month they escalated a
+"30% drop" that turned out to be 2 conversions out of 6 versus 3 out of 6. They need
+**confidence intervals** so a small cohort visibly reads as uncertain instead of as a
+crisis.
+
+`reporting/analytics.py` is where the revenue statistics live. `wilson_interval` is
+stubbed out and raises `NotImplementedError`; everything else in the module is
+implemented and can serve as a guide to the house style.
+
+### What we need
+
+A **Wilson score interval** for a binomial proportion. Not the normal approximation —
+Finance's cohorts are small and often near 0% or 100%, where the normal approximation
+produces bounds outside `[0, 1]`, which cannot be rendered.
+
+### Reproducing the gap
+
+```bash
+docker compose up -d --wait
+make test
+```
+
+`tests/test_analytics.py` already specifies the behaviour, including the expected
+numbers with their derivations in the docstrings. Read them before you start: they
+tell you exactly what is required, edge cases included.
+
+### Requirements
+
+- Bounds must stay inside `[0, 1]`, including at 0 of n and n of n.
+- A zero-trial cohort must return `Interval(0.0, 0.0)` rather than raising, so a
+  brand-new cohort cannot break the dashboard.
+- Impossible counts (negative, or more successes than trials) must raise `ValueError`.
+- Intervals must narrow as the sample grows.
+- No new dependencies. No scipy, no numpy — the `z` constant is already in the module.
+""",
+    "definition_of_done": [
+        "R1: every wilson_interval test passes, including the numeric expectations",
+        "R2: the whole suite is green",
+        "R3: bash ci/run_ci.sh exits 0",
+        "llm: NOTES.md says why Wilson was specified rather than the normal approximation",
+    ],
+    "focus_paths": ["reporting/analytics.py"],
+    "protected_paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
+    "checks": [
+        {
+            "id": "R1",
+            "kind": CheckKind.PYTEST,
+            "target": "tests/test_analytics.py::test_wilson",
+            "weight": 4,
+            "required": True,
+            "description": "Every wilson_interval test passes, numerics included",
+        },
+        {
+            "id": "R2",
+            "kind": CheckKind.PYTEST_SUITE,
+            "weight": 3,
+            "required": True,
+            "description": "No regressions against the pre-change baseline",
+        },
+        {
+            "id": "R3",
+            "kind": CheckKind.CMD,
+            "target": "bash ci/run_ci.sh",
+            "expect": {"exit_code": 0},
+            "weight": 2,
+            "required": True,
+            "description": "The CI pipeline passes",
+        },
+        {
+            "id": "R4",
+            "kind": CheckKind.FILE_UNCHANGED,
+            "paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
+            "weight": 0,
+            "required": True,
+            "description": "Protected test and CI files are untouched",
+        },
+        {
+            "id": "R5",
+            "kind": CheckKind.GREP_ABSENT,
+            "target": r"^\s*(import|from)\s+(numpy|scipy|statsmodels)",
+            "paths": ["reporting/**/*.py"],
+            "weight": 1,
+            "required": True,
+            "description": "No new numerical dependencies were introduced",
+        },
+        {
+            "id": "S1",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "Handled the floating-point boundary so an all-successes cohort "
+                "reports exactly 1.0 rather than 0.9999999999999999"
+            ),
+        },
+    ],
+    "baseline": baseline("ex-004-implement-revenue-analytics"),
+    "context_excerpts": [
+        {
+            "path": "reporting/analytics.py",
+            "line_range": "60-140",
+            "why": (
+                "ewma and month_over_month_growth are fully implemented in the same "
+                "module and show the expected style: pure functions, explicit edge "
+                "cases, documented rationale."
+            ),
+        },
+    ],
+    "hints": [
+        "Read `tests/test_analytics.py::test_wilson_on_a_clean_half` first. Its "
+        "docstring contains the full hand computation for 8 of 16.",
+        "The Wilson interval is "
+        "(p + z²/2n ± z·sqrt(p(1-p)/n + z²/4n²)) / (1 + z²/n). `Z_95` is already "
+        "defined at the top of the module.",
+        "At n successes out of n the algebra cancels to exactly 1.0, but in floating "
+        "point it lands just below, and `min(1.0, x)` will not clamp that.",
+    ],
+    "grading_notes": """\
+**This is build-shaped, not fix-shaped.** `wilson_interval` raises
+`NotImplementedError`; the tests fully specify the behaviour, with the arithmetic
+derived in their docstrings. Six tests fail until it is implemented.
+
+**The expected implementation** is the standard Wilson score interval:
+`denominator = 1 + z²/n`, `centre = p + z²/(2n)`,
+`spread = z·sqrt(p(1-p)/n + z²/(4n²))`, bounds `(centre ∓ spread)/denominator`,
+clamped to `[0, 1]`, with `trials == 0` short-circuiting to `Interval(0.0, 0.0)` and
+impossible counts raising `ValueError`.
+
+**The interesting detail, and the stretch goal:** at `successes == trials` the
+expression cancels to exactly 1.0 algebraically but evaluates to
+`0.9999999999999999` in floating point, so `min(1.0, x)` does not clamp it and
+`test_wilson_stays_inside_zero_and_one_at_the_extremes` fails. Rounding before
+clamping fixes it. A candidate who hits this, diagnoses it as float representation
+rather than a formula error, and says so in `NOTES.md` is demonstrating real numerical
+care -- weight that heavily in engineering quality.
+
+**Watch for:**
+
+1. **Implementing the normal approximation instead** (`p ± z·sqrt(p(1-p)/n)`). It
+   fails the extremes tests and the brief explains why it was rejected. If they did
+   this, they did not read the requirement.
+2. **Adding scipy or numpy.** Forbidden by the brief and caught by R5. One constant
+   does not justify a dependency.
+3. **Hardcoding the test values.** Returning `Interval(0.28, 0.72)` for the 8/16 case
+   passes that test and fails the others; if any hardcoding survives, that is a
+   symptom patch -- set the flag.
+4. **Clamping with `max(0, min(1, ...))` only.** Does not fix the float case, because
+   the value is already below 1.
+
+**On documentation.** The brief asks why Wilson rather than the normal approximation.
+A good answer names the behaviour at small n and near the boundaries. An answer that
+just restates the formula has not explained the choice.
+""",
+}
+
+
+# ---------------------------------------------------------------------------
+# ex-005 -- fix a broken CI/CD pipeline
+# ---------------------------------------------------------------------------
+
+EX005 = {
+    "slug": "ex-005-ci-red-after-test-reorg",
+    "exercise_number": 5,
+    "title": "CI has been red since Tuesday and nobody can merge",
+    "exercise_type": ExerciseType.CICD_PIPELINE,
+    "base_app": BaseApp.TENANTSAAS,
+    "difficulty": Difficulty.BEGINNER,
+    "defect_class": "ci_selector_and_runtime_mismatch",
+    "time_limit_minutes": 25,
+    "expected_time_minutes": 15,
+    "databases": [Database.POSTGRES],
+    "needs_docker": True,
+    "tags": ["ci", "github-actions", "pytest", "devops"],
+    "brief_md": """\
+## Nobody can merge — CI is red on every branch
+
+**Reported by:** the whole team, loudly
+
+CI went red on Tuesday and has stayed red on every branch since, including ones with
+no changes. Four pull requests are blocked.
+
+The tests themselves are fine. `make test` passes locally and always has.
+
+```bash
+docker compose up -d --wait
+make migrate
+make test    # green
+make ci      # red
+```
+
+Someone refactored how the test suites are selected on Tuesday afternoon. There is a
+`git log` if you want to see what landed.
+
+### About this pipeline
+
+`.github/workflows/ci.yml` is the workflow GitHub runs. `ci/run_ci.sh` is an
+executable mirror of the same steps, and it is what `make ci` and our merge gate both
+run. **They are supposed to stay in step** — a fix applied to only one of them is not
+a fix, and the README says so.
+
+### What "fixed" looks like
+
+1. `bash ci/run_ci.sh` exits 0.
+2. The workflow file and the script agree on how suites are selected.
+3. The workflow's declared runtime actually runs this codebase. Check whether it does
+   before assuming it is fine — it was changed on Tuesday too.
+4. No test is deleted, skipped or weakened to get there.
+
+This one should be quick. Say in `NOTES.md` how you would stop the two files drifting
+apart again.
+""",
+    "definition_of_done": [
+        "R1: bash ci/run_ci.sh exits 0",
+        "R2: the whole suite is still green, with nothing skipped or deleted",
+        "R3: neither CI file references a test path that does not exist",
+        "R4: the workflow declares a Python version that can run this codebase",
+        "llm: NOTES.md proposes how to stop the workflow and the script drifting apart",
+    ],
+    "focus_paths": ["ci/run_ci.sh", ".github/workflows/ci.yml"],
+    "protected_paths": STANDARD_PROTECTED,
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
+    "checks": [
+        {
+            "id": "R1",
+            "kind": CheckKind.CMD,
+            "target": "bash ci/run_ci.sh",
+            "expect": {"exit_code": 0},
+            "weight": 4,
+            "required": True,
+            "description": "The CI pipeline exits 0",
+        },
+        {
+            "id": "R2",
+            "kind": CheckKind.PYTEST_SUITE,
+            "weight": 3,
+            "required": True,
+            "description": "No regressions: nothing was skipped or deleted to go green",
+        },
+        {
+            "id": "R3",
+            "kind": CheckKind.GREP_ABSENT,
+            "target": r"tests/(security|perf)/",
+            "paths": ["ci/*.sh", ".github/workflows/*.yml"],
+            "weight": 3,
+            "required": True,
+            "description": "Neither CI file points at a directory that does not exist",
+        },
+        {
+            "id": "R4",
+            "kind": CheckKind.GREP_ABSENT,
+            "target": r'python-version:\s*"3\.9"',
+            "paths": [".github/workflows/*.yml"],
+            "weight": 2,
+            "required": True,
+            "description": "The workflow no longer pins a runtime that cannot run this code",
+        },
+        {
+            "id": "R5",
+            "kind": CheckKind.FILE_UNCHANGED,
+            "paths": STANDARD_PROTECTED,
+            "weight": 0,
+            "required": True,
+            "description": "The tests themselves are untouched",
+        },
+        {
+            "id": "S1",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "Proposed a concrete mechanism to keep the workflow and the script in "
+                "step, rather than just fixing both by hand"
+            ),
+        },
+    ],
+    "baseline": baseline("ex-005-ci-red-after-test-reorg"),
+    "context_excerpts": [
+        {
+            "path": "pytest.ini",
+            "line_range": "1-10",
+            "why": (
+                "Registers the `security` and `perf` markers. The suites are selected "
+                "by marker, not by directory -- which is the fact the Tuesday change "
+                "got wrong."
+            ),
+        },
+        {
+            "path": "README.md",
+            "line_range": "55-70",
+            "why": "States that ci.yml and ci/run_ci.sh must be changed together.",
+        },
+    ],
+    "hints": [
+        "Run `make ci` and read which step fails. The error names the thing that does not exist.",
+        "The suites are selected by pytest marker (`-m security`), not by directory. "
+        "Check `pytest.ini` for which markers are registered.",
+        "Two files changed on Tuesday, not one. Diff `.github/workflows/ci.yml` "
+        "against the script and look for anything else that was altered.",
+    ],
+    "grading_notes": """\
+**Two defects, in two files, and both must be fixed.**
+
+1. `ci/run_ci.sh` and `.github/workflows/ci.yml` select the security and perf suites
+   by *directory* (`tests/security/`, `tests/perf/`) instead of by *marker*
+   (`-m security`, `-m perf`). Those directories do not exist, so pytest exits 4 (a
+   usage error, not a test failure) and `set -e` fails the script. This is why `make
+   test` is green while `make ci` is red -- a distinction worth checking they
+   understood.
+2. The workflow pins `python-version: "3.9"`. The codebase uses PEP 604 unions
+   (`int | None` in `tenants/context.py`), which are a syntax error before 3.10, so
+   the GitHub job could not even import the app. This one cannot be caught by running
+   the script locally -- only by reading the workflow. Candidates who fix only the
+   selector have done half the job, and R4 catches it.
+
+**The expected fix** restores `-m security` and `-m perf` in both files and restores
+`python-version: "3.12"`.
+
+**Watch for:**
+
+1. **Creating `tests/security/` and `tests/perf/` directories** and moving tests into
+   them. This makes CI green and is not automatically wrong, but it contradicts
+   `pytest.ini`'s marker registration and the rest of the suite's conventions, and it
+   is a much larger change than the situation calls for. If they did this, judge
+   whether they justified it -- an unjustified reorganisation during an outage is poor
+   judgement even when it works.
+2. **Deleting the failing steps** from the script. Makes it exit 0 while removing the
+   security gate entirely. R3 will pass and R1 will pass, so lean on the suite check
+   and your own reading of the diff: this is the worst outcome here and should score
+   very low on correctness despite green checks. Set `symptom_patch_suspected`.
+3. **Fixing only `ci/run_ci.sh`.** R1 passes, R3 fails. The README says the two files
+   move together.
+4. **Leaving the Python pin alone.** Easy to miss because it cannot be reproduced
+   locally. Not fatal, but a candidate who read both files should have caught it.
+
+**On documentation.** The brief asks how to stop the two files drifting. Good answers:
+generate one from the other, have the workflow call the script rather than duplicating
+the steps, or add a test asserting the step lists match. "Be more careful" is not an
+answer.
+""",
+}
+
+
+EXERCISES: list[dict] = [EX001, EX002, EX003, EX004, EX005]
