@@ -145,6 +145,12 @@ LLM_PROVIDER = env("LLM_PROVIDER", default="claude")
 WORKSPACE_ROOT = Path(env("WORKSPACE_ROOT", default=str(BASE_DIR / "workspaces"))).expanduser()
 WORKSPACE_TEMPLATE_ROOT = BASE_DIR / "workspace_templates"
 
+# Rubric calibration state: blind grading packets, the hand-filled scoresheet and
+# the accumulating human-versus-system corpus. Inside the project because the
+# hand-assigned letters are source material -- they are the only record of what a
+# human thought, and the regression corpus that defends against grading drift.
+WORKSPACE_CALIBRATION_ROOT = BASE_DIR / "calibration"
+
 # Finished workspaces are MOVED here rather than deleted, so a mid-exercise
 # mistake never destroys work. Bare "origin" repos emulating GitHub live here.
 WORKSPACE_ARCHIVE_DIRNAME = ".archive"
