@@ -58,6 +58,23 @@ class AcceptanceJudgment(BaseModel):
     confidence: Literal["low", "medium", "high"]
     rationale: str
 
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _band_numeric_confidence(cls, value: Any) -> Any:
+        """Accept a numeric confidence by banding it into the three labels.
+
+        The model reliably answers this field with a probability (``1.0``, ``0.99``)
+        rather than one of the three words, whatever the prompt asks for. Rejecting
+        that cost a retry on essentially every grade -- a doubled API bill and latency
+        for a field no dimension score reads -- so the value is banded here instead.
+        Thresholds match how the words are used in the prompt: below 0.5 is a guess.
+        """
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return value
+        if value >= 0.85:
+            return "high"
+        return "medium" if value >= 0.5 else "low"
+
 
 class ExerciseEvaluation(BaseModel):
     """The grading model's full response.
