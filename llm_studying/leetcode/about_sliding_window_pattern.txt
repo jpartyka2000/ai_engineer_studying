@@ -1,0 +1,136 @@
+Sliding window handles problems about a **contiguous** subarray or substring with some property. It is the single most recognizable Medium pattern, and once you have the template it solves a dozen problems with small variations.
+
+**The signal.** The problem says "longest", "shortest", "maximum", "minimum", or "count of" plus **subarray** or **substring**, plus a condition. Contiguity is essential — if elements can be skipped, it is not a sliding window.
+
+**Why it is O(n) even though it looks O(n²).** Both pointers only ever move forward. `right` advances n times total; `left` advances at most n times total. So the total pointer movement is bounded by 2n regardless of the nesting in the code. Being able to state this is often the follow-up question.
+
+**Variant 1: variable-size window, expand and contract.** The dominant template.
+
+```python
+def longest_substring_without_repeating(s: str) -> int:
+    seen = set()
+    left = 0
+    best = 0
+    for right, ch in enumerate(s):
+        while ch in seen:            # shrink until the window is valid again
+            seen.remove(s[left])
+            left += 1
+        seen.add(ch)
+        best = max(best, right - left + 1)
+    return best
+```
+
+The shape to memorize:
+
+```
+for right in range(n):
+    add element at right to the window state
+    while window is INVALID:
+        remove element at left from the window state
+        left += 1
+    update the answer            # window is valid here
+```
+
+For a **longest** problem, you shrink only while invalid and update the answer after shrinking. For a **shortest** problem, you shrink while the window is still *valid* and update the answer before shrinking:
+
+```python
+def min_subarray_len(target: int, nums: list[int]) -> int:
+    left = 0
+    total = 0
+    best = float("inf")
+    for right, num in enumerate(nums):
+        total += num
+        while total >= target:                  # still valid -> try to shrink
+            best = min(best, right - left + 1)
+            total -= nums[left]
+            left += 1
+    return 0 if best == float("inf") else best
+```
+
+That inversion — shrink-while-invalid for longest, shrink-while-valid for shortest — is the thing to get straight. Mixing them up is the most common sliding window bug.
+
+**Variant 2: fixed-size window.** When the window length k is given, there is no shrink loop; you add one and remove one each step.
+
+```python
+def max_sum_subarray_k(nums: list[int], k: int) -> int:
+    window = sum(nums[:k])
+    best = window
+    for right in range(k, len(nums)):
+        window += nums[right] - nums[right - k]
+        best = max(best, window)
+    return best
+```
+
+The `+= nums[right] - nums[right - k]` line is the whole pattern: slide by adding the entering element and subtracting the leaving one, so each step is O(1) instead of re-summing.
+
+**Variant 3: window with a count map.** When validity depends on character frequencies rather than mere presence.
+
+```python
+from collections import Counter, defaultdict
+
+def character_replacement(s: str, k: int) -> int:
+    """Longest repeating character replacement: at most k changes allowed."""
+    counts = defaultdict(int)
+    left = 0
+    max_freq = 0
+    best = 0
+    for right, ch in enumerate(s):
+        counts[ch] += 1
+        max_freq = max(max_freq, counts[ch])
+        while (right - left + 1) - max_freq > k:   # too many chars to replace
+            counts[s[left]] -= 1
+            left += 1
+        best = max(best, right - left + 1)
+    return best
+```
+
+The validity test `window_length - max_freq > k` says: everything that isn't the most common character must be replaced, and that must fit in the budget.
+
+**Variant 4: "contains all of" with a need counter.** For permutation/anagram containment, track how many characters still have the wrong count.
+
+```python
+def find_anagrams(s: str, p: str) -> list[int]:
+    if len(p) > len(s):
+        return []
+    need = Counter(p)
+    window = Counter(s[:len(p)])
+    result = [0] if window == need else []
+    for right in range(len(p), len(s)):
+        window[s[right]] += 1
+        left_char = s[right - len(p)]
+        window[left_char] -= 1
+        if window[left_char] == 0:
+            del window[left_char]              # keep dicts comparable
+        if window == need:
+            result.append(right - len(p) + 1)
+    return result
+```
+
+The `del` on zero is important: `Counter({'a': 0})` is not equal to `Counter()`, so leaving zero entries breaks the comparison. That is a real and easily-missed bug.
+
+**Choosing which variant.**
+
+| Problem says | Variant |
+|---|---|
+| "subarray of size k" | fixed-size |
+| "longest ... with at most k ..." | variable, shrink while invalid |
+| "shortest/minimum ... with at least ..." | variable, shrink while valid |
+| "contains a permutation / anagram of" | fixed-size with count map |
+| "at most k distinct characters" | variable with count map |
+
+**When it does not apply.**
+- The subarray need not be contiguous → that is usually DP or sorting.
+- There are **negative numbers** and the condition is a sum threshold. Sliding window relies on monotonicity: adding an element must move the metric in a predictable direction. With negatives, growing the window can *decrease* the sum, so shrinking logic breaks. Use prefix sums with a hash map instead.
+- You need the k-th largest rather than a windowed aggregate → heap.
+
+That negative-numbers caveat is worth stating unprompted; it is a favorite follow-up.
+
+**Common mistakes.**
+- Using `if` instead of `while` for the shrink step. One shrink is often not enough to restore validity.
+- Off-by-one on the window length: it is `right - left + 1`.
+- Updating the answer at the wrong moment (before vs after shrinking).
+- Forgetting to remove the outgoing element from the window state.
+- Leaving zero-count entries in a Counter when comparing dicts.
+- Applying it to a sum-threshold problem with negative numbers.
+
+**Representative problems.** Easy: Maximum Average Subarray I, Contains Duplicate II. Medium: Longest Substring Without Repeating Characters, Longest Repeating Character Replacement, Permutation in String, Find All Anagrams in a String, Minimum Size Subarray Sum, Max Consecutive Ones III, Fruit Into Baskets, Longest Substring with At Most K Distinct Characters, Subarray Product Less Than K.

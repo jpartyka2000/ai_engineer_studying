@@ -1,0 +1,194 @@
+Graph problems reduce to one question: BFS or DFS? Both visit every node once in O(V + E). The choice depends on what you need, and the single most important fact is that **BFS finds shortest paths in unweighted graphs and DFS does not.**
+
+**Graph representations.**
+
+```python
+from collections import defaultdict, deque
+
+# adjacency list - the default choice
+graph = defaultdict(list)
+for u, v in edges:
+    graph[u].append(v)
+    graph[v].append(u)          # omit this line for a directed graph
+
+# a grid is an implicit graph: each cell's neighbors are its 4 (or 8) sides
+DIRECTIONS = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+```
+
+Adjacency list is O(V + E) space and is right for the sparse graphs interviews use. An adjacency matrix is O(V²) and only worth it for dense graphs or O(1) edge lookups.
+
+**DFS — go deep, backtrack.**
+
+```python
+def dfs_recursive(graph, node, visited):
+    visited.add(node)
+    for neighbor in graph[node]:
+        if neighbor not in visited:
+            dfs_recursive(graph, neighbor, visited)
+
+def dfs_iterative(graph, start):
+    visited = set()
+    stack = [start]
+    while stack:
+        node = stack.pop()
+        if node in visited:
+            continue
+        visited.add(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                stack.append(neighbor)
+```
+
+Recursion is cleaner; the iterative version avoids stack overflow on deep graphs. Python's default recursion limit is about 1000, so mention `sys.setrecursionlimit` or go iterative if depth could reach ~10⁵.
+
+**BFS — go level by level.**
+
+```python
+def bfs(graph, start):
+    visited = {start}
+    q = deque([start])
+    while q:
+        node = q.popleft()
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)        # mark on ENQUEUE, not on dequeue
+                q.append(neighbor)
+```
+
+**Mark visited when you enqueue, not when you dequeue.** If you wait until dequeuing, the same node can be added multiple times before it is first processed, which blows up the queue and can give wrong distances. This is the number-one BFS bug.
+
+**BFS for shortest path.** Track distance by level:
+
+```python
+def shortest_path_length(graph, start, target) -> int:
+    if start == target:
+        return 0
+    visited = {start}
+    q = deque([start])
+    steps = 0
+    while q:
+        steps += 1
+        for _ in range(len(q)):              # process exactly one level
+            node = q.popleft()
+            for neighbor in graph[node]:
+                if neighbor == target:
+                    return steps
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    q.append(neighbor)
+    return -1
+```
+
+Why BFS works and DFS does not: BFS explores all nodes at distance 1, then all at distance 2, and so on, so the first time you reach the target you have arrived by a shortest route. DFS may reach it via a long detour first. For **weighted** graphs you need Dijkstra (a heap-based BFS), which is a step beyond this scope but worth naming.
+
+**Grid problems — the biggest Medium family.** Number of Islands is the template.
+
+```python
+def num_islands(grid: list[list[str]]) -> int:
+    if not grid:
+        return 0
+    rows, cols = len(grid), len(grid[0])
+    count = 0
+
+    def sink(r: int, c: int) -> None:
+        if r < 0 or r >= rows or c < 0 or c >= cols or grid[r][c] != "1":
+            return
+        grid[r][c] = "0"                     # mark visited in place
+        for dr, dc in DIRECTIONS:
+            sink(r + dr, c + dc)
+
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == "1":
+                count += 1
+                sink(r, c)
+    return count
+```
+
+Three habits that make grid problems routine:
+1. **A single bounds-and-validity check at the top of the recursive function**, rather than checking before each call. Far fewer places to get wrong.
+2. **Mark visited in place** when you are allowed to mutate — it saves a `visited` set. Ask whether mutation is acceptable; if not, use a set of `(r, c)` tuples.
+3. **Iterate a `DIRECTIONS` list** instead of writing four near-identical calls.
+
+**Multi-source BFS.** When several starting points spread simultaneously, seed the queue with all of them. This is a genuinely useful trick that turns some hard-looking problems into standard BFS.
+
+```python
+def oranges_rotting(grid: list[list[int]]) -> int:
+    rows, cols = len(grid), len(grid[0])
+    q = deque()
+    fresh = 0
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == 2:
+                q.append((r, c))             # ALL rotten cells start together
+            elif grid[r][c] == 1:
+                fresh += 1
+    minutes = 0
+    while q and fresh:
+        minutes += 1
+        for _ in range(len(q)):
+            r, c = q.popleft()
+            for dr, dc in DIRECTIONS:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:
+                    grid[nr][nc] = 2
+                    fresh -= 1
+                    q.append((nr, nc))
+    return -1 if fresh else minutes
+```
+
+The same shape solves Walls and Gates (seed with all gates) and 01 Matrix (seed with all zeros).
+
+**Connected components.** Count how many times you have to start a fresh traversal.
+
+```python
+def count_components(n: int, edges: list[list[int]]) -> int:
+    graph = defaultdict(list)
+    for u, v in edges:
+        graph[u].append(v)
+        graph[v].append(u)
+    visited = set()
+    count = 0
+    for node in range(n):
+        if node not in visited:
+            count += 1
+            stack = [node]
+            while stack:
+                cur = stack.pop()
+                if cur in visited:
+                    continue
+                visited.add(cur)
+                stack.extend(graph[cur])
+    return count
+```
+
+Union-find also solves this — see that note for when each is preferable.
+
+**Choosing BFS or DFS.**
+
+| Need | Use |
+|---|---|
+| Shortest path, unweighted | **BFS** |
+| Minimum number of steps/moves | **BFS** |
+| Level-by-level processing | **BFS** |
+| Does a path exist | either |
+| Connected components / flood fill | either (DFS is less code) |
+| All paths, or path enumeration | **DFS** with backtracking |
+| Cycle detection | **DFS** with a recursion-state set |
+| Topological sort | either (DFS postorder, or BFS/Kahn) |
+| Memory matters on a wide graph | **DFS** — BFS queue can hold a whole level |
+| Memory matters on a deep graph | **BFS** — DFS stack can go O(V) deep |
+
+**Complexity.** Both are O(V + E) time. Space: DFS is O(V) for the recursion stack in the worst case; BFS is O(V) for the queue, but practically it is the width of the widest level. For a grid of R rows and C columns, V = R·C and E ≈ 4·R·C, so both are O(R·C).
+
+**Common mistakes.**
+- Marking visited on dequeue instead of enqueue.
+- Forgetting `visited` entirely → infinite loop on any cycle. Even a bidirectional edge is a cycle.
+- Adding both directions for a directed graph, or only one for an undirected graph.
+- Out-of-bounds indexing on grids — centralize the check.
+- Using DFS for a shortest-path problem.
+- `list.pop(0)` instead of `deque.popleft()`.
+- Hitting the recursion limit on a large grid; mention the iterative option.
+- Assuming the graph is connected. Loop over all nodes so you do not miss components.
+
+**Representative problems.** Easy: Flood Fill, Find if Path Exists in Graph, Find Center of Star Graph. Medium: Number of Islands, Clone Graph, Rotting Oranges, Pacific Atlantic Water Flow, Surrounded Regions, Max Area of Island, Walls and Gates, 01 Matrix, Number of Connected Components, Word Ladder, Open the Lock, Keys and Rooms, Number of Provinces.

@@ -1,0 +1,121 @@
+Hash maps and hash sets are the highest-leverage tool in coding interviews. The core move — trading O(n) space for O(1) lookups to collapse an O(n²) solution into O(n) — shows up more than any other single idea.
+
+**The mental model.** A hash map gives you O(1) average insert, lookup, and delete. Any time a brute-force solution repeatedly *searches* the data, ask: could I have stored what I need in a hash map and looked it up instead?
+
+**Pattern 1: complement lookup (Two Sum).** Brute force checks every pair, O(n²). Instead, store values as you go and look up what you need:
+
+```python
+def two_sum(nums: list[int], target: int) -> list[int]:
+    seen = {}                      # value -> index
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+    return []
+```
+
+O(n) time, O(n) space. The insight: for each element, you know exactly what value would complete the pair, so you don't need to search — you look up. Note the ordering — check *before* inserting, so an element can't pair with itself.
+
+**Pattern 2: frequency counting.** Count occurrences, then reason about the counts.
+
+```python
+from collections import Counter
+
+def is_anagram(s: str, t: str) -> bool:
+    return Counter(s) == Counter(t)
+
+def first_unique_char(s: str) -> int:
+    counts = Counter(s)
+    for i, ch in enumerate(s):
+        if counts[ch] == 1:
+            return i
+    return -1
+```
+
+`Counter` is a dict subclass and returns 0 for missing keys, which avoids `KeyError` guards. Two passes over the string is still O(n).
+
+**Pattern 3: seen-set for duplicates.**
+
+```python
+def contains_duplicate(nums: list[int]) -> bool:
+    seen = set()
+    for num in nums:
+        if num in seen:
+            return True
+        seen.add(num)
+    return False
+```
+
+The one-liner `len(set(nums)) != len(nums)` is equivalent but always scans everything; the loop can exit early.
+
+**Pattern 4: grouping by a computed key.** The key insight is choosing a **canonical form** so that everything that should group together produces an identical key.
+
+```python
+from collections import defaultdict
+
+def group_anagrams(strs: list[str]) -> list[list[str]]:
+    groups = defaultdict(list)
+    for s in strs:
+        key = tuple(sorted(s))        # canonical form
+        groups[key].append(s)
+    return list(groups.values())
+```
+
+O(n · k log k) for n strings of length k. An alternative key is a 26-length count tuple, which is O(n · k) — worth mentioning as the optimization if asked.
+
+**Pattern 5: prefix/running state in a map.** Store a running value and look up whether the state you need has occurred before. This is the bridge to prefix sums:
+
+```python
+def subarray_sum_equals_k(nums: list[int], k: int) -> int:
+    count = 0
+    running = 0
+    seen = {0: 1}                     # prefix sum -> how many times seen
+    for num in nums:
+        running += num
+        count += seen.get(running - k, 0)
+        seen[running] = seen.get(running, 0) + 1
+    return count
+```
+
+The `{0: 1}` seed is essential — it accounts for subarrays starting at index 0. Forgetting it is the classic bug in this problem.
+
+**Pattern 6: set for O(1) neighbor checks.** Converting a list to a set to enable constant-time membership tests is what makes Longest Consecutive Sequence linear:
+
+```python
+def longest_consecutive(nums: list[int]) -> int:
+    num_set = set(nums)
+    best = 0
+    for num in num_set:
+        if num - 1 not in num_set:            # only start from a sequence's beginning
+            length = 1
+            while num + length in num_set:
+                length += 1
+            best = max(best, length)
+    return best
+```
+
+This looks O(n²) but is O(n): the inner `while` only runs for numbers that start a sequence, so each element is visited at most twice overall. Being able to explain that is the point of the problem.
+
+**Choosing the right container.**
+
+| Need | Use |
+|---|---|
+| Key → value | `dict` |
+| Membership only | `set` |
+| Counts | `collections.Counter` |
+| Key → list, auto-created | `collections.defaultdict(list)` |
+| Key → int, auto-zero | `collections.defaultdict(int)` |
+| Insertion order matters | `dict` (ordered since Python 3.7) |
+
+**Common mistakes.**
+- **Unhashable keys.** Lists cannot be dict keys; convert to `tuple`. Sets cannot either; use `frozenset`.
+- **Mutating while iterating.** `for k in d: del d[k]` raises. Iterate over `list(d.keys())` instead.
+- **`defaultdict` creating entries on read.** Merely accessing `dd[k]` inserts the default. Use `.get(k)` when you only want to check.
+- **Insertion order before check.** In Two Sum, inserting before checking lets an element match itself.
+- **Forgetting the seed** in prefix-sum-in-a-map problems.
+- **Claiming O(1) worst case.** Hash operations are O(1) *average*; worst case is O(n) with adversarial collisions.
+
+**Representative problems.** Easy: Two Sum, Contains Duplicate, Valid Anagram, Majority Element, Intersection of Two Arrays, Single Number. Medium: Group Anagrams, Top K Frequent Elements, Product of Array Except Self, Longest Consecutive Sequence, Subarray Sum Equals K, Valid Sudoku, Encode and Decode Strings.
+
+**The interview reflex.** When you catch yourself writing a nested loop where the inner loop is *searching* for something, stop and ask what you could have stored in a hash map. That single reflex converts a large fraction of O(n²) solutions to O(n).

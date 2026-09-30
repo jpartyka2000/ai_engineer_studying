@@ -1,0 +1,152 @@
+A stack is LIFO — push and pop at one end, both O(1). In Python a plain `list` is your stack: `append` to push, `pop()` to pop. The two interview uses are **matching/nesting** problems and the **monotonic stack**, which is one of the highest-value Medium patterns.
+
+**Use 1: matching and nesting.** Whenever the structure is nested — brackets, tags, expressions — a stack is almost certainly the answer.
+
+```python
+def is_valid(s: str) -> bool:
+    pairs = {")": "(", "]": "[", "}": "{"}
+    stack = []
+    for ch in s:
+        if ch in pairs:                       # a closer
+            if not stack or stack.pop() != pairs[ch]:
+                return False
+        else:                                 # an opener
+            stack.append(ch)
+    return not stack                          # leftovers mean unclosed
+```
+
+Two failure modes to handle: a closer arriving with an empty stack, and openers left over at the end. Returning `not stack` covers the second; many candidates forget it and pass `"((("`.
+
+**Use 2: evaluation.** Postfix evaluation is a direct stack application.
+
+```python
+def eval_rpn(tokens: list[str]) -> int:
+    stack = []
+    ops = {
+        "+": lambda a, b: a + b,
+        "-": lambda a, b: a - b,
+        "*": lambda a, b: a * b,
+        "/": lambda a, b: int(a / b),         # truncate toward zero, not floor
+    }
+    for token in tokens:
+        if token in ops:
+            b = stack.pop()
+            a = stack.pop()                   # order matters for - and /
+            stack.append(ops[token](a, b))
+        else:
+            stack.append(int(token))
+    return stack[0]
+```
+
+Two details: pop order is second operand first, and `int(a / b)` truncates toward zero whereas `a // b` floors — they differ for negatives, and LeetCode wants truncation.
+
+**Use 3: tracking state you need to undo.** Min Stack is the canonical design problem.
+
+```python
+class MinStack:
+    def __init__(self):
+        self.stack = []
+        self.mins = []                        # mins[i] = min of stack[0..i]
+
+    def push(self, val: int) -> None:
+        self.stack.append(val)
+        self.mins.append(val if not self.mins else min(val, self.mins[-1]))
+
+    def pop(self) -> None:
+        self.stack.pop()
+        self.mins.pop()
+
+    def top(self) -> int:
+        return self.stack[-1]
+
+    def get_min(self) -> int:
+        return self.mins[-1]
+```
+
+All operations O(1). The idea — a parallel stack holding the running minimum — is the insight; storing the min *alongside* each element is what makes popping cheap.
+
+**Use 4: the monotonic stack.** This is the pattern worth real study time. A monotonic stack keeps its elements in sorted order (increasing or decreasing) by popping anything that would violate the order before pushing.
+
+The signal: **"next greater"**, **"next smaller"**, **"previous greater"**, **"previous smaller"**, or "how far until something bigger".
+
+```python
+def next_greater_element(nums: list[int]) -> list[int]:
+    result = [-1] * len(nums)
+    stack = []                                # holds indices, values decreasing
+    for i, num in enumerate(nums):
+        while stack and nums[stack[-1]] < num:
+            result[stack.pop()] = num         # num is the answer for that index
+        stack.append(i)
+    return result
+```
+
+The key realization: when you pop index j because the current element is bigger, **the current element is j's answer**. The stack holds "indices still waiting for their answer".
+
+```python
+def daily_temperatures(temps: list[int]) -> list[int]:
+    result = [0] * len(temps)
+    stack = []
+    for i, t in enumerate(temps):
+        while stack and temps[stack[-1]] < t:
+            j = stack.pop()
+            result[j] = i - j                 # distance, not value
+        stack.append(i)
+    return result
+```
+
+Same skeleton, different payload — store the index distance instead of the value. Recognizing that these are one pattern is the point.
+
+**Storing indices, not values, is the default.** You almost always want indices so you can compute distances and widths. Reach for values only when the problem truly needs nothing else.
+
+**Increasing vs decreasing.** Decide from what you are looking for:
+
+| Looking for | Stack is | Pop when |
+|---|---|---|
+| next **greater** element | decreasing | current > stack top |
+| next **smaller** element | increasing | current < stack top |
+| previous greater | decreasing | current >= stack top |
+| previous smaller | increasing | current <= stack top |
+
+**Why monotonic stack is O(n).** Each index is pushed once and popped at most once, so total work is bounded by 2n despite the nested `while`. This is the same argument as sliding window, and it is a standard follow-up question.
+
+**A harder Medium worth knowing** — Largest Rectangle in Histogram, because it shows the pattern computing a width from two boundaries:
+
+```python
+def largest_rectangle_area(heights: list[int]) -> int:
+    stack = []                                # indices, heights increasing
+    best = 0
+    for i, h in enumerate(heights + [0]):     # sentinel 0 flushes the stack
+        while stack and heights[stack[-1]] >= h:
+            height = heights[stack.pop()]
+            left = stack[-1] + 1 if stack else 0
+            best = max(best, height * (i - left))
+        stack.append(i)
+    return best
+```
+
+The appended sentinel `0` is a nice trick: it forces every remaining bar to be popped and measured, removing the need for a separate drain loop after the main loop.
+
+**Stacks and recursion.** Recursion uses the call stack, so any recursive traversal can be rewritten iteratively with an explicit stack. This matters when the interviewer says "now do it without recursion", usually motivated by stack-overflow risk on deep inputs.
+
+```python
+def inorder_iterative(root) -> list[int]:
+    result, stack, node = [], [], root
+    while stack or node:
+        while node:                 # go as far left as possible
+            stack.append(node)
+            node = node.left
+        node = stack.pop()
+        result.append(node.val)
+        node = node.right
+    return result
+```
+
+**Common mistakes.**
+- Popping from an empty stack — always guard with `if stack` or `while stack and ...`.
+- Forgetting the final emptiness check in matching problems.
+- Wrong pop order for non-commutative operators.
+- Storing values when you need indices.
+- Getting the monotonic direction backwards. Derive it from what you are searching for rather than memorizing.
+- Using `list.pop(0)` for a queue — that is O(n). Use `collections.deque`.
+
+**Representative problems.** Easy: Valid Parentheses, Min Stack, Baseball Game, Remove All Adjacent Duplicates, Implement Queue using Stacks. Medium: Evaluate Reverse Polish Notation, Daily Temperatures, Next Greater Element I and II, Asteroid Collision, Car Fleet, Decode String, Simplify Path, Generate Parentheses (backtracking, but stack-shaped), Remove K Digits, Basic Calculator II.

@@ -75,6 +75,10 @@ class Command(BaseCommand):
         "slack": ("Slack", "Productivity"),
         "metabase": ("Metabase", "Data Science"),
         "microsoft_excel": ("Microsoft Excel", "Data Science"),
+        "sglang": ("SGLang", "ML Ops"),
+        "azure": ("Microsoft Azure", "Cloud"),
+        "leetcode": ("LeetCode", "Software Engineering"),
+        "leetcode_data_science": ("LeetCode: Data Science", "Data Science"),
     }
 
     def add_arguments(self, parser):
@@ -179,9 +183,7 @@ class Command(BaseCommand):
 
                 if existing_without_questions.exists():
                     count = existing_without_questions.count()
-                    self.stdout.write(
-                        f"Found {count} existing material(s) without questions"
-                    )
+                    self.stdout.write(f"Found {count} existing material(s) without questions")
                     materials = list(materials) + list(existing_without_questions)
 
             self.generate_questions(
@@ -245,9 +247,7 @@ class Command(BaseCommand):
         """Check if a file is an image based on extension."""
         return file_path.suffix.lower() in self.IMAGE_EXTENSIONS
 
-    def show_dry_run(
-        self, files: list[Path], subject: Subject | None, options: dict
-    ) -> None:
+    def show_dry_run(self, files: list[Path], subject: Subject | None, options: dict) -> None:
         """Show what would be ingested in dry run mode."""
         self.stdout.write("\n" + self.style.WARNING("DRY RUN - No changes made"))
         self.stdout.write(f"\nWould ingest {len(files)} document(s):\n")
@@ -271,9 +271,7 @@ class Command(BaseCommand):
             total_questions = len(files) * options["questions_per_file"]
             self.stdout.write(f"\nWould generate ~{total_questions} questions")
 
-    def ingest_documents(
-        self, files: list[Path], subject: Subject
-    ) -> list[StudyMaterial]:
+    def ingest_documents(self, files: list[Path], subject: Subject) -> list[StudyMaterial]:
         """Ingest document files (text and images) as StudyMaterial records."""
         materials = []
 
@@ -298,9 +296,7 @@ class Command(BaseCommand):
                     token_estimate = len(content) // 4
                     size_info = f"{token_estimate:,} tokens"
             except Exception as e:
-                self.stdout.write(
-                    self.style.ERROR(f"  Error reading {file_path.name}: {e}")
-                )
+                self.stdout.write(self.style.ERROR(f"  Error reading {file_path.name}: {e}"))
                 continue
 
             # Check for existing material
@@ -319,9 +315,7 @@ class Command(BaseCommand):
                 if created:
                     file_type = "image" if is_image else "text"
                     self.stdout.write(
-                        self.style.SUCCESS(
-                            f"  + {file_path.name} ({file_type}, {size_info})"
-                        )
+                        self.style.SUCCESS(f"  + {file_path.name} ({file_type}, {size_info})")
                     )
                     materials.append(material)
                 else:
@@ -381,9 +375,7 @@ class Command(BaseCommand):
                 material.save(update_fields=["questions_generated"])
 
                 total_generated += len(questions)
-                self.stdout.write(
-                    self.style.SUCCESS(f"    Generated {len(questions)} question(s)")
-                )
+                self.stdout.write(self.style.SUCCESS(f"    Generated {len(questions)} question(s)"))
 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"    Error: {e}"))
@@ -392,6 +384,4 @@ class Command(BaseCommand):
             if delay > 0:
                 time.sleep(delay)
 
-        self.stdout.write(
-            self.style.SUCCESS(f"\nTotal questions generated: {total_generated}")
-        )
+        self.stdout.write(self.style.SUCCESS(f"\nTotal questions generated: {total_generated}"))

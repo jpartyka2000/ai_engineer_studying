@@ -1,0 +1,168 @@
+Greedy algorithms make the locally best choice at each step and never reconsider. They are simpler and faster than DP when they work — and wrong when they do not, so the real skill is knowing which case you are in. **Interval problems** are the most common greedy family in interviews.
+
+**When greedy is valid.** You need the **greedy choice property**: a locally optimal choice is part of some globally optimal solution. You cannot assume this — you argue it, usually by an exchange argument ("if an optimal solution differs from my greedy choice, I can swap in my choice without making it worse").
+
+**When greedy fails.** Coin Change with coins `[1, 3, 4]` and amount 6: greedy takes the largest coin first, giving 4+1+1 = 3 coins, but 3+3 = 2 is optimal. Keep that counterexample ready — it is the standard way interviewers test whether you know the difference between greedy and DP.
+
+The practical rule: if you propose greedy, **state why it works**. If you cannot justify it in a sentence, assume DP.
+
+**Interval pattern 1: merge overlapping intervals. Sort by start.**
+
+```python
+def merge(intervals: list[list[int]]) -> list[list[int]]:
+    intervals.sort(key=lambda x: x[0])              # sort by START
+    merged = [intervals[0]]
+    for start, end in intervals[1:]:
+        if start <= merged[-1][1]:                  # overlaps the last merged one
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return merged
+```
+
+O(n log n) from the sort, then one O(n) pass. Two details: `max(merged[-1][1], end)` because the new interval may be entirely contained in the previous one; and `start <= end` treats touching intervals like `[1,4]` and `[4,5]` as overlapping — clarify with the interviewer whether touching counts.
+
+**Interval pattern 2: non-overlapping count / erase overlaps. Sort by end.**
+
+```python
+def erase_overlap_intervals(intervals: list[list[int]]) -> int:
+    intervals.sort(key=lambda x: x[1])              # sort by END
+    kept = 0
+    current_end = float("-inf")
+    for start, end in intervals:
+        if start >= current_end:
+            kept += 1
+            current_end = end
+    return len(intervals) - kept
+```
+
+**Sorting by end is the entire insight.** Choosing the interval that finishes earliest leaves the most room for everything after it. The exchange argument: any optimal solution's first interval can be replaced by the earliest-ending one without reducing the count. This is the classic activity-selection result, and being able to state that justification is what the problem is testing.
+
+**The sort key is the decision.** This table is the most useful thing in this note:
+
+| Problem type | Sort by |
+|---|---|
+| Merge overlapping intervals | **start** |
+| Insert an interval | **start** |
+| Maximum non-overlapping intervals | **end** |
+| Minimum removals to remove overlaps | **end** |
+| Minimum arrows / minimum platforms | **end** |
+| Meeting rooms — can one room hold all? | **start** |
+| Meeting rooms II — how many rooms? | **start**, plus a min-heap of end times |
+
+**Interval pattern 3: minimum resources — sort by start, heap of ends.**
+
+```python
+import heapq
+
+def min_meeting_rooms(intervals: list[list[int]]) -> int:
+    if not intervals:
+        return 0
+    intervals.sort(key=lambda x: x[0])
+    heap = []                                        # end times of in-use rooms
+    for start, end in intervals:
+        if heap and heap[0] <= start:
+            heapq.heappop(heap)                      # a room freed up in time
+        heapq.heappush(heap, end)
+    return len(heap)
+```
+
+The heap size is the number of concurrent meetings, which is the number of rooms. The alternative is a **sweep line**: turn each interval into `(start, +1)` and `(end, -1)` events, sort, and track a running count — that generalizes better to "maximum concurrent X" problems and is worth mentioning.
+
+**Interval pattern 4: insert into a sorted list of intervals.**
+
+```python
+def insert(intervals: list[list[int]], new: list[int]) -> list[list[int]]:
+    result = []
+    i, n = 0, len(intervals)
+    while i < n and intervals[i][1] < new[0]:        # entirely before
+        result.append(intervals[i]); i += 1
+    while i < n and intervals[i][0] <= new[1]:       # overlapping - absorb
+        new = [min(new[0], intervals[i][0]), max(new[1], intervals[i][1])]
+        i += 1
+    result.append(new)
+    result.extend(intervals[i:])                     # entirely after
+    return result
+```
+
+Three phases — before, overlapping, after — is the clean decomposition. Trying to do it in one loop produces tangled conditionals.
+
+**Non-interval greedy patterns.**
+
+*Jump Game — track the furthest reachable index.*
+
+```python
+def can_jump(nums: list[int]) -> bool:
+    furthest = 0
+    for i, jump in enumerate(nums):
+        if i > furthest:
+            return False                   # can't even reach here
+        furthest = max(furthest, i + jump)
+    return True
+```
+
+*Jump Game II — count levels, essentially a BFS on the array.*
+
+```python
+def min_jumps(nums: list[int]) -> int:
+    jumps = 0
+    current_end = 0
+    furthest = 0
+    for i in range(len(nums) - 1):
+        furthest = max(furthest, i + nums[i])
+        if i == current_end:               # end of the current jump's range
+            jumps += 1
+            current_end = furthest
+    return jumps
+```
+
+*Gas Station — if the total is non-negative a solution exists, and the start is just after the lowest point.*
+
+```python
+def can_complete_circuit(gas: list[int], cost: list[int]) -> int:
+    if sum(gas) < sum(cost):
+        return -1
+    start = tank = 0
+    for i in range(len(gas)):
+        tank += gas[i] - cost[i]
+        if tank < 0:                       # can't reach i+1 from `start`
+            start = i + 1
+            tank = 0
+    return start
+```
+
+The argument: if you run dry going from `start` to `i`, no station between them works as a start either, so skip straight past. That is a genuine exchange argument and worth articulating.
+
+*Best Time to Buy and Sell Stock — track the running minimum.*
+
+```python
+def max_profit(prices: list[int]) -> int:
+    best = 0
+    lowest = float("inf")
+    for price in prices:
+        lowest = min(lowest, price)
+        best = max(best, price - lowest)
+    return best
+```
+
+**Greedy vs DP — how to decide.**
+
+| Greedy | DP |
+|---|---|
+| A local choice is provably safe | You must compare outcomes of multiple choices |
+| No need to revisit decisions | Subproblems overlap and are reused |
+| O(n) or O(n log n) | Often O(n²) or O(n·k) |
+| Typically activity selection, intervals, exchange arguments | Counting ways, min/max over paths of choices |
+
+If you can construct a counterexample to a greedy rule in under a minute, it is DP. If the problem says "minimum number of X to cover/remove/schedule Y" and sorting makes the choice obvious, it is probably greedy.
+
+**Common mistakes.**
+- Sorting by the wrong key — start vs end. Derive it from the problem rather than guessing.
+- Assuming greedy works without justification.
+- Forgetting `max()` when merging, so a contained interval truncates the merged end.
+- Ambiguity about whether touching intervals overlap — ask.
+- Mutating the input list via `sort()` when the caller needs the original order. Use `sorted()` if so.
+- Not handling the empty input.
+- Missing the `range(len(nums) - 1)` bound in Jump Game II — landing on the last index should not count an extra jump.
+
+**Representative problems.** Easy: Best Time to Buy and Sell Stock, Assign Cookies, Lemonade Change, Meeting Rooms. Medium: Merge Intervals, Insert Interval, Non-overlapping Intervals, Minimum Number of Arrows to Burst Balloons, Meeting Rooms II, Jump Game, Jump Game II, Gas Station, Partition Labels, Task Scheduler, Car Pooling, Two City Scheduling, Boats to Save People.

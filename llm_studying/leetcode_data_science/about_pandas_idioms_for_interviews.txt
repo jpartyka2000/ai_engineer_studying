@@ -1,0 +1,129 @@
+In a real data science screen you will reach for pandas. These are the idioms that come up, the traps that cost correctness, and the mapping between pandas and SQL — which interviewers ask about directly.
+
+**Note on this topic's coding challenges.** The execution sandbox here runs bare `python:3.12-slim` with no pandas or numpy, so the executable challenges use list-of-dicts and the standard library. The operations are identical; only the API differs. This note covers the pandas side.
+
+**loc vs iloc — the most common indexing bug.**
+
+```python
+df.loc[0:2]     # LABEL-based, slice is INCLUSIVE  -> 3 rows on a RangeIndex
+df.iloc[0:2]    # POSITION-based, slice is EXCLUSIVE -> 2 rows
+df.loc[df.amount > 100, 'status'] = 'large'   # boolean mask + column, one step
+```
+
+`loc` takes index labels and column names; `iloc` takes integer positions. The inclusive/exclusive difference in slicing is what surprises people.
+
+**SettingWithCopyWarning means a likely lost write.**
+
+```python
+df[df.a > 0]['b'] = 1          # BAD - chained indexing, may write to a copy
+df.loc[df.a > 0, 'b'] = 1      # GOOD - single-step assignment
+```
+
+Chained indexing operates on an intermediate object that may be a copy, so the assignment may never reach `df`. Treat the warning as a bug report, not noise.
+
+**groupby: agg vs transform.** This distinction matters constantly.
+
+```python
+# agg - REDUCES each group to one row (a summary table)
+df.groupby('dept').agg({'salary': ['mean', 'max'], 'id': 'count'})
+
+# transform - returns a result aligned to the ORIGINAL row count
+df['dept_mean'] = df.groupby('dept')['salary'].transform('mean')
+df['pct_of_dept'] = df.salary / df.groupby('dept').salary.transform('sum')
+```
+
+`agg` is SQL's `GROUP BY`. `transform` is SQL's **window function** — it broadcasts the group value back to every member row, which is what you need to add a group statistic as a column.
+
+```python
+# rank within group - the pandas equivalent of ROW_NUMBER() OVER (PARTITION BY ...)
+df['rn'] = df.groupby('dept')['salary'].rank(method='first', ascending=False)
+top2 = df[df.rn <= 2]
+```
+
+**merge, and the fan-out trap.**
+
+```python
+pd.merge(left, right, on='id', how='left')
+pd.merge(left, right, left_on='a', right_on='b', how='inner')
+pd.merge(left, right, on='id', how='left', validate='many_to_one')  # raises on fan-out
+pd.merge(left, right, on='id', how='left', indicator=True)          # adds _merge column
+```
+
+A left join guarantees every left row appears **at least** once, not exactly once. Duplicate keys on the right multiply rows and silently inflate any subsequent sum. Check with `right['id'].duplicated().any()`, or better, pass `validate=` so pandas raises. The `indicator=True` flag adds a `_merge` column showing which side each row came from, which is the quickest way to count unmatched rows.
+
+**Missing data.**
+
+```python
+df.isna().sum()                    # count missing PER COLUMN
+df.dropna(subset=['a'])            # drop rows missing a specific column
+df['a'].fillna(df['a'].median())   # impute
+df['a'].ffill()                    # forward fill - for time series
+```
+
+`df.count()` counts **non**-null values, the opposite of what people often expect. And `dropna()` with no arguments drops any row with any missing value, which can silently delete most of a wide dataset.
+
+**Reshaping.**
+
+```python
+df.melt(id_vars=['date'], var_name='metric', value_name='value')   # WIDE  -> LONG
+df.pivot(index='date', columns='metric', values='value')           # LONG  -> WIDE
+df.pivot_table(index='date', columns='metric', values='value', aggfunc='sum')
+```
+
+`pivot` raises on duplicate index/column pairs; `pivot_table` takes an `aggfunc` and handles them. Reach for `pivot_table` unless you are certain the pairs are unique.
+
+**Time series.**
+
+```python
+df = df.sort_values('date')                          # ALWAYS sort first
+df['ma7'] = df['value'].rolling(7).mean()            # 7 ROWS
+df['ma7'] = df['value'].rolling('7D').mean()         # 7 DAYS (needs DatetimeIndex)
+df['prev'] = df['value'].shift(1)                    # = SQL LAG
+df['change'] = df['value'].diff()
+df.resample('D').sum()                               # requires a DatetimeIndex
+```
+
+Four pitfalls:
+1. **Sort first.** Rolling works in row order, not date order.
+2. **`rolling(7)` counts rows, not days.** With missing dates a 7-row window can span three weeks. Use the `'7D'` offset form, or `resample('D')` to build a complete date spine.
+3. **`min_periods`** defaults to the window size, so leading values are NaN. Setting it to 1 gives partial averages — fine, but make it deliberate.
+4. **`center=True` uses future values.** Using a centered window as a model feature is target leakage.
+
+**Vectorize rather than apply.**
+
+```python
+df['c'] = df.a + df.b                                  # fast, vectorized
+df['flag'] = np.where(df.a > 0, 'pos', 'neg')          # vectorized conditional
+df['c'] = df.apply(lambda r: r.a + r.b, axis=1)        # SLOW - a Python loop
+```
+
+`apply(axis=1)` is row-wise and runs at Python speed — often orders of magnitude slower. Use it only when the logic genuinely resists vectorization. Recognizing when to vectorize is the signal being tested.
+
+**Deduplication.**
+
+```python
+df.drop_duplicates()                                       # all columns must match
+df.sort_values('ts').drop_duplicates('id', keep='last')    # latest record per id
+df.duplicated(subset=['id']).sum()                         # how many duplicates
+```
+
+Without `subset`, near-duplicates survive because every column must match. The sort-then-`keep='last'` combination is the standard "most recent row per key" idiom.
+
+**The pandas-to-SQL mapping**, which is a common interview question in its own right:
+
+| SQL | pandas |
+|---|---|
+| `SELECT a, b` | `df[['a', 'b']]` |
+| `WHERE x > 5` | `df[df.x > 5]` |
+| `GROUP BY k` + aggregate | `df.groupby('k').agg(...)` |
+| `HAVING count(*) > 2` | `.groupby('k').filter(lambda g: len(g) > 2)` |
+| `ORDER BY x DESC` | `df.sort_values('x', ascending=False)` |
+| `LIMIT 10` | `df.head(10)` |
+| `JOIN` | `pd.merge(...)` |
+| `UNION ALL` | `pd.concat([...])` |
+| `COUNT(DISTINCT x)` | `df.x.nunique()` |
+| window function | `.groupby(...).transform(...)` or `.rank()` |
+| `LAG(x)` | `df.x.shift(1)` |
+| `CASE WHEN` | `np.where(...)` or `.map(...)` |
+
+**A few more worth knowing.** `df.nlargest(5, 'col')` beats sorting the whole frame. `value_counts(normalize=True)` gives proportions directly. `df.memory_usage(deep=True)` and converting a low-cardinality string column with `astype('category')` is the standard first move on a frame that will not fit in memory. And `pd.read_csv(..., dtype=...)` up front avoids a lot of downstream type grief.

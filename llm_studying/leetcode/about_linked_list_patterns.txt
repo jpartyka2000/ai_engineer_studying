@@ -1,0 +1,158 @@
+Linked lists test pointer manipulation carefully rather than clever algorithms. There are four techniques that cover nearly every Easy and Medium linked list problem.
+
+**The node definition** interviews assume:
+
+```python
+class ListNode:
+    def __init__(self, val: int = 0, next: "ListNode | None" = None):
+        self.val = val
+        self.next = next
+```
+
+**Technique 1: the dummy head.** Allocate a fake node before the real head so you never special-case "inserting at the front" or "the list became empty". This single habit eliminates a large class of bugs.
+
+```python
+def remove_elements(head: ListNode | None, val: int) -> ListNode | None:
+    dummy = ListNode(0, head)
+    current = dummy
+    while current.next:
+        if current.next.val == val:
+            current.next = current.next.next      # skip it
+        else:
+            current = current.next
+    return dummy.next                             # not `head` - head may be gone
+```
+
+Returning `dummy.next` rather than `head` is the point: if the original head was removed, `head` is stale.
+
+```python
+def merge_two_sorted(a: ListNode | None, b: ListNode | None) -> ListNode | None:
+    dummy = tail = ListNode()
+    while a and b:
+        if a.val <= b.val:
+            tail.next, a = a, a.next
+        else:
+            tail.next, b = b, b.next
+        tail = tail.next
+    tail.next = a or b            # attach whatever remains
+    return dummy.next
+```
+
+`tail.next = a or b` is a neat Python idiom for "attach the non-empty remainder", and it is correct when both are None.
+
+**Technique 2: reversal.** Memorize this; it appears constantly, both as its own problem and as a sub-step.
+
+```python
+def reverse_list(head: ListNode | None) -> ListNode | None:
+    prev = None
+    current = head
+    while current:
+        nxt = current.next        # save it BEFORE overwriting
+        current.next = prev       # flip the pointer
+        prev = current            # advance prev
+        current = nxt             # advance current
+    return prev                   # prev is the new head
+```
+
+Four lines in a fixed order. Saving `next` first is mandatory — overwrite `current.next` before saving and you have lost the rest of the list. O(n) time, O(1) space.
+
+**Technique 3: fast and slow pointers (Floyd's).** Two pointers at different speeds. Three distinct uses:
+
+*Find the middle.* Fast moves two, slow moves one; when fast reaches the end, slow is at the middle.
+
+```python
+def middle_node(head: ListNode) -> ListNode:
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    return slow           # for even length, this is the second middle
+```
+
+*Detect a cycle.* If there is a loop, the fast pointer eventually laps the slow one.
+
+```python
+def has_cycle(head: ListNode | None) -> bool:
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:
+            return True
+    return False
+```
+
+*Find the cycle's start.* After they meet, reset one pointer to the head and advance both one step at a time; they meet at the cycle entrance.
+
+```python
+def detect_cycle_start(head: ListNode | None) -> ListNode | None:
+    slow = fast = head
+    while fast and fast.next:
+        slow, fast = slow.next, fast.next.next
+        if slow is fast:
+            slow = head
+            while slow is not fast:
+                slow, fast = slow.next, fast.next
+            return slow
+    return None
+```
+
+You are not expected to derive the proof of that second phase, but you should be able to say it follows from the distance relationship between the head, the cycle entrance, and the meeting point.
+
+*Nth from the end.* Give one pointer an n-step head start, then move both together.
+
+```python
+def remove_nth_from_end(head: ListNode, n: int) -> ListNode | None:
+    dummy = ListNode(0, head)
+    fast = slow = dummy
+    for _ in range(n):
+        fast = fast.next
+    while fast.next:
+        fast, slow = fast.next, slow.next
+    slow.next = slow.next.next
+    return dummy.next
+```
+
+The dummy is what makes removing the actual head work without a special case.
+
+**Technique 4: in-place relinking.** Many Medium problems are a composition of the techniques above.
+
+```python
+def reorder_list(head: ListNode | None) -> None:
+    """L0 -> Ln -> L1 -> Ln-1 -> ..."""
+    if not head or not head.next:
+        return
+    # 1. find the middle
+    slow = fast = head
+    while fast.next and fast.next.next:
+        slow, fast = slow.next, fast.next.next
+    # 2. reverse the second half
+    second = slow.next
+    slow.next = None
+    prev = None
+    while second:
+        second.next, prev, second = prev, second, second.next
+    # 3. interleave
+    first, second = head, prev
+    while second:
+        first.next, second.next, first, second = second, first.next, first.next, second.next
+```
+
+Solve it as three named steps — find middle, reverse, merge — rather than trying to do it in one pass. Interviewers like seeing the decomposition.
+
+**Checking a palindrome** is the same decomposition: find the middle, reverse the second half, compare. O(n) time and O(1) space, versus the O(n)-space approach of copying values into a list. Mention both and note that the O(1) version mutates the input, which may or may not be acceptable.
+
+**Common mistakes.**
+- **Losing the rest of the list** by overwriting `current.next` before saving it.
+- **Not using a dummy head**, then needing special cases for head removal or an empty result.
+- Returning `head` instead of `dummy.next`.
+- `while fast.next.next` without checking `fast.next` first → `AttributeError` on short lists.
+- Using `==` where you mean `is` for node identity. For cycle detection you are comparing object identity, not values.
+- Forgetting to terminate: `slow.next = None` when splitting a list, or you create a cycle.
+- Not handling empty list or single node.
+
+**The universal edge cases** to test on any linked list problem: empty list, one node, two nodes, and the operation targeting the head or the tail. Walk at least the empty and single-node cases out loud.
+
+**Complexity.** Nearly all of these are O(n) time and O(1) space. The O(1) space is the whole reason these techniques exist — the easy solution is usually "copy into a list and index it", which is O(n) space. Interviewers ask for O(1), so lead with whether you are allowed extra space.
+
+**Representative problems.** Easy: Reverse Linked List, Merge Two Sorted Lists, Linked List Cycle, Middle of the Linked List, Remove Duplicates from Sorted List, Palindrome Linked List. Medium: Add Two Numbers, Remove Nth Node From End, Reorder List, Linked List Cycle II, Odd Even Linked List, Swap Nodes in Pairs, Rotate List, Copy List with Random Pointer, LRU Cache (doubly linked list plus hash map).

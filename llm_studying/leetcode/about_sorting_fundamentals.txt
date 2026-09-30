@@ -1,0 +1,148 @@
+You will rarely be asked to implement a sort from scratch, but sorting is the most common *preprocessing* step in interviews, and interviewers do ask about the algorithms' properties.
+
+**The algorithms and their properties.**
+
+| Algorithm | Best | Average | Worst | Space | Stable? |
+|---|---|---|---|---|---|
+| Bubble sort | O(n) | O(n²) | O(n²) | O(1) | yes |
+| Insertion sort | O(n) | O(n²) | O(n²) | O(1) | yes |
+| Selection sort | O(n²) | O(n²) | O(n²) | O(1) | no |
+| **Merge sort** | O(n log n) | O(n log n) | **O(n log n)** | **O(n)** | **yes** |
+| **Quicksort** | O(n log n) | O(n log n) | **O(n²)** | **O(log n)** | no |
+| Heapsort | O(n log n) | O(n log n) | O(n log n) | O(1) | no |
+| Counting sort | O(n + k) | O(n + k) | O(n + k) | O(k) | yes |
+| Bucket / radix sort | O(n) | O(n) | O(n²) / O(nk) | O(n) | yes |
+
+The three rows that get asked about: **merge sort** guarantees O(n log n) but needs O(n) space and is stable; **quicksort** is usually fastest in practice but has an O(n²) worst case and is not stable; **counting/bucket sort** beats O(n log n) by exploiting a bounded value range.
+
+**Stability.** A stable sort preserves the relative order of equal elements. It matters when you sort by multiple keys in sequence — sort by the secondary key first, then by the primary, and stability keeps the secondary ordering intact within ties. Python's `sorted` is **stable**.
+
+**The O(n log n) lower bound.** Any comparison-based sort needs Ω(n log n) comparisons, because there are n! possible orderings and each comparison yields one bit, so you need at least log₂(n!) ≈ n log n comparisons. Counting and radix sort beat this by not comparing elements — they use the values as indices, which requires a bounded range. Being able to state both the bound and why the linear sorts escape it is a good answer.
+
+**Python's sort.** `list.sort()` sorts in place; `sorted(iterable)` returns a new list. Both use **Timsort** — a hybrid of merge sort and insertion sort that detects already-sorted runs, giving **O(n) on nearly-sorted input** and O(n log n) worst case. It is stable, and uses O(n) auxiliary space in the worst case.
+
+```python
+nums.sort()                                  # in place, O(1)-ish extra, returns None
+new = sorted(nums)                           # new list, O(n) space
+
+people.sort(key=lambda p: p[1])              # sort by one field
+people.sort(key=lambda p: (p[1], -p[0]))     # multi-key: p[1] asc, p[0] desc
+words.sort(key=len)
+nums.sort(reverse=True)
+
+from functools import cmp_to_key
+nums.sort(key=cmp_to_key(lambda a, b: ...))  # custom comparator, when a key won't do
+```
+
+Two things worth knowing: `nums.sort()` returns `None`, so `x = nums.sort()` is a classic bug; and the tuple trick `(p[1], -p[0])` handles mixed ascending/descending without a comparator, as long as the descending field is numeric.
+
+**When a key function isn't enough.** Largest Number is the canonical case — you need a pairwise comparison rule that no simple key expresses:
+
+```python
+from functools import cmp_to_key
+
+def largest_number(nums: list[int]) -> str:
+    strs = [str(n) for n in nums]
+    strs.sort(key=cmp_to_key(lambda a, b: (1 if a + b < b + a else -1)))
+    return str(int("".join(strs)))           # int() strips a leading "0...0"
+```
+
+The comparison `a + b` versus `b + a` as strings decides which concatenation order is bigger. The `int()` round-trip handles the all-zeros case.
+
+**Sorting as preprocessing.** This is the real interview relevance. Sorting first enables:
+- **Two pointers** — Three Sum, Two Sum II, Container With Most Water.
+- **Greedy interval sweeps** — Merge Intervals (by start), Non-overlapping Intervals (by end).
+- **Duplicate grouping** — duplicates become adjacent, which powers the backtracking duplicate-skip and simplifies dedup.
+- **Binary search** — the prerequisite.
+- **Canonical forms** — `tuple(sorted(s))` as an anagram key.
+
+The cost is O(n log n) and, if you use `sorted()`, O(n) space. Always ask whether the input order needs preserving before you sort in place — that is both a correctness question and a good clarifying question to be seen asking.
+
+**Counting sort, when the range is bounded.** The practical escape from O(n log n).
+
+```python
+def sort_colors(nums: list[int]) -> None:
+    """Sort an array of 0s, 1s, and 2s."""
+    counts = [0, 0, 0]
+    for num in nums:
+        counts[num] += 1
+    i = 0
+    for value, count in enumerate(counts):
+        for _ in range(count):
+            nums[i] = value
+            i += 1
+```
+
+The single-pass alternative — **Dutch national flag** — does it in one pass with three pointers, which is the answer if asked for one pass:
+
+```python
+def sort_colors_one_pass(nums: list[int]) -> None:
+    low, mid, high = 0, 0, len(nums) - 1
+    while mid <= high:
+        if nums[mid] == 0:
+            nums[low], nums[mid] = nums[mid], nums[low]
+            low += 1
+            mid += 1
+        elif nums[mid] == 1:
+            mid += 1
+        else:
+            nums[mid], nums[high] = nums[high], nums[mid]
+            high -= 1                        # do NOT advance mid - the swapped-in value is unchecked
+```
+
+Not advancing `mid` after the high swap is the detail — the value swapped in from the back has not been examined yet.
+
+**Bucket sort for top-k frequency.** When counts are bounded by n, you get O(n) instead of O(n log n):
+
+```python
+from collections import Counter
+
+def top_k_frequent(nums: list[int], k: int) -> list[int]:
+    counts = Counter(nums)
+    buckets = [[] for _ in range(len(nums) + 1)]      # index = frequency
+    for num, freq in counts.items():
+        buckets[freq].append(num)
+    result = []
+    for freq in range(len(buckets) - 1, 0, -1):
+        for num in buckets[freq]:
+            result.append(num)
+            if len(result) == k:
+                return result
+    return result
+```
+
+Offering this alongside the heap solution — O(n) vs O(n log k) — is a strong answer to Top K Frequent Elements.
+
+**Merge sort, when asked to implement one.** It is the one worth knowing because of its stability, its guaranteed bound, and because merging two sorted halves is a sub-step in other problems.
+
+```python
+def merge_sort(nums: list[int]) -> list[int]:
+    if len(nums) <= 1:
+        return nums
+    mid = len(nums) // 2
+    left, right = merge_sort(nums[:mid]), merge_sort(nums[mid:])
+    out, i, j = [], 0, 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:              # <= preserves stability
+            out.append(left[i]); i += 1
+        else:
+            out.append(right[j]); j += 1
+    out.extend(left[i:])
+    out.extend(right[j:])
+    return out
+```
+
+The `<=` rather than `<` is what makes it stable — taking from the left half on ties preserves original order. It is also the natural choice for sorting a **linked list** in O(n log n) with O(log n) space, since it needs no random access.
+
+**Quickselect** — worth knowing it exists. Partition like quicksort but recurse only into the side containing the kth element, giving O(n) average for "kth largest". Worst case O(n²) without randomized pivots, so a heap is the safer interview answer unless O(n) is explicitly required.
+
+**Common mistakes.**
+- `x = nums.sort()` — assigns `None`.
+- Sorting in place when the original order is needed.
+- Claiming sorting is O(1) space in Python — Timsort uses O(n) auxiliary in the worst case, and `sorted()` allocates a new list.
+- Saying quicksort is O(n log n) worst case. It is O(n²).
+- Forgetting that a stable sort is required for multi-key sorting done in passes.
+- Reaching for a custom comparator when a tuple key would do.
+- Not advancing pointers correctly in Dutch national flag.
+
+**Representative problems.** Easy: Merge Sorted Array, Squares of a Sorted Array, Sort Array By Parity, Height Checker. Medium: Sort Colors, Largest Number, Kth Largest Element in an Array, Top K Frequent Elements, Merge Intervals, H-Index, Custom Sort String, Sort List (merge sort on a linked list), Wiggle Sort.

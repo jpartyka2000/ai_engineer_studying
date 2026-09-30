@@ -1,0 +1,168 @@
+Two-dimensional DP uses a state with two varying components — typically two string indices, or a grid position, or an index plus a remaining budget. The method is the same as 1-D DP; the table is just a grid.
+
+**The signals for a second dimension.**
+- **Two sequences** being compared or aligned → `dp[i][j]` over both indices.
+- **A grid** → `dp[r][c]`.
+- **An index plus a capacity or budget** → `dp[i][remaining]` (the knapsack shape).
+- **An index plus a small mode/state** → `dp[i][holding]`, as in stock problems.
+
+**Pattern 1: grid paths.** The cleanest introduction.
+
+```python
+def unique_paths(m: int, n: int) -> int:
+    dp = [[1] * n for _ in range(m)]        # first row and column are all 1
+    for r in range(1, m):
+        for c in range(1, n):
+            dp[r][c] = dp[r - 1][c] + dp[r][c - 1]
+    return dp[m - 1][n - 1]
+```
+
+State: "number of paths from the start to (r, c)." Since you can only move right or down, each cell is reachable only from above or from the left.
+
+```python
+def min_path_sum(grid: list[list[int]]) -> int:
+    rows, cols = len(grid), len(grid[0])
+    dp = [[0] * cols for _ in range(rows)]
+    dp[0][0] = grid[0][0]
+    for c in range(1, cols):
+        dp[0][c] = dp[0][c - 1] + grid[0][c]      # top row: only from the left
+    for r in range(1, rows):
+        dp[r][0] = dp[r - 1][0] + grid[r][0]      # left column: only from above
+    for r in range(1, rows):
+        for c in range(1, cols):
+            dp[r][c] = grid[r][c] + min(dp[r - 1][c], dp[r][c - 1])
+    return dp[rows - 1][cols - 1]
+```
+
+Initializing the first row and column separately is the habit that avoids index errors. You can also pad the table with a row and column of sentinels instead — either is fine, but be consistent.
+
+**Pattern 2: two strings (edit distance family).** The archetype for 2-D DP.
+
+```python
+def min_distance(word1: str, word2: str) -> int:
+    m, n = len(word1), len(word2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1):
+        dp[i][0] = i                      # delete all i characters
+    for j in range(n + 1):
+        dp[0][j] = j                      # insert all j characters
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if word1[i - 1] == word2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]           # free match
+            else:
+                dp[i][j] = 1 + min(
+                    dp[i - 1][j],         # delete from word1
+                    dp[i][j - 1],         # insert into word1
+                    dp[i - 1][j - 1],     # replace
+                )
+    return dp[m][n]
+```
+
+The three details that make the whole family work:
+1. Dimensions are `(m+1) × (n+1)`, so index 0 means "the empty prefix". This removes every boundary special case.
+2. `dp[i][j]` refers to characters `word1[i-1]` and `word2[j-1]` — the off-by-one is the price of the padding, and forgetting it is the most common bug here.
+3. The base row and column encode "transform to/from the empty string".
+
+**Longest common subsequence** is the same skeleton with a different recurrence:
+
+```python
+def longest_common_subsequence(a: str, b: str) -> int:
+    m, n = len(a), len(b)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if a[i - 1] == b[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    return dp[m][n]
+```
+
+Recognizing that Edit Distance, LCS, Longest Common Substring, and Delete Operation for Two Strings are all the same table with different recurrences is what makes this pattern efficient to learn.
+
+**Pattern 3: 0/1 knapsack — index plus remaining capacity.**
+
+```python
+def can_partition(nums: list[int]) -> bool:
+    """Partition Equal Subset Sum: is there a subset summing to total/2?"""
+    total = sum(nums)
+    if total % 2:
+        return False
+    target = total // 2
+    dp = [False] * (target + 1)
+    dp[0] = True                            # a sum of 0 is always achievable
+    for num in nums:
+        for t in range(target, num - 1, -1):    # BACKWARD
+            dp[t] = dp[t] or dp[t - num]
+    return dp[target]
+```
+
+**The backward inner loop is the critical detail.** Iterating downward means `dp[t - num]` still holds the value from the *previous* item, so each item is used at most once — that is what makes it 0/1 knapsack. Iterating forward would let an item be reused, turning it into unbounded knapsack. This is the same loop-order issue as combinations vs permutations in Coin Change II, and it is a favorite question.
+
+**Pattern 4: index plus a small mode.** Stock problems with a cooldown or a transaction limit.
+
+```python
+def max_profit_with_cooldown(prices: list[int]) -> int:
+    """Best Time to Buy and Sell Stock with Cooldown: 1-day wait after selling."""
+    hold = -prices[0]      # best profit while holding a share
+    sold = 0               # best profit having just sold (in cooldown)
+    rest = 0               # best profit free to buy
+    for price in prices[1:]:
+        prev_sold = sold
+        sold = hold + price
+        hold = max(hold, rest - price)
+        rest = max(rest, prev_sold)
+    return max(sold, rest)
+```
+
+The state is (day, mode) where mode is a small enumeration. Writing the transitions as named variables rather than a 2-D array makes these far more readable, and it is the space-optimized form for free.
+
+**Space optimization: keep two rows.** When `dp[i][j]` depends only on row `i-1` and the current row:
+
+```python
+def longest_common_subsequence_optimized(a: str, b: str) -> int:
+    prev = [0] * (len(b) + 1)
+    for i in range(1, len(a) + 1):
+        curr = [0] * (len(b) + 1)
+        for j in range(1, len(b) + 1):
+            if a[i - 1] == b[j - 1]:
+                curr[j] = prev[j - 1] + 1
+            else:
+                curr[j] = max(prev[j], curr[j - 1])
+        prev = curr
+    return prev[len(b)]
+```
+
+O(min(m, n)) space if you make the shorter string the inner dimension. Offer this as the follow-up after the O(m·n) version works.
+
+**Pattern 5: interval DP (expand from the center).** Palindromic substrings are cleaner with center expansion than with a table.
+
+```python
+def count_substrings(s: str) -> int:
+    count = 0
+    for center in range(len(s)):
+        for left, right in ((center, center), (center, center + 1)):
+            while left >= 0 and right < len(s) and s[left] == s[right]:
+                count += 1
+                left -= 1
+                right += 1
+    return count
+```
+
+O(n²) time, **O(1) space** — better than the O(n²)-space DP table. Two centers per position handles odd and even lengths. Mention both approaches; the expansion one is usually preferred.
+
+**Filling order matters.** Every entry must be computed after everything it depends on. For the two-string patterns that means increasing i and j; for backward knapsack it means decreasing capacity. If you are unsure, sketch the dependency arrows on a small grid before coding — that five-second check prevents the most frustrating DP bugs.
+
+**Complexity.** Typically O(m·n) time and O(m·n) space, reducible to O(min(m,n)) space with the two-row trick. State it as "states × work per state": the number of table entries times the cost of each transition.
+
+**Common mistakes.**
+- Off-by-one between table indices and string indices (`dp[i][j]` uses `s[i-1]`).
+- Table sized `m × n` instead of `(m+1) × (n+1)` when you need an empty-prefix row.
+- Missing base row/column initialization.
+- **Forward instead of backward** inner loop in 0/1 knapsack, silently allowing reuse.
+- `[[0] * n] * m` to build the grid — this creates m references to the **same** row, so writing one row writes them all. Use `[[0] * n for _ in range(m)]`.
+- Space-optimizing before the full table version is correct.
+- Filling in an order that reads not-yet-computed entries.
+
+**Representative problems.** Medium: Unique Paths, Unique Paths II, Minimum Path Sum, Longest Common Subsequence, Edit Distance, Partition Equal Subset Sum, Target Sum, Longest Palindromic Substring, Palindromic Substrings, Maximal Square, Interleaving String, Best Time to Buy and Sell Stock with Cooldown, Coin Change II, Delete Operation for Two Strings, Triangle.

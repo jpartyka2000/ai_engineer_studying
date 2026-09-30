@@ -1,0 +1,177 @@
+Backtracking is exhaustive search with pruning: build a candidate solution incrementally, and abandon a branch as soon as it cannot lead to a valid answer. It is the pattern for **subsets, permutations, combinations**, and constraint problems.
+
+**The signal.** The problem asks for **all** of something — all subsets, all permutations, all combinations, all paths, all valid arrangements — or asks whether any arrangement satisfies a set of constraints. Also a strong hint: a tiny input constraint like `n <= 20`, which announces exponential complexity is expected.
+
+**The universal template.**
+
+```python
+def backtrack(state, choices):
+    if is_complete(state):
+        results.append(state[:])       # COPY, because state is mutated
+        return
+    for choice in choices:
+        if not is_valid(choice, state):
+            continue                   # prune
+        state.append(choice)           # 1. choose
+        backtrack(state, next_choices) # 2. explore
+        state.pop()                    # 3. un-choose (backtrack)
+```
+
+**Choose, explore, un-choose.** That three-line rhythm is the entire pattern. The `pop()` is what makes it backtracking rather than plain recursion — it restores the state so sibling branches start clean.
+
+**Subsets.** Each element is either in or out, so the tree branches twice per element: 2ⁿ subsets.
+
+```python
+def subsets(nums: list[int]) -> list[list[int]]:
+    result = []
+    path = []
+    def backtrack(start: int) -> None:
+        result.append(path[:])              # every node is a valid subset
+        for i in range(start, len(nums)):
+            path.append(nums[i])
+            backtrack(i + 1)                # i + 1: don't reuse this element
+            path.pop()
+    backtrack(0)
+    return result
+```
+
+Note the answer is recorded at **every** node, not just leaves — every prefix is itself a valid subset. The `start` parameter prevents generating the same subset in different orders.
+
+**Permutations.** All n! orderings; here you need a `used` marker rather than a `start` index, because order matters and every element must appear.
+
+```python
+def permute(nums: list[int]) -> list[list[int]]:
+    result = []
+    path = []
+    used = [False] * len(nums)
+    def backtrack() -> None:
+        if len(path) == len(nums):
+            result.append(path[:])
+            return
+        for i in range(len(nums)):
+            if used[i]:
+                continue
+            used[i] = True
+            path.append(nums[i])
+            backtrack()
+            path.pop()
+            used[i] = False                # un-choose BOTH pieces of state
+    backtrack()
+    return result
+```
+
+The rule: **subsets and combinations use a `start` index; permutations use a `used` array.** That distinction is the most useful thing in this note. `start` means "only look forward, order doesn't matter". `used` means "any unused element, order matters".
+
+**Combinations** are subsets with a size constraint, plus a pruning opportunity:
+
+```python
+def combine(n: int, k: int) -> list[list[int]]:
+    result = []
+    path = []
+    def backtrack(start: int) -> None:
+        if len(path) == k:
+            result.append(path[:])
+            return
+        # prune: not enough numbers left to reach length k
+        for i in range(start, n - (k - len(path)) + 2):
+            path.append(i)
+            backtrack(i + 1)
+            path.pop()
+    backtrack(1)
+    return result
+```
+
+That loop bound is the pruning: if fewer than `k - len(path)` candidates remain, the branch is hopeless. In an interview, write the simple `range(start, n + 1)` first, get it correct, then mention the pruning as an optimization.
+
+**Handling duplicates — sort, then skip siblings.** This is the trickiest recurring detail.
+
+```python
+def subsets_with_dup(nums: list[int]) -> list[list[int]]:
+    nums.sort()                            # duplicates become adjacent
+    result, path = [], []
+    def backtrack(start: int) -> None:
+        result.append(path[:])
+        for i in range(start, len(nums)):
+            if i > start and nums[i] == nums[i - 1]:
+                continue                   # skip duplicate at the SAME level
+            path.append(nums[i])
+            backtrack(i + 1)
+            path.pop()
+    backtrack(0)
+    return result
+```
+
+The condition is `i > start`, not `i > 0`. You want to skip a duplicate when it appears as a **sibling** choice at the same tree level, but still allow it deeper in the tree (where it legitimately forms `[2, 2]`). Getting this to `i > 0` drops valid answers; omitting it produces duplicates.
+
+**Reuse allowed: pass `i` instead of `i + 1`.**
+
+```python
+def combination_sum(candidates: list[int], target: int) -> list[list[int]]:
+    result, path = [], []
+    candidates.sort()
+    def backtrack(start: int, remaining: int) -> None:
+        if remaining == 0:
+            result.append(path[:])
+            return
+        for i in range(start, len(candidates)):
+            if candidates[i] > remaining:
+                break                      # sorted, so everything after is too big
+            path.append(candidates[i])
+            backtrack(i, remaining - candidates[i])   # i, not i+1: reuse allowed
+            path.pop()
+    backtrack(0, target)
+    return result
+```
+
+`backtrack(i, ...)` allows reusing the current element; `backtrack(i + 1, ...)` does not. One character, completely different problem. The `break` on a sorted array is effective pruning.
+
+**Grid backtracking: Word Search.** Mark visited, explore, unmark.
+
+```python
+def exist(board: list[list[str]], word: str) -> bool:
+    rows, cols = len(board), len(board[0])
+    def dfs(r: int, c: int, k: int) -> bool:
+        if k == len(word):
+            return True
+        if (r < 0 or r >= rows or c < 0 or c >= cols
+                or board[r][c] != word[k]):
+            return False
+        board[r][c] = "#"                  # mark, so this path can't reuse the cell
+        found = (dfs(r + 1, c, k + 1) or dfs(r - 1, c, k + 1)
+                 or dfs(r, c + 1, k + 1) or dfs(r, c - 1, k + 1))
+        board[r][c] = word[k]              # UNMARK - restore for other paths
+        return found
+    return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))
+```
+
+The unmark is mandatory. Unlike Number of Islands — where you permanently sink visited land because you never need to revisit it — here a cell used on a failed path must be available to a different path. Understanding that difference is the point of the problem.
+
+**Complexity.** Backtracking is exponential, and you state it from the shape of the search tree:
+
+| Problem | Time | Space |
+|---|---|---|
+| Subsets | O(n · 2ⁿ) | O(n) recursion + output |
+| Permutations | O(n · n!) | O(n) recursion + output |
+| Combination Sum | O(n^(target/min)) | O(target/min) |
+| Word Search | O(m · n · 4^L) | O(L) |
+| N-Queens | O(n!) | O(n) |
+
+The extra factor of n is the cost of copying each result. Be explicit that the output itself is exponential, so you cannot beat that bound — you can only prune the search.
+
+**Pruning is the actual skill.** The template is mechanical; the interview value is in cutting branches:
+- Sort first so you can `break` instead of `continue` once a candidate is too large.
+- Check feasibility before recursing rather than at the base case.
+- Bound the loop when too few candidates remain.
+- Track remaining budget and stop when it goes negative.
+
+**Common mistakes.**
+- Appending `path` instead of `path[:]` — every result is a reference to the same list, so they all end up identical (usually empty).
+- Forgetting to un-choose, so state leaks into sibling branches.
+- Using `start` for permutations or `used` for combinations.
+- Duplicate skip written as `i > 0` instead of `i > start`.
+- Forgetting to sort before the duplicate-skip logic — it relies on duplicates being adjacent.
+- `i + 1` vs `i` when reuse is or isn't allowed.
+- Failing to restore a grid cell after a failed path.
+- Mutable default arguments (`path=[]`).
+
+**Representative problems.** Easy: Binary Tree Paths, Letter Case Permutation. Medium: Subsets, Subsets II, Permutations, Permutations II, Combination Sum, Combination Sum II, Combinations, Generate Parentheses, Letter Combinations of a Phone Number, Word Search, Palindrome Partitioning, Restore IP Addresses, Target Sum.

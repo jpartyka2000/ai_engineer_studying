@@ -1,0 +1,53 @@
+The data science coding interview is a different animal from the software engineering one. You are rarely asked to invert a binary tree; you are asked to write SQL against a schema, manipulate a dataset, or implement a metric or algorithm from scratch.
+
+**The formats you will actually see, in rough order of frequency.**
+
+**1. SQL.** The single most common format for data scientist, data analyst, and analytics engineer roles. Typically 2–4 queries of escalating difficulty against a small schema. The patterns are narrow and highly repeatable: aggregation with GROUP BY and HAVING, the right join type, window functions for ranking and running totals, and top-N-per-group.
+
+**2. Data manipulation.** Given a dataset, compute something. In a real screen you would reach for pandas; in a sandbox without it, you do the same work on a list of dicts. Either way the operations are the same handful: group and aggregate, join, pivot, deduplicate, fill missing values, and window over a sort order.
+
+**3. Implement a metric from scratch.** Precision, recall, F1, RMSE, R-squared, AUC, log loss. These are short and they test whether you actually understand the metric rather than just calling `sklearn.metrics`.
+
+**4. Implement an algorithm from scratch.** Linear regression by least squares or gradient descent, k-NN, one step of k-means, entropy and information gain, cosine similarity. Again short, again testing understanding over API familiarity.
+
+**5. Statistics and probability.** Compute a percentile, standardize a column, find outliers, reason about conditional probability. Often blended into the questions above rather than asked standalone.
+
+**6. Conceptual follow-ups.** Attached to almost every coding question: "why that metric?", "what would leak here?", "how would you validate this?" These frequently carry more weight than the code.
+
+**What distinguishes a strong candidate.** Not typing speed. Three things:
+
+- **Naming the right metric or method and justifying it.** "I'd use PR-AUC rather than accuracy because positives are 0.5% of the data, so the majority-class baseline is already 99.5%."
+- **Spotting leakage and validation problems unprompted.** Fitting a scaler before splitting, random-splitting a time series, using a feature that only exists after the outcome. Interviewers watch for this specifically.
+- **Handling the unglamorous edge cases.** Empty input, zero denominators, all-missing columns, a constant feature, a group with no members. Data science code fails on these constantly, and guarding them is a strong signal of production experience.
+
+**The SQL patterns worth drilling, because they recur endlessly.**
+
+| Pattern | Key tool |
+|---|---|
+| Second highest / Nth value | subquery, or window function |
+| Top N per group | `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` in a CTE |
+| Deduplicate keeping latest | top-N-per-group with N=1 |
+| Rows with no match | LEFT JOIN + IS NULL, or NOT EXISTS |
+| Include groups with zero rows | LEFT JOIN + `COUNT(other.id)`, never `COUNT(*)` |
+| Filter on an aggregate | HAVING, not WHERE |
+| Running total | `SUM(x) OVER (ORDER BY ...)` |
+| Period-over-period change | `LAG()` over an aggregated CTE |
+| Pivot without PIVOT | `SUM(CASE WHEN ... THEN 1 ELSE 0 END)` |
+| Safe division | `NULLIF(denominator, 0)` |
+| Next/previous event per user | `LEAD()`/`LAG()` with PARTITION BY |
+
+**The traps that catch people most often.**
+
+1. **`COUNT(*)` after a LEFT JOIN**, which reports 1 instead of 0 for unmatched groups.
+2. **`NOT IN` with a NULL in the subquery**, which silently returns zero rows.
+3. **Filtering on a window function in WHERE**, which is invalid because WHERE runs first.
+4. **Fan-out**: a non-unique join key duplicating rows and inflating every downstream SUM.
+5. **Fitting a transformer before splitting**, leaking test statistics into training.
+6. **Random-splitting time series**, training on the future.
+7. **Reporting accuracy on imbalanced data** without stating the baseline.
+8. **Integer division** truncating a rate to 0.
+9. **Unguarded division** by a zero count, a zero total weight, or a zero standard deviation.
+
+**How to practise.** Drill the SQL patterns until the shape is automatic — there are perhaps a dozen and they cover the large majority of questions. Implement each metric once from the definition rather than reading it. And for every dataset operation, ask what happens when the input is empty, when a group has one member, and when a denominator is zero, because that is where the follow-up question goes.
+
+**One honest note about tooling.** Real data science work is pandas, numpy, and scikit-learn. Interviews sometimes forbid them, precisely to see whether you understand what those libraries do. Both skills matter: know the library idiom, and be able to write the thing it does in plain Python.

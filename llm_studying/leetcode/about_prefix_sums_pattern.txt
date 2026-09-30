@@ -1,0 +1,136 @@
+A prefix sum array lets you answer "what is the sum of elements from i to j?" in O(1) after O(n) preprocessing. It is the tool for range-sum questions and, combined with a hash map, for counting subarrays with a target sum — including when sliding window fails.
+
+**The construction.** `prefix[i]` = sum of the first i elements, with `prefix[0] = 0`.
+
+```python
+def build_prefix(nums: list[int]) -> list[int]:
+    prefix = [0] * (len(nums) + 1)
+    for i, num in enumerate(nums):
+        prefix[i + 1] = prefix[i] + num
+    return prefix
+```
+
+Then the sum of `nums[i..j]` inclusive is `prefix[j + 1] - prefix[i]`.
+
+The `+1` offset with a leading zero is worth adopting as a habit: it removes all the special-casing for ranges that start at index 0. Without the sentinel you end up writing `prefix[j] - (prefix[i-1] if i > 0 else 0)` everywhere.
+
+```python
+class NumArray:
+    """Range Sum Query - Immutable."""
+    def __init__(self, nums: list[int]):
+        self.prefix = build_prefix(nums)
+
+    def sum_range(self, left: int, right: int) -> int:
+        return self.prefix[right + 1] - self.prefix[left]
+```
+
+The trade: O(n) preprocessing and O(n) space, then O(1) per query. That is the right call when there are many queries; pointless for a single one.
+
+**Pattern: count subarrays with a target sum.** This is the important one, and it is the answer when sliding window breaks.
+
+```python
+def subarray_sum_equals_k(nums: list[int], k: int) -> int:
+    count = 0
+    running = 0
+    seen = {0: 1}                          # prefix sum -> number of occurrences
+    for num in nums:
+        running += num
+        count += seen.get(running - k, 0)  # how many earlier prefixes complete a sum of k
+        seen[running] = seen.get(running, 0) + 1
+    return count
+```
+
+The logic: a subarray ending here sums to k exactly when some earlier prefix equals `running - k`. So count how many such earlier prefixes exist.
+
+Two things to get right:
+- **The `{0: 1}` seed.** It represents the empty prefix, and it is what allows a subarray starting at index 0 to be counted. Omitting it is *the* bug in this problem.
+- **Count, do not just check.** You need the number of occurrences, not presence, because multiple earlier prefixes can have the same value.
+
+**Why this beats sliding window here.** Sliding window requires monotonicity — growing the window must move the sum predictably. With **negative numbers**, growing can decrease the sum, so the shrink logic is invalid. Prefix sums with a hash map do not care about sign. When an interviewer adds "the array may contain negative numbers" to a subarray-sum problem, they are steering you from sliding window to this technique.
+
+**Variant: divisibility and remainders.** Instead of keying on the prefix value, key on `prefix % k`.
+
+```python
+def subarrays_div_by_k(nums: list[int], k: int) -> int:
+    count = 0
+    running = 0
+    seen = {0: 1}
+    for num in nums:
+        running = (running + num) % k      # Python's % is always non-negative for positive k
+        count += seen.get(running, 0)
+        seen[running] = seen.get(running, 0) + 1
+    return count
+```
+
+Two prefixes with the same remainder mod k bracket a subarray divisible by k. Python's modulo conveniently returns a non-negative result for a positive divisor, which sidesteps a bug that bites in languages where it does not.
+
+**Variant: prefix and suffix products (no division).** Product of Array Except Self is a prefix-sum problem in disguise.
+
+```python
+def product_except_self(nums: list[int]) -> list[int]:
+    n = len(nums)
+    result = [1] * n
+    prefix = 1
+    for i in range(n):
+        result[i] = prefix
+        prefix *= nums[i]
+    suffix = 1
+    for i in range(n - 1, -1, -1):
+        result[i] *= suffix
+        suffix *= nums[i]
+    return result
+```
+
+O(n) time, O(1) extra space beyond the output. The trick is two passes accumulating in opposite directions, with the output array doubling as scratch space. The reason division is banned is that a zero in the input would break it.
+
+**Variant: 2-D prefix sums.** For rectangle sums in a matrix, with the inclusion-exclusion formula.
+
+```python
+def build_prefix_2d(matrix: list[list[int]]) -> list[list[int]]:
+    rows, cols = len(matrix), len(matrix[0])
+    p = [[0] * (cols + 1) for _ in range(rows + 1)]
+    for r in range(rows):
+        for c in range(cols):
+            p[r + 1][c + 1] = (matrix[r][c] + p[r][c + 1]
+                               + p[r + 1][c] - p[r][c])
+    return p
+```
+
+Then the sum of the rectangle from (r1,c1) to (r2,c2) inclusive is
+`p[r2+1][c2+1] - p[r1][c2+1] - p[r2+1][c1] + p[r1][c1]`.
+
+The `- p[r][c]` in construction and the `+ p[r1][c1]` in the query are both inclusion-exclusion: the overlapping corner gets subtracted twice, so it is added back once.
+
+**Variant: difference array for range updates.** The inverse technique — when you apply many range increments and only read the result at the end.
+
+```python
+def apply_range_increments(n: int, updates: list[tuple[int, int, int]]) -> list[int]:
+    diff = [0] * (n + 1)
+    for start, end, delta in updates:
+        diff[start] += delta
+        diff[end + 1] -= delta         # cancel the delta just past the range
+    result = []
+    running = 0
+    for i in range(n):
+        running += diff[i]
+        result.append(running)
+    return result
+```
+
+Each update is O(1) instead of O(range length), and one final prefix pass materializes the array. This is the pattern behind problems like Corporate Flight Bookings and Car Pooling.
+
+**When to reach for prefix sums.**
+- Repeated range-sum queries on an unchanging array.
+- Counting subarrays with a target sum, **especially with negatives**.
+- Divisibility conditions on subarray sums.
+- Rectangle sums in a matrix.
+- Many range updates, read once at the end (difference array).
+
+**Common mistakes.**
+- Forgetting the `{0: 1}` seed in the hash-map version.
+- Checking presence instead of counting occurrences.
+- Off-by-one in the range formula. With the leading-zero convention it is `prefix[j+1] - prefix[i]`; verify on a two-element example.
+- Using sliding window when negatives are present.
+- Mutating the array after building the prefix — the prefix is now stale. Mutable range queries are what segment trees and Fenwick trees are for, and those are deliberately outside this topic's scope.
+
+**Representative problems.** Easy: Running Sum of 1d Array, Range Sum Query Immutable, Find Pivot Index. Medium: Subarray Sum Equals K, Product of Array Except Self, Subarray Sums Divisible by K, Contiguous Array, Range Sum Query 2D Immutable, Continuous Subarray Sum, Corporate Flight Bookings.

@@ -1,0 +1,134 @@
+Union-find (also called disjoint set union, or DSU) tracks which elements belong to the same group, supporting two operations: **find** which group an element is in, and **union** two groups together. It is a small amount of code that solves a specific family of Medium graph problems very cleanly.
+
+**When to reach for it.** The signal is **dynamic connectivity** — edges arriving over time, and you need to answer "are these two connected?" or "how many groups are there?" as you go. If the graph is fixed and you just need to traverse it once, plain BFS or DFS is simpler.
+
+**The implementation.** Memorize this; it is short and it is the whole topic.
+
+```python
+class UnionFind:
+    def __init__(self, n: int):
+        self.parent = list(range(n))     # each node starts as its own root
+        self.rank = [1] * n              # tree size, used to union smaller into larger
+        self.count = n                   # number of disjoint components
+
+    def find(self, x: int) -> int:
+        while self.parent[x] != x:
+            self.parent[x] = self.parent[self.parent[x]]   # path compression
+            x = self.parent[x]
+        return x
+
+    def union(self, a: int, b: int) -> bool:
+        root_a, root_b = self.find(a), self.find(b)
+        if root_a == root_b:
+            return False                 # already connected - this edge forms a cycle
+        if self.rank[root_a] < self.rank[root_b]:          # union by rank
+            root_a, root_b = root_b, root_a
+        self.parent[root_b] = root_a
+        self.rank[root_a] += self.rank[root_b]
+        self.count -= 1
+        return True
+
+    def connected(self, a: int, b: int) -> bool:
+        return self.find(a) == self.find(b)
+```
+
+**The two optimizations, and why they matter.**
+
+**Path compression** — in `find`, point nodes directly at (closer to) the root as you walk up. The line `self.parent[x] = self.parent[self.parent[x]]` is *path halving*: each node on the path gets repointed to its grandparent, which flattens the tree over time without needing a second pass or recursion.
+
+**Union by rank (or size)** — always attach the smaller tree under the larger root. Without this, unioning in an adversarial order builds a long chain and `find` degrades to O(n).
+
+With both, the amortized complexity per operation is **effectively O(1)** — formally O(α(n)), the inverse Ackermann function, which is less than 5 for any n you will ever see. In an interview, say "effectively constant amortized, formally inverse Ackermann" and move on.
+
+**`union` returning a boolean is the useful design.** `False` means the two were already connected, which means **this edge creates a cycle**. That single return value solves a whole class of problems.
+
+**Use 1: count connected components.**
+
+```python
+def count_components(n: int, edges: list[list[int]]) -> int:
+    uf = UnionFind(n)
+    for u, v in edges:
+        uf.union(u, v)
+    return uf.count
+```
+
+Compare with the BFS/DFS version: both are fine, but union-find is shorter and handles edges arriving incrementally. If someone asks "now what if edges keep arriving and I need the count after each one?", union-find answers in O(1) amortized per edge while re-running DFS would be O(V + E) each time. That is the scenario that justifies it.
+
+**Use 2: cycle detection in an undirected graph.**
+
+```python
+def has_cycle(n: int, edges: list[list[int]]) -> bool:
+    uf = UnionFind(n)
+    for u, v in edges:
+        if not uf.union(u, v):
+            return True                  # endpoints already connected
+    return False
+```
+
+Much cleaner than the DFS-with-parent-tracking version, and it is the natural solution to Redundant Connection — the first edge whose `union` returns `False` is the one to remove.
+
+**Use 3: valid tree.** A graph is a tree iff it is connected and acyclic:
+
+```python
+def valid_tree(n: int, edges: list[list[int]]) -> bool:
+    if len(edges) != n - 1:
+        return False                     # cheap early exit
+    uf = UnionFind(n)
+    for u, v in edges:
+        if not uf.union(u, v):
+            return False                 # cycle
+    return uf.count == 1                 # connected
+```
+
+With the `n - 1` edge check, either condition implies the other, but checking both reads more clearly.
+
+**Use 4: grouping by equivalence.** When elements should be grouped by some shared property, union them and then collect groups by root.
+
+```python
+from collections import defaultdict
+
+def groups(uf: UnionFind, n: int) -> list[list[int]]:
+    buckets = defaultdict(list)
+    for i in range(n):
+        buckets[uf.find(i)].append(i)
+    return list(buckets.values())
+```
+
+This is how Accounts Merge works: union accounts that share an email, then group by root. Note you must call `find` on every element when collecting — reading `parent[i]` directly can give a stale intermediate node.
+
+**Mapping non-integer elements.** Union-find is indexed by integer, so map arbitrary keys to indices first:
+
+```python
+index = {}
+def get_index(key) -> int:
+    if key not in index:
+        index[key] = len(index)
+    return index[key]
+```
+
+For a grid, flatten the coordinates: `node_id = r * cols + c`. That conversion is worth stating explicitly when you use it.
+
+**Union-find vs BFS/DFS — the actual decision.**
+
+| Situation | Use |
+|---|---|
+| Edges arrive incrementally, queries interleaved | **union-find** |
+| Fixed graph, one traversal | BFS/DFS (simpler) |
+| Need the shortest path | **BFS** — union-find has no path information |
+| Need the actual path or the traversal order | **BFS/DFS** |
+| Undirected cycle detection | **union-find** (cleanest) |
+| Directed cycle detection | **DFS with three states** — union-find does not handle direction |
+| Counting components after each edge | **union-find** |
+
+Two limitations worth volunteering: union-find gives you **no path and no distance information**, and it **does not work for directed graphs** — grouping is inherently symmetric. If someone asks about directed cycles, go to DFS with WHITE/GRAY/BLACK.
+
+**Common mistakes.**
+- Omitting path compression or union by rank, then claiming near-constant time.
+- Comparing `parent[a] == parent[b]` instead of `find(a) == find(b)`. Parents are not roots.
+- Forgetting to decrement the component count in `union`.
+- Unioning without checking whether they were already connected, losing the cycle signal.
+- Reading `parent[i]` when collecting groups instead of calling `find(i)`.
+- Using it for a directed graph.
+- Off-by-one when nodes are 1-indexed — size the arrays `n + 1`.
+
+**Representative problems.** Medium: Number of Connected Components in an Undirected Graph, Graph Valid Tree, Redundant Connection, Accounts Merge, Number of Provinces, Most Stones Removed with Same Row or Column, Satisfiability of Equality Equations, Number of Islands (union-find alternative to DFS), Smallest String With Swaps.

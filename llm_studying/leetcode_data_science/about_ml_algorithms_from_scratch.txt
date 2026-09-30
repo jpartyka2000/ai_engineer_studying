@@ -1,0 +1,138 @@
+"Implement X from scratch" is a standard data science interview exercise. The algorithms asked are short, and the interest is in whether you understand the mechanics and the practical caveats.
+
+**Linear regression, closed form.** For a single feature there is an exact solution, no iteration needed.
+
+```python
+def fit_linear(x, y):
+    n = len(x)
+    mx, my = sum(x) / n, sum(y) / n
+    num = sum((a - mx) * (b - my) for a, b in zip(x, y))
+    den = sum((a - mx) ** 2 for a in x)
+    slope = num / den
+    return slope, my - slope * mx          # the line passes through (mx, my)
+```
+
+`slope = cov(x, y) / var(x)`. The fitted line always passes through the point of means, which gives you the intercept for free. Guard `den == 0` (constant x). For multiple features this generalizes to the normal equation `(XᵀX)⁻¹Xᵀy`, which is O(p³) in the number of features and numerically unstable when features are collinear — which is why real implementations use QR or SVD decomposition instead of inverting directly.
+
+**Gradient descent.** The iterative alternative, and what scales.
+
+```python
+def gradient_descent(x, y, lr, epochs):
+    w = b = 0.0
+    n = len(x)
+    for _ in range(epochs):
+        dw = db = 0.0
+        for xi, yi in zip(x, y):
+            error = yi - (w * xi + b)
+            dw += -2 * xi * error
+            db += -2 * error
+        w -= lr * (dw / n)                 # SUBTRACT - we are descending
+        b -= lr * (db / n)
+    return w, b
+```
+
+Points worth raising:
+- Accumulating over all points before updating makes this **batch** gradient descent. Updating per sample is **stochastic**; per small group is **mini-batch**, which is what deep learning uses.
+- Dividing by n keeps the learning rate independent of dataset size.
+- Too large a learning rate diverges; too small crawls. **Feature scaling matters** — with features on wildly different scales the loss surface is elongated and convergence is slow.
+- The closed form is exact and preferable for small problems. Gradient descent wins when the data is large, streaming, or the model has no closed form.
+
+**Logistic regression: the sigmoid.** The piece that turns a linear score into a probability.
+
+```python
+def sigmoid(z):
+    if z >= 0:
+        return 1 / (1 + math.exp(-z))
+    exp_z = math.exp(z)                    # avoids overflow for large negative z
+    return exp_z / (1 + exp_z)
+```
+
+The naive `1 / (1 + exp(-z))` **overflows** for large negative z. Branching on the sign is the standard numerically stable form, and writing it correctly is a genuine signal. Logistic regression is trained by minimizing log loss (cross-entropy), not squared error — squared error on a sigmoid gives a non-convex surface.
+
+**k-nearest neighbours.**
+
+```python
+def knn_predict(train_x, train_y, query, k):
+    dists = sorted(
+        (math.sqrt(sum((a - b) ** 2 for a, b in zip(p, query))), i)
+        for i, p in enumerate(train_x)
+    )
+    votes = {}
+    for _, i in dists[:k]:
+        votes[train_y[i]] = votes.get(train_y[i], 0) + 1
+    best = max(votes.values())
+    return min(label for label, c in votes.items() if c == best)
+```
+
+- kNN is a **lazy learner** — no training phase, all the work at prediction time.
+- **Feature scaling is mandatory.** Euclidean distance lets the largest-range feature dominate. A salary column in the tens of thousands will swamp an age column entirely.
+- Prediction is O(n) per query, which is why production systems use KD-trees, ball trees, or approximate nearest neighbour indexes (HNSW, IVF).
+- Small k overfits and is noise-sensitive; large k oversmooths. Odd k avoids ties in binary classification.
+- It suffers badly from the **curse of dimensionality**: in high dimensions all points become roughly equidistant and the notion of "nearest" loses meaning.
+
+**One step of k-means (Lloyd's algorithm).** Assign, then move.
+
+```python
+def kmeans_step(points, centroids):
+    assignments = [min(range(len(centroids)), key=lambda j: abs(p - centroids[j]))
+                   for p in points]
+    new = []
+    for j, old in enumerate(centroids):
+        members = [p for p, a in zip(points, assignments) if a == j]
+        new.append(sum(members) / len(members) if members else old)
+    return assignments, new
+```
+
+- The two alternating steps are **assign** each point to its nearest centroid, then **move** each centroid to the mean of its members. Repeat until assignments stop changing.
+- **Empty clusters are a real case** and must not divide by zero. Implementations either keep the old centroid or reinitialize it.
+- k-means converges to a **local** optimum and is sensitive to initialization, which is why **k-means++** seeding and multiple restarts exist.
+- It minimizes within-cluster sum of squares, which biases it toward spherical, similarly-sized clusters. It will do a poor job on elongated or nested shapes — that is a DBSCAN or spectral clustering problem.
+- Choosing k: the elbow method on inertia, or silhouette score.
+
+**Entropy and information gain** — the splitting criterion behind decision trees.
+
+```python
+def entropy(labels):
+    n = len(labels)
+    counts = Counter(labels)
+    return -sum((c / n) * math.log2(c / n) for c in counts.values())
+
+def information_gain(labels, split):
+    parent = entropy(labels)
+    groups = defaultdict(list)
+    for label, g in zip(labels, split):
+        groups[g].append(label)
+    weighted = sum(len(v) / len(labels) * entropy(v) for v in groups.values())
+    return parent - weighted
+```
+
+- Entropy is 0 for a pure node and 1 bit for a balanced binary node.
+- Children must be weighted by their **share of the samples**, not equally — a split isolating one sample should not count as much as an even one.
+- Information gain is what ID3 and C4.5 maximize. **Gini impurity** (`1 - Σp²`) is the CART alternative; it behaves very similarly and is cheaper, avoiding the logarithm.
+- Skip `p = 0` terms, since `log2(0)` is undefined (the limit of `p·log2(p)` is 0).
+- Plain information gain **favours high-cardinality features** — an id column splits perfectly and is useless. C4.5's gain ratio normalizes for that.
+
+**Cosine similarity.**
+
+```python
+def cosine_similarity(a, b):
+    dot = sum(x * y for x, y in zip(a, b))
+    mag = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b))
+    return dot / mag if mag else 0.0
+```
+
+It measures **angle**, not distance, so it ignores magnitude — which is exactly why it is the default for text embeddings and TF-IDF, where document length should not affect similarity. Range is [-1, 1] generally, but [0, 1] for non-negative vectors like word counts. Guard zero magnitude: a zero vector has no direction.
+
+**Train/test split and k-fold indices.** Frequently asked because they test whether you think about reproducibility.
+
+```python
+def train_test_split(n, test_size, seed):
+    idx = list(range(n))
+    random.Random(seed).shuffle(idx)        # seeded instance, not global random
+    cut = int(n * test_size)
+    return sorted(idx[cut:]), sorted(idx[:cut])
+```
+
+Use a **seeded `random.Random` instance** rather than the global module, so your split does not depend on other code's use of randomness. Reproducibility is not a nicety — without it you cannot compare two experiments. And note the real-world requirements a naive split misses: **stratification** to preserve class balance, **grouping** so an entity stays in one split, and **chronological** splitting for time series.
+
+**The common thread in all of these.** Guard every division. Handle the degenerate input — empty data, a constant feature, an empty cluster, a zero-magnitude vector. And for every algorithm, know the one practical caveat that bites in production: scaling for kNN and gradient descent, initialization for k-means, numerical stability for the sigmoid, and cardinality bias for information gain.

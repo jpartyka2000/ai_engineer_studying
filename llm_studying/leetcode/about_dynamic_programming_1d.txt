@@ -1,0 +1,165 @@
+Dynamic programming solves problems with **overlapping subproblems** and an **optimal substructure** by computing each subproblem once. One-dimensional DP — where the state is a single index — covers a large share of Medium DP problems.
+
+**The two signals.** A problem is DP when (a) it asks for a count of ways, or a minimum/maximum over a sequence of choices, and (b) the naive recursion recomputes the same subproblem. If a greedy choice is provably correct, it is greedy, not DP; if each subproblem is used once, it is plain recursion.
+
+**Two implementations of the same idea.**
+
+**Top-down (memoized recursion)** — write the recurrence naturally and cache it. Usually easier to derive.
+
+```python
+from functools import cache
+
+def climb_stairs(n: int) -> int:
+    @cache
+    def ways(i: int) -> int:
+        if i <= 2:
+            return i
+        return ways(i - 1) + ways(i - 2)
+    return ways(n)
+```
+
+**Bottom-up (tabulation)** — fill an array in dependency order. No recursion limit, often faster in practice.
+
+```python
+def climb_stairs_dp(n: int) -> int:
+    if n <= 2:
+        return n
+    dp = [0] * (n + 1)
+    dp[1], dp[2] = 1, 2
+    for i in range(3, n + 1):
+        dp[i] = dp[i - 1] + dp[i - 2]
+    return dp[n]
+```
+
+**Space optimization** — if `dp[i]` only depends on the last few entries, keep only those. O(1) space.
+
+```python
+def climb_stairs_optimized(n: int) -> int:
+    if n <= 2:
+        return n
+    prev2, prev1 = 1, 2
+    for _ in range(3, n + 1):
+        prev2, prev1 = prev1, prev1 + prev2
+    return prev1
+```
+
+A strong interview arc is exactly this progression: brute-force recursion → memoize it → tabulate it → optimize the space. Narrating that sequence demonstrates you understand DP rather than having memorized a table.
+
+**The method for deriving a DP.** Answer four questions in order, out loud:
+
+1. **What is the state?** What does `dp[i]` mean, in a full sentence? "The maximum money robbable from the first i houses." Being vague here is why most DP attempts fail.
+2. **What is the recurrence?** How does `dp[i]` follow from smaller entries?
+3. **What are the base cases?**
+4. **What is the answer?** Usually `dp[n]`, but sometimes `max(dp)`.
+
+If you cannot state #1 as a clean sentence, do not start coding. Fix the state definition first.
+
+**Pattern 1: take or skip (House Robber).** At each element, either take it and skip the previous, or skip it.
+
+```python
+def rob(nums: list[int]) -> int:
+    prev2, prev1 = 0, 0        # best up to i-2, best up to i-1
+    for num in nums:
+        prev2, prev1 = prev1, max(prev1, prev2 + num)
+    return prev1
+```
+
+State: "best total from the first i houses." Recurrence: `dp[i] = max(dp[i-1], dp[i-2] + nums[i])` — skip this house, or take it plus the best from two back.
+
+**Pattern 2: minimum coins / unbounded choices (Coin Change).**
+
+```python
+def coin_change(coins: list[int], amount: int) -> int:
+    dp = [float("inf")] * (amount + 1)
+    dp[0] = 0                                   # zero coins make amount 0
+    for a in range(1, amount + 1):
+        for coin in coins:
+            if coin <= a:
+                dp[a] = min(dp[a], dp[a - coin] + 1)
+    return -1 if dp[amount] == float("inf") else dp[amount]
+```
+
+State: "fewest coins to make amount a." O(amount × len(coins)) time, O(amount) space. The `inf` sentinel encodes unreachable, and the final check converts it to -1.
+
+Note that greedy fails here: for coins `[1, 3, 4]` and amount 6, greedy takes 4+1+1 = 3 coins, but 3+3 = 2 is optimal. Having that counterexample ready is the standard follow-up.
+
+**Pattern 3: count the ways (Coin Change II / Climbing variations).** Same table, different recurrence — and the loop order matters enormously.
+
+```python
+def change(amount: int, coins: list[int]) -> int:
+    dp = [0] * (amount + 1)
+    dp[0] = 1                                   # one way to make 0: take nothing
+    for coin in coins:                          # coins OUTER
+        for a in range(coin, amount + 1):
+            dp[a] += dp[a - coin]
+    return dp[amount]
+```
+
+**Coins outer counts combinations; amount outer counts permutations.** With coins outer, `[1,2]` and `[2,1]` are the same and counted once. Swap the loops and you count ordered sequences instead. This is the highest-value detail in 1-D DP and interviewers probe it directly.
+
+**Pattern 4: longest increasing subsequence.** The O(n²) version is the expected answer.
+
+```python
+def length_of_lis(nums: list[int]) -> int:
+    if not nums:
+        return 0
+    dp = [1] * len(nums)               # dp[i] = LIS length ENDING at i
+    for i in range(1, len(nums)):
+        for j in range(i):
+            if nums[j] < nums[i]:
+                dp[i] = max(dp[i], dp[j] + 1)
+    return max(dp)
+```
+
+Note the answer is `max(dp)`, not `dp[-1]` — the longest subsequence need not end at the last element. There is an O(n log n) solution using binary search with `bisect`; mention it exists, and offer it if pushed.
+
+**Pattern 5: word break (DP over string positions).**
+
+```python
+def word_break(s: str, word_dict: list[str]) -> bool:
+    words = set(word_dict)
+    dp = [False] * (len(s) + 1)
+    dp[0] = True                       # empty string is breakable
+    for i in range(1, len(s) + 1):
+        for j in range(i):
+            if dp[j] and s[j:i] in words:
+                dp[i] = True
+                break
+    return dp[len(s)]
+```
+
+State: "is `s[:i]` segmentable?" The `dp[0] = True` seed is the empty-prefix base case, analogous to the `{0: 1}` seed in prefix-sum problems.
+
+**Pattern 6: max subarray (Kadane's).** Arguably the simplest DP, often not recognized as one.
+
+```python
+def max_subarray(nums: list[int]) -> int:
+    best = current = nums[0]
+    for num in nums[1:]:
+        current = max(num, current + num)   # extend, or start fresh here
+        best = max(best, current)
+    return best
+```
+
+State: "largest sum of a subarray ending at i." The choice at each step is extend the previous subarray or start a new one.
+
+**Choosing top-down vs bottom-up.**
+
+| Prefer | When |
+|---|---|
+| **Top-down** | the recurrence is easier to see than the fill order; not all states are needed; the state is a tuple or otherwise awkward to index |
+| **Bottom-up** | you want to space-optimize; recursion depth would be a problem; you want the lower constant factor |
+
+In an interview, top-down with `@cache` is usually the fastest route to a correct solution. Then offer the bottom-up and space-optimized versions as follow-ups.
+
+**Common mistakes.**
+- Not defining the state precisely. This causes most DP failures.
+- Wrong array size — usually `n + 1`, not `n`, when `dp[0]` means "empty".
+- Missing base cases, especially `dp[0]`.
+- Returning `dp[-1]` when the answer is `max(dp)`, as in LIS.
+- Getting the loop order wrong in Coin Change II — combinations vs permutations.
+- Using `0` as the sentinel for "unreachable" when 0 is a legitimate value; use `inf` or `-1`.
+- Space-optimizing before the unoptimized version is correct. Get it right, then compress.
+- Reaching for greedy where DP is required. Ask for a counterexample before trusting a greedy choice.
+
+**Representative problems.** Easy: Climbing Stairs, Min Cost Climbing Stairs, Fibonacci Number, Maximum Subarray, Best Time to Buy and Sell Stock. Medium: House Robber, House Robber II, Coin Change, Coin Change II, Longest Increasing Subsequence, Word Break, Decode Ways, Partition Equal Subset Sum, Maximum Product Subarray, Jump Game, Combination Sum IV, Number of Longest Increasing Subsequence.

@@ -1,0 +1,95 @@
+Data leakage is the most consequential mistake in applied machine learning, and spotting it unprompted is one of the strongest signals you can give in a data science interview. It produces excellent validation scores and a model that fails immediately in production.
+
+**The definition.** Leakage is any situation where information that would not be available at prediction time influences training or evaluation. Two broad families:
+
+**1. Target leakage** — a *feature* encodes the outcome.
+**2. Train/test contamination** — the *evaluation* saw data it should not have.
+
+**Target leakage examples.**
+- Predicting churn with a `days_since_account_closed` field. It only exists after churning.
+- Predicting fraud with a `chargeback_amount` column populated during investigation.
+- Predicting a diagnosis from a `treatment_prescribed` field.
+- Predicting conversion with a `total_lifetime_spend` computed after the conversion window.
+
+The diagnostic question for every feature: **would this value exist, with this value, at the exact moment the prediction must be made?** If it is populated by a downstream process, it leaks.
+
+A practical tell: a single feature with implausibly high importance, or a validation score that is suspiciously good. Investigate rather than celebrate.
+
+**Train/test contamination: the preprocessing trap.** This is the one people commit most often.
+
+```python
+# WRONG - the scaler saw the test set
+scaler.fit(X_all)
+X_all_scaled = scaler.transform(X_all)
+X_train, X_test = split(X_all_scaled)
+
+# RIGHT - fit on train only
+X_train, X_test = split(X_all)
+scaler.fit(X_train)
+X_train_scaled = scaler.transform(X_train)
+X_test_scaled = scaler.transform(X_test)     # same fitted parameters
+```
+
+Any **fitted** transformer is subject to this rule, not just scalers:
+- Scalers (the mean and std are learned)
+- Imputers (the fill value is learned)
+- Encoders (the category set is learned)
+- Feature selection (which features survive is learned)
+- Dimensionality reduction such as PCA
+- Resampling such as SMOTE — oversample the training fold only
+
+**The practical answer is a Pipeline.** Wrapping preprocessing and the estimator in a `sklearn.pipeline.Pipeline` and passing that to `cross_val_score` refits every step on each training fold automatically. This is the main reason Pipelines exist, and saying so is the right answer to "how do you prevent this?"
+
+**Time-series leakage.** A random split lets the model train on the future and predict the past — a situation the deployed model never faces.
+
+- Use a **forward-chaining** split: train on [0, t], validate on (t, t+h], roll forward.
+- Watch **feature construction** too. A centered rolling window (`center=True`) includes future values. A `rolling(7).mean()` used as a feature must be trailing.
+- Beware of a **gap** requirement: if predictions are made a week ahead, leave a week between train and validation, or you leak information the model would not yet have.
+
+**Group leakage.** If the same entity appears in both train and validation — several visits from one patient, several sessions from one user, several photos of one object — the model can memorize the entity rather than learn the pattern. Use `GroupKFold` or `GroupShuffleSplit` keyed on the entity id.
+
+**Duplicate leakage.** Exact or near-duplicate rows split across train and test inflate scores. Deduplicate *before* splitting.
+
+**Cross-validation, correctly.**
+
+```
+k-fold:             each sample is validated once, trained on k-1 times
+StratifiedKFold:    preserves class proportions per fold - essential when imbalanced
+GroupKFold:         keeps an entity entirely within one fold
+TimeSeriesSplit:    forward-chaining, never trains on the future
+```
+
+With 1% positives and plain 5-fold, a fold can contain almost no positives, making its metrics meaningless and the overall estimate very high-variance. Stratify.
+
+**Why cross-validate at all rather than use one split?** A single split gives one noisy estimate that depends heavily on which rows landed where. k-fold uses every observation for both training and validation (never simultaneously), giving a lower-variance estimate plus a spread across folds — and that spread is itself informative. Large fold-to-fold variance means your estimate is unstable and you should not trust a small difference between two models.
+
+**The three-way split.** Train / validation / test exist for distinct purposes:
+- **Train** fits parameters.
+- **Validation** selects hyperparameters and models.
+- **Test** is touched **once**, at the end, to estimate generalization.
+
+Tuning against the test set turns it into a validation set, and your reported number becomes optimistic. If you have tuned against it repeatedly, you no longer have an unbiased estimate — say so rather than pretending otherwise.
+
+**Overfitting vs underfitting, diagnosed from two numbers.**
+
+| | Train error | Validation error |
+|---|---|---|
+| Underfitting (high bias) | high | high, close to train |
+| Good fit | low | low, small gap |
+| Overfitting (high variance) | very low | much higher — large gap |
+
+The remedies are opposite, which is why the diagnosis matters. Overfitting wants regularization, more data, a simpler model, early stopping, or bagging. Underfitting wants more capacity, better features, or less regularization — and notably, **more data does not fix underfitting**, because more rows reduce variance rather than bias.
+
+**A checklist to run on any modelling problem.**
+1. For each feature: would it exist at prediction time?
+2. Is every transformer fit on training data only?
+3. Is preprocessing inside the cross-validation loop (a Pipeline)?
+4. Is the split chronological if the data is temporal?
+5. Are entities confined to one fold if rows are grouped?
+6. Were duplicates removed before splitting?
+7. Are folds stratified if classes are imbalanced?
+8. How many times has the test set been used?
+9. What is the majority-class or naive baseline?
+10. Is the validation score too good to be true?
+
+That last question is the one that catches real leakage most often. A score that seems too good almost always is.

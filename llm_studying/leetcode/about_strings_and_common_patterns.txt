@@ -1,0 +1,178 @@
+String problems are array problems with extra convenience and one important constraint: **strings are immutable in Python**, which has real complexity consequences.
+
+**The immutability trap.** Building a string by repeated concatenation is O(n²), because each `+=` allocates a new string and copies everything.
+
+```python
+# BAD - O(n^2)
+result = ""
+for ch in chars:
+    result += ch
+
+# GOOD - O(n)
+result = "".join(chars)
+```
+
+Collect pieces in a list and `join` once at the end. This is the single most important Python-specific string fact for interviews, and mentioning it unprompted lands well.
+
+**The methods worth knowing.**
+
+```python
+s.lower() / s.upper()
+s.strip() / s.lstrip() / s.rstrip()
+s.split() / s.split(",")            # split() with no args splits on any whitespace
+s.isalnum() / s.isalpha() / s.isdigit()
+s.startswith(p) / s.endswith(p)
+s.replace(old, new)
+s.find(sub)                          # -1 if not found
+s.index(sub)                         # raises ValueError if not found
+s[::-1]                              # reverse
+ord(ch) / chr(n)                     # char <-> code point
+```
+
+`split()` with no arguments handles runs of whitespace and strips leading/trailing — that alone solves several "reverse the words" problems. Know that `find` returns -1 while `index` raises.
+
+**Pattern 1: frequency counting.** Most string problems are counting problems.
+
+```python
+from collections import Counter
+
+def is_anagram(s: str, t: str) -> bool:
+    return len(s) == len(t) and Counter(s) == Counter(t)
+
+def can_construct(note: str, magazine: str) -> bool:
+    return not (Counter(note) - Counter(magazine))     # Counter subtraction drops negatives
+```
+
+`Counter` subtraction keeping only positive counts is a genuinely useful idiom: "what's missing from the magazine?"
+
+For a lowercase-only alphabet, a fixed 26-slot array is the O(1)-space alternative worth mentioning:
+
+```python
+def is_anagram_array(s: str, t: str) -> bool:
+    if len(s) != len(t):
+        return False
+    counts = [0] * 26
+    for a, b in zip(s, t):
+        counts[ord(a) - ord("a")] += 1
+        counts[ord(b) - ord("a")] -= 1
+    return all(c == 0 for c in counts)
+```
+
+**Pattern 2: two pointers for palindromes.**
+
+```python
+def is_palindrome(s: str) -> bool:
+    left, right = 0, len(s) - 1
+    while left < right:
+        while left < right and not s[left].isalnum():
+            left += 1
+        while left < right and not s[right].isalnum():
+            right -= 1
+        if s[left].lower() != s[right].lower():
+            return False
+        left, right = left + 1, right - 1
+    return True
+```
+
+The one-liner `cleaned == cleaned[::-1]` is fine and worth offering, but it uses O(n) extra space; the two-pointer version is O(1). Mention both and name the trade.
+
+**Pattern 3: sliding window on strings.** Covered fully in the sliding window note — anagram containment, longest substring without repeats, and longest substring with at most k distinct characters are all the same template with a count map.
+
+**Pattern 4: canonical form as a grouping key.** Map everything that should be considered equivalent to an identical key.
+
+```python
+from collections import defaultdict
+
+def group_anagrams(strs: list[str]) -> list[list[str]]:
+    groups = defaultdict(list)
+    for s in strs:
+        groups[tuple(sorted(s))].append(s)
+    return list(groups.values())
+
+
+def is_isomorphic(s: str, t: str) -> bool:
+    """Both directions must map consistently."""
+    return len(set(zip(s, t))) == len(set(s)) == len(set(t))
+```
+
+The isomorphic one-liner is elegant but explain it: the number of distinct character *pairs* must equal the number of distinct characters on each side, which forces a bijection. A two-dict version is more obviously correct and fine to write instead.
+
+**Pattern 5: expand around center for palindromic substrings.** O(n²) time, O(1) space — better than the DP table.
+
+```python
+def longest_palindrome(s: str) -> str:
+    best = ""
+    for center in range(len(s)):
+        for left, right in ((center, center), (center, center + 1)):
+            while left >= 0 and right < len(s) and s[left] == s[right]:
+                if right - left + 1 > len(best):
+                    best = s[left:right + 1]
+                left -= 1
+                right += 1
+    return best
+```
+
+Two centers per index handles odd- and even-length palindromes. (Manacher's algorithm does this in O(n) but is well outside the scope of Easy/Medium interviews.)
+
+**Pattern 6: string encoding and parsing.** Design problems where you serialize and recover data.
+
+```python
+def encode(strs: list[str]) -> str:
+    return "".join(f"{len(s)}#{s}" for s in strs)
+
+def decode(s: str) -> list[str]:
+    result, i = [], 0
+    while i < len(s):
+        j = s.find("#", i)
+        length = int(s[i:j])
+        result.append(s[j + 1:j + 1 + length])
+        i = j + 1 + length
+    return result
+```
+
+Length-prefixing is the right answer because it works for **any** content, including strings containing the delimiter. A candidate who proposes a plain delimiter and then handles escaping is doing more work for a worse result.
+
+**Pattern 7: character arithmetic.** For lowercase-only problems, `ord(ch) - ord('a')` gives a 0–25 index.
+
+```python
+def shift_char(ch: str, k: int) -> str:
+    return chr((ord(ch) - ord("a") + k) % 26 + ord("a"))
+```
+
+The `% 26` wraps around the alphabet. This shows up in Caesar-cipher-flavored problems and in bitmask-over-alphabet tricks.
+
+**Pattern 8: in-place reversal on a character list.** When asked for O(1) space on a string, convert to a list first (in languages with mutable strings this is direct).
+
+```python
+def reverse_words_in_place(s: list[str]) -> None:
+    def reverse(i: int, j: int) -> None:
+        while i < j:
+            s[i], s[j] = s[j], s[i]
+            i, j = i + 1, j - 1
+    reverse(0, len(s) - 1)               # reverse everything
+    start = 0                            # then reverse each word back
+    for end in range(len(s) + 1):
+        if end == len(s) or s[end] == " ":
+            reverse(start, end - 1)
+            start = end + 1
+```
+
+"Reverse the whole thing, then reverse each piece" is a trick worth remembering — it also solves array rotation.
+
+**Complexity notes specific to strings.**
+- Slicing `s[i:j]` is **O(j - i)**, not O(1). A loop that slices repeatedly can be quadratic without looking like it.
+- `in` for substring search is O(n·m) worst case.
+- `sorted(s)` is O(n log n) and returns a list, not a string.
+- Comparing two strings is O(n), not O(1) — relevant when strings are dict keys or heap elements.
+
+**Common mistakes.**
+- Building strings with `+=` in a loop.
+- Forgetting strings are immutable and trying `s[0] = 'x'`.
+- Not handling case sensitivity — ask whether comparison is case-insensitive.
+- Not handling non-alphanumeric characters in palindrome problems.
+- Assuming ASCII when the input may be Unicode. Ask about the character set; `ord(ch) - ord('a')` breaks outside a–z.
+- Off-by-one in slice bounds — `s[left:right+1]` to include `right`.
+- Forgetting the empty string edge case.
+- Treating `split(" ")` and `split()` as the same — they differ on repeated whitespace.
+
+**Representative problems.** Easy: Valid Palindrome, Valid Anagram, Ransom Note, Longest Common Prefix, Reverse String, First Unique Character, Implement strStr, Isomorphic Strings, Length of Last Word. Medium: Longest Substring Without Repeating Characters, Longest Palindromic Substring, Group Anagrams, Longest Repeating Character Replacement, Permutation in String, String to Integer (atoi), Encode and Decode Strings, Reverse Words in a String, Zigzag Conversion, Decode String, Multiply Strings.

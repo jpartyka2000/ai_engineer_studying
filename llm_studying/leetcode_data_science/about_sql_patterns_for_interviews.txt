@@ -1,0 +1,147 @@
+SQL is the highest-frequency coding format in data science interviews. The good news is that the pattern set is small and finite. This is that set.
+
+**The logical evaluation order**, which explains most SQL confusion:
+
+```
+FROM -> WHERE -> GROUP BY -> HAVING -> window functions -> SELECT -> ORDER BY -> LIMIT
+```
+
+Three consequences fall straight out:
+- **WHERE cannot reference an aggregate**, because grouping has not happened yet. Use HAVING.
+- **WHERE cannot reference a window function**, because those are computed later. Wrap in a CTE.
+- **SELECT aliases are not usable in WHERE**, because SELECT runs after it. (Most engines do allow aliases in ORDER BY.)
+
+**Pattern: aggregation with a filter on the aggregate.**
+
+```sql
+SELECT department, ROUND(AVG(salary), 2) AS avg_salary
+FROM employees
+WHERE department IS NOT NULL          -- filters ROWS
+GROUP BY department
+HAVING AVG(salary) > (SELECT AVG(salary) FROM employees)   -- filters GROUPS
+ORDER BY avg_salary DESC;
+```
+
+Row-level conditions go in WHERE; aggregate conditions go in HAVING. Putting a row condition in HAVING is a correctness bug, not a style choice — `HAVING status = 'completed'` would still let cancelled rows count toward a `COUNT(*)` threshold.
+
+**Pattern: counting including empty groups.** The classic trap.
+
+```sql
+SELECT d.name, COUNT(e.id) AS headcount   -- NOT COUNT(*)
+FROM departments d
+LEFT JOIN employees e ON e.department = d.name
+GROUP BY d.name;
+```
+
+A LEFT JOIN emits one all-NULL row for an unmatched department. `COUNT(*)` counts that row and reports 1; `COUNT(e.id)` ignores NULLs and correctly reports 0. Memorize this.
+
+**Pattern: top N per group.** The most-asked window function question.
+
+```sql
+WITH ranked AS (
+  SELECT department, name, salary,
+         ROW_NUMBER() OVER (
+           PARTITION BY department ORDER BY salary DESC, name ASC
+         ) AS rn
+  FROM employees
+)
+SELECT department, name, salary
+FROM ranked
+WHERE rn <= 2;
+```
+
+- `PARTITION BY` restarts numbering per group.
+- The secondary sort key makes ties deterministic. Without it, which row you get can change between runs.
+- The CTE is mandatory — you cannot filter `rn` in WHERE.
+- Use ROW_NUMBER, not RANK: RANK returns three rows for a two-way tie at position 2.
+
+**Deduplication is this same pattern with N = 1.** "One row per customer, their latest order" is `ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC, id DESC)` filtered to `rn = 1`.
+
+**Pattern: the three ranking functions.** On salaries 100, 90, 90, 80 descending:
+
+| Function | Result | Use when |
+|---|---|---|
+| `ROW_NUMBER()` | 1, 2, 3, 4 | you need exactly one row per group |
+| `RANK()` | 1, 2, 2, 4 | competition standings — gaps are meaningful |
+| `DENSE_RANK()` | 1, 2, 2, 3 | you need contiguous rank levels |
+
+**Pattern: running total.**
+
+```sql
+SELECT order_date, amount,
+       SUM(amount) OVER (
+         ORDER BY order_date
+         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+       ) AS running_total
+FROM orders;
+```
+
+An aggregate plus `OVER (ORDER BY ...)` becomes cumulative. Be explicit about the frame: with an ORDER BY, the *default* frame is `RANGE UNBOUNDED PRECEDING`, which treats tied rows as peers and gives them all the same total. With duplicate dates that differs from `ROWS`, and it is a subtle source of wrong answers.
+
+**Pattern: period-over-period change.** Aggregate first, then window.
+
+```sql
+WITH monthly AS (
+  SELECT strftime('%Y-%m', order_date) AS month, SUM(amount) AS revenue
+  FROM orders WHERE status = 'completed'
+  GROUP BY month
+)
+SELECT month, revenue,
+       LAG(revenue) OVER (ORDER BY month) AS prev_revenue,
+       revenue - LAG(revenue) OVER (ORDER BY month) AS change
+FROM monthly;
+```
+
+`LAG` looks back, `LEAD` looks forward. The first row has no predecessor so `LAG` returns NULL and the subtraction propagates NULL — usually correct. `LAG(revenue, 1, 0)` supplies a default instead. Note that a month with **no** orders is simply absent rather than zero; a calendar/date-spine table is the fix.
+
+**Pattern: anti-join — rows with no match.**
+
+```sql
+-- LEFT JOIN + IS NULL
+SELECT c.name FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.id
+WHERE o.id IS NULL;
+
+-- NOT EXISTS, usually clearest and often fastest
+SELECT c.name FROM customers c
+WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);
+```
+
+**Avoid `NOT IN` here.** If the subquery yields even one NULL, `NOT IN` returns no rows at all, because `x <> NULL` is UNKNOWN. That looks like a valid empty answer rather than an error, which makes it genuinely dangerous.
+
+**Pattern: conditional aggregation as a pivot.**
+
+```sql
+SELECT country,
+       COUNT(*) AS total,
+       SUM(CASE WHEN strftime('%Y', signup_date) = '2021' THEN 1 ELSE 0 END) AS y2021,
+       SUM(CASE WHEN strftime('%Y', signup_date) = '2022' THEN 1 ELSE 0 END) AS y2022
+FROM customers
+GROUP BY country;
+```
+
+One pass, many derived columns, no engine-specific PIVOT needed. `COUNT(CASE WHEN cond THEN 1 END)` is equivalent — note the deliberate absence of ELSE, since COUNT skips NULLs.
+
+**Pattern: safe division.**
+
+```sql
+ROUND(CAST(numerator AS REAL) / NULLIF(denominator, 0), 4)
+```
+
+`NULLIF(x, 0)` makes a zero denominator yield NULL instead of an error. The CAST prevents integer division truncating a rate to 0. Both halves matter.
+
+**Pattern: next event per user.**
+
+```sql
+SELECT user_id, name,
+       LEAD(name) OVER (PARTITION BY user_id ORDER BY ts) AS next_name
+FROM events;
+```
+
+Far cleaner than the pre-window-function approach of a self-join against a correlated `MIN(ts)` subquery.
+
+**The fan-out trap.** If an INNER JOIN returns more rows than either input, your join key is not unique on one side and rows have multiplied. Any subsequent `SUM` is now inflated. Check the grain before joining, and aggregate the many-side to one row per key first if needed. This is the most common cause of quietly wrong analytics numbers.
+
+**NULL semantics, briefly.** `NULL = NULL` is UNKNOWN, not true — use `IS NULL`. Aggregates skip NULLs, so `AVG` divides by the non-null count. `COUNT(*)` counts rows while `COUNT(col)` counts non-null values. GROUP BY does collect NULLs into their own group. Most arithmetic with NULL yields NULL.
+
+**Engine portability.** Date functions differ the most: SQLite uses `strftime`, PostgreSQL uses `date_trunc`/`EXTRACT`, MySQL uses `DATE_FORMAT`. Window functions are standard across modern PostgreSQL, MySQL 8+, SQL Server, Snowflake, BigQuery, and SQLite 3.25+. If you are unsure which dialect the interviewer wants, ask — and say what you are assuming.

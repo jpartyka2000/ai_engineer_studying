@@ -1,0 +1,140 @@
+A heap gives you the minimum (or maximum) in O(1) and insert/extract in O(log n). In interviews it exists almost entirely to answer **"top k"** and **"streaming median"** questions.
+
+**Python's `heapq` is a min-heap over a plain list.**
+
+```python
+import heapq
+
+heap = []
+heapq.heappush(heap, 5)          # O(log n)
+smallest = heap[0]               # O(1) peek - do NOT pop to look
+smallest = heapq.heappop(heap)   # O(log n)
+heapq.heapify(existing_list)     # O(n) - in place, faster than n pushes
+heapq.heappushpop(heap, x)       # push then pop, one operation
+heapq.heapreplace(heap, x)       # pop then push
+```
+
+Two facts worth stating in an interview: `heapify` is **O(n)**, not O(n log n) — building a heap from a list beats n individual pushes; and `heap[0]` peeks in O(1) without mutating.
+
+**Max-heap: negate the values.** Python has no max-heap, so push negatives and negate on the way out.
+
+```python
+max_heap = []
+for num in nums:
+    heapq.heappush(max_heap, -num)
+largest = -heapq.heappop(max_heap)
+```
+
+For tuples, negate only the sort key: `(-count, word)`. Be careful — negating a key reverses tie-breaking too, which matters when the problem specifies how ties resolve.
+
+**The top-k pattern, and the counter-intuitive part.** For "k largest", use a **min-heap of size k**, not a max-heap.
+
+```python
+def k_largest(nums: list[int], k: int) -> list[int]:
+    heap = []
+    for num in nums:
+        heapq.heappush(heap, num)
+        if len(heap) > k:
+            heapq.heappop(heap)      # evict the smallest - it can't be top-k
+    return heap
+```
+
+The logic: the heap holds the k best seen so far, and its root is the *weakest* of those. Any new element only needs to beat that weakest one. So a **min**-heap for k **largest**, and a **max**-heap for k **smallest**. Getting this backwards is the classic error.
+
+Complexity is **O(n log k)** time and **O(k)** space, versus O(n log n) for sorting. That is the reason to use a heap: when k is much smaller than n, and especially when n is a stream you cannot sort.
+
+```python
+from collections import Counter
+
+def top_k_frequent(nums: list[int], k: int) -> list[int]:
+    counts = Counter(nums)
+    return [num for num, _ in counts.most_common(k)]
+
+def top_k_frequent_heap(nums: list[int], k: int) -> list[int]:
+    counts = Counter(nums)
+    heap = []
+    for num, count in counts.items():
+        heapq.heappush(heap, (count, num))
+        if len(heap) > k:
+            heapq.heappop(heap)
+    return [num for _, num in heap]
+```
+
+`Counter.most_common(k)` uses a heap internally and is fine to use — but be ready to write the heap version, and to mention that **bucket sort** solves this in O(n) since counts are bounded by n. Offering all three approaches with their complexities is a strong answer.
+
+**`heapq.nlargest` / `nsmallest`** are built in and use exactly this bounded-heap technique:
+
+```python
+heapq.nlargest(k, nums)
+heapq.nlargest(k, counts.items(), key=lambda kv: kv[1])
+```
+
+**Two-heap pattern: streaming median.** Keep a max-heap of the lower half and a min-heap of the upper half, balanced in size.
+
+```python
+class MedianFinder:
+    def __init__(self):
+        self.low = []       # max-heap (negated) - the smaller half
+        self.high = []      # min-heap           - the larger half
+
+    def add_num(self, num: int) -> None:
+        heapq.heappush(self.low, -num)
+        # ensure every element of low <= every element of high
+        heapq.heappush(self.high, -heapq.heappop(self.low))
+        # keep low the same size as high, or one larger
+        if len(self.high) > len(self.low):
+            heapq.heappush(self.low, -heapq.heappop(self.high))
+
+    def find_median(self) -> float:
+        if len(self.low) > len(self.high):
+            return float(-self.low[0])
+        return (-self.low[0] + self.high[0]) / 2.0
+```
+
+`add_num` is O(log n), `find_median` is O(1). The push-then-transfer-then-rebalance sequence is what guarantees both invariants (ordering and size) without case analysis. Memorize the three-step shape.
+
+**Merging k sorted sequences.** A heap holding one candidate from each list.
+
+```python
+def merge_k_sorted_lists(lists):
+    heap = []
+    for i, node in enumerate(lists):
+        if node:
+            heapq.heappush(heap, (node.val, i, node))   # i breaks ties
+    dummy = tail = ListNode()
+    while heap:
+        _, i, node = heapq.heappop(heap)
+        tail.next = node
+        tail = node
+        if node.next:
+            heapq.heappush(heap, (node.next.val, i, node.next))
+    return dummy.next
+```
+
+O(n log k) where k is the number of lists. The `i` in the tuple is essential: without it, equal values cause Python to compare `ListNode` objects, which raises `TypeError` because they are not orderable. That bug is extremely common — always include a unique tiebreaker index when heaping non-comparable objects.
+
+`heapq.merge(*iterables)` does this for plain iterables and is worth knowing.
+
+**Heap vs sort vs quickselect — how to choose.**
+
+| Need | Approach | Complexity |
+|---|---|---|
+| Full sorted order | `sorted()` | O(n log n) |
+| Top k, k much smaller than n | bounded heap | O(n log k) |
+| Top k from a stream | bounded heap | O(n log k) |
+| Exactly the kth element, one query | quickselect | O(n) average |
+| Repeated min/max with insertions | heap | O(log n) per op |
+| Counts bounded by n | bucket sort | O(n) |
+
+Quickselect is worth knowing exists — it is O(n) average for "kth largest element" via partitioning — but a heap is the safer interview answer because quickselect's worst case is O(n²) and it is easier to get wrong under pressure.
+
+**Common mistakes.**
+- Max-heap vs min-heap backwards in the top-k pattern.
+- Heaping non-comparable objects without a tiebreaker index → `TypeError`.
+- Popping to peek instead of reading `heap[0]`.
+- Pushing all n elements when you only need k — that is O(n log n) space and time, defeating the purpose.
+- Assuming a heap is sorted. It is **not** — only the root is guaranteed. Iterating a heap list gives you heap order, not sorted order.
+- Using `heapify` on a list of tuples where the first elements tie and later elements are unorderable.
+- Forgetting that negating a tuple key also reverses tie-break direction.
+
+**Representative problems.** Easy: Kth Largest Element in a Stream, Last Stone Weight, Relative Ranks. Medium: Top K Frequent Elements, Kth Largest Element in an Array, K Closest Points to Origin, Task Scheduler, Reorganize String, Design Twitter, Find K Pairs with Smallest Sums, Single-Threaded CPU. Also Find Median from Data Stream and Merge k Sorted Lists, which are commonly labelled Hard but sit squarely on the two-heap and k-way-merge patterns above.

@@ -1,0 +1,143 @@
+Two pointers means using two indices that move through a sequence according to a rule, usually replacing a nested loop and turning O(n²) into O(n). There are three distinct variants and they solve different problems.
+
+**Variant 1: converging pointers (opposite ends).** Start at both ends and move inward. The prerequisite is almost always a **sorted** array — sortedness is what tells you *which* pointer to move.
+
+```python
+def two_sum_sorted(nums: list[int], target: int) -> list[int]:
+    left, right = 0, len(nums) - 1
+    while left < right:
+        current = nums[left] + nums[right]
+        if current == target:
+            return [left, right]
+        elif current < target:
+            left += 1          # need a bigger sum
+        else:
+            right -= 1         # need a smaller sum
+    return []
+```
+
+O(n) time, **O(1) space** — that space advantage over the hash-map Two Sum is the reason this variant exists. The logic is a decision procedure: too small means the only way to grow is to raise the left value; too large means lower the right.
+
+Other converging-pointer problems:
+
+```python
+def is_palindrome(s: str) -> bool:
+    left, right = 0, len(s) - 1
+    while left < right:
+        while left < right and not s[left].isalnum():
+            left += 1
+        while left < right and not s[right].isalnum():
+            right -= 1
+        if s[left].lower() != s[right].lower():
+            return False
+        left += 1
+        right -= 1
+    return True
+
+
+def max_area(heights: list[int]) -> int:
+    """Container With Most Water."""
+    left, right = 0, len(heights) - 1
+    best = 0
+    while left < right:
+        best = max(best, (right - left) * min(heights[left], heights[right]))
+        if heights[left] < heights[right]:
+            left += 1          # move the shorter side; moving the taller cannot help
+        else:
+            right -= 1
+    return best
+```
+
+Container With Most Water is worth studying because the greedy choice needs justification: width always shrinks, so the only chance of a bigger area is a taller minimum, which requires moving the *shorter* wall. Being able to argue that is the interview.
+
+**Variant 2: same-direction pointers (fast and slow).** Both move forward, at different rates or under different conditions. This is the in-place filtering pattern.
+
+```python
+def remove_duplicates(nums: list[int]) -> int:
+    """In-place dedupe of a sorted array; returns the new length."""
+    if not nums:
+        return 0
+    write = 1                              # next position to write
+    for read in range(1, len(nums)):
+        if nums[read] != nums[write - 1]:
+            nums[write] = nums[read]
+            write += 1
+    return write
+
+
+def move_zeroes(nums: list[int]) -> None:
+    write = 0
+    for read in range(len(nums)):
+        if nums[read] != 0:
+            nums[write], nums[read] = nums[read], nums[write]
+            write += 1
+```
+
+The naming matters: think **read** and **write** pointers, not `i` and `j`. The read pointer scans; the write pointer marks where the next kept element belongs. Once you see it that way, the whole family of "remove element in place" problems is one template.
+
+**Variant 3: two pointers across two sequences.** Merging or comparing two sorted inputs.
+
+```python
+def merge_sorted(a: list[int], b: list[int]) -> list[int]:
+    i = j = 0
+    out = []
+    while i < len(a) and j < len(b):
+        if a[i] <= b[j]:
+            out.append(a[i]); i += 1
+        else:
+            out.append(b[j]); j += 1
+    out.extend(a[i:])
+    out.extend(b[j:])
+    return out
+```
+
+The two `extend` calls at the end are the part people forget — one list runs out first and the remainder must be appended.
+
+**Sort first, then two pointers.** Many problems are two-pointer problems hiding behind an unsorted input. Three Sum is the canonical example: fix one element, then run converging pointers on the rest.
+
+```python
+def three_sum(nums: list[int]) -> list[list[int]]:
+    nums.sort()
+    result = []
+    for i in range(len(nums) - 2):
+        if i > 0 and nums[i] == nums[i - 1]:
+            continue                            # skip duplicate anchors
+        left, right = i + 1, len(nums) - 1
+        while left < right:
+            total = nums[i] + nums[left] + nums[right]
+            if total < 0:
+                left += 1
+            elif total > 0:
+                right -= 1
+            else:
+                result.append([nums[i], nums[left], nums[right]])
+                while left < right and nums[left] == nums[left + 1]:
+                    left += 1                   # skip duplicate seconds
+                while left < right and nums[right] == nums[right - 1]:
+                    right -= 1
+                left += 1
+                right -= 1
+    return result
+```
+
+O(n²) time, O(1) extra space beyond the sort. The duplicate-skipping is the entire difficulty of this problem, and there are three places it has to happen: the anchor, and both pointers after recording a hit.
+
+**When to reach for two pointers.**
+- The array is **sorted**, or sorting it does not break the problem.
+- You are looking for a **pair or triplet** with some property.
+- You need to do something **in place** with O(1) extra space.
+- You are comparing or merging **two sorted sequences**.
+- Palindrome or symmetry checks.
+- You need O(1) space and the hash-map solution uses O(n).
+
+**When it is the wrong tool.** If you need the *original indices* and sorting would destroy them, use a hash map instead. If the problem is about a contiguous window with a property, that is sliding window (a related but distinct pattern — see that note). If the input is unsorted and sorting changes the answer, two pointers usually does not apply.
+
+**Common mistakes.**
+- `while left <= right` when you mean `left < right`, which lets the pointers meet and pair an element with itself.
+- Forgetting to skip duplicates in Three Sum — you get repeated triplets.
+- Moving both pointers when only one should move.
+- Sorting when the problem requires original indices.
+- Off-by-one on `range(len(nums) - 2)` in Three Sum — you need room for two more pointers.
+- Infinite loops from forgetting to advance a pointer on one of the branches.
+
+**Representative problems.** Easy: Valid Palindrome, Two Sum II (sorted input), Remove Duplicates from Sorted Array, Move Zeroes, Merge Sorted Array, Squares of a Sorted Array. Medium: Three Sum, Container With Most Water, Sort Colors, 3Sum Closest, Remove Nth Node From End of List (fast/slow on a linked list), Boats to Save People.

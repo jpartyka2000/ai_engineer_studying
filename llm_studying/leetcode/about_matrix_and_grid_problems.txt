@@ -1,0 +1,160 @@
+Matrix problems are either **traversal** (visit cells in a specific order), **transformation** (rotate, transpose, spiral), or **graph problems on an implicit grid** (islands, shortest path). The third category is the most common in Mediums and is covered in the graph traversal note; this covers the first two plus the shared mechanics.
+
+**The setup every matrix problem starts with.**
+
+```python
+rows, cols = len(matrix), len(matrix[0])          # guard against an empty matrix first
+DIRECTIONS = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # right, down, left, up
+DIAGONALS = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+ALL_EIGHT = DIRECTIONS + DIAGONALS
+
+def in_bounds(r: int, c: int) -> bool:
+    return 0 <= r < rows and 0 <= c < cols
+```
+
+Two habits that prevent most matrix bugs: a **named `DIRECTIONS` list** you iterate, and a **single `in_bounds` helper**. Writing four separate neighbor checks inline is where off-by-one errors live.
+
+**The `[[0] * n] * m` trap.** This is the most destructive matrix bug in Python:
+
+```python
+grid = [[0] * 3] * 3          # WRONG - three references to ONE row
+grid[0][0] = 1                # now grid == [[1,0,0], [1,0,0], [1,0,0]]
+
+grid = [[0] * 3 for _ in range(3)]    # CORRECT - three independent rows
+```
+
+The outer `* 3` copies the *reference*, not the list. Always use the comprehension form.
+
+**Coordinate conversion.** For union-find or for using a set as a visited marker, flatten a cell to a single integer:
+
+```python
+node_id = r * cols + c
+r, c = divmod(node_id, cols)
+```
+
+**Transformation 1: rotate 90 degrees in place.** Transpose, then reverse each row.
+
+```python
+def rotate(matrix: list[list[int]]) -> None:
+    n = len(matrix)
+    for r in range(n):                        # transpose (upper triangle only)
+        for c in range(r + 1, n):
+            matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]
+    for row in matrix:                        # reverse each row
+        row.reverse()
+```
+
+The `range(r + 1, n)` is essential — iterating the full range swaps every pair twice and returns the original matrix. That is a favorite bug.
+
+For counter-clockwise, reverse each row *first*, then transpose. Or reverse the row order and then transpose. Deriving it on the spot from a 2×2 example is faster than memorizing.
+
+**Transformation 2: spiral traversal.** Four boundaries that close in.
+
+```python
+def spiral_order(matrix: list[list[int]]) -> list[int]:
+    if not matrix:
+        return []
+    top, bottom = 0, len(matrix) - 1
+    left, right = 0, len(matrix[0]) - 1
+    result = []
+    while top <= bottom and left <= right:
+        for c in range(left, right + 1):
+            result.append(matrix[top][c])
+        top += 1
+        for r in range(top, bottom + 1):
+            result.append(matrix[r][right])
+        right -= 1
+        if top <= bottom:                     # guard: row may be exhausted
+            for c in range(right, left - 1, -1):
+                result.append(matrix[bottom][c])
+            bottom -= 1
+        if left <= right:                     # guard: column may be exhausted
+            for r in range(bottom, top - 1, -1):
+                result.append(matrix[r][left])
+            left += 1
+    return result
+```
+
+The two mid-loop guards are what make single-row and single-column matrices work. Without them you re-traverse a row or column. Test with a 1×n and an n×1 matrix.
+
+**Transformation 3: set matrix zeroes with O(1) space.** Use the first row and column as the marker storage.
+
+```python
+def set_zeroes(matrix: list[list[int]]) -> None:
+    rows, cols = len(matrix), len(matrix[0])
+    first_row_has_zero = any(matrix[0][c] == 0 for c in range(cols))
+    first_col_has_zero = any(matrix[r][0] == 0 for r in range(rows))
+
+    for r in range(1, rows):                  # mark in row 0 / column 0
+        for c in range(1, cols):
+            if matrix[r][c] == 0:
+                matrix[r][0] = 0
+                matrix[0][c] = 0
+
+    for r in range(1, rows):                  # apply the marks
+        for c in range(1, cols):
+            if matrix[r][0] == 0 or matrix[0][c] == 0:
+                matrix[r][c] = 0
+
+    if first_row_has_zero:
+        for c in range(cols):
+            matrix[0][c] = 0
+    if first_col_has_zero:
+        for r in range(rows):
+            matrix[r][0] = 0
+```
+
+The first row and column have to be recorded separately up front, because they double as the marker storage and would otherwise be indistinguishable. Start with the straightforward O(m+n) two-set version, then offer this as the O(1) follow-up.
+
+**Search: binary search a sorted matrix.** If the matrix is sorted row-wise and each row starts after the previous ends, treat it as one flat sorted array:
+
+```python
+def search_matrix(matrix: list[list[int]], target: int) -> bool:
+    rows, cols = len(matrix), len(matrix[0])
+    lo, hi = 0, rows * cols - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        value = matrix[mid // cols][mid % cols]      # flat index -> 2-D
+        if value == target:
+            return True
+        elif value < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return False
+```
+
+**The staircase search** is a different and important case: rows sorted left-to-right *and* columns sorted top-to-bottom, but rows not globally ordered. Start from the top-right corner:
+
+```python
+def search_matrix_ii(matrix: list[list[int]], target: int) -> bool:
+    r, c = 0, len(matrix[0]) - 1               # top-right corner
+    while r < len(matrix) and c >= 0:
+        if matrix[r][c] == target:
+            return True
+        elif matrix[r][c] > target:
+            c -= 1                             # too big: eliminate this column
+        else:
+            r += 1                             # too small: eliminate this row
+    return False
+```
+
+O(m + n). The top-right corner works because it is the maximum of its row and the minimum of its column, so each comparison eliminates an entire row or column. The bottom-left corner works symmetrically; the other two corners do not, and being able to say why is the insight.
+
+**Grid DP.** Covered in the 2-D DP note — unique paths, minimum path sum, maximal square. The mechanics are the same as any matrix traversal with a table.
+
+**Grid as an implicit graph.** Islands, flood fill, rotting oranges, shortest path in a maze. The neighbor function *is* the adjacency list; no graph needs building. See the graph traversal note for the templates, including multi-source BFS.
+
+One distinction worth internalizing: in Number of Islands you mark cells visited **permanently** because you never need to revisit them. In Word Search you must **unmark** on the way out, because a cell used by a failed path must be available to another path. Same grid, opposite bookkeeping, driven by whether you are counting regions or searching for a path.
+
+**Common mistakes.**
+- `[[0] * n] * m` creating aliased rows.
+- Not checking for an empty matrix before `len(matrix[0])`.
+- Confusing `rows`/`cols` with `x`/`y`. Matrix indexing is `[row][col]`, which is `[y][x]` — pick `r, c` naming and stay consistent.
+- Transposing over the full range instead of the upper triangle.
+- Missing the guards in spiral traversal, breaking single-row/column inputs.
+- Out-of-bounds from writing neighbor checks inline instead of using a helper.
+- Assuming the matrix is square when it is m×n.
+- Using the wrong corner for staircase search.
+
+**Representative problems.** Easy: Transpose Matrix, Matrix Diagonal Sum, Flood Fill, Richest Customer Wealth, Toeplitz Matrix. Medium: Rotate Image, Spiral Matrix, Set Matrix Zeroes, Search a 2D Matrix, Search a 2D Matrix II, Number of Islands, Game of Life, Word Search, Rotting Oranges, Pacific Atlantic Water Flow, Surrounded Regions, Maximal Square, Diagonal Traverse.

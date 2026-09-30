@@ -1,0 +1,95 @@
+Implementing metrics from the definition is a favourite interview exercise because it separates people who understand a metric from people who call `sklearn.metrics`. All of them are short.
+
+**The confusion matrix underlies every classification metric.** Get the naming right: it is from the *prediction's* perspective, so a "false positive" means you predicted positive and were wrong.
+
+```python
+def confusion_matrix(y_true, y_pred):
+    tp = sum(1 for a, p in zip(y_true, y_pred) if a == 1 and p == 1)
+    fp = sum(1 for a, p in zip(y_true, y_pred) if a == 0 and p == 1)
+    tn = sum(1 for a, p in zip(y_true, y_pred) if a == 0 and p == 0)
+    fn = sum(1 for a, p in zip(y_true, y_pred) if a == 1 and p == 0)
+    return {"tp": tp, "fp": fp, "tn": tn, "fn": fn}
+```
+
+**Precision, recall, F1.** The denominators tell you which is which.
+
+```python
+precision = tp / (tp + fp)      # of what you FLAGGED, how much was right
+recall    = tp / (tp + fn)      # of what WAS positive, how much you caught
+f1        = 2 * precision * recall / (precision + recall)
+accuracy  = (tp + tn) / (tp + fp + tn + fn)
+```
+
+Every one of those denominators can be zero — guard all four.
+
+**F1 is the harmonic mean for a reason.** It is dominated by the smaller of the two values, so precision 1.0 with recall 0.0 scores 0, not 0.5. You cannot game it by sacrificing one side. F-beta generalizes: beta > 1 weights recall more, beta < 1 weights precision more.
+
+**Which one matters is a business question.** Spam filtering favours precision (a false positive loses a real email). Cancer screening favours recall (a false negative is far worse than a follow-up test). Say which you are optimizing and why.
+
+**Accuracy is a trap on imbalanced data.** Always compute the majority-class baseline first:
+
+```python
+baseline = max(y_true.count(0), y_true.count(1)) / len(y_true)
+```
+
+At 0.5% positives that baseline is 99.5%, so a headline accuracy of 99.5% may describe a model that catches zero positives. Report precision, recall, F1, or PR-AUC instead — and state the baseline either way.
+
+**The threshold is not part of the model.** A classifier outputs a score; 0.5 is merely a default cut point. Lowering it predicts positive more often, raising recall and usually lowering precision. Choose it from the relative cost of the two error types, or read it off a precision-recall curve. This is one of the most useful practical points to raise unprompted.
+
+**Regression metrics.**
+
+```python
+mae  = sum(abs(a - p) for a, p in zip(y_true, y_pred)) / n
+mse  = sum((a - p) ** 2 for a, p in zip(y_true, y_pred)) / n
+rmse = math.sqrt(mse)
+
+ss_res = sum((a - p) ** 2 for a, p in zip(y_true, y_pred))
+ss_tot = sum((a - mean_true) ** 2 for a in y_true)
+r2 = 1 - ss_res / ss_tot
+```
+
+- **MAE vs RMSE**: squaring makes RMSE punish large errors harder and be far more outlier-sensitive. MAE gives a robust typical error. They can rank models differently, so the choice is substantive. RMSE has the advantage of being in the target's units.
+- **R-squared** compares your residuals against the variance of the target itself, i.e. against a model that always predicts the mean. It is **1** for perfect prediction, **0** for no better than the mean, and **negative** for worse than the mean — impossible on OLS training data, entirely possible on a test set, and a clear signal of a badly misspecified model.
+- R-squared never decreases when you add predictors, even useless ones. Adjusted R-squared penalizes parameter count and is the right cross-model comparison.
+- Guard `ss_tot == 0`, which happens when the target is constant.
+
+**ROC-AUC without sweeping thresholds.** The cleanest definition is probabilistic: AUC is the probability that a randomly chosen positive scores higher than a randomly chosen negative, with ties counting half.
+
+```python
+def roc_auc(y_true, y_score):
+    pos = [s for t, s in zip(y_true, y_score) if t == 1]
+    neg = [s for t, s in zip(y_true, y_score) if t == 0]
+    if not pos or not neg:
+        return 0.0
+    wins = sum((p > n) + 0.5 * (p == n) for p in pos for n in neg)
+    return wins / (len(pos) * len(neg))
+```
+
+This pairwise form is O(p·n); sorting by score and accumulating ranks gives O(n log n), which is worth mentioning as the optimization. Two caveats to raise: AUC measures **ranking**, not calibration — a model can score 0.95 AUC with badly miscalibrated probabilities — and it can look flatteringly high when positives are very rare, which is when **PR-AUC** is the more informative choice.
+
+**Log loss measures calibration, not just ranking.**
+
+```python
+def log_loss(y_true, y_prob):
+    eps = 1e-15
+    total = 0.0
+    for a, p in zip(y_true, y_prob):
+        p = min(max(p, eps), 1 - eps)          # clipping is mandatory
+        total += -(a * math.log(p) + (1 - a) * math.log(1 - p))
+    return total / len(y_true)
+```
+
+The clipping is not optional: a confident-and-wrong prediction of exactly 0 makes `log(0) = -inf` and the whole metric becomes infinite. Because the penalty grows without bound as you approach certainty, log loss punishes confident errors far harder than unsure ones — it rewards honest uncertainty, which accuracy does not.
+
+**Ranking metrics, for search and recommenders.** Users only see the first page, so position matters.
+
+```python
+def precision_at_k(y_true, y_score, k):
+    order = sorted(range(len(y_true)), key=lambda i: (-y_score[i], i))
+    top = order[:k]
+    return sum(y_true[i] for i in top) / len(top)
+```
+
+precision@k is the simplest. **NDCG** additionally handles graded relevance and discounts lower positions logarithmically, which is why it is the standard in search. **MAP** averages precision at each relevant position. Accuracy and RMSE are inappropriate here because they ignore position entirely.
+
+**The pattern across all of these.** Sort indices rather than values when you need to keep two lists aligned. Include a tiebreaker for determinism. Guard every denominator. And handle the empty input, because it appears in the test suite every time.

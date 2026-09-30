@@ -1,0 +1,168 @@
+Topological sort orders the nodes of a **directed acyclic graph** so that every edge points forward. It is the answer to any problem about **prerequisites, dependencies, or ordering** — and it doubles as cycle detection, because a cycle makes a valid ordering impossible.
+
+**The signal.** The problem mentions prerequisites, dependencies, build order, course schedules, task ordering, or asks whether a set of constraints is satisfiable. Also: "can you finish all N courses" is cycle detection in disguise.
+
+**Method 1: Kahn's algorithm (BFS with in-degrees).** This is the one I would default to — it detects cycles naturally and is harder to get wrong.
+
+```python
+from collections import defaultdict, deque
+
+def topological_order(n: int, edges: list[list[int]]) -> list[int]:
+    """edges[i] = [u, v] means u must come before v. Returns [] if there is a cycle."""
+    graph = defaultdict(list)
+    in_degree = [0] * n
+    for u, v in edges:
+        graph[u].append(v)
+        in_degree[v] += 1
+
+    q = deque(node for node in range(n) if in_degree[node] == 0)
+    order = []
+    while q:
+        node = q.popleft()
+        order.append(node)
+        for neighbor in graph[node]:
+            in_degree[neighbor] -= 1         # one prerequisite satisfied
+            if in_degree[neighbor] == 0:
+                q.append(neighbor)
+
+    return order if len(order) == n else []   # short order means a cycle
+```
+
+The logic: a node with in-degree 0 has no unmet prerequisites, so it is safe to take now. Taking it removes its outgoing edges, possibly freeing others.
+
+**The cycle check is the length check.** If a cycle exists, its nodes never reach in-degree 0, so they never enter the queue and `len(order) < n`. That one comparison is both your validity test and your answer to "can this be completed?"
+
+```python
+def can_finish(num_courses: int, prerequisites: list[list[int]]) -> bool:
+    """Course Schedule: prerequisites[i] = [course, prereq]."""
+    graph = defaultdict(list)
+    in_degree = [0] * num_courses
+    for course, prereq in prerequisites:
+        graph[prereq].append(course)         # prereq -> course
+        in_degree[course] += 1
+    q = deque(c for c in range(num_courses) if in_degree[c] == 0)
+    taken = 0
+    while q:
+        node = q.popleft()
+        taken += 1
+        for nxt in graph[node]:
+            in_degree[nxt] -= 1
+            if in_degree[nxt] == 0:
+                q.append(nxt)
+    return taken == num_courses
+```
+
+**Get the edge direction right.** With `[course, prereq]`, the dependency edge runs `prereq -> course`, and it is `course` whose in-degree increases. Reversing this is the most common bug in these problems — build a two-node example and check it before coding.
+
+**Method 2: DFS with three states.** Useful when you want the cycle detection to be explicit, or you prefer recursion.
+
+```python
+def topological_order_dfs(n: int, edges: list[list[int]]) -> list[int]:
+    graph = defaultdict(list)
+    for u, v in edges:
+        graph[u].append(v)
+
+    WHITE, GRAY, BLACK = 0, 1, 2             # unvisited, in progress, done
+    color = [WHITE] * n
+    order = []
+
+    def dfs(node: int) -> bool:
+        color[node] = GRAY
+        for neighbor in graph[node]:
+            if color[neighbor] == GRAY:
+                return False                 # back edge -> cycle
+            if color[neighbor] == WHITE and not dfs(neighbor):
+                return False
+        color[node] = BLACK
+        order.append(node)                   # postorder
+        return True
+
+    for node in range(n):
+        if color[node] == WHITE and not dfs(node):
+            return []
+    return order[::-1]                       # reverse the postorder
+```
+
+Two details that are the whole algorithm:
+
+1. **Three states, not two.** GRAY means "on the current recursion path". Encountering a GRAY node is a **back edge**, which is a cycle. A BLACK node is finished and is fine to encounter again — that is just a diamond, not a cycle. Using a single `visited` set cannot distinguish these, and that is the classic wrong answer.
+2. **Reverse postorder.** A node is appended only after all its descendants, so the postorder list is the topological order backwards.
+
+**Cycle detection in an undirected graph is a different problem.** There is no notion of a back edge along the path in the same way, because every edge is bidirectional. Track the parent instead:
+
+```python
+def has_cycle_undirected(n: int, edges: list[list[int]]) -> bool:
+    graph = defaultdict(list)
+    for u, v in edges:
+        graph[u].append(v)
+        graph[v].append(u)
+    visited = set()
+
+    def dfs(node: int, parent: int) -> bool:
+        visited.add(node)
+        for neighbor in graph[node]:
+            if neighbor == parent:
+                continue                     # the edge we came in on
+            if neighbor in visited:
+                return True
+            if dfs(neighbor, node):
+                return True
+        return False
+
+    for node in range(n):
+        if node not in visited and dfs(node, -1):
+            return True
+    return False
+```
+
+Skipping the parent is essential; without it every single edge looks like a 2-cycle. Union-find also detects undirected cycles cleanly — see that note.
+
+**Valid tree check** combines the two ideas: a graph on n nodes is a tree iff it has exactly `n - 1` edges **and** is connected (or equivalently, is connected and acyclic). Checking edge count first is a cheap early exit.
+
+**Lexicographically smallest topological order.** Replace the deque with a min-heap so you always take the smallest available node:
+
+```python
+import heapq
+
+def smallest_topological_order(n: int, edges: list[list[int]]) -> list[int]:
+    graph = defaultdict(list)
+    in_degree = [0] * n
+    for u, v in edges:
+        graph[u].append(v)
+        in_degree[v] += 1
+    heap = [node for node in range(n) if in_degree[node] == 0]
+    heapq.heapify(heap)
+    order = []
+    while heap:
+        node = heapq.heappop(heap)
+        order.append(node)
+        for neighbor in graph[node]:
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0:
+                heapq.heappush(heap, neighbor)
+    return order if len(order) == n else []
+```
+
+This costs O(V log V + E). Knowing that the "any valid order" version uses a queue and the "smallest valid order" version uses a heap is a nice piece of range.
+
+**Choosing between the two methods.**
+
+| Prefer | Because |
+|---|---|
+| **Kahn / BFS** | cycle detection falls out of the length check; iterative, so no recursion limit; easy to adapt for lexicographic order or level counting |
+| **DFS** | less setup; natural when you already have a DFS; makes the cycle explicit if you need to report it |
+
+Kahn's is the safer default under interview pressure.
+
+**Complexity.** Both are O(V + E) time and O(V + E) space for the graph plus O(V) for the bookkeeping.
+
+**Common mistakes.**
+- Edge direction reversed — always verify on a two-node example.
+- Incrementing the in-degree of the wrong endpoint.
+- Using a single `visited` set for directed cycle detection instead of three states.
+- Forgetting the `len(order) == n` cycle check and returning a partial order as if it were valid.
+- Forgetting to skip the parent in undirected cycle detection.
+- Not seeding the queue with **all** in-degree-0 nodes — there can be several, and the graph may be disconnected.
+- Assuming the DAG is connected. Loop over every node.
+
+**Representative problems.** Medium: Course Schedule, Course Schedule II, Graph Valid Tree, Minimum Height Trees, Sequence Reconstruction, Sort Items by Groups Respecting Dependencies (harder), Find Eventual Safe States, Parallel Courses. Alien Dictionary is the well-known Hard that is a direct topological sort once you extract the ordering constraints between adjacent words.

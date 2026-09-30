@@ -1,0 +1,1003 @@
+{
+  "metadata": {
+    "subject_slug": "leetcode_data_science",
+    "subject_name": "LeetCode: Data Science",
+    "exported_at": "2026-09-29T17:54:14.614279",
+    "question_count": 50,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "What is the risk of `WHERE id NOT IN (SELECT customer_id FROM orders)`?",
+      "question_type": "mc",
+      "options": [
+        "A. It is slower than a LEFT JOIN but otherwise identical",
+        "B. If the subquery returns even one NULL, NOT IN yields no rows at all, because comparing to NULL is UNKNOWN rather than true",
+        "C. NOT IN is not valid SQL",
+        "D. It silently returns duplicates"
+      ],
+      "correct_answer": "B",
+      "explanation": "`x NOT IN (1, NULL)` expands to `x <> 1 AND x <> NULL`, and `x <> NULL` is UNKNOWN, so the whole predicate can never be true. The result is an empty set, which looks like 'there are no such customers' rather than an error — a genuinely dangerous silent bug. Use NOT EXISTS or a LEFT JOIN with IS NULL instead.",
+      "difficulty": "advanced",
+      "tags": [
+        "sql",
+        "null-handling",
+        "anti-join",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "An INNER JOIN between two tables returns more rows than either table has. What happened?",
+      "question_type": "mc",
+      "options": [
+        "A. The query is malformed",
+        "B. The join key is not unique on at least one side, so rows fan out — each left row matches several right rows",
+        "C. An INNER JOIN can never return more rows than the smaller table",
+        "D. A NULL in the join key duplicated rows"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is row fan-out, and it is the most common cause of silently inflated aggregates in analytics. If you then SUM a left-table column, every duplicated row is counted again. The fix is to confirm the join key's grain — aggregate the many-side to one row per key before joining, or use a window function instead of a join.",
+      "difficulty": "advanced",
+      "tags": [
+        "sql",
+        "join",
+        "fan-out",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You need a rolling 7-day average of a daily metric in pandas. Describe the approach and the pitfalls.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The core call is `df['metric'].rolling(window=7).mean()`, and for a genuine 7-DAY window on a DatetimeIndex, `df['metric'].rolling('7D').mean()`.\n\nPitfalls:\n\n1. **Sort first.** Rolling operates in row order, not date order. Unsorted data gives silently wrong results. `df.sort_values('date')` before rolling.\n\n2. **Missing dates.** `rolling(7)` counts seven ROWS, not seven days. If some days are absent, a 7-row window can span three weeks. Either `resample('D').asfreq()` to create a complete date spine, or use the offset form `rolling('7D')`.\n\n3. **min_periods.** By default the first 6 positions are NaN. Setting `min_periods=1` fills them with partial averages — that may be what you want, but it must be deliberate, because a 'weekly average' computed from two days is misleading.\n\n4. **Leakage in a modelling context.** `rolling` is trailing by default, which is correct for features. A CENTERED window (`center=True`) uses future values, and using it as a model feature is target leakage.\n\n5. **Group-wise.** For per-entity series use `df.groupby('entity')['metric'].rolling(7).mean()`, or rolling inside a groupby-apply, so windows do not bleed across entities.",
+      "explanation": "A good answer names sorting, the rows-vs-days distinction with the '7D' offset fix, min_periods, and ideally the leakage risk of centered windows and the need to group by entity.",
+      "difficulty": "advanced",
+      "tags": [
+        "pandas",
+        "rolling",
+        "time-series",
+        "leakage"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "A 95% confidence interval for a mean is [10, 20]. Which statement is correct?",
+      "question_type": "mc",
+      "options": [
+        "A. There is a 95% probability the true mean lies between 10 and 20",
+        "B. If you repeated the sampling procedure many times, about 95% of the intervals so constructed would contain the true mean",
+        "C. 95% of the data lies between 10 and 20",
+        "D. The sample mean has a 95% chance of being 15"
+      ],
+      "correct_answer": "B",
+      "explanation": "In the frequentist framing the true mean is fixed and the INTERVAL is random. The 95% describes the long-run coverage of the procedure, not a probability about this particular interval. Option C confuses a confidence interval with a prediction interval, which is a distinct and much wider thing.",
+      "difficulty": "advanced",
+      "tags": [
+        "statistics",
+        "confidence-interval",
+        "inference"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is Simpson's paradox?",
+      "question_type": "mc",
+      "options": [
+        "A. A sampling method that reduces variance",
+        "B. A trend that appears in several groups reverses or disappears when the groups are combined, usually because of a confounding variable",
+        "C. The tendency of p-values to shrink with more data",
+        "D. A bias caused by rounding"
+      ],
+      "correct_answer": "B",
+      "explanation": "The classic example is a treatment that looks better in every subgroup but worse overall, because the subgroups have very different sizes and baseline rates. It is the reason aggregate metrics can mislead and why you segment before concluding — and a direct argument for randomization, which breaks the confounding.",
+      "difficulty": "advanced",
+      "tags": [
+        "statistics",
+        "simpsons-paradox",
+        "confounding"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You run an A/B test, see no significance at day 3, and keep checking daily until it turns significant. What is wrong?",
+      "question_type": "mc",
+      "options": [
+        "A. Nothing — more data is always better",
+        "B. Repeated significance testing inflates the false positive rate far above the nominal 5%, because you get many chances to cross the threshold by chance",
+        "C. The test becomes underpowered",
+        "D. It only biases the effect size, not the p-value"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is 'peeking' or optional stopping. Each look is another opportunity for noise to cross the line, so the true Type I error rate can easily exceed 20%. Remedies: fix the sample size in advance from a power calculation, or use a method designed for continuous monitoring — sequential testing with alpha spending, or a Bayesian approach.",
+      "difficulty": "advanced",
+      "tags": [
+        "statistics",
+        "ab-testing",
+        "multiple-comparisons"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "ROC-AUC is described as 'threshold-independent'. What does it actually measure?",
+      "question_type": "mc",
+      "options": [
+        "A. The accuracy at the best threshold",
+        "B. The probability that a randomly chosen positive receives a higher score than a randomly chosen negative",
+        "C. The area under the precision-recall curve",
+        "D. The model's calibration quality"
+      ],
+      "correct_answer": "B",
+      "explanation": "That probabilistic reading (the Mann-Whitney U interpretation) is the cleanest definition and the easiest way to compute it. AUC evaluates RANKING quality across all thresholds. It says nothing about calibration — a model can have AUC 0.95 while its probabilities are badly miscalibrated — and it can look flattering when positives are very rare, which is when PR-AUC is preferable.",
+      "difficulty": "advanced",
+      "tags": [
+        "ml-metrics",
+        "auc",
+        "roc",
+        "ranking"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain R-squared, including what a negative value means and why it can mislead.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "R-squared is 1 - SS_res/SS_tot: the fraction of the target's variance your model explains, relative to the baseline of always predicting the mean.\n\n- **1.0** means perfect prediction.\n- **0.0** means you did exactly as well as predicting the mean — your features added nothing.\n- **Negative** means you did WORSE than predicting the mean. This is impossible on training data for ordinary least squares, but entirely possible on a test set, and it is a clear signal of a badly misspecified or overfitted model.\n\nWhy it misleads:\n\n1. **It never decreases when you add predictors**, even useless random ones. Adjusted R-squared penalizes parameter count and is the right comparison across models of different size.\n\n2. **It is relative to the variance of YOUR target.** A high R-squared on a high-variance target can still mean large absolute errors, and a low R-squared on a nearly-constant target can still be a useful model. Always look at RMSE in the target's units alongside it.\n\n3. **It says nothing about whether the model is appropriate.** Anscombe-style datasets with identical R-squared can have wildly different residual structure — so plot the residuals.\n\n4. **On time series it is often inflated** by a trend both the model and the mean baseline partly capture; compare against a naive last-value forecast instead.",
+      "explanation": "A strong answer gives the formula and the mean-baseline interpretation, explains that negative values occur out-of-sample and what they signal, and raises at least the monotonicity-in-predictors problem with adjusted R-squared as the fix.",
+      "difficulty": "advanced",
+      "tags": [
+        "ml-metrics",
+        "regression",
+        "r-squared"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You must impute missing values and then cross-validate. What is the correct order?",
+      "question_type": "mc",
+      "options": [
+        "A. Impute on the whole dataset, then cross-validate",
+        "B. Put the imputer inside the cross-validation loop so it is fit on each training fold only, then applied to that fold's validation data",
+        "C. Drop all rows with missing values first",
+        "D. Impute after cross-validation"
+      ],
+      "correct_answer": "B",
+      "explanation": "Imputing globally uses the validation folds' values to compute the fill statistic, which leaks. The imputer is a fitted transformer and must be treated like the model: fit on train, apply to validation. A Pipeline wrapped in cross_val_score does this correctly by construction, which is the main reason Pipelines exist.",
+      "difficulty": "advanced",
+      "tags": [
+        "validation",
+        "leakage",
+        "missing-data",
+        "cross-validation"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the difference between WHERE and HAVING?",
+      "question_type": "mc",
+      "options": [
+        "A. They are interchangeable synonyms",
+        "B. WHERE filters individual rows before grouping; HAVING filters groups after aggregation",
+        "C. HAVING filters rows and WHERE filters columns",
+        "D. WHERE works only on indexed columns"
+      ],
+      "correct_answer": "B",
+      "explanation": "Logical order is FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY. Because WHERE runs before grouping it cannot reference an aggregate; HAVING runs after, so it can. Putting a row-level filter in HAVING is usually a correctness bug: filtering `status='completed'` in HAVING would still let cancelled rows count toward a COUNT(*) threshold.",
+      "difficulty": "beginner",
+      "tags": [
+        "sql",
+        "where",
+        "having",
+        "aggregation"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the key difference between `df.loc[...]` and `df.iloc[...]`?",
+      "question_type": "mc",
+      "options": [
+        "A. loc is faster; iloc is more memory efficient",
+        "B. loc selects by LABEL (index values and column names); iloc selects by INTEGER POSITION",
+        "C. loc works only on columns; iloc only on rows",
+        "D. They are aliases for the same method"
+      ],
+      "correct_answer": "B",
+      "explanation": "`loc` is label-based and its slices are INCLUSIVE of the endpoint; `iloc` is position-based and its slices are exclusive, like normal Python. So on a default RangeIndex `df.loc[0:2]` returns three rows while `df.iloc[0:2]` returns two. Mixing them up is the most common pandas indexing bug.",
+      "difficulty": "beginner",
+      "tags": [
+        "pandas",
+        "indexing"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which pandas operation corresponds to SQL's GROUP BY with multiple aggregates?",
+      "question_type": "mc",
+      "options": [
+        "A. df.apply(...)",
+        "B. df.groupby('key').agg({'col1': 'sum', 'col2': 'mean'})",
+        "C. df.pivot_table() only",
+        "D. df.transform('sum')"
+      ],
+      "correct_answer": "B",
+      "explanation": "`groupby().agg()` accepts a dict of column-to-function, or a list of functions, mapping directly onto SQL's GROUP BY with several aggregates. The related `transform` returns a result BROADCAST back to the original row count — that is what you use to add a group mean as a new column, which is closer to a SQL window function.",
+      "difficulty": "beginner",
+      "tags": [
+        "pandas",
+        "groupby",
+        "aggregation"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "How do you count missing values per column in a DataFrame?",
+      "question_type": "mc",
+      "options": [
+        "A. df.count()",
+        "B. df.isna().sum()",
+        "C. df.dropna().shape",
+        "D. len(df) - len(df.dropna())"
+      ],
+      "correct_answer": "B",
+      "explanation": "`isna()` gives a boolean DataFrame and `sum()` counts True per column, since True is 1. Note `df.count()` does the opposite — it counts NON-null values. And `dropna()` drops any row with any missing value, which tells you nothing about which column is responsible.",
+      "difficulty": "beginner",
+      "tags": [
+        "pandas",
+        "missing-data"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the practical difference between `df.drop_duplicates()` and `df.drop_duplicates(subset=['id'], keep='last')`?",
+      "question_type": "mc",
+      "options": [
+        "A. No difference; subset and keep are cosmetic",
+        "B. The first requires ALL columns to match; the second dedupes on 'id' alone and retains the last occurrence instead of the first",
+        "C. The second one sorts the DataFrame",
+        "D. keep='last' is invalid"
+      ],
+      "correct_answer": "B",
+      "explanation": "Without `subset`, rows must be identical across every column, so near-duplicates survive. With `subset=['id']` you define identity by the key you care about. `keep` chooses which row survives — `'first'` (default), `'last'`, or `False` to drop all duplicates. For 'keep the most recent record per id' you sort by timestamp then use `keep='last'`.",
+      "difficulty": "beginner",
+      "tags": [
+        "pandas",
+        "deduplication",
+        "data-cleaning"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "When should you report the median rather than the mean?",
+      "question_type": "mc",
+      "options": [
+        "A. Always — the median is more accurate",
+        "B. When the distribution is skewed or contains outliers, since the median is robust and the mean is pulled toward extreme values",
+        "C. Only for categorical data",
+        "D. When the sample size is even"
+      ],
+      "correct_answer": "B",
+      "explanation": "The mean is sensitive to every value, so one extreme observation can move it a long way; the median depends only on rank. For income, latency, or any heavy-tailed quantity the median is the more honest summary — which is also why p50/p95/p99 latency is reported rather than average latency.",
+      "difficulty": "beginner",
+      "tags": [
+        "statistics",
+        "descriptive-stats",
+        "robustness"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which is the correct interpretation of a standard deviation of 0 for a feature?",
+      "question_type": "mc",
+      "options": [
+        "A. The feature is perfectly predictive",
+        "B. Every value is identical, so the feature carries no information and will break any z-score standardization by dividing by zero",
+        "C. The feature is normally distributed",
+        "D. The data has been normalized already"
+      ],
+      "correct_answer": "B",
+      "explanation": "A constant column has zero variance. It cannot help any model, and it is an active hazard for preprocessing — z-scoring divides by the standard deviation. Guard for it explicitly, or drop such columns in a variance-threshold step. This is a routine data-quality check before modelling.",
+      "difficulty": "beginner",
+      "tags": [
+        "statistics",
+        "feature-scaling",
+        "data-cleaning"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Your fraud classifier reports 99.5% accuracy on data where 0.5% of transactions are fraudulent. What should you conclude?",
+      "question_type": "mc",
+      "options": [
+        "A. The model is excellent",
+        "B. Almost nothing — a model that always predicts 'not fraud' achieves 99.5%, so you need precision, recall, F1 or PR-AUC instead",
+        "C. The model is overfitting",
+        "D. The test set is too small"
+      ],
+      "correct_answer": "B",
+      "explanation": "On severely imbalanced data, accuracy is dominated by the majority class. The majority-class baseline here is 99.5%, so the headline number may represent a model that catches zero fraud. Always state the baseline, and report metrics that focus on the positive class. Precision-recall AUC is usually more informative than ROC-AUC when positives are rare.",
+      "difficulty": "beginner",
+      "tags": [
+        "ml-metrics",
+        "class-imbalance",
+        "accuracy"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Precision and recall: which is which?",
+      "question_type": "mc",
+      "options": [
+        "A. Precision = tp/(tp+fn), recall = tp/(tp+fp)",
+        "B. Precision = tp/(tp+fp) — of what you flagged, how much was right. Recall = tp/(tp+fn) — of what was actually positive, how much you caught",
+        "C. They are the same quantity computed differently",
+        "D. Precision applies to regression, recall to classification"
+      ],
+      "correct_answer": "B",
+      "explanation": "Precision is about the purity of your positive predictions; recall is about coverage of the actual positives. The denominators tell you which: precision divides by everything you PREDICTED positive, recall by everything that WAS positive. Which one matters is a business decision — spam filtering favours precision, cancer screening favours recall.",
+      "difficulty": "beginner",
+      "tags": [
+        "ml-metrics",
+        "precision",
+        "recall"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "In k-fold cross validation with k=5, how many times is each sample used for training?",
+      "question_type": "mc",
+      "options": [
+        "A. Once",
+        "B. Four times",
+        "C. Five times",
+        "D. It depends on the shuffle"
+      ],
+      "correct_answer": "B",
+      "explanation": "Each sample sits in exactly one validation fold and therefore appears in the training set for the other k-1 = 4 folds. That is what makes cross-validation a more stable estimate than a single split: every observation contributes to both training and evaluation, just never at the same time.",
+      "difficulty": "beginner",
+      "tags": [
+        "validation",
+        "cross-validation"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What distinguishes overfitting from underfitting in terms of train and validation error?",
+      "question_type": "mc",
+      "options": [
+        "A. Overfitting: both errors high. Underfitting: both low",
+        "B. Overfitting: low train error but high validation error. Underfitting: both errors high",
+        "C. Overfitting: high train error, low validation error",
+        "D. They cannot be distinguished from error values alone"
+      ],
+      "correct_answer": "B",
+      "explanation": "Overfitting means the model memorized noise specific to the training set, so the gap between train and validation error is large. Underfitting means the model is too simple to capture the signal, so it performs poorly everywhere. The remedies differ completely: overfitting wants regularization, more data, or a simpler model; underfitting wants more capacity or better features.",
+      "difficulty": "beginner",
+      "tags": [
+        "validation",
+        "overfitting",
+        "bias-variance"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You LEFT JOIN departments to employees and write COUNT(*) to get each department's headcount. What goes wrong?",
+      "question_type": "mc",
+      "options": [
+        "A. Nothing — COUNT(*) is correct here",
+        "B. Departments with no employees report 1 instead of 0, because the left join still emits one row with NULLs and COUNT(*) counts that row",
+        "C. The query fails with a syntax error",
+        "D. Departments with no employees are excluded entirely"
+      ],
+      "correct_answer": "B",
+      "explanation": "COUNT(*) counts rows, including the all-NULL row a left join produces for an unmatched left-side record. COUNT(employees.id) counts only non-NULL values and therefore correctly returns 0. This is the single most common LEFT JOIN + aggregate bug.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "left-join",
+        "aggregation",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "How do ROW_NUMBER(), RANK() and DENSE_RANK() differ on the values 100, 90, 90, 80 ordered descending?",
+      "question_type": "mc",
+      "options": [
+        "A. They all produce 1, 2, 3, 4",
+        "B. ROW_NUMBER gives 1,2,3,4; RANK gives 1,2,2,4; DENSE_RANK gives 1,2,2,3",
+        "C. ROW_NUMBER gives 1,2,2,3; RANK gives 1,2,3,4; DENSE_RANK gives 1,2,2,4",
+        "D. RANK and DENSE_RANK are identical; only ROW_NUMBER differs"
+      ],
+      "correct_answer": "B",
+      "explanation": "ROW_NUMBER is always sequential and breaks ties arbitrarily unless you add tiebreakers. RANK gives ties the same value then SKIPS the consumed positions. DENSE_RANK gives ties the same value with no gap. Use ROW_NUMBER when you need exactly one row per group, DENSE_RANK when you need contiguous rank levels.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "window-function",
+        "ranking"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why can't you filter on a window function directly in a WHERE clause?",
+      "question_type": "mc",
+      "options": [
+        "A. Window functions are not allowed in SELECT either",
+        "B. WHERE is evaluated before window functions are computed, so wrap the window function in a CTE or subquery and filter outside it",
+        "C. It works fine in all SQL engines",
+        "D. Because window functions always return NULL in WHERE"
+      ],
+      "correct_answer": "B",
+      "explanation": "Window functions are evaluated after FROM, WHERE, GROUP BY and HAVING — they operate on the result set those clauses produce. So `WHERE ROW_NUMBER() OVER (...) = 1` is invalid. The standard fix is a CTE: compute the window function inside, then filter on its output in the outer query. This is exactly how top-N-per-group is written.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "window-function",
+        "cte"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Write the query shape for 'top 2 highest-paid employees per department' and explain each piece.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "```sql\nWITH ranked AS (\n  SELECT department, name, salary,\n         ROW_NUMBER() OVER (\n           PARTITION BY department ORDER BY salary DESC, name ASC\n         ) AS rn\n  FROM employees\n  WHERE department IS NOT NULL\n)\nSELECT department, name, salary\nFROM ranked\nWHERE rn <= 2\nORDER BY department, rn;\n```\n\n- **PARTITION BY department** restarts the numbering for each group, which is what makes it per-department rather than global.\n- **ORDER BY salary DESC** defines what 'top' means. The secondary `name ASC` makes ties deterministic — without it, which employee you get is arbitrary and can change between runs.\n- **The CTE is required** because you cannot reference a window function in WHERE; it is computed after WHERE runs.\n- **ROW_NUMBER rather than RANK**: RANK would return three rows for a two-way tie at position 2, breaking the 'exactly 2' requirement.\n- **WHERE department IS NOT NULL** prevents a NULL group appearing in the output.\n\nBefore window functions this needed a correlated subquery counting how many employees in the same department earn more — correct but O(n^2)-ish and much harder to read.",
+      "explanation": "A strong answer produces the CTE + ROW_NUMBER shape, explains PARTITION BY and the tiebreaker, and justifies why the CTE is necessary and why ROW_NUMBER beats RANK here.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "window-function",
+        "top-n",
+        "cte"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which is the safe way to compute a ratio in SQL when the denominator may be zero?",
+      "question_type": "mc",
+      "options": [
+        "A. Wrap the whole expression in COALESCE",
+        "B. Divide by NULLIF(denominator, 0), which turns 0 into NULL so the result is NULL rather than an error",
+        "C. Add 1 to the denominator",
+        "D. Use a CASE statement in the WHERE clause"
+      ],
+      "correct_answer": "B",
+      "explanation": "`NULLIF(x, 0)` returns NULL when x is 0, and any arithmetic with NULL yields NULL. So the row returns NULL instead of raising a divide-by-zero. Adding 1 silently distorts the value. Also remember to CAST to a float type first in engines where integer / integer truncates.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "null-handling",
+        "division"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You want a running total of daily revenue. What does the OVER clause need?",
+      "question_type": "mc",
+      "options": [
+        "A. Only PARTITION BY",
+        "B. An ORDER BY inside OVER, which turns the aggregate into a cumulative calculation",
+        "C. A GROUP BY in the outer query",
+        "D. DISTINCT inside the aggregate"
+      ],
+      "correct_answer": "B",
+      "explanation": "`SUM(amount) OVER (ORDER BY order_date)` is a running total; `SUM(amount) OVER ()` with no ORDER BY is the grand total repeated on every row. Worth knowing: with an ORDER BY the default frame is RANGE UNBOUNDED PRECEDING, which lumps tied rows together as peers. If dates repeat, `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` gives the strict row-by-row behaviour most people intend.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "window-function",
+        "running-total"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the cleanest way to get each user's next event in time order?",
+      "question_type": "mc",
+      "options": [
+        "A. A self-join with a correlated subquery finding MIN(ts) greater than the current ts",
+        "B. LEAD(column) OVER (PARTITION BY user_id ORDER BY ts)",
+        "C. ORDER BY ts and read the next row in application code",
+        "D. GROUP BY user_id with MAX(ts)"
+      ],
+      "correct_answer": "B",
+      "explanation": "LEAD reaches forward within the window ordering, and LAG reaches backward. Both are far clearer and faster than the pre-window-function self-join with a correlated MIN subquery. The last row per partition has no successor, so LEAD returns NULL — filter those out or supply a default with LEAD(col, 1, default).",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "window-function",
+        "lag-lead",
+        "time-series"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is `SUM(CASE WHEN condition THEN 1 ELSE 0 END)` a common SQL idiom?",
+      "question_type": "mc",
+      "options": [
+        "A. It is faster than COUNT",
+        "B. It pivots rows into columns, letting you compute several conditional counts in a single pass without a PIVOT operator",
+        "C. It is the only way to count rows",
+        "D. It avoids the need for a GROUP BY"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is conditional aggregation. It lets one GROUP BY produce many derived columns — signups per year, counts per status — without multiple scans or an engine-specific PIVOT. `COUNT(CASE WHEN cond THEN 1 END)` is equivalent because COUNT skips NULLs; note there is deliberately no ELSE in that form.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sql",
+        "aggregation",
+        "pivot",
+        "case-when"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does the SettingWithCopyWarning indicate?",
+      "question_type": "mc",
+      "options": [
+        "A. The DataFrame is too large for memory",
+        "B. You may be assigning to a temporary copy rather than the original DataFrame, so the write could be silently lost",
+        "C. A column contains mixed types",
+        "D. The index is not unique"
+      ],
+      "correct_answer": "B",
+      "explanation": "Chained indexing like `df[df.a > 0]['b'] = 1` operates on an intermediate object that may be a copy, so the assignment may not reach `df`. The fix is single-step assignment with `.loc`: `df.loc[df.a > 0, 'b'] = 1`. Treat the warning as a likely bug, not noise.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pandas",
+        "indexing",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the difference between `groupby().agg()` and `groupby().transform()`?",
+      "question_type": "mc",
+      "options": [
+        "A. transform is just a faster agg",
+        "B. agg reduces each group to one row; transform returns a result aligned to the ORIGINAL row count, broadcasting the group value back to every member row",
+        "C. transform only works on numeric columns",
+        "D. agg can take a lambda and transform cannot"
+      ],
+      "correct_answer": "B",
+      "explanation": "This distinction matters constantly. Use `agg` for a summary table (one row per group). Use `transform` when you want a per-row column derived from its group — group mean, group rank, or normalizing within group. `transform` is pandas' analogue of a SQL window function.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pandas",
+        "groupby",
+        "transform"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "`pd.merge(left, right, on='id', how='left')` produces more rows than `left`. Why?",
+      "question_type": "mc",
+      "options": [
+        "A. merge always duplicates rows",
+        "B. The 'id' key is not unique in `right`, so each left row fans out to one row per match",
+        "C. how='left' is invalid with on=",
+        "D. The indexes were not reset first"
+      ],
+      "correct_answer": "B",
+      "explanation": "A left join guarantees every left row appears AT LEAST once, not exactly once. Duplicate keys on the right cause fan-out. Check with `right['id'].duplicated().any()` before merging, and use `validate='one_to_one'` or `validate='many_to_one'` to make pandas raise instead of silently inflating your data.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pandas",
+        "merge",
+        "fan-out",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does `df.apply(func, axis=1)` do, and why is it often discouraged?",
+      "question_type": "mc",
+      "options": [
+        "A. Applies func to each column; it is the fastest option",
+        "B. Applies func to each ROW, but it loops in Python so it is far slower than a vectorized operation on the whole column",
+        "C. Applies func in parallel across cores",
+        "D. It modifies the DataFrame in place"
+      ],
+      "correct_answer": "B",
+      "explanation": "`axis=1` means row-wise, and it is essentially a Python-level loop — orders of magnitude slower than vectorized arithmetic or `np.where` on whole columns. Reach for it only when the logic genuinely cannot be vectorized. The interview signal is knowing to look for a vectorized formulation first.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pandas",
+        "performance",
+        "vectorization"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which reshapes data from WIDE to LONG format?",
+      "question_type": "mc",
+      "options": [
+        "A. df.pivot()",
+        "B. df.melt()",
+        "C. df.groupby()",
+        "D. df.transpose()"
+      ],
+      "correct_answer": "B",
+      "explanation": "`melt` goes wide to long (columns become rows — the 'unpivot' direction). `pivot` and `pivot_table` go long to wide. `pivot_table` additionally accepts an aggfunc, so it can handle duplicate index/column pairs, whereas plain `pivot` raises on them.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pandas",
+        "reshape",
+        "melt",
+        "pivot"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does the sample variance divide by n-1 rather than n?",
+      "question_type": "mc",
+      "options": [
+        "A. To make the number larger for safety",
+        "B. Bessel's correction: dividing by n would systematically underestimate the population variance, because deviations are measured from the sample mean rather than the true mean",
+        "C. Because n-1 is faster to compute",
+        "D. It only matters when n is very large"
+      ],
+      "correct_answer": "B",
+      "explanation": "The sample mean sits, by construction, at the centre of the sample, so squared deviations from it are on average too small. Dividing by n-1 corrects that bias and makes the estimator unbiased. The difference matters most for small n and vanishes as n grows. Note numpy's `var` defaults to ddof=0 (population) while pandas' `var` defaults to ddof=1 (sample) — a real source of mismatched numbers.",
+      "difficulty": "intermediate",
+      "tags": [
+        "statistics",
+        "variance",
+        "estimation"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does a p-value of 0.03 mean?",
+      "question_type": "mc",
+      "options": [
+        "A. There is a 3% probability the null hypothesis is true",
+        "B. Assuming the null hypothesis is true, there is a 3% probability of observing data at least as extreme as what you saw",
+        "C. The effect size is 3%",
+        "D. There is a 97% probability the alternative hypothesis is true"
+      ],
+      "correct_answer": "B",
+      "explanation": "The p-value is P(data this extreme | null true) — a statement about the data given the hypothesis, not about the hypothesis given the data. Option A is the single most common misinterpretation in the field. And a small p-value says nothing about whether the effect is large enough to matter, which is why you report the effect size and confidence interval too.",
+      "difficulty": "intermediate",
+      "tags": [
+        "statistics",
+        "hypothesis-testing",
+        "p-value"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does the Central Limit Theorem actually tell you?",
+      "question_type": "mc",
+      "options": [
+        "A. Any large sample is normally distributed",
+        "B. The distribution of the SAMPLE MEAN approaches normal as sample size grows, regardless of the population's own distribution",
+        "C. All populations become normal with enough data",
+        "D. The sample standard deviation converges to the population value"
+      ],
+      "correct_answer": "B",
+      "explanation": "The CLT is about the sampling distribution of a statistic, not about the raw data. Your observations can be wildly skewed while the distribution of their mean is still approximately normal for large enough n. That is what licenses z-tests and t-tests on means even when the underlying data is not normal.",
+      "difficulty": "intermediate",
+      "tags": [
+        "statistics",
+        "central-limit-theorem",
+        "inference"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the difference between correlation and causation, and name three mechanisms that produce correlation without causation.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Correlation measures statistical association: when X is high, Y tends to be high (or low). Causation means intervening on X changes Y. Correlation is symmetric and observational; causation is directional and interventional.\n\nThree mechanisms that create correlation without causation:\n\n1. **Confounding.** A third variable Z causes both X and Y. Ice cream sales correlate with drowning deaths because temperature drives both.\n\n2. **Reverse causation.** Y actually causes X. Hospital visits correlate with illness, but the illness causes the visit.\n\n3. **Selection bias / collider effects.** How the data was collected induces the association. Conditioning on a variable that both X and Y influence can create a correlation between them that does not exist in the population.\n\nAlso worth naming: **chance** (with enough variables tested, spurious correlations are guaranteed — the multiple-comparisons problem) and **simultaneity** (each affects the other).\n\nThe remedy is a randomized controlled experiment, because randomizing X breaks its dependence on any confounder. When you cannot randomize, quasi-experimental designs — difference-in-differences, instrumental variables, regression discontinuity — try to recover a causal estimate under stated assumptions.",
+      "explanation": "A strong answer defines both terms in terms of intervention, names at least three distinct mechanisms with examples, and identifies randomization as the reason experiments license causal claims.",
+      "difficulty": "intermediate",
+      "tags": [
+        "statistics",
+        "causation",
+        "confounding",
+        "experiment-design"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is statistical power, and what increases it?",
+      "question_type": "mc",
+      "options": [
+        "A. The probability of a false positive; increased by lowering alpha",
+        "B. The probability of correctly detecting a real effect; increased by a larger sample, a larger true effect, lower variance, or a higher alpha",
+        "C. The proportion of variance explained by the model",
+        "D. The same thing as the confidence level"
+      ],
+      "correct_answer": "B",
+      "explanation": "Power is 1 - beta, the probability of rejecting the null when the alternative is true. The four levers are sample size, effect size, variance, and alpha. Note the tension: lowering alpha reduces false positives but also reduces power. Underpowered tests are the reason so many 'no difference' results are uninformative rather than evidence of no effect.",
+      "difficulty": "intermediate",
+      "tags": [
+        "statistics",
+        "power",
+        "hypothesis-testing"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is F1 the harmonic mean of precision and recall rather than the arithmetic mean?",
+      "question_type": "mc",
+      "options": [
+        "A. It is easier to compute",
+        "B. The harmonic mean punishes imbalance: a model with precision 1.0 and recall 0.0 gets F1 = 0, whereas the arithmetic mean would reward it with 0.5",
+        "C. It makes the score range wider",
+        "D. There is no real reason; it is convention"
+      ],
+      "correct_answer": "B",
+      "explanation": "The harmonic mean is dominated by the smaller value, so you cannot get a good F1 by sacrificing one metric entirely. That is exactly the behaviour you want from a single summary score. F-beta generalizes it: beta > 1 weights recall more, beta < 1 weights precision more.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ml-metrics",
+        "f1",
+        "precision",
+        "recall"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does moving the classification threshold from 0.5 to 0.3 do?",
+      "question_type": "mc",
+      "options": [
+        "A. Improves both precision and recall",
+        "B. Predicts positive more often, which raises recall and typically lowers precision",
+        "C. Has no effect on the confusion matrix",
+        "D. Changes the model's learned parameters"
+      ],
+      "correct_answer": "B",
+      "explanation": "The threshold is a post-hoc decision, not part of the fitted model. Lowering it flags more cases: you catch more true positives (recall up) but also admit more false positives (precision down). 0.5 is only a default and is rarely the business optimum — choose it from the relative cost of the two error types, or from a precision-recall curve.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ml-metrics",
+        "threshold",
+        "precision",
+        "recall"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "When is RMSE preferable to MAE, and vice versa?",
+      "question_type": "mc",
+      "options": [
+        "A. RMSE is always better because it is differentiable",
+        "B. RMSE squares errors so it punishes large ones harder and is more outlier-sensitive; MAE treats all errors linearly and is more robust",
+        "C. MAE is only for classification",
+        "D. They rank models identically, so it does not matter"
+      ],
+      "correct_answer": "B",
+      "explanation": "Choose RMSE when large errors are disproportionately costly, and MAE when you want a robust typical-error figure and do not want a few outliers to dominate. RMSE is also in the target's units, which makes it more interpretable than MSE. They can genuinely rank models differently, so the choice is substantive.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ml-metrics",
+        "regression",
+        "rmse",
+        "mae"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does log loss punish confident wrong predictions so heavily?",
+      "question_type": "mc",
+      "options": [
+        "A. Because it squares the error",
+        "B. Because it takes the log of the predicted probability, which goes to negative infinity as that probability approaches 0 for the true class",
+        "C. Because it multiplies by the class weight",
+        "D. It does not — it treats all errors equally"
+      ],
+      "correct_answer": "B",
+      "explanation": "Predicting 0.01 for something that is actually class 1 contributes -log(0.01) ≈ 4.6, whereas predicting 0.4 contributes only ≈ 0.92. This makes log loss a measure of CALIBRATION, not just of ranking: it rewards honest uncertainty. In practice you must clip probabilities away from exactly 0 and 1, or a single confident error makes the metric infinite.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ml-metrics",
+        "log-loss",
+        "calibration"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which metric would you choose to evaluate a search ranking system?",
+      "question_type": "mc",
+      "options": [
+        "A. Accuracy",
+        "B. A ranking metric such as precision@k, NDCG or MAP, because users only see the top few results",
+        "C. RMSE on the relevance scores",
+        "D. Log loss"
+      ],
+      "correct_answer": "B",
+      "explanation": "Ranking quality at the top of the list is what users experience, so position-aware metrics are appropriate. precision@k is the simplest. NDCG additionally handles graded relevance and discounts lower positions, which is why it is the standard in search. Accuracy and RMSE ignore position entirely.",
+      "difficulty": "intermediate",
+      "tags": [
+        "ml-metrics",
+        "ranking",
+        "ndcg",
+        "recommender"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You standardize your features using the mean and standard deviation of the FULL dataset, then split into train and test. What is wrong?",
+      "question_type": "mc",
+      "options": [
+        "A. Nothing — scaling before splitting is more efficient",
+        "B. Data leakage: the test set's statistics influenced the transformation, so your test score is optimistically biased",
+        "C. The scaling will be numerically unstable",
+        "D. The train and test sets will have different shapes"
+      ],
+      "correct_answer": "B",
+      "explanation": "Any transformation FIT on data that includes the test set leaks information. Fit the scaler on training data only, then apply those fitted parameters to validation and test. The same rule covers imputation values, encoders, feature selection, and resampling. Using a scikit-learn Pipeline inside cross-validation enforces this automatically, which is the practical answer.",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "leakage",
+        "feature-scaling"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why must time-series data be split chronologically rather than randomly?",
+      "question_type": "mc",
+      "options": [
+        "A. Random splits are computationally more expensive",
+        "B. A random split lets the model train on future observations and predict the past, which leaks information and wildly overstates performance",
+        "C. Time series cannot be cross-validated at all",
+        "D. Because the data is usually too large"
+      ],
+      "correct_answer": "B",
+      "explanation": "Random k-fold on time series puts future rows in the training set, which is not a situation the deployed model will ever face. Use a forward-chaining split: train on [0, t], validate on (t, t+h], and roll forward. Be careful with lag and rolling features too — a centered rolling window silently includes future values.",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "leakage",
+        "time-series",
+        "cross-validation"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which is a textbook example of target leakage?",
+      "question_type": "mc",
+      "options": [
+        "A. Including the customer's age as a feature",
+        "B. Including a 'days_since_account_closed' field when predicting churn, since it only exists after the outcome has occurred",
+        "C. Standardizing features before training",
+        "D. Using one-hot encoding on a categorical column"
+      ],
+      "correct_answer": "B",
+      "explanation": "Target leakage is a feature that encodes information unavailable at prediction time. It produces spectacular validation scores and a model that fails immediately in production. The diagnostic question for every feature is: would this value actually be known, with this value, at the moment the prediction must be made?",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "leakage",
+        "feature-engineering"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Describe the bias-variance tradeoff and how it guides model selection.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Expected prediction error decomposes into three parts: **bias squared** (error from wrong assumptions — the model is too simple to represent the truth), **variance** (error from sensitivity to the particular training sample), and **irreducible noise**.\n\n- **High bias, low variance**: a linear model on a curved relationship. Underfits. Train and validation error are both high and close together.\n- **Low bias, high variance**: a deep unpruned tree. Overfits. Train error is near zero, validation error is much higher.\n\nIncreasing model complexity generally lowers bias and raises variance, so total error is U-shaped in complexity. Model selection is the search for that minimum, and cross-validation is how you locate it empirically.\n\nLevers:\n- **Reduce variance**: more training data, regularization (L1/L2), bagging and random forests, early stopping, dropout, feature reduction.\n- **Reduce bias**: a more flexible model, better or interaction features, boosting, less aggressive regularization.\n\nTwo caveats worth adding: **more data reduces variance but not bias**, so if you are underfitting, collecting more rows will not help. And modern heavily-overparameterized models complicate the classical U-shape — the double-descent phenomenon — so treat the tradeoff as a guiding intuition rather than a strict law.",
+      "explanation": "A strong answer gives the decomposition, maps each regime to observable train/validation error patterns, lists concrete levers for each side, and ideally notes that more data does not fix bias.",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "bias-variance",
+        "overfitting",
+        "model-selection"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is stratified k-fold preferable to plain k-fold on imbalanced classification data?",
+      "question_type": "mc",
+      "options": [
+        "A. It is faster",
+        "B. It preserves the class proportions in every fold, so no fold ends up with very few (or zero) positive examples",
+        "C. It shuffles the data more thoroughly",
+        "D. It allows a larger value of k"
+      ],
+      "correct_answer": "B",
+      "explanation": "With 1% positives and 5 plain folds, a fold can easily contain almost no positives, making its metrics meaningless and the cross-validation estimate very high-variance. Stratification samples within each class so every fold mirrors the overall distribution. For grouped data you additionally need GroupKFold so the same entity does not appear in both train and validation.",
+      "difficulty": "intermediate",
+      "tags": [
+        "validation",
+        "cross-validation",
+        "class-imbalance"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You one-hot encode a categorical column on the training set. At inference a new, unseen category appears. What happens, and what is the fix?",
+      "question_type": "mc",
+      "options": [
+        "A. The model handles it automatically",
+        "B. There is no column for it, so the encoding breaks or silently produces all zeros; fix it with handle_unknown='ignore' or an explicit 'other' bucket",
+        "C. The category is imputed with the mode",
+        "D. One-hot encoding is immune to unseen categories"
+      ],
+      "correct_answer": "B",
+      "explanation": "The encoder learned a fixed column set at fit time. An unseen category has no column, so a strict encoder raises and a lenient one emits all zeros — which may be acceptable but should be a deliberate choice. Options: `handle_unknown='ignore'`, an explicit rare/other bucket collapsing infrequent categories at training time, or a target/hashing encoder for very high cardinality.",
+      "difficulty": "intermediate",
+      "tags": [
+        "feature-engineering",
+        "encoding",
+        "data-cleaning"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which outlier-detection rule is more robust, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. The z-score rule, because it uses all the data",
+        "B. The IQR rule, because quartiles are rank-based and unaffected by extreme values, whereas the outliers themselves inflate the standard deviation used by the z-score",
+        "C. They are mathematically equivalent",
+        "D. Neither works without normally distributed data"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is the masking problem: a few large outliers raise the standard deviation, which widens the z-score fences and can hide the very points you are looking for. Quartiles depend only on rank, so the Tukey 1.5×IQR fences are unaffected. The z-score rule also implicitly assumes approximate normality, which skewed data violates.",
+      "difficulty": "intermediate",
+      "tags": [
+        "data-cleaning",
+        "outliers",
+        "statistics",
+        "robustness"
+      ],
+      "source": "manual",
+      "is_active": true
+    }
+  ]
+}

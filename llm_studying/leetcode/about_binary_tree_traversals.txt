@@ -1,0 +1,206 @@
+Binary trees are the most heavily tested structure in interviews, and almost every problem is a traversal with a small twist. Get the four traversals and the recursive template solid and most tree problems become mechanical.
+
+**The node definition:**
+
+```python
+class TreeNode:
+    def __init__(self, val: int = 0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+```
+
+**The four traversals.**
+
+```python
+def preorder(node, out):     # node, left, right  - top-down
+    if not node:
+        return
+    out.append(node.val)
+    preorder(node.left, out)
+    preorder(node.right, out)
+
+def inorder(node, out):      # left, node, right  - sorted order for a BST
+    if not node:
+        return
+    inorder(node.left, out)
+    out.append(node.val)
+    inorder(node.right, out)
+
+def postorder(node, out):    # left, right, node  - bottom-up
+    if not node:
+        return
+    postorder(node.left, out)
+    postorder(node.right, out)
+    out.append(node.val)
+```
+
+Level-order is BFS with a queue, covered below.
+
+**When to use which — this is the actual skill.**
+
+| Traversal | Use it when |
+|---|---|
+| **Preorder** | You need to process a node **before** its children: copying/serializing a tree, passing information *down* (depth, path so far, valid range) |
+| **Inorder** | The tree is a **BST** and you want sorted order: validate BST, kth smallest, convert to sorted list |
+| **Postorder** | You need results **from** the children to compute the node: height, diameter, subtree sums, "is this subtree balanced" |
+| **Level-order** | Anything "by level", or the **shortest path** in an unweighted sense: level averages, right side view, minimum depth |
+
+The preorder/postorder distinction is the one to internalize. **Information flowing down** the tree is preorder — you pass it as a parameter. **Information flowing up** is postorder — you return it from the recursive call. Many problems need both at once.
+
+**The recursive template.** Nearly every tree problem fits this shape:
+
+```python
+def solve(node):
+    if not node:                     # 1. base case
+        return IDENTITY              # 0, 1, True, [] - whatever fits the combine
+    left = solve(node.left)          # 2. recurse
+    right = solve(node.right)
+    return combine(left, right, node.val)    # 3. combine
+```
+
+The whole design question is: what does one call *return*, and what is the identity value for an empty subtree? Answer those two and the code writes itself.
+
+```python
+def max_depth(root) -> int:
+    if not root:
+        return 0                                  # identity: empty tree has depth 0
+    return 1 + max(max_depth(root.left), max_depth(root.right))
+
+
+def is_same_tree(p, q) -> bool:
+    if not p and not q:
+        return True
+    if not p or not q or p.val != q.val:
+        return False
+    return is_same_tree(p.left, q.left) and is_same_tree(p.right, q.right)
+
+
+def invert_tree(root):
+    if not root:
+        return None
+    root.left, root.right = invert_tree(root.right), invert_tree(root.left)
+    return root
+```
+
+**The "return one thing, track another" pattern.** Some problems need a value that isn't what the recursion naturally returns. Diameter is the classic: the recursion returns *height*, but the answer is the best *path* seen anywhere.
+
+```python
+def diameter_of_binary_tree(root) -> int:
+    best = 0
+    def height(node) -> int:
+        nonlocal best
+        if not node:
+            return 0
+        left = height(node.left)
+        right = height(node.right)
+        best = max(best, left + right)        # path THROUGH this node
+        return 1 + max(left, right)           # height, for the parent
+    height(root)
+    return best
+```
+
+Recognizing when you need this — a `nonlocal` accumulator alongside a returned value — unlocks Diameter, Maximum Path Sum, Longest Univalue Path, and Count Good Nodes. It is worth practicing until it is automatic.
+
+Balanced-tree checking is the same idea, using a sentinel to short-circuit:
+
+```python
+def is_balanced(root) -> bool:
+    def height(node) -> int:
+        if not node:
+            return 0
+        left = height(node.left)
+        if left == -1:
+            return -1                          # propagate failure
+        right = height(node.right)
+        if right == -1 or abs(left - right) > 1:
+            return -1
+        return 1 + max(left, right)
+    return height(root) != -1
+```
+
+**Level-order (BFS).** Snapshot the queue length so each iteration handles exactly one level.
+
+```python
+from collections import deque
+
+def level_order(root) -> list[list[int]]:
+    if not root:
+        return []
+    result, q = [], deque([root])
+    while q:
+        level = []
+        for _ in range(len(q)):                # snapshot before enqueuing children
+            node = q.popleft()
+            level.append(node.val)
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)
+        result.append(level)
+    return result
+```
+
+Variations are all one-line changes: right side view takes `level[-1]`, level averages take `sum(level)/len(level)`, zigzag reverses alternate levels, and minimum depth returns the level index of the first leaf.
+
+**Path problems: pass state down, backtrack on the way out.**
+
+```python
+def path_sum_all(root, target: int) -> list[list[int]]:
+    result = []
+    def dfs(node, remaining, path):
+        if not node:
+            return
+        path.append(node.val)
+        if not node.left and not node.right and remaining == node.val:
+            result.append(path[:])             # COPY - path is mutated after this
+        else:
+            dfs(node.left, remaining - node.val, path)
+            dfs(node.right, remaining - node.val, path)
+        path.pop()                             # backtrack
+    dfs(root, target, [])
+    return result
+```
+
+Two mandatory details: `path[:]` copies the list (appending `path` itself stores a reference that later mutation will corrupt), and `path.pop()` undoes the append so siblings see a clean state.
+
+**Iterative traversals**, for when the interviewer asks for no recursion:
+
+```python
+def preorder_iterative(root) -> list[int]:
+    if not root:
+        return []
+    out, stack = [], [root]
+    while stack:
+        node = stack.pop()
+        out.append(node.val)
+        if node.right:
+            stack.append(node.right)           # right first, so left pops first
+        if node.left:
+            stack.append(node.left)
+    return out
+
+def inorder_iterative(root) -> list[int]:
+    out, stack, node = [], [], root
+    while stack or node:
+        while node:
+            stack.append(node)
+            node = node.left
+        node = stack.pop()
+        out.append(node.val)
+        node = node.right
+    return out
+```
+
+**Complexity.** Traversals are O(n) time. Space is O(h) for the recursion stack where h is height — **O(log n) for a balanced tree, O(n) for a skewed one**. State it that way rather than just "O(n)"; it shows you understand the difference. BFS space is O(w) for the widest level, which is O(n) in the worst case.
+
+**Common mistakes.**
+- Missing the `if not node: return` base case.
+- Forgetting `level_size = len(q)` in level-order BFS.
+- Appending `path` instead of `path[:]` in path problems — every result ends up empty or identical.
+- Forgetting to `pop()` when backtracking.
+- Using postorder when information needs to flow down, or preorder when it needs to flow up.
+- Giving space complexity as O(1) for a recursive traversal — the call stack is O(h).
+- Assuming the tree is balanced. Unless stated, assume it can be a straight line.
+
+**Representative problems.** Easy: Maximum Depth, Invert Binary Tree, Same Tree, Symmetric Tree, Path Sum, Balanced Binary Tree, Diameter of Binary Tree, Merge Two Binary Trees. Medium: Binary Tree Level Order Traversal, Right Side View, Zigzag Level Order, Path Sum II, Lowest Common Ancestor, Construct Tree from Preorder and Inorder, Count Good Nodes, Flatten Binary Tree to Linked List, Populating Next Right Pointers.

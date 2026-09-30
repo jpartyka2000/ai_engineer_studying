@@ -1,0 +1,161 @@
+Bit manipulation appears in a small but predictable set of interview problems. You need the operators, half a dozen idioms, and the XOR trick.
+
+**The operators.**
+
+```python
+a & b      # AND  - 1 where both are 1
+a | b      # OR   - 1 where either is 1
+a ^ b      # XOR  - 1 where they DIFFER
+~a         # NOT  - flips all bits (in Python: ~a == -a - 1)
+a << n     # left shift  - multiply by 2^n
+a >> n     # right shift - floor divide by 2^n
+```
+
+**XOR is the one that matters.** Its properties drive most bit problems:
+
+```
+a ^ a = 0          # self-cancelling
+a ^ 0 = a          # identity
+a ^ b ^ a = b      # commutative and associative, so pairs cancel anywhere
+```
+
+Self-cancellation is the whole trick. XOR everything together and paired values vanish, leaving the unpaired one:
+
+```python
+def single_number(nums: list[int]) -> int:
+    result = 0
+    for num in nums:
+        result ^= num
+    return result
+```
+
+O(n) time, **O(1) space** — versus the hash-set approach's O(n) space. That space advantage is why the problem exists.
+
+Two more XOR applications:
+
+```python
+def missing_number(nums: list[int]) -> int:
+    """Numbers 0..n with one missing."""
+    result = len(nums)
+    for i, num in enumerate(nums):
+        result ^= i ^ num              # each present index/value pair cancels
+    return result
+
+def find_difference(s: str, t: str) -> str:
+    """t is s with one extra character."""
+    result = 0
+    for ch in s + t:
+        result ^= ord(ch)
+    return chr(result)
+```
+
+**The essential idioms.**
+
+```python
+n & 1 == 1              # is n odd
+n & (1 << i)            # is bit i set (nonzero if yes)
+n | (1 << i)            # set bit i
+n & ~(1 << i)           # clear bit i
+n ^ (1 << i)            # toggle bit i
+(n >> i) & 1            # read bit i as 0 or 1
+```
+
+**Two tricks worth memorizing.**
+
+`n & (n - 1)` **clears the lowest set bit.** Subtracting 1 flips the lowest 1 to 0 and everything below it to 1; the AND keeps only the bits above.
+
+```python
+def is_power_of_two(n: int) -> bool:
+    return n > 0 and n & (n - 1) == 0      # a power of two has exactly one set bit
+
+def count_bits(n: int) -> int:
+    """Brian Kernighan's: loops once per SET bit, not once per bit."""
+    count = 0
+    while n:
+        n &= n - 1
+        count += 1
+    return count
+```
+
+`n & -n` **isolates the lowest set bit**, which follows from two's complement representation.
+
+Python has `int.bit_count()` (3.10+) and `bin(n).count("1")` — mention them, but be ready to write Kernighan's loop, which is what interviewers usually want.
+
+**Counting bits for a range, with DP.** A neat recurrence: the number of set bits in n is one more than in `n >> 1` if n is odd.
+
+```python
+def count_bits_range(n: int) -> list[int]:
+    dp = [0] * (n + 1)
+    for i in range(1, n + 1):
+        dp[i] = dp[i >> 1] + (i & 1)
+    return dp
+```
+
+**Bitmask as a set.** For small universes (≤ ~20 elements), an integer is a fast set: bit i means "element i is present". This is how subset enumeration and small-state DP work.
+
+```python
+def all_subsets(nums: list[int]) -> list[list[int]]:
+    n = len(nums)
+    result = []
+    for mask in range(1 << n):                      # 2^n masks
+        result.append([nums[i] for i in range(n) if mask & (1 << i)])
+    return result
+```
+
+An input constraint of `n <= 20` is a strong hint that a bitmask is intended, since 2²⁰ ≈ 10⁶ is tractable.
+
+For a lowercase-alphabet "does this word use only these letters" check, a 26-bit mask makes the comparison O(1):
+
+```python
+def word_mask(word: str) -> int:
+    mask = 0
+    for ch in word:
+        mask |= 1 << (ord(ch) - ord("a"))
+    return mask
+
+# two words share no letters iff:
+word_mask(a) & word_mask(b) == 0
+```
+
+**Addition without `+`.** Occasionally asked, and it demonstrates you understand carries.
+
+```python
+def get_sum(a: int, b: int) -> int:
+    MASK = 0xFFFFFFFF
+    MAX_INT = 0x7FFFFFFF
+    while b & MASK:
+        carry = (a & b) << 1        # positions where both are 1 produce a carry
+        a = a ^ b                   # sum without carry
+        b = carry
+    a &= MASK
+    return a if a <= MAX_INT else ~(a ^ MASK)
+```
+
+The masking is needed because **Python integers are arbitrary precision** — there is no natural 32-bit overflow, so you have to simulate it. That is the interesting part of the problem in Python and worth calling out.
+
+**Python-specific gotchas.**
+
+- **Arbitrary precision.** No overflow, so `1 << 100` is fine. Problems that rely on 32-bit wraparound need explicit masking with `0xFFFFFFFF`.
+- **`~n == -n - 1`.** Python's `~` operates on a conceptually infinite two's-complement representation, so `~5 == -6`, not a 32-bit pattern.
+- **Right shift on negatives is arithmetic**, preserving the sign: `-8 >> 1 == -4`. There is no `>>>` unsigned shift.
+- **Negative modulo is non-negative** for a positive divisor, which is convenient elsewhere but surprising if you come from C.
+
+**When bit manipulation is the answer.**
+- The problem explicitly involves bits, binary representation, or powers of two.
+- "Find the single/missing/duplicate number" with an O(1) space requirement.
+- Subset enumeration with `n <= 20`.
+- You need a compact set representation for DP state.
+- Swapping or toggling without extra space.
+
+**When it is not.** Do not force bit tricks where a hash map is clearer. `n & 1` instead of `n % 2` is a micro-optimization that costs readability, and interviewers notice clever-for-its-own-sake code. Use bits when they give an asymptotic or space win, not to look sharp.
+
+**Common mistakes.**
+- Confusing `&` with `&&` (Python uses `and`) or `|` with `or`.
+- Operator precedence: `&` binds *looser* than `==`, so `if n & 1 == 1` parses as `n & (1 == 1)`. Parenthesize: `if (n & 1) == 1`. This is a real and nasty bug.
+- Expecting 32-bit overflow in Python.
+- Assuming `~` yields a 32-bit pattern.
+- Off-by-one on shift amounts — bit i is `1 << i`, so bit 0 is the least significant.
+- Using XOR for "find the duplicate" when elements appear three times rather than twice — self-cancellation only works for pairs. That variant needs counting bits mod 3.
+- Forgetting `n > 0` in the power-of-two check; `0 & -1 == 0` would otherwise pass.
+
+**Representative problems.** Easy: Single Number, Number of 1 Bits, Counting Bits, Reverse Bits, Missing Number, Power of Two, Hamming Distance, Find the Difference, Complement of Base 10 Integer. Medium: Single Number II, Single Number III, Sum of Two Integers, Subsets (bitmask approach), Maximum XOR of Two Numbers, Bitwise AND of Numbers Range, Gray Code, Maximum Product of Word Lengths.

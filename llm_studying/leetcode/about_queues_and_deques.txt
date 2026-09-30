@@ -1,0 +1,169 @@
+A queue is FIFO — add at the back, remove from the front. Its main interview role is powering BFS, but the **monotonic deque** for sliding window maximum is a Medium pattern worth knowing on its own.
+
+**Use `collections.deque`, never a list.** This is a real complexity bug, not a style preference.
+
+```python
+from collections import deque
+
+q = deque()
+q.append(x)        # push to back  - O(1)
+q.popleft()        # pop from front - O(1)
+q.appendleft(x)    # push to front - O(1)
+q.pop()            # pop from back  - O(1)
+```
+
+A Python `list` gives O(1) `append` and `pop()` but **O(n)** `pop(0)` and `insert(0, x)`, because every remaining element shifts. Using `list.pop(0)` in a BFS makes it O(n²). Saying "I'll use a deque because list.pop(0) is O(n)" is a cheap, strong signal.
+
+**Use 1: BFS.** Nearly every queue in an interview is here. The full pattern lives in the graph and tree traversal notes; the skeleton is:
+
+```python
+def bfs(start):
+    q = deque([start])
+    visited = {start}
+    while q:
+        node = q.popleft()
+        for neighbor in neighbors(node):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                q.append(neighbor)
+```
+
+**Level-by-level BFS** is the variant that matters, because so many problems ask for something per level. Capture the queue's length before the inner loop:
+
+```python
+def level_order(root):
+    if not root:
+        return []
+    result, q = [], deque([root])
+    while q:
+        level_size = len(q)                  # snapshot BEFORE adding children
+        level = []
+        for _ in range(level_size):
+            node = q.popleft()
+            level.append(node.val)
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)
+        result.append(level)
+    return result
+```
+
+Taking `len(q)` first is the whole trick — it separates the current level from the children you are about to enqueue. Forgetting it is the most common BFS bug.
+
+**Use 2: the monotonic deque — sliding window maximum.** The window maximum in O(n), which a heap gives you only in O(n log n).
+
+```python
+def max_sliding_window(nums: list[int], k: int) -> list[int]:
+    dq = deque()                     # indices, their values strictly decreasing
+    result = []
+    for i, num in enumerate(nums):
+        # 1. drop indices that have slid out of the window
+        while dq and dq[0] <= i - k:
+            dq.popleft()
+        # 2. drop smaller values from the back - they can never be the max now
+        while dq and nums[dq[-1]] < num:
+            dq.pop()
+        dq.append(i)
+        # 3. the front is the window's maximum
+        if i >= k - 1:
+            result.append(nums[dq[0]])
+    return result
+```
+
+Three invariants make it work: the deque holds **indices**, in **decreasing value** order, all **within the window**. The front is therefore always the maximum. Each index is appended once and removed once, so it is O(n) with O(k) space.
+
+The insight for step 2: if a new element is larger than elements behind it in the deque, those older, smaller elements can never be the maximum again — the new one is both bigger and stays in the window longer. So discard them.
+
+**Contrast with the heap solution.** A max-heap also solves sliding window maximum, in O(n log n), and needs lazy deletion to discard entries that have left the window. The deque is strictly better here. Knowing why — O(n) vs O(n log n), no lazy deletion needed — is a good thing to volunteer.
+
+**Use 3: a bounded window of recent values.** `deque(maxlen=n)` automatically discards from the opposite end when full, which makes "moving average of the last n values" trivial:
+
+```python
+class MovingAverage:
+    def __init__(self, size: int):
+        self.q = deque(maxlen=size)
+        self.total = 0.0
+
+    def next(self, val: int) -> float:
+        if len(self.q) == self.q.maxlen:
+            self.total -= self.q[0]          # about to be evicted
+        self.q.append(val)
+        self.total += val
+        return self.total / len(self.q)
+```
+
+**Use 4: circular queue / ring buffer design.** A classic design question. Fixed-size array plus head and tail indices with modular arithmetic:
+
+```python
+class MyCircularQueue:
+    def __init__(self, k: int):
+        self.buf = [0] * k
+        self.head = 0
+        self.count = 0
+        self.capacity = k
+
+    def enqueue(self, value: int) -> bool:
+        if self.count == self.capacity:
+            return False
+        self.buf[(self.head + self.count) % self.capacity] = value
+        self.count += 1
+        return True
+
+    def dequeue(self) -> bool:
+        if self.count == 0:
+            return False
+        self.head = (self.head + 1) % self.capacity
+        self.count -= 1
+        return True
+```
+
+Tracking `count` rather than a separate tail index avoids the classic full-vs-empty ambiguity, where head == tail could mean either.
+
+**Queue via two stacks.** A common Easy design problem. Amortized O(1) per operation.
+
+```python
+class MyQueue:
+    def __init__(self):
+        self.inbox = []
+        self.outbox = []
+
+    def push(self, x: int) -> None:
+        self.inbox.append(x)
+
+    def pop(self) -> int:
+        self._transfer()
+        return self.outbox.pop()
+
+    def peek(self) -> int:
+        self._transfer()
+        return self.outbox[-1]
+
+    def _transfer(self) -> None:
+        if not self.outbox:                  # only when outbox is empty
+            while self.inbox:
+                self.outbox.append(self.inbox.pop())
+```
+
+The amortized argument: each element moves from inbox to outbox exactly once. Transferring only when the outbox is empty is what makes it amortized O(1) rather than O(n) per pop.
+
+**Choosing a container.**
+
+| Need | Use |
+|---|---|
+| FIFO queue | `deque` — `append` / `popleft` |
+| LIFO stack | `list` — `append` / `pop` |
+| Both ends | `deque` |
+| Window maximum/minimum in O(n) | monotonic `deque` |
+| Priority order | `heapq`, not a queue |
+| Last n items, auto-evicting | `deque(maxlen=n)` |
+
+**Common mistakes.**
+- `list.pop(0)` for a queue — O(n), turns BFS into O(n²).
+- Forgetting `level_size = len(q)` for level-by-level BFS.
+- Marking nodes visited when dequeuing instead of when enqueuing, which lets duplicates into the queue.
+- In the monotonic deque: storing values instead of indices, so you cannot tell when something leaves the window.
+- Getting the monotonic deque's comparison direction backwards — decreasing for maximum, increasing for minimum.
+- Confusing a queue with a priority queue. A queue is insertion-ordered; `heapq` is value-ordered.
+
+**Representative problems.** Easy: Implement Queue using Stacks, Implement Stack using Queues, Moving Average from Data Stream, Number of Recent Calls. Medium: Sliding Window Maximum, Design Circular Queue, Rotting Oranges (BFS), Walls and Gates (multi-source BFS), Open the Lock (BFS), Design Hit Counter.

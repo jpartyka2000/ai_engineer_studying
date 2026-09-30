@@ -1,0 +1,971 @@
+{
+  "metadata": {
+    "subject_slug": "leetcode",
+    "subject_name": "LeetCode",
+    "exported_at": "2026-09-29T17:03:19.951910",
+    "question_count": 50,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "Explain the role of the `{0: 1}` seed in this solution, and what breaks without it.\n\n```python\ncount = 0\nrunning = 0\nseen = {0: 1}\nfor num in nums:\n    running += num\n    count += seen.get(running - k, 0)\n    seen[running] = seen.get(running, 0) + 1\n```",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The map counts how many times each prefix sum has occurred. A subarray ending at the current position sums to k exactly when some earlier prefix sum equals `running - k`.\n\nThe `{0: 1}` entry represents the EMPTY prefix — the state before any element is consumed. It is what allows a subarray that starts at index 0 to be counted: for such a subarray, the 'earlier prefix' is the empty one, whose sum is 0.\n\nWithout the seed, every subarray beginning at index 0 is missed. For `nums=[1,2]` and `k=3`, the correct answer is 1, but an unseeded map returns 0 because the only valid subarray is the whole array and its complement prefix is the empty one.\n\nA second detail: the map stores COUNTS, not just presence, because multiple earlier prefixes can share the same sum and each one forms a distinct valid subarray.",
+      "explanation": "The answer should identify the seed as the empty prefix, give a concrete failing example, and note that counting occurrences (rather than checking membership) is also required for correctness.",
+      "difficulty": "advanced",
+      "tags": [
+        "hash-map",
+        "prefix-sum",
+        "subarray"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "In a sliding-window anagram problem you compare `window == need`, where both are `Counter` objects. Why must you delete keys whose count reaches zero?",
+      "question_type": "mc",
+      "options": [
+        "A. Because Counter does not support equality comparison",
+        "B. Because `Counter({'a': 0})` is not equal to `Counter()`, so a lingering zero entry makes two logically identical windows compare unequal",
+        "C. Because zero counts make the comparison O(n^2)",
+        "D. You do not need to — Counter ignores zero values in comparisons"
+      ],
+      "correct_answer": "B",
+      "explanation": "Counter equality compares the underlying dicts, and a key mapped to 0 is still a key. So a window that has fully removed a character still differs from one that never had it. Deleting the key when its count hits zero keeps the comparison correct. This is an easy bug to miss because the logic looks right.",
+      "difficulty": "advanced",
+      "tags": [
+        "hash-map",
+        "counter",
+        "sliding-window",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You have a stream of millions of events and need to report the 10 most frequent event types at any time. Describe your data structures and the complexity.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Maintain a hash map from event type to count — O(1) per event to update.\n\nFor the top 10, there are three reasonable answers with different trade-offs:\n\n1. **Sort on demand**: sort the counts when a report is requested. O(m log m) per report where m is the number of distinct types. Fine if reports are rare.\n\n2. **Bounded min-heap of size 10**: O(m log 10) per report, effectively O(m). Better when m is large and reports are frequent.\n\n3. **Bucket sort by frequency**: because counts are bounded by the number of events, you can bucket types by count and scan buckets from the top. O(m) per report, the best asymptotic option.\n\nThe key insight for the heap version: for the k LARGEST you use a MIN-heap of size k, so the root is the weakest of the current best k and a new candidate only has to beat that one element.\n\nIf exact counts are not required at this scale, mention Count-Min Sketch or Space-Saving as sublinear-memory approximations.",
+      "explanation": "A good answer separates the counting structure (hash map) from the selection structure (heap / bucket / sort), gets the min-heap-for-k-largest direction right, and states complexities. Mentioning approximate sketches for true stream scale is a bonus.",
+      "difficulty": "advanced",
+      "tags": [
+        "hash-map",
+        "heap",
+        "top-k",
+        "streaming"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "This solution to Longest Consecutive Sequence contains a nested loop. Why is it O(n) rather than O(n^2)?\n\n```python\nnum_set = set(nums)\nfor num in num_set:\n    if num - 1 not in num_set:\n        length = 1\n        while num + length in num_set:\n            length += 1\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Because sets make the while loop constant time",
+        "B. Because the `num - 1 not in num_set` guard means the while loop only runs for numbers that START a run, so each element is visited at most twice overall",
+        "C. Because the outer loop iterates over a set rather than a list",
+        "D. It is O(n^2) — the analysis in the problem is wrong"
+      ],
+      "correct_answer": "B",
+      "explanation": "The guard is the whole trick. Without it, every element of a run would trigger a full walk of that run, giving O(n^2). With it, only the smallest element of each run walks forward, and the total length of all runs is at most n. So each element is touched a constant number of times. Being able to explain this is the point of the problem.",
+      "difficulty": "advanced",
+      "tags": [
+        "hash-set",
+        "complexity",
+        "amortized"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the monotonic deque solution to Sliding Window Maximum: what invariants does the deque maintain, why is it O(n), and why is it better than a heap?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The deque holds **indices**, and maintains three invariants: the indices are all inside the current window; their corresponding values are in decreasing order; and therefore the FRONT is always the index of the window maximum.\n\nEach step does three things:\n1. Pop from the FRONT any index that has slid out of the window (`dq[0] <= i - k`).\n2. Pop from the BACK any index whose value is smaller than the incoming value.\n3. Append the current index; the front is now the answer for this window.\n\n**Why step 2 is valid**: if a newly arriving element is larger than elements behind it in the deque, those older smaller elements can never be the maximum again — the new one is both bigger and will remain in the window longer. So they are safe to discard permanently.\n\n**Why O(n)**: each index is appended exactly once and removed exactly once, so total work is bounded by 2n despite the nested while loops. Space is O(k).\n\n**Versus a heap**: a max-heap also solves this but in O(n log k), and it needs lazy deletion — you must pop stale entries that have left the window when they surface at the root. The deque is asymptotically better and avoids that bookkeeping entirely. Storing indices rather than values is essential in both, since that is how you detect that an entry has expired.",
+      "explanation": "The answer should state all three invariants, justify the back-popping step, give the amortized O(n) argument, and contrast with the heap's O(n log k) plus lazy deletion.",
+      "difficulty": "advanced",
+      "tags": [
+        "queue",
+        "deque",
+        "monotonic-deque",
+        "sliding-window",
+        "heap"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does the Diameter of a Binary Tree solution use a `nonlocal` accumulator instead of simply returning the answer?",
+      "question_type": "mc",
+      "options": [
+        "A. Because recursion cannot return integers",
+        "B. Because the recursion must return HEIGHT for the parent's use, while the answer is the best left+right path found at any node — two different quantities",
+        "C. Because `nonlocal` is faster than returning a value",
+        "D. Because the diameter is only defined at the root"
+      ],
+      "correct_answer": "B",
+      "explanation": "Each call must hand its parent the subtree height, but the diameter is the maximum of `left + right` evaluated at every node, and the best path may not pass through the root. So you return one value and accumulate another. Forgetting the `nonlocal` keyword is a classic bug: the assignment creates a new local and the answer silently stays 0.",
+      "difficulty": "advanced",
+      "tags": [
+        "binary-tree",
+        "recursion",
+        "accumulator"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You are given a binary tree and asked for the lowest common ancestor of two nodes. Explain how your approach changes if the tree happens to be a BST.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "**General binary tree**: you have no ordering information, so you must search. Do a postorder DFS that returns the LCA if found in a subtree, otherwise the node itself if it matches p or q, otherwise None. If both children return non-None, the current node is the split point and therefore the LCA. O(n) time, O(h) space for the call stack.\n\n**BST**: the ordering invariant lets you walk straight down without searching. Starting at the root, if both target values are less than the current node, go left; if both are greater, go right; otherwise the values split here (or one of them IS the current node), so this is the LCA. O(h) time and O(1) space iteratively.\n\n```python\nwhile root:\n    if p.val < root.val and q.val < root.val:\n        root = root.left\n    elif p.val > root.val and q.val > root.val:\n        root = root.right\n    else:\n        return root\n```\n\nThe difference — O(n) and O(h) space versus O(h) and O(1) space — is a concrete illustration of what the BST invariant buys you. Using the general algorithm on a BST is correct but leaves that value on the table.",
+      "explanation": "A strong answer describes both algorithms, identifies the split-point insight in each, and quantifies the improvement the BST property provides.",
+      "difficulty": "advanced",
+      "tags": [
+        "binary-tree",
+        "bst",
+        "lca",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does pushing tuples like `(priority, node)` into a heap sometimes raise a TypeError?",
+      "question_type": "mc",
+      "options": [
+        "A. Because heapq cannot store tuples",
+        "B. Because when priorities tie, Python compares the next tuple element, and custom objects without ordering methods cannot be compared",
+        "C. Because tuples are immutable",
+        "D. Because the priority must be an integer"
+      ],
+      "correct_answer": "B",
+      "explanation": "Heap comparisons are lexicographic over the tuple. Equal priorities make Python fall through to comparing the second element; if that is a `ListNode` or similar object with no `__lt__`, it raises TypeError. The fix is a unique tiebreaker in the middle: `(priority, index, node)`. This bites frequently in Merge K Sorted Lists.",
+      "difficulty": "advanced",
+      "tags": [
+        "heap",
+        "python-gotcha",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Describe the two-heap technique for maintaining the median of a stream of numbers, including the invariants and the complexity.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Maintain two heaps that split the data at the median:\n\n- `low`: a MAX-heap holding the smaller half (in Python, a min-heap of negated values)\n- `high`: a MIN-heap holding the larger half\n\n**Invariants**: every element of `low` is <= every element of `high`, and the sizes differ by at most one — conventionally `len(low) >= len(high)`.\n\n**Insert** in three steps, which maintain both invariants without case analysis:\n1. Push the new value onto `low`.\n2. Move `low`'s root over to `high`. This guarantees the ordering invariant, because the largest of the small half is now correctly placed.\n3. If `high` is now larger than `low`, move `high`'s root back to `low`. This restores the size invariant.\n\n**Find median**: if the sizes differ, the median is `low`'s root. If they are equal, it is the average of the two roots.\n\n**Complexity**: insert is O(log n), median query is O(1), space is O(n).\n\nThe reason for the fixed three-step push-transfer-rebalance sequence is that it is correct unconditionally — attempting to decide which heap to push onto based on comparisons invites edge-case bugs when a heap is empty.",
+      "explanation": "The answer should name both heaps and their orientation, state both invariants, give the three-step insertion, and state O(log n) insert with O(1) query.",
+      "difficulty": "advanced",
+      "tags": [
+        "heap",
+        "two-heaps",
+        "median",
+        "streaming"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You need the single kth largest element of a static array, once. Which approach has the best average time complexity?",
+      "question_type": "mc",
+      "options": [
+        "A. Sort the array and index it, O(n log n)",
+        "B. A bounded min-heap of size k, O(n log k)",
+        "C. Quickselect via partitioning, O(n) average",
+        "D. A max-heap of all elements with k pops, O(n + k log n)"
+      ],
+      "correct_answer": "C",
+      "explanation": "Quickselect partitions like quicksort but recurses only into the side containing the kth position, giving O(n) average. Its worst case is O(n^2) without randomized pivots, which is why a heap is often the safer interview answer — but quickselect is the correct answer to 'best average complexity'. If k is tiny the heap's O(n log k) is close to linear anyway.",
+      "difficulty": "advanced",
+      "tags": [
+        "heap",
+        "quickselect",
+        "complexity",
+        "top-k"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the time complexity of `nums.pop(0)` on a Python list of length n?",
+      "question_type": "mc",
+      "options": [
+        "A. O(1), because pop is always constant time",
+        "B. O(n), because every remaining element shifts down one position",
+        "C. O(log n), because the list is internally a balanced tree",
+        "D. O(1) amortized, like append"
+      ],
+      "correct_answer": "B",
+      "explanation": "A Python list is a dynamic array. Removing the first element requires shifting all n-1 remaining elements left by one, so it is O(n). `list.pop()` from the END is O(1). This is exactly why you use `collections.deque` for a queue: using `list.pop(0)` in a BFS silently turns it into O(n^2).",
+      "difficulty": "beginner",
+      "tags": [
+        "list",
+        "complexity",
+        "deque"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to find whether a target value exists in an unsorted list of 1,000,000 integers, and you will perform 10,000 such lookups. What is the best approach?",
+      "question_type": "mc",
+      "options": [
+        "A. Linear scan for each lookup, O(n) per lookup",
+        "B. Sort the list once, then binary search each lookup",
+        "C. Build a set once, then do O(1) membership tests",
+        "D. Use a list comprehension with `in`"
+      ],
+      "correct_answer": "C",
+      "explanation": "Building a set is O(n) once, then each of the 10,000 lookups is O(1) average — total roughly O(n + q). Sorting then binary searching is O(n log n + q log n), which is worse. Linear scanning is O(n·q) = 10^10 operations. The general reflex: when you repeatedly *search* a collection, convert it to a set or dict first.",
+      "difficulty": "beginner",
+      "tags": [
+        "list",
+        "hash-set",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which operation is a set NOT useful for?",
+      "question_type": "mc",
+      "options": [
+        "A. Testing membership in O(1)",
+        "B. Removing duplicates from a collection",
+        "C. Retrieving elements in sorted order",
+        "D. Computing the intersection of two collections"
+      ],
+      "correct_answer": "C",
+      "explanation": "Python sets are unordered hash-based collections. They give O(1) membership, natural deduplication, and fast set algebra (`|`, `&`, `-`, `^`). They provide no ordering guarantee at all — if you need sorted order you must call `sorted()`, which is O(n log n), or use a different structure such as a sorted list with `bisect`.",
+      "difficulty": "beginner",
+      "tags": [
+        "hash-set",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which problem characteristic most reliably signals that you should use a stack?",
+      "question_type": "mc",
+      "options": [
+        "A. The input is sorted",
+        "B. The problem involves nesting, matching, or needing the most recently seen unresolved item",
+        "C. The problem asks for the shortest path",
+        "D. The problem asks for the k largest elements"
+      ],
+      "correct_answer": "B",
+      "explanation": "A stack is LIFO, so it naturally handles structures where the most recent unresolved item must be resolved first: bracket matching, nested encodings, expression evaluation, and 'next greater element' via a monotonic stack. Sorted input suggests binary search or two pointers; shortest path suggests BFS; k largest suggests a heap.",
+      "difficulty": "beginner",
+      "tags": [
+        "stack",
+        "pattern-recognition"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "A bracket-matching function pops and compares correctly but returns True for the input `\"(((\"`. What is missing?",
+      "question_type": "mc",
+      "options": [
+        "A. A check that the string length is even",
+        "B. A final check that the stack is empty after the loop, since leftover openers mean unclosed brackets",
+        "C. A guard against popping from an empty stack",
+        "D. Support for square and curly brackets"
+      ],
+      "correct_answer": "B",
+      "explanation": "There are two distinct failure modes: a closing bracket arriving when the stack is empty, and opening brackets left on the stack when input is exhausted. Code that only handles the first accepts `\"(((\"`. Returning `not stack` at the end covers the second. A length check is neither necessary nor sufficient.",
+      "difficulty": "beginner",
+      "tags": [
+        "stack",
+        "matching",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which structure should you use to implement a FIFO queue in Python, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. `list`, using `append` and `pop(0)`",
+        "B. `collections.deque`, using `append` and `popleft`, because both ends are O(1)",
+        "C. `heapq`, because it maintains order automatically",
+        "D. `set`, because insertion order is preserved"
+      ],
+      "correct_answer": "B",
+      "explanation": "`deque` is a doubly linked structure giving O(1) append and pop at BOTH ends. A `list` gives O(1) at the end but O(n) at the front, because `pop(0)` shifts every element — using it in a BFS makes the traversal O(n^2). `heapq` orders by value, not arrival. A set is unordered and deduplicates.",
+      "difficulty": "beginner",
+      "tags": [
+        "queue",
+        "deque",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "An inorder traversal of a binary search tree produces which output?",
+      "question_type": "mc",
+      "options": [
+        "A. The values in the order they were inserted",
+        "B. The values in ascending sorted order",
+        "C. The values level by level from the root down",
+        "D. The leaves first, then internal nodes"
+      ],
+      "correct_answer": "B",
+      "explanation": "Inorder visits left subtree, then node, then right subtree. Combined with the BST invariant (left < node < right), this yields ascending sorted order. This single fact drives a large share of BST problems: validating a BST, finding the kth smallest, and converting a BST to a sorted list all reduce to an inorder walk.",
+      "difficulty": "beginner",
+      "tags": [
+        "binary-tree",
+        "bst",
+        "traversal"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does the recursive base case `if not node: return 0` represent when computing a subtree sum?",
+      "question_type": "mc",
+      "options": [
+        "A. An error condition that should raise instead",
+        "B. The identity value for the combine operation — an empty subtree contributes nothing to a sum",
+        "C. A signal to stop the entire traversal",
+        "D. A placeholder that could be any value"
+      ],
+      "correct_answer": "B",
+      "explanation": "The base case must return the identity for whatever you are combining, so the combine step stays correct. For a sum that is 0; for a product 1; for a maximum depth 0; for a boolean AND True; for list concatenation `[]`. Asking 'what should an empty input return so the combine still works?' is the reliable way to get base cases right.",
+      "difficulty": "beginner",
+      "tags": [
+        "binary-tree",
+        "recursion"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Python's `heapq` provides only a min-heap. How do you get max-heap behaviour?",
+      "question_type": "mc",
+      "options": [
+        "A. Pass `reverse=True` to heappush",
+        "B. Negate values on the way in and negate them again on the way out",
+        "C. Use `heapq.heapifymax`",
+        "D. Sort the underlying list in descending order first"
+      ],
+      "correct_answer": "B",
+      "explanation": "Push `-x` and negate the popped result. For tuples, negate only the sort key, e.g. `(-count, word)`. Be aware that negating a key also reverses tie-breaking, which matters when the problem specifies how ties resolve. There is no `reverse` parameter and no public max-heap API.",
+      "difficulty": "beginner",
+      "tags": [
+        "heap",
+        "python-gotcha"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "`list.append(x)` is described as O(1) *amortized* rather than simply O(1). Why?",
+      "question_type": "mc",
+      "options": [
+        "A. Because appending sometimes has to acquire a lock",
+        "B. Because the list occasionally reallocates to a larger buffer and copies all elements, which is O(n), but this is rare enough to average out to O(1)",
+        "C. Because append is actually O(log n) but the constant is tiny",
+        "D. Because amortized and worst-case mean the same thing for lists"
+      ],
+      "correct_answer": "B",
+      "explanation": "The backing array has spare capacity. Most appends just write into a free slot, O(1). When capacity runs out, Python allocates a bigger buffer and copies everything, O(n). Because capacity grows geometrically, those copies are rare enough that the average cost per append is constant — that is what 'amortized' means.",
+      "difficulty": "intermediate",
+      "tags": [
+        "list",
+        "complexity",
+        "amortized"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does this two-pointer loop accomplish?\n\n```python\nwrite = 0\nfor read in range(len(nums)):\n    if nums[read] != 0:\n        nums[write], nums[read] = nums[read], nums[write]\n        write += 1\n```",
+      "question_type": "mc",
+      "options": [
+        "A. Removes all zeroes from the list, shortening it",
+        "B. Moves all non-zero values to the front in their original relative order, with the zeroes pushed to the end",
+        "C. Sorts the list in ascending order",
+        "D. Reverses the list in place"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is the read/write pointer pattern. `read` scans every element; `write` marks where the next non-zero value belongs. Swapping (rather than overwriting) sends the zeroes to the back automatically. The list length never changes, and the relative order of non-zero elements is preserved. O(n) time, O(1) space.",
+      "difficulty": "intermediate",
+      "tags": [
+        "list",
+        "two-pointers",
+        "in-place"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to find two numbers in an array that sum to a target. Explain how your approach differs depending on whether the array is sorted, and what each approach costs in time and space.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "If the array is UNSORTED, use a hash map: scan once, and for each element check whether `target - num` is already in the map, inserting as you go. O(n) time, O(n) space. This also preserves the original indices, which matters if the answer must be indices rather than values.\n\nIf the array is SORTED, use converging two pointers from both ends. If the current sum is too small, advance the left pointer to increase it; if too large, retreat the right pointer. O(n) time and O(1) space — the space advantage is the reason this variant exists.\n\nIf the array is unsorted but the problem wants O(1) space, you can sort first and then use two pointers, giving O(n log n) time — but sorting destroys the original indices, so that is only acceptable if the answer is the values.",
+      "explanation": "A strong answer names both approaches, states both complexities, identifies the O(1) space advantage of two pointers, and notes the index-preservation trade-off that makes sorting unacceptable in some variants.",
+      "difficulty": "intermediate",
+      "tags": [
+        "list",
+        "hash-map",
+        "two-pointers",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is `[[0] * 3] * 3` a bug when building a 3x3 grid in Python?",
+      "question_type": "mc",
+      "options": [
+        "A. It creates a 9-element flat list instead of nested lists",
+        "B. The outer multiplication copies the reference to a single inner list, so all three rows are the same object and writing to one writes to all",
+        "C. It raises a TypeError because lists cannot be multiplied",
+        "D. It works correctly but is slower than a list comprehension"
+      ],
+      "correct_answer": "B",
+      "explanation": "`[0] * 3` builds one list. The outer `* 3` then replicates the *reference* three times, not the contents. So `grid[0][0] = 1` makes the grid `[[1,0,0],[1,0,0],[1,0,0]]`. The correct form is `[[0] * 3 for _ in range(3)]`, which evaluates the inner expression three times and produces three independent rows.",
+      "difficulty": "intermediate",
+      "tags": [
+        "list",
+        "matrix",
+        "python-gotcha"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "A nested loop over a list normally suggests O(n^2). In the sliding window pattern, why is the nested `while` loop still O(n) overall?",
+      "question_type": "mc",
+      "options": [
+        "A. Because the inner loop runs at most a constant number of times per iteration",
+        "B. Because both pointers only ever move forward, so the total pointer movement across the whole run is bounded by 2n",
+        "C. Because the window size is always small",
+        "D. It is not — sliding window is genuinely O(n^2)"
+      ],
+      "correct_answer": "B",
+      "explanation": "The `right` pointer advances exactly n times, and the `left` pointer advances at most n times across the entire run. Total work is therefore bounded by 2n regardless of how the loops nest. This amortized argument is the standard follow-up question for sliding window, and the same reasoning explains why a monotonic stack is O(n).",
+      "difficulty": "intermediate",
+      "tags": [
+        "list",
+        "sliding-window",
+        "complexity",
+        "amortized"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Dict and set operations are usually described as O(1). What is the worst case, and why?",
+      "question_type": "mc",
+      "options": [
+        "A. O(1) in all cases — hashing guarantees constant time",
+        "B. O(log n), because Python dicts are internally trees",
+        "C. O(n), when many keys hash to the same bucket and the lookup degenerates into scanning a collision chain",
+        "D. O(n log n), due to rehashing"
+      ],
+      "correct_answer": "C",
+      "explanation": "Hash table operations are O(1) *average*. With adversarial or pathological collisions, all keys can land in the same bucket, making a lookup a linear scan of that chain — O(n). In practice Python's hashing makes this a non-issue, but in an interview you should quote the average case and be able to state the worst case if asked.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-map",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why can a Python list not be used as a dictionary key, while a tuple can?",
+      "question_type": "mc",
+      "options": [
+        "A. Lists are too large to hash efficiently",
+        "B. Lists are mutable, so their hash could change after insertion and the entry would become unfindable; tuples are immutable and therefore hashable",
+        "C. Lists can contain mixed types and tuples cannot",
+        "D. It is an arbitrary restriction with no technical reason"
+      ],
+      "correct_answer": "B",
+      "explanation": "Dict keys must be hashable, which requires that the hash never changes while the object is in the dict. Mutable containers like `list`, `dict` and `set` are unhashable for that reason. Convert a list to a `tuple`, or a set to a `frozenset`, to use it as a key. This is why the canonical anagram key is `tuple(sorted(s))` rather than `sorted(s)`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-map",
+        "python-gotcha",
+        "hashable"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the bug in this Two Sum implementation?\n\n```python\nseen = {}\nfor i, num in enumerate(nums):\n    seen[num] = i\n    if target - num in seen:\n        return [seen[target - num], i]\n```",
+      "question_type": "mc",
+      "options": [
+        "A. It should use a set instead of a dict",
+        "B. The insertion happens before the check, so an element can pair with itself when `num * 2 == target`",
+        "C. It fails on negative numbers",
+        "D. `enumerate` should be replaced with `range(len(nums))`"
+      ],
+      "correct_answer": "B",
+      "explanation": "Inserting before checking means the current element is already in `seen` when you look for its complement. For `nums=[3,5]` and `target=6`, the first iteration stores `3` then finds `3` and returns `[0, 0]` — the same index twice. Swap the order: check first, then insert.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-map",
+        "two-sum",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You want to group words that are anagrams of each other. Which dictionary key works?",
+      "question_type": "mc",
+      "options": [
+        "A. The word's length",
+        "B. The sum of the character code points",
+        "C. The word's characters sorted into a canonical form, e.g. `tuple(sorted(word))`",
+        "D. The first and last character of the word"
+      ],
+      "correct_answer": "C",
+      "explanation": "The key must be identical for every anagram of each other and different otherwise. Sorting the characters achieves exactly that. Length and code-point sums are not injective — 'abc' and 'acb' share a sum, but so do other non-anagram pairs, causing false groupings. A 26-element count tuple is an equivalent key that is O(k) rather than O(k log k).",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-map",
+        "grouping",
+        "canonical-form"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the risk of using `collections.defaultdict(list)` and then writing `if my_dict[key]:` to test whether a key exists?",
+      "question_type": "mc",
+      "options": [
+        "A. None — that is the intended usage",
+        "B. Reading a missing key INSERTS it with an empty default, silently growing the dict and corrupting later counts or iteration",
+        "C. It raises a KeyError, unlike a normal dict",
+        "D. It converts the value to a boolean permanently"
+      ],
+      "correct_answer": "B",
+      "explanation": "`defaultdict.__getitem__` creates the default entry on a missing key. So merely *testing* `my_dict[key]` mutates the dict. This corrupts `len(my_dict)`, changes what iteration yields, and is a genuinely hard bug to spot. Use `my_dict.get(key)` or `key in my_dict` when you only want to check.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-map",
+        "defaultdict",
+        "python-gotcha"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to detect whether a sequence of transformations ever revisits a previous state, where each state is a list of integers. What do you store in your set?",
+      "question_type": "mc",
+      "options": [
+        "A. The list itself",
+        "B. A tuple built from the list, since lists are unhashable",
+        "C. The length of the list",
+        "D. The sum of the list's elements"
+      ],
+      "correct_answer": "B",
+      "explanation": "Lists are mutable and therefore unhashable, so they cannot go into a set. Convert to a `tuple` (or a string, or a `frozenset` if order is irrelevant). Storing only the length or sum would produce false positives, since different states can share those values — you need a representation that uniquely identifies the state.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-set",
+        "hashable",
+        "cycle-detection"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Compare a set and a dict in Python: what do they share, how do they differ, and when would you pick each?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "**Shared**: both are hash-based, giving O(1) average insert, delete and membership test. Both require hashable keys — mutable objects like lists cannot be used. Both have O(n) worst case under pathological collisions, and both cost O(n) space.\n\n**Different**: a set stores only keys; a dict maps each key to a value. A dict preserves insertion order (guaranteed since Python 3.7); a set has no ordering guarantee. Sets support set algebra (`|`, `&`, `-`, `^`) that dicts do not.\n\n**Choose a set** when the only question is 'have I seen this?' — deduplication, visited-tracking in a graph traversal, cycle detection, membership filtering.\n\n**Choose a dict** when you need associated data — value to index (Two Sum), value to count (frequency problems), node to its neighbours (adjacency list), prefix sum to occurrence count.\n\nA practical note: if you find yourself using a set and then needing to know *where* or *how many times* something occurred, you actually needed a dict.",
+      "explanation": "The answer should cover shared complexity and the hashability requirement, name the key difference (keys only vs key-value, plus ordering), and give concrete selection criteria rather than only definitions.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-set",
+        "hash-map",
+        "data-structures"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "`frozenset` differs from `set` in which important way for interview problems?",
+      "question_type": "mc",
+      "options": [
+        "A. It is sorted, so iteration order is deterministic",
+        "B. It is immutable and therefore hashable, so it can be used as a dict key or placed inside another set",
+        "C. It supports faster membership tests",
+        "D. It can hold mutable elements such as lists"
+      ],
+      "correct_answer": "B",
+      "explanation": "A `frozenset` is an immutable set. Because it is hashable, it can be a dictionary key or an element of another set — useful when you need to group by an unordered collection, for example deduplicating groups of items where order does not matter. It is not sorted, and its membership performance is the same as a regular set.",
+      "difficulty": "intermediate",
+      "tags": [
+        "hash-set",
+        "frozenset",
+        "hashable"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "In a monotonic stack solving 'next greater element', what should the stack hold and why?",
+      "question_type": "mc",
+      "options": [
+        "A. The values, because you only need to compare magnitudes",
+        "B. The indices, so you can compute distances and widths as well as read values via the original array",
+        "C. Pairs of (value, count) to handle duplicates",
+        "D. The running maximum seen so far"
+      ],
+      "correct_answer": "B",
+      "explanation": "Storing indices is the default because it gives you everything: `nums[stack[-1]]` recovers the value, and `i - j` gives the distance — which is exactly what Daily Temperatures needs, and what computing a rectangle width needs. Storing only values loses positional information you usually turn out to need.",
+      "difficulty": "intermediate",
+      "tags": [
+        "stack",
+        "monotonic-stack"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is a monotonic stack traversal O(n) despite containing a `while` loop inside a `for` loop?",
+      "question_type": "mc",
+      "options": [
+        "A. Because the while loop never executes more than twice",
+        "B. Because each index is pushed exactly once and popped at most once, bounding total work at 2n",
+        "C. Because the stack is kept sorted, making pops O(log n)",
+        "D. Because the for loop is the only one that touches the input"
+      ],
+      "correct_answer": "B",
+      "explanation": "The amortized argument: over the entire run, there are n pushes and at most n pops. Any single iteration might pop many elements, but those elements are then gone forever. Total work is therefore linear. This is the same reasoning that makes sliding window O(n), and it is a standard follow-up question.",
+      "difficulty": "intermediate",
+      "tags": [
+        "stack",
+        "monotonic-stack",
+        "complexity",
+        "amortized"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Design a stack that supports push, pop, top and get_min, all in O(1). Explain your approach and why the naive solution fails.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "**Naive approach and why it fails**: keeping a single `min` variable works for push (compare and update) but breaks on pop. If you pop the current minimum, you have no way to recover the previous minimum without scanning the whole stack, which is O(n).\n\n**Solution**: maintain a second, parallel stack of minima. When pushing x, push `min(x, mins[-1])` — or x itself if the min stack is empty. So `mins[i]` always holds the minimum of everything at or below position i. Pop both stacks together.\n\n```python\ndef push(self, x):\n    self.stack.append(x)\n    self.mins.append(x if not self.mins else min(x, self.mins[-1]))\n\ndef pop(self):\n    self.stack.pop()\n    self.mins.pop()\n\ndef get_min(self):\n    return self.mins[-1]\n```\n\nAll four operations are O(1). Space is O(n) for the extra stack.\n\n**Optimization worth mentioning**: you can store only *new* minima on the min stack, popping it solely when the popped value equals the current minimum. That reduces space in the common case but requires careful handling of duplicate minima — you must push a duplicate when the new value is less than OR EQUAL to the current minimum, otherwise popping one of two equal minima loses the other.",
+      "explanation": "A strong answer explains why a single min variable fails on pop, presents the parallel stack with correct code, states O(1)/O(n), and ideally mentions the space optimization along with its duplicate-handling pitfall.",
+      "difficulty": "intermediate",
+      "tags": [
+        "stack",
+        "design",
+        "min-stack"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You are asked to convert a recursive tree traversal into an iterative one. What is the usual motivation, and what structure replaces the recursion?",
+      "question_type": "mc",
+      "options": [
+        "A. To reduce time complexity; a queue replaces it",
+        "B. To avoid stack overflow on deep inputs; an explicit stack replaces the implicit call stack",
+        "C. To make the code shorter; a heap replaces it",
+        "D. To make the traversal stable; a set replaces it"
+      ],
+      "correct_answer": "B",
+      "explanation": "Recursion uses the call stack, which is bounded — Python's default recursion limit is about 1000, so a skewed tree with 10^5 nodes raises RecursionError. An explicit stack makes the same traversal iterative with heap-allocated storage. Time complexity is unchanged at O(n); the win is robustness, not speed.",
+      "difficulty": "intermediate",
+      "tags": [
+        "stack",
+        "recursion",
+        "binary-tree"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "In a level-by-level BFS, why must you capture `len(queue)` before the inner loop?",
+      "question_type": "mc",
+      "options": [
+        "A. To avoid an infinite loop",
+        "B. Because children enqueued during the inner loop would otherwise be processed as part of the current level, merging all levels together",
+        "C. Because `len` is O(n) and should be called only once",
+        "D. To handle the empty-tree case"
+      ],
+      "correct_answer": "B",
+      "explanation": "The snapshot separates the current level from the next. Without it, the loop condition keeps seeing the queue grow as children are added, so nodes from deeper levels get included in the current level's output. This is the single most common BFS bug and it produces subtly wrong groupings rather than a crash.",
+      "difficulty": "intermediate",
+      "tags": [
+        "queue",
+        "bfs",
+        "binary-tree",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "In BFS, should a node be marked visited when it is enqueued or when it is dequeued?",
+      "question_type": "mc",
+      "options": [
+        "A. When dequeued, so you only mark nodes you actually process",
+        "B. When enqueued, otherwise the same node can be added to the queue multiple times before its first processing",
+        "C. It makes no difference to correctness or performance",
+        "D. Both, for safety"
+      ],
+      "correct_answer": "B",
+      "explanation": "Mark on enqueue. If you wait until dequeuing, a node reachable from several nodes in the current frontier gets enqueued once per incoming edge, bloating the queue and — in shortest-path variants — potentially producing wrong distances. Marking at enqueue time guarantees each node enters the queue exactly once.",
+      "difficulty": "intermediate",
+      "tags": [
+        "queue",
+        "bfs",
+        "graph",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You implement a queue with two stacks, transferring elements from the inbox to the outbox. When should the transfer happen?",
+      "question_type": "mc",
+      "options": [
+        "A. On every push, to keep the outbox current",
+        "B. Only when the outbox is empty, which makes each operation amortized O(1)",
+        "C. On every pop, regardless of the outbox contents",
+        "D. Never — one stack is sufficient"
+      ],
+      "correct_answer": "B",
+      "explanation": "Transferring only when the outbox is empty means each element moves from inbox to outbox exactly once over its lifetime, giving amortized O(1) per operation. Transferring more eagerly is both wasteful and incorrect: moving elements into a non-empty outbox would interleave newer elements ahead of older ones, breaking FIFO order.",
+      "difficulty": "intermediate",
+      "tags": [
+        "queue",
+        "stack",
+        "design",
+        "amortized"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What problem does tracking a `count` field solve in a circular queue implementation, compared with tracking only `head` and `tail` indices?",
+      "question_type": "mc",
+      "options": [
+        "A. It avoids modular arithmetic",
+        "B. It resolves the ambiguity where `head == tail` could mean either completely empty or completely full",
+        "C. It allows the queue to grow beyond its capacity",
+        "D. It makes the front() operation O(1)"
+      ],
+      "correct_answer": "B",
+      "explanation": "With only two indices in a ring buffer, `head == tail` is ambiguous. The classic workarounds are to waste one slot (so full means `tail` is one behind `head`) or to keep an explicit count. The count is clearer, uses the full capacity, and makes both the empty and full tests trivial: `count == 0` and `count == capacity`.",
+      "difficulty": "intermediate",
+      "tags": [
+        "queue",
+        "design",
+        "ring-buffer"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to compute each node's height, where a node's value depends on results from its children. Which traversal order is required?",
+      "question_type": "mc",
+      "options": [
+        "A. Preorder — node before children",
+        "B. Inorder — left, node, right",
+        "C. Postorder — children before node",
+        "D. Level order — breadth first"
+      ],
+      "correct_answer": "C",
+      "explanation": "Height flows UP from the children: you cannot compute a node's height until both subtrees are done. That is postorder. The general rule: information flowing DOWN the tree (a valid range, a path so far, remaining budget) is preorder and passed as a parameter; information flowing UP (height, subtree sum, diameter) is postorder and returned from the recursive call.",
+      "difficulty": "intermediate",
+      "tags": [
+        "binary-tree",
+        "traversal",
+        "recursion"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is wrong with validating a BST by checking, at every node, that `node.left.val < node.val < node.right.val`?",
+      "question_type": "mc",
+      "options": [
+        "A. Nothing — that is the correct definition",
+        "B. It only enforces a local constraint; a node deep in the left subtree can exceed a distant ancestor while every parent-child comparison passes",
+        "C. It fails only for trees containing duplicate values",
+        "D. It is correct but O(n^2)"
+      ],
+      "correct_answer": "B",
+      "explanation": "The BST invariant constrains entire SUBTREES, not just immediate children. Consider root 5 with left child 1, whose right child is 6: every local comparison passes, but 6 sits in 5's left subtree and violates the invariant. The fix is to pass a valid (low, high) range down the recursion, narrowing it at each step — or to verify that an inorder traversal is strictly increasing.",
+      "difficulty": "intermediate",
+      "tags": [
+        "binary-tree",
+        "bst",
+        "debugging"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the space complexity of a recursive DFS on a binary tree with n nodes?",
+      "question_type": "mc",
+      "options": [
+        "A. O(1), since no data structures are allocated",
+        "B. O(h) for the call stack, where h is the height — O(log n) if balanced, O(n) if skewed",
+        "C. Always O(n), regardless of shape",
+        "D. O(n log n)"
+      ],
+      "correct_answer": "B",
+      "explanation": "Each active recursive call holds a frame, so space is proportional to the maximum depth, which is the tree height. A balanced tree gives O(log n); a completely skewed tree degenerates to a linked list and gives O(n). Answering 'O(1) because I allocate nothing' is a common and costly error — the call stack is space.",
+      "difficulty": "intermediate",
+      "tags": [
+        "binary-tree",
+        "recursion",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Why do BST operations get described as O(h) rather than O(log n)?",
+      "question_type": "mc",
+      "options": [
+        "A. Because h is easier to compute than log n",
+        "B. Because a plain BST can degenerate — inserting sorted values produces a linked list with height n, making operations O(n)",
+        "C. Because the two are mathematically unrelated",
+        "D. Because BSTs are always balanced, so h is always log n"
+      ],
+      "correct_answer": "B",
+      "explanation": "O(h) is the honest bound. Only a *balanced* tree guarantees h = O(log n). Insert 1, 2, 3, 4, 5 in order into a plain BST and you get a right-going chain with h = n. Guaranteeing balance is what self-balancing variants such as red-black and AVL trees exist for — which is why Java's TreeMap and C++'s std::map use them.",
+      "difficulty": "intermediate",
+      "tags": [
+        "binary-tree",
+        "bst",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "In a path-collecting tree DFS, explain why `result.append(path)` is a bug and what the fix is.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "`path` is a single mutable list reused across the whole traversal. Appending it stores a REFERENCE, not a snapshot. As the DFS continues and backtracks, it mutates that same list, so every entry in `result` ends up reflecting the final state of `path` — typically all empty, or all identical.\n\nThe fix is to append a copy: `result.append(path[:])` (or `list(path)`, or `copy.copy(path)`).\n\nThe companion requirement is the backtracking step. After recursing you must `path.pop()` to undo the append, so sibling branches start from the correct state. The full shape is:\n\n```python\npath.append(node.val)\nif is_target(node):\n    result.append(path[:])\nelse:\n    dfs(node.left)\n    dfs(node.right)\npath.pop()\n```\n\nThese two details — copy on record, pop on exit — are what make every backtracking problem work, not just tree paths.",
+      "explanation": "The answer must identify the shared-reference aliasing problem, give the copy fix, and connect it to the mandatory `pop()` backtracking step.",
+      "difficulty": "intermediate",
+      "tags": [
+        "binary-tree",
+        "backtracking",
+        "debugging",
+        "python-gotcha"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which traversal finds the shortest path from the root to any leaf in an unweighted tree?",
+      "question_type": "mc",
+      "options": [
+        "A. Preorder DFS",
+        "B. Postorder DFS",
+        "C. Level-order BFS, which reaches the shallowest leaf first",
+        "D. Inorder traversal"
+      ],
+      "correct_answer": "C",
+      "explanation": "BFS explores by increasing depth, so the first leaf it encounters is at minimum depth. DFS may descend a long branch first and find a deep leaf before a shallow one, so it must explore everything before it can be sure. The same principle is why BFS — not DFS — is the tool for shortest paths in unweighted graphs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "binary-tree",
+        "bfs",
+        "traversal"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "To find the k LARGEST elements of a stream efficiently, which heap do you maintain?",
+      "question_type": "mc",
+      "options": [
+        "A. A max-heap containing all n elements",
+        "B. A min-heap bounded to size k",
+        "C. A max-heap bounded to size k",
+        "D. Two heaps of size k/2"
+      ],
+      "correct_answer": "B",
+      "explanation": "Keep a MIN-heap of size k. Its root is the weakest of the current best k, so a new element only has to beat that one value to earn a place — and when the heap exceeds k you evict the root. This is O(n log k) time and O(k) space. Getting the direction backwards (max-heap for k largest) is the classic error; a max-heap of size k is what you use for the k SMALLEST.",
+      "difficulty": "intermediate",
+      "tags": [
+        "heap",
+        "top-k"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "`heapq.heapify(lst)` versus pushing n elements one at a time — what is the difference?",
+      "question_type": "mc",
+      "options": [
+        "A. No difference; both are O(n log n)",
+        "B. `heapify` is O(n) while n individual pushes total O(n log n), so heapify is preferable when you already have the full list",
+        "C. `heapify` is O(n log n) and pushes are O(n)",
+        "D. `heapify` only works on sorted lists"
+      ],
+      "correct_answer": "B",
+      "explanation": "`heapify` builds the heap bottom-up in place. The work per node decreases with depth, and the sum telescopes to O(n). Pushing one at a time costs O(log i) per insertion for a total of O(n log n). So if you have all the data up front, heapify; if elements arrive over time, push. Mentioning that heapify is O(n) is a good signal in an interview.",
+      "difficulty": "intermediate",
+      "tags": [
+        "heap",
+        "complexity"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "What does iterating directly over the list backing a heap give you?",
+      "question_type": "mc",
+      "options": [
+        "A. The elements in fully sorted order",
+        "B. Heap order, in which only the root is guaranteed to be the minimum — the rest is not sorted",
+        "C. The elements in insertion order",
+        "D. The elements in reverse sorted order"
+      ],
+      "correct_answer": "B",
+      "explanation": "A heap satisfies only the heap property: every parent is <= its children. That guarantees the minimum sits at index 0, but says nothing about the relative order of the rest. To get sorted output you must pop repeatedly (O(n log n)) or call `sorted()`. Assuming a heap is sorted is a common misconception.",
+      "difficulty": "intermediate",
+      "tags": [
+        "heap",
+        "data-structures"
+      ],
+      "source": "manual",
+      "is_active": true
+    },
+    {
+      "question_text": "Which of these is NOT something a binary heap gives you efficiently?",
+      "question_type": "mc",
+      "options": [
+        "A. Retrieving the minimum in O(1)",
+        "B. Inserting a new element in O(log n)",
+        "C. Searching for an arbitrary value in O(log n)",
+        "D. Removing the minimum in O(log n)"
+      ],
+      "correct_answer": "C",
+      "explanation": "A heap is only partially ordered, so there is no way to direct a search for an arbitrary value — you must scan, which is O(n). Heaps give you cheap access to the extreme element, not general lookup. If you need both ordered access and fast arbitrary search, you want a balanced BST or a hash map alongside the heap.",
+      "difficulty": "intermediate",
+      "tags": [
+        "heap",
+        "complexity",
+        "data-structures"
+      ],
+      "source": "manual",
+      "is_active": true
+    }
+  ]
+}

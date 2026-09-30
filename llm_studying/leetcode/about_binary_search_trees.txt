@@ -1,0 +1,152 @@
+A binary search tree adds one invariant to a binary tree, and that invariant is the entire source of its problems: **every value in the left subtree is less than the node, every value in the right subtree is greater.**
+
+**The consequence that matters most: an inorder traversal of a BST yields sorted order.** A large share of BST problems are "do something with sorted order without materializing the sorted list".
+
+**Operations and their complexity.**
+
+```python
+def search_bst(root, target: int):
+    while root:
+        if target == root.val:
+            return root
+        root = root.left if target < root.val else root.right
+    return None
+
+
+def insert_into_bst(root, val: int):
+    if not root:
+        return TreeNode(val)
+    if val < root.val:
+        root.left = insert_into_bst(root.left, val)
+    else:
+        root.right = insert_into_bst(root.right, val)
+    return root
+```
+
+Search, insert, and delete are **O(h)** — where h is the height. That is O(log n) **only if the tree is balanced**. Insert sorted values into a plain BST and it degenerates into a linked list with O(n) operations.
+
+This is exactly where self-balancing trees (AVL, red-black) come in — and they are deliberately out of scope for this topic. What you should be able to say in an interview is: "A plain BST is O(h), which degrades to O(n) on sorted input. Production implementations use a self-balancing variant like a red-black tree to guarantee O(log n) — that's what Java's TreeMap and C++'s std::map are built on. Python doesn't have one in the standard library; you'd use a sorted list with `bisect`, or the `sortedcontainers` package." That answer demonstrates the concept without needing the implementation.
+
+**Validating a BST — the classic trap.** Checking only `left.val < node.val < right.val` locally is **wrong**. The invariant is about entire subtrees, not immediate children.
+
+```python
+def is_valid_bst(root) -> bool:
+    def check(node, low: float, high: float) -> bool:
+        if not node:
+            return True
+        if not (low < node.val < high):
+            return False
+        return (check(node.left, low, node.val)
+                and check(node.right, node.val, high))
+    return check(root, float("-inf"), float("inf"))
+```
+
+This is a **preorder** problem: the valid range flows *down* as a parameter. The counterexample that breaks the naive version is a tree where a deep left-subtree node exceeds an ancestor — locally fine, globally invalid. Have that example ready.
+
+The alternative is an inorder traversal checking that values strictly increase:
+
+```python
+def is_valid_bst_inorder(root) -> bool:
+    prev = float("-inf")
+    stack, node = [], root
+    while stack or node:
+        while node:
+            stack.append(node)
+            node = node.left
+        node = stack.pop()
+        if node.val <= prev:            # <= rejects duplicates
+            return False
+        prev = node.val
+        node = node.right
+    return True
+```
+
+Being able to offer both, and say the range version is preorder while this one exploits sorted inorder, is a strong answer.
+
+**Kth smallest — inorder with a counter and early exit.**
+
+```python
+def kth_smallest(root, k: int) -> int:
+    stack, node = [], root
+    while stack or node:
+        while node:
+            stack.append(node)
+            node = node.left
+        node = stack.pop()
+        k -= 1
+        if k == 0:
+            return node.val             # stop as soon as we have it
+        node = node.right
+    return -1
+```
+
+The iterative version is better than recursive here because it can **stop early**, giving O(h + k) instead of O(n). If asked how to make repeated queries fast, the answer is to augment each node with its subtree size, turning each query into O(h).
+
+**Lowest common ancestor — use the BST property.** In a plain binary tree LCA needs a full search; in a BST you can walk straight down.
+
+```python
+def lowest_common_ancestor(root, p, q):
+    while root:
+        if p.val < root.val and q.val < root.val:
+            root = root.left           # both in the left subtree
+        elif p.val > root.val and q.val > root.val:
+            root = root.right          # both in the right subtree
+        else:
+            return root                # they split here, or one IS root
+    return None
+```
+
+O(h) time, O(1) space. The split point is the LCA. Compare with the general binary-tree LCA, which is O(n) postorder — the difference is exactly the value of the BST invariant.
+
+**Deletion — the one fiddly operation.** Three cases, and the two-child case is the interesting one.
+
+```python
+def delete_node(root, key: int):
+    if not root:
+        return None
+    if key < root.val:
+        root.left = delete_node(root.left, key)
+    elif key > root.val:
+        root.right = delete_node(root.right, key)
+    else:
+        if not root.left:                    # 0 or 1 child
+            return root.right
+        if not root.right:
+            return root.left
+        successor = root.right               # 2 children: find inorder successor
+        while successor.left:
+            successor = successor.left
+        root.val = successor.val             # copy its value up
+        root.right = delete_node(root.right, successor.val)   # delete it below
+    return root
+```
+
+The two-child case replaces the node's value with its **inorder successor** (smallest value in the right subtree), then deletes that successor — which necessarily has at most one child, so it reduces to an easy case. The inorder predecessor works symmetrically.
+
+**Building a balanced BST from a sorted array.** The middle element becomes the root, recursively.
+
+```python
+def sorted_array_to_bst(nums: list[int]):
+    def build(lo: int, hi: int):
+        if lo > hi:
+            return None
+        mid = (lo + hi) // 2
+        node = TreeNode(nums[mid])
+        node.left = build(lo, mid - 1)
+        node.right = build(mid + 1, hi)
+        return node
+    return build(0, len(nums) - 1)
+```
+
+This is binary search turned into tree construction, and it is the direct answer to "how would you avoid the degenerate case?" for a static dataset.
+
+**Common mistakes.**
+- Validating with only immediate-child comparisons instead of range propagation.
+- Using `<` where the problem allows duplicates, or `<=` where it does not — clarify duplicate handling up front.
+- Claiming O(log n) for BST operations without the balanced caveat. It is O(h).
+- Using the generic binary-tree LCA on a BST and missing the O(h) solution.
+- Forgetting that inorder gives sorted order, and re-deriving things the hard way.
+- Recursive kth-smallest that traverses the whole tree instead of exiting early.
+- Not returning the (possibly new) subtree root from recursive insert and delete — those functions must return the node so the parent can rewire.
+
+**Representative problems.** Easy: Search in a BST, Insert into a BST, Minimum Absolute Difference in BST, Range Sum of BST, Convert Sorted Array to BST, Two Sum IV. Medium: Validate Binary Search Tree, Kth Smallest Element in a BST, Lowest Common Ancestor of a BST, Delete Node in a BST, BST Iterator, Inorder Successor in BST, Convert BST to Greater Tree.

@@ -1,0 +1,66 @@
+Every coding interview ends with "what's the time and space complexity?" Being fluent here is non-negotiable, and it is one of the easiest parts to get reliably right.
+
+**What Big-O means.** An upper bound on how the runtime or memory grows as the input grows, ignoring constants and lower-order terms. `O(2n + 10)` is `O(n)`. We care about growth rate, not exact operation counts, because growth rate is what determines whether your solution survives a large input.
+
+**The hierarchy, best to worst.**
+
+| Complexity | Name | n = 1,000 | Typical source |
+|---|---|---|---|
+| O(1) | constant | 1 | hash lookup, array index, arithmetic |
+| O(log n) | logarithmic | ~10 | binary search, balanced tree operation |
+| O(n) | linear | 1,000 | single pass over the input |
+| O(n log n) | linearithmic | ~10,000 | sorting, heap-based passes |
+| O(n²) | quadratic | 1,000,000 | nested loops over the input |
+| O(2ⁿ) | exponential | astronomically large | subsets, naive recursion without memo |
+| O(n!) | factorial | worse still | permutations |
+
+**How to analyze quickly.**
+
+- **Sequential blocks add**, and you keep the dominant term: O(n) then O(n log n) → O(n log n).
+- **Nested loops multiply**: a loop over n containing a loop over m is O(n·m).
+- **Halving the search space each step** is O(log n). Recursing and halving while doing O(n) work per level is O(n log n).
+- **Recursion:** total work ≈ (number of nodes in the recursion tree) × (work per node). For a branching factor of b and depth d, that is roughly O(b^d).
+
+**Space complexity: count the extra space you allocate.** The input itself does not count. Two things people forget:
+
+1. **The recursion call stack is space.** A DFS on a tree of height h uses O(h) space even if you allocate nothing — which is O(n) in the worst case for a skewed tree, O(log n) for a balanced one.
+2. **Sorting is not free in space.** Python's `sorted()` allocates a new list, so O(n). `list.sort()` is in-place, but Timsort still uses O(n) auxiliary space in the worst case. Saying "sorting is O(1) space" is a common error.
+
+**The complexity of the operations you use.** Interviewers expect you to know these cold.
+
+| Operation | List | Dict / Set | Heap | Deque |
+|---|---|---|---|---|
+| Access by index | O(1) | — | — | O(n) |
+| Search by value | O(n) | **O(1)** avg | O(n) | O(n) |
+| Insert / append at end | O(1) amortized | O(1) avg | O(log n) | O(1) |
+| Insert at front | **O(n)** | — | — | **O(1)** |
+| Delete from end | O(1) | O(1) avg | O(log n) | O(1) |
+| Delete from front | **O(n)** | — | O(log n) for min | **O(1)** |
+| Get min/max | O(n) | O(n) | **O(1)** | O(n) |
+
+The two rows to internalize: **hash lookup is O(1)**, which is why hash maps turn so many O(n²) solutions into O(n); and **inserting or deleting at the front of a Python list is O(n)**, which is why you use `collections.deque` for queues.
+
+**Amortized vs worst case.** `list.append` is O(1) *amortized*: occasionally the list resizes and copies everything, which is O(n), but averaged over many appends it is constant. Dict and set operations are O(1) *average* but O(n) worst case under adversarial hash collisions. In an interview, quote the average or amortized figure and mention the worst case if asked — that shows you know the difference.
+
+**What complexity target to aim for.** Given a constraint like n ≤ 10⁵, a rough guide:
+
+| n | Acceptable complexity |
+|---|---|
+| ≤ 10 | O(n!) or O(2ⁿ) is fine |
+| ≤ 20 | O(2ⁿ) |
+| ≤ 500 | O(n³) |
+| ≤ 5,000 | O(n²) |
+| ≤ 10⁶ | O(n log n) or O(n) |
+| ≤ 10⁸ | O(n) with a small constant |
+
+This is genuinely useful during an interview: constraints tell you the intended complexity, which tells you the pattern. `n ≤ 20` is practically an announcement that the answer is bitmask or backtracking over subsets. `n ≤ 10⁵` rules out O(n²) and points at sorting, hashing, or two pointers.
+
+**Common analysis mistakes.**
+
+- Saying a nested loop is always O(n²). If the inner loop's total work across all outer iterations is bounded by n — as in sliding window, where each pointer only moves forward — it is O(n). This is the single most common error, and it is exactly why sliding window looks quadratic but is linear.
+- Forgetting the recursion stack in space complexity.
+- Treating `"".join(parts)` and repeated `s += char` as equivalent. String concatenation in a loop is O(n²) because strings are immutable and each concatenation copies; `join` is O(n).
+- Ignoring the cost of building the output. If the answer is a list of all n subsets, you cannot be faster than O(2ⁿ) no matter how clever the search.
+- Saying "O(log n)" without a base. Base doesn't matter in Big-O — `log₂` and `log₁₀` differ by a constant factor — so this is fine, but be ready to say why.
+
+**How to state it in an interview.** "This runs in O(n log n) time because I sort the array up front, and the sweep afterwards is a single O(n) pass. Space is O(n) for the sorted copy — or O(1) extra if I'm allowed to sort in place." That sentence structure — complexity, then the reason, then the space caveat — is what a strong answer sounds like.

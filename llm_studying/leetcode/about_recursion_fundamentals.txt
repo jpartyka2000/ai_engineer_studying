@@ -1,0 +1,152 @@
+Recursion underlies trees, backtracking, divide and conquer, and dynamic programming. Getting comfortable with it — specifically, learning to *trust* it rather than trace it — is the prerequisite for the harder patterns.
+
+**The three required parts.**
+
+1. **Base case** — when to stop. Missing or wrong base case means infinite recursion and `RecursionError`.
+2. **Recursive case** — solve a strictly smaller subproblem.
+3. **Combine** — build this answer from the subproblem's answer.
+
+```python
+def factorial(n: int) -> int:
+    if n <= 1:              # base case
+        return 1
+    return n * factorial(n - 1)     # recursive case + combine
+```
+
+**The mental shift: do not trace, trust.** The single biggest obstacle is trying to simulate the whole call tree in your head. Instead, assume the recursive call **already works correctly** for smaller inputs, and ask only: given a correct answer for the smaller problem, how do I build mine?
+
+For tree height: assume `height(left)` and `height(right)` are correct. Then my height is `1 + max(left, right)`. Done — no tracing required. This "recursive leap of faith" is how you write recursive code quickly and correctly under pressure.
+
+**Getting the base case right.** For trees, the base case is almost always the null node, and the return value is the **identity** for whatever you are combining:
+
+| Combining with | Identity |
+|---|---|
+| sum | 0 |
+| product | 1 |
+| max depth | 0 |
+| boolean AND | True |
+| boolean OR | False |
+| list concatenation | `[]` |
+
+Ask "what should an empty input return so that the combine step stays correct?" That reframing removes most base-case errors.
+
+**Parameters flow down, return values flow up.** This distinction organizes almost every recursive problem.
+
+```python
+def has_path_sum(node, remaining: int) -> bool:
+    """`remaining` flows DOWN as a parameter."""
+    if not node:
+        return False
+    if not node.left and not node.right:
+        return remaining == node.val
+    rest = remaining - node.val
+    return has_path_sum(node.left, rest) or has_path_sum(node.right, rest)
+
+
+def count_nodes(node) -> int:
+    """The count flows UP as a return value."""
+    if not node:
+        return 0
+    return 1 + count_nodes(node.left) + count_nodes(node.right)
+```
+
+When you need both — information descending and results ascending — you pass a parameter *and* return a value, and often keep a `nonlocal` accumulator too. That is exactly the tree-diameter pattern.
+
+**The accumulator pattern.** When the answer is not what the recursion naturally returns:
+
+```python
+def diameter(root) -> int:
+    best = 0
+    def height(node) -> int:
+        nonlocal best
+        if not node:
+            return 0
+        left, right = height(node.left), height(node.right)
+        best = max(best, left + right)     # the answer we actually want
+        return 1 + max(left, right)        # what the parent needs
+    height(root)
+    return best
+```
+
+`nonlocal` is required to rebind a variable from an enclosing function scope. Without it, `best = ...` creates a new local and the outer value never changes — a silent bug that returns 0. (For module-level variables it would be `global`, but a closure is the right structure here.)
+
+**Recursion and the call stack.** Each active call holds a frame, so depth costs space:
+
+- Balanced tree → depth O(log n) → **O(log n)** space.
+- Skewed tree or a linked list → depth O(n) → **O(n)** space.
+
+Always include the stack in your space complexity. "O(1) space" for a recursive traversal is wrong.
+
+**Python's recursion limit** defaults to about 1000. A skewed tree with 10⁵ nodes will raise `RecursionError`. Two responses: `sys.setrecursionlimit(10**6)` (mention that it risks a real stack overflow, since CPython frames are heap-allocated but the C stack is not unbounded), or rewrite iteratively with an explicit stack. Volunteering this shows production awareness.
+
+**Converting recursion to iteration.** Any recursion can be made iterative with an explicit stack. Tail recursion — where the recursive call is the last operation — converts to a simple loop; Python does not optimize tail calls, so this matters.
+
+```python
+# recursive
+def sum_list(nums, i=0):
+    if i == len(nums):
+        return 0
+    return nums[i] + sum_list(nums, i + 1)
+
+# iterative
+def sum_list_iter(nums):
+    total = 0
+    for num in nums:
+        total += num
+    return total
+```
+
+**Divide and conquer.** Split in half, solve each, merge. The structure behind merge sort and many "build a tree from an array" problems.
+
+```python
+def merge_sort(nums: list[int]) -> list[int]:
+    if len(nums) <= 1:
+        return nums
+    mid = len(nums) // 2
+    left = merge_sort(nums[:mid])
+    right = merge_sort(nums[mid:])
+    return merge(left, right)
+```
+
+Depth is log n and each level does O(n) work, giving O(n log n) — the standard recursion-tree argument. Be ready to draw that tree.
+
+**Memoization: the bridge to DP.** When a recursion recomputes the same subproblem, cache it. This is the single highest-value recursion technique.
+
+```python
+from functools import cache
+
+@cache
+def fib(n: int) -> int:
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)
+```
+
+Without the cache this is O(2ⁿ) — the call tree branches twice at every level with massive overlap. With it, each n is computed once, giving O(n) time and O(n) space. `functools.cache` (or `lru_cache(maxsize=None)` on older Python) is one line and is entirely acceptable in an interview, though you should be able to write the dictionary by hand:
+
+```python
+def fib_manual(n: int, memo: dict | None = None) -> int:
+    if memo is None:
+        memo = {}                     # do NOT use a mutable default argument
+    if n < 2:
+        return n
+    if n not in memo:
+        memo[n] = fib_manual(n - 1, memo) + fib_manual(n - 2, memo)
+    return memo[n]
+```
+
+The `memo=None` guard matters: a mutable default like `memo={}` is created once at function definition and shared across all calls, which is a real Python gotcha that leaks state between test cases.
+
+Note `@cache` requires hashable arguments, so lists must be converted to tuples before caching.
+
+**Common mistakes.**
+- Missing or unreachable base case → `RecursionError`.
+- The recursive call not on a strictly smaller input → infinite recursion.
+- Forgetting `nonlocal`, so the accumulator silently never updates.
+- Mutable default arguments (`memo={}`, `path=[]`).
+- Appending a shared mutable list to results without copying (`path` vs `path[:]`).
+- Omitting the call stack from space complexity.
+- Recomputing overlapping subproblems instead of memoizing.
+- Trying to trace the whole call tree rather than trusting the recursion.
+
+**How to verify recursive code without tracing everything.** Check three things: the base case returns the right identity; the recursive call is on a strictly smaller input; and the combine step is correct *assuming* the recursive calls are correct. If all three hold, the function is correct by induction. That is far faster and more reliable than mental simulation, and it is what experienced candidates actually do.

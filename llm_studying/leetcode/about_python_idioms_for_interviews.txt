@@ -1,0 +1,181 @@
+Python is the most common interview language because it is terse. These are the standard-library tools and idioms that save real time, plus the Python-specific traps that cost candidates correctness.
+
+**The imports worth knowing by heart.**
+
+```python
+from collections import Counter, defaultdict, deque, OrderedDict
+import heapq
+from functools import cache, lru_cache, cmp_to_key
+import bisect
+import math
+from itertools import permutations, combinations, product, accumulate
+```
+
+**`collections.Counter`.**
+
+```python
+c = Counter("aabbbc")             # {'b': 3, 'a': 2, 'c': 1}
+c.most_common(2)                  # [('b', 3), ('a', 2)]
+c["z"]                            # 0, not a KeyError
+Counter(a) == Counter(b)          # anagram check
+Counter(a) - Counter(b)           # subtraction drops non-positive counts
+sum(c.values())                   # total
+```
+
+Two gotchas: `most_common()` with no argument sorts everything, which is O(n log n) — pass k if you only need k. And `Counter({'a': 0})` is **not** equal to `Counter()`, so delete zero-count keys before comparing dicts in sliding window problems.
+
+**`collections.defaultdict`.**
+
+```python
+graph = defaultdict(list)
+graph[node].append(neighbor)      # no "if node not in graph" needed
+
+counts = defaultdict(int)
+counts[key] += 1
+
+groups = defaultdict(set)
+```
+
+The trap: **reading a missing key inserts it.** `if graph[x]:` creates an empty entry for `x`, which will corrupt a later `len(graph)` or iteration. Use `graph.get(x)` when you only want to check.
+
+**`collections.deque`** — O(1) at both ends. Use it for every queue and BFS; `list.pop(0)` is O(n).
+
+**`heapq`** — min-heap over a list. Negate for a max-heap. `heapify` is O(n). Details in the heaps note.
+
+**`functools.cache`** — one line turns exponential recursion into polynomial.
+
+```python
+@cache
+def fib(n: int) -> int:
+    return n if n < 2 else fib(n - 1) + fib(n - 2)
+```
+
+Requires hashable arguments, so convert lists to tuples. `lru_cache(maxsize=None)` is the pre-3.9 equivalent.
+
+**`bisect`** — binary search on a sorted list.
+
+```python
+bisect.bisect_left(a, x)          # first index where a[i] >= x
+bisect.bisect_right(a, x)         # first index where a[i] > x
+bisect.insort(a, x)               # insert keeping sorted order - O(n) due to the shift
+```
+
+Note `insort` is O(n) despite the O(log n) search, because inserting into a list shifts elements.
+
+**`itertools`.**
+
+```python
+list(permutations([1, 2, 3]))            # all orderings
+list(combinations([1, 2, 3], 2))         # all 2-element choices
+list(product([0, 1], repeat=3))          # cartesian product - all bitmasks
+list(accumulate([1, 2, 3, 4]))           # [1, 3, 6, 10] - prefix sums
+list(accumulate(nums, max))              # running maximum
+```
+
+`accumulate` is a one-line prefix sum. `product(..., repeat=n)` enumerates subsets without bit arithmetic. Using these is fine, but if the problem *is* "generate permutations", write the backtracking — that is what is being tested.
+
+**Language features that save lines.**
+
+```python
+a, b = b, a                              # swap, no temp
+x = y = 0                                # chained assignment
+lo, hi = 0, len(nums) - 1                # tuple unpacking
+
+for i, val in enumerate(nums): ...
+for i, val in enumerate(nums, start=1): ...
+for a, b in zip(list1, list2): ...
+for a, b in zip(s, s[1:]): ...           # adjacent pairs
+
+matrix_t = list(zip(*matrix))            # transpose
+flat = [x for row in matrix for x in row]
+
+if low < x < high: ...                   # chained comparison
+result = a if condition else b
+value = maybe or default                 # falsy default
+total = sum(x for x in nums if x > 0)
+if any(x > 0 for x in nums): ...
+if all(x > 0 for x in nums): ...
+first = next((x for x in nums if x > 0), None)     # first match or None
+
+nums[::-1]                               # reverse
+nums[::2]                                # every other
+float("inf") / float("-inf")             # sentinels
+divmod(17, 5)                            # (3, 2)
+math.inf, math.isqrt(n), math.gcd(a, b), math.comb(n, k)
+```
+
+`list(zip(*matrix))` for transpose and `zip(s, s[1:])` for adjacent pairs are the two most useful of these.
+
+**The traps that cost correctness.**
+
+**1. Mutable default arguments.** The default is created **once**, at function definition, and shared across all calls.
+
+```python
+def bad(path=[]):        # BUG - state leaks between calls
+    path.append(1)
+
+def good(path=None):
+    if path is None:
+        path = []
+```
+
+This silently breaks multi-test-case runs, and it is a favorite thing for interviewers to notice.
+
+**2. Appending a reference instead of a copy.**
+
+```python
+result.append(path)      # BUG - stores a reference that later mutation changes
+result.append(path[:])   # correct - snapshot
+```
+
+Every backtracking problem depends on this. The symptom is a result list full of identical (usually empty) lists.
+
+**3. Aliased rows in a 2-D list.**
+
+```python
+grid = [[0] * 3] * 3                  # BUG - three references to ONE row
+grid = [[0] * 3 for _ in range(3)]    # correct
+```
+
+**4. Integer division and negatives.** `//` **floors**, it does not truncate.
+
+```python
+-7 // 2      # -4  (floor)
+int(-7 / 2)  # -3  (truncate toward zero)
+```
+
+LeetCode's "divide and truncate" problems want truncation, so use `int(a / b)` — or better, `-(abs(a) // abs(b))` with sign handling, to avoid float precision issues on large values.
+
+**5. `sort()` returns `None`.** `x = nums.sort()` assigns `None`. Use `sorted(nums)` if you need a value.
+
+**6. `is` vs `==`.** `is` compares identity. Use it for `None` and for node identity in cycle detection; use `==` for values. Small-integer interning makes `is` accidentally work for small numbers and then fail for large ones.
+
+**7. Shadowing builtins.** Naming a variable `list`, `dict`, `sum`, `max`, `input`, or `id` breaks later use of the builtin. It is also a readability signal interviewers notice.
+
+**8. Recursion limit.** Default is about 1000. Deep recursion on a 10⁵-element skewed structure raises `RecursionError`. Either `sys.setrecursionlimit(10**6)` or convert to an iterative solution — and say which and why.
+
+**9. String immutability.** `s += ch` in a loop is O(n²). Collect in a list and `"".join(parts)`.
+
+**10. Slicing is O(k).** `s[i:j]` copies. A loop that slices can be quadratic without looking like it.
+
+**Type hints.** Use the modern syntax — `list[int]`, `dict[str, int]`, `int | None`. It reads as current, professional Python and costs nothing.
+
+**What to avoid in an interview.** Do not golf. A dense one-liner nobody can read is worse than four clear lines, and if you cannot explain it under questioning it actively hurts. Write the readable version, then mention the concise alternative if it is genuinely better. Similarly, using `itertools.permutations` to solve "generate permutations" sidesteps the thing being tested — write the backtracking, then note the stdlib function exists.
+
+**A reasonable default skeleton.**
+
+```python
+from collections import Counter, defaultdict, deque
+import heapq
+
+class Solution:
+    def solve(self, nums: list[int], target: int) -> int:
+        if not nums:                      # edge case first
+            return 0
+        seen: dict[int, int] = {}         # named, typed state
+        for i, num in enumerate(nums):    # enumerate, not range(len(...))
+            ...
+        return result
+```
+
+Handling the empty input on line one, naming state clearly, and using `enumerate` are three small habits that make code read as experienced.
