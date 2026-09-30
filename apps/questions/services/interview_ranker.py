@@ -151,9 +151,7 @@ Example response format:
             ranking_response = RankingResponse.model_validate(response)
 
             # Extract IDs in ranked order
-            sorted_questions = sorted(
-                ranking_response.ranked_questions, key=lambda q: q.rank
-            )
+            sorted_questions = sorted(ranking_response.ranked_questions, key=lambda q: q.rank)
             ranked_ids = [q.id for q in sorted_questions]
 
             # Validate that returned IDs exist in our input

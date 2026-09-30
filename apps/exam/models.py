@@ -92,9 +92,7 @@ class ExamSession(models.Model):
         verbose_name_plural = _("Exam Sessions")
 
     def __str__(self) -> str:
-        return (
-            f"{self.user.username} - {self.subject.name} ({self.started_at:%Y-%m-%d})"
-        )
+        return f"{self.user.username} - {self.subject.name} ({self.started_at:%Y-%m-%d})"
 
     def get_absolute_url(self) -> str:
         """Return the URL for this exam session."""
@@ -210,15 +208,13 @@ class ExamAnswer(models.Model):
         if self.question.is_multiple_choice:
             # For MC, compare the letter (case-insensitive)
             self.is_correct = (
-                self.user_answer.strip().upper()
-                == self.question.correct_answer.strip().upper()
+                self.user_answer.strip().upper() == self.question.correct_answer.strip().upper()
             )
         else:
             # For free text, we'll need Claude to evaluate
             # For now, do exact match (case-insensitive)
             self.is_correct = (
-                self.user_answer.strip().lower()
-                == self.question.correct_answer.strip().lower()
+                self.user_answer.strip().lower() == self.question.correct_answer.strip().lower()
             )
 
         return self.is_correct

@@ -29,9 +29,7 @@ class MathConfigView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        subject = get_object_or_404(
-            Subject, slug=kwargs["subject_slug"], is_active=True
-        )
+        subject = get_object_or_404(Subject, slug=kwargs["subject_slug"], is_active=True)
         context["subject"] = subject
         context["difficulties"] = MathProblem.Difficulty.choices
         context["problem_types"] = MathProblem.ProblemType.choices
@@ -146,7 +144,9 @@ def start_math_session(request, subject_slug):
         if "credit balance" in error_msg.lower() or "billing" in error_msg.lower():
             messages.error(
                 request,
-                _("API credits are insufficient. Please uncheck 'Generate new problems with AI' to use existing problems, or add credits to your API account."),
+                _(
+                    "API credits are insufficient. Please uncheck 'Generate new problems with AI' to use existing problems, or add credits to your API account."
+                ),
             )
         elif "quota" in error_msg.lower() or "rate" in error_msg.lower():
             messages.error(
@@ -156,7 +156,9 @@ def start_math_session(request, subject_slug):
         else:
             messages.error(
                 request,
-                _("Failed to generate problems with AI. Please try using existing problems or a different AI provider."),
+                _(
+                    "Failed to generate problems with AI. Please try using existing problems or a different AI provider."
+                ),
             )
         return redirect("equations:config", subject_slug=subject_slug)
     except Exception as e:
@@ -195,9 +197,7 @@ class MathProblemView(LoginRequiredMixin, DetailView):
         hints_used = existing_answer.hints_used if existing_answer else 0
         context["hints_used"] = hints_used
         context["available_hints"] = current_problem.hints[:hints_used] if current_problem else []
-        context["has_more_hints"] = (
-            current_problem and hints_used < len(current_problem.hints)
-        )
+        context["has_more_hints"] = current_problem and hints_used < len(current_problem.hints)
         context["total_hints"] = len(current_problem.hints) if current_problem else 0
 
         # Progress info

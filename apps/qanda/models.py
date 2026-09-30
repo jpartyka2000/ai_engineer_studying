@@ -123,9 +123,7 @@ class QASession(models.Model):
         base = self.get_system_message()
 
         # Get study materials for this subject
-        materials = self.subject.study_materials.filter(is_active=True).order_by(
-            "-created_at"
-        )
+        materials = self.subject.study_materials.filter(is_active=True).order_by("-created_at")
 
         if not materials.exists():
             return base
@@ -200,9 +198,7 @@ class QASession(models.Model):
         self.message_count = messages.count()
         self.total_tokens_estimate = sum(msg.token_count_estimate for msg in messages)
         self.last_message_at = timezone.now()
-        self.save(
-            update_fields=["message_count", "total_tokens_estimate", "last_message_at"]
-        )
+        self.save(update_fields=["message_count", "total_tokens_estimate", "last_message_at"])
 
 
 class Message(models.Model):

@@ -152,8 +152,14 @@ Respond with JSON:
     ) -> str:
         """Build the scoring prompt with all context."""
         # Format requirements
-        fr = "\n".join(f"- {r}" for r in session.effective_functional_requirements) or "Not specified"
-        nfr = "\n".join(f"- {r}" for r in session.effective_non_functional_requirements) or "Not specified"
+        fr = (
+            "\n".join(f"- {r}" for r in session.effective_functional_requirements)
+            or "Not specified"
+        )
+        nfr = (
+            "\n".join(f"- {r}" for r in session.effective_non_functional_requirements)
+            or "Not specified"
+        )
         constraints = "\n".join(f"- {c}" for c in session.effective_constraints) or "Not specified"
 
         # Reference solution (if pre-defined challenge)
@@ -161,7 +167,7 @@ Respond with JSON:
         if session.challenge and session.challenge.reference_solution_description:
             reference_section = f"""
 ## Reference Solution (for comparison):
-**Expected components:** {', '.join(session.challenge.reference_components)}
+**Expected components:** {", ".join(session.challenge.reference_components)}
 
 **Ideal approach:**
 {session.challenge.reference_solution_description}
@@ -170,7 +176,11 @@ Respond with JSON:
         # Analysis data
         if analysis:
             components = ", ".join(analysis.identified_components) or "None identified"
-            connections = str(analysis.identified_connections) if analysis.identified_connections else "None identified"
+            connections = (
+                str(analysis.identified_connections)
+                if analysis.identified_connections
+                else "None identified"
+            )
             diagram_strengths = "\n".join(f"- {s}" for s in analysis.strengths) or "None noted"
             diagram_concerns = "\n".join(f"- {c}" for c in analysis.concerns) or "None noted"
         else:

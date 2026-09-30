@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -39,9 +38,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "description",
-                    models.TextField(
-                        help_text="Full problem statement presented to the user"
-                    ),
+                    models.TextField(help_text="Full problem statement presented to the user"),
                 ),
                 (
                     "functional_requirements",
@@ -117,9 +114,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "tags",
-                    models.JSONField(
-                        blank=True, default=list, help_text="Tags for categorization"
-                    ),
+                    models.JSONField(blank=True, default=list, help_text="Tags for categorization"),
                 ),
                 ("is_active", models.BooleanField(db_index=True, default=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -291,9 +286,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "design_coherence_feedback",
-                    models.TextField(
-                        blank=True, help_text="How well the components work together"
-                    ),
+                    models.TextField(blank=True, help_text="How well the components work together"),
                 ),
                 (
                     "comparison_to_reference",
@@ -426,15 +419,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "identified_components",
-                    models.JSONField(
-                        default=list, help_text="Components detected in the diagram"
-                    ),
+                    models.JSONField(default=list, help_text="Components detected in the diagram"),
                 ),
                 (
                     "identified_connections",
-                    models.JSONField(
-                        default=list, help_text="Data flows/connections detected"
-                    ),
+                    models.JSONField(default=list, help_text="Data flows/connections detected"),
                 ),
                 ("strengths", models.JSONField(default=list)),
                 ("concerns", models.JSONField(default=list)),
@@ -473,9 +462,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="systemdesignsession",
-            index=models.Index(
-                fields=["user", "status"], name="systemdesig_user_id_7b9c3e_idx"
-            ),
+            index=models.Index(fields=["user", "status"], name="systemdesig_user_id_7b9c3e_idx"),
         ),
         migrations.AddIndex(
             model_name="systemdesignmessage",

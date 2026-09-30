@@ -38,9 +38,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "description",
-                    models.TextField(
-                        help_text="Brief description shown in topic picker"
-                    ),
+                    models.TextField(help_text="Brief description shown in topic picker"),
                 ),
                 (
                     "rendering_type",
@@ -187,9 +185,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="visualtopic",
-            index=models.Index(
-                fields=["subject", "status"], name="visuals_vis_subject_ae02a5_idx"
-            ),
+            index=models.Index(fields=["subject", "status"], name="visuals_vis_subject_ae02a5_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="visualtopic",
@@ -197,9 +193,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="visualsession",
-            index=models.Index(
-                fields=["user", "completed"], name="visuals_vis_user_id_c56146_idx"
-            ),
+            index=models.Index(fields=["user", "completed"], name="visuals_vis_user_id_c56146_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="visualsession",

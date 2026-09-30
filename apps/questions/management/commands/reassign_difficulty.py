@@ -78,18 +78,14 @@ You must respond with valid JSON only."""
         if options["subject"]:
             subject = Subject.objects.filter(slug=options["subject"]).first()
             if not subject:
-                self.stdout.write(
-                    self.style.ERROR(f"Subject not found: {options['subject']}")
-                )
+                self.stdout.write(self.style.ERROR(f"Subject not found: {options['subject']}"))
                 return
             queryset = queryset.filter(subject=subject)
             self.stdout.write(f"Filtering by subject: {subject.name}")
 
         if options["current_difficulty"]:
             queryset = queryset.filter(difficulty=options["current_difficulty"])
-            self.stdout.write(
-                f"Filtering by current difficulty: {options['current_difficulty']}"
-            )
+            self.stdout.write(f"Filtering by current difficulty: {options['current_difficulty']}")
 
         if options["max_questions"]:
             queryset = queryset[: options["max_questions"]]
@@ -102,9 +98,7 @@ You must respond with valid JSON only."""
             return
 
         if options["dry_run"]:
-            self.stdout.write(
-                self.style.WARNING("\nDRY RUN - No changes will be made\n")
-            )
+            self.stdout.write(self.style.WARNING("\nDRY RUN - No changes will be made\n"))
 
         # Process questions
         claude_service = get_claude_service()
@@ -113,9 +107,7 @@ You must respond with valid JSON only."""
         error_count = 0
 
         for i, question in enumerate(queryset, 1):
-            self.stdout.write(
-                f"\n[{i}/{total_questions}] Processing question {question.id}..."
-            )
+            self.stdout.write(f"\n[{i}/{total_questions}] Processing question {question.id}...")
             self.stdout.write(f"  Subject: {question.subject.name}")
             self.stdout.write(f"  Current difficulty: {question.difficulty}")
             self.stdout.write(f"  Question: {question.question_text[:80]}...")
@@ -146,9 +138,7 @@ You must respond with valid JSON only."""
                         question.save(update_fields=["difficulty"])
                         self.stdout.write(self.style.SUCCESS("  ✓ Updated difficulty"))
                     else:
-                        self.stdout.write(
-                            self.style.WARNING("  → Would update difficulty")
-                        )
+                        self.stdout.write(self.style.WARNING("  → Would update difficulty"))
                     updated_count += 1
                 else:
                     self.stdout.write("  No change needed")

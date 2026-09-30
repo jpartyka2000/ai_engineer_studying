@@ -58,9 +58,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "questions_correct",
-                    models.PositiveIntegerField(
-                        default=0, help_text="Number of correct answers"
-                    ),
+                    models.PositiveIntegerField(default=0, help_text="Number of correct answers"),
                 ),
                 (
                     "current_streak",
@@ -91,9 +89,7 @@ class Migration(migrations.Migration):
                 ("started_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "completed_at",
-                    models.DateTimeField(
-                        blank=True, help_text="When the session ended", null=True
-                    ),
+                    models.DateTimeField(blank=True, help_text="When the session ended", null=True),
                 ),
                 (
                     "subject",
@@ -134,9 +130,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "user_answer",
-                    models.CharField(
-                        help_text="The user's answer (option letter)", max_length=10
-                    ),
+                    models.CharField(help_text="The user's answer (option letter)", max_length=10),
                 ),
                 (
                     "is_correct",

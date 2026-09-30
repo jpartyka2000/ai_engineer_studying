@@ -371,7 +371,9 @@ class ExecutionResultAdmin(admin.ModelAdmin):
 
     def response_info(self, obj) -> str:
         """Display response session info."""
-        return f"{obj.response.session.user.username} - Submission #{obj.response.submission_number}"
+        return (
+            f"{obj.response.session.user.username} - Submission #{obj.response.submission_number}"
+        )
 
     response_info.short_description = _("Response")
 

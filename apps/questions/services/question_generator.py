@@ -25,21 +25,13 @@ class GeneratedQuestion(BaseModel):
     question_type: str = Field(
         description="Either 'mc' for multiple choice or 'free' for free text"
     )
-    options: list[str] = Field(
-        default_factory=list, description="Answer options for MC questions"
-    )
-    correct_answer: str = Field(
-        description="The correct answer (letter for MC, text for free)"
-    )
-    explanation: str = Field(
-        default="", description="Explanation of why the answer is correct"
-    )
+    options: list[str] = Field(default_factory=list, description="Answer options for MC questions")
+    correct_answer: str = Field(description="The correct answer (letter for MC, text for free)")
+    explanation: str = Field(default="", description="Explanation of why the answer is correct")
     difficulty: str = Field(
         default="intermediate", description="beginner, intermediate, or advanced"
     )
-    tags: list[str] = Field(
-        default_factory=list, description="Topic tags for the question"
-    )
+    tags: list[str] = Field(default_factory=list, description="Topic tags for the question")
 
     @field_validator("options", mode="before")
     @classmethod
@@ -165,9 +157,7 @@ You must respond with valid JSON only."""
 
         # Build difficulty instruction
         if difficulty:
-            difficulty_instruction = (
-                f"- Generate questions at the '{difficulty}' difficulty level"
-            )
+            difficulty_instruction = f"- Generate questions at the '{difficulty}' difficulty level"
             difficulty_constraint = f'  "difficulty": "{difficulty}"'
         else:
             difficulty_instruction = (
@@ -176,7 +166,9 @@ You must respond with valid JSON only."""
                 "  * Intermediate: Application of concepts, problem-solving, understanding relationships\n"
                 "  * Advanced: Complex scenarios, edge cases, optimization, deep understanding"
             )
-            difficulty_constraint = '  "difficulty": "intermediate" (or "beginner" or "advanced" based on complexity)'
+            difficulty_constraint = (
+                '  "difficulty": "intermediate" (or "beginner" or "advanced" based on complexity)'
+            )
 
         prompt = f"""Based on the following content about "{topic}" in the subject area of "{subject.name}",
 generate {num_questions} exam questions.
@@ -257,9 +249,7 @@ Example response format:
         """
         # Build difficulty instruction
         if difficulty:
-            difficulty_instruction = (
-                f"- Questions should be at the '{difficulty}' difficulty level"
-            )
+            difficulty_instruction = f"- Questions should be at the '{difficulty}' difficulty level"
         else:
             difficulty_instruction = (
                 "- Assign appropriate difficulty level (beginner/intermediate/advanced) to each question based on:\n"
@@ -326,9 +316,7 @@ for each question:
 
             # Check if question already exists
             if Question.objects.filter(source_hash=source_hash).exists():
-                logger.info(
-                    "Question already exists, skipping: %s...", gen_q.question_text[:50]
-                )
+                logger.info("Question already exists, skipping: %s...", gen_q.question_text[:50])
                 continue
 
             question = Question.objects.create(
@@ -432,13 +420,9 @@ for each question:
         """
         # Build difficulty instruction
         if difficulty:
-            difficulty_instruction = (
-                f"- Generate questions at the '{difficulty}' difficulty level"
-            )
+            difficulty_instruction = f"- Generate questions at the '{difficulty}' difficulty level"
         else:
-            difficulty_instruction = (
-                "- Assign appropriate difficulty level (beginner/intermediate/advanced) to each question based on complexity"
-            )
+            difficulty_instruction = "- Assign appropriate difficulty level (beginner/intermediate/advanced) to each question based on complexity"
 
         prompt = f"""Analyze this image/screenshot about "{topic}" in the subject area of "{subject.name}".
 

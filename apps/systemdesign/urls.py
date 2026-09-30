@@ -11,7 +11,6 @@ urlpatterns = [
     path("config/", views.SystemDesignConfigView.as_view(), name="config"),
     path("start/", views.start_session, name="start"),
     path("start/surprise/", views.start_surprise_session, name="surprise"),
-
     # Active session
     path("<int:pk>/", views.SystemDesignSessionView.as_view(), name="session"),
     path("<int:pk>/save-canvas/", views.save_canvas, name="save_canvas"),
@@ -22,7 +21,6 @@ urlpatterns = [
     path("<int:pk>/time/", views.get_time_remaining, name="time"),
     path("<int:pk>/submit/", views.submit_design, name="submit"),
     path("<int:pk>/abandon/", views.abandon_session, name="abandon"),
-
     # Results
     path("<int:pk>/results/", views.SystemDesignResultsView.as_view(), name="results"),
 ]

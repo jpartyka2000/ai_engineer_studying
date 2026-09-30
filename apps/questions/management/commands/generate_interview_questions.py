@@ -105,17 +105,11 @@ class Command(BaseCommand):
             try:
                 updated = service.fix_question_difficulties(subject)
                 if updated:
-                    self.stdout.write(
-                        self.style.SUCCESS(f"\nUpdated {len(updated)} questions:")
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"\nUpdated {len(updated)} questions:"))
                     for q in updated:
-                        self.stdout.write(
-                            f"  [{q.difficulty}] {q.question_text[:60]}..."
-                        )
+                        self.stdout.write(f"  [{q.difficulty}] {q.question_text[:60]}...")
                 else:
-                    self.stdout.write(
-                        self.style.SUCCESS("\nNo questions needed difficulty fixes.")
-                    )
+                    self.stdout.write(self.style.SUCCESS("\nNo questions needed difficulty fixes."))
             except Exception as e:
                 raise CommandError(f"Failed to fix difficulty values: {e}")
             return
@@ -146,9 +140,7 @@ class Command(BaseCommand):
             subtopic = options["subtopic"]
             num = options["num"] or 10
             self.stdout.write(
-                self.style.MIGRATE_HEADING(
-                    f"\nGenerating {num} questions for subtopic: {subtopic}"
-                )
+                self.style.MIGRATE_HEADING(f"\nGenerating {num} questions for subtopic: {subtopic}")
             )
             try:
                 saved = service.generate_subtopic_questions(
@@ -162,9 +154,7 @@ class Command(BaseCommand):
                     self.style.SUCCESS(f"\nGenerated and saved {len(saved)} questions:")
                 )
                 for q in saved:
-                    self.stdout.write(
-                        f"  [{q.difficulty}] {q.question_text[:60]}..."
-                    )
+                    self.stdout.write(f"  [{q.difficulty}] {q.question_text[:60]}...")
             except Exception as e:
                 raise CommandError(f"Failed to generate subtopic questions: {e}")
             return
@@ -174,9 +164,7 @@ class Command(BaseCommand):
 
         existing = service.get_existing_coverage(subject)
         self.stdout.write(f"Total existing questions: {existing['total_questions']}")
-        self.stdout.write(
-            f"By difficulty: {existing['questions_by_difficulty']}"
-        )
+        self.stdout.write(f"By difficulty: {existing['questions_by_difficulty']}")
         if existing["all_tags"]:
             self.stdout.write(f"Topics covered: {', '.join(existing['all_tags'][:20])}")
 
@@ -202,9 +190,7 @@ class Command(BaseCommand):
             self.stdout.write(f"  {', '.join(coverage.get_partial_topic_names())}")
 
         if coverage.missing_topics:
-            self.stdout.write(
-                self.style.ERROR(f"\nMissing ({len(coverage.missing_topics)}):")
-            )
+            self.stdout.write(self.style.ERROR(f"\nMissing ({len(coverage.missing_topics)}):"))
             self.stdout.write(f"  {', '.join(coverage.get_missing_topic_names())}")
 
         # Display sufficiency status (informational only)
@@ -223,9 +209,7 @@ class Command(BaseCommand):
 
         # Check if there are any topics to generate questions for
         if not coverage.missing_topics and not coverage.partially_covered_topics:
-            self.stdout.write(
-                self.style.SUCCESS("\nNo gaps found - all topics are well covered!")
-            )
+            self.stdout.write(self.style.SUCCESS("\nNo gaps found - all topics are well covered!"))
             return
 
         # Generate questions
@@ -250,13 +234,9 @@ class Command(BaseCommand):
                     role=role,
                 )
 
-            self.stdout.write(
-                self.style.SUCCESS(f"\nGenerated and saved {len(saved)} questions:")
-            )
+            self.stdout.write(self.style.SUCCESS(f"\nGenerated and saved {len(saved)} questions:"))
             for q in saved:
-                self.stdout.write(
-                    f"  [{q.difficulty}] {q.question_text[:60]}..."
-                )
+                self.stdout.write(f"  [{q.difficulty}] {q.question_text[:60]}...")
 
         except Exception as e:
             raise CommandError(f"Failed to generate questions: {e}")

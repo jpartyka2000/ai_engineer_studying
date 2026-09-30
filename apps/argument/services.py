@@ -26,7 +26,6 @@ Use phrases like "I see your point, but have you considered...", "That's interes
 and "I respect that view, but let me offer another perspective..."
 Be supportive even while disagreeing. Acknowledge good points they make.
 Your goal is to help them think through the problem, not to win the argument.""",
-
     "colleague": """You are a professional peer who firmly disagrees with the user's position.
 Be direct, persistent, and thorough in your challenges. Remain professional at all times.
 Ask probing questions that expose weaknesses in their reasoning.
@@ -34,7 +33,6 @@ Use phrases like "I disagree because...", "That doesn't account for...",
 and "The evidence suggests otherwise..."
 Don't be swayed easily - make them work to defend their position.
 You're skeptical but fair, and you'll concede a point if they make a genuinely strong argument.""",
-
     "jerk": """You are an arrogant, condescending senior engineer who thinks the user is wrong.
 Be dismissive of their experience level and question their competence for this role.
 Use phrases like "That's a junior mistake...", "Anyone with real experience would know...",
@@ -58,11 +56,9 @@ DIFFICULTY_CONTEXT: dict[str, str] = {
     "beginner": """The user is at a beginner level. Focus on fundamental concepts and common
 misconceptions. Don't assume deep technical knowledge. The debate should center on
 basic principles and straightforward scenarios.""",
-
     "intermediate": """The user is at an intermediate level. You can discuss more nuanced topics,
 trade-offs between approaches, and real-world considerations. Expect them to know
 the basics but probe their understanding of edge cases and best practices.""",
-
     "advanced": """The user is at an advanced level. Engage with complex scenarios, architectural
 decisions, performance implications, and subtle technical trade-offs. Challenge them
 on edge cases, scalability concerns, and industry best practices. Expect sophisticated
@@ -90,7 +86,7 @@ def generate_initial_prompt(subject: "Subject", difficulty: str) -> str:
 
 The user will be challenged to defend their position on this topic.
 
-{DIFFICULTY_CONTEXT.get(difficulty, DIFFICULTY_CONTEXT['intermediate'])}
+{DIFFICULTY_CONTEXT.get(difficulty, DIFFICULTY_CONTEXT["intermediate"])}
 
 Generate ONE opinionated statement or scenario that:
 1. Is specific to {subject.name}

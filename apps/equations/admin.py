@@ -62,44 +62,62 @@ class MathProblemAdmin(admin.ModelAdmin):
     ordering = ["-created_at"]
 
     fieldsets = (
-        (None, {
-            "fields": (
-                "subject",
-                "topic",
-                "problem_type",
-                "difficulty",
-                "is_active",
-            )
-        }),
-        ("Problem Content", {
-            "fields": (
-                "problem_text",
-                "problem_latex",
-                "blank_placeholder",
-            )
-        }),
-        ("Answer", {
-            "fields": (
-                "correct_answer_latex",
-                "acceptable_alternatives",
-            )
-        }),
-        ("Multiple Choice", {
-            "fields": ("options", "correct_option"),
-            "classes": ("collapse",),
-        }),
-        ("Help & Metadata", {
-            "fields": (
-                "explanation",
-                "hints",
-                "tags",
-                "source",
-            )
-        }),
-        ("Timestamps", {
-            "fields": ("created_at", "updated_at"),
-            "classes": ("collapse",),
-        }),
+        (
+            None,
+            {
+                "fields": (
+                    "subject",
+                    "topic",
+                    "problem_type",
+                    "difficulty",
+                    "is_active",
+                )
+            },
+        ),
+        (
+            "Problem Content",
+            {
+                "fields": (
+                    "problem_text",
+                    "problem_latex",
+                    "blank_placeholder",
+                )
+            },
+        ),
+        (
+            "Answer",
+            {
+                "fields": (
+                    "correct_answer_latex",
+                    "acceptable_alternatives",
+                )
+            },
+        ),
+        (
+            "Multiple Choice",
+            {
+                "fields": ("options", "correct_option"),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Help & Metadata",
+            {
+                "fields": (
+                    "explanation",
+                    "hints",
+                    "tags",
+                    "source",
+                )
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
 
@@ -128,33 +146,43 @@ class MathSessionAdmin(admin.ModelAdmin):
     inlines = [MathSessionProblemInline, MathAnswerInline]
 
     fieldsets = (
-        (None, {
-            "fields": ("user", "subject", "status")
-        }),
-        ("Configuration", {
-            "fields": (
-                "difficulty",
-                "problem_types",
-                "topic_filter",
-            )
-        }),
-        ("Progress", {
-            "fields": (
-                "current_problem_index",
-                "total_problems",
-                "progress_percentage",
-            )
-        }),
-        ("Score", {
-            "fields": (
-                "score",
-                "total_points",
-                "accuracy_percentage",
-            )
-        }),
-        ("Timestamps", {
-            "fields": ("started_at", "completed_at"),
-        }),
+        (None, {"fields": ("user", "subject", "status")}),
+        (
+            "Configuration",
+            {
+                "fields": (
+                    "difficulty",
+                    "problem_types",
+                    "topic_filter",
+                )
+            },
+        ),
+        (
+            "Progress",
+            {
+                "fields": (
+                    "current_problem_index",
+                    "total_problems",
+                    "progress_percentage",
+                )
+            },
+        ),
+        (
+            "Score",
+            {
+                "fields": (
+                    "score",
+                    "total_points",
+                    "accuracy_percentage",
+                )
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("started_at", "completed_at"),
+            },
+        ),
     )
 
     @admin.display(description="Score")
@@ -199,31 +227,38 @@ class MathAnswerAdmin(admin.ModelAdmin):
     ordering = ["-answered_at"]
 
     fieldsets = (
-        (None, {
-            "fields": ("session", "problem")
-        }),
-        ("User's Answer", {
-            "fields": (
-                "user_answer_latex",
-                "selected_option",
-            )
-        }),
-        ("Evaluation", {
-            "fields": (
-                "is_correct",
-                "partial_credit",
-                "feedback",
-                "mathematical_errors",
-            )
-        }),
-        ("Metadata", {
-            "fields": (
-                "hints_used",
-                "time_taken_seconds",
-                "answered_at",
-                "evaluated_at",
-            )
-        }),
+        (None, {"fields": ("session", "problem")}),
+        (
+            "User's Answer",
+            {
+                "fields": (
+                    "user_answer_latex",
+                    "selected_option",
+                )
+            },
+        ),
+        (
+            "Evaluation",
+            {
+                "fields": (
+                    "is_correct",
+                    "partial_credit",
+                    "feedback",
+                    "mathematical_errors",
+                )
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": (
+                    "hints_used",
+                    "time_taken_seconds",
+                    "answered_at",
+                    "evaluated_at",
+                )
+            },
+        ),
     )
 
     @admin.display(description="Topic")

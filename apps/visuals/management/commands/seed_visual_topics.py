@@ -1192,9 +1192,7 @@ class Command(BaseCommand):
 
     def seed_sklearn_visuals(self):
         """Seed scikit-learn visual topics."""
-        subject = self.get_or_create_subject(
-            "scikit-learn", "scikit-learn", "ML Frameworks"
-        )
+        subject = self.get_or_create_subject("scikit-learn", "scikit-learn", "ML Frameworks")
 
         # Decision Tree Training
         topic, created = VisualTopic.objects.update_or_create(
@@ -1253,9 +1251,7 @@ class Command(BaseCommand):
 
     def seed_decision_tree_fundamentals_visual(self):
         """Seed Decision Tree Fundamentals visual topic."""
-        subject = self.get_or_create_subject(
-            "scikit-learn", "scikit-learn", "ML Frameworks"
-        )
+        subject = self.get_or_create_subject("scikit-learn", "scikit-learn", "ML Frameworks")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -1367,9 +1363,7 @@ class Command(BaseCommand):
 
     def seed_cart_visual(self):
         """Seed CART (Classification and Regression Trees) visual topic."""
-        subject = self.get_or_create_subject(
-            "scikit-learn", "scikit-learn", "ML Frameworks"
-        )
+        subject = self.get_or_create_subject("scikit-learn", "scikit-learn", "ML Frameworks")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -1487,9 +1481,7 @@ class Command(BaseCommand):
 
     def seed_random_forest_visual(self):
         """Seed Random Forest visual topic."""
-        subject = self.get_or_create_subject(
-            "scikit-learn", "scikit-learn", "ML Frameworks"
-        )
+        subject = self.get_or_create_subject("scikit-learn", "scikit-learn", "ML Frameworks")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -1619,9 +1611,7 @@ class Command(BaseCommand):
 
     def seed_extra_trees_visual(self):
         """Seed Extra Trees (Extremely Randomized Trees) visual topic."""
-        subject = self.get_or_create_subject(
-            "scikit-learn", "scikit-learn", "ML Frameworks"
-        )
+        subject = self.get_or_create_subject("scikit-learn", "scikit-learn", "ML Frameworks")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -1733,9 +1723,7 @@ class Command(BaseCommand):
 
     def seed_logistic_regression_visual(self):
         """Seed Logistic Regression visual topic."""
-        subject = self.get_or_create_subject(
-            "scikit-learn", "scikit-learn", "ML Frameworks"
-        )
+        subject = self.get_or_create_subject("scikit-learn", "scikit-learn", "ML Frameworks")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -1871,9 +1859,7 @@ class Command(BaseCommand):
 
     def seed_isolation_forest_visual(self):
         """Seed Isolation Forest visual topic."""
-        subject = self.get_or_create_subject(
-            "scikit-learn", "scikit-learn", "ML Frameworks"
-        )
+        subject = self.get_or_create_subject("scikit-learn", "scikit-learn", "ML Frameworks")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -1966,9 +1952,7 @@ class Command(BaseCommand):
 
     def seed_transformers_visuals(self):
         """Seed Transformers visual topics."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         # Self-Attention Mechanism
         topic, created = VisualTopic.objects.update_or_create(
@@ -2304,9 +2288,7 @@ class Command(BaseCommand):
 
     def seed_system_design_visuals(self):
         """Seed System Design visual topics."""
-        subject = self.get_or_create_subject(
-            "System Design", "system-design", "Architecture"
-        )
+        subject = self.get_or_create_subject("System Design", "system-design", "Architecture")
 
         # ML Model Serving
         topic, created = VisualTopic.objects.update_or_create(
@@ -2990,7 +2972,12 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "advanced",
                 "estimated_time_minutes": 12,
-                "tags": ["system-design", "consistent-hashing", "distributed-systems", "scalability"],
+                "tags": [
+                    "system-design",
+                    "consistent-hashing",
+                    "distributed-systems",
+                    "scalability",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -3641,7 +3628,7 @@ class Command(BaseCommand):
                     {
                         "step_number": 1,
                         "title": "Events vs Commands",
-                        "explanation": "**Events:** Facts that happened (past tense) - \"OrderPlaced\"\n**Commands:** Instructions to do something - \"PlaceOrder\"\n\nEvents are immutable and can have multiple consumers. Commands have one handler.",
+                        "explanation": '**Events:** Facts that happened (past tense) - "OrderPlaced"\n**Commands:** Instructions to do something - "PlaceOrder"\n\nEvents are immutable and can have multiple consumers. Commands have one handler.',
                         "diagram_data": """graph TB
     subgraph "Command"
         C[PlaceOrder] --> |"Single handler"| OS[Order Service]
@@ -4543,7 +4530,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 15,
-                "tags": ["gpu", "architecture", "cuda", "memory-hierarchy", "streaming-multiprocessor", "tensor-cores"],
+                "tags": [
+                    "gpu",
+                    "architecture",
+                    "cuda",
+                    "memory-hierarchy",
+                    "streaming-multiprocessor",
+                    "tensor-cores",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -10551,7 +10545,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "advanced",
                 "estimated_time_minutes": 18,
-                "tags": ["gpu", "distributed-training", "data-parallel", "model-parallel", "zero", "fsdp"],
+                "tags": [
+                    "gpu",
+                    "distributed-training",
+                    "data-parallel",
+                    "model-parallel",
+                    "zero",
+                    "fsdp",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -11497,7 +11498,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "advanced",
                 "estimated_time_minutes": 15,
-                "tags": ["gpu", "attention", "flash-attention", "memory", "transformers", "optimization"],
+                "tags": [
+                    "gpu",
+                    "attention",
+                    "flash-attention",
+                    "memory",
+                    "transformers",
+                    "optimization",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -11909,7 +11917,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 12,
-                "tags": ["gpu", "memory", "gradient-checkpointing", "activation-checkpointing", "training"],
+                "tags": [
+                    "gpu",
+                    "memory",
+                    "gradient-checkpointing",
+                    "activation-checkpointing",
+                    "training",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -12994,7 +13008,6 @@ class Command(BaseCommand):
             },
         )
         self.stdout.write(f"  {"'Created'" if created else 'Updated'}: {topic.title}")
-
 
     def seed_classification_metrics_visual(self):
         """Seed classification metrics visual topic."""
@@ -15488,7 +15501,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "beginner",
                 "estimated_time_minutes": 10,
-                "tags": ["lightgbm", "gradient boosting", "ensemble", "residuals", "additive model"],
+                "tags": [
+                    "lightgbm",
+                    "gradient boosting",
+                    "ensemble",
+                    "residuals",
+                    "additive model",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -16574,7 +16593,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 10,
-                "tags": ["lightgbm", "overfitting", "early stopping", "regularization", "cross-validation"],
+                "tags": [
+                    "lightgbm",
+                    "overfitting",
+                    "early stopping",
+                    "regularization",
+                    "cross-validation",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -17770,7 +17795,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 8,
-                "tags": ["xgboost", "monotonic", "constraints", "interpretability", "domain knowledge"],
+                "tags": [
+                    "xgboost",
+                    "monotonic",
+                    "constraints",
+                    "interpretability",
+                    "domain knowledge",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -21125,7 +21156,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 10,
-                "tags": ["statistics", "non-parametric", "mann-whitney", "wilcoxon", "kruskal-wallis"],
+                "tags": [
+                    "statistics",
+                    "non-parametric",
+                    "mann-whitney",
+                    "wilcoxon",
+                    "kruskal-wallis",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -22069,9 +22106,7 @@ class Command(BaseCommand):
 
     def seed_logging_hierarchy_visual(self):
         """Seed Logging Hierarchy & Flow visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -22286,9 +22321,7 @@ class Command(BaseCommand):
 
     def seed_logging_levels_visual(self):
         """Seed Log Levels Explained visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -22477,9 +22510,7 @@ class Command(BaseCommand):
 
     def seed_logging_inheritance_visual(self):
         """Seed Logger Inheritance visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -22674,9 +22705,7 @@ class Command(BaseCommand):
 
     def seed_logging_configuration_visual(self):
         """Seed Configuration Methods visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -22866,9 +22895,7 @@ class Command(BaseCommand):
 
     def seed_logging_handlers_visual(self):
         """Seed Handler Types visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -23079,9 +23106,7 @@ class Command(BaseCommand):
 
     def seed_logging_formatters_visual(self):
         """Seed Formatters Deep Dive visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -23263,9 +23288,7 @@ class Command(BaseCommand):
 
     def seed_logging_structured_visual(self):
         """Seed Structured Logging visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -23459,9 +23482,7 @@ class Command(BaseCommand):
 
     def seed_logging_ml_pipelines_visual(self):
         """Seed Logging in ML Pipelines visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -23656,9 +23677,7 @@ class Command(BaseCommand):
 
     def seed_logging_antipatterns_visual(self):
         """Seed Common Anti-Patterns visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -23865,9 +23884,7 @@ class Command(BaseCommand):
 
     def seed_logging_performance_visual(self):
         """Seed Performance Considerations visual topic."""
-        subject = self.get_or_create_subject(
-            "Python Logging", "logging", "Python"
-        )
+        subject = self.get_or_create_subject("Python Logging", "logging", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -24064,9 +24081,7 @@ class Command(BaseCommand):
 
     def seed_async_event_loop_visual(self):
         """Seed Event Loop Fundamentals visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -24299,9 +24314,7 @@ class Command(BaseCommand):
 
     def seed_async_concurrency_models_visual(self):
         """Seed Coroutines vs Threads vs Processes visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -24506,9 +24519,7 @@ class Command(BaseCommand):
 
     def seed_async_await_internals_visual(self):
         """Seed async/await Under the Hood visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -24726,9 +24737,7 @@ class Command(BaseCommand):
 
     def seed_async_task_lifecycle_visual(self):
         """Seed Task Lifecycle visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -24931,9 +24940,7 @@ class Command(BaseCommand):
 
     def seed_async_gather_wait_visual(self):
         """Seed asyncio.gather vs asyncio.wait visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -25125,9 +25132,7 @@ class Command(BaseCommand):
 
     def seed_async_semaphores_visual(self):
         """Seed Semaphores & Rate Limiting visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -25310,9 +25315,7 @@ class Command(BaseCommand):
 
     def seed_async_producer_consumer_visual(self):
         """Seed Producer-Consumer Pattern visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -25491,9 +25494,7 @@ class Command(BaseCommand):
 
     def seed_async_timeouts_visual(self):
         """Seed Timeouts & Cancellation visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -25676,9 +25677,7 @@ class Command(BaseCommand):
 
     def seed_async_http_requests_visual(self):
         """Seed Async HTTP Requests visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -25855,9 +25854,7 @@ class Command(BaseCommand):
 
     def seed_async_database_visual(self):
         """Seed Async Database Access visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -25868,7 +25865,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "advanced",
                 "estimated_time_minutes": 12,
-                "tags": ["python", "asyncio", "database", "asyncpg", "sqlalchemy", "connection-pool"],
+                "tags": [
+                    "python",
+                    "asyncio",
+                    "database",
+                    "asyncpg",
+                    "sqlalchemy",
+                    "connection-pool",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -26037,9 +26041,7 @@ class Command(BaseCommand):
 
     def seed_async_websocket_visual(self):
         """Seed WebSocket Communication visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -26207,9 +26209,7 @@ class Command(BaseCommand):
 
     def seed_async_antipatterns_visual(self):
         """Seed Common Async Anti-Patterns visual topic."""
-        subject = self.get_or_create_subject(
-            "Async Programming", "async_programming", "Python"
-        )
+        subject = self.get_or_create_subject("Async Programming", "async_programming", "Python")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -26811,7 +26811,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 12,
-                "tags": ["ml", "explainability", "feature-importance", "permutation", "interpretation"],
+                "tags": [
+                    "ml",
+                    "explainability",
+                    "feature-importance",
+                    "permutation",
+                    "interpretation",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -27512,7 +27518,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "advanced",
                 "estimated_time_minutes": 12,
-                "tags": ["ml", "explainability", "gradients", "saliency", "gradcam", "deep-learning"],
+                "tags": [
+                    "ml",
+                    "explainability",
+                    "gradients",
+                    "saliency",
+                    "gradcam",
+                    "deep-learning",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -30163,9 +30176,7 @@ class Command(BaseCommand):
 
     def seed_docker_container_vs_vm_visual(self):
         """Seed Container vs VM Architecture visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -30326,9 +30337,7 @@ class Command(BaseCommand):
 
     def seed_docker_image_layers_visual(self):
         """Seed Docker Image Layers visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -30490,9 +30499,7 @@ class Command(BaseCommand):
 
     def seed_docker_container_lifecycle_visual(self):
         """Seed Container Lifecycle visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -30607,9 +30614,7 @@ class Command(BaseCommand):
 
     def seed_docker_dockerfile_build_visual(self):
         """Seed Dockerfile Build Process visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -30754,9 +30759,7 @@ class Command(BaseCommand):
 
     def seed_docker_network_types_visual(self):
         """Seed Docker Network Types visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -30881,9 +30884,7 @@ class Command(BaseCommand):
 
     def seed_docker_container_communication_visual(self):
         """Seed Container-to-Container Communication visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -30991,9 +30992,7 @@ class Command(BaseCommand):
 
     def seed_docker_volume_types_visual(self):
         """Seed Docker Volume Types visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -31140,9 +31139,7 @@ class Command(BaseCommand):
 
     def seed_docker_compose_graph_visual(self):
         """Seed Docker Compose Service Graph visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -31274,9 +31271,7 @@ class Command(BaseCommand):
 
     def seed_docker_orchestration_basics_visual(self):
         """Seed Container Orchestration Basics visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -31431,9 +31426,7 @@ class Command(BaseCommand):
 
     def seed_docker_health_checks_visual(self):
         """Seed Health Checks & Restart Policies visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -31553,9 +31546,7 @@ class Command(BaseCommand):
 
     def seed_docker_image_security_visual(self):
         """Seed Image Security Layers visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -31666,9 +31657,7 @@ class Command(BaseCommand):
 
     def seed_docker_multistage_builds_visual(self):
         """Seed Multi-Stage Builds visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -31800,9 +31789,7 @@ class Command(BaseCommand):
 
     def seed_docker_container_isolation_visual(self):
         """Seed Container Isolation visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -31921,9 +31908,7 @@ class Command(BaseCommand):
 
     def seed_docker_cicd_pipeline_visual(self):
         """Seed CI/CD with Docker visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32036,9 +32021,7 @@ class Command(BaseCommand):
 
     def seed_docker_logging_monitoring_visual(self):
         """Seed Docker Logging & Monitoring visual topic."""
-        subject = self.get_or_create_subject(
-            "Docker", "docker", "DevOps & Tooling"
-        )
+        subject = self.get_or_create_subject("Docker", "docker", "DevOps & Tooling")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32190,9 +32173,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_basemodel_anatomy_visual(self):
         """Seed Pydantic BaseModel Anatomy visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32340,9 +32321,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_validation_flow_visual(self):
         """Seed Pydantic Validation Flow visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32463,9 +32442,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_type_coercion_visual(self):
         """Seed Pydantic Type Coercion visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32583,9 +32560,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_field_types_visual(self):
         """Seed Pydantic Field Types & Constraints visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32719,9 +32694,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_validation_error_visual(self):
         """Seed Pydantic Validation Error Structure visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32840,9 +32813,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_validator_types_visual(self):
         """Seed Pydantic Validator Types visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -32952,9 +32923,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_custom_validators_visual(self):
         """Seed Pydantic Custom Validators visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33059,9 +33028,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_model_inheritance_visual(self):
         """Seed Pydantic Model Inheritance visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33162,9 +33129,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_nested_models_visual(self):
         """Seed Pydantic Nested Models visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33264,9 +33229,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_generics_visual(self):
         """Seed Pydantic Generics & TypeVar visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33367,9 +33330,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_serialization_visual(self):
         """Seed Pydantic Serialization Modes visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33488,9 +33449,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_model_config_visual(self):
         """Seed Pydantic Model Config visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33595,9 +33554,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_json_schema_visual(self):
         """Seed Pydantic JSON Schema Generation visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33704,9 +33661,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_discriminated_unions_visual(self):
         """Seed Pydantic Discriminated Unions visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -33820,9 +33775,7 @@ class Command(BaseCommand):
 
     def seed_pydantic_v1_to_v2_visual(self):
         """Seed Pydantic V1 to V2 Migration visual topic."""
-        subject = self.get_or_create_subject(
-            "Pydantic", "pydantic", "Python Libraries"
-        )
+        subject = self.get_or_create_subject("Pydantic", "pydantic", "Python Libraries")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -44096,9 +44049,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_anatomy_visual(self):
         """Seed Path Anatomy & Components visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -44291,9 +44242,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_resolution_visual(self):
         """Seed Path Resolution Flow visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -44466,9 +44415,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_glob_rglob_visual(self):
         """Seed glob vs rglob Directory Traversal visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -44699,9 +44646,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_join_operator_visual(self):
         """Seed Path Joining with / Operator visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -44864,9 +44809,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_relative_to_visual(self):
         """Seed relative_to() Method visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -45034,9 +44977,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_mkdir_visual(self):
         """Seed mkdir() Decision Tree visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -45213,9 +45154,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_existence_checks_visual(self):
         """Seed File Existence Checks visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -45418,9 +45357,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_with_methods_visual(self):
         """Seed with_* Methods for Path Mutation visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -45607,9 +45544,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_parent_chain_visual(self):
         """Seed Parent Chain & Root Behavior visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -45762,9 +45697,7 @@ class Command(BaseCommand):
 
     def seed_pathlib_read_write_visual(self):
         """Seed Read/Write Operations visual topic."""
-        subject = self.get_or_create_subject(
-            "Pathlib", "pathlib", "Python Core"
-        )
+        subject = self.get_or_create_subject("Pathlib", "pathlib", "Python Core")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -45775,7 +45708,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "beginner",
                 "estimated_time_minutes": 6,
-                "tags": ["pathlib", "read_text", "write_text", "read_bytes", "write_bytes", "python"],
+                "tags": [
+                    "pathlib",
+                    "read_text",
+                    "write_text",
+                    "read_bytes",
+                    "write_bytes",
+                    "python",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -45964,9 +45904,7 @@ class Command(BaseCommand):
 
     def seed_transformers_kv_cache_visual(self):
         """Seed KV-Cache visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -46133,9 +46071,7 @@ class Command(BaseCommand):
 
     def seed_transformers_rag_pipeline_visual(self):
         """Seed RAG Pipeline visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -46336,9 +46272,7 @@ class Command(BaseCommand):
 
     def seed_transformers_cross_attention_visual(self):
         """Seed Cross-Attention vs Self-Attention visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -46349,7 +46283,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 6,
-                "tags": ["transformers", "attention", "cross-attention", "self-attention", "encoder-decoder"],
+                "tags": [
+                    "transformers",
+                    "attention",
+                    "cross-attention",
+                    "self-attention",
+                    "encoder-decoder",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -46472,9 +46412,7 @@ class Command(BaseCommand):
 
     def seed_transformers_attention_masking_visual(self):
         """Seed Attention Masking visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -46593,9 +46531,7 @@ class Command(BaseCommand):
 
     def seed_transformers_qkv_computation_visual(self):
         """Seed QKV Computation Flow visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -46734,9 +46670,7 @@ class Command(BaseCommand):
 
     def seed_transformers_tensor_shapes_visual(self):
         """Seed Tensor Shapes Through Transformer visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -46873,9 +46807,7 @@ class Command(BaseCommand):
 
     def seed_transformers_bert_gpt_t5_visual(self):
         """Seed BERT vs GPT vs T5 visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47020,9 +46952,7 @@ class Command(BaseCommand):
 
     def seed_transformers_parallelism_visual(self):
         """Seed Parallelism Strategies visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47145,9 +47075,7 @@ class Command(BaseCommand):
 
     def seed_transformers_long_context_visual(self):
         """Seed Long Context Handling visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47264,9 +47192,7 @@ class Command(BaseCommand):
 
     def seed_transformers_scaling_laws_visual(self):
         """Seed Scaling Laws visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47385,9 +47311,7 @@ class Command(BaseCommand):
 
     def seed_transformers_finetuning_visual(self):
         """Seed Fine-tuning Approaches visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47533,9 +47457,7 @@ class Command(BaseCommand):
 
     def seed_transformers_decoding_strategies_visual(self):
         """Seed Decoding Strategies visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47546,7 +47468,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 7,
-                "tags": ["transformers", "decoding", "beam-search", "sampling", "temperature", "generation"],
+                "tags": [
+                    "transformers",
+                    "decoding",
+                    "beam-search",
+                    "sampling",
+                    "temperature",
+                    "generation",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -47694,9 +47623,7 @@ class Command(BaseCommand):
 
     def seed_transformers_rope_visual(self):
         """Seed Rotary Position Embeddings (RoPE) visual topic."""
-        subject = self.get_or_create_subject(
-            "Transformers", "transformers", "Deep Learning"
-        )
+        subject = self.get_or_create_subject("Transformers", "transformers", "Deep Learning")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47861,9 +47788,7 @@ class Command(BaseCommand):
 
     def seed_databricks_medallion_visual(self):
         """Seed Medallion Architecture visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -47976,9 +47901,7 @@ class Command(BaseCommand):
 
     def seed_databricks_delta_lake_visual(self):
         """Seed Delta Lake Architecture visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48082,9 +48005,7 @@ class Command(BaseCommand):
 
     def seed_databricks_acid_transactions_visual(self):
         """Seed Delta Lake ACID Transactions visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48195,9 +48116,7 @@ class Command(BaseCommand):
 
     def seed_databricks_cluster_architecture_visual(self):
         """Seed Databricks Cluster Architecture visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48320,9 +48239,7 @@ class Command(BaseCommand):
 
     def seed_databricks_unity_catalog_visual(self):
         """Seed Unity Catalog Hierarchy visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48439,9 +48356,7 @@ class Command(BaseCommand):
 
     def seed_databricks_dlt_pipeline_visual(self):
         """Seed Delta Live Tables Pipeline visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48547,9 +48462,7 @@ class Command(BaseCommand):
 
     def seed_databricks_time_travel_visual(self):
         """Seed Time Travel & Versioning visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48641,9 +48554,7 @@ class Command(BaseCommand):
 
     def seed_databricks_jobs_orchestration_visual(self):
         """Seed Databricks Jobs Orchestration visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48765,9 +48676,7 @@ class Command(BaseCommand):
 
     def seed_databricks_sql_warehouse_visual(self):
         """Seed SQL Warehouse Types visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -48880,9 +48789,7 @@ class Command(BaseCommand):
 
     def seed_databricks_dbfs_storage_visual(self):
         """Seed DBFS & Storage Layers visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -49002,9 +48909,7 @@ class Command(BaseCommand):
 
     def seed_databricks_model_serving_visual(self):
         """Seed Model Serving Architecture visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -49121,9 +49026,7 @@ class Command(BaseCommand):
 
     def seed_databricks_vector_search_visual(self):
         """Seed Vector Search Pipeline visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -49227,9 +49130,7 @@ class Command(BaseCommand):
 
     def seed_databricks_zordering_visual(self):
         """Seed Z-Ordering & Data Skipping visual topic."""
-        subject = self.get_or_create_subject(
-            "Databricks", "databricks", "Data Engineering"
-        )
+        subject = self.get_or_create_subject("Databricks", "databricks", "Data Engineering")
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -53851,7 +53752,9 @@ class Command(BaseCommand):
 
     def seed_de_etl_vs_elt_visual(self):
         """Seed ETL vs ELT pipeline visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -54021,7 +53924,9 @@ class Command(BaseCommand):
 
     def seed_de_lake_warehouse_lakehouse_visual(self):
         """Seed Data Lake vs Warehouse vs Lakehouse visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -54032,7 +53937,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 10,
-                "tags": ["data-engineering", "data-lake", "data-warehouse", "lakehouse", "architecture"],
+                "tags": [
+                    "data-engineering",
+                    "data-lake",
+                    "data-warehouse",
+                    "lakehouse",
+                    "architecture",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -54239,7 +54150,9 @@ class Command(BaseCommand):
 
     def seed_de_batch_vs_stream_visual(self):
         """Seed Batch vs Stream Processing visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -54426,7 +54339,9 @@ class Command(BaseCommand):
 
     def seed_de_oltp_vs_olap_visual(self):
         """Seed OLTP vs OLAP systems visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -54604,7 +54519,9 @@ class Command(BaseCommand):
 
     def seed_de_star_snowflake_schema_visual(self):
         """Seed Star vs Snowflake Schema visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -54615,7 +54532,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 8,
-                "tags": ["data-engineering", "star-schema", "snowflake-schema", "dimensional-modeling", "warehouse"],
+                "tags": [
+                    "data-engineering",
+                    "star-schema",
+                    "snowflake-schema",
+                    "dimensional-modeling",
+                    "warehouse",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -54777,7 +54700,9 @@ class Command(BaseCommand):
 
     def seed_de_data_mesh_visual(self):
         """Seed Data Mesh Architecture visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -54788,7 +54713,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "advanced",
                 "estimated_time_minutes": 10,
-                "tags": ["data-engineering", "data-mesh", "architecture", "decentralized", "domain-driven"],
+                "tags": [
+                    "data-engineering",
+                    "data-mesh",
+                    "architecture",
+                    "decentralized",
+                    "domain-driven",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -54972,7 +54903,9 @@ class Command(BaseCommand):
 
     def seed_de_cdc_visual(self):
         """Seed Change Data Capture (CDC) visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -55168,7 +55101,9 @@ class Command(BaseCommand):
 
     def seed_de_scd_visual(self):
         """Seed Slowly Changing Dimensions (SCD) visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -55321,7 +55256,9 @@ class Command(BaseCommand):
 
     def seed_de_idempotent_pipelines_visual(self):
         """Seed Idempotent Pipeline Design visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -55332,7 +55269,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 8,
-                "tags": ["data-engineering", "idempotency", "pipeline", "reliability", "best-practices"],
+                "tags": [
+                    "data-engineering",
+                    "idempotency",
+                    "pipeline",
+                    "reliability",
+                    "best-practices",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -55485,7 +55428,9 @@ class Command(BaseCommand):
 
     def seed_de_backfill_strategies_visual(self):
         """Seed Backfill Strategies visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -55640,7 +55585,9 @@ class Command(BaseCommand):
 
     def seed_de_data_quality_gates_visual(self):
         """Seed Data Quality Gates visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -55651,7 +55598,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 8,
-                "tags": ["data-engineering", "data-quality", "validation", "testing", "great-expectations"],
+                "tags": [
+                    "data-engineering",
+                    "data-quality",
+                    "validation",
+                    "testing",
+                    "great-expectations",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -55794,7 +55747,9 @@ class Command(BaseCommand):
 
     def seed_de_orchestration_patterns_visual(self):
         """Seed Orchestration Patterns visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -55805,7 +55760,14 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 10,
-                "tags": ["data-engineering", "orchestration", "airflow", "dagster", "prefect", "dag"],
+                "tags": [
+                    "data-engineering",
+                    "orchestration",
+                    "airflow",
+                    "dagster",
+                    "prefect",
+                    "dag",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -55965,7 +55927,9 @@ class Command(BaseCommand):
 
     def seed_de_serialization_formats_visual(self):
         """Seed Serialization Formats Comparison visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -56154,7 +56118,9 @@ class Command(BaseCommand):
 
     def seed_de_partitioning_strategies_visual(self):
         """Seed Partitioning Strategies visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -56165,7 +56131,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 8,
-                "tags": ["data-engineering", "partitioning", "performance", "data-lake", "optimization"],
+                "tags": [
+                    "data-engineering",
+                    "partitioning",
+                    "performance",
+                    "data-lake",
+                    "optimization",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -56328,7 +56300,9 @@ class Command(BaseCommand):
 
     def seed_de_compression_tradeoffs_visual(self):
         """Seed Compression Trade-offs visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -56496,7 +56470,9 @@ class Command(BaseCommand):
 
     def seed_de_schema_evolution_visual(self):
         """Seed Schema Evolution visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -56677,7 +56653,9 @@ class Command(BaseCommand):
 
     def seed_de_data_lineage_visual(self):
         """Seed Data Lineage Tracking visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -56688,7 +56666,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 8,
-                "tags": ["data-engineering", "lineage", "governance", "metadata", "impact-analysis"],
+                "tags": [
+                    "data-engineering",
+                    "lineage",
+                    "governance",
+                    "metadata",
+                    "impact-analysis",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -56847,7 +56831,9 @@ class Command(BaseCommand):
 
     def seed_de_data_catalog_visual(self):
         """Seed Data Catalog Architecture visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -57040,7 +57026,9 @@ class Command(BaseCommand):
 
     def seed_de_access_control_visual(self):
         """Seed Access Control Patterns visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -57225,7 +57213,9 @@ class Command(BaseCommand):
 
     def seed_de_pipeline_monitoring_visual(self):
         """Seed Pipeline Monitoring & Alerting visual."""
-        subject = self.get_or_create_subject("Data Engineering", "data_engineering", "Data Engineering")
+        subject = self.get_or_create_subject(
+            "Data Engineering", "data_engineering", "Data Engineering"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -57416,7 +57406,9 @@ class Command(BaseCommand):
 
     def seed_genai_tokenization_visual(self):
         """Seed Tokenization & Vocabulary visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -57588,7 +57580,9 @@ class Command(BaseCommand):
 
     def seed_genai_temperature_sampling_visual(self):
         """Seed Temperature & Sampling visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -57754,7 +57748,9 @@ class Command(BaseCommand):
 
     def seed_genai_context_window_visual(self):
         """Seed Context Window Management visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -57911,7 +57907,9 @@ class Command(BaseCommand):
 
     def seed_genai_autoregressive_diffusion_visual(self):
         """Seed Autoregressive vs Diffusion visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -57922,7 +57920,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 10,
-                "tags": ["generative-ai", "autoregressive", "diffusion", "generation", "architecture"],
+                "tags": [
+                    "generative-ai",
+                    "autoregressive",
+                    "diffusion",
+                    "generation",
+                    "architecture",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -58081,7 +58085,9 @@ class Command(BaseCommand):
 
     def seed_genai_scaling_laws_visual(self):
         """Seed Model Size vs Capability visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -58260,7 +58266,9 @@ class Command(BaseCommand):
 
     def seed_genai_zero_few_shot_visual(self):
         """Seed Zero-Shot vs Few-Shot visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -58271,7 +58279,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "beginner",
                 "estimated_time_minutes": 8,
-                "tags": ["generative-ai", "prompting", "zero-shot", "few-shot", "in-context-learning"],
+                "tags": [
+                    "generative-ai",
+                    "prompting",
+                    "zero-shot",
+                    "few-shot",
+                    "in-context-learning",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -58417,7 +58431,9 @@ class Command(BaseCommand):
 
     def seed_genai_chain_of_thought_visual(self):
         """Seed Chain of Thought visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -58566,7 +58582,9 @@ class Command(BaseCommand):
 
     def seed_genai_system_user_prompts_visual(self):
         """Seed System vs User Prompts visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -58728,7 +58746,9 @@ class Command(BaseCommand):
 
     def seed_genai_structured_output_visual(self):
         """Seed Structured Output visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -58739,7 +58759,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 10,
-                "tags": ["generative-ai", "prompting", "json", "function-calling", "structured-output"],
+                "tags": [
+                    "generative-ai",
+                    "prompting",
+                    "json",
+                    "function-calling",
+                    "structured-output",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -58879,7 +58905,9 @@ class Command(BaseCommand):
 
     def seed_genai_prompt_injection_visual(self):
         """Seed Prompt Injection & Defense visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -59043,7 +59071,9 @@ class Command(BaseCommand):
 
     def seed_genai_training_pipeline_visual(self):
         """Seed Pre-training → Fine-tuning → RLHF visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -59218,7 +59248,9 @@ class Command(BaseCommand):
 
     def seed_genai_lora_peft_visual(self):
         """Seed LoRA & PEFT visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -59392,7 +59424,9 @@ class Command(BaseCommand):
 
     def seed_genai_instruction_tuning_visual(self):
         """Seed Instruction Tuning visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -59558,7 +59592,9 @@ class Command(BaseCommand):
 
     def seed_genai_rlhf_pipeline_visual(self):
         """Seed RLHF Pipeline visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -59732,7 +59768,9 @@ class Command(BaseCommand):
 
     def seed_genai_quantization_visual(self):
         """Seed Quantization visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -59904,7 +59942,9 @@ class Command(BaseCommand):
 
     def seed_genai_speculative_decoding_visual(self):
         """Seed Speculative Decoding visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -59915,7 +59955,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "advanced",
                 "estimated_time_minutes": 8,
-                "tags": ["generative-ai", "speculative-decoding", "inference", "optimization", "draft-model"],
+                "tags": [
+                    "generative-ai",
+                    "speculative-decoding",
+                    "inference",
+                    "optimization",
+                    "draft-model",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -60056,7 +60102,9 @@ class Command(BaseCommand):
 
     def seed_genai_batching_strategies_visual(self):
         """Seed Batching Strategies visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -60218,7 +60266,9 @@ class Command(BaseCommand):
 
     def seed_genai_agents_tool_use_visual(self):
         """Seed Agents & Tool Use visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -60380,7 +60430,9 @@ class Command(BaseCommand):
 
     def seed_genai_hallucination_visual(self):
         """Seed Hallucination & Grounding visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -60535,7 +60587,9 @@ class Command(BaseCommand):
 
     def seed_genai_guardrails_visual(self):
         """Seed Guardrails Architecture visual."""
-        subject = self.get_or_create_subject("Generative AI", "generative_ai", "AI & Machine Learning")
+        subject = self.get_or_create_subject(
+            "Generative AI", "generative_ai", "AI & Machine Learning"
+        )
 
         topic, created = VisualTopic.objects.update_or_create(
             subject=subject,
@@ -60546,7 +60600,13 @@ class Command(BaseCommand):
                 "rendering_type": VisualTopic.RenderingType.MERMAID,
                 "difficulty": "intermediate",
                 "estimated_time_minutes": 10,
-                "tags": ["generative-ai", "guardrails", "safety", "content-filtering", "moderation"],
+                "tags": [
+                    "generative-ai",
+                    "guardrails",
+                    "safety",
+                    "content-filtering",
+                    "moderation",
+                ],
                 "status": VisualTopic.Status.PUBLISHED,
                 "source": "manual",
                 "steps": [
@@ -62558,7 +62618,7 @@ class Command(BaseCommand):
                     {
                         "step_number": 2,
                         "title": "Period Schedules",
-                        "explanation": "**modal.Period** is simpler for regular intervals. Specify days, hours, minutes. Good for \"every N minutes\" patterns.",
+                        "explanation": '**modal.Period** is simpler for regular intervals. Specify days, hours, minutes. Good for "every N minutes" patterns.',
                         "diagram_data": """flowchart TB
     subgraph "Period Examples"
         P1["modal.Period(minutes=30)<br/>Every 30 minutes"]

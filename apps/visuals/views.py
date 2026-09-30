@@ -243,15 +243,11 @@ Keep your explanation focused, educational, and complementary to the visual diag
 
         except ClaudeAPIError as e:
             logger.exception(f"Claude API error during streaming: {e}")
-            error_data = json.dumps(
-                {"error": "Failed to generate explanation. Please try again."}
-            )
+            error_data = json.dumps({"error": "Failed to generate explanation. Please try again."})
             yield f"data: {error_data}\n\n"
         except Exception as e:
             logger.exception(f"Unexpected error during streaming: {e}")
-            error_data = json.dumps(
-                {"error": "An unexpected error occurred. Please try again."}
-            )
+            error_data = json.dumps({"error": "An unexpected error occurred. Please try again."})
             yield f"data: {error_data}\n\n"
 
     response = StreamingHttpResponse(

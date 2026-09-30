@@ -118,10 +118,12 @@ class ArgumentSession(models.Model):
         for msg in messages:
             # Map our roles to Claude API roles
             role = "user" if msg.role == ArgumentMessage.Role.USER else "assistant"
-            history.append({
-                "role": role,
-                "content": msg.content,
-            })
+            history.append(
+                {
+                    "role": role,
+                    "content": msg.content,
+                }
+            )
 
         return history
 
@@ -236,6 +238,4 @@ class ArgumentAnalysis(models.Model):
     @property
     def average_score(self) -> float:
         """Calculate average score across all dimensions."""
-        return round(
-            (self.technical_score + self.temperament_score + self.focus_score) / 3, 1
-        )
+        return round((self.technical_score + self.temperament_score + self.focus_score) / 3, 1)

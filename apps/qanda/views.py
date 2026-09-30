@@ -28,9 +28,7 @@ class QAHomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        subject = get_object_or_404(
-            Subject, slug=kwargs["subject_slug"], is_active=True
-        )
+        subject = get_object_or_404(Subject, slug=kwargs["subject_slug"], is_active=True)
         context["subject"] = subject
 
         # Get active sessions for this user and subject
@@ -111,9 +109,7 @@ def ask_question(request, subject_slug, pk):
     # Don't allow questions on archived sessions
     if session.status == QASession.Status.ARCHIVED:
         return JsonResponse(
-            {
-                "error": "Cannot ask questions in archived sessions. Please unarchive first."
-            },
+            {"error": "Cannot ask questions in archived sessions. Please unarchive first."},
             status=403,
         )
 
@@ -127,9 +123,7 @@ def ask_question(request, subject_slug, pk):
 
     # Validate question length (max 10k characters)
     if len(question) > 10000:
-        return JsonResponse(
-            {"error": "Question is too long (max 10,000 characters)"}, status=400
-        )
+        return JsonResponse({"error": "Question is too long (max 10,000 characters)"}, status=400)
 
     # Create user message
     user_message = Message.objects.create(
@@ -137,9 +131,7 @@ def ask_question(request, subject_slug, pk):
         role=Message.Role.USER,
         content=question,
         quick_action=quick_action,
-        reference_message_id=int(reference_message_id)
-        if reference_message_id
-        else None,
+        reference_message_id=int(reference_message_id) if reference_message_id else None,
     )
 
     # Create placeholder assistant message (content will be filled during streaming)
@@ -188,9 +180,7 @@ def stream_response(request, subject_slug, pk, message_id):
 
     # Don't allow streaming for archived sessions
     if session.status == QASession.Status.ARCHIVED:
-        return JsonResponse(
-            {"error": "Cannot stream responses for archived sessions"}, status=403
-        )
+        return JsonResponse({"error": "Cannot stream responses for archived sessions"}, status=403)
 
     # Get the assistant message to fill
     message = get_object_or_404(
@@ -201,9 +191,7 @@ def stream_response(request, subject_slug, pk, message_id):
     )
 
     # Get most recent user message
-    last_user_msg = (
-        session.messages.filter(role=Message.Role.USER).order_by("-created_at").first()
-    )
+    last_user_msg = session.messages.filter(role=Message.Role.USER).order_by("-created_at").first()
 
     if not last_user_msg:
         return JsonResponse({"error": "No user message found"}, status=400)
@@ -258,15 +246,11 @@ def stream_response(request, subject_slug, pk, message_id):
 
         except ClaudeAPIError as e:
             logger.exception(f"Claude API error during streaming: {e}")
-            error_data = json.dumps(
-                {"error": "Failed to generate response. Please try again."}
-            )
+            error_data = json.dumps({"error": "Failed to generate response. Please try again."})
             yield f"data: {error_data}\n\n"
         except Exception as e:
             logger.exception(f"Unexpected error during streaming: {e}")
-            error_data = json.dumps(
-                {"error": "An unexpected error occurred. Please try again."}
-            )
+            error_data = json.dumps({"error": "An unexpected error occurred. Please try again."})
             yield f"data: {error_data}\n\n"
 
     response = StreamingHttpResponse(
@@ -307,9 +291,7 @@ def export_session(request, subject_slug, pk):
     markdown_content = "\n".join(lines)
 
     # Create filename
-    filename = (
-        f"qanda_{session.subject.slug}_{session.started_at.strftime('%Y%m%d_%H%M')}.md"
-    )
+    filename = f"qanda_{session.subject.slug}_{session.started_at.strftime('%Y%m%d_%H%M')}.md"
 
     # Return as downloadable file
     response = HttpResponse(markdown_content, content_type="text/markdown")

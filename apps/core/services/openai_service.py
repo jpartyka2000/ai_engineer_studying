@@ -190,21 +190,23 @@ class OpenAIService:
                 messages.append({"role": "system", "content": system_message})
 
             # Build message with image
-            messages.append({
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{media_type};base64,{base64_image}",
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{media_type};base64,{base64_image}",
+                            },
                         },
-                    },
-                    {
-                        "type": "text",
-                        "text": prompt,
-                    },
-                ],
-            })
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        },
+                    ],
+                }
+            )
 
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -265,7 +267,7 @@ class OpenAIService:
         if cleaned_response.startswith("```"):
             first_newline = cleaned_response.find("\n")
             if first_newline != -1:
-                cleaned_response = cleaned_response[first_newline + 1:]
+                cleaned_response = cleaned_response[first_newline + 1 :]
 
         if cleaned_response.endswith("```"):
             cleaned_response = cleaned_response[:-3].rstrip()

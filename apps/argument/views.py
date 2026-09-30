@@ -29,9 +29,7 @@ class ArgumentConfigView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        subject = get_object_or_404(
-            Subject, slug=kwargs["subject_slug"], is_active=True
-        )
+        subject = get_object_or_404(Subject, slug=kwargs["subject_slug"], is_active=True)
         context["subject"] = subject
         context["heat_levels"] = ArgumentSession.HeatLevel.choices
         context["difficulty_levels"] = subject.difficulty_levels or [
@@ -140,9 +138,7 @@ def submit_response(request, subject_slug, pk):
 
     # Validate response length
     if len(response_text) > 10000:
-        return JsonResponse(
-            {"error": "Response is too long (max 10,000 characters)"}, status=400
-        )
+        return JsonResponse({"error": "Response is too long (max 10,000 characters)"}, status=400)
 
     # Create user message
     user_message = ArgumentMessage.objects.create(
@@ -164,12 +160,14 @@ def submit_response(request, subject_slug, pk):
     # Build stream URL
     stream_url = f"/argument/{subject_slug}/{pk}/stream/{opponent_message.id}/"
 
-    return JsonResponse({
-        "status": "success",
-        "message_id": opponent_message.id,
-        "stream_url": stream_url,
-        "user_message_id": user_message.id,
-    })
+    return JsonResponse(
+        {
+            "status": "success",
+            "message_id": opponent_message.id,
+            "stream_url": stream_url,
+            "user_message_id": user_message.id,
+        }
+    )
 
 
 @login_required
@@ -203,9 +201,7 @@ def stream_response(request, subject_slug, pk, message_id):
 
     # Get most recent user message
     last_user_msg = (
-        session.messages.filter(role=ArgumentMessage.Role.USER)
-        .order_by("-created_at")
-        .first()
+        session.messages.filter(role=ArgumentMessage.Role.USER).order_by("-created_at").first()
     )
 
     if not last_user_msg:
@@ -236,15 +232,11 @@ def stream_response(request, subject_slug, pk, message_id):
 
         except ClaudeAPIError as e:
             logger.exception("Claude API error during streaming: %s", e)
-            error_data = json.dumps(
-                {"error": "Failed to generate response. Please try again."}
-            )
+            error_data = json.dumps({"error": "Failed to generate response. Please try again."})
             yield f"data: {error_data}\n\n"
         except Exception as e:
             logger.exception("Unexpected error during streaming: %s", e)
-            error_data = json.dumps(
-                {"error": "An unexpected error occurred. Please try again."}
-            )
+            error_data = json.dumps({"error": "An unexpected error occurred. Please try again."})
             yield f"data: {error_data}\n\n"
 
     response = StreamingHttpResponse(
@@ -305,10 +297,12 @@ def end_argument(request, subject_slug, pk):
         session.completed_at = timezone.now()
         session.save(update_fields=["status", "completed_at"])
 
-        return JsonResponse({
-            "status": "success",
-            "redirect_url": f"/argument/{subject_slug}/{pk}/results/",
-        })
+        return JsonResponse(
+            {
+                "status": "success",
+                "redirect_url": f"/argument/{subject_slug}/{pk}/results/",
+            }
+        )
 
     except ClaudeAPIError as e:
         logger.exception("Failed to generate analysis: %s", e)

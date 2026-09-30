@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -109,9 +108,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "explanation",
-                    models.TextField(
-                        blank=True, help_text="Explanation of the correct answer"
-                    ),
+                    models.TextField(blank=True, help_text="Explanation of the correct answer"),
                 ),
                 (
                     "hints",
@@ -123,9 +120,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "tags",
-                    models.JSONField(
-                        blank=True, default=list, help_text="Tags for categorization"
-                    ),
+                    models.JSONField(blank=True, default=list, help_text="Tags for categorization"),
                 ),
                 (
                     "source",
@@ -199,9 +194,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "topic_filter",
-                    models.CharField(
-                        blank=True, help_text="Optional topic filter", max_length=100
-                    ),
+                    models.CharField(blank=True, help_text="Optional topic filter", max_length=100),
                 ),
                 (
                     "status",
@@ -301,9 +294,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "is_correct",
-                    models.BooleanField(
-                        help_text="Whether the answer is fully correct", null=True
-                    ),
+                    models.BooleanField(help_text="Whether the answer is fully correct", null=True),
                 ),
                 (
                     "partial_credit",
@@ -315,9 +306,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "feedback",
-                    models.TextField(
-                        blank=True, help_text="Feedback from Claude on the answer"
-                    ),
+                    models.TextField(blank=True, help_text="Feedback from Claude on the answer"),
                 ),
                 (
                     "mathematical_errors",
@@ -448,14 +437,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="mathsession",
-            index=models.Index(
-                fields=["user", "status"], name="equations_m_user_id_d3a999_idx"
-            ),
+            index=models.Index(fields=["user", "status"], name="equations_m_user_id_d3a999_idx"),
         ),
         migrations.AddIndex(
             model_name="mathsession",
-            index=models.Index(
-                fields=["subject", "status"], name="equations_m_subject_8d296d_idx"
-            ),
+            index=models.Index(fields=["subject", "status"], name="equations_m_subject_8d296d_idx"),
         ),
     ]

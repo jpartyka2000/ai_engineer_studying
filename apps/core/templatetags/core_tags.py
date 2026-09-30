@@ -59,8 +59,7 @@ def render_code_blocks(value):
         code = match.group(2).rstrip()
         escaped_code = escape(code)
         return (
-            f'<pre class="code-block"><code class="language-{language}">'
-            f"{escaped_code}</code></pre>"
+            f'<pre class="code-block"><code class="language-{language}">{escaped_code}</code></pre>'
         )
 
     # Replace fenced code blocks (use DOTALL to match across newlines)

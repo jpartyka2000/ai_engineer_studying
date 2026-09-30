@@ -149,9 +149,7 @@ class DashboardService:
         """
         from apps.accounts.models import UserProgress
 
-        progress_records = UserProgress.objects.filter(user=user).select_related(
-            "subject"
-        )
+        progress_records = UserProgress.objects.filter(user=user).select_related("subject")
 
         stats = []
         for progress in progress_records:
@@ -284,9 +282,7 @@ class DashboardService:
 
         return with_questions[:limit]
 
-    def get_strongest_subjects(
-        self, user: "User", limit: int = 3
-    ) -> list[SubjectStats]:
+    def get_strongest_subjects(self, user: "User", limit: int = 3) -> list[SubjectStats]:
         """
         Get subjects with highest accuracy (that have been attempted).
 

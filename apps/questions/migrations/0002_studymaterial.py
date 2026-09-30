@@ -33,9 +33,7 @@ class Migration(migrations.Migration):
                 ("content", models.TextField(help_text="Full document content")),
                 (
                     "source_file",
-                    models.CharField(
-                        blank=True, help_text="Original file path", max_length=500
-                    ),
+                    models.CharField(blank=True, help_text="Original file path", max_length=500),
                 ),
                 (
                     "content_hash",

@@ -27,9 +27,7 @@ class LightningConfigView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        subject = get_object_or_404(
-            Subject, slug=kwargs["subject_slug"], is_active=True
-        )
+        subject = get_object_or_404(Subject, slug=kwargs["subject_slug"], is_active=True)
         context["subject"] = subject
 
         # Get MC question count for each difficulty
@@ -77,9 +75,7 @@ def start_lightning(request, subject_slug):
     # Handle interview mode specially
     interview_question_pool = []
     if difficulty == "interview":
-        interview_question_pool = _get_interview_question_pool(
-            request, subject, subject_slug
-        )
+        interview_question_pool = _get_interview_question_pool(request, subject, subject_slug)
         if interview_question_pool is None:
             # Error occurred, redirect handled in helper
             return redirect("lightning:config", subject_slug=subject_slug)
@@ -206,9 +202,7 @@ class LightningPlayView(LoginRequiredMixin, DetailView):
             return context
 
         # Get answered question IDs
-        answered_question_ids = set(
-            session.answers.values_list("question_id", flat=True)
-        )
+        answered_question_ids = set(session.answers.values_list("question_id", flat=True))
 
         question = None
 
@@ -216,9 +210,7 @@ class LightningPlayView(LoginRequiredMixin, DetailView):
             # Interview mode: draw from pre-ranked pool in order
             for qid in session.interview_question_pool:
                 if qid not in answered_question_ids:
-                    question = Question.objects.filter(
-                        id=qid, is_active=True
-                    ).first()
+                    question = Question.objects.filter(id=qid, is_active=True).first()
                     if question:
                         break
         else:

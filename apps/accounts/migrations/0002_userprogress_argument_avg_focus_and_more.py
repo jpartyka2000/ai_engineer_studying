@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("accounts", "0001_initial"),
     ]
@@ -13,9 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="userprogress",
             name="argument_avg_focus",
-            field=models.FloatField(
-                default=0.0, help_text="Average topic focus score (1-10)"
-            ),
+            field=models.FloatField(default=0.0, help_text="Average topic focus score (1-10)"),
         ),
         migrations.AddField(
             model_name="userprogress",

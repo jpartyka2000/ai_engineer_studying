@@ -56,15 +56,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "argument_score",
-                    models.FloatField(
-                        help_text="Argument mode score (0-100)", null=True
-                    ),
+                    models.FloatField(help_text="Argument mode score (0-100)", null=True),
                 ),
                 (
                     "lightning_score",
-                    models.FloatField(
-                        help_text="Lightning mode score (0-100)", null=True
-                    ),
+                    models.FloatField(help_text="Lightning mode score (0-100)", null=True),
                 ),
                 (
                     "category_scores",
@@ -103,9 +99,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "recommendations",
-                    models.JSONField(
-                        default=list, help_text="List of study recommendations"
-                    ),
+                    models.JSONField(default=list, help_text="List of study recommendations"),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (

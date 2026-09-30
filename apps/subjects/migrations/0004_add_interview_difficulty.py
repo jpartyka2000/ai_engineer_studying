@@ -22,7 +22,6 @@ def remove_interview_from_difficulty_levels(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("subjects", "0003_add_supports_math"),
     ]

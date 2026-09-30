@@ -368,11 +368,7 @@ class CodingResponse(models.Model):
 
     def __str__(self) -> str:
         status = (
-            "Correct"
-            if self.is_correct
-            else "Incorrect"
-            if self.is_correct is False
-            else "Pending"
+            "Correct" if self.is_correct else "Incorrect" if self.is_correct is False else "Pending"
         )
         return f"Submission #{self.submission_number}: {status}"
 

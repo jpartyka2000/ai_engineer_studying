@@ -87,17 +87,19 @@ class QuestionAdmin(admin.ModelAdmin):
                     "subject_name": q.subject.name,
                     "questions": [],
                 }
-            questions_by_subject[subject_slug]["questions"].append({
-                "question_text": q.question_text,
-                "question_type": q.question_type,
-                "options": q.options,
-                "correct_answer": q.correct_answer,
-                "explanation": q.explanation,
-                "difficulty": q.difficulty,
-                "tags": q.tags,
-                "source": q.source,
-                "is_active": q.is_active,
-            })
+            questions_by_subject[subject_slug]["questions"].append(
+                {
+                    "question_text": q.question_text,
+                    "question_type": q.question_type,
+                    "options": q.options,
+                    "correct_answer": q.correct_answer,
+                    "explanation": q.explanation,
+                    "difficulty": q.difficulty,
+                    "tags": q.tags,
+                    "source": q.source,
+                    "is_active": q.is_active,
+                }
+            )
 
         # Export each subject to its own file
         exported_count = 0
@@ -142,17 +144,19 @@ class QuestionAdmin(admin.ModelAdmin):
                     "subject_name": q.subject.name,
                     "questions": [],
                 }
-            questions_by_subject[subject_slug]["questions"].append({
-                "question_text": q.question_text,
-                "question_type": q.question_type,
-                "options": q.options,
-                "correct_answer": q.correct_answer,
-                "explanation": q.explanation,
-                "difficulty": q.difficulty,
-                "tags": q.tags,
-                "source": q.source,
-                "is_active": q.is_active,
-            })
+            questions_by_subject[subject_slug]["questions"].append(
+                {
+                    "question_text": q.question_text,
+                    "question_type": q.question_type,
+                    "options": q.options,
+                    "correct_answer": q.correct_answer,
+                    "explanation": q.explanation,
+                    "difficulty": q.difficulty,
+                    "tags": q.tags,
+                    "source": q.source,
+                    "is_active": q.is_active,
+                }
+            )
 
         # Export each subject to its own file
         exported_count = 0

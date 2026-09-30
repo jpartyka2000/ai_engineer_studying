@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -29,15 +28,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "title",
-                    models.CharField(
-                        help_text="Brief title for the challenge", max_length=200
-                    ),
+                    models.CharField(help_text="Brief title for the challenge", max_length=200),
                 ),
                 (
                     "description",
-                    models.TextField(
-                        help_text="Full problem description with requirements"
-                    ),
+                    models.TextField(help_text="Full problem description with requirements"),
                 ),
                 (
                     "challenge_type",
@@ -68,9 +63,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "starter_code",
-                    models.TextField(
-                        blank=True, help_text="Initial code provided to the user"
-                    ),
+                    models.TextField(blank=True, help_text="Initial code provided to the user"),
                 ),
                 (
                     "reference_solution",
@@ -94,9 +87,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "hints",
-                    models.JSONField(
-                        default=list, help_text="List of hints that can be revealed"
-                    ),
+                    models.JSONField(default=list, help_text="List of hints that can be revealed"),
                 ),
                 (
                     "difficulty",
@@ -221,9 +212,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "hints_used",
-                    models.PositiveIntegerField(
-                        default=0, help_text="Number of hints revealed"
-                    ),
+                    models.PositiveIntegerField(default=0, help_text="Number of hints revealed"),
                 ),
                 (
                     "status",
@@ -319,15 +308,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "overall_score",
-                    models.PositiveIntegerField(
-                        help_text="Overall score out of 100", null=True
-                    ),
+                    models.PositiveIntegerField(help_text="Overall score out of 100", null=True),
                 ),
                 (
                     "evaluation_result",
-                    models.JSONField(
-                        default=dict, help_text="Full evaluation result from Claude"
-                    ),
+                    models.JSONField(default=dict, help_text="Full evaluation result from Claude"),
                 ),
                 (
                     "correctness_score",
@@ -356,9 +341,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "summary_feedback",
-                    models.TextField(
-                        blank=True, help_text="High-level summary of the evaluation"
-                    ),
+                    models.TextField(blank=True, help_text="High-level summary of the evaluation"),
                 ),
                 (
                     "detailed_feedback",
@@ -369,15 +352,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "areas_for_improvement",
-                    models.JSONField(
-                        default=list, help_text="List of specific areas to improve"
-                    ),
+                    models.JSONField(default=list, help_text="List of specific areas to improve"),
                 ),
                 (
                     "strengths",
-                    models.JSONField(
-                        default=list, help_text="List of things done well"
-                    ),
+                    models.JSONField(default=list, help_text="List of things done well"),
                 ),
                 ("submitted_at", models.DateTimeField(auto_now_add=True)),
                 (
@@ -425,15 +404,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="codingsession",
-            index=models.Index(
-                fields=["user", "status"], name="coding_codi_user_id_8f7fb7_idx"
-            ),
+            index=models.Index(fields=["user", "status"], name="coding_codi_user_id_8f7fb7_idx"),
         ),
         migrations.AddIndex(
             model_name="codingsession",
-            index=models.Index(
-                fields=["subject", "status"], name="coding_codi_subject_ec3995_idx"
-            ),
+            index=models.Index(fields=["subject", "status"], name="coding_codi_subject_ec3995_idx"),
         ),
         migrations.AddIndex(
             model_name="codingresponse",

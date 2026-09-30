@@ -304,9 +304,7 @@ class ReadinessCalculatorService:
 
         # Calculate activity summary
         total_sessions = sum(perf.sessions_count for perf in mode_performances.values())
-        total_questions = sum(
-            perf.total_attempted for perf in mode_performances.values()
-        )
+        total_questions = sum(perf.total_attempted for perf in mode_performances.values())
 
         # Count unique study days
         study_days = self._count_study_days(sessions_by_mode, period_start, period_end)
@@ -497,9 +495,7 @@ class ReadinessCalculatorService:
         return ModePerformance(
             mode_name="coding",
             sessions_count=len(sessions),
-            total_correct=int(total_score / 100 * evaluated_count)
-            if evaluated_count
-            else 0,
+            total_correct=int(total_score / 100 * evaluated_count) if evaluated_count else 0,
             total_attempted=evaluated_count,
             accuracy=round(accuracy, 1),
             weighted_score=0.0,
@@ -556,9 +552,7 @@ class ReadinessCalculatorService:
         4. Calculate: sum(mode_accuracy * adjusted_weight)
         """
         active_modes = {
-            mode: perf
-            for mode, perf in mode_performances.items()
-            if perf.sessions_count > 0
+            mode: perf for mode, perf in mode_performances.items() if perf.sessions_count > 0
         }
 
         if not active_modes:
@@ -586,9 +580,7 @@ class ReadinessCalculatorService:
         from apps.subjects.models import Subject
 
         # Get all subjects grouped by category
-        subjects = Subject.objects.filter(is_active=True).values(
-            "slug", "name", "category"
-        )
+        subjects = Subject.objects.filter(is_active=True).values("slug", "name", "category")
         category_subjects = {}
         for subject in subjects:
             cat = subject["category"]
@@ -654,8 +646,7 @@ class ReadinessCalculatorService:
                     gap_subjects.append(slug)
                 elif (
                     subject_scores.get(slug)
-                    and sum(subject_scores[slug]) / len(subject_scores[slug])
-                    < threshold
+                    and sum(subject_scores[slug]) / len(subject_scores[slug]) < threshold
                 ):
                     gap_subjects.append(slug)
 
@@ -689,9 +680,7 @@ class ReadinessCalculatorService:
 
         # Aggregate from exam sessions
         for session in sessions_by_mode.get("exam", []):
-            answers = ExamAnswer.objects.filter(session=session).select_related(
-                "question"
-            )
+            answers = ExamAnswer.objects.filter(session=session).select_related("question")
             for answer in answers:
                 if answer.is_correct is not None:
                     diff = answer.question.difficulty
@@ -702,9 +691,7 @@ class ReadinessCalculatorService:
 
         # Aggregate from lightning sessions
         for session in sessions_by_mode.get("lightning", []):
-            answers = LightningAnswer.objects.filter(session=session).select_related(
-                "question"
-            )
+            answers = LightningAnswer.objects.filter(session=session).select_related("question")
             for answer in answers:
                 diff = answer.question.difficulty
                 if diff in difficulty_stats:
@@ -718,9 +705,7 @@ class ReadinessCalculatorService:
         result = {}
 
         for diff, stats in difficulty_stats.items():
-            accuracy = (
-                (stats["correct"] / stats["total"] * 100) if stats["total"] > 0 else 0
-            )
+            accuracy = (stats["correct"] / stats["total"] * 100) if stats["total"] > 0 else 0
             meets = (
                 diff in required_difficulties
                 and stats["total"] >= 5  # Minimum questions to evaluate
@@ -767,10 +752,7 @@ class ReadinessCalculatorService:
         # Check difficulty requirements
         required_diffs = self.ROLE_THRESHOLDS[role_level]["difficulties"]
         for diff in required_diffs:
-            if (
-                diff in difficulty_readiness
-                and not difficulty_readiness[diff].meets_threshold
-            ):
+            if diff in difficulty_readiness and not difficulty_readiness[diff].meets_threshold:
                 return False
 
         return True

@@ -166,9 +166,7 @@ class SubjectAdmin(admin.ModelAdmin):
                     subject=subject,
                     num_questions=10,
                 )
-                messages.success(
-                    request, f"{subject.name}: Generated {len(saved)} questions"
-                )
+                messages.success(request, f"{subject.name}: Generated {len(saved)} questions")
             except Exception as e:
                 messages.error(request, f"{subject.name}: Generation failed - {e}")
 
@@ -227,17 +225,19 @@ class SubjectAdmin(admin.ModelAdmin):
             }
 
             for q in questions.order_by("difficulty", "created_at"):
-                data["questions"].append({
-                    "question_text": q.question_text,
-                    "question_type": q.question_type,
-                    "options": q.options,
-                    "correct_answer": q.correct_answer,
-                    "explanation": q.explanation,
-                    "difficulty": q.difficulty,
-                    "tags": q.tags,
-                    "source": q.source,
-                    "is_active": q.is_active,
-                })
+                data["questions"].append(
+                    {
+                        "question_text": q.question_text,
+                        "question_type": q.question_type,
+                        "options": q.options,
+                        "correct_answer": q.correct_answer,
+                        "explanation": q.explanation,
+                        "difficulty": q.difficulty,
+                        "tags": q.tags,
+                        "source": q.source,
+                        "is_active": q.is_active,
+                    }
+                )
 
             output_path = output_dir / f"{subject.slug}.json"
             with open(output_path, "w", encoding="utf-8") as f:

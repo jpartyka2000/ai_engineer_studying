@@ -111,9 +111,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "score",
-                    models.PositiveIntegerField(
-                        default=0, help_text="Number of correct answers"
-                    ),
+                    models.PositiveIntegerField(default=0, help_text="Number of correct answers"),
                 ),
                 (
                     "total_answered",

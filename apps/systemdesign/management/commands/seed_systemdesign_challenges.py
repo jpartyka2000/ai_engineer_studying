@@ -582,9 +582,7 @@ class Command(BaseCommand):
                 subject.supports_systemdesign = True
                 subject.save(update_fields=["supports_systemdesign"])
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Enabled System Design mode for '{subject.name}' subject"
-                    )
+                    self.style.SUCCESS(f"Enabled System Design mode for '{subject.name}' subject")
                 )
             except Subject.DoesNotExist:
                 self.stdout.write(

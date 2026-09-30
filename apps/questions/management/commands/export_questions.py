@@ -14,8 +14,7 @@ class Command(BaseCommand):
     """Export questions to JSON or SQL files for version control."""
 
     help = (
-        "Export questions to JSON or SQL files. "
-        "JSON format is recommended for Git version control."
+        "Export questions to JSON or SQL files. JSON format is recommended for Git version control."
     )
 
     def add_arguments(self, parser):
@@ -131,17 +130,19 @@ class Command(BaseCommand):
         }
 
         for q in questions:
-            data["questions"].append({
-                "question_text": q.question_text,
-                "question_type": q.question_type,
-                "options": q.options,
-                "correct_answer": q.correct_answer,
-                "explanation": q.explanation,
-                "difficulty": q.difficulty,
-                "tags": q.tags,
-                "source": q.source,
-                "is_active": q.is_active,
-            })
+            data["questions"].append(
+                {
+                    "question_text": q.question_text,
+                    "question_type": q.question_type,
+                    "options": q.options,
+                    "correct_answer": q.correct_answer,
+                    "explanation": q.explanation,
+                    "difficulty": q.difficulty,
+                    "tags": q.tags,
+                    "source": q.source,
+                    "is_active": q.is_active,
+                }
+            )
 
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)

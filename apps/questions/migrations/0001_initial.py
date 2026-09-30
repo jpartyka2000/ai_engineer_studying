@@ -26,9 +26,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "question_text",
-                    models.TextField(
-                        help_text="The question text (may include code snippets)"
-                    ),
+                    models.TextField(help_text="The question text (may include code snippets)"),
                 ),
                 (
                     "question_type",

@@ -28,9 +28,7 @@ class CodingConfigView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        subject = get_object_or_404(
-            Subject, slug=kwargs["subject_slug"], is_active=True
-        )
+        subject = get_object_or_404(Subject, slug=kwargs["subject_slug"], is_active=True)
         context["subject"] = subject
         context["languages"] = self._get_available_languages(subject)
         context["difficulties"] = CodingChallenge.Difficulty.choices
@@ -57,10 +55,7 @@ class CodingConfigView(LoginRequiredMixin, TemplateView):
                 "javascript": "JavaScript",
                 "docker": "Docker",
             }
-            label = language_labels.get(
-                subject.coding_language,
-                subject.coding_language.title()
-            )
+            label = language_labels.get(subject.coding_language, subject.coding_language.title())
             languages.append((subject.coding_language, label))
 
         return languages
@@ -180,9 +175,7 @@ class CodingChallengeView(LoginRequiredMixin, DetailView):
         context["monaco_language"] = self._get_monaco_language(session.language)
 
         # Get sample test cases (visible ones)
-        context["sample_tests"] = challenge.test_cases.filter(
-            is_sample=True, is_hidden=False
-        )
+        context["sample_tests"] = challenge.test_cases.filter(is_sample=True, is_hidden=False)
         context["has_hidden_tests"] = challenge.test_cases.filter(is_hidden=True).exists()
 
         return context
@@ -347,13 +340,11 @@ class CodingResultsView(LoginRequiredMixin, DetailView):
             }
 
             # Get execution results for test display
-            execution_results = response.execution_results.select_related(
-                "test_case"
-            ).order_by("test_case__order")
+            execution_results = response.execution_results.select_related("test_case").order_by(
+                "test_case__order"
+            )
             context["execution_results"] = execution_results
             context["tests_total"] = execution_results.count()
-            context["tests_passed"] = sum(
-                1 for r in execution_results if r.status == "passed"
-            )
+            context["tests_passed"] = sum(1 for r in execution_results if r.status == "passed")
 
         return context

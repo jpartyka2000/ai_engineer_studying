@@ -69,9 +69,7 @@ class StudyPlanGeneratorService:
         """Get all active subjects indexed by slug."""
         from apps.subjects.models import Subject
 
-        subjects = Subject.objects.filter(is_active=True).values(
-            "slug", "name", "category"
-        )
+        subjects = Subject.objects.filter(is_active=True).values("slug", "name", "category")
         return {s["slug"]: s for s in subjects}
 
     def generate_track_recommendations(
@@ -210,9 +208,7 @@ class StudyPlanGeneratorService:
                             )
             else:
                 # Category not in assessment (no subjects attempted)
-                subjects_in_cat = [
-                    s for s in all_subjects.values() if s["category"] == cat_name
-                ]
+                subjects_in_cat = [s for s in all_subjects.values() if s["category"] == cat_name]
 
                 # Prioritize by priority_topics
                 for subj in subjects_in_cat:

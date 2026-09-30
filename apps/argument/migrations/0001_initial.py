@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -157,21 +156,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "technical_score",
-                    models.PositiveSmallIntegerField(
-                        help_text="Technical accuracy score (1-10)"
-                    ),
+                    models.PositiveSmallIntegerField(help_text="Technical accuracy score (1-10)"),
                 ),
                 (
                     "temperament_score",
-                    models.PositiveSmallIntegerField(
-                        help_text="Emotional control score (1-10)"
-                    ),
+                    models.PositiveSmallIntegerField(help_text="Emotional control score (1-10)"),
                 ),
                 (
                     "focus_score",
-                    models.PositiveSmallIntegerField(
-                        help_text="Topic focus score (1-10)"
-                    ),
+                    models.PositiveSmallIntegerField(help_text="Topic focus score (1-10)"),
                 ),
                 (
                     "technical_feedback",
@@ -191,9 +184,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "overall_feedback",
-                    models.TextField(
-                        help_text="Overall summary and advice for improvement"
-                    ),
+                    models.TextField(help_text="Overall summary and advice for improvement"),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
@@ -213,15 +204,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="argumentsession",
-            index=models.Index(
-                fields=["user", "status"], name="argument_ar_user_id_5d816f_idx"
-            ),
+            index=models.Index(fields=["user", "status"], name="argument_ar_user_id_5d816f_idx"),
         ),
         migrations.AddIndex(
             model_name="argumentsession",
-            index=models.Index(
-                fields=["subject", "status"], name="argument_ar_subject_370b3a_idx"
-            ),
+            index=models.Index(fields=["subject", "status"], name="argument_ar_subject_370b3a_idx"),
         ),
         migrations.AddIndex(
             model_name="argumentmessage",

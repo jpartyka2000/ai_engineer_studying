@@ -118,9 +118,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "qa_sessions",
-                    models.PositiveIntegerField(
-                        default=0, help_text="Total Q&A sessions started"
-                    ),
+                    models.PositiveIntegerField(default=0, help_text="Total Q&A sessions started"),
                 ),
                 (
                     "last_studied_at",

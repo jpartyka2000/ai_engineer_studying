@@ -156,15 +156,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="qasession",
-            index=models.Index(
-                fields=["user", "status"], name="qanda_qases_user_id_537863_idx"
-            ),
+            index=models.Index(fields=["user", "status"], name="qanda_qases_user_id_537863_idx"),
         ),
         migrations.AddIndex(
             model_name="qasession",
-            index=models.Index(
-                fields=["subject", "status"], name="qanda_qases_subject_526731_idx"
-            ),
+            index=models.Index(fields=["subject", "status"], name="qanda_qases_subject_526731_idx"),
         ),
         migrations.AddIndex(
             model_name="message",

@@ -111,7 +111,9 @@ You must respond with valid JSON only."""
             correct_idx = ord(problem.correct_option.upper()) - ord("A")
             if 0 <= correct_idx < len(problem.options):
                 correct_answer = problem.options[correct_idx]
-                feedback = f"Incorrect. The correct answer is {problem.correct_option}: {correct_answer}"
+                feedback = (
+                    f"Incorrect. The correct answer is {problem.correct_option}: {correct_answer}"
+                )
             else:
                 feedback = f"Incorrect. The correct answer is {problem.correct_option}."
             partial_credit = 0.0

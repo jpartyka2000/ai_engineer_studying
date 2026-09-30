@@ -66,9 +66,7 @@ class Subject(models.Model):
     )
     difficulty_levels = models.JSONField(
         default=list,
-        help_text=_(
-            "Available difficulty tiers (e.g., ['beginner', 'intermediate', 'advanced'])"
-        ),
+        help_text=_("Available difficulty tiers (e.g., ['beginner', 'intermediate', 'advanced'])"),
     )
 
     # Status

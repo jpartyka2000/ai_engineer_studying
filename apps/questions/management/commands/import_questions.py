@@ -166,9 +166,7 @@ class Command(BaseCommand):
             delay=options["delay"],
         )
 
-    def get_subject_folders(
-        self, source_dir: Path, subject_filter: str | None
-    ) -> list[Path]:
+    def get_subject_folders(self, source_dir: Path, subject_filter: str | None) -> list[Path]:
         """Get list of subject folders to process."""
         folders = []
 
@@ -236,9 +234,7 @@ class Command(BaseCommand):
 
             name, slug, category = self.folder_to_subject_info(folder.name)
             file_count = len(list(folder.glob("*.txt")))
-            self.stdout.write(
-                f"  {folder.name:30} -> {name:25} ({category}) [{file_count} files]"
-            )
+            self.stdout.write(f"  {folder.name:30} -> {name:25} ({category}) [{file_count} files]")
 
     def show_dry_run_summary(self, folders: list[Path], options: dict):
         """Show summary of what would be imported."""
@@ -295,7 +291,5 @@ class Command(BaseCommand):
                     time.sleep(delay)
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\nImport complete! Total questions imported: {total_imported}"
-            )
+            self.style.SUCCESS(f"\nImport complete! Total questions imported: {total_imported}")
         )

@@ -99,9 +99,7 @@ class Command(BaseCommand):
 
         # Validate format
         if "metadata" not in data or "questions" not in data:
-            self.stdout.write(
-                self.style.ERROR("  Invalid format: missing metadata or questions")
-            )
+            self.stdout.write(self.style.ERROR("  Invalid format: missing metadata or questions"))
             return 0, 0
 
         # Get subject
@@ -168,8 +166,6 @@ class Command(BaseCommand):
             )
             imported += 1
 
-        self.stdout.write(
-            f"  Results: {imported} imported, {skipped} skipped, {updated} updated"
-        )
+        self.stdout.write(f"  Results: {imported} imported, {skipped} skipped, {updated} updated")
 
         return imported, skipped

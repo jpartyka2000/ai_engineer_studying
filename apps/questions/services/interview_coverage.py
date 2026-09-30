@@ -70,9 +70,7 @@ class CoverageAnalysis(BaseModel):
     missing_topics: list[str | TopicEntry] = Field(
         description="Important interview topics with no coverage"
     )
-    coverage_summary: str = Field(
-        description="Brief summary of the coverage analysis"
-    )
+    coverage_summary: str = Field(description="Brief summary of the coverage analysis")
     is_sufficient_for_role: bool = Field(
         default=False,
         description="Whether the current coverage is sufficient for the target role",
@@ -131,15 +129,9 @@ class CoverageAnalysis(BaseModel):
 class InterviewTopics(BaseModel):
     """Important interview topics for a subject."""
 
-    essential_topics: list[str] = Field(
-        description="Must-know topics for any interview"
-    )
-    common_topics: list[str] = Field(
-        description="Frequently asked topics in interviews"
-    )
-    advanced_topics: list[str] = Field(
-        description="Topics for senior/advanced positions"
-    )
+    essential_topics: list[str] = Field(description="Must-know topics for any interview")
+    common_topics: list[str] = Field(description="Frequently asked topics in interviews")
+    advanced_topics: list[str] = Field(description="Topics for senior/advanced positions")
     total_estimated_questions: int = Field(
         description="Estimated number of questions needed for full coverage"
     )
@@ -218,9 +210,7 @@ You must respond with valid JSON only."""
             "sample_questions": sample_texts,
         }
 
-    def analyze_coverage(
-        self, subject: Subject, role: str = "AI/ML engineer"
-    ) -> CoverageAnalysis:
+    def analyze_coverage(self, subject: Subject, role: str = "AI/ML engineer") -> CoverageAnalysis:
         """
         Use the LLM to analyze current coverage and identify gaps.
 
@@ -240,12 +230,12 @@ Focus ONLY on {subject.name} topics that are commonly asked in {role} interviews
 Do NOT include niche or specialist topics that wouldn't appear in a typical {role} interview.
 
 Current State:
-- Total questions: {existing['total_questions']}
-- Questions by difficulty: {existing['questions_by_difficulty']}
-- Topics covered (from tags): {', '.join(existing['all_tags']) or 'None'}
+- Total questions: {existing["total_questions"]}
+- Questions by difficulty: {existing["questions_by_difficulty"]}
+- Topics covered (from tags): {", ".join(existing["all_tags"]) or "None"}
 
 Sample existing questions:
-{chr(10).join(f'- {q}' for q in existing['sample_questions'][:10]) or 'No questions yet'}
+{chr(10).join(f"- {q}" for q in existing["sample_questions"][:10]) or "No questions yet"}
 
 Based on what a {role} would REALISTICALLY be asked about {subject.name} in interviews:
 
@@ -377,9 +367,7 @@ Respond with JSON containing:
             return self._generate_until_complete(subject, coverage, difficulty, role)
         else:
             target_count = num_questions or 10
-            return self._generate_n_questions(
-                subject, coverage, target_count, difficulty, role
-            )
+            return self._generate_n_questions(subject, coverage, target_count, difficulty, role)
 
     def _generate_n_questions(
         self,
@@ -391,9 +379,7 @@ Respond with JSON containing:
     ) -> list[Question]:
         """Generate a specific number of gap-filling questions."""
         # Prioritize missing topics, then partially covered (as string lists)
-        priority_topics = (
-            coverage.get_missing_topic_names() + coverage.get_partial_topic_names()
-        )
+        priority_topics = coverage.get_missing_topic_names() + coverage.get_partial_topic_names()
 
         if not priority_topics:
             logger.info("No coverage gaps found for %s", subject.name)
@@ -412,7 +398,7 @@ IMPORTANT: These questions are for {role} interviews, NOT {subject.name} special
 Focus on practical {subject.name} knowledge that a {role} would actually need.
 
 Topics that need more coverage:
-{chr(10).join(f'- {topic}' for topic in priority_topics[:15])}
+{chr(10).join(f"- {topic}" for topic in priority_topics[:15])}
 
 Requirements:
 - {difficulty_instruction}
@@ -504,7 +490,7 @@ IMPORTANT: These questions are for {role} interviews, NOT {subject.name} special
 Focus on practical {subject.name} knowledge that a {role} would actually need.
 
 These specific topics need coverage:
-{chr(10).join(f'- {topic}' for topic in topics_to_cover)}
+{chr(10).join(f"- {topic}" for topic in topics_to_cover)}
 
 Requirements:
 - {difficulty_instruction}
@@ -575,9 +561,7 @@ Respond with JSON containing a "questions" array. Each question needs:
         """
         # For small requests, no batching needed
         if num_questions <= batch_size:
-            return self._generate_subtopic_batch(
-                subject, subtopic, num_questions, difficulty, role
-            )
+            return self._generate_subtopic_batch(subject, subtopic, num_questions, difficulty, role)
 
         # Batch large requests
         all_saved = []
@@ -614,9 +598,7 @@ Respond with JSON containing a "questions" array. Each question needs:
                 logger.error("Batch %d failed: %s", batch_num, str(e))
                 # If we have some questions, return them; otherwise re-raise
                 if all_saved:
-                    logger.warning(
-                        "Returning %d questions from successful batches", len(all_saved)
-                    )
+                    logger.warning("Returning %d questions from successful batches", len(all_saved))
                     break
                 raise
 

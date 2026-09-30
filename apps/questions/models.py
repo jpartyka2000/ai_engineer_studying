@@ -141,7 +141,7 @@ class Question(models.Model):
             if i >= len(letters):
                 break
             # Strip existing letter prefix if present (e.g., "A. ", "B) ", "A: ")
-            text = re.sub(r'^[A-Za-z][.):]\s*', '', opt)
+            text = re.sub(r"^[A-Za-z][.):]\s*", "", opt)
             result.append({"letter": letters[i], "text": text})
         return result
 

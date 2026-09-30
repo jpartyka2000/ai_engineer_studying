@@ -108,10 +108,7 @@ class UserProgress(models.Model):
     def total_sessions(self) -> int:
         """Total sessions across all modes."""
         return (
-            self.exam_sessions
-            + self.lightning_sessions
-            + self.qa_sessions
-            + self.argument_sessions
+            self.exam_sessions + self.lightning_sessions + self.qa_sessions + self.argument_sessions
         )
 
     @property

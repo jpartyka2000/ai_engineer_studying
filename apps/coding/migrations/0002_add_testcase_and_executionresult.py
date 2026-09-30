@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("coding", "0001_initial"),
     ]
@@ -187,21 +186,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "stdout",
-                    models.TextField(
-                        blank=True, help_text="Standard output from the execution"
-                    ),
+                    models.TextField(blank=True, help_text="Standard output from the execution"),
                 ),
                 (
                     "stderr",
-                    models.TextField(
-                        blank=True, help_text="Standard error from the execution"
-                    ),
+                    models.TextField(blank=True, help_text="Standard error from the execution"),
                 ),
                 (
                     "error_message",
-                    models.TextField(
-                        blank=True, help_text="Error message if execution failed"
-                    ),
+                    models.TextField(blank=True, help_text="Error message if execution failed"),
                 ),
                 (
                     "execution_time_ms",
