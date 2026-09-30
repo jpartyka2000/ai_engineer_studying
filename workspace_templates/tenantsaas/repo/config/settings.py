@@ -15,6 +15,7 @@ INSTALLED_APPS = [
     "tenants",
     "projects",
     "billing",
+    "reporting",
     "api",
 ]
 

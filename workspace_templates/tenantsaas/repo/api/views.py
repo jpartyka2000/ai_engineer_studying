@@ -7,12 +7,14 @@ the dependency set is kept thin so the exercise image builds fast.
 import json
 from datetime import date
 
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
 from billing.models import Invoice
 from billing.services import build_invoice, compute_totals
 from projects.models import Project
+from reporting.exports import ProjectNotFound, export_project_line_items
+from reporting.services import project_usage_summary, top_spending_category
 
 
 @require_GET
@@ -103,3 +105,46 @@ def list_invoices(request: HttpRequest) -> JsonResponse:
         "id", "period_start", "period_end", "total_cents", "line_item_count", "status"
     )
     return JsonResponse({"invoices": list(invoices)}, json_dumps_params={"default": str})
+
+
+@require_GET
+def usage_by_project(request: HttpRequest) -> JsonResponse:
+    """Per-project usage totals for a billing period."""
+    try:
+        start, end = _parse_period(request.GET)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    rows = project_usage_summary(request.tenant.pk, start, end)
+    return JsonResponse(
+        {
+            "projects": [
+                {
+                    "id": row.project_id,
+                    "name": row.project_name,
+                    "line_item_count": row.line_item_count,
+                    "total_cents": row.total_cents,
+                }
+                for row in rows
+            ],
+            "top_category": top_spending_category(request.tenant.pk, start, end),
+        }
+    )
+
+
+@require_GET
+def export_project(request: HttpRequest, slug: str) -> HttpResponse:
+    """Export one project's usage as CSV."""
+    try:
+        start, end = _parse_period(request.GET)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    try:
+        body = export_project_line_items(request.tenant.pk, slug, start, end)
+    except ProjectNotFound:
+        return JsonResponse({"error": "No such project"}, status=404)
+
+    response = HttpResponse(body, content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{slug}.csv"'
+    return response

@@ -32,5 +32,8 @@ python -m pytest -p no:cacheprovider -q
 step "Running the security suite"
 python -m pytest -p no:cacheprovider -q -m security
 
+step "Checking reporting does not regress into an N+1"
+python -m pytest -p no:cacheprovider -q -m perf
+
 echo
 echo "CI passed."
