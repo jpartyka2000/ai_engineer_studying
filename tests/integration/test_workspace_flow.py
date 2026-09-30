@@ -165,11 +165,20 @@ def test_starting_twice_returns_the_same_session(logged_in, no_docker_needed):
 
 
 def test_scaffolded_repo_has_real_history_and_is_clean(logged_in, no_docker_needed):
+    """History must match the manifest exactly, and the tree must start clean.
+
+    The expected commit count is read from the manifest rather than hardcoded, so
+    growing the base app does not break this test for the wrong reason.
+    """
+    from apps.workspace.services import manifest
+
     logged_in.post(reverse("workspace:start", kwargs={"slug": no_docker_needed.slug}))
     session = WorkspaceSession.objects.get()
 
+    expected = len(manifest.load_manifest(no_docker_needed.base_app).seed_commits)
     log = git_ops.run_git(session.workspace_path, "log", "--oneline")
-    assert len(log.splitlines()) == 9
+    assert len(log.splitlines()) == expected
+    assert expected >= 5, "history should be long enough for git log and bisect to help"
     assert git_ops.is_tree_clean(session.workspace_path)
 
 

@@ -149,10 +149,16 @@ def validate_template(template_name: str) -> list[str]:
         elif target.is_file():
             covered.add(target)
 
+    # Build artifacts a stray local test run leaves behind. They are not template
+    # content, and they are excluded from scaffolding too, so they must not make
+    # validation fail.
+    ignored_dirs = {"__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache"}
     all_files = {
         p
         for p in repo.rglob("*")
-        if p.is_file() and "__pycache__" not in p.parts and p.name != ".DS_Store"
+        if p.is_file()
+        and not (ignored_dirs & set(p.parts))
+        and p.name not in {".DS_Store", ".coverage"}
     }
     orphans = sorted(str(p.relative_to(repo)) for p in all_files - covered)
     if orphans:
