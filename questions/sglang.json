@@ -1,0 +1,2245 @@
+{
+  "metadata": {
+    "subject_slug": "sglang",
+    "subject_name": "SGLang",
+    "exported_at": "2026-09-28T21:38:48.225992",
+    "question_count": 111,
+    "format_version": "1.0"
+  },
+  "questions": [
+    {
+      "question_text": "You are self-hosting an open-weight model (e.g., Llama/Mistral/Qwen) and need to build a multi-step workflow that:\n1) runs several sub-prompts in parallel,\n2) benefits from caching across steps/conversation turns,\n3) guarantees the final output conforms to a JSON schema.\n\nExplain why SGLang is a good fit for this scenario. In your answer, reference at least three distinct SGLang features from the source content and connect each feature to one of the requirements above.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "SGLang is a good fit because (1) its Python-embedded DSL provides a flexible frontend for programming LLM applications and can handle parallelism and batching automatically, matching the need to run sub-prompts in parallel. (2) Its fast inference backend using RadixAttention enables efficient KV cache reuse across multiple generation calls, which directly supports caching across steps and multi-turn conversations. (3) It excels at constrained decoding for structured output support, allowing outputs to conform to JSON schemas (or regex), satisfying the requirement to guarantee valid JSON output. Additionally, SGLang’s high-throughput serving via optimized memory usage and batching strategies helps the overall multi-step pipeline run efficiently when self-hosting open-weight models.",
+      "explanation": "A strong answer ties concrete requirements to SGLang’s stated capabilities: the frontend DSL addresses workflow programming with parallelism/batching/caching handled automatically; RadixAttention addresses KV cache reuse across calls (important in multi-step and multi-turn patterns); structured output support addresses constrained decoding to JSON schema; and high throughput explains why the whole pipeline can run efficiently compared to other serving solutions.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "structured-output",
+        "constrained-decoding",
+        "json-schema",
+        "parallelism",
+        "batching",
+        "kv-cache",
+        "self-hosting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is running a DeepSeek model with MLA (Multi-head Latent Attention) and wants to optimize decode performance. They're considering using data parallel (DP) attention and the `--dcp-size` flag. What is the key reason MLA models benefit from these specialized decode strategies?",
+      "question_type": "mc",
+      "options": [
+        "A. MLA requires more FLOPs per attention operation, so parallelization is essential",
+        "B. MLA compresses KV into a shared low-rank latent, changing the arithmetic enough to need dedicated kernels and avoiding latent cache replication across TP ranks",
+        "C. MLA models have larger vocabulary sizes that require distributed embedding lookups",
+        "D. MLA uses sparse attention patterns that must be computed independently on each GPU"
+      ],
+      "correct_answer": "B",
+      "explanation": "MLA (Multi-head Latent Attention) in DeepSeek-class models compresses KV into a shared low-rank latent, making the KV cache per token dramatically smaller than standard MHA. This changes the arithmetic characteristics enough to require dedicated kernels and decode strategies. The `--dcp-size` flag enables decode context parallelism for MLA models, and DP attention helps avoid replicating the latent cache across tensor parallel (TP) ranks.",
+      "difficulty": "advanced",
+      "tags": [
+        "MLA",
+        "DeepSeek",
+        "decode context parallelism",
+        "tensor parallelism",
+        "KV cache"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a production deployment with N SGLang replicas behind a load balancer, you observe that your prefix cache hit rate is much lower than expected despite using `lpm` scheduling on each replica. All three of the following are properly configured: eviction policy, schedule policy set to `lpm`, and sufficient KV memory.\n\nWhat is the most likely cause, and how should it be fixed?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The most likely cause is using a round-robin (or similar non-prefix-aware) load balancer, which distributes requests sharing the same prefix across different replicas. This destroys prefix locality because each replica ends up caching everything independently, and each individual hit rate becomes approximately 1/N of what it could be. The fix is to use SGLang's prefix-aware router (sglang_router / Model Gateway) that hashes on prefix, ensuring requests sharing a prefix land on the same worker while still balancing load across replicas.",
+      "explanation": "For prefix caching to work at scale, three layers must agree: the cache (eviction policy + memory), the scheduler (lpm/dfs-weight), and the router (prefix-aware load balancing). Even with perfect cache and scheduler configuration, a round-robin load balancer actively destroys prefix locality by scattering related requests across replicas. SGLang provides a prefix-aware router specifically to solve this problem by routing requests with shared prefixes to the same replica.",
+      "difficulty": "advanced",
+      "tags": [
+        "prefix-aware routing",
+        "load balancing",
+        "multi-replica deployment",
+        "cache hit rate",
+        "SGLang",
+        "system design"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe that your SGLang server is experiencing sustained request retractions/preemptions. The scheduler is admitting sequences that later get evicted and requeued, discarding their decode work. You need to fix this while maintaining reasonable throughput. Which combination of actions would correctly address this issue?\n\nA. Lower --schedule-conservativeness AND raise --max-running-requests\nB. Raise --schedule-conservativeness OR lower --max-running-requests\nC. Raise --mem-fraction-static AND lower --schedule-conservativeness\nD. Lower --context-length AND raise --schedule-conservativeness",
+      "question_type": "mc",
+      "options": [
+        "A. Lower --schedule-conservativeness AND raise --max-running-requests",
+        "B. Raise --schedule-conservativeness OR lower --max-running-requests",
+        "C. Raise --mem-fraction-static AND lower --schedule-conservativeness",
+        "D. Lower --context-length AND raise --schedule-conservativeness"
+      ],
+      "correct_answer": "B",
+      "explanation": "Sustained retractions occur when the scheduler admits more sequences than the KV pool can ultimately hold. The fix is to make the scheduler more conservative (raise --schedule-conservativeness) OR reduce the maximum concurrent sequences (lower --max-running-requests). Option A would make the problem worse by being less conservative and allowing more requests. Option C's lower conservativeness would admit more requests. Option D's context-length change might help indirectly but isn't the direct fix, and the combination is unnecessarily complex.",
+      "difficulty": "advanced",
+      "tags": [
+        "SGLang",
+        "scheduler",
+        "KV pool",
+        "retractions",
+        "configuration tuning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe the following metrics from an SGLang server under heavy batch workload:\n- `#queue-req`: 1500\n- `token usage`: 0.65\n\nWhat does this indicate and what parameter adjustment would you make?",
+      "question_type": "mc",
+      "options": [
+        "A) The server is healthy; no adjustment needed since queue depth 1500 is within the healthy range of 100-2000",
+        "B) Lower `--schedule-conservativeness` (e.g., to 0.3) because the scheduler is being too cautious despite requests waiting",
+        "C) Raise `--schedule-conservativeness` (e.g., to 1.3) because the cache is thrashing",
+        "D) Increase `--max-queued-requests` to allow more requests to queue"
+      ],
+      "correct_answer": "B",
+      "explanation": "The token usage (KV cache utilization) of 0.65 is below the target of ~0.9, while there are requests waiting in the queue (1500). This indicates the scheduler is being too cautious and not admitting enough requests to fully utilize the KV cache. The documentation states: 'If it sits below ~0.9 while requests are waiting, the scheduler is being too cautious — lower `--schedule-conservativeness` (e.g. to 0.3) to admit more aggressively.'",
+      "difficulty": "advanced",
+      "tags": [
+        "schedule-conservativeness",
+        "KV cache",
+        "throughput tuning",
+        "monitoring"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are deploying SGLang with tensor parallelism (TP) across 4 GPUs on 2 nodes (2 GPUs per node). Why would using a standard Kubernetes Deployment be inappropriate for this scenario, and what alternatives should you use?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "A standard Deployment is inappropriate because pods are interchangeable and unordered, but multi-node TP requires coordinated startup where each node needs a unique --node-rank, and all nodes must share the same --dist-init-addr and --nnodes values. Alternatives include LeaderWorkerSet (LWS), which is purpose-built for this pattern, or StatefulSet, which provides stable ordinal hostnames that can be mapped to node ranks plus a headless Service for rendezvous.",
+      "explanation": "Multi-node tensor parallelism requires that each participating node knows its rank in the distributed setup and can discover other nodes for coordination. Deployments treat all replicas as identical and interchangeable, which breaks this requirement. LeaderWorkerSet is specifically designed for leader-worker patterns common in distributed ML workloads, while StatefulSet provides the stable network identities (pod-0, pod-1, etc.) needed to assign consistent node ranks.",
+      "difficulty": "advanced",
+      "tags": [
+        "kubernetes",
+        "tensor-parallelism",
+        "distributed-deployment",
+        "StatefulSet",
+        "LeaderWorkerSet",
+        "multi-node"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team deployed SGLang on Kubernetes with 4 replicas behind a standard Kubernetes Service. They notice that cache hit rates are much lower than expected despite serving many requests with shared prefixes. What is the root cause and the recommended solution?",
+      "question_type": "mc",
+      "options": [
+        "A. The /dev/shm size is too small, causing cache eviction; mount a larger emptyDir with medium: Memory",
+        "B. The default round-robin Service routing fragments the radix cache across N replicas; use SGLang's prefix-aware router or Model Gateway instead",
+        "C. The HF_HOME cache volume is not shared across replicas; use a ReadWriteMany PVC for the model cache",
+        "D. The readinessProbe is too aggressive, causing pods to be removed from the Service before their cache warms up"
+      ],
+      "correct_answer": "B",
+      "explanation": "This is described as 'the single highest-impact Kubernetes-specific tuning item for an SGLang deployment.' When using standard Kubernetes Service round-robin load balancing, requests with shared prefixes get distributed across all replicas, meaning each replica only sees 1/N of the requests that could benefit from cached prefixes. This fragments the radix cache N ways and destroys cache hit rates. The solution is to use SGLang's prefix-aware router (or Model Gateway) which can route requests with similar prefixes to the same replica, maintaining cache locality.",
+      "difficulty": "advanced",
+      "tags": [
+        "kubernetes",
+        "radix-cache",
+        "load-balancing",
+        "prefix-caching",
+        "performance-optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are deploying a DeepSeek-class MoE model and need to configure the parallelism strategy. The model has a large number of experts and requires multiple GPUs.\n\nWhich parallelism configuration pattern is recommended for such deployments, and why does this specific combination address the unique characteristics of large MoE models?",
+      "question_type": "mc",
+      "options": [
+        "A. Pure tensor parallelism across all GPUs - this maximizes memory bandwidth utilization for both attention and MoE layers",
+        "B. Attention data-parallel (DP) + MoE expert-parallel (EP) - this avoids replicating KV cache across a huge TP group while efficiently sharding experts",
+        "C. Pure data parallelism with model replication - this eliminates all inter-GPU communication overhead",
+        "D. Pipeline parallelism with micro-batching - this hides communication latency behind computation"
+      ],
+      "correct_answer": "B",
+      "explanation": "The reference recipe for serving DeepSeek-class MoE models combines attention data-parallel (DP attention) with MoE expert-parallel (EP). DP attention avoids replicating the KV cache across a huge tensor-parallel group (which would waste memory). EP efficiently handles the MoE layers by placing different experts on different GPUs, allowing full-width GEMM operations. The dense parts may still use tensor parallelism. SGLang supports this via `--moe-data-parallel-size` and EP configuration options. This hybrid approach addresses both the memory capacity requirements of MoE and the communication efficiency needs.",
+      "difficulty": "advanced",
+      "tags": [
+        "DeepSeek",
+        "parallelism strategy",
+        "DP attention",
+        "expert parallelism",
+        "MoE deployment"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A production system uses HiCache with the following characteristics:\n- 8×80GB GPUs (640GB total HBM)\n- 1.5TB host RAM available for L2\n- High-traffic multi-turn chat application\n- Average conversation length: 32K tokens\n- Users frequently have 5-10 minute gaps between messages\n- The system also runs CPU-based preprocessing pipelines that consume ~500GB RAM\n\nWhat potential issue should the engineering team monitor, and what HiCache configuration flags would help address it?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The team should monitor host RAM and PCIe bandwidth contention between HiCache L2 tier and the CPU preprocessing pipelines. With 1.5TB total RAM and 500GB used by preprocessing, only ~1TB is safely available for HiCache. They should use --hicache-size or --hicache-ratio to explicitly limit L2 capacity (e.g., to 800GB-900GB with safety margin). They should also monitor PCIe bandwidth utilization, as both the preprocessing pipelines and HiCache promotions/demotions compete for the same PCIe lanes. If contention is severe, adjusting --hicache-write-policy to write-back can reduce bandwidth pressure from writes.",
+      "explanation": "HiCache explicitly notes that it 'consumes host RAM and PCIe bandwidth that may be contended by other work on the box.' This scenario is a textbook case: the preprocessing pipelines compete for both resources. The relevant flags are --hicache-ratio (proportion relative to GPU pool) or --hicache-size (explicit capacity) to cap L2 usage, and --hicache-write-policy to manage bandwidth. The workload itself (multi-turn chat with think time between turns) is ideal for HiCache — it's explicitly listed as a use case where HiCache shines — but resource contention must be managed.",
+      "difficulty": "advanced",
+      "tags": [
+        "HiCache",
+        "resource contention",
+        "production deployment",
+        "configuration",
+        "PCIe bandwidth"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain the key difference between jump-forward decoding and speculative decoding. Why does jump-forward decoding not require a verification step?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Jump-forward decoding differs from speculative decoding in that it does not guess tokens - the grammar proves that the forced tokens are the only legal ones, making verification unnecessary. Speculative decoding uses a draft model to guess likely tokens and must verify them against the target model, accepting or rejecting based on whether the guess was correct. Jump-forward decoding is deterministic and guaranteed correct when the constraint allows it, while speculative decoding is a probabilistic optimization that may have rejections.",
+      "explanation": "The fundamental distinction is certainty vs. probability. In jump-forward decoding, the FSM compiled from the grammar has deterministic paths where exactly one token sequence is legal - this is proven by the grammar, not guessed. Since there's no uncertainty, there's nothing to verify. Speculative decoding, by contrast, uses a cheap draft model to predict what the expensive target model would produce, but these are guesses that must be verified and may be rejected if wrong.",
+      "difficulty": "advanced",
+      "tags": [
+        "jump-forward decoding",
+        "speculative decoding",
+        "verification",
+        "comparison"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You have an 80 GB H100 serving Llama-3.1-8B in BF16 with `--mem-fraction-static 0.9`. The model weights are 16 GB and KV cache is 128 KB per token. With an average sequence length of 2,000 tokens and inter-token latency of 25ms at the resulting batch size, what is the approximate aggregate output throughput?\n\nAssume: 72 GB available for weights + KV, leaving ~56 GB for KV pool.",
+      "question_type": "mc",
+      "options": [
+        "A. ~2,200 tokens/sec",
+        "B. ~4,500 tokens/sec",
+        "C. ~8,900 tokens/sec",
+        "D. ~17,800 tokens/sec"
+      ],
+      "correct_answer": "C",
+      "explanation": "Following the capacity chain: 1) KV pool = 56 GB = 56 × 1024³ bytes. 2) max_tokens = 56 GB / 128 KB ≈ 448,000 tokens. 3) max_concurrency = 448,000 / 2,000 = 224 concurrent sequences. 4) throughput = max_concurrency / inter_token_latency = 224 / 0.025 = 8,960 ≈ 8,900 output tokens/sec. This capacity chain derivation is the answer to 'how many QPS can one GPU serve' - you derive it from first principles rather than guess.",
+      "difficulty": "advanced",
+      "tags": [
+        "capacity-planning",
+        "throughput-calculation",
+        "H100",
+        "concurrency",
+        "serving"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A workload has 200 concurrent users, each with a 2,000-token shared system prompt plus 500 unique tokens per request. Using Llama-3.1-8B (128 KB per token KV cache), how much KV cache memory is saved by using RadixAttention prefix caching compared to no caching?",
+      "question_type": "mc",
+      "options": [
+        "A. ~25 GB saved (from 62.5 GB to 37.5 GB)",
+        "B. ~50 GB saved (from 62.5 GB to 12.5 GB)",
+        "C. ~50 GB saved (from 64 GB to 14 GB)",
+        "D. ~49.75 GB saved (from 50 GB to 0.25 GB)"
+      ],
+      "correct_answer": "C",
+      "explanation": "Without caching: Each of 200 users needs KV for 2,500 tokens (2,000 prompt + 500 unique) = 200 × 2,500 × 128 KB = 64 GB. With RadixAttention: The 2,000-token shared prefix is stored once (2,000 × 128 KB = 256 MB ≈ 0.25 GB), plus 200 × 500 unique tokens (200 × 500 × 128 KB = 12.8 GB ≈ 13 GB). Total with caching ≈ 13.25 GB, rounded to ~14 GB. Savings: 64 GB - 14 GB = ~50 GB. This quantitative understanding of prefix caching's benefit is far more convincing than qualitative explanations.",
+      "difficulty": "advanced",
+      "tags": [
+        "RadixAttention",
+        "prefix-caching",
+        "memory-optimization",
+        "concurrency",
+        "shared-prefix"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are configuring an SGLang server for a production environment with the following requirements:\n- The model requires 4 GPUs with tensor parallelism\n- You need FP8 quantization for both weights and KV cache\n- Prometheus metrics must be exposed\n- Bearer token authentication is required\n- The server must be accessible from other machines on the network\n\nWrite the complete launch command that satisfies all these requirements for the model 'meta-llama/Llama-3.1-70B-Instruct' on port 8080, assuming the API key is stored in the environment variable $API_KEY.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "python -m sglang.launch_server --model-path meta-llama/Llama-3.1-70B-Instruct --tp 4 --host 0.0.0.0 --port 8080 --quantization fp8 --kv-cache-dtype fp8_e4m3 --enable-metrics --api-key \"$API_KEY\"",
+      "explanation": "The command must include: --model-path for the model, --tp 4 for tensor parallelism across 4 GPUs, --host 0.0.0.0 to allow external network access (not just loopback), --port 8080 as specified, --quantization fp8 for weight quantization, --kv-cache-dtype fp8_e4m3 (or fp8_e5m2) for KV cache quantization, --enable-metrics for Prometheus endpoint, and --api-key \"$API_KEY\" for bearer authentication. The order of flags doesn't matter, and alternative KV cache dtype fp8_e5m2 would also be acceptable.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "production-deployment",
+        "quantization",
+        "authentication",
+        "metrics",
+        "tensor-parallel"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company is running an SGLang server with multi-LoRA serving enabled, hosting 30 customer-specific adapters. They notice that their KV cache hit rate has dropped significantly compared to when they served a single merged model. Explain why this happens and what factors would make this problem worse.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The KV cache hit rate drops because the KV cache is a function of both the tokens AND the weights. Two requests with identical token prefixes but different LoRA adapters will have different KV values, so their cache entries cannot be shared. The radix cache must key on adapter identity as well as tokens, effectively partitioning the cache per adapter. This problem gets worse as: (1) adapter diversity increases (more unique adapters = more partitions), (2) traffic is spread evenly across many adapters rather than concentrated on a few, and (3) requests have less overlap in their token prefixes within the same adapter.",
+      "explanation": "This is a subtle but important consideration for multi-LoRA serving. Unlike token-only caching, the KV cache values depend on the specific weights used during computation. Since each LoRA adapter modifies the effective weights differently, two requests with the same prompt but different adapters will produce different KV cache entries. This fundamentally limits cache sharing and is one of the three main costs of multi-LoRA serving.",
+      "difficulty": "advanced",
+      "tags": [
+        "KV cache",
+        "prefix caching",
+        "multi-LoRA serving",
+        "cache partitioning",
+        "radix cache"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A startup has 50 customer-specific LoRA fine-tunes of Llama-3-8B. Customer A has steady high traffic (1000 requests/minute), while the other 49 customers have bursty, low traffic (average 10 requests/minute each). What is the optimal serving strategy?",
+      "question_type": "mc",
+      "options": [
+        "A. Run one multi-LoRA server with all 50 adapters to maximize GPU utilization",
+        "B. Merge Customer A's adapter into base weights and serve separately; use multi-LoRA for the other 49",
+        "C. Run 50 separate servers, one for each customer's merged model",
+        "D. Use multi-LoRA but prioritize Customer A's adapter to always stay in GPU memory"
+      ],
+      "correct_answer": "B",
+      "explanation": "The optimal strategy is hybrid: merge Customer A's high-traffic adapter into the base weights and serve it as a normal model (avoiding batched-LoRA overhead entirely), while using multi-LoRA serving for the other 49 low-traffic customers. This avoids the compute overhead of batched LoRA kernels for the high-traffic customer while still consolidating the bursty, low-traffic customers onto a single server instead of running 49 mostly-idle servers.",
+      "difficulty": "advanced",
+      "tags": [
+        "multi-LoRA serving",
+        "deployment strategy",
+        "traffic patterns",
+        "optimization",
+        "merged weights"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to serve a DeepSeek-class MLA (Multi-head Latent Attention) model with a large Tensor Parallelism group. Why would DP Attention (DPA) be recommended over standard TP for the attention layers?\n\nExplain the memory efficiency benefit and how DPA differs from standard TP in handling the KV cache.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "DP Attention (DPA) is recommended for MLA models because it avoids replicating the KV cache across all TP ranks. In standard TP, the KV cache would need to be replicated across the entire TP group, wasting memory. With DPA, attention is computed data-parallel where each rank handles its own sequences independently, so the KV cache is not replicated across TP ranks. While MLA architectures already have a small KV cache, replicating it across a large TP group still wastes significant memory. The MLP/MoE parts can still use tensor or expert parallelism. This hybrid approach is a major reason SGLang became a reference implementation for serving DeepSeek-class models.",
+      "explanation": "DPA is a hybrid parallelism strategy specifically designed for architectures like MLA where the KV cache, though small, would still waste memory if replicated across many TP ranks. By computing attention data-parallel (each rank handles its own sequences), the KV cache stays local to each rank while still allowing the compute-heavy MLP layers to benefit from tensor parallelism.",
+      "difficulty": "advanced",
+      "tags": [
+        "dp-attention",
+        "mla",
+        "deepseek",
+        "kv-cache",
+        "memory-optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A large-scale LLM deployment uses data-parallel attention across multiple ranks. Some ranks handle prefill while others handle decode simultaneously. An engineer notices that decode latency is elevated even on ranks that aren't doing prefill. What architectural issue explains this, and how does PD disaggregation address it?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "This is the DP attention imbalance problem. With data-parallel attention, all ranks must synchronize, but when some ranks are doing prefill (compute-bound, small batch) while others are decoding (bandwidth-bound, needs large batch), they have mismatched batch types. The synchronization across these mismatched batch types raises decode latency for everyone, including ranks not doing prefill. PD disaggregation addresses this by completely separating prefill and decode into independent worker pools. Each pool contains only workers doing the same phase, eliminating the cross-phase synchronization problem. Prefill workers synchronize only with other prefill workers, and decode workers synchronize only with other decode workers.",
+      "explanation": "This tests understanding of a subtle but important problem: DP attention requires synchronization across ranks, and mixing phases creates an imbalance. Prefill has high arithmetic intensity and saturates compute at small batch sizes, while decode needs large batches to saturate bandwidth. When ranks must synchronize across these different workload profiles, the slower operation (relative to its optimal configuration) drags down the faster one. Disaggregation eliminates this by ensuring homogeneous workloads within each pool.",
+      "difficulty": "advanced",
+      "tags": [
+        "data-parallel-attention",
+        "DP-imbalance",
+        "synchronization",
+        "decode-latency",
+        "architecture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is serving a 70B parameter model and observes that:\n- The model loads successfully on 2 GPUs with FP8 weight quantization\n- They can only serve 4 concurrent long-context (128k token) requests before running out of memory\n- They need to support 8 concurrent requests\n\nWhat is the most appropriate next step to address this issue?",
+      "question_type": "mc",
+      "options": [
+        "A. Switch from FP8 to 4-bit weight quantization (AWQ/GPTQ)",
+        "B. Enable KV cache quantization with --kv-cache-dtype fp8_e4m3",
+        "C. Add more tensor parallelism by using 4 GPUs instead of 2",
+        "D. Increase --mem-fraction-static to allocate more memory"
+      ],
+      "correct_answer": "B",
+      "explanation": "The problem described is a concurrency limitation, not a model loading problem. Since the model already loads successfully, weight quantization isn't the bottleneck. For long-context serving, the KV cache can dwarf the weights in memory usage. Quantizing the KV cache to FP8 roughly doubles the number of sequences that can fit in memory, directly addressing the concurrency issue. While adding more GPUs could help, KV cache quantization is the more targeted and cost-effective solution for this specific problem.",
+      "difficulty": "advanced",
+      "tags": [
+        "kv-cache",
+        "quantization",
+        "memory-management",
+        "troubleshooting",
+        "long-context"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why FP8 weight quantization often improves throughput during decode, not just memory usage. Also describe a scenario where 4-bit quantization methods like AWQ/GPTQ might actually be slower than FP8 despite using fewer bits.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "FP8 weight quantization improves decode throughput because decode is memory-bandwidth-bound, with the dominant traffic being streaming weights from HBM each step. Halving the weight bytes nearly halves that memory traffic, resulting in real throughput gains. For 4-bit methods like AWQ/GPTQ, they can be slower than FP8 at large batch sizes because they must dequantize weights on-the-fly during computation. Their kernels are optimized for low-batch decode scenarios, so at larger batches the dequantization overhead can outweigh the memory bandwidth savings. This is why the Marlin kernel was developed - to make GPTQ-style 4-bit weights perform well at larger batch sizes.",
+      "explanation": "This question tests understanding of the relationship between memory bandwidth and compute throughput during inference, as well as the practical trade-offs between different quantization approaches. The key insight is that memory bandwidth is the bottleneck during decode, so reducing bytes transferred directly improves throughput. However, the computational overhead of dequantization in 4-bit methods can become significant at larger batch sizes.",
+      "difficulty": "advanced",
+      "tags": [
+        "fp8",
+        "awq",
+        "gptq",
+        "memory-bandwidth",
+        "throughput",
+        "quantization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are operating an SGLang deployment where a small set of system prompts serves 80% of your traffic, but you're experiencing cache thrashing during bursts of unique one-off requests. The hot system prompts keep getting evicted. Which eviction policy would best address this issue and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "LFU (least frequently used) or SLRU (segmented LRU) would best address this issue. LFU evicts prefixes with the fewest hits, so your frequently-used system prompts would accumulate high hit counts and resist eviction even during bursts of unique requests. SLRU provides similar protection by promoting frequently-accessed entries to a protected segment. This is the classic LRU failure mode - a scan of unique prompts evicting hot content - and both LFU and SLRU are designed to resist it.",
+      "explanation": "The scenario describes the classic LRU failure mode where a burst of unique requests (a 'scan') evicts frequently-used content. LFU addresses this by tracking hit counts rather than just recency, so well-established hot prefixes survive. SLRU offers similar protection through its two-segment design where proven prefixes are promoted to a protected segment that is evicted after probationary entries.",
+      "difficulty": "advanced",
+      "tags": [
+        "lfu",
+        "slru",
+        "cache thrashing",
+        "hot set",
+        "eviction policy selection"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why RadixAttention's effectiveness depends heavily on request scheduling, and describe a scenario where poor scheduling would cause the cache to provide minimal benefit despite a workload with shared prefixes.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "RadixAttention's effectiveness depends on scheduling because KV cache reuse only works when the shared prefix is still in GPU memory when the second request arrives. If two requests that share a long prefix are separated in the processing queue by many unrelated requests, the shared prefix may be evicted before the second request can use it. For example, consider 100 requests with a shared 2000-token system prompt arriving, but interleaved with 1000 requests with completely different prompts. If processed in arrival order, the KV cache for the shared prefix might be evicted between each pair of related requests, forcing redundant prefill computation. This is why SGLang pairs RadixAttention with cache-aware scheduling (--schedule-policy lpm) and prefix-aware load balancing to maximize cache hits.",
+      "explanation": "This question tests understanding of the interaction between caching and scheduling. The key insight is that cache reuse is only as good as the order requests are processed in. SGLang addresses this by using Longest Prefix Match (lpm) scheduling to prioritize requests that can reuse existing cached prefixes, and by using prefix-aware load balancing across replicas instead of simple round-robin.",
+      "difficulty": "advanced",
+      "tags": [
+        "radixattention",
+        "scheduling",
+        "cache-aware-scheduling",
+        "lpm",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An organization is building a high-throughput VLM service where image processing is the primary constraint. They want to scale their system efficiently. Which SGLang feature(s) should they consider, and what architectural pattern does this represent?\n\nConsider the following scenario:\n- 10,000 images/minute incoming\n- Vision encoder is compute-heavy\n- LLM decode capacity is underutilized\n- Images vary significantly in resolution",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "They should consider encoder data parallelism (DP for multi-modal encoder) and EPD disaggregation (Encoder, Prefill, Decode disaggregation). EPD disaggregation allows the encoder, prefill, and decode stages to be scaled as three separately scaled pools, meaning they can add more encoder capacity independently without over-provisioning prefill or decode resources. Additionally, they should implement client-side pre-resizing of images to avoid sending unnecessarily large images, and control resolution/tiling configuration at the model level since halving image token count often provides bigger wins than server flags with minimal accuracy loss.",
+      "explanation": "SGLang addresses the challenge of the vision encoder having a different resource profile than the LLM by offering encoder data parallelism and EPD disaggregation. This is the architectural solution for when 'image throughput is the constraint.' The three-pool disaggregation (encoder, prefill, decode) allows each stage to be scaled according to its actual demand. Combined with practical measures like client-side resizing and resolution control, this represents a comprehensive approach to high-throughput VLM serving where the bottleneck is specifically in image processing.",
+      "difficulty": "advanced",
+      "tags": [
+        "EPD-disaggregation",
+        "encoder-data-parallelism",
+        "scaling",
+        "VLM",
+        "architecture",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer is building an RL training loop that needs to: (1) generate rollouts from a model, (2) hot-swap model weights after each training step, and (3) maximize throughput. Which combination of SGLang API surfaces and endpoints would best support this workflow?",
+      "question_type": "mc",
+      "options": [
+        "A. Offline Engine for rollouts, restart the engine after each weight update",
+        "B. OpenAI-compatible API for rollouts, POST /update_weights_from_disk for weight updates",
+        "C. Offline Engine for rollouts (embedded in the RL framework), native API's /update_weights_from_disk for weight hot-swap",
+        "D. Frontend language for rollouts with automatic weight synchronization"
+      ],
+      "correct_answer": "C",
+      "explanation": "For RL training loops, the offline Engine is explicitly recommended because it can be embedded directly in the RL framework for rollouts, avoiding HTTP overhead and maximizing throughput. The native SRT API provides the /update_weights_from_disk endpoint (and related endpoints) specifically for weight hot-swapping, which RL trainers use to update the model without restarting. This combination gives you the best throughput for rollouts while supporting the iterative weight update pattern that RL training requires.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "rl-training",
+        "weight-updates",
+        "offline-engine",
+        "native-api",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why SGLang's RadixAttention/prefix caching is particularly beneficial for GRPO-style RL training, and describe the key limitation of this benefit across training iterations.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "In GRPO-style training, each prompt is typically sampled n times (e.g., n=8 or 16) to compute group-relative advantages. All n samples share the identical prompt prefix. RadixAttention allows SGLang to compute the prefill for this shared prompt only once and reuse the cached KV entries for all n completions, rather than redundantly computing it n times. For long prompts, this provides substantial computational savings.\n\nHowever, the key limitation is that this benefit only applies within a single training iteration. After each policy update step, the model weights change, which invalidates all cached KV entries (since KV values are a function of both tokens and weights). The cache must be flushed via /flush_cache, meaning prefix caching benefits cannot persist across iterations.",
+      "explanation": "This tests understanding of both why prefix caching helps (group sampling shares prompts) and the critical subtlety that weight updates invalidate the cache, limiting the benefit to intra-iteration only.",
+      "difficulty": "advanced",
+      "tags": [
+        "GRPO",
+        "RadixAttention",
+        "prefix caching",
+        "group sampling",
+        "weight updates"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An RL training framework needs to overlap rollout generation with policy training to maximize GPU utilization. What correctness issue does this introduce for strict on-policy algorithms, and how is it typically addressed?",
+      "question_type": "mc",
+      "options": [
+        "A. Memory fragmentation; addressed by using separate GPU pools for rollout and training",
+        "B. Stale weights causing off-policy rollouts; addressed by importance-sampling corrections or bounding staleness",
+        "C. KV cache corruption; addressed by using deterministic inference mode",
+        "D. Gradient accumulation errors; addressed by synchronizing weight updates across workers"
+      ],
+      "correct_answer": "B",
+      "explanation": "When generation overlaps with training, some rollouts are generated using slightly stale (older) weights rather than the current policy weights. This makes the training update technically off-policy to some degree, which violates strict on-policy algorithm requirements. Frameworks handle this through importance-sampling corrections to account for the distribution mismatch, or by bounding how stale the weights can be (limiting to a fixed number of steps). This represents a fundamental engineering tension between maximizing utilization through pipelining and maintaining on-policy correctness.",
+      "difficulty": "advanced",
+      "tags": [
+        "on-policy",
+        "off-policy",
+        "importance sampling",
+        "weight staleness",
+        "GPU utilization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In an SGLang production deployment, you observe the following metrics over time:\n- Queue depth (`#queue-req`): Growing from 50 to 500 over 10 minutes\n- Token usage (KV pool): Steady at 45%\n- Retraction count: 0\n- Running requests: Constant at 32 (matching `--max-running-requests`)\n\nWhat is the most likely issue and appropriate remediation?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The system is bottlenecked by the `--max-running-requests` setting, not by memory. The KV pool is only 45% utilized while the queue grows unbounded, indicating the running request limit is preventing the scheduler from admitting more work despite available memory. The remediation is to increase `--max-running-requests` and/or decrease `--schedule-conservativeness` to allow more concurrent requests, better utilizing the available KV cache memory.",
+      "explanation": "The key insight is correlating multiple metrics: monotonically growing queue depth indicates capacity exhaustion, but the low KV pool utilization (45%) with zero retractions shows memory isn't the constraint. The running requests being exactly at the configured maximum reveals the artificial bottleneck. A common mistake would be to scale out (add replicas) when the existing replica has unused capacity that could be unlocked through configuration.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "capacity-planning",
+        "saturation-metrics",
+        "troubleshooting",
+        "scheduler"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why claiming \"SGLang is 3x faster than vLLM\" in an interview would be problematic, and describe the recommended approach for choosing between these serving frameworks for a production deployment.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Claiming a fixed performance multiplier is problematic because: (1) the projects have converged significantly, with most differentiating features from 2024 now being table stakes in both frameworks, (2) benchmark leadership swaps between releases, and (3) performance is extremely workload- and version-dependent. Any fixed number is likely from a stale benchmark on a specific configuration. The recommended approach is to benchmark both frameworks on your actual workload with your actual prompt distribution, as the difference between a good and bad configuration of either framework is typically larger than the difference between the frameworks themselves.",
+      "explanation": "This tests understanding of the current competitive landscape and practical engineering judgment. The content explicitly warns against quoting stale benchmarks and emphasizes that honest assessment acknowledges convergence. The key insight is that configuration matters more than framework choice, and real-world testing on actual workloads is essential.",
+      "difficulty": "advanced",
+      "tags": [
+        "benchmarking",
+        "vLLM",
+        "SGLang",
+        "production deployment",
+        "performance evaluation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You are tuning speculative decoding for a production deployment and observe an average acceptance length of 1.3 tokens per verification step. Your workload involves generating creative marketing copy with high variability. Explain what this metric indicates about your current configuration and what actions you should consider.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "An acceptance length of 1.3 is below the ~1.5 threshold where speculative decoding barely pays for itself. This means the technique is adding overhead (draft computation and verification) without sufficient benefit. This is expected for creative, high-entropy text which accepts poorly because the drafter cannot reliably predict unpredictable outputs. Actions to consider: (1) Reduce or disable speculative decoding for this workload since the overhead may not be justified, (2) If keeping it enabled, reduce speculation depth via --speculative-num-steps to minimize wasted draft compute, (3) Consider using adaptive speculative decoding which can automatically adjust speculation depth based on observed acceptance rates, (4) Accept that speculative decoding may simply not be suitable for high-entropy creative generation tasks.",
+      "explanation": "The acceptance length metric directly measures speculative decoding effectiveness. Below ~1.5, you're essentially getting one token per verification (what you'd get without speculation) while paying the cost of drafting. Creative text is inherently unpredictable, making it a poor fit for speculation. A strong result would be 2.5-4 accepted tokens. Understanding this workload-dependent nature of acceptance rates demonstrates practical deployment knowledge.",
+      "difficulty": "advanced",
+      "tags": [
+        "speculative-decoding",
+        "acceptance-length",
+        "tuning",
+        "high-entropy-text",
+        "performance-metrics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why applying a JSON Schema constraint to the entire generation of a reasoning model (like one that produces chain-of-thought) can be problematic, and describe how SGLang addresses this issue.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Applying a JSON Schema constraint to the entire generation of a reasoning model forces it to start emitting JSON immediately, which destroys the model's ability to produce its chain-of-thought reasoning before the final answer. This prevents the model from 'thinking through' the problem, potentially degrading answer quality. SGLang addresses this by providing a separate path where the reasoning block generates unconstrained, and the constraint is only applied to the answer that follows. Related features include the reasoning parser (--reasoning-parser) which separates thinking content from the final answer, and the tool parser (--tool-call-parser) for handling different model family formats.",
+      "explanation": "Reasoning models need to emit their chain of thought before producing structured output. Constraining the entire generation to JSON forces immediate JSON emission, bypassing the reasoning process. SGLang's solution involves letting reasoning happen unconstrained first, then applying constraints only to the structured answer portion.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "reasoning-models",
+        "chain-of-thought",
+        "json-schema",
+        "constrained-decoding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer is considering whether to use the SGLang frontend DSL or the OpenAI-compatible API with external orchestration (e.g., LangChain). Which statement best characterizes the trade-offs?\n\n```python\n# Option 1: SGLang DSL\n@sgl.function\ndef multi_branch(s, query):\n    s += sgl.user(query)\n    forks = s.fork(4)\n    # ... parallel processing\n\n# Option 2: OpenAI API + external orchestration\nasync def multi_branch_api(query):\n    tasks = [call_api(query + suffix) for suffix in suffixes]\n    results = await asyncio.gather(*tasks)\n```",
+      "question_type": "mc",
+      "options": [
+        "A. The DSL is universally superior because it always executes faster than API-based approaches",
+        "B. The DSL provides automatic prefix sharing and declarative parallelism, but creates framework lock-in; most production users prefer the API approach",
+        "C. The API approach is only suitable for single-shot completions and cannot handle multi-step programs",
+        "D. The DSL is required to use RadixAttention; the runtime cannot optimize API requests"
+      ],
+      "correct_answer": "B",
+      "explanation": "The SGLang documentation honestly acknowledges that the frontend DSL is 'the least-adopted half of SGLang.' While the DSL offers real advantages—automatic prefix sharing across forks without manual cache management and declarative parallel branch expression—its disadvantage is being a framework-specific abstraction that ties application code to SGLang. Most production users run the runtime behind the OpenAI-compatible API and use external orchestration tools.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "frontend-dsl",
+        "production-patterns",
+        "api-design",
+        "trade-offs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following scenario: You're running a small model (7B parameters) where the forward pass takes only 3ms. Without SGLang's zero-overhead batch scheduler optimization, what would happen to throughput and why?\n\nExplain how SGLang's scheduling design addresses this problem.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Without the zero-overhead batch scheduler, throughput could be halved because the CPU work (building the next batch, preparing metadata, sampling bookkeeping) would take comparable time to the 3ms forward pass, causing the GPU to wait. SGLang addresses this by overlapping the CPU work for step N+1 with the GPU forward pass for step N. This means while the GPU is executing the current forward pass, the CPU is simultaneously preparing the next batch, eliminating the serialization overhead.",
+      "explanation": "The content explains that 'a small model whose forward pass takes 3 ms can spend comparable time waiting on Python, halving throughput.' SGLang's solution is to overlap CPU work (batch building, metadata preparation, sampling bookkeeping) for the next step with the current GPU forward pass. This pipelining approach is specifically why 'SGLang's small-model numbers look strong' - it prevents the CPU from becoming the bottleneck for fast models.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "zero-overhead-scheduler",
+        "performance-optimization",
+        "cpu-gpu-overlap",
+        "throughput"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You're tuning a production SGLang deployment and observe the following:\n- `token usage` is consistently at 0.75\n- `#queue-req` shows 500+ requests waiting\n- No OOM errors occurring\n\nWhich of the following is the most appropriate tuning action?",
+      "question_type": "mc",
+      "options": [
+        "A. Increase `--chunked-prefill-size` to speed up prefill",
+        "B. Lower `--schedule-conservativeness` to approximately 0.3",
+        "C. Enable `--schedule-policy lpm` to improve cache hits",
+        "D. Raise `--schedule-conservativeness` to approximately 1.3"
+      ],
+      "correct_answer": "B",
+      "explanation": "With token usage below 0.9 (at 0.75) AND requests waiting in the queue (500+), the scheduler is being too cautious in its estimation of future KV demand. The documentation recommends lowering `--schedule-conservativeness` to ~0.3 to admit requests more aggressively. This will increase token usage and reduce queue depth by allowing more sequences to run concurrently. Raising conservativeness (option D) would make the problem worse, and options A and C don't address the core admission issue.",
+      "difficulty": "advanced",
+      "tags": [
+        "sglang",
+        "schedule-conservativeness",
+        "token-usage",
+        "scheduler-tuning",
+        "KV-cache"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You're designing an RL training framework that needs to generate rollouts from a language model and periodically update the model weights without restarting the inference server. You also need structured JSON output for parsing agent actions. Which characteristics make SGLang particularly suitable for this use case?\n\nConsider the following requirements:\n1. High-throughput generation for RL rollouts\n2. Hot-swapping of model weights during training\n3. JSON schema-constrained output\n4. Efficient handling of repeated prompt prefixes across rollouts",
+      "question_type": "mc",
+      "options": [
+        "A. Only the OpenAI-compatible API and tensor parallelism features are relevant",
+        "B. RadixAttention for prefix reuse, fast constrained decoding with XGrammar for JSON output, and the ability to hot-swap weights without restarting",
+        "C. The frontend DSL is the only feature needed since it handles all RL-specific requirements",
+        "D. SGLang is not suitable for RL workloads and vLLM should be used instead"
+      ],
+      "correct_answer": "B",
+      "explanation": "SGLang is specifically noted as a standard rollout engine for RLHF/RLVR training frameworks because it combines several features critical for RL: (1) RadixAttention automatically shares KV cache across rollouts with common prefixes, (2) fast constrained decoding with XGrammar (the default backend) enforces JSON Schema output efficiently, and (3) the same process can serve generations and then hot-swap updated weights. This combination makes it ideal for the iterative generate-train-update loop in RL.",
+      "difficulty": "advanced",
+      "tags": [
+        "rlhf",
+        "rlvr",
+        "constrained-decoding",
+        "xgrammar",
+        "hot-swap",
+        "radixattention"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which statement best describes SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A training framework for fine-tuning LLMs using RLHF",
+        "A fast serving framework for LLMs and VLMs that optimizes inference and supports structured generation",
+        "A dataset curation tool for building instruction-tuning corpora",
+        "A model architecture that replaces transformers with state-space layers"
+      ],
+      "correct_answer": "B",
+      "explanation": "SGLang (Structured Generation Language) is described as a fast serving framework for LLMs and VLMs focused on efficient inference. It also provides structured output support (constrained decoding) and a flexible frontend DSL for building multi-step generation workflows.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "llm-serving",
+        "vlm-serving",
+        "inference",
+        "structured-generation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary purpose of cache-aware scheduling in SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. To reduce memory usage by compressing the KV cache",
+        "B. To control the order of request admission so that prefix-sharing requests run near each other",
+        "C. To distribute requests evenly across multiple GPU replicas",
+        "D. To prioritize shorter requests over longer ones for faster throughput"
+      ],
+      "correct_answer": "B",
+      "explanation": "Cache-aware scheduling controls the order in which waiting requests are admitted to the system. Its primary purpose is to reorder the queue so that requests sharing common prefixes run near each other in time, maximizing the chance that shared KV cache entries are still present when related requests execute. RadixAttention provides the ability to reuse KV cache, but scheduling is what makes that ability actually pay off.",
+      "difficulty": "beginner",
+      "tags": [
+        "cache-aware scheduling",
+        "SGLang",
+        "KV cache",
+        "request ordering"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You've deployed an SGLang server in a Docker container, but clients outside the container cannot connect to it. The server logs show it started successfully. What is the most likely cause?",
+      "question_type": "mc",
+      "options": [
+        "A. The model weights haven't finished loading yet",
+        "B. The server is bound to 127.0.0.1 instead of 0.0.0.0",
+        "C. The CUDA drivers are incompatible with the container",
+        "D. The /health endpoint is returning 503"
+      ],
+      "correct_answer": "B",
+      "explanation": "When running SGLang in a container or VM, the default --host 127.0.0.1 binding only allows connections from within the container itself. To allow external connections, you must bind to --host 0.0.0.0. While option A could cause connection issues, the question states the server started successfully. Option D describes a symptom that would occur during warmup, not after successful startup.",
+      "difficulty": "beginner",
+      "tags": [
+        "SGLang",
+        "deployment",
+        "networking",
+        "containers"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the key difference between static batching and continuous batching in LLM inference?",
+      "question_type": "mc",
+      "options": [
+        "A) Static batching uses more GPU memory than continuous batching",
+        "B) Continuous batching reforms the batch every decoding step, freeing slots immediately when sequences finish",
+        "C) Static batching is faster for short sequences while continuous batching is faster for long sequences",
+        "D) Continuous batching requires chunked prefill while static batching does not"
+      ],
+      "correct_answer": "B",
+      "explanation": "Continuous batching (iteration-level scheduling) reforms the batch at every decoding step. When a sequence emits its EOS token, its slot is freed immediately and a waiting request can be admitted on the next iteration. In contrast, static batching collects N requests and runs them together until ALL finish, meaning the batch is 'held hostage by its longest member' and GPU slots sit idle for finished sequences, resulting in terrible utilization.",
+      "difficulty": "beginner",
+      "tags": [
+        "continuous batching",
+        "static batching",
+        "scheduling",
+        "GPU utilization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When deploying SGLang on Kubernetes, why is `--host 0.0.0.0` mandatory?",
+      "question_type": "mc",
+      "options": [
+        "A. It enables HTTPS encryption for secure communication",
+        "B. The default 127.0.0.1 binds to loopback only, preventing the Service from reaching the pod",
+        "C. It allows multiple replicas to share the same GPU",
+        "D. It configures the container to use the official SGLang images"
+      ],
+      "correct_answer": "B",
+      "explanation": "The default binding address of 127.0.0.1 only accepts connections from within the same container (loopback interface). In Kubernetes, the Service needs to route traffic from outside the pod to the container, which requires binding to 0.0.0.0 to accept connections on all network interfaces. Without this flag, the Kubernetes Service will never be able to reach the SGLang server inside the pod.",
+      "difficulty": "beginner",
+      "tags": [
+        "kubernetes",
+        "networking",
+        "sglang",
+        "container-configuration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary reason that MoE (Mixture-of-Experts) model serving is memory-capacity-bound rather than compute-bound?",
+      "question_type": "mc",
+      "options": [
+        "A. The router computation requires enormous amounts of memory for storing routing tables",
+        "B. All expert weights must be held resident in memory because any token may route to any expert, even though only a few experts are activated per token",
+        "C. The all-to-all communication requires large memory buffers that dominate the memory footprint",
+        "D. MoE models use larger hidden dimensions than dense models, requiring more memory for activations"
+      ],
+      "correct_answer": "B",
+      "explanation": "MoE models have a unique serving characteristic: while compute per token is small (like a small dense model, since only k experts are activated), you must keep ALL experts loaded in memory because the router can send any token to any expert. A 600B parameter MoE might only activate ~37B parameters per token, but all 600B must be memory-resident. This flips the typical serving bottleneck - you pay dense-model memory costs for small-model compute.",
+      "difficulty": "beginner",
+      "tags": [
+        "MoE",
+        "memory-bound",
+        "serving characteristics",
+        "expert parallelism"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary motivation for implementing HiCache in SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. To reduce the computational complexity of attention mechanisms",
+        "B. To extend KV cache capacity beyond GPU HBM by utilizing cheaper, larger memory tiers",
+        "C. To enable multi-GPU communication for distributed inference",
+        "D. To compress KV cache entries using quantization techniques"
+      ],
+      "correct_answer": "B",
+      "explanation": "HiCache addresses the fundamental constraint that RadixAttention's hit rate is bounded by how much KV cache you can keep, and GPU HBM is the scarcest, most expensive memory. By creating a tiered hierarchy (GPU HBM → host RAM → disk/NVMe), HiCache allows cached prefixes to be demoted rather than discarded, enabling much larger effective cache sizes using the abundant but slower memory that typically sits idle on inference nodes.",
+      "difficulty": "beginner",
+      "tags": [
+        "HiCache",
+        "KV cache",
+        "memory hierarchy",
+        "SGLang"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary purpose of jump-forward decoding in SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. To guess likely tokens using a smaller draft model and verify them later",
+        "B. To skip model forward passes entirely when grammar constraints leave only one legal token sequence",
+        "C. To mask illegal tokens from the vocabulary during constrained generation",
+        "D. To compress the model weights for faster inference"
+      ],
+      "correct_answer": "B",
+      "explanation": "Jump-forward decoding is an optimization that recognizes when the grammar/constraint leaves no choice in the output. In these deterministic stretches, instead of running expensive forward passes for each forced token, SGLang emits the entire forced string directly and only runs a single batched prefill to update the KV cache. This is fundamentally different from speculative decoding (option A) which guesses and verifies, or standard constrained decoding (option C) which still runs forward passes before masking.",
+      "difficulty": "beginner",
+      "tags": [
+        "jump-forward decoding",
+        "SGLang",
+        "constrained generation",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the correct formula for calculating KV cache bytes per token?",
+      "question_type": "mc",
+      "options": [
+        "A. num_layers × num_attention_heads × head_dim × bytes_per_element",
+        "B. 2 × num_layers × num_kv_heads × head_dim × bytes_per_element",
+        "C. 2 × num_layers × num_attention_heads × head_dim × bytes_per_element",
+        "D. num_layers × num_kv_heads × head_dim × bytes_per_element"
+      ],
+      "correct_answer": "B",
+      "explanation": "The correct formula is 2 × num_layers × num_kv_heads × head_dim × bytes_per_element. The factor of 2 accounts for both keys AND values being stored. Critically, you must use num_kv_heads (not num_attention_heads) because GQA models share KV heads across multiple query heads. Using num_attention_heads would overestimate the memory by the GQA ratio.",
+      "difficulty": "beginner",
+      "tags": [
+        "kv-cache",
+        "memory-calculation",
+        "formula",
+        "GQA"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When launching an SGLang server inside a container, you run the following command but cannot reach the server from outside the container:\n\n```bash\npython -m sglang.launch_server \\\n  --model-path meta-llama/Llama-3.1-8B-Instruct \\\n  --port 30000\n```\n\nWhat is the most likely cause of this issue?",
+      "question_type": "mc",
+      "options": [
+        "A. The port 30000 is already in use by another process",
+        "B. The default host binds to 127.0.0.1 (loopback only), blocking external access",
+        "C. The model path is incorrect and the server failed to start",
+        "D. The --trust-remote-code flag is required for Llama models"
+      ],
+      "correct_answer": "B",
+      "explanation": "By default, SGLang binds to host 127.0.0.1, which is the loopback interface. This means only processes on the same machine (or in this case, inside the same container) can reach the server. To allow external access, you must explicitly set --host 0.0.0.0. This is described in the documentation as 'the single most common \"the server started but I can't curl it\" cause.'",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "server-launch",
+        "networking",
+        "containers",
+        "host-binding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In LoRA (Low-Rank Adaptation), what is the mathematical form of the weight update that is learned during fine-tuning?",
+      "question_type": "mc",
+      "options": [
+        "A. ΔW = A + B where A and B are full-rank matrices",
+        "B. ΔW = B·A where A is r×k and B is d×r, with r being a small rank",
+        "C. ΔW = W·α where α is a scalar learning rate",
+        "D. ΔW = softmax(A·B) where A and B are attention matrices"
+      ],
+      "correct_answer": "B",
+      "explanation": "LoRA learns a low-rank update ΔW = B·A where A has dimensions r×k and B has dimensions d×r. The rank r is typically small (8-64), which is why LoRA adapters are only a few megabytes compared to tens of gigabytes for full model weights. At inference time, the output is computed as y = Wx + B(Ax) · (α/r).",
+      "difficulty": "beginner",
+      "tags": [
+        "LoRA",
+        "low-rank adaptation",
+        "fine-tuning",
+        "weight updates"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What problem does Tensor Parallelism (TP) primarily solve in SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. Splitting requests across multiple model replicas to increase throughput",
+        "B. Sharding weight matrices across GPUs when a model doesn't fit on one GPU",
+        "C. Distributing different experts of an MoE model across GPUs",
+        "D. Splitting a single long sequence across GPUs for attention computation"
+      ],
+      "correct_answer": "B",
+      "explanation": "Tensor Parallelism (TP) shards each layer's weight matrices across GPUs, with every GPU participating in every token computation. This solves the problem of models that don't fit on a single GPU, and also reduces per-token latency since each GPU handles 1/N of the FLOPs. Option A describes Data Parallelism, Option C describes Expert Parallelism, and Option D describes Context Parallelism.",
+      "difficulty": "beginner",
+      "tags": [
+        "tensor-parallelism",
+        "parallelism-strategies",
+        "model-sharding"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In prefill/decode disaggregation, what is the primary bottleneck for each phase?\n\nA) Prefill: memory bandwidth; Decode: compute (FLOPs)\nB) Prefill: compute (FLOPs); Decode: memory bandwidth + KV capacity\nC) Prefill: network latency; Decode: disk I/O\nD) Prefill: KV capacity; Decode: arithmetic intensity",
+      "question_type": "mc",
+      "options": [
+        "Prefill: memory bandwidth; Decode: compute (FLOPs)",
+        "Prefill: compute (FLOPs); Decode: memory bandwidth + KV capacity",
+        "Prefill: network latency; Decode: disk I/O",
+        "Prefill: KV capacity; Decode: arithmetic intensity"
+      ],
+      "correct_answer": "B",
+      "explanation": "Prefill processes the entire prompt (many tokens) in one pass, making it compute-bound with high arithmetic intensity. Decode generates only one token per sequence per pass, making it memory bandwidth-bound since it needs to read the KV cache but does relatively little computation. This fundamental difference in resource profiles is why the two phases conflict when run together.",
+      "difficulty": "beginner",
+      "tags": [
+        "prefill-decode-disaggregation",
+        "resource-profiles",
+        "bottlenecks",
+        "LLM-inference"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary benefit of KV cache quantization (--kv-cache-dtype) in SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. It reduces the memory needed to load model weights",
+        "B. It increases the number of concurrent sequences or context length that can fit in memory",
+        "C. It speeds up the model loading time",
+        "D. It improves the accuracy of the model's predictions"
+      ],
+      "correct_answer": "B",
+      "explanation": "KV cache quantization saves KV cache memory, which is what limits concurrency, not model size. Halving KV bytes per token roughly doubles how many sequences (or how long a context) fit in the same memory pool, which directly raises achievable batch size and therefore throughput. Weight quantization (--quantization), not KV cache quantization, is what reduces model weight memory.",
+      "difficulty": "beginner",
+      "tags": [
+        "kv-cache",
+        "quantization",
+        "memory-management",
+        "concurrency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the default radix eviction policy in SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. lfu (least frequently used)",
+        "B. lru (least recently used)",
+        "C. slru (segmented LRU)",
+        "D. priority"
+      ],
+      "correct_answer": "B",
+      "explanation": "The default eviction policy is LRU (least recently used), which matches the natural assumption that reuse likelihood decays with time. The documentation recommends this as the starting point for most workloads before considering other policies.",
+      "difficulty": "beginner",
+      "tags": [
+        "radix cache",
+        "eviction policy",
+        "lru",
+        "sglang defaults"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What data structure does RadixAttention use to index KV cache by token prefix?",
+      "question_type": "mc",
+      "options": [
+        "A. Hash map with prompt hashing",
+        "B. Radix tree (compressed trie)",
+        "C. Binary search tree",
+        "D. Linked list with LRU pointers"
+      ],
+      "correct_answer": "B",
+      "explanation": "RadixAttention uses a radix tree (a compressed trie whose edges are token sequences rather than single characters) to index KV cache by token prefix. This is superior to a hash map because it enables partial prefix matching rather than all-or-nothing exact matching. When two requests share a system prompt but diverge at the user turn, the tree naturally represents that branch point.",
+      "difficulty": "beginner",
+      "tags": [
+        "radixattention",
+        "kv-cache",
+        "data-structures",
+        "prefix-caching"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What are the three stages of processing a VLM (Vision-Language Model) request in SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. Tokenization, Embedding, Decode",
+        "B. Vision encoding, Projection and prefill, Decode",
+        "C. Image loading, Text processing, Generation",
+        "D. Preprocessing, Attention, Output"
+      ],
+      "correct_answer": "B",
+      "explanation": "VLM requests in SGLang follow three distinct stages: (1) Vision encoding - where images are preprocessed and run through a vision encoder (typically ViT) to produce image embeddings, (2) Projection and prefill - where a projector maps image embeddings into the LLM's embedding space and the LLM prefills over the mixed sequence, and (3) Decode - ordinary autoregressive text generation. This is one more stage than text-only LLMs which only have prefill and decode.",
+      "difficulty": "beginner",
+      "tags": [
+        "VLM",
+        "SGLang",
+        "architecture",
+        "vision-language-models"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which SGLang API surface should you use if you want to integrate with existing code that uses the OpenAI Python SDK with minimal changes?",
+      "question_type": "mc",
+      "options": [
+        "A. The native SRT API via POST /generate",
+        "B. The OpenAI-compatible HTTP API",
+        "C. The offline Engine",
+        "D. The frontend language"
+      ],
+      "correct_answer": "B",
+      "explanation": "The OpenAI-compatible HTTP API is designed specifically for drop-in replacement scenarios. You simply override the base_url to point to the SGLang server, and existing OpenAI SDK code works unchanged. This is why 'swap vLLM for SGLang' is typically just a config change rather than a code rewrite.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "api-surfaces",
+        "openai-compatibility",
+        "integration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In a typical policy-gradient-style LLM training loop (RLHF, GRPO, etc.), which step is usually the dominant cost in terms of wall-clock time?",
+      "question_type": "mc",
+      "options": [
+        "A. Policy update / gradient computation",
+        "B. Rollout / generation",
+        "C. Reward model scoring",
+        "D. Data preprocessing and batching"
+      ],
+      "correct_answer": "B",
+      "explanation": "The rollout/generation step, which is inference, is typically the dominant cost of each iteration, often accounting for well over half the wall-clock time. This is why optimizing the inference engine (like SGLang) is so important for RL post-training efficiency.",
+      "difficulty": "beginner",
+      "tags": [
+        "RL post-training",
+        "rollout",
+        "inference cost",
+        "RLHF"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which SGLang command-line flag enables the Prometheus scrape endpoint for metrics collection?",
+      "question_type": "mc",
+      "options": [
+        "A. --log-requests",
+        "B. --enable-metrics",
+        "C. --enable-trace",
+        "D. --export-metrics-to-file"
+      ],
+      "correct_answer": "B",
+      "explanation": "The `--enable-metrics` flag exposes a Prometheus scrape endpoint at `/metrics`. While `--log-requests` enables per-request logging, `--enable-trace` enables OpenTelemetry distributed tracing, and `--export-metrics-to-file` writes per-request metrics to disk for offline analysis, none of these specifically enable the Prometheus endpoint.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "observability",
+        "prometheus",
+        "metrics",
+        "configuration"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which serving framework originated PagedAttention, and what problem does it solve?",
+      "question_type": "mc",
+      "options": [
+        "A. SGLang; it solves the problem of finding reusable prefixes across requests",
+        "B. vLLM; it solves KV cache fragmentation and enables copy-on-write sharing",
+        "C. TGI; it solves tokenization latency through Rust optimization",
+        "D. vLLM; it solves the problem of scheduling requests for maximum prefix reuse"
+      ],
+      "correct_answer": "B",
+      "explanation": "vLLM originated PagedAttention, which stores KV cache in fixed-size pages with a block table. This approach eliminates memory fragmentation (since sequences don't need contiguous memory) and enables copy-on-write sharing of KV blocks. The problem of finding reusable prefixes is addressed by RadixAttention (SGLang), and scheduling for prefix reuse is handled by SGLang's cache-aware scheduling - these are different concerns at different layers.",
+      "difficulty": "beginner",
+      "tags": [
+        "vLLM",
+        "PagedAttention",
+        "KV cache",
+        "memory fragmentation",
+        "copy-on-write"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the fundamental inefficiency of autoregressive decoding that speculative decoding addresses?",
+      "question_type": "mc",
+      "options": [
+        "A. The GPU compute units are too slow for modern language models",
+        "B. Each decoding step moves all model weights from HBM but produces only a single token, leaving GPU compute mostly idle",
+        "C. The model must reload the entire prompt for every generated token",
+        "D. Autoregressive decoding requires multiple forward passes per token"
+      ],
+      "correct_answer": "B",
+      "explanation": "Autoregressive decoding is memory-bandwidth-bound, not compute-bound. Each step requires moving all model weights from High Bandwidth Memory (HBM) to compute units just to produce a single token. This means the GPU's compute capacity sits mostly idle while waiting for memory transfers. Speculative decoding exploits this idle compute by guessing multiple tokens cheaply and verifying them in parallel.",
+      "difficulty": "beginner",
+      "tags": [
+        "speculative-decoding",
+        "autoregressive-decoding",
+        "memory-bandwidth",
+        "GPU-utilization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the default grammar backend in SGLang for structured outputs?",
+      "question_type": "mc",
+      "options": [
+        "A) outlines",
+        "B) llguidance",
+        "C) xgrammar",
+        "D) jsonschema"
+      ],
+      "correct_answer": "C",
+      "explanation": "xgrammar is the default grammar backend in SGLang. It supports JSON Schema, regex, and EBNF, offering the fastest performance and broadest feature set. The documentation recommends not changing it unless you have a specific reason to use one of the other backends.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "grammar-backends",
+        "xgrammar",
+        "structured-outputs"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the SGLang frontend language, what is the purpose of the `+=` operator when used with the state object `s`?",
+      "question_type": "mc",
+      "options": [
+        "A. It performs mathematical addition on token counts",
+        "B. It appends content to the prompt being built",
+        "C. It creates a new branch in the execution flow",
+        "D. It stores generation results in the state dictionary"
+      ],
+      "correct_answer": "B",
+      "explanation": "In SGLang, the `+=` operator is used to append content to the prompt. When you write `s += sgl.user(question)` or `s += sgl.gen(...)`, you are building up the prompt incrementally. The state object `s` accumulates these additions to form the complete prompt that will be sent to the model.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "frontend-dsl",
+        "state-object",
+        "prompt-building"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In the SGLang Runtime architecture, which process is responsible for owning the waiting queue, running batch, radix cache, and KV pool accounting?",
+      "question_type": "mc",
+      "options": [
+        "A. TokenizerManager",
+        "B. HTTP server / entrypoint",
+        "C. Scheduler",
+        "D. DetokenizerManager"
+      ],
+      "correct_answer": "C",
+      "explanation": "The Scheduler is described as 'the brain' of the SGLang Runtime. It owns the waiting queue, the running batch, the radix cache, and the KV pool accounting. Each step it decides whether to run a prefill batch, decode batch, or mix them. The TokenizerManager handles text-to-token conversion, the HTTP server accepts requests, and the DetokenizerManager converts tokens back to text.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "runtime-architecture",
+        "scheduler",
+        "process-responsibilities"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "According to SGLang's tuning guidance, what is the fundamental principle that all throughput optimization revolves around?",
+      "question_type": "mc",
+      "options": [
+        "A. Minimize memory usage",
+        "B. Maximize batch size",
+        "C. Reduce network latency",
+        "D. Optimize CPU utilization"
+      ],
+      "correct_answer": "B",
+      "explanation": "SGLang's tuning guidance explicitly states that the core principle is to 'maximize batch size.' All other tuning recommendations are either corrections to this principle or defenses against the memory errors that maximizing batch size can cause. Larger batches mean better GPU utilization and higher throughput.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "throughput",
+        "batch-size",
+        "tuning-principles"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What are the two main components that make up SGLang?",
+      "question_type": "mc",
+      "options": [
+        "A. A training framework and an inference server",
+        "B. A runtime (SRT) for high-throughput inference and a frontend language for expressing prompt programs",
+        "C. A model compiler and a deployment orchestrator",
+        "D. A tokenizer library and a KV cache manager"
+      ],
+      "correct_answer": "B",
+      "explanation": "SGLang consists of two loosely coupled halves: (1) The runtime (SRT, 'SGLang Runtime') — a high-throughput inference engine with its own scheduler, KV cache manager, and attention kernels that serves an OpenAI-compatible HTTP API, and (2) The frontend language — a set of Python primitives (gen, select, fork, image, and the @sgl.function decorator) for expressing prompt programs with branching, parallelism, and constrained output.",
+      "difficulty": "beginner",
+      "tags": [
+        "sglang",
+        "architecture",
+        "srt",
+        "frontend-language"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "SGLang’s RadixAttention primarily improves performance by enabling which capability?\n\nA. Quantizing model weights to 4-bit during inference\nB. Reusing the KV cache efficiently across multiple generation calls\nC. Increasing the context window by compressing tokens\nD. Offloading attention computation to the CPU to save GPU memory",
+      "question_type": "mc",
+      "options": [
+        "Quantizing model weights to 4-bit during inference",
+        "Reusing the KV cache efficiently across multiple generation calls",
+        "Increasing the context window by compressing tokens",
+        "Offloading attention computation to the CPU to save GPU memory"
+      ],
+      "correct_answer": "B",
+      "explanation": "The source content states that SGLang uses RadixAttention for efficient KV cache reuse across multiple generation calls. This is especially beneficial for complex prompting patterns like few-shot learning, chain-of-thought, and multi-turn conversations where prompts share prefixes or repeated context.",
+      "difficulty": "intermediate",
+      "tags": [
+        "radixattention",
+        "kv-cache",
+        "llm-inference",
+        "throughput",
+        "multi-turn"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary benefit of FlashAttention compared to naive attention implementation?",
+      "question_type": "mc",
+      "options": [
+        "A. It reduces the number of floating-point operations (FLOPs) required",
+        "B. It reduces memory I/O by tiling computation and keeping tiles in SRAM",
+        "C. It approximates attention scores to skip unnecessary computations",
+        "D. It uses sparse attention patterns to reduce the attention matrix size"
+      ],
+      "correct_answer": "B",
+      "explanation": "FlashAttention is an exact computation (not an approximation) that wins on I/O, not FLOPs. Naive attention materializes the full S×S score matrix in HBM, causing memory traffic to grow quadratically with sequence length. FlashAttention tiles the computation, keeps tiles in SRAM, and uses the online-softmax trick to accumulate correct normalization without writing the full score matrix. This I/O optimization is what makes long contexts practical.",
+      "difficulty": "intermediate",
+      "tags": [
+        "FlashAttention",
+        "attention optimization",
+        "memory I/O",
+        "SRAM"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does SGLang support multiple attention backends rather than using a single optimized implementation?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Attention has very different computational characteristics in different phases (prefill vs decode) and with different model features (paged KV storage, GQA/MQA, MLA, sliding windows, speculative tree verification). Prefill involves long query and key sequences (compute-bound GEMM), while decode has query length 1 with long keys (bandwidth-bound gather). No single kernel is optimal for all these scenarios, so backends specialize for different use cases.",
+      "explanation": "The content explains that attention shapes differ dramatically between prefill (big GEMM) and decode (bandwidth-bound gather), and additional features like paged KV, GQA/MQA, MLA, and sliding windows further complicate optimization. Each backend specializes for certain scenarios, making multiple backends necessary for comprehensive coverage and optimal performance.",
+      "difficulty": "intermediate",
+      "tags": [
+        "attention backends",
+        "prefill",
+        "decode",
+        "kernel optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer notices that their SGLang server takes a long time to start up and pass the health check. Which of the following is the most likely explanation related to attention backends?",
+      "question_type": "mc",
+      "options": [
+        "A. The Triton backend is compiling all possible kernel variants at startup",
+        "B. FlashInfer is performing JIT compilation of kernels and warming the kernel cache",
+        "C. The server is downloading attention kernel weights from a remote repository",
+        "D. CUDA graphs are being disabled due to insufficient GPU memory"
+      ],
+      "correct_answer": "B",
+      "explanation": "FlashInfer, the usual default backend on NVIDIA GPUs, performs JIT (Just-In-Time) compilation of kernels for specific shapes. This is why first startup can be slow while the kernel cache warms. Additionally, CUDA graph capture for common decode batch shapes also contributes to startup delay, but the JIT compilation of FlashInfer kernels is the primary attention-backend-related cause mentioned.",
+      "difficulty": "intermediate",
+      "tags": [
+        "FlashInfer",
+        "JIT compilation",
+        "startup time",
+        "kernel cache"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following scenario: You have requests A1, A2, A3 that share a 4,000-token system prompt, and requests B1 through B50 that are unrelated one-off prompts. The queue order is A1, B1...B50, A2, A3.\n\nWhat problem does this ordering cause, and which scheduling policy would best address it?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "This ordering causes the shared prefix from A1 to be evicted from the KV cache by the time A2 runs, because the 50 B requests churn the KV pool in between. The cache hit that was available for A2 and A3 is thrown away due to poor ordering. The `lpm` (longest prefix match) scheduling policy would address this by sorting waiting requests by the length of prefix they match in the current radix tree, running best matches first, so A1, A2, and A3 would run consecutively.",
+      "explanation": "The problem is cache eviction due to temporal separation of prefix-sharing requests. When 50 unrelated requests run between A1 and A2, they fill the KV cache with their own entries, evicting A1's prefix. The `lpm` policy specifically addresses this by prioritizing requests that match existing cached prefixes, ensuring prefix-sharing requests cluster together in execution order.",
+      "difficulty": "intermediate",
+      "tags": [
+        "cache-aware scheduling",
+        "lpm",
+        "prefix caching",
+        "KV cache eviction",
+        "SGLang"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When would the `dfs-weight` scheduling policy be preferred over `lpm` (longest prefix match)?",
+      "question_type": "mc",
+      "options": [
+        "A. When requests have diverse prompts with little sharing",
+        "B. When you need strict FIFO fairness guarantees",
+        "C. When workloads have tree-structured patterns like branching agent explorations or self-consistency sampling",
+        "D. When minimizing scheduling overhead is the top priority"
+      ],
+      "correct_answer": "C",
+      "explanation": "The `dfs-weight` policy performs depth-first traversal of the radix tree weighted by subtree size. Instead of greedily taking the single longest match like `lpm`, it walks the tree so that an entire shared subtree is drained before moving on. This is better for tree-structured workloads where many requests branch off from the same interior node, such as branching agent explorations or self-consistency sampling. Option A would favor `fcfs`, option B would also favor `fcfs`, and option D would favor `fcfs` as well since both `lpm` and `dfs-weight` introduce scheduling overhead.",
+      "difficulty": "intermediate",
+      "tags": [
+        "dfs-weight",
+        "lpm",
+        "scheduling policies",
+        "tree-structured workloads",
+        "SGLang"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An SGLang server has been running smoothly for hours, but suddenly crashes with a CUDA out of memory error during a period of high load. The error occurs during the decode phase, not during prefill. Which flag should you adjust to address this issue?",
+      "question_type": "mc",
+      "options": [
+        "A. Lower --chunked-prefill-size",
+        "B. Lower --max-running-requests",
+        "C. Lower --cuda-graph-max-bs-decode",
+        "D. Increase --mem-fraction-static"
+      ],
+      "correct_answer": "B",
+      "explanation": "OOM during decode (after running fine for a while, under load) indicates the KV pool cannot hold that many concurrent sequences at their eventual lengths. Lowering --max-running-requests reduces the number of concurrent sequences. Option A addresses prefill OOM, option C addresses startup/graph capture OOM, and option D would actually make the problem worse by allocating more static memory upfront.",
+      "difficulty": "intermediate",
+      "tags": [
+        "SGLang",
+        "CUDA",
+        "memory management",
+        "decode",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your SGLang deployment was achieving excellent cache hit rates, but latency suddenly regressed and cache hits dropped dramatically. After investigation, you discover that the operations team made a minor edit to the system prompt yesterday. Explain why this caused the cache collapse and describe how system prompt changes should be treated in production SGLang deployments.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "System prompts serve as cache keys in SGLang's prefix caching mechanism. When the system prompt is modified—even slightly—every cached prefix is invalidated at once because the cache keys no longer match. This causes all requests to miss the cache and require full computation. In production, system prompt changes should be treated like schema migrations: planned carefully, deployed during low-traffic periods, and with awareness that there will be a temporary performance degradation while the cache warms up with the new prefix.",
+      "explanation": "SGLang uses prompts as cache keys for its prefix caching system. Any modification to the system prompt invalidates all existing cached prefixes because the hash/key of the prompt changes. This is the most common cause of sudden cache hit rate collapse. The content emphasizes treating prompt changes 'like schema migrations' because of their significant operational impact.",
+      "difficulty": "intermediate",
+      "tags": [
+        "SGLang",
+        "prefix caching",
+        "system prompts",
+        "production operations",
+        "latency"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A user is experiencing OOM (out of memory) errors during the prefill phase when processing long prompts. Which SGLang parameter should they adjust, and what is a typical remedial value?\n\nExplain the tradeoff involved with this adjustment.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "They should adjust `--chunked-prefill-size` to a lower value such as 4096 or 2048. This parameter splits long prompts into chunks of at most this many tokens, processing one chunk per iteration. The tradeoff is that lowering this value saves memory but slows down prefill speed for long prompts, because you lose some efficiency of processing one big GEMM operation.",
+      "explanation": "Chunked prefill addresses the memory problem by bounding peak activation memory during prefill. The documentation explicitly states that 'decreasing it saves memory but slows down the prefill speed for long prompts' and recommends values of 4096 or 2048 when experiencing prefill OOM issues. Setting it to -1 disables chunking entirely.",
+      "difficulty": "intermediate",
+      "tags": [
+        "chunked prefill",
+        "OOM",
+        "memory management",
+        "prefill optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does SGLang support mixed batches that combine prefill chunks and decode tokens in the same forward pass?",
+      "question_type": "mc",
+      "options": [
+        "A) To reduce the total number of forward passes required, saving energy",
+        "B) Because decode alone underutilizes compute (being bandwidth-bound), so folding in prefill work fills the gap and keeps the GPU busy",
+        "C) To ensure prefill always has higher priority than decode operations",
+        "D) To eliminate the need for chunked prefill when processing long prompts"
+      ],
+      "correct_answer": "B",
+      "explanation": "The documentation explains that 'decode alone underutilizes compute (it is bandwidth-bound), so folding prefill work in fills the gap.' This keeps the GPU busy by combining compute-intensive prefill operations with bandwidth-bound decode operations. The tradeoff mentioned is that decode latency becomes sensitive to how much prefill is co-scheduled.",
+      "difficulty": "intermediate",
+      "tags": [
+        "mixed batches",
+        "GPU utilization",
+        "prefill",
+        "decode",
+        "compute vs bandwidth"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "An SGLang deployment on Kubernetes keeps crash-looping during startup, with pods being killed before they can serve traffic. The logs show the model is still loading when the pod terminates. Which probe configuration is most likely the cause and solution?\n\n```yaml\nlivenessProbe:\n  httpGet:\n    path: /health\n    port: 30000\n  initialDelaySeconds: 30\n  periodSeconds: 10\n  failureThreshold: 3\n```",
+      "question_type": "mc",
+      "options": [
+        "A. The livenessProbe path should be /ready instead of /health",
+        "B. Add a startupProbe with a generous failureThreshold × periodSeconds budget (many minutes), and keep the livenessProbe loose",
+        "C. Increase the livenessProbe periodSeconds to 60 and remove initialDelaySeconds",
+        "D. Replace httpGet with a tcpSocket probe to reduce overhead"
+      ],
+      "correct_answer": "B",
+      "explanation": "SGLang takes minutes to become ready due to weight download/load, CUDA graph capture, and warmup. The configuration shown has a livenessProbe that will fail after approximately 60 seconds (30s initial delay + 3 failures × 10s), which is far too short. The correct solution is to use a startupProbe with a generous timeout (many minutes) to handle the lengthy initialization, while keeping the livenessProbe loose to avoid racing with long prefill operations or the built-in --watchdog-timeout.",
+      "difficulty": "intermediate",
+      "tags": [
+        "kubernetes",
+        "probes",
+        "startupProbe",
+        "livenessProbe",
+        "sglang"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why is expert parallelism (EP) preferred over tensor parallelism (TP) for the MoE layers specifically?\n\nConsider the following scenario: You have 8 GPUs and an MoE layer with 64 experts where each token activates 2 experts.",
+      "question_type": "mc",
+      "options": [
+        "A. TP requires more total memory across all GPUs compared to EP",
+        "B. With TP, every GPU does 1/8th of a very small amount of work per expert (poor GEMM efficiency), while EP lets each GPU do full-width work on fewer tokens",
+        "C. EP eliminates all inter-GPU communication, while TP requires expensive all-reduce operations",
+        "D. TP cannot handle dynamic routing decisions, while EP supports arbitrary routing patterns"
+      ],
+      "correct_answer": "B",
+      "explanation": "With tensor parallelism on MoE layers, every GPU participates in every expert computation, meaning each GPU does 1/world_size of what is already a small amount of work (since only k experts are active per token). This leads to poor GEMM efficiency because the matrix multiplications are too small. With expert parallelism, each GPU holds complete experts and processes full-width computations on the tokens routed to its experts, which is much more GEMM-efficient. The tradeoff is all-to-all communication instead of all-reduce.",
+      "difficulty": "intermediate",
+      "tags": [
+        "expert parallelism",
+        "tensor parallelism",
+        "GEMM efficiency",
+        "MoE serving"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In an expert-parallel MoE deployment, what causes the 'hot expert' problem and what are effective mitigations?\n\nExplain the mechanism by which expert load imbalance affects serving performance and describe at least two strategies to address it.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The hot expert problem occurs when certain experts receive disproportionately more tokens than others during inference. Since each GPU in EP holds a fixed subset of experts, a hot expert means its GPU becomes a straggler while all other GPUs wait at the all-to-all barrier synchronization point. Even though routers are trained with auxiliary balance losses, real inference traffic is never uniformly distributed.\n\nMitigations include:\n1. Expert replication/redundant experts - keeping extra copies of hot experts on multiple GPUs so their load can be split across replicas\n2. Expert placement rebalancing - periodically measuring per-expert load and re-mapping experts to GPUs to balance the distribution\n3. Careful EP-group sizing - balancing the tradeoff between spreading experts thinner (larger groups) versus all-to-all communication costs",
+      "explanation": "Expert load imbalance is the characteristic serving problem for MoE models with expert parallelism. The synchronous nature of all-to-all communication means the slowest GPU (the one with hot experts) determines overall throughput. SGLang exposes expert distribution recording specifically to help operators measure and diagnose this imbalance rather than guessing at it.",
+      "difficulty": "intermediate",
+      "tags": [
+        "expert load imbalance",
+        "hot expert",
+        "expert replication",
+        "EP configuration",
+        "all-to-all"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In HiCache, what is the decision rule for determining whether to fetch a cached prefix from a lower tier versus recomputing it?\n\nConsider a scenario where:\n- Prefix length L = 8192 tokens\n- KV bytes per token = 512 bytes (after quantization)\n- PCIe bandwidth = 32 GB/s\n- Prefill compute time for 8192 tokens = 200ms\n\nShould HiCache fetch or recompute?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Fetch. The transfer time is approximately 0.125ms (8192 × 512 bytes ÷ 32 GB/s = 4MB ÷ 32 GB/s ≈ 0.125ms), which is much less than the 200ms recompute time. The decision rule is: fetch if transfer_time < recompute_time, and 0.125ms << 200ms, so fetching is the clear winner.",
+      "explanation": "The decision rule in HiCache is straightforward: fetch if transfer_time < recompute_time. Transfer time = KV_bytes(L) / bandwidth. In this case: 8192 tokens × 512 bytes = 4,194,304 bytes = 4 MB. Transfer time = 4 MB / 32 GB/s = 0.000125 seconds = 0.125ms. Since 0.125ms is dramatically less than 200ms, fetching is far more efficient. This example illustrates why long prefixes on large models favor fetching — prefill cost grows with compute while transfer grows only with bytes.",
+      "difficulty": "intermediate",
+      "tags": [
+        "HiCache",
+        "cost analysis",
+        "prefill",
+        "bandwidth",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which `--hicache-write-policy` configuration would be most appropriate for a workload where most cached prefixes are accessed only once before being evicted?",
+      "question_type": "mc",
+      "options": [
+        "A. Write-through, because it ensures all entries are immediately durable in L2",
+        "B. Write-back/lazy, because it avoids wasting bandwidth on entries that may never be reused",
+        "C. Write-through, because it reduces latency on cache hits",
+        "D. Write-back/lazy, because it increases the effective L1 cache size"
+      ],
+      "correct_answer": "B",
+      "explanation": "For workloads with low reuse, write-back/lazy policy is optimal because it defers copying entries to L2 until necessary. A write-through policy would immediately copy every evicted entry to L2, spending precious PCIe bandwidth on entries that will never be fetched back. Since most prefixes in this workload are accessed only once, the bandwidth spent on write-through would be largely wasted. This is the classic cache-design tradeoff: write-through provides durability at the cost of bandwidth, while write-back conserves bandwidth but risks losing entries.",
+      "difficulty": "intermediate",
+      "tags": [
+        "HiCache",
+        "write policy",
+        "cache design",
+        "write-through",
+        "write-back"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does jump-forward decoding require special handling at token boundaries when appending forced strings?\n\nConsider a scenario where the forced string is `\"age\"` appearing after a comma in JSON output.",
+      "question_type": "mc",
+      "options": [
+        "A. The KV cache cannot store tokens from different forward passes",
+        "B. BPE tokenizers produce context-dependent tokenizations, so the standalone tokenization of the forced string may differ from what the tokenizer would produce in context",
+        "C. The grammar FSM cannot handle multi-character transitions",
+        "D. The model's attention mechanism requires tokens to be generated one at a time"
+      ],
+      "correct_answer": "B",
+      "explanation": "LLMs use subword tokenizers like BPE where tokenization is context-dependent. The tokens for `\"age\"` appearing after a comma may differ from the tokens for `\"age\"` in isolation. If you naively append the forced string's standalone tokenization, you create a token sequence the model would never have produced, putting it off-distribution and degrading subsequent unconstrained token generation. SGLang handles this by retokenizing the boundary region to ensure the token sequence matches what the tokenizer would naturally produce.",
+      "difficulty": "intermediate",
+      "tags": [
+        "tokenization",
+        "BPE",
+        "jump-forward decoding",
+        "boundary handling"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When generating JSON for the schema `{\"name\": str, \"age\": int}`, which portion of the output would benefit MOST from jump-forward decoding?",
+      "question_type": "mc",
+      "options": [
+        "A. The actual string value provided for the \"name\" field",
+        "B. The integer value provided for the \"age\" field",
+        "C. The structural tokens like `{`, `\"name\":`, `,`, `\"age\":`, and `}`",
+        "D. All portions benefit equally from jump-forward decoding"
+      ],
+      "correct_answer": "C",
+      "explanation": "Jump-forward decoding helps most with deterministic, structurally forced tokens. The structural elements like braces, key names, colons, and commas are completely determined by the schema - there's only one legal option. In contrast, the actual values for \"name\" (a free-text string) and \"age\" (an integer chosen by the model) require the model to make real choices, so they cannot be jumped forward. The content notes this explicitly: verbose schemas with fixed keys help most, while free-text string fields help least.",
+      "difficulty": "intermediate",
+      "tags": [
+        "JSON Schema",
+        "constrained generation",
+        "jump-forward decoding",
+        "use cases"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "For Llama-3.1-8B with 32 layers, 32 query heads, 8 KV heads, head_dim 128, and BF16 precision:\n\n1. Calculate the KV cache memory per token\n2. Calculate the KV cache memory for a single 128k-token context\n3. Explain why this is significant given the model weights are 16 GB",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "1. KV bytes per token = 2 × 32 × 8 × 128 × 2 = 131,072 bytes = 128 KB per token. 2. For 128k tokens: 128 KB × 128,000 = 16 GB. 3. This is significant because a single 128k-token sequence requires 16 GB of KV cache memory, which equals the entire model weight size. This demonstrates why long context is expensive and why concurrency collapses as context grows - the KV cache can dominate memory usage even compared to model weights.",
+      "explanation": "This calculation shows the practical reality of serving long-context models. The KV cache for a single long sequence can equal or exceed the model weights, which is why serving systems must carefully manage memory and why techniques like GQA, MQA, and MLA exist to reduce KV cache size.",
+      "difficulty": "intermediate",
+      "tags": [
+        "kv-cache",
+        "memory-calculation",
+        "Llama",
+        "long-context",
+        "capacity-planning"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to deploy a large language model that doesn't fit on a single GPU. Which SGLang flag should you use to shard each layer across multiple GPUs?",
+      "question_type": "mc",
+      "options": [
+        "A. --pipeline-parallel-size",
+        "B. --moe-data-parallel-size",
+        "C. --tensor-parallel-size",
+        "D. --attention-context-parallel-size"
+      ],
+      "correct_answer": "C",
+      "explanation": "--tensor-parallel-size (or --tp) shards each layer across multiple GPUs, which is the appropriate solution when a model doesn't fit on a single GPU. Pipeline parallelism (--pipeline-parallel-size) splits layers into stages rather than sharding individual layers. --moe-data-parallel-size is specifically for Mixture of Experts models, and --attention-context-parallel-size is for handling very long contexts.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "parallelism",
+        "tensor-parallel",
+        "multi-gpu",
+        "model-deployment"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Examine the following production SGLang server launch command:\n\n```bash\npython -m sglang.launch_server \\\n  --model-path Qwen/Qwen3-32B \\\n  --tp 4 \\\n  --host 0.0.0.0 --port 30000 \\\n  --mem-fraction-static 0.90 \\\n  --chunked-prefill-size 8192 \\\n  --schedule-policy lpm \\\n  --quantization fp8 \\\n  --kv-cache-dtype fp8_e4m3 \\\n  --enable-metrics \\\n  --api-key \"$SGLANG_API_KEY\" \\\n  --served-model-name my-chat-model\n```\n\nWhat is the purpose of the --served-model-name flag in this configuration?",
+      "question_type": "mc",
+      "options": [
+        "A. It specifies which model to download from HuggingFace",
+        "B. It sets the internal model identifier for logging purposes only",
+        "C. It defines the name clients see in API responses, allowing checkpoint swaps without client code changes",
+        "D. It creates an alias for the --model-path to simplify the command"
+      ],
+      "correct_answer": "C",
+      "explanation": "The --served-model-name flag controls the model name that appears in API responses to clients. This is particularly useful in production because you can swap out the underlying model checkpoint (e.g., upgrade to a newer version) without requiring any changes to client code that references the model by name. The actual model being loaded is still determined by --model-path.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "api-configuration",
+        "served-model-name",
+        "production-deployment"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why can't you simply merge LoRA weights into the base model weights when serving multiple adapters in a single SGLang server?",
+      "question_type": "mc",
+      "options": [
+        "A. Merging LoRA weights would require recompiling the model for each request",
+        "B. Different requests in the same batch may need different adapters, so each row needs different deltas",
+        "C. LoRA weights are stored in a different numerical precision than base weights",
+        "D. Merging would exceed GPU memory limits for any adapter"
+      ],
+      "correct_answer": "B",
+      "explanation": "When serving multiple adapters, a single batch may contain requests for different adapters. You cannot merge a LoRA into the base weights because different rows of the batch need different deltas applied. The solution is to use batched/grouped LoRA kernels that compute B(Ax) per-request with the appropriate adapter, gathering the relevant A and B slices for each row.",
+      "difficulty": "intermediate",
+      "tags": [
+        "multi-LoRA serving",
+        "batching",
+        "SGLang",
+        "inference optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is serving a large language model using SGLang with Data Parallelism (DP) across 4 replicas. They notice that their prefix caching hit rate has dropped significantly compared to running a single replica. What is the most likely cause and solution?\n\nA. The radix cache is shared across replicas causing contention; they should disable caching\nB. Each replica has its own radix cache and round-robin routing destroys prefix locality; they should use a prefix-aware DP router\nC. DP replicas require more memory for caching; they should reduce the cache size\nD. The model weights are being duplicated unnecessarily; they should switch to Tensor Parallelism",
+      "question_type": "mc",
+      "options": [
+        "A. The radix cache is shared across replicas causing contention; they should disable caching",
+        "B. Each replica has its own radix cache and round-robin routing destroys prefix locality; they should use a prefix-aware DP router",
+        "C. DP replicas require more memory for caching; they should reduce the cache size",
+        "D. The model weights are being duplicated unnecessarily; they should switch to Tensor Parallelism"
+      ],
+      "correct_answer": "B",
+      "explanation": "In Data Parallelism, each replica maintains its own independent radix cache. When using naive round-robin routing, requests with the same prefix may be sent to different replicas, preventing cache reuse. SGLang specifically documents the prefix-aware DP router to address this issue, ensuring requests with similar prefixes are routed to the same replica to maximize cache hits.",
+      "difficulty": "intermediate",
+      "tags": [
+        "data-parallelism",
+        "prefix-caching",
+        "radix-cache",
+        "dp-router"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A company needs to deploy a 200B parameter dense model that doesn't fit in a single 8-GPU node. They have two nodes connected via standard ethernet (not InfiniBand). According to SGLang's parallelism guidelines, what is the recommended parallelism configuration?\n\nA. Use TP=16 across both nodes for maximum FLOP distribution\nB. Use TP=8 within each node and PP=2 across nodes\nC. Use DP=2 with one full model replica per node\nD. Use Context Parallelism to split the model across nodes",
+      "question_type": "mc",
+      "options": [
+        "A. Use TP=16 across both nodes for maximum FLOP distribution",
+        "B. Use TP=8 within each node and PP=2 across nodes",
+        "C. Use DP=2 with one full model replica per node",
+        "D. Use Context Parallelism to split the model across nodes"
+      ],
+      "correct_answer": "B",
+      "explanation": "The decision sketch states: 'Does not fit in one node? → TP within each node, PP across nodes.' TP requires an all-reduce per layer and is extremely sensitive to interconnect - it works well over NVLink within a node but is painful over PCIe or across nodes. Pipeline Parallelism uses point-to-point activation transfers which are far cheaper than per-layer all-reduces, making it suitable for cross-node communication. Option A would suffer from slow all-reduces across ethernet. Option C is impossible since the model doesn't fit on one node. Option D splits sequences, not model weights.",
+      "difficulty": "intermediate",
+      "tags": [
+        "pipeline-parallelism",
+        "tensor-parallelism",
+        "multi-node",
+        "deployment-strategy"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is deploying an LLM service and observing that users mid-conversation experience stuttering token generation whenever new users submit long prompts. They are currently running prefill and decode in a single engine with chunked prefill enabled. What is the most accurate explanation for this behavior?",
+      "question_type": "mc",
+      "options": [
+        "Chunked prefill completely eliminates prefill interruption, so the issue must be network-related",
+        "Chunked prefill bounds but does not remove prefill interruption, so incoming prefills still delay ongoing decode batches",
+        "The decode phase is consuming too much compute, starving the prefill phase",
+        "The KV cache transfer between phases is causing the latency spikes"
+      ],
+      "correct_answer": "B",
+      "explanation": "When running both phases in one engine, incoming prefill batches frequently interrupt ongoing decode batches, causing delays in token generation. While chunked prefill helps by breaking large prefills into smaller chunks, it bounds this problem rather than eliminating it entirely. Users mid-stream will still see their tokens stutter when others submit long prompts. This is one of the documented problems that PD disaggregation addresses.",
+      "difficulty": "intermediate",
+      "tags": [
+        "prefill-interruption",
+        "chunked-prefill",
+        "decode-latency",
+        "single-engine"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following SGLang deployment commands:\n\n```bash\n# Worker A\npython -m sglang.launch_server --model-path meta-llama/Llama-3.1-8B-Instruct \\\n  --disaggregation-mode prefill --port 30000\n\n# Worker B  \npython -m sglang.launch_server --model-path meta-llama/Llama-3.1-8B-Instruct \\\n  --disaggregation-mode decode --port 30001\n\n# Router\npython -m sglang_router.launch_router --pd-disaggregation \\\n  --prefill http://127.0.0.1:30000 --decode http://127.0.0.1:30001 --port 8000\n```\n\nThe deployment is on a single node without RDMA or NVLink, connected only via standard Ethernet. The team has modest traffic with average prompt lengths. Is this configuration likely to be beneficial, and why?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "This configuration is likely NOT beneficial. PD disaggregation requires transferring the KV cache between workers, and without fast interconnect (RDMA, NVLink, InfiniBand, or EFA), the transfer latency can exceed the prefill interruption it was meant to avoid. For single-node deployments without fast interconnect and modest traffic, the added operational complexity (managing two worker pools plus a router, more failure modes) outweighs the benefits. The team should start with chunked prefill in a single engine instead.",
+      "explanation": "The central cost of PD disaggregation is the KV transfer. On a slow interconnect, this transfer can cost more than the prefill interruption it was designed to avoid. The documentation explicitly states that disaggregation is 'not worth it' for small deployments, single node without fast interconnect, and modest traffic. The recommendation is to start with chunked prefill in such scenarios.",
+      "difficulty": "intermediate",
+      "tags": [
+        "deployment-decisions",
+        "KV-transfer",
+        "interconnect",
+        "operational-complexity"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When choosing between fp8_e4m3 and fp8_e5m2 for KV cache quantization, which statement is correct?\n\nA. E4M3 has more dynamic range and is preferred for KV cache\nB. E5M2 has more precision and is preferred for KV cache\nC. E4M3 has more precision and is generally preferred for KV cache since values are well-scaled\nD. Both formats are identical and interchangeable",
+      "question_type": "mc",
+      "options": [
+        "A. E4M3 has more dynamic range and is preferred for KV cache",
+        "B. E5M2 has more precision and is preferred for KV cache",
+        "C. E4M3 has more precision and is generally preferred for KV cache since values are well-scaled",
+        "D. Both formats are identical and interchangeable"
+      ],
+      "correct_answer": "C",
+      "explanation": "E4M3 has 4 exponent bits and 3 mantissa bits, giving it more precision but less range. E5M2 has 5 exponent bits and 2 mantissa bits, giving it more range but less precision. E4M3 is generally preferred for KV cache because the values are typically well-scaled and benefit more from the additional precision. E5M2 is the safer fallback choice if you observe overflow artifacts.",
+      "difficulty": "intermediate",
+      "tags": [
+        "fp8",
+        "kv-cache",
+        "quantization",
+        "numerical-formats"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In SGLang's radix cache, which of the following is NOT a characteristic of nodes eligible for eviction?",
+      "question_type": "mc",
+      "options": [
+        "A. The node must be a leaf node in the radix tree",
+        "B. The node must be unlocked (no in-flight request holds it)",
+        "C. The node can be any node with low usage, including internal nodes",
+        "D. The node's KV must be actually resident in the pool"
+      ],
+      "correct_answer": "C",
+      "explanation": "Only 'evictable leaves' can be evicted - nodes that are leaves, unlocked, have KV resident in the pool, and are not shadowed by a child node. Internal nodes cannot be arbitrarily evicted; reclamation proceeds up a branch toward the root as children are removed, preserving the tree invariant that a cached node's ancestors are also cached.",
+      "difficulty": "intermediate",
+      "tags": [
+        "radix cache",
+        "eviction eligibility",
+        "tree structure",
+        "memory management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "When configuring SGLang's radix eviction policy, what happens if you pass a configuration object like `--radix-eviction-policy-config '{\"protected_threshold\": 4}'` to the `lru` policy?",
+      "question_type": "mc",
+      "options": [
+        "A. The configuration is silently ignored and default LRU behavior is used",
+        "B. The server rejects the unrecognized keys and fails at startup",
+        "C. The LRU policy adapts to use the protected_threshold parameter",
+        "D. The server automatically switches to SLRU policy"
+      ],
+      "correct_answer": "B",
+      "explanation": "Only segmented policies (like SLRU) accept a configuration object. The other policies (lru, lfu, priority) reject unrecognized keys at startup rather than silently ignoring them. This fail-fast behavior ensures that typos or misconfigurations are caught immediately instead of quietly giving you default behavior.",
+      "difficulty": "intermediate",
+      "tags": [
+        "configuration validation",
+        "radix eviction policy",
+        "error handling",
+        "slru"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does RadixAttention use a radix tree instead of a hash map for KV cache lookup?",
+      "question_type": "mc",
+      "options": [
+        "A. Hash maps are slower for exact matches",
+        "B. Radix trees use less memory than hash maps",
+        "C. Radix trees enable partial prefix matching, while hash maps only support all-or-nothing matching",
+        "D. Hash maps cannot store tensor data"
+      ],
+      "correct_answer": "C",
+      "explanation": "A hash map on the whole prompt provides all-or-nothing matching: exact duplicate prompts hit, everything else misses. A radix tree provides partial matching, which is the common case. For example, two requests might share a system prompt and few-shot block but diverge in the user turn. The tree naturally represents that branch point and allows reuse of the shared prefix even when the full prompts differ.",
+      "difficulty": "intermediate",
+      "tags": [
+        "radixattention",
+        "hash-map",
+        "radix-tree",
+        "prefix-matching"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "In SGLang's RadixAttention memory management, which of the following statements about eviction is correct?",
+      "question_type": "mc",
+      "options": [
+        "A. Any node can be evicted at any time using LRU policy",
+        "B. Only evictable leaves (unlocked nodes without children) can be reclaimed",
+        "C. Interior nodes are evicted first to free more memory quickly",
+        "D. The eviction policy can permanently pin KV cache entries"
+      ],
+      "correct_answer": "B",
+      "explanation": "Only evictable leaves can be reclaimed: nodes whose KV is resident, unlocked, and not shadowed by a child. You cannot free an interior node while a descendant still needs it, so reclamation walks branches from the leaves toward the root. The root is never evicted. Additionally, eviction policies only score candidates—they cannot pin KV permanently; under enough pressure, anything unlocked will be evicted.",
+      "difficulty": "intermediate",
+      "tags": [
+        "radixattention",
+        "memory-management",
+        "eviction",
+        "kv-cache"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team notices their VLM serving system has low GPU utilization despite receiving many image requests. The throughput remains flat regardless of GPU-related configuration changes. What is the most likely bottleneck according to SGLang best practices?",
+      "question_type": "mc",
+      "options": [
+        "A. The KV cache is too small for the image tokens",
+        "B. The vision encoder needs more CUDA streams",
+        "C. CPU-side image preprocessing (JPEG decoding, resizing, tiling) is saturated",
+        "D. The batch size is too large for the GPU memory"
+      ],
+      "correct_answer": "C",
+      "explanation": "This is a genuinely common surprise in VLM serving: when GPU utilization is low and throughput is flat, the bottleneck is often CPU-side image preprocessing. Decoding JPEGs, resizing, and tiling happen on CPU and can become the bottleneck at high image throughput. The content specifically warns that 'the GPU is idle and the tokenizer/preprocessor process is pegged' is a common scenario. The recommendation is to profile the CPU side before touching GPU flags.",
+      "difficulty": "intermediate",
+      "tags": [
+        "VLM",
+        "performance",
+        "bottleneck",
+        "CPU-preprocessing",
+        "debugging"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does prefix caching provide significantly less benefit for VLM workloads compared to text-only LLM workloads?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Prefix caching is less effective for VLMs because images dominate the token count (often hundreds or thousands of tokens per image), and two requests with different images share nothing in the image portion even if they have identical text prompts. Since images make up the majority of the token sequence, the achievable cache hit rate on image-heavy traffic is much lower than on text-only traffic. Prefix caching still helps when there's a fixed system prompt before the image or in multi-turn conversations about the same image where subsequent turns can reuse the entire prefix including the image embeddings.",
+      "explanation": "The key insight is that prefix caching works by sharing KV cache entries for matching prefixes. While text prefixes can be shared across requests, different images produce completely different embeddings that cannot be shared. Given that a single high-resolution image can expand to more tokens than the text prompt itself, the portion of the sequence that could potentially be cached and reused is dominated by non-shareable image content.",
+      "difficulty": "intermediate",
+      "tags": [
+        "prefix-caching",
+        "VLM",
+        "KV-cache",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You need to perform constrained decoding using a JSON schema and also retrieve logprobs from the model. Which API approach should you use?\n\n```python\n# Which endpoint and parameters would support this?\nresponse = ???\n```",
+      "question_type": "mc",
+      "options": [
+        "A. OpenAI-compatible API with response_format parameter",
+        "B. Native SRT API via POST /generate with json_schema and return_logprob parameters",
+        "C. Offline Engine with structured output mode",
+        "D. Anthropic-compatible endpoint with schema validation"
+      ],
+      "correct_answer": "B",
+      "explanation": "The native SRT API (POST /generate) is specifically designed for SGLang-specific features that the OpenAI schema doesn't support. It exposes knobs like json_schema, regex, ebnf constraints, and return_logprob. While the OpenAI API supports some structured output via response_format, the native API provides direct access to all constraint types plus logprob retrieval in a single request.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "native-api",
+        "constrained-decoding",
+        "logprobs",
+        "json-schema"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Explain why you would choose the offline Engine over the HTTP API for a batch dataset labeling job, and describe what optimizations are still available when using the offline Engine.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The offline Engine should be chosen for batch dataset labeling because it eliminates the network hop overhead and doesn't require running a separate server process. Despite being 'offline', it still provides all the same runtime optimizations as the HTTP server: continuous batching, RadixAttention for prefix caching, and constrained decoding. This makes it ideal for throughput-focused batch jobs like dataset labeling, offline evaluation harnesses, and synthetic data generation.",
+      "explanation": "The offline Engine is the same SGLang runtime with the HTTP layer removed. This is a key architectural insight - you don't lose any of the core optimizations (continuous batching, RadixAttention, constrained decoding) by going offline. The only thing removed is the network overhead, which is unnecessary when processing batches on a single machine.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "offline-engine",
+        "batch-processing",
+        "optimization",
+        "radixattention"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why must the KV cache be flushed after a weight update in an RL training loop using SGLang?\n\nA. The KV cache runs out of memory during training\nB. KV entries are a function of both tokens AND weights, so old entries become invalid\nC. The CUDA graphs need to be recompiled with new cache pointers\nD. Prefix caching only works within a single batch of requests",
+      "question_type": "mc",
+      "options": [
+        "A. The KV cache runs out of memory during training",
+        "B. KV entries are a function of both tokens AND weights, so old entries become invalid",
+        "C. The CUDA graphs need to be recompiled with new cache pointers",
+        "D. Prefix caching only works within a single batch of requests"
+      ],
+      "correct_answer": "B",
+      "explanation": "KV cache entries are computed as a function of the model weights, not just the input tokens. When weights are updated during a policy step, all previously cached KV entries become stale and invalid because they were computed with the old weights. This is why prefix caching benefits are realized within an iteration (across n samples sharing a prompt) but not across iterations after weight updates.",
+      "difficulty": "intermediate",
+      "tags": [
+        "KV cache",
+        "weight updates",
+        "RadixAttention",
+        "prefix caching"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A user reports that their chat application feels sluggish when they first submit a message, but once tokens start streaming, the experience is smooth. Which metric category should you investigate first?\n\nA. ITL (Inter-Token Latency)\nB. TTFT (Time to First Token)\nC. Cache hit rate\nD. Gen throughput (token/s)",
+      "question_type": "mc",
+      "options": [
+        "A. ITL (Inter-Token Latency)",
+        "B. TTFT (Time to First Token)",
+        "C. Cache hit rate",
+        "D. Gen throughput (token/s)"
+      ],
+      "correct_answer": "B",
+      "explanation": "TTFT (Time to First Token) measures the time from request arrival to the first streamed token, which is dominated by queueing delay plus prefill. This is exactly what makes an interface feel responsive initially. Since the user reports smooth streaming after tokens start appearing (which would indicate good ITL), but sluggishness at the start, TTFT is the primary metric to investigate. Cache hit rate could be a root cause affecting TTFT, but TTFT is the direct symptom metric to check first.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "latency",
+        "TTFT",
+        "user-experience",
+        "troubleshooting"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your SGLang deployment's cache hit rate suddenly dropped from 85% to 40% after a routine deployment, causing p99 TTFT to spike. The traffic volume and prompt lengths remained unchanged. Which of the following is the LEAST likely cause?",
+      "question_type": "mc",
+      "options": [
+        "A. The system prompt was modified in the new deployment",
+        "B. The load balancer was changed from prefix-aware routing to round-robin",
+        "C. The --watchdog-timeout value was decreased",
+        "D. The --mem-fraction-static value was reduced, shrinking the KV pool"
+      ],
+      "correct_answer": "C",
+      "explanation": "The `--watchdog-timeout` setting controls how long the system waits before considering a GPU or interconnect hung - it has no effect on cache hit rates. All other options directly impact caching: (A) changing the system prompt invalidates all cached prefixes since they no longer match, (B) round-robin routing distributes requests across replicas randomly instead of routing similar prefixes to the same replica, and (D) a smaller KV pool means less space for cached prefixes, causing more evictions. These are all documented causes of cache hit rate drops.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "cache-hit-rate",
+        "radix-cache",
+        "troubleshooting",
+        "deployment"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the primary technical distinction between PagedAttention and RadixAttention?",
+      "question_type": "mc",
+      "options": [
+        "A. PagedAttention is faster while RadixAttention uses less memory",
+        "B. PagedAttention is a memory allocation scheme while RadixAttention is a cache retention and lookup scheme",
+        "C. PagedAttention was developed by SGLang while RadixAttention was developed by vLLM",
+        "D. PagedAttention handles prefixes while RadixAttention handles suffixes"
+      ],
+      "correct_answer": "B",
+      "explanation": "PagedAttention and RadixAttention operate at different layers and are not competitors. PagedAttention is a memory allocation scheme that stores KV cache in fixed-size pages with an indirection table, solving fragmentation and enabling sharing. RadixAttention is a cache retention and lookup scheme that decides what to keep after a request finishes and how to find reusable prefixes. SGLang actually uses paged storage underneath its radix index, demonstrating they work together at different abstraction levels.",
+      "difficulty": "intermediate",
+      "tags": [
+        "PagedAttention",
+        "RadixAttention",
+        "KV cache",
+        "memory management",
+        "SGLang",
+        "vLLM"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which of the following is a feature that currently distinguishes SGLang from vLLM and TGI?",
+      "question_type": "mc",
+      "options": [
+        "A. Support for continuous batching",
+        "B. OpenAI-compatible APIs",
+        "C. A frontend DSL with fork/join primitives for branch-and-merge prompt programs",
+        "D. FP8 quantization support"
+      ],
+      "correct_answer": "C",
+      "explanation": "While continuous batching, OpenAI-compatible APIs, and FP8 support have all converged across the major serving stacks (vLLM, SGLang, and TGI), the frontend DSL with fork/join primitives and automatic prefix sharing remains unique to SGLang. This DSL enables branch-and-merge prompt programs that have no equivalent in vLLM or TGI.",
+      "difficulty": "intermediate",
+      "tags": [
+        "SGLang",
+        "DSL",
+        "frontend",
+        "fork/join",
+        "differentiation"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is deploying an LLM service that will handle both interactive chat (low concurrency, latency-sensitive) and nightly batch processing jobs (high throughput, thousands of requests). They want to enable speculative decoding. What is the correct deployment strategy?",
+      "question_type": "mc",
+      "options": [
+        "A. Enable speculative decoding for both workloads since it always improves performance",
+        "B. Enable speculative decoding for the batch processing jobs where throughput matters most",
+        "C. Enable speculative decoding for interactive chat but disable or reduce it for high-batch-size offline jobs",
+        "D. Disable speculative decoding entirely since it only works with greedy decoding"
+      ],
+      "correct_answer": "C",
+      "explanation": "Speculative decoding is a latency optimization, not a throughput optimization. It exploits idle GPU compute that exists at low to moderate concurrency. At high batch sizes, the GPU is already compute-saturated, so verifying speculative tokens competes with real work and the extra draft compute becomes pure overhead. Therefore, speculative decoding should be enabled for interactive serving (low concurrency, latency-sensitive) but disabled or reduced for high-throughput batch jobs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "speculative-decoding",
+        "deployment",
+        "latency-vs-throughput",
+        "batch-processing"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Which speculative decoding algorithm in SGLang requires NO separate draft model or checkpoint?",
+      "question_type": "mc",
+      "options": [
+        "A. EAGLE3 and STANDALONE",
+        "B. MTP and NGRAM",
+        "C. UNO and DFLASH",
+        "D. EAGLE2 and MTP"
+      ],
+      "correct_answer": "B",
+      "explanation": "MTP (Multi-Token Prediction) uses multi-token prediction heads that some models (like DeepSeek-class) ship with natively, requiring no separate draft checkpoint. NGRAM draws candidates from the token history of the current request with no extra model at all. In contrast, EAGLE variants need trained draft heads, STANDALONE requires a smaller model from the same family, UNO needs trained LoRA adapters, and DFLASH requires a dedicated draft checkpoint.",
+      "difficulty": "intermediate",
+      "tags": [
+        "speculative-decoding",
+        "MTP",
+        "NGRAM",
+        "SGLang-algorithms"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A developer wants to constrain their model output to match an EBNF grammar for a custom DSL. They attempt to use the `outlines` backend but the constraint is not being applied. What is the most likely cause?\n\nA) The EBNF syntax is invalid\nB) The `outlines` backend does not support EBNF constraints\nC) EBNF requires the `--enable-ebnf` flag to be set\nD) The model does not support structured outputs",
+      "question_type": "mc",
+      "options": [
+        "A) The EBNF syntax is invalid",
+        "B) The `outlines` backend does not support EBNF constraints",
+        "C) EBNF requires the `--enable-ebnf` flag to be set",
+        "D) The model does not support structured outputs"
+      ],
+      "correct_answer": "B",
+      "explanation": "The `outlines` backend only supports JSON Schema and regex constraints—it does not support EBNF. For EBNF support, the developer should use either `xgrammar` (the default) or `llguidance` backend.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "outlines",
+        "ebnf",
+        "grammar-backends",
+        "constraints"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A team is using SGLang with constrained decoding to ensure valid JSON output. Their model consistently produces schema-valid JSON, but the values are nonsensical (e.g., random strings for name fields, zeros for all numeric fields). The constraint is working correctly. What is the most likely cause and solution?\n\nA) The grammar backend is too slow and timing out before generating meaningful content\nB) The model was not instructed in the prompt to generate the desired format, so it produces valid but meaningless output\nC) The JSON Schema is too restrictive and limiting the model's vocabulary\nD) Jump-forward decoding is skipping the model's semantic reasoning steps",
+      "question_type": "mc",
+      "options": [
+        "A) The grammar backend is too slow and timing out before generating meaningful content",
+        "B) The model was not instructed in the prompt to generate the desired format, so it produces valid but meaningless output",
+        "C) The JSON Schema is too restrictive and limiting the model's vocabulary",
+        "D) Jump-forward decoding is skipping the model's semantic reasoning steps"
+      ],
+      "correct_answer": "B",
+      "explanation": "Constrained decoding guarantees syntax validity, not semantic quality. As the documentation states, 'it's advisable to explicitly include instructions in the prompt to guide the model to generate the desired format.' A model that doesn't know it should be emitting meaningful JSON will produce schema-valid garbage: correct keys, useless values. The solution is to include clear instructions in the prompt about what content should be generated.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "constrained-decoding",
+        "prompt-engineering",
+        "json-schema",
+        "output-quality"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is the key advantage of using `sgl.select(name, choices=[...])` over `sgl.gen()` when you need the model to choose from a fixed set of options?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "The `select` primitive guarantees the result will be exactly one of the provided choices because it uses scoring (comparing token-level logprobs or normalized likelihood) rather than free generation. This eliminates the possibility of the model generating an unexpected or malformed response.",
+      "explanation": "Unlike `gen()` which performs free-form text generation where the model might produce any output, `select()` implements choice selection by scoring each option and picking the highest-scoring one. This scoring-based approach ensures deterministic selection from the provided options, making it ideal for classification tasks, yes/no questions, or any scenario requiring constrained outputs.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "select-primitive",
+        "constrained-decoding",
+        "generation-primitives"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Consider the following SGLang program:\n\n```python\n@sgl.function\ndef analyze(s, data):\n    s += sgl.user(f\"Analyze: {data}\")\n    forks = s.fork(3)\n    for i, f in enumerate(forks):\n        f += sgl.gen(f\"analysis_{i}\", max_tokens=100)\n    forks.join()\n    s += sgl.gen(\"summary\", max_tokens=200)\n```\n\nHow does RadixAttention optimize the execution of this program?",
+      "question_type": "mc",
+      "options": [
+        "A. It runs all generations sequentially to minimize memory usage",
+        "B. It computes the shared prefix once and serves it from cache for all three branches",
+        "C. It automatically reduces the number of forks based on available GPU memory",
+        "D. It combines all three analyses into a single generation call"
+      ],
+      "correct_answer": "B",
+      "explanation": "When `fork(3)` creates three independent branches, they all share the same parent prefix (the user message with the data). RadixAttention recognizes this shared prefix and computes it exactly once, serving it from cache for all three branches. This is a key optimization that would be difficult to achieve manually when writing against a plain HTTP API.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "fork",
+        "radix-attention",
+        "prefix-caching",
+        "parallelism"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Why does SGLang use ZeroMQ sockets over IPC for inter-process communication instead of Python queues?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "SGLang uses ZeroMQ sockets over IPC for performance reasons and to enable proper multi-process communication. This design choice means that when a worker crashes, it surfaces as a broken socket rather than an exception in the request handler, which is why you see 'zmq' in tracebacks during failures.",
+      "explanation": "The content explicitly states that inter-process communication uses ZeroMQ sockets over IPC, not Python queues. This architectural decision has implications for how failures manifest - crashed workers appear as broken sockets rather than Python exceptions. This is important for understanding failure modes and debugging production issues.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "inter-process-communication",
+        "zeromq",
+        "architecture"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A user reports that their SGLang server is healthy but slow, and they notice `#queue-req` is always 0. What is the most likely cause of this issue?",
+      "question_type": "mc",
+      "options": [
+        "A. The GPU is experiencing memory fragmentation",
+        "B. The client is the bottleneck, not the server",
+        "C. The radix cache is full and needs clearing",
+        "D. The chunked prefill size is too large"
+      ],
+      "correct_answer": "B",
+      "explanation": "According to the troubleshooting guidance in the content, when the server is healthy but slow and `#queue-req` is always 0, it indicates that the client is the bottleneck, not the server. A queue of 0 means the server is processing requests faster than they're arriving, so the slowness is on the client side (perhaps slow request generation or network latency).",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "troubleshooting",
+        "performance",
+        "bottleneck-analysis"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "You observe that your SGLang server's `#queue-req` metric is persistently at 0 while running batch inference. What does this indicate and what should you do?\n\nA. The server is overloaded; reduce `--max-running-requests`\nB. The client is not submitting fast enough; increase client concurrency or use async submission\nC. The KV cache is full; increase `--mem-fraction-static`\nD. The scheduler is too conservative; lower `--schedule-conservativeness`",
+      "question_type": "mc",
+      "options": [
+        "A. The server is overloaded; reduce --max-running-requests",
+        "B. The client is not submitting fast enough; increase client concurrency or use async submission",
+        "C. The KV cache is full; increase --mem-fraction-static",
+        "D. The scheduler is too conservative; lower --schedule-conservativeness"
+      ],
+      "correct_answer": "B",
+      "explanation": "A `#queue-req` of 0 means the waiting queue is empty, which indicates you are benchmarking your load generator, not SGLang. The documentation states that healthy offline batch work should show a queue depth of 100-2000. You should fix the client first by adding more concurrency, using async submission, or using `run_batch` before touching any server flags.",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "queue-req",
+        "client-bottleneck",
+        "diagnostics"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "Your SGLang server is experiencing OOM errors. You've determined that the errors occur during the prefill phase. Which parameter should you adjust, and what are the recommended values?\n\nExplain your answer and describe the trade-off involved.",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "Lower `--chunked-prefill-size` to 4096 or 2048. The trade-off is that this slows down the prefill speed for long prompts, but it prevents OOM during prefill by processing the input in smaller chunks that require less memory.",
+      "explanation": "SGLang's documentation specifies that OOM during prefill should be addressed by lowering `--chunked-prefill-size`, with recommended values of 4096 or 2048. This is distinct from decode-phase OOM (which requires lowering `--max-running-requests`) and startup OOM (which requires lowering `--mem-fraction-static`). Understanding which phase causes OOM is described as 'the single most useful diagnostic in SGLang operations.'",
+      "difficulty": "intermediate",
+      "tags": [
+        "sglang",
+        "OOM",
+        "prefill",
+        "chunked-prefill-size",
+        "memory-management"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "What is RadixAttention and why is it significant in SGLang?",
+      "question_type": "free",
+      "options": [],
+      "correct_answer": "RadixAttention is SGLang's signature contribution where KV cache entries for all past requests are retained in a radix tree keyed by token prefix. When a new request shares a prefix with an earlier one, it skips recomputing that prefix. Unlike caches that must be explicitly declared, this happens automatically across requests, making SGLang particularly effective for few-shot prompts, long system prompts, multi-turn chat, agent loops, and tree search.",
+      "explanation": "RadixAttention is the key innovation that differentiates SGLang. By automatically caching and reusing KV cache entries based on token prefixes in a radix tree structure, it eliminates redundant computation without requiring explicit cache management from the user. This automatic prefix sharing is especially valuable in workloads with repeated patterns.",
+      "difficulty": "intermediate",
+      "tags": [
+        "radixattention",
+        "kv-cache",
+        "prefix-caching",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    },
+    {
+      "question_text": "A user wants to maximize KV cache hit rates for a workload with many requests sharing similar prefixes. Which SGLang scheduler policy should they use?",
+      "question_type": "mc",
+      "options": [
+        "A. --schedule-policy fifo (First In, First Out)",
+        "B. --schedule-policy lpm (Longest Prefix Match)",
+        "C. --schedule-policy random",
+        "D. --schedule-policy priority"
+      ],
+      "correct_answer": "B",
+      "explanation": "The cache-aware scheduling feature in SGLang allows the scheduler to reorder the waiting queue by longest-prefix match using --schedule-policy lpm. This ensures that requests likely to hit the cache run together, actively raising the hit rate rather than just exploiting whatever cache hits happen by accident with a standard FIFO ordering.",
+      "difficulty": "intermediate",
+      "tags": [
+        "scheduling",
+        "cache-aware-scheduling",
+        "lpm",
+        "optimization"
+      ],
+      "source": "llm_studying",
+      "is_active": true
+    }
+  ]
+}

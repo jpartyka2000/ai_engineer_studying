@@ -1,0 +1,36 @@
+A debugging playbook for SGLang. Interviewers like "tell me about a time it broke," and these are the failures that actually happen.
+
+**"Server started but I can't reach it."** Almost always the default `--host 127.0.0.1`. In a container or VM, bind `--host 0.0.0.0`. Second cause: the health check passes only after weight loading, CUDA graph capture, and warmup — so a client connecting immediately gets refused. Poll `/health` before sending traffic.
+
+**CUDA out of memory — diagnose by phase.** This is the core skill.
+- **At startup / graph capture** → `--mem-fraction-static` is too high for this model, or CUDA graph buffers do not fit. Lower `--mem-fraction-static`; lower `--cuda-graph-max-bs-decode`.
+- **During prefill** (OOM on a long prompt) → lower `--chunked-prefill-size` to 4096 or 2048; lower `--max-prefill-tokens`.
+- **During decode** (OOM after running fine for a while, under load) → lower `--max-running-requests`; the pool cannot hold that many concurrent sequences at their eventual lengths.
+- **Sneaky cause:** `--context-length` set higher than you need. KV budget per sequence is proportional to it, so an inflated value silently slashes concurrency.
+
+**Throughput is far below the benchmark numbers.** Check `#queue-req` first. If it is 0, the server is starved and you are measuring your client — add concurrency, use `run_batch` or the offline `Engine`, or more load-generator processes. If the queue is healthy but `token usage` is low, the scheduler is under-admitting: lower `--schedule-conservativeness`, raise `--mem-fraction-static`. If both look fine, you are probably comparing against a benchmark with a very different input/output length distribution.
+
+**Requests being retracted / preempted.** The scheduler admitted more sequences than the KV pool could ultimately hold and had to evict a running generation and requeue it, discarding its decode work. Raise `--schedule-conservativeness` or lower `--max-running-requests`. Sustained retraction is always a misconfiguration, never a healthy steady state.
+
+**Cache hit rate collapsed and latency regressed.** Ordered by likelihood:
+1. Someone edited the system prompt — every cached prefix was invalidated at once. (Prompts are cache keys. Treat prompt changes like schema migrations.)
+2. A round-robin load balancer replaced (or was never replaced by) a prefix-aware router, fragmenting the cache across replicas.
+3. KV pool shrank because `--context-length` or `--max-running-requests` changed.
+4. Traffic mix genuinely shifted to more diverse prompts.
+5. Multi-LoRA: adapter diversity rose, and KV cannot be shared across adapters.
+
+**Watchdog timeout with no OOM.** `--watchdog-timeout` (default 300 s) fired because a forward pass hung. In multi-GPU setups this is usually a NCCL/interconnect hang rather than an SGLang bug — check `NCCL_DEBUG=INFO`, topology, and whether one rank died first. In Kubernetes, verify `/dev/shm` is large enough and that peer access works (`--enable-p2p-check` exists to validate GPU peer-to-peer).
+
+**Structured output is valid JSON but useless.** Constrained decoding guarantees syntax, not semantics. If the model was never told it is producing a structured record, you get schema-conformant nonsense. Put the format description in the prompt *in addition to* the constraint. Related: applying a whole-response JSON constraint to a reasoning model destroys its chain of thought — use the reasoning-aware structured output path instead.
+
+**Structured output throws or hangs.** Usually an unsupported constraint for the chosen backend (EBNF on `outlines`), two constraint types passed at once (mutually exclusive), or a pathological schema whose automaton is enormous to compile. Simplify the schema; prefer `xgrammar`.
+
+**Garbage output after changing a flag.** Suspects: `--context-length` raised above the model's trained length; a wrong `--chat-template` so the model never sees the format it expects; overly aggressive quantization (4-bit weights *and* FP8 KV on a small model); `--dtype float16` on a model trained in bfloat16, overflowing. Bisect by returning to BF16, default template, no quantization.
+
+**Outputs are not reproducible between runs.** Expected, not a bug: batch composition changes floating-point reduction order. Fix the seed with `--random-seed` and, if you truly need bit-exactness, use the documented deterministic inference mode — accepting its performance cost.
+
+**Model won't load.** Missing `--trust-remote-code` for a custom architecture; unsupported architecture (check the supported-models list, and note the Transformers fallback path exists for some); a gated repo needing `HF_TOKEN`; mismatched `--load-format`; or disk full in `--download-dir`.
+
+**First request after startup is very slow.** FlashInfer JIT-compiles kernels for your shapes, and `--skip-server-warmup` (if set) defers graph/kernel warmup to the first real request. Send a synthetic warmup request before opening to traffic.
+
+**The general method.** Identify the *phase* (startup, prefill, decode), read what the scheduler is logging (`#queue-req`, `#running-req`, `token usage`, retractions), change one flag at a time, and re-measure with a workload that resembles production. Most "SGLang is slow" reports are a starved client, an under-admitting scheduler, or a destroyed cache hit rate — in that order.

@@ -1,0 +1,32 @@
+Mixture-of-Experts models have become the dominant frontier architecture (DeepSeek, Qwen MoE, Mixtral, GLM, Kimi, gpt-oss), and serving them well is a distinct engineering problem. SGLang's expert parallelism support is one reason it is used for large MoE deployments.
+
+**What an MoE layer does.** Replace the single MLP in a transformer block with N expert MLPs plus a router. For each *token*, the router selects top-k experts (commonly k=1, 2, or 8 of 64–256 experts), runs only those, and combines their outputs weighted by router scores. Consequence: total parameters are enormous while *active* parameters per token stay small. A 600B-parameter MoE may activate only ~37B per token.
+
+**The serving implications, which are the opposite of what you'd expect.**
+- **Compute** per token is like a small dense model — cheap.
+- **Memory** is like a huge dense model — you must hold *all* experts resident, because any token may route anywhere.
+- So MoE serving is memory-capacity-bound in a way dense serving is not. You need many GPUs to hold the weights even though the FLOPs per token are modest.
+
+**Expert parallelism (EP).** Rather than sharding every expert across all GPUs (tensor parallelism), place *different experts on different GPUs*. Each GPU holds a subset of experts in full. Then for each token:
+1. The router decides which experts it needs.
+2. An **all-to-all dispatch** sends each token's hidden state to the GPU(s) owning its chosen experts.
+3. Each GPU runs its local experts on the tokens it received.
+4. An **all-to-all combine** returns results to the originating GPU.
+
+**Why EP instead of TP for the MoE part.** With TP, every GPU participates in every expert, so every GPU does 1/world_size of a very small amount of work — poor efficiency, and the per-layer all-reduce is on the critical path. With EP, each GPU does full-width work on fewer tokens, which is far more GEMM-efficient. The price is all-to-all communication instead of all-reduce, which is why specialized libraries (DeepEP and similar) and fast interconnect matter so much here.
+
+**Expert load imbalance — the characteristic MoE serving problem.** Routers are trained with auxiliary balance losses, but at inference on real traffic, distribution is never uniform. Some experts are "hot." Since each GPU holds a fixed set of experts, a hot expert means one GPU is the straggler and every other GPU waits at the all-to-all barrier. Mitigations:
+- **Expert replication / redundant experts** — keep extra copies of hot experts on multiple GPUs so their load can be split.
+- **Expert placement rebalancing** — periodically measure per-expert load and re-map experts to GPUs.
+- **Careful EP-group sizing** — larger EP groups spread experts thinner but make the all-to-all more expensive.
+
+SGLang exposes expert-parallel configuration and documents expert distribution recording, so you can measure the imbalance rather than guess at it.
+
+**Combining with other parallelism.** A large MoE deployment typically layers several dimensions: attention data-parallel (DP attention, to avoid replicating KV across a huge TP group), MoE expert-parallel across many GPUs, and the dense parts tensor-parallel. `--moe-data-parallel-size` and the EP configuration control the MoE side. This "attention DP + MoE EP" hybrid is essentially the reference recipe for serving DeepSeek-class models and is worth being able to sketch.
+
+**Other MoE serving concerns.**
+- **Batching amplifies expert coverage.** With batch size 1 only k experts run; with a large batch, nearly every expert gets some tokens. So MoE efficiency *improves* with batch size in a way dense models do not — small batches waste the investment in holding all those weights.
+- **Quantization is near-mandatory.** FP8 (or FP4) on expert weights is what makes the memory footprint tractable.
+- **Prefill vs decode asymmetry is sharper.** Prefill has many tokens to dispatch (good all-to-all efficiency); decode has one token per sequence (tiny messages, latency-dominated all-to-all). This is part of why PD disaggregation is especially attractive for MoE models.
+
+**Interview soundbite.** "MoE flips the serving bottleneck: you pay dense-model memory for small-model compute. So you use expert parallelism to shard experts across GPUs rather than tensor-parallelizing each one, and your dominant new problems are all-to-all communication cost and expert load imbalance — one hot expert makes every other GPU wait at the barrier."

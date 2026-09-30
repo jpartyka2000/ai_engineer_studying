@@ -1,0 +1,42 @@
+The SGLang Runtime (SRT) is a multi-process pipeline, not a single monolithic server loop. Knowing the process boundaries explains most of its performance behavior and most of its failure modes.
+
+**The processes.**
+
+1. **HTTP server / entrypoint** — accepts OpenAI-compatible and native requests. Runs an async web server (`--host`, `--port`, default `127.0.0.1:30000`).
+
+2. **TokenizerManager** — converts text (and images) to token IDs, validates sampling parameters, and forwards the request to the scheduler. Runs in its own process so tokenization of a long prompt does not block the GPU loop.
+
+3. **Scheduler** — the brain. Owns the waiting queue, the running batch, the radix cache, and the KV pool accounting. Each step it decides: run a prefill batch, run a decode batch, or mix them (chunked prefill). One scheduler process per TP rank, with rank 0 driving.
+
+4. **Model workers (TP ranks)** — hold the model weights and execute forward passes. `--tp-size` GPUs each run a shard. CUDA graphs are captured for common decode batch shapes to eliminate per-step kernel launch overhead.
+
+5. **DetokenizerManager** — turns output token IDs back into text incrementally (handling multi-byte UTF-8 boundaries so streaming does not emit broken characters), and sends results back to the entrypoint.
+
+**Inter-process communication** is via ZeroMQ sockets over IPC, not Python queues — which is why you see `zmq` in tracebacks and why a crashed worker surfaces as a broken socket rather than an exception in the request handler.
+
+**The zero-overhead batch scheduler.** The CPU work for step N+1 (building the next batch, preparing metadata, sampling bookkeeping) is overlapped with the GPU forward pass for step N. Without this, a small model whose forward pass takes 3 ms can spend comparable time waiting on Python, halving throughput. This overlap is the reason SGLang's small-model numbers look strong.
+
+**The scheduling loop, roughly.**
+
+```
+each iteration:
+  admit new requests from the waiting queue (subject to memory + --max-running-requests)
+  for each admitted request: match its prefix in the radix tree, reuse that KV
+  build a batch: either prefill (possibly chunked) or decode, or both
+  forward pass on the TP workers
+  sample next tokens (with grammar masks applied if constrained)
+  free finished requests' slots, insert their sequences into the radix tree
+  stream partial output to the detokenizer
+```
+
+**Prefill vs decode.** Prefill processes many tokens of one or more prompts in parallel and is compute-bound. Decode processes one token per sequence and is memory-bandwidth-bound. Mixing them in one engine means a large prefill can stall ongoing decodes — the "prefill interruption" problem that chunked prefill mitigates and that PD disaggregation eliminates by putting them on separate workers.
+
+**Memory layout.** At startup, `--mem-fraction-static` reserves a fraction of GPU memory (default around 0.88) for model weights plus the static KV cache pool; the remainder is left for activations, CUDA graph buffers, and fragmentation. The KV pool is a flat token/page buffer; the radix tree stores indices into it, not tensors. This indirection is what makes prefix sharing free — two tree nodes can point at the same pool pages.
+
+**Watchdog.** `--watchdog-timeout` (default 300 s) kills the server if a forward pass hangs, on the theory that a wedged GPU should fail loudly and be restarted by your orchestrator rather than silently black-hole traffic.
+
+**Where things break.**
+- OOM during *prefill* → lower `--chunked-prefill-size`.
+- OOM during *decode* → lower `--max-running-requests` or `--mem-fraction-static`.
+- Server healthy but slow, `#queue-req` always 0 → the client is the bottleneck, not the server.
+- Watchdog kills with no OOM → usually a NCCL/interconnect hang in multi-GPU setups.

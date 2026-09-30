@@ -1,0 +1,78 @@
+The standard way to run SGLang is `python -m sglang.launch_server`. The flags divide into a handful of groups; knowing which group a symptom belongs to is most of the operational skill.
+
+**Minimal launch.**
+
+```bash
+python -m sglang.launch_server \
+  --model-path meta-llama/Llama-3.1-8B-Instruct \
+  --host 0.0.0.0 --port 30000
+```
+
+Defaults: host `127.0.0.1`, port `30000`. Note the default host binds loopback only — in a container you must set `--host 0.0.0.0` or nothing outside can reach it. This is the single most common "the server started but I can't curl it" cause.
+
+**Model and tokenizer.**
+- `--model-path` / `--model` — local directory or HuggingFace repo id.
+- `--tokenizer-path` — override if the tokenizer lives elsewhere.
+- `--tokenizer-mode` — `auto` (fast tokenizer when available) or `slow`.
+- `--load-format` — `auto`, `safetensors`, `pt`, `gguf`, ...
+- `--trust-remote-code` — required for models shipping custom modeling code.
+- `--context-length` — override the value from `config.json`. Raising it above what the model was trained for will produce garbage; lowering it saves KV memory.
+- `--revision` — pin a branch/tag/commit so a deploy is reproducible.
+- `--served-model-name` — the name clients see in API responses, so you can swap the underlying checkpoint without changing client code.
+- `--chat-template` — a builtin name or a file, for models whose template HF metadata gets wrong.
+
+**Parallelism.**
+- `--tensor-parallel-size` / `--tp` — shard each layer across GPUs. Use when the model does not fit on one GPU.
+- `--pipeline-parallel-size` / `--pp-size` — split layers into stages.
+- `--attention-context-parallel-size`, `--dcp-size` — context parallelism for very long contexts / MLA decode.
+- `--moe-data-parallel-size` — MoE data parallelism.
+- Multi-node: `--dist-init-addr`, `--nnodes`, `--node-rank`.
+
+**Memory and scheduling.**
+- `--mem-fraction-static` — fraction of GPU memory for weights + KV pool (default ~0.88). Raise until OOM, leaving roughly 5–8 GB headroom for activations.
+- `--max-running-requests`, `--max-queued-requests` — concurrency and queue caps.
+- `--chunked-prefill-size` — tokens per prefill chunk; `-1` disables.
+- `--max-prefill-tokens` — default 16384.
+- `--page-size` — tokens per KV page, default 1.
+- `--schedule-policy` — `fcfs`, `lpm`, `random`, `dfs-weight`.
+- `--enable-priority-scheduling`, `--radix-eviction-policy`.
+
+**Precision and quantization.**
+- `--dtype` — `auto`, `bfloat16`, `float16`, `float32`.
+- `--quantization` — `fp8`, `awq`, `gptq`, `marlin`, `bitsandbytes`, ...
+- `--kv-cache-dtype` — `auto`, `fp8_e5m2`, `fp8_e4m3`, `bf16`, `nvfp4`.
+- `--enable-fp32-lm-head` — FP32 output logits, for numerics-sensitive work.
+
+**Runtime and device.**
+- `--device` — `cuda`, `xpu`, `hpu`, `npu`, `cpu`.
+- `--base-gpu-id` — first GPU index, so two servers can share a box.
+- `--random-seed`, `--watchdog-timeout` (default 300 s), `--download-dir`, `--skip-server-warmup`.
+
+**Serving surface and security.**
+- `--api-key`, `--admin-api-key` — bearer auth.
+- `--grpc-mode`, `--enable-http2`, `--ssl-certfile`, `--ssl-keyfile`.
+
+**Observability.**
+- `--log-level` (default `info`), `--log-requests`, `--log-requests-level` 0–3 (default 2).
+- `--enable-metrics` — Prometheus endpoint.
+- `--enable-trace`, `--otlp-traces-endpoint` (default `localhost:4317`).
+- `--export-metrics-to-file`, `--crash-dump-folder`.
+
+**A realistic production launch.**
+
+```bash
+python -m sglang.launch_server \
+  --model-path Qwen/Qwen3-32B \
+  --tp 4 \
+  --host 0.0.0.0 --port 30000 \
+  --mem-fraction-static 0.90 \
+  --chunked-prefill-size 8192 \
+  --schedule-policy lpm \
+  --quantization fp8 \
+  --kv-cache-dtype fp8_e4m3 \
+  --enable-metrics \
+  --api-key "$SGLANG_API_KEY" \
+  --served-model-name my-chat-model
+```
+
+**Verifying it is up.** `GET /health` and `GET /get_model_info`, then a real generation against `/v1/chat/completions`. Startup is not instant — weight loading, CUDA graph capture, and warmup all happen before the health check passes, so orchestrator readiness probes need a generous initial delay.

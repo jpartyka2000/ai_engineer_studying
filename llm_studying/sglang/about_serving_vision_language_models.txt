@@ -1,0 +1,40 @@
+SGLang serves vision-language models (VLMs) as well as text-only LLMs — Qwen-VL, InternVL, GLM-V, Llama 4, MiniCPM-V, LLaVA-lineage models, and OCR-specialized models. Multimodal serving adds a phase and a set of problems that text-only serving does not have.
+
+**The architecture of a VLM request.** Three stages instead of two:
+
+1. **Vision encoding.** Images are preprocessed (resize/tile/normalize) and run through a vision encoder (typically a ViT) producing image embeddings.
+2. **Projection and prefill.** A projector maps image embeddings into the language model's embedding space, where they are spliced into the token sequence at the position of an image placeholder token. The LLM then prefills over this mixed sequence.
+3. **Decode.** Ordinary autoregressive text generation.
+
+**Why this complicates serving.**
+
+- **Images inflate the token count enormously.** A single high-resolution image can expand to hundreds or thousands of "tokens" after tiling — often more than the text prompt. Your KV budget is dominated by images, and prefill cost scales with them. Budget accordingly.
+- **The vision encoder is a third resource profile.** It is compute-heavy, batchable, and independent of the LLM's decode loop. Running it inline blocks the LLM pipeline. SGLang addresses this with data parallelism for the multimodal encoder (`DP for multi-modal encoder`) and CUDA graph support for the encoder, and at the extreme with **EPD disaggregation** — encoder, prefill, and decode as three separately scaled pools.
+- **Preprocessing is CPU-bound.** Decoding JPEGs, resizing, and tiling happen on CPU and can become the bottleneck at high image throughput. This is a genuinely common surprise: the GPU is idle and the tokenizer/preprocessor process is pegged.
+- **Prefix caching gets weaker.** Two requests sharing a text prefix share KV; two requests with *different images* do not share the image portion at all, even with an identical text prompt. Since images dominate the token count, the achievable cache hit rate on image-heavy traffic is much lower than on text traffic. Where it still helps: a fixed system prompt before the image, and multi-turn conversations about the *same* image (turn 2 reuses turn 1's entire prefix, images included).
+- **Variable sequence lengths are extreme.** Text prompts vary by maybe 10×; image-bearing prompts can vary by 100× depending on resolution and tiling. Batching efficiency suffers and `--chunked-prefill-size` matters more.
+
+**How to send images.** The OpenAI-compatible vision format works unchanged:
+
+```python
+client.chat.completions.create(
+    model="qwen-vl",
+    messages=[{"role": "user", "content": [
+        {"type": "text", "text": "What's in this image?"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}},
+    ]}],
+)
+```
+
+Base64 data URLs and HTTP URLs are both accepted. In the frontend DSL the primitive is `sgl.image(path_or_bytes)`. For batch work, the offline engine has a documented VLM query path (`Query VLM with Offline Engine`).
+
+**Practical guidance.**
+- **Control resolution.** Most VLMs accept a max-pixels / tiling configuration. Halving the image token count is usually a much bigger win than any server flag, and often costs little accuracy for the task at hand. Measure it.
+- **Pre-resize client-side.** Sending a 4000×3000 photo when the model tiles to 1024px wastes bandwidth and CPU.
+- **Watch the preprocessing process.** If GPU utilization is low and throughput is flat, profile the CPU side before touching GPU flags.
+- **Scale the encoder separately** if image throughput is the constraint — that is exactly what encoder DP and EPD disaggregation are for.
+- **Expect lower cache hit rates** and do not treat that as a misconfiguration.
+
+**Beyond VLMs.** SGLang also supports embedding models, rerankers, classification and reward models (all of which are "prefill-only" — one forward pass, no decode loop, so they are pure throughput plays), and a separate `sglang-diffusion` stack for image/video generation models with its own parallelism and caching techniques. Worth knowing the scope exists, because "can I serve my reranker on the same stack?" is a real architectural question and the answer is yes.
+
+**Interview soundbite.** "VLM serving adds a compute-heavy encoder stage with its own resource profile, and images blow up the token count so KV memory and prefill cost are image-dominated. Two consequences people miss: CPU-side image preprocessing often becomes the actual bottleneck, and prefix caching helps much less because different images share nothing — which is why SGLang offers encoder data parallelism and encoder/prefill/decode disaggregation."

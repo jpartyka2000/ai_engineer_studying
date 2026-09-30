@@ -1,0 +1,21 @@
+Jump-forward decoding is SGLang's optimization for constrained generation: when the grammar leaves no choice, skip the model entirely and emit the forced tokens directly.
+
+**The observation.** Constrained decoding tracks a finite-state machine over the output. For a realistic JSON Schema, large stretches of that FSM are *deterministic* — there is exactly one legal continuation. Consider generating an object for the schema `{"name": str, "age": int}`. After the opening brace, the only legal next characters are `"name": ` — the key name, the quotes, the colon, the space. The model has no freedom there, yet a naive implementation still runs a full forward pass for each of those tokens, masks the entire vocabulary down to one allowed token, and "samples" the only option.
+
+For schemas with long key names, nesting, and fixed punctuation, a large fraction of the output can be structurally forced. Paying a forward pass for each of those tokens is pure waste.
+
+**The optimization.** Compile the constraint into a *compressed* FSM in which deterministic paths are collapsed into single edges labeled with the whole forced string. At decode time, when the FSM reaches a state whose outgoing path is deterministic, the runtime:
+
+1. Appends the entire forced string to the output at once.
+2. Prefills the KV cache for those tokens in a single batched forward pass (needed so later tokens can attend to them) rather than one autoregressive step each.
+3. Resumes normal sampling at the next state where the model actually has a choice.
+
+The saving is in *decode steps*, which are the latency-dominant, memory-bandwidth-bound part of generation. Replacing k sequential decode steps with one small prefill is a large win.
+
+**The tokenization catch.** This is the subtle part and the reason the technique is non-trivial. LLMs use subword tokenizers (BPE), so the tokenization of a string is context-dependent — the tokens for `"age"` appearing after `,` may differ from the tokens for `"age"` in isolation. If you naively append the forced string's standalone tokenization, you create a token sequence the model would never have produced, which puts it off-distribution and degrades the *unconstrained* tokens that follow. SGLang handles this by retokenizing the boundary region: it re-tokenizes the text around the junction so the resulting token sequence is one the tokenizer would actually produce for that text.
+
+**Where it helps most.** Verbose schemas with many fixed keys, deeply nested objects, long enum values, fixed prefixes/suffixes, and regex patterns with literal runs. Where it helps least: schemas that are mostly free-text string fields, since those are exactly the tokens the model must actually generate.
+
+**Relationship to speculative decoding.** Both reduce the number of sequential forward passes, but they differ fundamentally. Speculative decoding *guesses* tokens with a cheap draft model and must verify them against the target model, accepting or rejecting. Jump-forward decoding does not guess — the grammar *proves* those tokens are the only legal ones, so no verification is needed and there is no rejection. It is a free win when the structure allows it; speculative decoding is a probabilistic bet.
+
+**Interview soundbite.** "Constrained decoding tells you which tokens are illegal. Jump-forward decoding notices that sometimes only one token is legal, and in that case you don't need the model at all — you just have to be careful to retokenize the boundary so you don't hand the model a token sequence its tokenizer would never produce."

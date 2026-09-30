@@ -1,0 +1,26 @@
+SGLang does not implement one attention kernel — it selects among several backends, each with different performance characteristics and feature coverage. `--attention-backend` chooses; the default depends on your hardware and model.
+
+**Why there are multiple backends.** Attention has very different shapes in prefill (long query, long key — a big GEMM) and decode (query length 1, long key — bandwidth-bound gather). Add paged KV storage, GQA/MQA, MLA, sliding windows, and speculative tree verification, and no single kernel is optimal everywhere. So backends specialize.
+
+**The main options.**
+
+- **FlashInfer** — the usual default on NVIDIA. A library of highly tuned attention kernels built specifically for LLM *serving*: paged KV layouts, variable-length batches, GQA, and fast decode. It does JIT compilation of kernels for your specific shapes, which is why first startup can be slow while a kernel cache warms.
+- **Triton** — kernels written in OpenAI's Triton DSL. More portable and easier to modify; usually a bit slower than the hand-tuned path, but it is the fallback when FlashInfer lacks support for a model's attention variant, and it is the friendliest place to prototype a new one.
+- **Torch native** — plain PyTorch SDPA. Slowest, most portable, useful for debugging and for hardware without specialized kernels. If a numerical result looks wrong, reproducing it here rules the custom kernels out.
+- **FlashAttention-family backends** — FA2/FA3-style kernels, strong for prefill on supported hardware.
+- **Hardware-specific backends** — AITER and similar on AMD, plus vendor backends for Ascend NPU, TPU, XPU, and CPU. SGLang has a plugin system for out-of-tree backends.
+
+**FlashAttention in one paragraph, since it underlies most of them.** Naive attention materializes the S×S score matrix in HBM, so memory traffic (and memory *capacity*) grows quadratically with sequence length. FlashAttention tiles the computation, keeps tiles in SRAM, and uses the online-softmax trick to accumulate the correct normalization without ever writing the full score matrix out. It is exact — not an approximation — and the win is I/O, not FLOPs. This is what makes long contexts practical at all.
+
+**Paged KV and attention.** Because SGLang stores KV in pages (`--page-size`) with an index, the attention kernel must gather keys and values through a page table rather than reading a contiguous tensor. Backends differ in how efficiently they do that gather, and some prefer page sizes greater than 1. This is the main reason `--page-size` interacts with `--attention-backend`.
+
+**MLA (Multi-head Latent Attention).** DeepSeek-class models compress KV into a shared low-rank latent, so the KV cache per token is dramatically smaller than MHA. That changes the arithmetic enough to need dedicated kernels and dedicated decode strategies (hence `--dcp-size` for decode context parallelism on MLA models, and DP attention to avoid replicating the latent cache across TP ranks).
+
+**HiSparse / hierarchical sparse attention.** SGLang documents a sparse attention feature for very long contexts. The premise: at 100k+ tokens, most attention weight concentrates on a small subset of positions, so computing all of it is wasteful. Sparse/hierarchical schemes approximate full attention by attending to a selected subset, trading a little accuracy for large savings. Unlike FlashAttention, this *is* an approximation — worth stating clearly, because conflating "exact I/O optimization" with "sparse approximation" is a common error.
+
+**CUDA graphs and the backend.** Decode steps are small and launch-bound, so SGLang captures CUDA graphs for common decode batch shapes, replaying a whole step as one graph launch instead of hundreds of kernel launches. Consequences worth knowing:
+- Startup spends time capturing graphs (visible as a delay before the health check passes).
+- Captured graphs consume memory, which is why `--cuda-graph-max-bs-decode` shows up in the OOM remediation list.
+- Graphs require static shapes, so only pre-captured batch sizes benefit; SGLang also documents *piecewise* and *breakable* CUDA graph modes for cases where a fully static capture is impossible.
+
+**Practical advice.** Leave the backend on the default. Change it only when (a) a model's attention variant is unsupported, (b) you are debugging a numerical discrepancy, or (c) you have benchmarked an alternative on your own shapes and it wins. Backend choice is a last-mile optimization, well behind batch size, memory allocation, and cache hit rate.

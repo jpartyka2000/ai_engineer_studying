@@ -1,0 +1,38 @@
+Running SGLang in production means knowing which numbers to watch. The metrics divide into latency metrics (what users feel), saturation metrics (what the scheduler feels), and efficiency metrics (what your bill feels).
+
+**Turning it on.**
+- `--enable-metrics` — exposes a Prometheus scrape endpoint (`/metrics`).
+- `--log-requests` with `--log-requests-level 0..3` (default 2) — per-request logging at increasing detail; level 3 includes full inputs/outputs, which you likely do not want on in production for privacy reasons.
+- `--log-level` (default `info`) — general verbosity.
+- `--enable-trace` and `--otlp-traces-endpoint` (default `localhost:4317`) — OpenTelemetry distributed tracing, so a request can be followed across router → prefill → decode in a disaggregated deployment.
+- `--export-metrics-to-file` — per-request metrics to disk for offline analysis.
+- `--crash-dump-folder` — diagnostics on crash.
+
+**The latency metrics users actually experience.**
+
+- **TTFT (time to first token)** — from request arrival to the first streamed token. Dominated by queueing delay plus prefill. This is what makes an interface feel responsive. Long prompts, a deep queue, and cache misses all inflate it; a prefix cache hit can cut it dramatically because most of the prefill disappears.
+- **ITL / TPOT (inter-token latency / time per output token)** — the gap between successive tokens. Determines whether streaming text reads smoothly. Inflated by large batch sizes and by prefill work co-scheduled with decode.
+- **End-to-end latency** — TTFT + (output_tokens × ITL). Note the implication: for long outputs, ITL dominates; for short outputs, TTFT dominates. Which one you optimize depends on your output length distribution.
+- **Percentiles, not means.** p50 TTFT hides the long-prompt tail entirely. Alert on p95/p99.
+
+**The saturation metrics the scheduler logs.**
+- `#queue-req` — waiting queue depth. 0 means you are client-bound; 100–2000 is healthy for batch work; unbounded growth means you are over capacity and should shed load or scale out.
+- `#running-req` — sequences in the running batch. Compare against `--max-running-requests` to see whether you are capped by that flag or by memory.
+- `token usage` — KV pool utilization. Persistently low with a non-empty queue means wasted memory (raise `--mem-fraction-static`, lower `--schedule-conservativeness`).
+- `gen throughput (token/s)` — aggregate decode throughput.
+- **Retraction / preemption count** — requests evicted mid-generation and requeued. Any sustained nonzero value is a red flag: you are over-admitting and throwing away completed work.
+
+**The efficiency metric that matters most.**
+- **Cache hit rate** — fraction of prompt tokens served from the radix cache. This is the number that justifies SGLang's architecture, and the one to check first when latency regresses for no obvious reason. Causes of a sudden drop: a new deployment changed the system prompt (invalidating every cached prefix), a round-robin router replaced a prefix-aware one, traffic mix shifted to diverse prompts, or the KV pool shrank.
+
+**Alerting that is actually useful.**
+1. p99 TTFT above SLO — the user-visible symptom.
+2. Queue depth growing monotonically — capacity exhaustion, scale out.
+3. Retraction rate > 0 sustained — misconfigured admission.
+4. Cache hit rate dropped >20% week over week — something changed in prompts or routing.
+5. Server restarts / watchdog fires — `--watchdog-timeout` expiries usually mean a GPU or interconnect hang.
+6. OOM in logs — note *which phase*, since the remediation differs.
+
+**Capacity planning sketch.** Throughput per replica is roughly `batch_size / ITL`, and `batch_size` is bounded by KV pool capacity divided by average KV bytes per sequence. So the levers on capacity are: KV pool size (`--mem-fraction-static`), KV bytes per token (`--kv-cache-dtype`, and the model's architecture — GQA and MLA are far cheaper than MHA), and average sequence length (a workload property you often cannot change). That relationship is a good thing to derive out loud in a system design interview rather than quoting a tokens/sec number.
+
+**Deterministic inference.** SGLang documents a deterministic inference mode — worth knowing because batch composition normally makes outputs non-bit-reproducible (floating-point reduction order changes with batch shape). If you need reproducible outputs for testing or audit, that is the feature to reach for, and it costs performance.

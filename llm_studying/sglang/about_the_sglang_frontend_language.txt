@@ -1,0 +1,61 @@
+The SGLang frontend language is the "SGL" in SGLang: a Python-embedded DSL for writing LLM *programs* — prompts with multiple generation calls, branching, and parallelism — rather than single one-shot completions.
+
+**The shape of a program.** Decorate a function with `@sgl.function`. Its first parameter is a state object (conventionally `s`) that you build up with `+=`:
+
+```python
+import sglang as sgl
+
+@sgl.function
+def basic_qa(s, question):
+    s += sgl.system("You are a helpful assistant.")
+    s += sgl.user(question)
+    s += sgl.assistant(sgl.gen("answer", max_tokens=512))
+
+sgl.set_default_backend(sgl.RuntimeEndpoint("http://localhost:30000"))
+
+state = basic_qa.run(question="What is RadixAttention?")
+print(state["answer"])
+```
+
+`+=` appends to the prompt. `sgl.gen("name", ...)` marks a hole to be filled by the model and stores the result under that name in the returned state, retrievable with `state["name"]`.
+
+**Primitives.**
+
+- `gen(name, max_tokens=, temperature=, stop=, regex=, ...)` — non-blocking generation. The `regex=` argument gives you constrained decoding inline.
+- `select(name, choices=[...])` — pick among options. Implemented by scoring the choices rather than free generation, so the result is guaranteed to be one of them. (SGLang documents several "choices methods" for how the scoring is done — e.g. comparing token-level logprobs vs. normalized likelihood.)
+- `fork(n)` — branch the state into n independent continuations that execute in parallel. They all share the parent's prefix, so RadixAttention serves that prefix from cache exactly once.
+- `join()` — recombine forked branches (often implicit in subsequent operations).
+- `system()`, `user()`, `assistant()` — role helpers that apply the model's chat template. Context-manager forms (`assistant_begin()` / `assistant_end()`) exist for more intricate formatting.
+- `image(path_or_bytes)` — multimodal input for VLMs.
+
+**Fork: the motivating example.** Branch-and-merge patterns are where the DSL earns its keep:
+
+```python
+@sgl.function
+def multi_perspective(s, topic):
+    s += sgl.user(f"Topic: {topic}")
+    s += sgl.assistant_begin()
+    forks = s.fork(3)
+    for i, f in enumerate(forks):
+        f += f"\nArgument {i} from a distinct angle:\n"
+        f += sgl.gen(f"arg_{i}", max_tokens=200)
+    forks.join()
+    s += "\nNow synthesize the three arguments.\n"
+    s += sgl.gen("synthesis", max_tokens=400)
+```
+
+The three branches run concurrently against the runtime, and the shared prefix is computed once. Writing this by hand against a plain HTTP API means managing asyncio tasks, assembling prompts manually, and getting no prefix reuse guarantee.
+
+**Execution modes.**
+- `run(**kwargs)` — one execution, returns a state object holding every named generation.
+- `run_batch(list_of_kwargs)` — many executions with progress tracking; the runtime batches them and shares prefixes across them.
+- `stream=True` with `state.text_iter()` — incremental output.
+
+**Backends.** `sgl.set_default_backend(...)` chooses the execution target:
+- `sgl.RuntimeEndpoint("http://localhost:30000")` — a local SGLang server.
+- An in-process `sgl.Engine`.
+- API models (OpenAI and compatible endpoints), so the same program can run against a hosted model. Because API models charge per call, the frontend applies optimizations like speculative execution to reduce the number of round trips for multi-call programs.
+
+**Compiler vs interpreter.** The default path is an interpreter that submits operations to the runtime asynchronously as it walks the program. SGLang also describes a compiled mode that traces a program into a graph for whole-program optimization. Interpreted mode is what you will use day to day.
+
+**Honest assessment for an interview.** The frontend is the least-adopted half of SGLang — most production users run the runtime behind the OpenAI-compatible API and write their orchestration in LangChain/LlamaIndex/plain Python. The DSL's real advantages are (a) automatic prefix sharing across forks without manual cache management and (b) a declarative way to express parallel branches. Its disadvantage is being a framework-specific abstraction that ties your application code to SGLang.

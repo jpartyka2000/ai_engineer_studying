@@ -1,0 +1,39 @@
+Speculative decoding attacks the fundamental inefficiency of autoregressive decoding: each step moves all the model's weights from HBM to compute units in order to produce a single token. Decode is memory-bandwidth-bound, so the GPU's compute sits mostly idle. Speculative decoding fills that idle compute by *guessing several tokens cheaply and verifying them all in one forward pass*.
+
+**The core loop.** A cheap drafter proposes k candidate tokens. The target model runs one forward pass over all k in parallel and, for each position, checks whether it would have produced that token (under a sampling rule that provably preserves the target distribution). Accepted tokens are kept; the first rejection truncates the rest. If the drafter is good you get several tokens per target forward pass; if it is bad you paid a little extra and got one, so the technique is nearly free downside.
+
+Critically, this is *lossless* for greedy decoding and distribution-preserving for sampling — it is a latency optimization, not a quality tradeoff.
+
+**Algorithms SGLang supports** (`--speculative-algorithm`):
+
+`EAGLE` / `EAGLE2` — a small draft head trained on the target model's hidden features, drafting a *tree* of candidates rather than a single chain so that more of the guess survives verification. Broadly compatible; the safe choice.
+
+`EAGLE3` — the current recommendation. Per the docs, EAGLE-3 "removes the feature prediction objective, incorporates low and mid-layer features, and is trained in an on-policy manner." The documented comparison on Llama 3.1 8B is 373.25 tok/s (EAGLE-3) versus 244.10 tok/s (EAGLE-2).
+
+`MTP` (Multi-Token Prediction) — uses multi-token prediction heads that some models (notably DeepSeek-class) ship with. No separate draft checkpoint needed.
+
+`STANDALONE` — classical speculative decoding with a smaller model from the same family as the drafter (e.g. a 1B drafting for a 70B).
+
+`UNO` — reuses the target model itself with trained LoRA adapters instead of a separate draft checkpoint; supports linear and tree modes.
+
+`DFLASH` — linear block verification with a dedicated draft checkpoint, rather than tree expansion.
+
+`NGRAM` — draws candidates from the token history of the current request, with no extra model at all (CUDA-only). Shockingly effective for tasks with heavy copying from the prompt: code editing, summarization with quotation, RAG answers that echo retrieved text.
+
+**The key flags.**
+- `--speculative-algorithm` — the method.
+- `--speculative-draft-model-path` — draft weights (required for most, not for MTP or NGRAM).
+- `--speculative-num-steps` — how many autoregressive drafting steps. Deeper speculation reaches further ahead but risks rejection cascades, since one early rejection discards everything after it.
+- `--speculative-eagle-topk` — branching factor of the draft tree. More candidates per position raise acceptance but cost memory and draft compute.
+- `--speculative-num-draft-tokens` — maximum tokens verified in parallel. Larger allows deeper trees, costs GPU memory.
+
+**Tuning guidance.** Either leave all three numeric parameters unset to use auto-tuning, or set all three explicitly — mixing defaults with overrides gives incoherent configurations. `bench_speculative.py` in the repo searches combinations for your specific model/hardware/workload. Under memory pressure, reduce in this order: `--mem-fraction-static` (most effective), then `--cuda-graph-max-bs-decode`, then the three speculative parameters.
+
+**When it does and does not help.**
+- Helps most at *low to moderate concurrency*, where there is genuine idle compute to exploit.
+- Helps least, and can actively hurt, at *high batch sizes* — with a large batch the GPU is already compute-saturated, so verifying speculative tokens competes with real work. The extra draft compute becomes pure overhead.
+- Therefore: speculative decoding is a *latency* optimization for interactive serving, not a *throughput* optimization for offline batch jobs. Stating that distinction is the mark of someone who has actually deployed it.
+
+**Acceptance length is the metric.** Watch the average accepted tokens per verification step. Below ~1.5 the technique is barely paying for itself; 2.5–4 is a strong result. Acceptance is workload-dependent: predictable, templated, or copy-heavy text accepts well; creative, high-entropy text does not.
+
+**Adaptive speculative decoding.** SGLang documents an adaptive variant that adjusts speculation depth at runtime based on observed acceptance and current load — turning speculation down as batch size grows, which is exactly the right response to the tradeoff above.

@@ -1,0 +1,29 @@
+RadixAttention is SGLang's mechanism for reusing KV cache across requests. It is the framework's headline optimization and the thing most likely to be asked about in an interview.
+
+**The problem it solves.** In a transformer, generating token t requires the key/value tensors for all tokens before it. Computing those for the prompt is the "prefill" phase, and it costs compute proportional to the prompt length. If a thousand requests all begin with the same 2,000-token system prompt, a naive server recomputes those 2,000 tokens of KV a thousand times. Classic servers freed a request's KV cache the moment the request finished, so none of that work could ever be reused.
+
+**The core idea.** Don't free it. Keep finished requests' KV cache in GPU memory and index it by *token prefix* in a radix tree (a compressed trie whose edges are token sequences rather than single characters). When a new request arrives:
+
+1. Walk its token sequence down the tree, matching as far as possible.
+2. The matched portion already has KV in the pool — reuse it directly.
+3. Prefill only the unmatched suffix.
+4. Insert the new full sequence back into the tree so future requests can match it.
+
+Because the index is a prefix tree, the shared 2,000-token system prompt is stored exactly once and every request that starts with it matches on the first walk.
+
+**Why a radix tree and not a hash map.** A hash map on the whole prompt gives you all-or-nothing matching: exact duplicate prompts hit, everything else misses. A prefix tree gives you *partial* matching, which is the common case — two requests share a system prompt and a few-shot block but diverge in the user turn. The tree naturally represents that branch point, and the compressed (radix) form keeps the tree shallow instead of one node per token.
+
+**Memory management.** The KV pool is finite, so the tree doubles as an eviction structure:
+
+- **Reference counting / locking.** Nodes whose KV is being used by an in-flight request are locked and cannot be evicted. This is what keeps a running generation from having its own context pulled out from under it.
+- **Leaf-only eviction.** Only *evictable leaves* can be reclaimed: nodes whose KV is resident, unlocked, and not shadowed by a child. You cannot free an interior node while a descendant still needs it, so reclamation walks branches from the leaves toward the root. The root is never evicted.
+- **Policies.** LRU is the default; LFU, SLRU (segmented LRU with a protected segment), and priority-based eviction are selectable via `--radix-eviction-policy`.
+- **A policy only scores candidates.** It does not decide how much to free and it cannot pin KV permanently — under enough pressure, anything unlocked goes.
+
+**Page size.** KV is allocated in pages of `--page-size` tokens (default 1 in SGLang, i.e. token-granular). A page size of 1 gives the finest-grained prefix matching; larger pages reduce bookkeeping overhead and suit some attention backends, at the cost of matching only on page boundaries.
+
+**What makes hit rates high or low.** Workloads with long shared prefixes win big: long system prompts, few-shot exemplars, RAG with a fixed instruction block, multi-turn chat (turn N+1's prefix is turn N's whole conversation), agent loops that replay a growing transcript, and tree search / self-consistency sampling that forks from a common node. Workloads with independent short prompts and high prompt diversity get almost nothing — and pay a small bookkeeping cost. This is the honest caveat to state in an interview.
+
+**Interaction with scheduling.** Reuse is only as good as the order requests are processed in. If two prefix-sharing requests are separated in the queue by a flood of unrelated traffic, the shared prefix may be evicted in between. That is exactly why SGLang pairs RadixAttention with cache-aware scheduling (`--schedule-policy lpm`), and why its router does prefix-aware load balancing across replicas instead of round-robin.
+
+**Turning it off.** `--disable-radix-cache` disables the feature. It is worth knowing this exists for two reasons: benchmarking the delta, and diagnosing a rare correctness/memory issue by ruling the cache out.

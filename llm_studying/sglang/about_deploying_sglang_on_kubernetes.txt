@@ -1,0 +1,32 @@
+Deploying SGLang on Kubernetes has a few wrinkles that generic web-service deployment advice gets wrong. These are practical, frequently-asked operational points.
+
+**Container basics.**
+- Use the official `lmsysorg/sglang` images (CUDA-matched tags) rather than building from scratch; the CUDA / PyTorch / FlashInfer version matrix is unpleasant to assemble by hand.
+- `--host 0.0.0.0` is mandatory. The default `127.0.0.1` binds loopback only and the Service will never reach the pod.
+- Request GPUs via `nvidia.com/gpu` in resource limits, and remember that GPUs are not fractionally shareable by default — one pod per GPU set unless you use MPS/MIG/time-slicing.
+- Mount a shared cache volume (`--download-dir` / `HF_HOME`) so every pod restart does not re-download tens of gigabytes. A PVC or a node-local hostPath both work; a pre-baked model in the image is fastest but bloats the image.
+- `/dev/shm` defaults to 64 MB in Kubernetes and that is too small for multi-process/NCCL workloads. Mount a larger `emptyDir` with `medium: Memory`, or the server will fail in confusing ways.
+
+**Probes — the most common mistake.** SGLang takes minutes to become ready: weight download/load, CUDA graph capture, warmup. A default liveness probe will kill the pod repeatedly in a crash loop before it ever serves.
+- Use a **startupProbe** with a generous `failureThreshold × periodSeconds` budget (many minutes) pointed at `/health`.
+- Keep the **readinessProbe** on `/health` so the Service does not route traffic to a pod that is still loading.
+- Keep the **livenessProbe** loose. `--watchdog-timeout` already handles a wedged GPU by exiting; you do not want a probe timeout racing it during a long prefill.
+- `--skip-server-warmup` trades startup time for a slower first request.
+
+**Graceful shutdown.** In-flight generations can run for a minute or more. Set `terminationGracePeriodSeconds` high enough to drain them, and make sure the readiness probe fails *before* the process starts refusing work so the Service stops sending new requests first.
+
+**Multi-node deployments.** Any deployment where TP or PP spans hosts needs coordinated startup: every node runs the same command, differing only in `--node-rank`, and all need `--dist-init-addr` and `--nnodes`. A plain Deployment cannot express this because pods are interchangeable and unordered. Use:
+- **LeaderWorkerSet (LWS)** — purpose-built for this pattern; SGLang's docs cover LWS-based PD deployment specifically.
+- **StatefulSet** — gives stable ordinal hostnames you can map to node ranks, plus a headless Service for rendezvous.
+- Node affinity / topology constraints so the ranks land on hosts with the right interconnect. A TP group split across racks will perform terribly.
+- RDMA/InfiniBand device plugins and hugepages if you are using `--disaggregation-ib-device` or fast KV transfer.
+
+**PD disaggregation on Kubernetes** means three workloads: a prefill pool, a decode pool, and the router — each with its own scaling policy. The router needs stable endpoint discovery for both pools; headless Services plus the router's own health checking handle membership changes.
+
+**Autoscaling.** CPU utilization is meaningless here. Scale on queue depth, GPU utilization, or a custom metric from `--enable-metrics` (queue depth is the most honest signal of "we need more replicas"). Be realistic about scale-up latency: a new pod is minutes from serving, so an HPA reacting to a traffic spike is always late. Keep warm headroom.
+
+**Routing.** Put SGLang's prefix-aware router (or Model Gateway) in front of replicas rather than relying on the Service's round-robin. Round-robin across N replicas fragments the radix cache N ways and quietly destroys your cache hit rate — this is the single highest-impact Kubernetes-specific tuning item for an SGLang deployment.
+
+**Config hygiene.** Pin `--revision` so a rollout is reproducible, set `--served-model-name` so client code is decoupled from the checkpoint, and put `--api-key` in a Secret. Expose `/metrics` for scraping but do not expose it publicly.
+
+**Interview-worthy summary.** "The three things that bite you: startup takes minutes so you need a startupProbe and loose liveness; multi-node TP needs ordered identity so you use LWS or a StatefulSet rather than a Deployment; and the default round-robin Service destroys prefix cache locality, so you put a prefix-aware router in front."

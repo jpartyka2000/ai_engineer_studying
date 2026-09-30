@@ -1,0 +1,63 @@
+SGLang deliberately exposes several API surfaces so it can drop into existing code without a rewrite. Knowing which one to use for what is a practical interview question.
+
+**1. OpenAI-compatible HTTP API.** The default integration path. Point any OpenAI SDK at the SGLang server by overriding the base URL:
+
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://localhost:30000/v1", api_key="EMPTY")
+
+resp = client.chat.completions.create(
+    model="my-served-model-name",
+    messages=[{"role": "user", "content": "Explain RadixAttention briefly."}],
+    temperature=0.2,
+    max_tokens=512,
+)
+```
+
+Supported endpoint families: `/v1/chat/completions`, `/v1/completions`, `/v1/embeddings`, and vision inputs via the standard multimodal content-parts format (`{"type": "image_url", ...}`). Structured output goes through `response_format`. This surface is the reason "swap vLLM for SGLang" is usually a config change rather than a code change.
+
+**2. Anthropic-compatible and Ollama-compatible endpoints.** SGLang also speaks the Anthropic Messages API shape and the Ollama API shape, so tooling written against those clients (including many agent frameworks and local-dev UIs) can target a self-hosted model unchanged.
+
+**3. The native SRT API.** `POST /generate` is SGLang's own endpoint, and it exposes knobs the OpenAI schema has no field for:
+
+```python
+import requests
+r = requests.post("http://localhost:30000/generate", json={
+    "text": "List three cities as JSON: ",
+    "sampling_params": {
+        "max_new_tokens": 128,
+        "temperature": 0,
+        "json_schema": "$$ANY$$",      # or a real schema string
+        # "regex": "(Paris|London)",
+        # "ebnf": "root ::= ...",
+    },
+    "return_logprob": True,
+})
+```
+
+Use it when you need `json_schema` / `regex` / `ebnf` constraints directly, logprobs, custom stop token ids, or SGLang-specific sampling parameters. Other native endpoints cover health and introspection (`/health`, `/get_model_info`, `/get_server_info`), cache control (`/flush_cache`), and weight updates (`/update_weights_from_disk` and friends, used by RL trainers).
+
+**4. The offline Engine (in-process, no HTTP).** For batch jobs and evaluation there is no reason to pay for a network hop or run a server:
+
+```python
+import sglang as sgl
+
+engine = sgl.Engine(model_path="meta-llama/Llama-3.1-8B-Instruct")
+prompts = ["Summarize: ...", "Classify: ...", "Translate: ..."]
+outputs = engine.generate(prompts, {"temperature": 0, "max_new_tokens": 256})
+for o in outputs:
+    print(o["text"])
+engine.shutdown()
+```
+
+The offline engine still gets continuous batching, RadixAttention, and constrained decoding — it is the same runtime with the HTTP layer removed. This is the right tool for dataset labeling, offline eval harnesses, and synthetic data generation, and it is what RL frameworks embed for rollouts.
+
+**5. The frontend language.** A separate layer (see the frontend notes) for multi-call prompt *programs* with branching and parallelism. It can target the local runtime or a remote API model.
+
+**Choosing.**
+- Existing OpenAI-SDK code, or you want a stable public interface → OpenAI-compatible HTTP.
+- You need constrained decoding knobs, logprobs, or weight hot-swap → native `/generate`.
+- Batch job on one box, throughput is all that matters → offline `Engine`.
+- Multi-step prompt program with forks and shared prefixes → frontend language.
+
+**Streaming.** Both the OpenAI surface (`stream=True`, SSE chunks) and the native surface (`"stream": true`) stream incrementally. The DetokenizerManager handles partial multi-byte UTF-8 so streamed chunks never split a character mid-sequence.

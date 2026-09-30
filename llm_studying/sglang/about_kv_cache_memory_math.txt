@@ -1,0 +1,56 @@
+Being able to compute the KV cache budget on a whiteboard is one of the highest-value skills for an LLM serving interview. Every capacity question reduces to it.
+
+**The formula.**
+
+```
+KV bytes per token = 2 × num_layers × num_kv_heads × head_dim × bytes_per_element
+```
+
+The `2` is for keys *and* values. Note `num_kv_heads`, not `num_attention_heads` — that distinction is the whole point of GQA.
+
+**Worked example: Llama-3.1-8B.** 32 layers, 32 query heads, **8 KV heads** (GQA), head_dim 128, BF16 (2 bytes):
+
+```
+2 × 32 × 8 × 128 × 2 = 131,072 bytes = 128 KB per token
+```
+
+So an 8k-token context costs ~1 GB of KV, and a 128k-token context costs ~16 GB — for a *single sequence*, against a model whose weights are only 16 GB. This is why long context is expensive and why concurrency collapses as context grows.
+
+**What GQA buys.** If that model used full multi-head attention (32 KV heads instead of 8), KV per token would be 512 KB — 4× more. GQA (Grouped Query Attention) shares one KV head across a group of query heads; MQA is the extreme case of a single KV head. The quality cost is small; the serving benefit is enormous. MLA (Multi-head Latent Attention, DeepSeek) goes further by compressing KV into a low-rank latent, cutting KV per token by roughly an order of magnitude versus MHA.
+
+**The capacity chain.** Everything follows from the formula:
+
+```
+KV pool bytes  = total_GPU_memory × mem_fraction_static − weight_bytes − overhead
+max_tokens     = KV_pool_bytes / KV_bytes_per_token
+max_concurrency ≈ max_tokens / avg_sequence_length
+throughput     ≈ max_concurrency / inter_token_latency
+```
+
+That last chain is the answer to "how many QPS can one A100 serve?" — you derive it rather than guess.
+
+**Worked capacity example.** One 80 GB H100, Llama-3.1-8B in BF16:
+- Weights: ~16 GB.
+- `--mem-fraction-static 0.9` → ~72 GB for weights + KV → ~56 GB KV pool.
+- At 128 KB/token → ~448,000 tokens of KV.
+- Average sequence (prompt + output) of 2,000 tokens → ~224 concurrent sequences.
+- If inter-token latency at that batch size is 25 ms → ~224/0.025 ≈ 8,900 output tokens/sec aggregate.
+
+Then sanity-check against `--max-running-requests`, which may cap you below the memory limit.
+
+**The four levers, once you see the formula.**
+1. **`--mem-fraction-static` up** → bigger pool → more concurrency. Bounded by activation headroom (target 5–8 GB free).
+2. **`--kv-cache-dtype fp8_e4m3`** → halves bytes_per_element → doubles max_tokens. The cheapest large win.
+3. **Quantize weights** (`--quantization fp8`) → frees ~8 GB in the example above, which goes to the KV pool.
+4. **Reduce `--context-length`** → does not change bytes/token, but stops the scheduler from reserving for lengths you never use, so it admits more.
+
+And one lever you don't control: the **model architecture**. MHA vs GQA vs MLA changes KV cost by 4–10×. When choosing a model to serve, KV cost per token belongs in the decision alongside quality.
+
+**Where prefix caching enters.** The formula assumes each sequence owns its KV. With RadixAttention, sequences *sharing* a prefix share those pages, so a workload with a 2,000-token shared system prompt and 200 concurrent users stores that prefix once (0.25 GB) instead of 200 times (50 GB). Effective concurrency can be several times the naive number. This is the quantitative version of "why prefix caching matters" and it is far more convincing in an interview than the qualitative version.
+
+**Common mistakes to avoid.**
+- Using `num_attention_heads` instead of `num_kv_heads` — overestimates by the GQA ratio.
+- Forgetting the factor of 2 for K and V.
+- Forgetting that the *output* tokens also grow the KV cache: budget for prompt + max_new_tokens, not just the prompt.
+- Ignoring activation and CUDA-graph overhead, then being surprised by OOM at 0.95 mem-fraction.
+- Assuming weights + KV is the whole story. Speculative decoding draft models, LoRA adapter pools, and multimodal encoders all take memory too.

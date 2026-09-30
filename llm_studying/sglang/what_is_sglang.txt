@@ -1,0 +1,25 @@
+SGLang (Structured Generation Language) is a fast serving framework for large language models (LLMs) and vision-language models (VLMs). It originated from research at UC Berkeley (the paper is "SGLang: Efficient Execution of Structured Language Model Programs," Zheng et al., NeurIPS 2024) and is now a community project under the sgl-project organization, part of the PyTorch ecosystem.
+
+The name is slightly misleading today. SGLang started as a *language* — a Python-embedded DSL for writing multi-call LLM programs — but the part most people deploy is the *runtime*: an inference server that competes with vLLM and TGI. Understanding that SGLang is two loosely coupled halves is the single most useful framing:
+
+**1. The runtime (SRT, "SGLang Runtime")** — a high-throughput inference engine with its own scheduler, KV cache manager, and attention kernels. This is what `python -m sglang.launch_server` starts, and what serves an OpenAI-compatible HTTP API.
+
+**2. The frontend language** — a set of Python primitives (`gen`, `select`, `fork`, `image`, and the `@sgl.function` decorator) for expressing prompt programs with branching, parallelism, and constrained output. The frontend can target the local runtime or a remote API model.
+
+Key features:
+
+**RadixAttention** — the signature contribution. KV cache entries for all past requests are retained in a radix tree keyed by token prefix, so any new request that shares a prefix with an earlier one skips recomputing that prefix. Unlike caches that must be explicitly declared, this happens automatically across requests, which is why SGLang shines on few-shot prompts, long system prompts, multi-turn chat, agent loops, and tree search.
+
+**Cache-aware scheduling** — the scheduler can reorder the waiting queue by longest-prefix match (`--schedule-policy lpm`) so that requests likely to hit the cache run together, raising the hit rate rather than just exploiting whatever hits happen by accident.
+
+**Fast constrained decoding** — structured output (JSON Schema, regex, EBNF, structural tags) is enforced by a grammar backend that masks illegal tokens at each step. XGrammar is the default backend; Outlines and llguidance are alternatives.
+
+**Zero-overhead batch scheduler** — the CPU-side work of preparing the next batch is overlapped with the GPU forward pass, so the GPU is not left idle between steps. This matters far more than it sounds for small models where a forward pass is only a few milliseconds.
+
+**Breadth of serving features** — tensor / pipeline / data / expert / context parallelism, FP8 and FP4 quantization, quantized KV cache, multi-LoRA serving, speculative decoding (EAGLE-2/3, MTP, ngram), prefill/decode disaggregation, hierarchical KV caching to CPU and disk, and multimodal models.
+
+**Multiple API surfaces** — OpenAI-compatible endpoints (`/v1/chat/completions`, `/v1/completions`, `/v1/embeddings`), an Anthropic-compatible endpoint, an Ollama-compatible endpoint, SGLang's own native `/generate` endpoint with extra knobs, and an in-process offline `Engine` class for batch jobs with no HTTP at all.
+
+Where it fits: SGLang is the alternative you reach for when self-hosting open-weight models (Llama, Qwen, DeepSeek, GLM, Mistral, gpt-oss) and your workload has *structure* — shared prefixes, schema-constrained output, multi-step agent calls, or RL rollouts. It has become a standard rollout engine for RLHF/RLVR training frameworks because the same process can serve generations and then hot-swap updated weights.
+
+Interview framing: if asked "why SGLang over vLLM," the honest answer in 2026 is that the two have converged heavily on features (both have prefix caching, chunked prefill, PD disaggregation, spec decoding). The differentiators to name are RadixAttention with cache-aware scheduling as a first-class design center, the frontend DSL for multi-call programs, and strong structured-output performance.

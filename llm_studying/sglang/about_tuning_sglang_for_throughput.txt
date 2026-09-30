@@ -1,0 +1,40 @@
+SGLang's tuning guidance boils down to one principle: **maximize batch size**. Everything else is a correction to that, or a defense against the memory errors it causes.
+
+**Step 1 — confirm the server is actually the bottleneck.** The scheduler logs two numbers every few seconds.
+
+- `#queue-req` — depth of the waiting queue. Healthy for offline batch work is **100–2000**. If it is persistently **0**, your client is not submitting fast enough and you are benchmarking your load generator, not SGLang. Fix the client (more concurrency, async submission, `run_batch`) before touching any server flag. If it is enormous, scheduling overhead starts to grow and you should cap it with `--max-queued-requests`.
+- `token usage` — KV cache utilization. You want this high and stable. Low utilization with requests waiting means the scheduler is leaving memory unused.
+
+**Step 2 — give the cache as much memory as possible.** `--mem-fraction-static` (default ~0.88) governs the split between weights + KV pool and everything else. The documented method is empirical: raise it incrementally until you hit OOM, then back off. The stated target is to reserve roughly **5–8 GB for activations** and give the rest to the cache. A higher KV pool means more concurrent sequences, which means bigger batches, which means better throughput.
+
+**Step 3 — fix OOM based on *which phase* it happens in.** This distinction is the single most useful diagnostic in SGLang operations.
+
+- **OOM during prefill** → lower `--chunked-prefill-size`. The documented remediation values are **4096 or 2048**, with the acknowledged cost that it "slows down the prefill speed for long prompts."
+- **OOM during decode** → lower `--max-running-requests`, constraining how many sequences can be resident at once.
+- **OOM at startup / CUDA graph capture** → lower `--mem-fraction-static`, or reduce the captured batch sizes.
+
+**Step 4 — tune scheduler admission.** `--schedule-conservativeness` controls how pessimistically the scheduler estimates future KV demand before admitting a request.
+
+- `token usage < 0.9` **and** requests are waiting → the estimator is too cautious. **Lower to ~0.3** to admit more aggressively.
+- Queue growing without bound, or requests being retracted mid-generation → too aggressive. **Raise to ~1.3.**
+
+Retraction is the failure mode to watch for: admitting more sequences than the pool can ultimately hold forces the scheduler to evict a running generation and requeue it, throwing away all the decode work done so far. A little conservativeness is much cheaper than thrashing.
+
+**Step 5 — raise the cache hit rate, if and only if your workload has shared prefixes.** `--schedule-policy lpm` "reorders requests to encourage more cache hits but introduces more scheduling overhead," and applies only to workloads with "many shared prefixes." On diverse traffic, `fcfs` is better. If you run multiple replicas, none of this matters unless the router in front is prefix-aware.
+
+**Step 6 — shrink the bytes.** `--quantization fp8` halves weight bandwidth; `--kv-cache-dtype fp8_e4m3` halves KV bytes per token, which directly increases how many sequences fit. Both raise the achievable batch size.
+
+**Step 7 — only now consider latency features.** Speculative decoding (EAGLE3) cuts inter-token latency at low-to-moderate concurrency but competes for compute at large batch sizes, so it is the wrong tool for a throughput-maximizing offline job. PD disaggregation removes prefill/decode interference but adds a KV transfer and operational complexity — reach for it at scale, not first.
+
+**Latency-oriented tuning is the mirror image.** If you are optimizing p99 TTFT and inter-token latency rather than tokens/sec: cap `--max-running-requests` lower (queueing delay beats a huge batch), keep `--chunked-prefill-size` modest so long prompts cannot stall streams, enable speculative decoding, and consider PD disaggregation. Throughput and latency genuinely trade off here; decide which one you are being measured on before you start.
+
+**Measure, do not guess.** Use `python -m sglang.bench_serving` (and `bench_one_batch` / `bench_offline_throughput`) with a request distribution that resembles production — input and output length distributions and prefix-sharing structure all change the answer. A benchmark with uniform 128-token prompts will tell you nothing about a 8k-prompt RAG workload.
+
+**A checklist to recite in an interview.**
+1. Is the client saturating the server? (`#queue-req`)
+2. Is the KV pool as large as it can be? (`--mem-fraction-static`)
+3. Which phase OOMs? (chunked-prefill vs max-running-requests)
+4. Is the scheduler admitting enough? (`--schedule-conservativeness`, `token usage`)
+5. Does the workload share prefixes? (`--schedule-policy lpm`, prefix-aware router)
+6. Can I shrink bytes? (FP8 weights, FP8 KV)
+7. Am I optimizing throughput or latency? (spec decoding, PD disaggregation)

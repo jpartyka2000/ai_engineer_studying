@@ -1,0 +1,36 @@
+HiCache is SGLang's hierarchical KV cache: instead of one flat pool in GPU memory, cached prefixes live in a tiered hierarchy and are promoted/demoted between tiers.
+
+**The motivation.** RadixAttention's hit rate is bounded by how much KV you can keep, and GPU HBM is the scarcest, most expensive memory in the system. A node with 8×80 GB of HBM might have 1–2 TB of host RAM and tens of TB of NVMe sitting idle. If a prefix is evicted from GPU memory, the alternative to recomputing it is *fetching* it from a slower tier — and fetching is often much cheaper than recomputing, because prefill is compute-heavy while a transfer is just bandwidth.
+
+**The tiers.**
+
+| Tier | Medium | Capacity | Latency |
+|---|---|---|---|
+| L1 | GPU HBM | GB | immediate |
+| L2 | host RAM (CPU) | 100s of GB | PCIe transfer |
+| L3 | disk / NVMe / remote object or KV store | TB+ | I/O |
+
+On eviction from L1, a prefix is written down to L2 rather than discarded; on a hit against an L2/L3-resident prefix, it is loaded back up into L1 and the request proceeds without recomputing prefill.
+
+**The economics.** The decision rule is: fetch if `transfer_time < recompute_time`. Recomputing a prefix of length L costs a prefill over L tokens; fetching costs `KV_bytes(L) / bandwidth`. Long prefixes on large models favor fetching (prefill cost grows with compute while transfer grows with bytes, and KV bytes per token are modest — especially with a quantized KV cache or an MLA architecture). Very short prefixes favor recomputing, since the transfer's fixed overhead dominates.
+
+**The flags.**
+- `--enable-hierarchical-cache` — turn it on.
+- `--hicache-ratio` — proportion of memory devoted to the host-side tier, relative to the GPU pool.
+- `--hicache-size` — explicit cache capacity.
+- `--hicache-write-policy` — when evicted/new entries are written to the lower tier. A write-through policy makes entries immediately durable in L2 but spends bandwidth on entries that may never be reused; a write-back / lazy policy defers the copy. This is the classic cache-design tradeoff and the knob most worth reasoning about.
+- `--hicache-storage-backend` — the L3 implementation (file/NVMe and external KV-store backends).
+
+SGLang also documents attaching and detaching a HiCache storage backend *at runtime*, so you can add or drain an L3 tier without restarting the server.
+
+**Where it shines.**
+- Multi-turn chat with long conversations and think time between turns. Without HiCache, a user who steps away for two minutes comes back to a cold cache and pays full prefill on a long transcript. With HiCache, that transcript was demoted to host RAM and comes back cheaply.
+- Agent systems replaying long tool-call transcripts.
+- RAG with a large but finite set of recurring document contexts.
+- Any workload where the *working set* of prefixes is much larger than GPU memory but much smaller than host memory.
+
+**Where it does not help.** High prompt diversity with no reuse (nothing to fetch), or very short prompts (transfer overhead exceeds recompute). It also consumes host RAM and PCIe bandwidth that may be contended by other work on the box.
+
+**Session-aware radix cache.** A related feature: SGLang can scope cache entries to a session so that a conversation's KV is tracked and retained as a unit rather than relying on incidental prefix matching. Useful when you want per-conversation cache guarantees rather than best-effort sharing.
+
+**Interview framing.** HiCache is a textbook memory hierarchy applied to KV cache: L1 HBM / L2 DRAM / L3 disk, with promotion on hit, demotion on eviction, and a write policy. The novel part versus a CPU cache is the *alternative to fetching* — you can always recompute — so the eviction and fetch decisions are governed by an explicit cost comparison rather than by capacity alone.

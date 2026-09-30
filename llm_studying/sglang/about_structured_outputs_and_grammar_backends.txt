@@ -1,0 +1,32 @@
+Structured output means constraining the model so its generation is guaranteed to parse — valid JSON matching a schema, a string matching a regex, a sentence in a grammar. SGLang treats this as a first-class runtime feature rather than a post-hoc validation step.
+
+**How constrained decoding works mechanically.** At each decoding step the model produces logits over the whole vocabulary. A grammar engine tracks the current state of the constraint (a position in an automaton) and computes a *mask* over the vocabulary: tokens that would make the output unparseable get their logits set to -inf. Sampling then cannot pick an illegal token. Because the constraint is enforced at sampling time, the output is valid by construction — there is no retry loop and no "the model ignored my instructions" failure.
+
+**The three grammar backends.**
+
+`xgrammar` (default) — supports JSON Schema, regex, and EBNF. Fastest and the broadest feature set; this is the recommended choice and you generally should not change it.
+
+`outlines` — supports JSON Schema and regex only (no EBNF). Select with `--grammar-backend outlines`.
+
+`llguidance` — supports all three constraint types. Select with `--grammar-backend llguidance`.
+
+**The four constraint types.**
+
+*JSON Schema* — the workhorse. Pass a Pydantic model's `model_json_schema()` or a raw schema dict. In the OpenAI-compatible API this goes through `response_format={"type": "json_schema", "json_schema": {...}}`; in the native API it is the `json_schema` sampling parameter.
+
+*Regex* — constrain to a pattern, e.g. `"(Paris|London)"` for a forced choice, or a date/phone/ID format. Cheap and very effective for classification-style outputs where you want exactly one of N labels.
+
+*EBNF* — Extended Backus–Naur Form for genuinely grammatical output: SQL dialects, DSLs, arithmetic expressions. More expressive than regex; not supported by the `outlines` backend.
+
+*Structural tags* — for function/tool calling. You declare tagged regions (a trigger token or string, then a JSON schema that applies inside that region). This lets the model choose freely in prose and become constrained only once it has committed to emitting a tool call. XGrammar's triggered-tag format is the current form; a legacy format is also accepted.
+
+**Hard constraints from the docs.**
+- Only one constraint type per request — `json_schema`, `regex`, and `ebnf` are mutually exclusive.
+- Even with a hard constraint, "it's advisable to explicitly include instructions in the prompt to guide the model to generate the desired format." Constraint guarantees *syntax*, not *quality*. A model that does not know it should be emitting JSON will produce schema-valid garbage: correct keys, useless values.
+- All three API surfaces support it — OpenAI-compatible endpoints, the native SRT endpoint, and the offline `Engine`.
+
+**Reasoning models need care.** A reasoning model wants to emit a chain of thought before its answer. If you apply a JSON Schema constraint to the whole generation, you force it to start emitting JSON immediately and destroy the reasoning. SGLang documents a separate path for this: let the reasoning block generate unconstrained, then apply the constraint to the answer that follows. Related features are the reasoning parser (`--reasoning-parser`, which separates thinking content from the final answer in the response) and the tool parser (`--tool-call-parser`), which handle the formats different model families use.
+
+**Performance.** Naive constrained decoding can be slow because building the token mask for a complex schema at every step is expensive. The mitigations are (a) compiled/cached automata so the grammar is compiled once per unique schema rather than per request, and (b) overlapping mask computation with the GPU forward pass. The historical SGLang contribution here is *jump-forward decoding*: when the automaton has only one legal continuation, emit those tokens directly without a model forward pass at all.
+
+**Interview framing.** Contrast three approaches to getting JSON out of an LLM: (1) prompt and hope, then retry on parse failure — wastes tokens, unbounded latency; (2) generate then validate and repair — still unbounded; (3) constrained decoding — valid on the first try, bounded latency, at the cost of some per-step masking overhead and the risk of steering the model into a schema it would not have chosen. Name the quality caveat, because it is the part most candidates miss.

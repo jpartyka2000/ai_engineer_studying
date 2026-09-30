@@ -1,0 +1,21 @@
+When the KV cache pool fills up, SGLang must reclaim space from the radix tree. Which cached prefixes get thrown away is controlled by `--radix-eviction-policy`.
+
+**What is eligible for eviction.** Only "evictable leaves" — nodes whose KV is actually resident in the pool, that are unlocked (no in-flight request holds them), and that are not shadowed by a child node. The root is never evicted. Because a parent becomes a leaf once its last child is removed, reclamation proceeds up a branch toward the root rather than freeing arbitrary nodes.
+
+**The policy's job is narrow.** From the docs: "A policy only scores. It does not decide how much to free, and it cannot pin KV in memory." All policies assign a score to each candidate leaf; the lowest scores are evicted first, with recency as the tie-breaker. If freeing everything unlocked still is not enough memory, the server falls back to more drastic measures (retracting/requeuing running requests).
+
+**The four policies.**
+
+`lru` (default) — evict the least recently used prefix. Matches the natural assumption that reuse likelihood decays with time. Correct for most workloads; this is where you should start.
+
+`lfu` — evict the prefix with the fewest hits, breaking ties by recency. Wins when you have a small, stable "hot set" of prefixes (a handful of system prompts serving most traffic) that pure recency would flush out during a burst of one-off requests. The classic LRU failure mode is a scan of unique prompts evicting your hot system prompt; LFU resists that.
+
+`slru` — segmented LRU. New entries land in a probationary segment and are evicted before entries that have been promoted to the protected segment. Gives you LFU-like resistance to scans but with a hard floor protecting prefixes that have proven themselves. Accepts configuration, e.g. `--radix-eviction-policy-config '{"protected_threshold": 4}'`.
+
+`priority` — evict the lowest-priority requests' prefixes first, following the same ranking used by priority scheduling. Use this when you are already running `--enable-priority-scheduling` so that cache retention and admission agree with each other instead of fighting.
+
+**Configuration validation.** Only the segmented policies accept a config object. The others reject unrecognized keys at startup rather than silently ignoring them — so a typo fails fast instead of quietly giving you default behavior.
+
+**How to choose in practice.** Watch the cache hit rate in the metrics. If hit rate is good, leave it on `lru`. If hit rate is erratic and you can identify a small set of prompts that *should* always be resident, try `lfu` or `slru`. If you have tiered customers or latency classes, align it with `priority`. Changing the eviction policy is a second-order tuning knob — `--mem-fraction-static` (how much memory the cache gets at all) and `--schedule-policy` (whether prefix-sharing requests run near each other) both move the needle more.
+
+**Mental model for an interview.** The radix tree is simultaneously (a) a prefix index for cache lookup, (b) a memory accounting structure, and (c) an eviction queue. Reference counts protect live requests; leaf-only eviction preserves the tree invariant that a cached node's ancestors are also cached; the policy chooses among the leaves.

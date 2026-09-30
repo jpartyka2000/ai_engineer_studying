@@ -1,0 +1,37 @@
+"Why SGLang over vLLM?" is close to a guaranteed question if SGLang appears on your resume. The answer that scores well is honest about convergence rather than reciting marketing benchmarks.
+
+**The three main open-source serving stacks.**
+
+**vLLM** — the most widely adopted. Originated PagedAttention (KV cache in fixed-size pages with a block table, eliminating fragmentation and enabling copy-on-write sharing). Largest model coverage, largest ecosystem, the default choice at most companies. Now has automatic prefix caching, chunked prefill, spec decoding, PD disaggregation, and a v1 engine with a rearchitected scheduler.
+
+**SGLang** — originated RadixAttention (automatic cross-request prefix caching in a radix tree) and cache-aware scheduling, plus the frontend DSL and strong structured-output support. Widely used for DeepSeek-class and MoE serving and as the rollout engine in RL training stacks.
+
+**TGI (Text Generation Inference)** — HuggingFace's Rust-based server. Tight HF Hub integration, solid production ergonomics, Rust router and tokenizer. Historically lagged on the newest inference research; the least common choice for frontier optimization work today.
+
+**The honest current picture.** These projects have converged hard. Features that were differentiators in 2024 are table stakes now — both vLLM and SGLang have prefix caching, continuous batching, chunked prefill, FP8, spec decoding, multi-LoRA, PD disaggregation, and OpenAI-compatible APIs. Benchmark leadership swaps between releases and is extremely workload- and version-dependent. Any candidate who claims a fixed "SGLang is 3x faster" is quoting a stale number from a specific configuration.
+
+**What still distinguishes SGLang.**
+1. **Prefix reuse as a design center, not a feature.** RadixAttention plus `--schedule-policy lpm` plus a prefix-aware router is a coherent three-layer story about exploiting shared prefixes. Other stacks cache prefixes; SGLang also *schedules and routes* for them.
+2. **The frontend DSL.** No equivalent in vLLM or TGI. `fork`/`join` with automatic prefix sharing is genuinely nice for branch-and-merge prompt programs.
+3. **Structured output performance.** Grammar backends as first-class citizens, with jump-forward decoding as the historical contribution.
+4. **DP attention and MoE/MLA serving.** SGLang became a reference implementation for large DeepSeek-class deployments, and the DP-attention work is aimed squarely at that.
+5. **RL integration.** Weight-update endpoints and an embeddable engine make it a standard rollout backend for RLHF/RLVR frameworks.
+
+**What still distinguishes vLLM.**
+1. Broadest model and hardware coverage, fastest support for brand-new architectures.
+2. Biggest community, most third-party integrations, most StackOverflow answers when something breaks.
+3. Often the safer organizational default — "nobody gets fired for choosing vLLM."
+
+**PagedAttention vs RadixAttention — they are not competitors.** This is the technical distinction most worth getting right:
+- **PagedAttention** is a *memory allocation* scheme. It stores KV in fixed-size pages with an indirection table so a sequence's cache need not be contiguous. It solves fragmentation and enables sharing.
+- **RadixAttention** is a *cache retention and lookup* scheme. It decides what to keep after a request finishes and how to find a reusable prefix.
+
+They operate at different layers and SGLang uses paged storage underneath its radix index (`--page-size` exposes exactly that). The right framing: PagedAttention answers "where do KV blocks live," RadixAttention answers "which prefixes do we keep and how do we find them."
+
+**How to actually choose.**
+- Heavy shared prefixes (long system prompts, multi-turn, agents, tree search) → SGLang's story is strongest.
+- Schema-constrained output at high volume → SGLang.
+- Large MoE / MLA models at scale → SGLang has a strong track record.
+- Brand-new model architecture, or you need the widest ecosystem → vLLM.
+- Deep in the HuggingFace ecosystem and want minimal ops → TGI is defensible.
+- **Honest default:** benchmark both on *your* workload with *your* prompt distribution. The difference between a good and bad configuration of either framework is larger than the difference between the frameworks.

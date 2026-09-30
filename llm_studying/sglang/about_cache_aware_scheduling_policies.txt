@@ -1,0 +1,25 @@
+RadixAttention gives you the *ability* to reuse KV cache. Cache-aware scheduling is what makes that ability actually pay off, by controlling the order in which waiting requests are admitted.
+
+**The problem.** Suppose requests A1, A2, A3 all share a 4,000-token system prompt, and requests B1...B50 are unrelated one-off prompts. If the queue order is A1, B1...B50, A2, A3, then by the time A2 runs, the 50 B requests have churned the KV pool and A1's prefix has been evicted. The cache hit that was available was thrown away by ordering alone.
+
+**The fix.** Reorder the queue so prefix-sharing requests run near each other. `--schedule-policy` selects the algorithm:
+
+`fcfs` — first come, first served. Fair, predictable, zero reordering overhead. The right default when prompts are diverse and there is little to share.
+
+`lpm` — longest prefix match. Sorts waiting requests by the length of the prefix they match in the current radix tree, running the best matches first. The docs are blunt about the tradeoff: it "reorders requests to encourage more cache hits but introduces more scheduling overhead," and it only pays off on "workloads with many shared prefixes." It also weakens fairness — a request whose prefix is cold can be repeatedly overtaken.
+
+`dfs-weight` — depth-first traversal of the radix tree weighted by subtree size. Instead of greedily taking the single longest match, it walks the tree so that an entire shared subtree is drained before moving on. Better for tree-structured workloads (branching agent explorations, self-consistency sampling) where many requests hang off the same interior node.
+
+`random` — mostly a benchmarking baseline.
+
+**Priority scheduling.** `--enable-priority-scheduling` lets requests carry a priority so that latency-sensitive traffic jumps the queue. Pair it with `--radix-eviction-policy priority` so that cache retention follows the same ranking — otherwise admission favors a request whose KV the eviction policy just discarded.
+
+**Schedule conservativeness.** `--schedule-conservativeness` controls how eagerly the scheduler admits new requests given its estimate of future KV demand. It is not a cache-locality knob but it interacts with one:
+- `token usage` below ~0.9 while requests wait → the estimator is too pessimistic; lower it (e.g. 0.3) to admit more.
+- Queue ballooning and requests getting retracted → too optimistic; raise it (e.g. 1.3).
+
+Over-admission has a real cost: if the scheduler admits more sequences than the KV pool can ultimately hold, some must be *retracted* — evicted mid-generation and requeued — which wastes all the work done so far.
+
+**Scheduling across replicas.** Cache-aware scheduling inside one engine only helps if the request reached the engine that holds the prefix. A round-robin load balancer in front of N replicas actively destroys prefix locality: each replica ends up caching everything, and each individual hit rate is 1/N of what it could be. SGLang ships a prefix-aware router (`sglang_router` / the Model Gateway) that hashes on prefix so requests sharing a prefix land on the same worker, while still balancing load. This is a genuinely important deployment detail and a good thing to raise unprompted in a system design interview.
+
+**Summary for an interview.** Three layers must agree for prefix caching to work at scale: the *cache* must retain the prefix (eviction policy + enough memory), the *scheduler* must run prefix-sharing requests close together (`lpm`/`dfs-weight`), and the *router* must send them to the same replica (prefix-aware load balancing). Break any one layer and the measured hit rate collapses.

@@ -1,0 +1,21 @@
+Multi-LoRA serving lets one SGLang server host a base model plus many LoRA adapters, routing each request to the adapter it names — instead of running a separate full server per fine-tune.
+
+**Recap of LoRA.** Low-Rank Adaptation freezes the base weights W and learns a low-rank update `ΔW = B·A` where A is r×k and B is d×r, with r typically 8–64. The adapter is a few megabytes to a few hundred megabytes versus tens of gigabytes for the base model. At inference, `y = Wx + B(Ax) · (α/r)`.
+
+**Why serving many adapters is attractive.** The base model weights — the expensive part — are shared. If you have 50 customer-specific or task-specific fine-tunes of the same base, running 50 servers means 50 copies of the base weights and 50 idle-GPU bills. One server with 50 adapters means one copy of the base and 50 small deltas.
+
+**The technical challenge.** A batch may contain requests for *different* adapters. You cannot merge a LoRA into the base weights (the usual trick for single-adapter deployment) because different rows of the batch need different deltas. The solution is batched/grouped LoRA kernels that compute `B(Ax)` per-request with the appropriate adapter, gathering the relevant A and B slices for each row. This costs extra compute and memory traffic relative to a merged model, and the overhead grows with how many *distinct* adapters appear in one batch.
+
+**Serving-time considerations.**
+- **Adapter memory pool.** Adapters are held in GPU memory up to a capacity limit; beyond that they are swapped in from host memory on demand, which adds latency to the first request for a cold adapter.
+- **Rank uniformity.** Batching is most efficient when adapters share the same rank and target the same modules; a zoo of heterogeneous adapters batches less well.
+- **Prefix caching interaction.** This is the subtle one: KV cache is a function of the *weights* as well as the tokens. Two requests with the same token prefix but different adapters do **not** have the same KV, so their cache entries cannot be shared. The radix cache must therefore key on adapter identity as well as tokens, which means your effective cache is partitioned per adapter and your hit rate drops as adapter diversity rises.
+
+**Deployment shape.** Launch the base model with LoRA serving enabled and a set of adapter paths/names, then name the adapter per request (in the native API's request body, or via the model field on the OpenAI-compatible surface depending on configuration). SGLang's LoRA documentation covers the specific flags, adapter registration, and dynamic load/unload.
+
+**When to use it, when not to.**
+- **Use it** when you have many adapters over one base, each with modest and bursty traffic — the classic multi-tenant fine-tuning product. Utilization goes from 50 half-idle servers to one busy one.
+- **Don't** when you have one adapter with steady high traffic: merge it into the base weights and serve it as a normal model. Merging is free at inference time and avoids the batched-LoRA overhead entirely.
+- **Don't** when adapters have wildly different ranks/targets and traffic is heavy — the batching inefficiency and cache partitioning can eat the savings.
+
+**Interview angle.** The good answer names all three costs, not just the memory win: (1) batched LoRA kernels are slower than merged weights, (2) cold adapters pay a swap-in latency, and (3) prefix cache hit rate degrades because KV cache cannot be shared across adapters. Then contrast with the alternative — merge and serve separately — and say which traffic pattern picks which.

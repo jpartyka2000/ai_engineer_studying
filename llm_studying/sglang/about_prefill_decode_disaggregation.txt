@@ -1,0 +1,66 @@
+Prefill/decode (PD) disaggregation runs the two phases of LLM inference on *separate* worker pools instead of interleaving them in one engine. It is one of the most important architectural ideas in modern LLM serving.
+
+**Why the two phases conflict.** They have opposite resource profiles:
+
+| | Prefill | Decode |
+|---|---|---|
+| Work per pass | whole prompt, many tokens | 1 token per sequence |
+| Bottleneck | compute (FLOPs) | memory bandwidth + KV capacity |
+| Arithmetic intensity | high | very low |
+| Latency metric it owns | TTFT (time to first token) | ITL / TPOT (inter-token latency) |
+| Batching behavior | already saturates compute at small batch | needs large batch to saturate |
+
+Running both in one engine creates two documented problems:
+
+1. **Prefill interruption.** "Incoming prefill batches frequently interrupt ongoing decode batches, causing substantial delays in token generation." Every user mid-stream sees their tokens stutter whenever someone else submits a long prompt. Chunked prefill bounds this but does not remove it.
+
+2. **DP attention imbalance.** With data-parallel attention, if one rank is doing prefill while another is decoding, the ranks must synchronize across mismatched batch types, raising decode latency for everyone.
+
+There is also a tuning conflict: the configuration that maximizes prefill throughput (big chunks, high compute utilization) is not the one that minimizes decode latency (large concurrent batch, maximal KV room). One engine can only pick one compromise.
+
+**The architecture.** Split into prefill workers and decode workers:
+
+```
+client → router → [prefill worker]  --KV transfer-->  [decode worker] → tokens
+```
+
+1. Router receives the request and assigns a prefill worker and a decode worker.
+2. The prefill worker computes the prompt's KV cache and the first token.
+3. The KV cache is transferred over the interconnect to the decode worker.
+4. The decode worker generates the remaining tokens.
+
+Each pool is independently sized, tuned, and scaled — and can even use different hardware, e.g. compute-dense GPUs for prefill and memory-bandwidth-dense GPUs for decode.
+
+**Transfer backends** (`--disaggregation-transfer-backend`):
+- `mooncake` — the primary backend, with NVLink and EFA support, custom memory pools, and batched transfer optimization.
+- `nixl` — uses UCX by default, with configurable plugins such as LIBFABRIC for cross-platform setups.
+- `ascend` — for Ascend NPUs, via memfabric_hybrid.
+
+**Launching it.**
+
+```bash
+# prefill worker
+python -m sglang.launch_server --model-path meta-llama/Llama-3.1-8B-Instruct \
+  --disaggregation-mode prefill --port 30000 --disaggregation-ib-device mlx5_roce0
+
+# decode worker
+python -m sglang.launch_server --model-path meta-llama/Llama-3.1-8B-Instruct \
+  --disaggregation-mode decode --port 30001 --base-gpu-id 1
+
+# router in front
+python -m sglang_router.launch_router --pd-disaggregation \
+  --prefill http://127.0.0.1:30000 --decode http://127.0.0.1:30001 \
+  --host 0.0.0.0 --port 8000
+```
+
+Key flags: `--disaggregation-mode {prefill|decode}`, `--disaggregation-transfer-backend`, `--disaggregation-ib-device`, plus the usual `--tp-size`/`--dp-size` and multi-node `--dist-init-addr` / `--nnodes` / `--node-rank`. Environment variables tune timeouts, thread pools, and staging buffers without redeploying.
+
+**The central cost: the KV transfer.** You have moved a potentially large tensor across the network in the critical path. For a long prompt on a large model the KV cache is gigabytes. This is why the transfer backend and the interconnect (RDMA, InfiniBand, NVLink, EFA) dominate whether disaggregation is a win. On a slow interconnect the transfer can cost more than the prefill interruption it was meant to avoid.
+
+**When it is worth it.**
+- Worth it: large deployments with strict, separate SLOs on TTFT and ITL; skewed workloads (long prompts, short outputs, or the reverse); fast RDMA-class interconnect; enough traffic that both pools stay busy.
+- Not worth it: small deployments, single node without fast interconnect, modest traffic. You add operational complexity (two pools plus a router, more failure modes) and gain little. Start with chunked prefill.
+
+**EPD disaggregation.** For multimodal models SGLang also documents *encoder*/prefill/decode disaggregation — the vision encoder is a third phase with its own profile, so it gets its own pool.
+
+**Interview soundbite.** "Prefill is compute-bound and owns TTFT; decode is bandwidth-bound and owns inter-token latency. In one engine they interfere and you can only tune for one. Disaggregation lets you scale and tune them independently — and the price you pay is shipping the KV cache across the network, so it only makes sense when your interconnect is fast and your scale justifies the complexity."

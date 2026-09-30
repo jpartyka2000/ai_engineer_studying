@@ -1,0 +1,29 @@
+Two batching techniques do most of the work of turning an LLM from a latency-bound toy into a throughput machine: continuous batching and chunked prefill. SGLang implements both, and the flags that control them are the first things you tune.
+
+**Static batching (the thing we no longer do).** Collect N requests, run them together until all finish, then start the next batch. Because generations have wildly different lengths, the batch is held hostage by its longest member and GPU slots sit idle for finished sequences. Utilization is terrible.
+
+**Continuous batching (a.k.a. iteration-level scheduling).** The batch is reformed *every decoding step*. When a sequence emits its EOS token, its slot is freed immediately and a waiting request is admitted in its place on the next iteration. The batch composition is fluid; no request waits for an unrelated one to finish. Every modern server (SGLang, vLLM, TGI) does this. In SGLang the scheduler loop plus the KV pool's per-sequence slot accounting is the implementation.
+
+`--max-running-requests` caps how many sequences may be in the running batch at once. It is a memory guard: each running sequence needs KV cache room for its full eventual length. If you OOM during decode, this is the knob to lower.
+
+`--max-queued-requests` caps the waiting queue; beyond it the server rejects rather than accumulating unbounded latency.
+
+**Why prefill needs separate handling.** A decode step processes 1 token per sequence — cheap and uniform. A prefill processes the whole prompt — if someone sends a 100k-token prompt, that single forward pass is enormous. It will (a) possibly not fit in memory at all and (b) block every in-flight decode for its duration, producing a visible stall in everyone else's token stream (the "prefill interruption" problem, and a spike in inter-token latency).
+
+**Chunked prefill.** Split a long prompt into chunks of at most `--chunked-prefill-size` tokens and process one chunk per iteration, interleaving decode work in between. Effects:
+
+- Bounds peak activation memory for prefill (fixes prefill OOM).
+- Bounds the worst-case stall that a long prompt imposes on ongoing decodes, smoothing inter-token latency.
+- Costs a little raw prefill throughput: "decreasing it saves memory but slows down the prefill speed for long prompts," because you lose some of the efficiency of one big GEMM.
+
+Set `--chunked-prefill-size -1` to disable chunking entirely. Typical remedial values when you are OOMing on prefill are 4096 or 2048.
+
+`--max-prefill-tokens` (default 16384) caps total tokens in a single prefill batch — it limits how many prompts get packed together, distinct from how a single long prompt is split.
+
+**Mixed batches.** SGLang can put prefill chunks and decode tokens in the same forward pass. This keeps the GPU busy: decode alone underutilizes compute (it is bandwidth-bound), so folding prefill work in fills the gap. The tradeoff is that decode latency becomes sensitive to how much prefill is co-scheduled.
+
+**The throughput dashboard.** The server logs two numbers to watch:
+- `#queue-req` — depth of the waiting queue. 100–2000 is healthy for offline batch work. Persistently 0 means your client is not feeding the server fast enough and you are measuring your load generator, not the engine. Enormous means scheduling overhead is growing.
+- `token usage` — KV cache utilization. You want this high. If it sits below ~0.9 while requests are waiting, the scheduler is being too cautious — lower `--schedule-conservativeness` (e.g. to 0.3) to admit more aggressively. If the cache is thrashing and the queue balloons, raise it (e.g. to 1.3).
+
+**Priority of tuning, for an interview answer.** Maximize batch size first (`--mem-fraction-static` up, until OOM; keep the queue non-empty), then fix the phase interference (`--chunked-prefill-size`, or go to PD disaggregation), then raise cache hit rate (`--schedule-policy lpm`), then reach for spec decoding to cut latency at low load.

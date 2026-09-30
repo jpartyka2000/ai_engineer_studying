@@ -1,0 +1,33 @@
+Quantization in SGLang comes in two independent flavors that people routinely conflate: quantizing the *weights* and quantizing the *KV cache*. They save different memory and have different accuracy consequences.
+
+**Weight quantization** — `--quantization`. Supported methods include `fp8`, `awq`, `gptq`, `marlin`, `bitsandbytes`, and others, plus NVFP4-class formats on newer hardware.
+
+- **What it saves:** model weight memory. A 70B model at BF16 needs ~140 GB; at FP8 ~70 GB; at 4-bit ~35 GB. This is the difference between needing 2 GPUs and 4.
+- **Why it also speeds things up:** decode is memory-bandwidth-bound, and the dominant traffic is streaming weights from HBM each step. Halving weight bytes nearly halves that traffic, so FP8 often gives a real throughput gain, not just a memory saving.
+- **The method families:**
+  - `fp8` — 8-bit floating point, hardware-accelerated on Hopper/Blackwell (and MI300-class AMD). Usually near-lossless for inference, per-tensor or per-channel scaled. The default recommendation when your hardware supports it.
+  - `awq` (Activation-aware Weight Quantization) and `gptq` — 4-bit methods requiring a calibration pass, distributed as pre-quantized checkpoints. Bigger savings, more accuracy risk, and the kernels are optimized for low-batch decode; at large batch they can be *slower* than FP8 because they dequantize on the fly.
+  - `marlin` — a fast 4-bit GEMM kernel used to make GPTQ-style weights perform well at larger batch sizes.
+  - `bitsandbytes` — on-the-fly quantization, convenient for experiments, not the fastest.
+- **Practical note:** many checkpoints ship already quantized, in which case the config declares it and you do not pass `--quantization` at all.
+
+**KV cache quantization** — `--kv-cache-dtype`. Options include `auto`, `fp8_e5m2`, `fp8_e4m3`, `bf16`, and `nvfp4`.
+
+- **What it saves:** KV cache memory, which is what limits *concurrency*, not model size. Halving KV bytes per token roughly doubles how many sequences (or how long a context) fit in the same pool, which directly raises achievable batch size and therefore throughput.
+- **Why it matters more than people expect:** for long-context serving the KV cache can dwarf the weights. A 128k-token context on a large model can consume tens of GB per sequence.
+- **`fp8_e4m3` vs `fp8_e5m2`:** both are 8-bit floats with different exponent/mantissa splits. E4M3 has 4 exponent bits and 3 mantissa bits — more precision, less range. E5M2 has 5 exponent bits and 2 mantissa bits — more range, less precision. E4M3 is generally preferred for KV cache since the values are well-scaled; E5M2 is the safer choice if you see overflow artifacts.
+- **`--quantization-param-path`** supplies a JSON file of pre-computed KV scaling factors, which gives better accuracy than dynamic scaling.
+- **Accuracy:** FP8 KV cache is usually a very small quality hit, but it is *not* free, and it compounds with aggressive weight quantization. Long-context retrieval tasks ("needle in a haystack") are the most sensitive, because a subtle degradation in old keys hurts the ability to attend far back.
+
+**Combining them.** The common production configuration is FP8 weights plus FP8 KV cache:
+
+```bash
+python -m sglang.launch_server --model-path <model> --tp 4 \
+  --quantization fp8 --kv-cache-dtype fp8_e4m3 --mem-fraction-static 0.92
+```
+
+**`--enable-fp32-lm-head`** keeps the final logits in FP32. Useful when you need numerically stable logprobs (reward models, evaluation, classification by logprob comparison) even though the rest of the model is quantized.
+
+**`--dtype`** is separate from quantization: it sets the base compute precision (`auto`, `bfloat16`, `float16`, `float32`). Prefer `bfloat16` over `float16` on modern hardware — same memory, much better numerical range, far fewer overflow/NaN surprises.
+
+**How to reason about it in an interview.** Ask what is binding. Out of memory loading the model → quantize weights. Fits but low concurrency / short usable context → quantize the KV cache. Neither → do not quantize; you are only buying accuracy risk. And always validate on a task-representative eval, not perplexity alone: perplexity is famously insensitive to the degradations that quantization introduces in long-context retrieval and structured output.

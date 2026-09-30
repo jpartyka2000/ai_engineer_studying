@@ -1,0 +1,34 @@
+SGLang supports several orthogonal parallelism dimensions. They solve different problems and are routinely combined; confusing them is a common interview stumble.
+
+**Tensor parallelism (TP)** — `--tensor-parallel-size` / `--tp`. Shard each layer's weight matrices across GPUs; every GPU participates in every token. Attention heads split across ranks, and MLP matrices split column-wise then row-wise so each layer needs one all-reduce.
+- Solves: the model does not fit on one GPU; also reduces per-token latency since each GPU does 1/N of the FLOPs.
+- Costs: an all-reduce per layer. Extremely sensitive to interconnect — excellent over NVLink within a node, painful over PCIe or across nodes.
+- Constraint: TP size must divide the attention head count (and for GQA, ideally the KV head count).
+- Rule of thumb: keep TP inside a single node.
+
+**Pipeline parallelism (PP)** — `--pipeline-parallel-size` / `--pp-size`. Split the model by *layers* into sequential stages on different GPUs; activations flow stage to stage.
+- Solves: models too large for one node, where TP across nodes would be crippled by the interconnect. Point-to-point activation transfers are far cheaper than per-layer all-reduces.
+- Costs: pipeline bubbles. With many concurrent requests in flight the bubbles fill in, so PP suits high-throughput serving more than low-latency single-stream work.
+- SGLang documents PP specifically for long-context serving.
+
+**Data parallelism (DP)** — replicate the whole model and split *requests* across replicas.
+- Solves: throughput scaling once the model already fits.
+- Key caveat: each replica has its own radix cache. Naive round-robin routing across DP replicas destroys prefix locality, so you want the prefix-aware DP router rather than a dumb load balancer.
+- SGLang documents "DP, DPA, and the SGLang DP Router" together for this reason.
+
+**DP attention (DPA)** — a hybrid used heavily for MLA models like DeepSeek. Attention is computed data-parallel (each rank handles its own sequences, so the KV cache is not replicated across TP ranks) while the MLP/MoE part stays tensor- or expert-parallel. For MLA architectures the KV cache is small but replicating it across a large TP group still wastes memory; DPA avoids that and is a major reason SGLang became a reference implementation for serving DeepSeek-class models.
+
+**Context parallelism** — `--attention-context-parallel-size` for prefill, `--dcp-size` for decode context parallelism on MLA models. Splits a *single long sequence* across GPUs so that a 500k-token context does not have to fit its attention computation on one device. This is the answer to "how do I serve a million-token context," distinct from TP (which splits weights) and DP (which splits requests).
+
+**Expert parallelism (EP)** — for MoE models, place different experts on different GPUs and route tokens to the GPU holding the expert they selected. `--moe-data-parallel-size` and the expert-parallelism configuration cover this. Solves the memory problem of MoE models whose total parameter count is huge while active parameters per token are small. The cost is an all-to-all communication to dispatch tokens to experts and gather results back — which is why specialized communication libraries (DeepEP and similar) matter here, and why expert load imbalance (a "hot expert" receiving disproportionate tokens) is the characteristic MoE serving problem.
+
+**Multi-node wiring.** Any of these spanning hosts needs `--dist-init-addr` (rendezvous address of the master), `--nnodes` (total nodes), and `--node-rank` (this node's index, 0 for master). Every node runs the same launch command with only `--node-rank` differing.
+
+**How to choose — a decision sketch.**
+1. Does the model fit on one GPU? → no parallelism; scale with DP replicas.
+2. Fits in one node but not one GPU? → TP across that node.
+3. Does not fit in one node? → TP within each node, PP across nodes.
+4. MoE model? → add EP, watch for expert imbalance.
+5. MLA model with big TP? → consider DP attention to avoid KV replication.
+6. Extreme context lengths? → context parallelism.
+7. Need more QPS at the same latency? → DP replicas, with a prefix-aware router.
