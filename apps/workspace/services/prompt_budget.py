@@ -21,6 +21,7 @@ can hedge rather than confidently mis-scoring. Budgeting is in characters at rou
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 
 from django.conf import settings
@@ -33,6 +34,36 @@ logger = logging.getLogger(__name__)
 #: Rough characters per token. Used only to translate a token intuition into the
 #: character budget actually enforced.
 CHARS_PER_TOKEN = 3.5
+
+_WHITESPACE = re.compile(r"\s+")
+
+#: A duplicate is only collapsed when the shorter copy is at least this long. Two short
+#: files that happen to share a sentence are not the same writeup, and dropping one
+#: would lose evidence.
+MIN_DUPLICATE_CHARS = 200
+
+
+def _normalise_prose(text: str) -> str:
+    """Reduce prose to a form where formatting differences do not matter."""
+    return _WHITESPACE.sub(" ", text or "").strip().lower()
+
+
+def _is_same_writeup(candidate: str, notes: str) -> bool:
+    """Whether a Markdown file carries the same writeup as the notes field.
+
+    Deliberately conservative: exact match after normalisation, or one side wholly
+    containing the other with the shorter side substantial. A similarity ratio would
+    also catch a file that was edited in one place and not the other, but it would
+    sometimes drop a file saying something genuinely different -- and losing evidence is
+    worse than printing a near-duplicate.
+    """
+    left, right = _normalise_prose(candidate), _normalise_prose(notes)
+    if not left or not right:
+        return False
+    if left == right:
+        return True
+    shorter, longer = sorted((left, right), key=len)
+    return len(shorter) >= MIN_DUPLICATE_CHARS and shorter in longer
 
 
 @dataclass
@@ -267,14 +298,36 @@ def build_grading_prompt(
         ]
 
     # -- P1: prose, never truncated ----------------------------------------
-    notes = session.user_notes or ""
+    notes = (session.user_notes or "").strip()
     markdown_files = {
         path: content
         for path, content in (submission.full_files or {}).items()
         if path.endswith((".md", ".rst", ".txt"))
     }
+
+    # The in-app notes panel and a committed NOTES.md are two routes to the same
+    # writeup, and an engineer may use either or both. Printing the same prose twice
+    # presents one writeup as if it were two: length is one of the few proxies for
+    # effort a reader has, so a duplicated writeup scores as more work than it was.
+    # Collapse it, and say where it came from -- which source they used is information,
+    # a second copy of the text is not.
+    duplicated = [
+        path for path, content in markdown_files.items() if _is_same_writeup(content, notes)
+    ]
+    for path in duplicated:
+        # Same prose either way; take the longer copy in case one side carries a
+        # trailing edit the other does not.
+        if len(markdown_files[path].strip()) > len(notes):
+            notes = markdown_files[path].strip()
+        del markdown_files[path]
+
     parts += ["# NOTES.md AS SUBMITTED"]
-    parts.append(notes.strip() or "(the engineer left this empty)")
+    if duplicated:
+        parts.append(
+            f"(submitted identically via the notes panel and {', '.join(sorted(duplicated))}; "
+            "shown once)"
+        )
+    parts.append(notes or "(the engineer left this empty)")
     for path, content in markdown_files.items():
         parts += ["", f"## {path}", content]
     parts.append("")
