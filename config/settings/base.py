@@ -51,6 +51,7 @@ LOCAL_APPS = [
     "apps.readiness",
     "apps.equations",
     "apps.systemdesign",
+    "apps.workspace",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -134,6 +135,62 @@ OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-5.2")
 # Default LLM provider for question generation: "claude" or "openai"
 LLM_PROVIDER = env("LLM_PROVIDER", default="claude")
 
+# ---------------------------------------------------------------------------
+# Workspace mode ("Work With Existing Codebase")
+# ---------------------------------------------------------------------------
+# Exercise workspaces are real directories on disk that the user works in with
+# their own terminal, editor and browser. WORKSPACE_ROOT defaults inside the
+# project (and is gitignored) so the app never writes outside the project
+# directory; set the env var to relocate it, e.g. ~/ai-prep-workspaces.
+WORKSPACE_ROOT = Path(env("WORKSPACE_ROOT", default=str(BASE_DIR / "workspaces"))).expanduser()
+WORKSPACE_TEMPLATE_ROOT = BASE_DIR / "workspace_templates"
+
+# Finished workspaces are MOVED here rather than deleted, so a mid-exercise
+# mistake never destroys work. Bare "origin" repos emulating GitHub live here.
+WORKSPACE_ARCHIVE_DIRNAME = ".archive"
+WORKSPACE_ORIGINS_DIRNAME = ".origins"
+
+# A directory is only ever deleted if it carries this sentinel file, proving
+# this app created it. See apps/workspace/services/paths.py.
+WORKSPACE_SENTINEL_FILENAME = ".ai-prep-workspace"
+
+# Time box: 20 minutes minimum, 60 maximum. Enforced by model validators too.
+WORKSPACE_MIN_TIME_LIMIT_SECONDS = 20 * 60
+WORKSPACE_MAX_TIME_LIMIT_SECONDS = 60 * 60
+# A submit fired at T-2s whose capture takes 6s must not be rejected.
+WORKSPACE_SUBMIT_GRACE_SECONDS = 30
+WORKSPACE_HEARTBEAT_INTERVAL_SECONDS = 15
+# Environment probing shells out to docker and git, so the report is cached
+# briefly; the Re-check button bypasses it.
+WORKSPACE_DOCTOR_CACHE_SECONDS = 10
+
+# Prompt budget for grading. Budgeted in characters (~3.5 chars/token) rather
+# than tokens so no tokenizer dependency is needed.
+WORKSPACE_MAX_DIFF_CHARS = 200_000
+WORKSPACE_MAX_FILE_DIFF_CHARS = 20_000
+
+# Host ports for per-exercise containers. Deliberately clear of the study app's
+# own Postgres (5432) and Redis (6379); in-container addressing is unchanged.
+WORKSPACE_PORT_RANGE = (55000, 55999)
+WORKSPACE_RESERVED_PORTS = [5432, 6379, 8000, 27017]
+
+# Subprocess timeouts (seconds). Every external command gets one.
+WORKSPACE_GIT_TIMEOUT_SECONDS = 30
+WORKSPACE_SCAFFOLD_TIMEOUT_SECONDS = 180
+WORKSPACE_COMPOSE_UP_TIMEOUT_SECONDS = 300
+WORKSPACE_COMPOSE_DOWN_TIMEOUT_SECONDS = 120
+WORKSPACE_CHECK_TIMEOUT_SECONDS = 600
+
+# Read-only file browser limits.
+WORKSPACE_TREE_MAX_ENTRIES = 2000
+WORKSPACE_FILE_PREVIEW_MAX_BYTES = 256_000
+
+# Destructive cleanup is off unless explicitly enabled, so a stray invocation
+# (e.g. from CI) cannot wipe archived work.
+WORKSPACE_ALLOW_DESTRUCTIVE_CLEANUP = env.bool("WORKSPACE_ALLOW_DESTRUCTIVE_CLEANUP", default=False)
+WORKSPACE_ARCHIVE_RETENTION_DAYS = 7
+WORKSPACE_STALE_PREPARE_HOURS = 2
+
 # Celery Configuration
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
@@ -141,6 +198,17 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+
+# Fail fast when the broker is down instead of blocking the web request.
+# By default Celery retries a lost connection 20 times at one-second intervals, so
+# a `.delay()` with Redis stopped would hang a page load for 20+ seconds before the
+# caller could fall back. Callers are expected to handle the exception.
+CELERY_TASK_PUBLISH_RETRY = False
+CELERY_BROKER_CONNECTION_TIMEOUT = 2
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
+CELERY_BROKER_TRANSPORT_OPTIONS = {"max_retries": 0}
+CELERY_RESULT_BACKEND_ALWAYS_RETRY = False
+CELERY_REDIS_RETRY_ON_TIMEOUT = False
 
 # Logging
 LOGGING = {

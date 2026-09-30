@@ -19,4 +19,5 @@ urlpatterns = [
     path("readiness/", include("apps.readiness.urls")),
     path("equations/", include("apps.equations.urls")),
     path("systemdesign/", include("apps.systemdesign.urls")),
+    path("workspace/", include("apps.workspace.urls")),
 ]
