@@ -202,9 +202,13 @@ def test_a_correct_well_documented_fix_earns_a_high_grade(session):
 
 
 def test_the_same_fix_with_no_notes_scores_far_lower(session):
-    """The headline consequence of documentation being a quarter of the mark.
+    """The headline consequence of documentation carrying weight at all.
 
-    Identical code, identical passing checks — only the writeup is missing.
+    Identical code, identical passing checks -- only the writeup is missing.
+
+    The bounds moved when documentation was recalibrated from 25% to 15% against
+    hand-graded submissions; what must not move is that the same code without its writeup
+    lands several letters lower, with no gate involved.
     """
     do_the_work(session)
 
@@ -219,10 +223,15 @@ def test_the_same_fix_with_no_notes_scores_far_lower(session):
     ):
         grade = submission_service.capture_and_grade(session)
 
-    assert grade.overall_score <= 80
-    assert grade.letter_grade in {"B-", "C+", "C"}
+    assert grade.overall_score <= 86
+    assert grade.letter_grade in {"B", "B-", "C+", "C"}
     # No gate fired: the drop is purely the documentation weight doing its job.
     assert grade.applied_caps == []
+    # And it is a real drop, not a rounding artefact: several letters below the same
+    # code with a writeup, which the documented case in this module scores at A or A+.
+    from apps.workspace.grading import letter_rank
+
+    assert letter_rank(grade.letter_grade) - letter_rank("A") >= 3
 
 
 def test_an_unverifiable_fix_is_capped_even_when_correct(session):

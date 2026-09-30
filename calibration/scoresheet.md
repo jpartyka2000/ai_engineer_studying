@@ -97,12 +97,12 @@ comment:
 
 ## item-9d4b
 
-letter: 
+letter: B-
 correctness: 
 engineering: 
 documentation: 
 completeness: 
-comment: 
+comment: identical working code to the documented version; writing it up is not worth six letters
 
 ## item-bcae
 
@@ -133,12 +133,12 @@ comment:
 
 ## item-ee55
 
-letter: 
+letter: B
 correctness: 
 engineering: 
 documentation: 
 completeness: 
-comment: 
+comment: same code as the documented version; the explanatory comment is worth a step (B- without it)
 
 ## item-fc5e
 

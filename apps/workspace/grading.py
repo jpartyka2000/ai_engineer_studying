@@ -63,12 +63,27 @@ GRADE_POINTS: Final[dict[str, str]] = {
     "F": "0.00",
 }
 
-# Dimension weights. Correctness is weighted to dominate because "is the problem
-# actually solved" is the final arbiter; documentation is first-class at 25% so a
-# silent fix cannot earn an A.
-WEIGHT_CORRECTNESS: Final[float] = 0.40
+# Dimension weights. Correctness dominates because "is the problem actually solved" is
+# the final arbiter; documentation is first-class, so a silent fix cannot earn an A.
+#
+# Documentation was 25% until it was checked against human judgment, and 25% was too
+# much. Two hand-graded submissions -- identical working code to their documented twins,
+# one with an explanatory comment and one without -- were called B and B- by the user
+# where the rubric said C+ and C-. Solving each for the weight that would produce the
+# human letter gave 18.2% and 14.7%; 15% is the conservative end of that range, and at
+# it the two land B (exact) and C+ (one step, inside tolerance).
+#
+# The consequences are deliberate. A correct, complete, undocumented fix now reaches
+# B-/B rather than C-/C, and an explanatory comment is worth about one letter step --
+# which is what the user said it should be worth. Writing the work up is still worth
+# roughly three letters, asserted independently of these numbers in
+# tests/regression/test_workspace_rubric_conformance.py.
+#
+# Changing these restates every historical grade, which is why grades record their
+# RUBRIC_VERSION. Do not change them again without new hand-graded evidence.
+WEIGHT_CORRECTNESS: Final[float] = 0.50
 WEIGHT_ENGINEERING: Final[float] = 0.25
-WEIGHT_DOCUMENTATION: Final[float] = 0.25
+WEIGHT_DOCUMENTATION: Final[float] = 0.15
 WEIGHT_COMPLETENESS: Final[float] = 0.10
 
 # Gate identifiers, stored on the grade so the UI can explain a cap rather than
@@ -369,6 +384,77 @@ def apply_gates(weighted_score: int, signals: GateSignals) -> GradeOutcome:
         uncapped_letter=uncapped,
         applied_caps=tuple(caps),
         speed_bonus=bonus,
+    )
+
+
+#: The ceiling each gate imposes. Kept beside the gate identifiers so the two cannot
+#: drift apart, and used by :func:`regrade_with_recorded_caps`.
+GATE_CEILINGS: Final[dict[str, str]] = {
+    GATE_TAMPERING: "F",
+    GATE_EMPTY: "F",
+    GATE_NOTHING_SOLVED: "D+",
+    GATE_UNSOLVED: "C+",
+    GATE_REGRESSION: "B",
+    GATE_NOT_EXCEPTIONAL: "A",
+}
+
+
+def regrade_with_recorded_caps(
+    dimensions: DimensionScores, applied_caps: list[str], *, speed_bonus: int = 0
+) -> GradeOutcome:
+    """Recompute a letter from stored dimension scores and the caps already recorded.
+
+    For re-deriving historical grades after a **weight** change. The dimension scores are
+    the model's judgment and do not depend on the weights, so a weight change needs
+    arithmetic rather than another API call -- re-running the model would also introduce
+    sampling noise and make the before/after uninterpretable.
+
+    Deliberately replays the recorded caps rather than recomputing them from signals:
+    which gates fired is a fact about that submission, already decided, and reconstructing
+    :class:`GateSignals` from stored rows would be guesswork.
+
+    Args:
+        dimensions: The stored dimension scores.
+        applied_caps: The gate identifiers recorded on the original grade.
+        speed_bonus: Any bonus the original grade recorded.
+
+    Returns:
+        A :class:`GradeOutcome` under the current weights.
+
+    Raises:
+        ValueError: If a cap identifier is not a known gate, rather than silently
+            ignoring it and returning a grade that skipped a cap.
+    """
+    unknown = [cap for cap in applied_caps if cap not in GATE_CEILINGS]
+    if unknown:
+        raise ValueError(f"unknown gate identifier(s): {unknown}")
+
+    base = max(0, min(100, dimensions.weighted()))
+    if GATE_TAMPERING in applied_caps or GATE_EMPTY in applied_caps:
+        absolute = GATE_TAMPERING if GATE_TAMPERING in applied_caps else GATE_EMPTY
+        return GradeOutcome(
+            letter="F",
+            score=0,
+            base_score=base,
+            grade_points=letter_to_points("F"),
+            uncapped_letter=score_to_letter(base),
+            applied_caps=(absolute,),
+        )
+
+    score = min(100, base + speed_bonus)
+    uncapped = score_to_letter(score)
+    letter = uncapped
+    for cap in applied_caps:
+        letter = cap_letter(letter, GATE_CEILINGS[cap])
+
+    return GradeOutcome(
+        letter=letter,
+        score=score,
+        base_score=base,
+        grade_points=letter_to_points(letter),
+        uncapped_letter=uncapped,
+        applied_caps=tuple(applied_caps),
+        speed_bonus=speed_bonus,
     )
 
 

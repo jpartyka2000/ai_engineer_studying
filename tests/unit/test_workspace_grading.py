@@ -184,30 +184,42 @@ def test_weighted_score_of_all_zeros_is_zero():
 
 
 def test_correctness_dominates_the_weighting():
-    """40% on correctness must outweigh any single other dimension."""
+    """Correctness must outweigh any single other dimension."""
     only_correct = DimensionScores(100, 0, 0, 0).weighted()
-    only_documented = DimensionScores(0, 0, 100, 0).weighted()
-    assert only_correct > only_documented
+    for other in (
+        DimensionScores(0, 100, 0, 0).weighted(),
+        DimensionScores(0, 0, 100, 0).weighted(),
+        DimensionScores(0, 0, 0, 100).weighted(),
+    ):
+        assert only_correct > other
 
 
 def test_a_perfect_but_undocumented_fix_cannot_reach_an_a():
-    """The headline consequence of documentation at 25%."""
+    """The headline consequence of documentation being weighted at all.
+
+    The exact figure moved when documentation was recalibrated from 25% to 15% against
+    hand-graded submissions; what must not move is that a silent fix cannot earn an A,
+    however good the code.
+    """
     outcome = grading.grade(DimensionScores(100, 100, 0, 100), solved())
-    assert outcome.score == 75
-    assert outcome.letter == "C"
+    assert outcome.score == 85
+    assert outcome.letter == "B"
+    assert grading.letter_rank(outcome.letter) > grading.letter_rank("A-")
 
 
 def test_beautifully_documented_but_unsolved_cannot_beat_a_c_plus():
     """The mirror case: prose cannot substitute for a working fix.
 
-    Perfect engineering, documentation and scope with only partial correctness
-    still weights to a B, which the unsolved gate then pulls down to C+.
+    Perfect engineering, documentation and scope with only partial correctness weights
+    to a B-, which the unsolved gate then pulls down to C+. It was a B before
+    documentation was recalibrated from 25% to 15%; prose buys one step less than it
+    used to, which is the intended mirror of an undocumented fix now scoring higher.
     """
     outcome = grading.grade(
         DimensionScores(60, 100, 100, 100),
         solved(required_checks_passed=2, documentation_score=100),
     )
-    assert outcome.uncapped_letter == "B"
+    assert outcome.uncapped_letter == "B-"
     assert outcome.letter == "C+"
     assert grading.GATE_UNSOLVED in outcome.applied_caps
 
@@ -281,12 +293,36 @@ def test_g6_timing_out_is_not_an_automatic_f():
 
 
 def test_g6_a_timed_out_partial_fix_still_earns_partial_credit():
+    """Dimensions measured on a real honest-partial submission, not invented ones.
+
+    The calibration corpus has exactly this case: the Wilson-interval exercise with the
+    floating-point boundary unfixed, diagnosed honestly in NOTES.md and flagged
+    do-not-ship. It scored correctness 40 (a required check fails), engineering 85,
+    documentation 88, completeness 70.
+    """
     outcome = grading.grade(
-        DimensionScores(40, 70, 90, 50),
+        DimensionScores(40, 85, 88, 70),
         solved(timed_out=True, required_checks_passed=2),
     )
     assert outcome.letter != "F"
     assert grading.GATE_UNSOLVED in outcome.applied_caps
+
+
+def test_a_partial_fix_carried_mainly_by_its_writeup_can_now_reach_f():
+    """A deliberate consequence of documentation dropping from 25% to 15%.
+
+    Weaker code than the case above -- engineering 70, completeness 50 -- with the same
+    strong writeup used to weight to D-. It now reaches F, because the writeup is worth
+    ten points less and there is not enough else holding it up. Pinned so the trade-off
+    stays visible: recalibrating documentation down to stop undocumented work being
+    punished necessarily stops prose rescuing work that is mostly unsolved.
+    """
+    outcome = grading.grade(
+        DimensionScores(40, 70, 90, 50),
+        solved(timed_out=True, required_checks_passed=2),
+    )
+    assert outcome.score == 56
+    assert outcome.letter == "F"
 
 
 # ---------------------------------------------------------------------------
@@ -428,3 +464,62 @@ def test_cap_explanations_are_returned_in_order():
 def test_fraction_time_remaining_is_clamped():
     assert solved(fraction_time_used=1.4).fraction_time_remaining == 0.0
     assert solved(fraction_time_used=-0.2).fraction_time_remaining == 1.0
+
+
+# ---------------------------------------------------------------------------
+# Re-deriving a historical grade after a weight change
+# ---------------------------------------------------------------------------
+
+
+def test_regrade_replays_a_recorded_cap():
+    """The caps are facts about that submission, replayed rather than recomputed."""
+    outcome = grading.regrade_with_recorded_caps(
+        DimensionScores(95, 95, 95, 95), [grading.GATE_UNSOLVED]
+    )
+    assert outcome.uncapped_letter == "A"
+    assert outcome.letter == "C+"
+    assert outcome.applied_caps == (grading.GATE_UNSOLVED,)
+
+
+def test_regrade_composes_multiple_caps_worst_first():
+    outcome = grading.regrade_with_recorded_caps(
+        DimensionScores(95, 95, 95, 95), [grading.GATE_REGRESSION, grading.GATE_UNSOLVED]
+    )
+    assert outcome.letter == "C+"
+
+
+@pytest.mark.parametrize("gate", [grading.GATE_TAMPERING, grading.GATE_EMPTY])
+def test_regrade_keeps_the_absolute_gates_absolute(gate):
+    """A weight change must never resurrect a tampered or empty submission."""
+    outcome = grading.regrade_with_recorded_caps(DimensionScores(100, 100, 100, 100), [gate])
+    assert outcome.letter == "F"
+    assert outcome.score == 0
+
+
+def test_regrade_with_no_caps_is_just_the_weighted_letter():
+    outcome = grading.regrade_with_recorded_caps(DimensionScores(96, 95, 96, 97), [])
+    assert outcome.letter == outcome.uncapped_letter
+    assert outcome.applied_caps == ()
+
+
+def test_regrade_carries_a_recorded_speed_bonus():
+    plain = grading.regrade_with_recorded_caps(DimensionScores(90, 90, 90, 90), [])
+    bonused = grading.regrade_with_recorded_caps(DimensionScores(90, 90, 90, 90), [], speed_bonus=3)
+    assert bonused.score == plain.score + 3
+    assert bonused.speed_bonus == 3
+
+
+def test_regrade_rejects_an_unknown_cap():
+    """Silently ignoring it would return a grade that skipped a gate."""
+    with pytest.raises(ValueError, match="unknown gate"):
+        grading.regrade_with_recorded_caps(DimensionScores(90, 90, 90, 90), ["G9_invented"])
+
+
+def test_every_gate_identifier_has_a_ceiling():
+    """A new gate must be given a ceiling, or regrading would reject grades using it."""
+    gates = {
+        value
+        for name, value in vars(grading).items()
+        if name.startswith("GATE_") and isinstance(value, str)
+    }
+    assert gates == set(grading.GATE_CEILINGS)

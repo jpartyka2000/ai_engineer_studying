@@ -21,7 +21,7 @@ from apps.workspace.calibration import packets, report, store
 from apps.workspace.calibration.personas import all_personas, personas_for
 from apps.workspace.calibration.runner import build as build_persona
 from apps.workspace.calibration.spec import Persona
-from apps.workspace.models import WorkspaceSession
+from apps.workspace.models import WorkspaceGrade, WorkspaceSession
 
 
 class Command(BaseCommand):
@@ -33,7 +33,7 @@ class Command(BaseCommand):
         """Register the action and its filters."""
         parser.add_argument(
             "action",
-            choices=["build", "packet", "report", "status"],
+            choices=["build", "packet", "report", "status", "recompute"],
             help="Which step of the round to run",
         )
         parser.add_argument(
@@ -89,8 +89,81 @@ class Command(BaseCommand):
             self._packet(options)
         elif action == "report":
             self._report(options)
+        elif action == "recompute":
+            self._recompute(options)
         else:
             self._status(options)
+
+    # -- recompute --------------------------------------------------------
+
+    def _recompute(self, options: dict) -> None:
+        """Re-derive every recorded letter under the current weights, with no API call.
+
+        For a weight change. Dimension scores are the model's judgment and are unaffected
+        by the weights, so re-running the model would only add sampling noise and make
+        the before/after impossible to read.
+        """
+        from apps.workspace.grading import DimensionScores, regrade_with_recorded_caps
+        from apps.workspace.services.exercise_evaluator import RUBRIC_VERSION
+
+        entries = store.read_answer_key()
+        graded = [entry for entry in entries if entry.graded]
+        if not graded:
+            raise CommandError("no graded items to recompute")
+
+        moved = 0
+        for entry in graded:
+            scores = entry.system_dimensions or {}
+            if not scores:
+                self.stdout.write(self.style.WARNING(f"  {entry.item} has no dimensions; skipped"))
+                continue
+            outcome = regrade_with_recorded_caps(
+                DimensionScores(
+                    correctness=scores.get("correctness", 0),
+                    engineering=scores.get("engineering", 0),
+                    documentation=scores.get("documentation", 0),
+                    completeness=scores.get("completeness", 0),
+                ),
+                list(entry.applied_caps or []),
+            )
+            before = f"{entry.system_letter} {entry.system_score}"
+            after = f"{outcome.letter} {outcome.score}"
+            changed = outcome.letter != entry.system_letter or outcome.score != entry.system_score
+            moved += changed
+
+            grade_row = WorkspaceGrade.objects.filter(session_id=entry.session_id).first()
+            if grade_row:
+                grade_row.overall_score = outcome.score
+                grade_row.base_score = outcome.base_score
+                grade_row.letter_grade = outcome.letter
+                grade_row.uncapped_letter = outcome.uncapped_letter
+                grade_row.grade_points = outcome.grade_points
+                grade_row.rubric_version = RUBRIC_VERSION
+                grade_row.save(
+                    update_fields=[
+                        "overall_score",
+                        "base_score",
+                        "letter_grade",
+                        "uncapped_letter",
+                        "grade_points",
+                        "rubric_version",
+                    ]
+                )
+            entry.system_letter = outcome.letter
+            entry.system_score = outcome.score
+
+            marker = "  ->" if changed else "    "
+            self.stdout.write(
+                f"{marker} {entry.item}  {entry.persona_id:<16}{before:>8} -> {after}"
+            )
+
+        store.write_answer_key(entries)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"\nRecomputed {len(graded)} grade(s) under {RUBRIC_VERSION}; "
+                f"{moved} changed. Dimension scores untouched, no API calls made."
+            )
+        )
 
     # -- build ------------------------------------------------------------
 

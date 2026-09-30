@@ -220,8 +220,10 @@ def test_weighted_contribution_ranks_by_weight_not_raw_delta():
     )
     ranked = result.weighted_contribution()
     assert ranked[0][0] == "correctness"
-    assert ranked[0][1] == pytest.approx(-12.0)
-    assert ranked[1][1] == pytest.approx(-10.0)
+    # correctness -30 at 50%, documentation -40 at 15%: the larger raw delta contributes
+    # less, which is the whole point of ranking by weighted contribution.
+    assert ranked[0][1] == pytest.approx(-15.0)
+    assert ranked[1][1] == pytest.approx(-6.0)
 
 
 # ---------------------------------------------------------------------------
@@ -357,7 +359,7 @@ def test_a_consistent_offset_is_not_reported_as_noise():
         ]
     )
     biased, noisy = report._dimension_offenders(round_)
-    assert biased == ("documentation", pytest.approx(-20.0))
+    assert biased == ("documentation", pytest.approx(-12.0))
     assert noisy is None
 
 
