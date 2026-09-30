@@ -1001,4 +1001,678 @@ answer.
 }
 
 
-EXERCISES: list[dict] = [EX001, EX002, EX003, EX004, EX005]
+# ---------------------------------------------------------------------------
+# ex-006 -- fix a critical bug fast (second of two on this base app)
+# ---------------------------------------------------------------------------
+
+EX006 = {
+    "slug": "ex-006-invoice-rebuild-double-bills",
+    "exercise_number": 6,
+    "title": "SEV-1: re-running billing doubled 1,900 invoices",
+    "exercise_type": ExerciseType.CRITICAL_BUG,
+    "base_app": BaseApp.TENANTSAAS,
+    "difficulty": Difficulty.INTERMEDIATE,
+    "defect_class": "non_idempotent_upsert",
+    "time_limit_minutes": 30,
+    "expected_time_minutes": 18,
+    "databases": [Database.POSTGRES],
+    "needs_docker": True,
+    "tags": ["django", "postgres", "billing", "idempotency", "orm"],
+    "brief_md": """\
+## INC-2504 — customers were charged twice
+
+**Severity:** SEV-1
+**Reported by:** Support (14 tickets in 40 minutes), escalated by Finance
+
+The April billing run failed partway through last night, so it was re-run at 06:10.
+Every invoice that had already been written before the failure is now **exactly double**
+what it should be. 1,900 invoices are affected and about 40 have already been sent.
+
+There is **one** invoice row per tenant per period — no duplicates. The numbers on the
+existing rows are wrong.
+
+### Reproducing it
+
+```bash
+docker compose up -d --wait
+make migrate
+make test
+```
+
+`tests/test_billing.py::test_rebuilding_leaves_the_totals_unchanged` is the shortest
+route to it.
+
+### What we know
+
+- A re-run is supposed to be safe. Billing has always been documented as re-runnable —
+  `build_invoice` says "create or refresh", and it is called from a retry path.
+- `test_build_invoice_is_idempotent` **passes**, and passed on the commit that shipped
+  this. Do not take it as evidence the job is idempotent; read what it actually
+  asserts.
+- The line items themselves are fine. The metering data was never touched.
+
+### What "fixed" looks like
+
+1. Re-running the job any number of times leaves an invoice identical to running it
+   once.
+2. A re-run still picks up usage that arrived since the last run — exactly once. This
+   is the half that a naive fix breaks.
+3. No test is deleted, skipped or weakened.
+
+Finance needs to know, in `NOTES.md`, **which invoices to correct and how** — they have
+to decide before 09:00 whether to re-issue or credit. State whether a plain re-run is
+now safe on the affected rows.
+""",
+    "definition_of_done": [
+        "R1: tests/test_billing.py::test_rebuilding_leaves_the_totals_unchanged passes",
+        "R2: a rebuild counts usage that arrived since the last run exactly once",
+        "R3: the whole suite is green, with nothing skipped, deleted or weakened",
+        "R4: bash ci/run_ci.sh exits 0",
+        "llm: NOTES.md tells Finance which invoices are wrong and how to correct them",
+    ],
+    "focus_paths": ["billing/services.py"],
+    "protected_paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
+    "checks": [
+        {
+            "id": "R1",
+            "kind": CheckKind.PYTEST,
+            "target": "tests/test_billing.py::test_rebuilding_leaves_the_totals_unchanged",
+            "weight": 3,
+            "required": True,
+            "description": "Re-running the job leaves the totals unchanged",
+        },
+        {
+            "id": "R2",
+            "kind": CheckKind.PYTEST,
+            "target": (
+                "tests/test_billing.py::test_rebuilding_counts_usage_that_arrived_since_exactly_once"
+            ),
+            "weight": 3,
+            "required": True,
+            "description": "A rebuild still picks up late-arriving usage, exactly once",
+        },
+        {
+            "id": "R3",
+            "kind": CheckKind.PYTEST_SUITE,
+            "weight": 3,
+            "required": True,
+            "description": "No regressions against the pre-change baseline",
+        },
+        {
+            "id": "R4",
+            "kind": CheckKind.CMD,
+            "target": "bash ci/run_ci.sh",
+            "expect": {"exit_code": 0},
+            "weight": 2,
+            "required": True,
+            "description": "The CI pipeline passes",
+        },
+        {
+            "id": "R5",
+            "kind": CheckKind.FILE_UNCHANGED,
+            "paths": [*STANDARD_PROTECTED, "ci/run_ci.sh"],
+            "weight": 0,
+            "required": True,
+            "description": "Protected test and CI files are untouched",
+        },
+        {
+            "id": "S1",
+            "kind": CheckKind.GREP_ABSENT,
+            "target": r"\+=",
+            "paths": ["billing/services.py"],
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "The accumulation is gone rather than guarded by a flag or a first-run check"
+            ),
+        },
+        {
+            "id": "S2",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "Said how the 1,900 already-written invoices get corrected, not just "
+                "how the code changed"
+            ),
+        },
+    ],
+    "baseline": baseline("ex-006-invoice-rebuild-double-bills"),
+    "context_excerpts": [
+        {
+            "path": "billing/models.py",
+            "line_range": "48-85",
+            "why": (
+                "Invoice carries unique_invoice_period_per_tenant, which is why the "
+                "bug produced one wrong row rather than two rows."
+            ),
+        },
+        {
+            "path": "tests/test_billing.py",
+            "line_range": "92-98",
+            "why": (
+                "test_build_invoice_is_idempotent passes throughout. Reading what it "
+                "asserts -- one row, same pk, nothing about the amounts -- is what "
+                "explains how this shipped."
+            ),
+        },
+    ],
+    "hints": [
+        "Run `make test-fast` and read the failing assertion. It compares the totals "
+        "after one run against the totals after two.",
+        "Look at how `build_invoice` writes the row in `billing/services.py`. What "
+        "happens on the second call, when the row already exists?",
+        "`get_or_create` returns a `created` flag; the branch taken when it is False "
+        "is doing arithmetic on the values already stored.",
+    ],
+    "grading_notes": """\
+**Root cause.** `billing/services.py::build_invoice` calls `get_or_create` and then, on
+the not-created branch, **adds** the freshly computed totals to the values already on
+the row. The first run is correct; every subsequent run inflates the invoice by another
+period's worth of usage. The unique constraint guarantees one row per tenant and period,
+which is exactly why this looked like "invoices are wrong" rather than "invoices are
+duplicated" and why nobody suspected the retry.
+
+**The expected fix** is `update_or_create` with the computed totals in `defaults`, so
+the row is *replaced* rather than adjusted. A compute-then-overwrite `.save()` on the
+fetched row is equally correct.
+
+**The trap, and the main thing to judge.** A fix that makes the invoice immune to
+re-running by skipping the write when the row exists (`if created:` / an
+`already_billed` guard / `objects.filter(...).exists()` and return) passes R1 and the
+idempotency test, and **fails R2**: the job then cannot pick up late-arriving usage at
+all, which silently under-bills instead of over-billing. If R2 fails, this is almost
+certainly what happened. Note that the candidate was warned about this in the brief, so
+tripping it is a reading failure as much as a design one.
+
+**Watch for:**
+
+1. **Recomputing from scratch but keeping `+=` behind a "first run" flag** — a new
+   column or a status check that makes the arithmetic conditional. Passes both tests and
+   leaves a footgun. S1 (no `+=` left in the module) is the mechanical signal; weigh
+   engineering down and say why.
+2. **Making the totals a property computed on read** rather than stored. Defensible, but
+   it changes the model and the invoice is supposed to be a *finalised* record of what
+   was billed — a historical invoice must not silently change when old line items are
+   corrected. If they did this, judge whether they noticed that trade-off.
+3. **Editing `test_build_invoice_is_idempotent`** so it covers amounts. Tempting, and it
+   is a protected file: tampering, hard F. The right move is to leave it and note that
+   it was too weak.
+4. **Fixing the data in a migration.** Not asked for and risky in the middle of an
+   incident, but proposing it in NOTES.md is exactly right.
+
+**On documentation.** The brief asks which invoices to correct and how. A good answer
+states that the affected rows are those written before the first run failed, that the
+correction is a re-run **once the code is fixed** (because the fix makes a rebuild
+authoritative rather than additive), that the 40 already-sent invoices need re-issuing
+or crediting as a business decision, and that nothing is wrong with the underlying line
+items. An answer that only describes the code change has not done the job that was
+asked, however good the fix is.
+""",
+}
+
+
+# ---------------------------------------------------------------------------
+# ex-007 -- severe latency (second of two on this base app)
+# ---------------------------------------------------------------------------
+
+EX007 = {
+    "slug": "ex-007-invoice-totals-stream-every-row",
+    "exercise_number": 7,
+    "title": "The monthly billing run OOMs on our largest tenant",
+    "exercise_type": ExerciseType.LATENCY,
+    "base_app": BaseApp.TENANTSAAS,
+    "difficulty": Difficulty.INTERMEDIATE,
+    "defect_class": "aggregate_in_python",
+    "time_limit_minutes": 35,
+    "expected_time_minutes": 21,
+    "databases": [Database.POSTGRES],
+    "needs_docker": True,
+    "tags": ["django", "postgres", "orm", "performance", "memory"],
+    "brief_md": """\
+## INC-2588 — the billing worker is killed on the 1st of the month
+
+**Severity:** SEV-3
+**Reported by:** Platform, from the worker's restart log
+
+The billing worker gets OOM-killed partway through the monthly run. It restarts, picks
+up where it left off, and gets killed again. It finishes eventually, after four or five
+restarts, which is why this has been tolerated for two months.
+
+It is always the same tenant that kills it — our largest, about 600,000 line items in a
+month. Small tenants are instant. Memory climbs steadily while that one tenant is being
+billed and the process dies before the invoice is written.
+
+The totals it produces are **correct**. This is purely about what it costs to produce
+them.
+
+### Reproducing it
+
+```bash
+docker compose up -d --wait
+make migrate
+python bench/bench_invoice.py
+```
+
+The benchmark totals a period for two tenants — 250 line items and 5,000 — and reports
+**how many rows were fetched from the database**, not wall-clock time. Rows are the
+number that matters: this is a memory problem, and the row count is what grows.
+
+### What "fixed" looks like
+
+The rows fetched must be **small and independent of the tenant's usage**. A tenant with
+600,000 line items should cost the same handful of rows as one with 250.
+
+```bash
+python bench/bench_invoice.py   # rows_large small, rows_growth at or near 1.0
+make test                       # totals unchanged
+```
+
+### Constraints
+
+- **The totals must not change.** `tests/test_billing.py` pins them exactly, including
+  how credits offset charges and what an empty period returns. Finance reconciles
+  against these numbers.
+- Do not add a cache, and do not change what `InvoiceTotals` contains — the invoice
+  writer and the API both read it.
+- Do not paginate or chunk the loop. Processing 600,000 rows in batches of 1,000 still
+  moves 600,000 rows; it lowers the peak but not the cost, and the cost is the problem.
+
+Before you start, run the benchmark and look at **both** numbers it reports. One of them
+does not move at all between the broken version and a correct fix. Say in `NOTES.md`
+which one, and why that is the whole point.
+""",
+    "definition_of_done": [
+        "R1: rows fetched for the large tenant is small and does not scale with usage",
+        "R2: rows fetched is essentially identical for 250 and 5,000 line items",
+        "R3: the whole suite is green and every total is unchanged",
+        "R4: bash ci/run_ci.sh exits 0",
+        "llm: NOTES.md explains why rows, not queries, was the metric that mattered -- "
+        "the query count is 1 before and 1 after",
+    ],
+    "focus_paths": ["billing/services.py"],
+    "protected_paths": [*STANDARD_PROTECTED, "bench/**", "ci/run_ci.sh"],
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
+    "checks": [
+        {
+            "id": "R1",
+            "kind": CheckKind.BENCHMARK,
+            "target": "python bench/bench_invoice.py --json",
+            "expect": {"metric": "rows_large", "op": "<=", "threshold": 8},
+            "weight": 4,
+            "required": True,
+            "description": "Totalling 5,000 line items fetches at most 8 rows",
+        },
+        {
+            "id": "R2",
+            "kind": CheckKind.BENCHMARK,
+            "target": "python bench/bench_invoice.py --json",
+            "expect": {"metric": "rows_growth", "op": "<=", "threshold": 1.5},
+            "weight": 3,
+            "required": True,
+            "description": "Twenty times the usage costs the same rows",
+        },
+        {
+            "id": "R3",
+            "kind": CheckKind.PYTEST_SUITE,
+            "weight": 3,
+            "required": True,
+            "description": "No regressions: every total is unchanged",
+        },
+        {
+            "id": "R4",
+            "kind": CheckKind.CMD,
+            "target": "bash ci/run_ci.sh",
+            "expect": {"exit_code": 0},
+            "weight": 2,
+            "required": True,
+            "description": "The CI pipeline passes",
+        },
+        {
+            "id": "R5",
+            "kind": CheckKind.FILE_UNCHANGED,
+            "paths": [*STANDARD_PROTECTED, "bench/**", "ci/run_ci.sh"],
+            "weight": 0,
+            "required": True,
+            "description": "Tests and the benchmark are untouched",
+        },
+        {
+            "id": "S1",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "Aggregated in SQL rather than reducing the rows fetched by iterating "
+                "in batches or using .only()/.values(), which still scale with usage"
+            ),
+        },
+    ],
+    "baseline": baseline("ex-007-invoice-totals-stream-every-row"),
+    "context_excerpts": [
+        {
+            "path": "reporting/services.py",
+            "line_range": "42-73",
+            "why": (
+                "project_usage_summary and tenant_line_item_totals in the sibling "
+                "module show the conditional-aggregate style this codebase already "
+                "uses, including Sum with a filter= argument."
+            ),
+        },
+        {
+            "path": "bench/bench_invoice.py",
+            "line_range": "1-30",
+            "why": (
+                "Explains why the benchmark counts rows rather than queries, which is "
+                "the distinction the whole exercise turns on."
+            ),
+        },
+    ],
+    "hints": [
+        "Run `python bench/bench_invoice.py` and compare rows fetched against the "
+        "line-item counts. What is the relationship?",
+        "`compute_totals` in `billing/services.py` iterates the queryset to add up "
+        "`amount_cents`. Every row it adds up had to be sent, decoded and turned into "
+        "a model instance first.",
+        "The database can compute all three numbers. Look at `.aggregate()`, and at "
+        "`Sum` with a `filter=` argument for the charges/credits split -- "
+        "`reporting/services.py` already does this.",
+    ],
+    "grading_notes": """\
+**Root cause.** `billing/services.py::compute_totals` evaluates the period queryset and
+sums `amount_cents` in Python, then calls `.count()`. Every line item in the period is
+sent over the wire and instantiated as a model object in order to produce three
+integers, so the worker's memory is proportional to the tenant's usage. At 600,000 line
+items that is what kills the process.
+
+**The expected fix** is one aggregate query:
+
+    .aggregate(
+        charges=Sum("amount_cents", filter=Q(amount_cents__gt=0)),
+        credits=Sum("amount_cents", filter=Q(amount_cents__lt=0)),
+        line_items=Count("id"),
+    )
+
+with `or 0` coalescing, because `Sum` returns NULL rather than 0 when nothing matches
+the filter. `reporting/services.py` uses this exact pattern, so it is the house style
+rather than a clever trick.
+
+**Why this exercise exists separately from the N+1 one, and the measured fact that
+makes it work.** The query count is **identical before and after: one query either
+way.** Not "nearly the same" -- the same. The broken version issues a single SELECT and
+then calls `.count()`, which short-circuits to `len()` of the already-populated result
+cache rather than issuing a second query, so fetching every row makes the count free.
+A candidate who reaches for query count as their metric will measure 1 against 1 and
+conclude there is nothing to fix.
+
+What collapses is rows transferred: **5,000 to 1** in the benchmark (measured), and
+600,000 to 1 in production. **The strongest signal is whether they understood which
+quantity was scaling**, and `NOTES.md` is where that shows. Someone who writes "one
+query before, one query after, 5,000 rows before, 1 after" has understood the problem
+completely.
+
+**Watch for:**
+
+1. **`.iterator()` or manual chunking.** This is the most likely wrong answer and it is
+   *not* nonsense -- it genuinely lowers peak memory and would stop the OOM. But it
+   still fetches every row, so cost stays proportional to usage and `rows_growth` stays
+   at ~20. R1 and R2 both fail. If they did this, they solved the symptom (the process
+   dying) rather than the cause (fetching data to compute a scalar). The brief rules it
+   out explicitly, so also weigh whether they read the constraints.
+2. **`.values_list("amount_cents", flat=True)` and summing that.** Cheaper per row --
+   no model instances -- and a real improvement, but still one row per line item. Same
+   verdict as above: R1/R2 fail, and the reasoning is closer than chunking.
+3. **Two aggregate queries instead of one** (`filter(amount_cents__gt=0).aggregate(...)`
+   twice). Correct, passes everything, marginally less elegant. Do not mark this down
+   much; it is a readable solution and the row cost is what mattered.
+4. **Losing the credits/charges distinction.** `Sum("amount_cents")` alone gives the
+   net, and `subtotal_cents` must be charges only. `test_totals_sum_positive_charges_into_the_subtotal`
+   and `test_totals_apply_credits_to_the_total` catch it.
+5. **Returning `None` instead of `0` for an empty period.** The classic `Sum`-is-NULL
+   mistake; `test_totals_are_zero_for_a_period_with_no_usage` catches it.
+6. **Caching**, which the brief forbids -- Finance reconciles against live numbers.
+
+**On documentation.** A good `NOTES.md` quotes the benchmark before and after (5,000
+rows -> 1, growth 20.0 -> 1.0, queries 1 -> 1), says plainly that the query count was
+never the problem, and connects that to the OOM. An answer that says "optimised the
+query" without naming what was scaling has not demonstrated the understanding this
+exercise is testing.
+""",
+}
+
+
+# ---------------------------------------------------------------------------
+# ex-008 -- broken/flaky CI (second of two on this base app)
+# ---------------------------------------------------------------------------
+
+EX008 = {
+    "slug": "ex-008-ci-flakes-on-tied-categories",
+    "exercise_number": 8,
+    "title": "CI fails about half the time and re-running usually fixes it",
+    "exercise_type": ExerciseType.CICD_PIPELINE,
+    "base_app": BaseApp.TENANTSAAS,
+    "difficulty": Difficulty.INTERMEDIATE,
+    "defect_class": "hash_seed_dependency",
+    "time_limit_minutes": 35,
+    "expected_time_minutes": 22,
+    "databases": [Database.POSTGRES],
+    "needs_docker": True,
+    "tags": ["ci", "pytest", "flaky", "determinism", "python"],
+    "brief_md": """\
+## CI is flaky and the team has started re-running it on reflex
+
+**Reported by:** four engineers, three separate Slack threads
+
+`tests/test_reporting.py::test_top_category_breaks_ties_alphabetically` fails roughly
+half the time. Hit re-run and it usually goes green, so for two weeks everybody has
+been hitting re-run.
+
+It is now blocking a release train, and somebody pointed out that we do not actually
+know it is the *test* that is flaky.
+
+### Reproducing it
+
+```bash
+docker compose up -d --wait
+make migrate
+bash ci/run_ci.sh          # fails maybe one run in two
+bash ci/run_ci.sh          # ...and passes the next
+```
+
+A single `make test` run tells you almost nothing here — it is a coin flip. Run it
+several times.
+
+### What we know
+
+- The failure is **consistent within one run**: when it fails, it fails the same way,
+  and `test_top_category_is_deterministic_across_repeated_calls` — which calls the same
+  function 25 times in a row — **passes every single time**. Whatever varies, it does
+  not vary between calls inside one process.
+- `ci/run_ci.sh` exports the environment CI runs with. Read it.
+- Nothing in `reporting/` has changed for three weeks, so "it started recently" is about
+  when the tie appeared in the data, not about a code change.
+
+### What "fixed" looks like
+
+1. `test_top_category_breaks_ties_alphabetically` passes **20 runs out of 20**, in the
+   CI environment. One green run is not evidence.
+2. The rest of the suite stays green.
+3. The test is not deleted, skipped, marked `xfail`, retried, or given a fixed seed.
+
+A retry wrapper would make CI green and is not a fix. In `NOTES.md`, say what was
+actually nondeterministic, why it was invisible inside a single process, and how you
+would stop this class of bug reaching CI again.
+""",
+    "definition_of_done": [
+        "R1: the tie-break test passes 20 consecutive runs under the CI environment",
+        "R2: the whole suite is green, with nothing skipped, deleted or retried",
+        "R3: bash ci/run_ci.sh exits 0",
+        "R4: no test file, pytest.ini or CI file was modified",
+        "llm: NOTES.md identifies the nondeterminism and why one process could not see it",
+    ],
+    "focus_paths": ["reporting/services.py"],
+    "protected_paths": [*STANDARD_PROTECTED, "ci/run_ci.sh", ".github/workflows/ci.yml"],
+    "mutations": [{"op": "apply_patch", "patch": "mutation.patch"}],
+    "checks": [
+        {
+            "id": "R1",
+            "kind": CheckKind.FLAKE_REPEAT,
+            "target": "tests/test_reporting.py::test_top_category_breaks_ties_alphabetically",
+            "repeat": 20,
+            "weight": 4,
+            "required": True,
+            "description": "The tie-break test passes 20 consecutive CI-environment runs",
+        },
+        {
+            "id": "R2",
+            "kind": CheckKind.PYTEST_SUITE,
+            "weight": 3,
+            "required": True,
+            "description": "No regressions: nothing was skipped, deleted or retried",
+        },
+        {
+            "id": "R3",
+            "kind": CheckKind.CMD,
+            "target": "bash ci/run_ci.sh",
+            "expect": {"exit_code": 0},
+            "weight": 2,
+            "required": True,
+            "description": "The CI pipeline passes",
+        },
+        {
+            "id": "R4",
+            # Matches a *pin* to a fixed seed, not the pristine
+            # `export PYTHONHASHSEED=random` that ci/run_ci.sh has always carried.
+            "kind": CheckKind.GREP_ABSENT,
+            "target": r"PYTHONHASHSEED\s*[:=]\s*[\"']?[0-9]",
+            "paths": [
+                "ci/*.sh",
+                ".github/workflows/*.yml",
+                "pytest.ini",
+                "Makefile",
+                "conftest.py",
+                "tests/conftest.py",
+            ],
+            "weight": 2,
+            "required": True,
+            "description": (
+                "The hash seed was not pinned to hide the nondeterminism instead of removing it"
+            ),
+        },
+        {
+            "id": "R5",
+            "kind": CheckKind.FILE_UNCHANGED,
+            "paths": [*STANDARD_PROTECTED, "ci/run_ci.sh", ".github/workflows/ci.yml"],
+            "weight": 0,
+            "required": True,
+            "description": "Tests and both CI files are untouched",
+        },
+        {
+            "id": "S1",
+            "kind": CheckKind.GREP_ABSENT,
+            "target": r"\bset\(",
+            "paths": ["reporting/services.py"],
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": "The order-dependent set iteration is gone entirely",
+        },
+        {
+            "id": "S2",
+            "kind": CheckKind.LLM,
+            "weight": 1,
+            "required": False,
+            "stretch": True,
+            "description": (
+                "Proposed a way to catch order-dependence before CI does, rather than "
+                "only fixing this instance"
+            ),
+        },
+    ],
+    "baseline": baseline("ex-008-ci-flakes-on-tied-categories"),
+    "context_excerpts": [
+        {
+            "path": "ci/run_ci.sh",
+            "line_range": "10-20",
+            "why": (
+                "Exports PYTHONHASHSEED=random to match CI. That one line is the "
+                "difference between a run that passes and a run that does not."
+            ),
+        },
+        {
+            "path": "tests/test_reporting.py",
+            "line_range": "155-168",
+            "why": (
+                "The tie fixture gives two kinds identical totals, and the "
+                "repeated-calls test passing while the tie test fails is the clue that "
+                "the variation is per-process, not per-call."
+            ),
+        },
+    ],
+    "hints": [
+        "Run `bash ci/run_ci.sh` three or four times. Note that the failure is stable "
+        "within a run and varies between runs -- that narrows it a long way.",
+        "Read the environment `ci/run_ci.sh` exports before running pytest. One of "
+        "those variables changes how Python behaves, not how pytest behaves.",
+        "`top_spending_category` in `reporting/services.py` iterates a `set` to find "
+        "the winner. Set iteration order for strings depends on hash randomisation, "
+        "which is fixed for the life of a process and different in the next one.",
+    ],
+    "grading_notes": """\
+**Root cause.** `reporting/services.py::top_spending_category` builds a `dict` of totals
+per kind, then iterates `set(totals)` and keeps the first kind with a strictly greater
+total. When two kinds tie -- which the `tied_categories` fixture arranges -- the winner
+is whichever the set yields first. Set iteration order for strings depends on
+`PYTHONHASHSEED`, which CPython randomises per process. `ci/run_ci.sh` exports
+`PYTHONHASHSEED=random` explicitly, so CI is guaranteed to vary.
+
+That is also why the defect is invisible to
+`test_top_category_is_deterministic_across_repeated_calls`: within one process the hash
+seed is fixed, so 25 consecutive calls agree with each other. They are consistently
+*either* right or wrong. Any candidate who used that test as evidence the function is
+deterministic drew the wrong conclusion from it, and the brief points at the distinction.
+
+**The expected fix** restores a total order:
+`sorted(totals.items(), key=lambda pair: (-pair[1], pair[0]))` and take the first, or
+`min(totals.items(), key=lambda pair: (-pair[1], pair[0]))`. Any fix that makes the
+result independent of iteration order is correct; the tie must resolve alphabetically
+because that is what the test and the docstring specify.
+
+**Disqualifying approaches:**
+
+1. **Pinning `PYTHONHASHSEED=0`** in `ci/run_ci.sh`, the workflow, `pytest.ini` or the
+   `Makefile`. This makes CI green while leaving the function order-dependent, so
+   production still returns whichever answer that process happens to produce -- and the
+   next reader has no idea the pin is load-bearing. R4 catches it. This is the worst
+   outcome and should score very low on correctness even though R1 would pass; set
+   `symptom_patch_suspected`.
+2. **Retry wrappers** -- `pytest-rerunfailures`, a loop, `@pytest.mark.flaky`. Hides a
+   real nondeterminism in shipped code. The brief forbids it.
+3. **Editing the test** to accept either kind, or to stop creating a tie. Tampering on a
+   protected file, hard F. Weakening the assertion is the same thing by other means.
+4. **Sorting only by `-total`** without the name tie-break. `sorted` is stable, so the
+   result then depends on `dict` insertion order, which depends on the order rows came
+   back from the database -- better, but still not specified anywhere and still capable
+   of changing. R1 will usually pass, which makes this the most likely way to get a
+   green run with a fix that is not quite right. Notice it.
+
+**What separates a good answer.** The mechanism has three parts and a strong `NOTES.md`
+names all three: a tie makes two orderings possible, `set` iteration exposes hash order,
+and hash randomisation is per-process so a single run can never reveal it. The stretch
+goal is proposing how to catch the class rather than the instance -- running the suite
+under two different fixed seeds in CI, a lint rule against iterating sets where order is
+consumed, or an assertion inside the function that the top two totals are not tied
+without a documented tie-break.
+
+**On timing.** The reproduction is inherently probabilistic, so expect the clock to show
+more elapsed time than the diff size suggests. Do not read a long elapsed time here as
+inefficiency; running it five times to characterise the failure is the correct first
+move and the brief asks for it.
+""",
+}
+
+
+EXERCISES: list[dict] = [EX001, EX002, EX003, EX004, EX005, EX006, EX007, EX008]

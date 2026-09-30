@@ -1,0 +1,50 @@
+--- a/billing/services.py
++++ b/billing/services.py
+@@ -8,8 +8,6 @@ import logging
+ from dataclasses import dataclass
+ from datetime import date
+ 
+-from django.db.models import Count, Q, Sum
+-
+ from billing.models import Invoice, LineItem
+ 
+ logger = logging.getLogger(__name__)
+@@ -49,15 +47,6 @@ def line_items_for_period(tenant_id: int, period_start: date, period_end: date):
+ def compute_totals(tenant_id: int, period_start: date, period_end: date) -> InvoiceTotals:
+     """Total up a tenant's usage for a billing period.
+ 
+-    Aggregated in the database, in one query, deliberately. The result is three
+-    numbers; a month of usage for a large tenant is hundreds of thousands of line
+-    items. Summing in Python would make both the memory the billing worker needs and
+-    the bytes pulled over the wire grow with the tenant's usage, to compute a total
+-    the database can produce without sending a single line item.
+-
+-    ``bench/bench_invoice.py`` measures exactly that -- rows fetched, not wall clock
+-    -- because the row count is what scales.
+-
+     Args:
+         tenant_id: The tenant being billed.
+         period_start: First day of the period, inclusive.
+@@ -66,18 +55,13 @@ def compute_totals(tenant_id: int, period_start: date, period_end: date) -> Invo
+     Returns:
+         The aggregated :class:`InvoiceTotals`.
+     """
+-    totals = line_items_for_period(tenant_id, period_start, period_end).aggregate(
+-        charges=Sum("amount_cents", filter=Q(amount_cents__gt=0)),
+-        credits=Sum("amount_cents", filter=Q(amount_cents__lt=0)),
+-        line_items=Count("id"),
+-    )
+-    # Sum() is NULL when nothing matches the filter, which is not the same as zero.
+-    subtotal = totals["charges"] or 0
+-    credits = totals["credits"] or 0
++    items = line_items_for_period(tenant_id, period_start, period_end)
++    subtotal = sum(item.amount_cents for item in items if item.amount_cents > 0)
++    credits = sum(item.amount_cents for item in items if item.amount_cents < 0)
+     return InvoiceTotals(
+         subtotal_cents=subtotal,
+         total_cents=subtotal + credits,
+-        line_item_count=totals["line_items"],
++        line_item_count=items.count(),
+     )
+ 
+ 

@@ -1,0 +1,30 @@
+--- a/reporting/services.py
++++ b/reporting/services.py
+@@ -89,10 +89,6 @@ def models_q_for_period(period_start: date, period_end: date):
+ def top_spending_category(tenant_id: int, period_start: date, period_end: date) -> str:
+     """Return the line-item kind a tenant spent most on during a period.
+ 
+-    Ties are broken alphabetically by kind. That matters: without an explicit
+-    tie-break the winner would depend on iteration order, which is not stable across
+-    interpreter runs once hash randomisation is enabled.
+-
+     Args:
+         tenant_id: The tenant to report on.
+         period_start: First day of the period, inclusive.
+@@ -109,10 +105,12 @@ def top_spending_category(tenant_id: int, period_start: date, period_end: date)
+     if not totals:
+         return ""
+ 
+-    # Sort by descending total, then ascending kind, so a tie is resolved by name
+-    # rather than by whatever order the mapping happens to yield.
+-    ranked = sorted(totals.items(), key=lambda pair: (-pair[1], pair[0]))
+-    return ranked[0][0]
++    best_kind = ""
++    best_total = 0
++    for kind in set(totals):
++        if totals[kind] > best_total:
++            best_kind, best_total = kind, totals[kind]
++    return best_kind
+ 
+ 
+ def tenant_line_item_totals(tenant_id: int) -> dict[str, int]:

@@ -1,0 +1,25 @@
+--- a/billing/services.py
++++ b/billing/services.py
+@@ -93,7 +93,7 @@ def build_invoice(tenant_id: int, period_start: date, period_end: date) -> Invoi
+         The saved draft :class:`~billing.models.Invoice`.
+     """
+     totals = compute_totals(tenant_id, period_start, period_end)
+-    invoice, _created = Invoice.objects.update_or_create(
++    invoice, created = Invoice.objects.get_or_create(
+         tenant_id=tenant_id,
+         period_start=period_start,
+         period_end=period_end,
+@@ -104,6 +104,13 @@ def build_invoice(tenant_id: int, period_start: date, period_end: date) -> Invoi
+             "status": Invoice.Status.DRAFT,
+         },
+     )
++    if not created:
++        invoice.subtotal_cents += totals.subtotal_cents
++        invoice.total_cents += totals.total_cents
++        invoice.line_item_count += totals.line_item_count
++        invoice.save(
++            update_fields=["subtotal_cents", "total_cents", "line_item_count"]
++        )
+     logger.info(
+         "built invoice for tenant=%s period=%s..%s items=%d total=%d",
+         tenant_id,

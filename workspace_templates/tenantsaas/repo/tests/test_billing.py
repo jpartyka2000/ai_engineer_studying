@@ -97,6 +97,41 @@ def test_build_invoice_is_idempotent(acme, march_usage):
     assert Invoice.objects.filter(tenant=acme).count() == 1
 
 
+def test_rebuilding_leaves_the_totals_unchanged(acme, march_usage):
+    """One row is not the same thing as idempotent.
+
+    ``test_build_invoice_is_idempotent`` only proves a second run reuses the same
+    row. It would still pass if the second run *added* the period's usage to what was
+    already recorded, which is the same money bug with none of the symptoms -- no
+    duplicate invoice, no error, just a larger number.
+    """
+    first = build_invoice(acme.pk, MARCH_START, MARCH_END)
+    recorded = (first.subtotal_cents, first.total_cents, first.line_item_count)
+
+    second = build_invoice(acme.pk, MARCH_START, MARCH_END)
+    assert (second.subtotal_cents, second.total_cents, second.line_item_count) == recorded
+
+    second.refresh_from_db()
+    assert (second.subtotal_cents, second.total_cents, second.line_item_count) == recorded
+
+
+def test_rebuilding_counts_usage_that_arrived_since_exactly_once(acme, acme_project, march_usage):
+    """A rebuild must reflect late-arriving usage once, not on top of the old total."""
+    before = build_invoice(acme.pk, MARCH_START, MARCH_END)
+    LineItem.objects.create(
+        tenant=acme,
+        project=acme_project,
+        kind=LineItem.Kind.API_CALL,
+        description="Late-arriving usage",
+        amount_cents=2_000,
+        created_at=utc(2026, 3, 28, 10),
+    )
+
+    after = build_invoice(acme.pk, MARCH_START, MARCH_END)
+    assert after.subtotal_cents == before.subtotal_cents + 2_000
+    assert after.line_item_count == before.line_item_count + 1
+
+
 def test_invoices_never_mix_tenants(acme, globex, march_usage, acme_project):
     """Globex usage must never appear on an Acme invoice.
 
