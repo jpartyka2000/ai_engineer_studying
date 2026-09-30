@@ -1,34 +1,50 @@
 # AI Interview Prep — Git & GitHub Workflow
 
+This describes what this repository actually does, verified against its history. Where a
+practice is aspirational rather than current, it says so instead of pretending.
+
 ## Repository
 
-- git@github.com:jpartyka2000/ai_engineer_studying.git
-- **Remote**: GitHub (origin)
-- **Main branch**: `main` — always deployable, protected.
-- **Development branch**: `develop` — integration branch for features.
-- FOR EVERY GIT COMMAND YOU RUN, IT MUST BE CONFIRMED BY ME.
+- `git@github.com:jpartyka2000/ai_engineer_studying.git`
+- **Remote**: GitHub (`origin`)
+- **Branch**: `main`, and only `main`. No `develop`, no feature branches.
+- `main` is **not** branch-protected on GitHub. Pushes to it succeed.
 
 ---
 
-## Branching Strategy
+## The one hard rule
 
-Use feature branches off `develop`:
+**EVERY GIT COMMAND MUST BE CONFIRMED BY ME BEFORE IT RUNS.**
 
-```
-main          ← production-ready, tagged releases
-  └── develop ← integration branch
-        ├── feature/exam-mode
-        ├── feature/lightning-round
-        ├── fix/scoring-bug-42
-        └── ...
-```
+This applies to anything that changes state — `commit`, `push`, `checkout -b`, `reset`,
+`rebase`, `tag`. Read-only inspection (`status`, `log`, `diff`, `show`) does not need
+asking each time.
 
-Branch naming conventions:
-- `feature/<short-description>` — New functionality (e.g., `feature/exam-scoring`)
-- `fix/<short-description>` — Bug fixes (e.g., `fix/timer-overflow`)
-- `refactor/<short-description>` — Code improvements with no behavior change
-- `docs/<short-description>` — Documentation only
-- `test/<short-description>` — Adding or improving tests only
+"Commit this" is confirmation to commit. It is **not** confirmation to push; ask
+separately. Present the planned commit breakdown before running it, so the split can be
+objected to while it is still cheap to change.
+
+---
+
+## Branching — trunk-based
+
+Work goes directly onto `main`. Across 82 commits there are **zero merge commits, and no
+branch other than `main` has ever existed**; the two-tier `main`/`develop` flow with
+feature branches has never been used once.
+
+Consequences worth being deliberate about:
+
+- There is no integration branch, so `main` is only as deployable as the last commit.
+  Run the checklist below *before* committing, not before some later merge.
+- There is no review gate. The commit message is the only explanation anyone gets, which
+  is why the body matters more here than in a repo with PRs.
+- A half-finished change has nowhere to live. Either the commit stands on its own or it
+  waits.
+
+**If you do want a branch** — a risky refactor, an experiment you may throw away —
+`feature/<short-description>`, `fix/<short-description>`, `refactor/<...>`,
+`docs/<...>`, `test/<...>` off `main`. That is a deliberate exception, not the default,
+and it needs confirming like any other git command.
 
 ---
 
@@ -38,195 +54,143 @@ Branch naming conventions:
 
 Commits should be **right-sized**: meaningful and self-contained but not sprawling.
 
-**Too small** (avoid):
-- "Fix typo in variable name"
-- "Add import statement"
-- "Update whitespace"
-- Single-line changes that don't stand alone.
+**Too small** (avoid): "Fix typo in variable name", "Add import statement", single-line
+changes that don't stand alone.
 
-**Too large** (avoid):
-- "Implement entire exam mode" (touching 20+ files across models, views, templates, tests)
-- "Add all subject areas and question generation"
-- Changes that take more than ~30 minutes to code review.
+**Too large** (avoid): "Implement entire exam mode" touching 20+ files across models,
+views, templates and tests. Anything that would take more than ~30 minutes to review.
 
-**Just right** (target):
-- "Add Question model and migration" — One model, its migration, and its admin registration.
-- "Implement exam scoring service with unit tests" — The service module plus its tests.
-- "Add exam session views and URL routing" — Views + URLs + basic templates for one flow.
-- "Wire up Claude API for question generation" — The integration layer for one specific feature.
+**Just right** (target): one logical unit of work you could explain in a single
+sentence, which compiles, passes linting, and passes tests on its own.
 
-**Rule of thumb**: A commit should represent one logical unit of work that you could explain in a single sentence. It should compile, pass linting, and ideally pass tests on its own.
+- "Add Question model and migration" — one model, its migration, its admin registration
+- "Implement exam scoring service with unit tests" — the service module plus its tests
+- "Wire up Claude API for question generation" — the integration layer for one feature
+
+Actual distribution: **median 5 files, p90 31 files.** The tail is real and mostly
+legitimate:
+
+- **`data` commits** (question and fixture exports) run to thousands of files. They are
+  generated content, not code, and splitting them serves nobody.
+- **Large `feat` commits** land when a module set is genuinely interdependent — a
+  package whose parts cannot be committed separately without leaving dead code or code
+  without its tests. When that happens, say so in the body rather than letting the size
+  pass unremarked.
 
 ### Commit Message Format
-
-Use conventional commits:
 
 ```
 <type>(<scope>): <short summary>
 
-<optional body — explain WHY, not WHAT>
+<body — explain WHY, not WHAT>
 
-<optional footer — reference issues>
+Co-Authored-By: ...
 ```
 
-Types:
-- `feat` — New feature
-- `fix` — Bug fix
-- `refactor` — Code restructuring, no behavior change
-- `test` — Adding or modifying tests
-- `docs` — Documentation changes
-- `style` — Formatting, linting fixes (no logic changes)
-- `chore` — Build, config, dependency changes
+**Types**, by actual frequency:
 
-Scopes (match Django apps):
-- `core`, `subjects`, `questions`, `exam`, `lightning`, `qanda`, `visuals`, `accounts`, `config`
+| type | used | meaning |
+|---|---|---|
+| `feat` | 55 | New feature |
+| `fix` | 11 | Bug fix |
+| `chore` | 5 | Build, config, dependency changes |
+| `data` | 4 | Generated content: question/fixture exports |
+| `test` | 2 | Adding or modifying tests |
+| `docs` | 2 | Documentation only |
+| `style` | 1 | Formatting, linting (no logic change) |
+| `refactor` | 0 | Restructuring with no behaviour change — available, never yet used |
 
-Examples:
+**Scopes** are the app or area directory, not a fixed list. In use: `workspace`,
+`visuals`, `questions`, `ui`, `exam`, `core`, `coding`, `config`, `admin`,
+`systemdesign`, `accounts`, `lightning`, `qanda`, `equations`, `leetcode`, `azure`,
+`sglang`, `fixtures`. Add a new one when a new app appears; a scope is omitted only for
+changes that genuinely span the project (`style: apply ruff format across the project`).
+
+**Footer.** `Co-Authored-By` appears on 80 of 82 commits — include it. There is **no
+issue tracker in use**: `Refs #12` / `Fixes #42` have never appeared in this history, so
+do not invent issue numbers. If a commit relates to something, name it in the body.
+
+**Bodies carry real weight here.** With no PR description and no reviewer, the body is
+the entire record of why a change was made. Write what a future reader could not
+reconstruct from the diff: the reasoning, the alternatives rejected, what was measured,
+what is still unresolved. The recent `workspace` commits are the reference for depth.
+
+Examples from this repository:
 
 ```
-feat(exam): add ExamSession model and migration
+fix(workspace): pass the check environment into the container
 
-Defines the ExamSession model with FK to user and subject,
-score tracking, and timestamps. Includes initial migration.
+CheckRunner.run_command set env on the subprocess, which configures the local
+`docker` CLI -- not the process inside the container. `docker compose exec`
+forwards nothing by default, so CI_ENV silently applied to no containerised
+check at all.
 
-Refs #12
+That made ci_env=True a no-op, including for flake_repeat, whose entire purpose
+is reproducing CI-shaped nondeterminism under the environment CI actually uses.
 
----
+Co-Authored-By: ...
+```
 
-feat(questions): implement Claude-powered question generation service
+```
+feat(workspace): add the tenantsaas base application template
 
-Adds QuestionGenerationService that calls the Claude API to generate
-structured multiple-choice and free-text questions. Includes retry
-logic, response validation via Pydantic, and caching to the Question
-model.
-
-Refs #15
-
----
-
-fix(lightning): prevent timer from going negative on slow connections
-
-The countdown timer could display negative values if the HTMX poll
-response was delayed. Now clamps to zero client-side and triggers
-session end immediately.
-
-Fixes #42
-
----
-
-test(exam): add integration tests for full exam flow
-
-Tests the complete path: start session → answer questions → submit →
-view results. Uses mocked Claude API responses. Covers both
-all-correct and mixed-result scenarios.
-
-Refs #12
+Co-Authored-By: ...
 ```
 
 ---
 
-## Push Workflow
+## Before committing or pushing
 
-### When to Push
+`main` has no safety net, so this runs before the commit rather than before a merge:
 
-Push to the remote after completing each logical unit of work. Align pushes with the commit sizing guidelines above. A typical feature will involve 3–8 commits pushed together or incrementally:
-
-Example for "Exam Mode":
-1. `feat(questions): add Question model and migration`
-2. `feat(exam): add ExamSession and ExamAnswer models`
-3. `feat(questions): implement question generation service`
-4. `feat(exam): add exam session views and templates`
-5. `feat(exam): implement scoring and results display`
-6. `test(exam): add unit tests for scoring service`
-7. `test(exam): add integration tests for exam flow`
-8. `docs(exam): update spec.md with implementation notes`
-
-### Push Checklist
-
-Before every push, verify:
-
-1. All tests pass: `pytest`
+1. Tests pass: `pytest`
 2. Linting passes: `ruff check .`
-3. Formatting is clean: `ruff format .`
-4. No untracked files that should be committed: `git status`
-5. Migrations are up to date: `python manage.py makemigrations --check`
-6. You are on the correct branch (not `main` or `develop` directly).
+3. Formatting is clean: `ruff format --check .`
+4. Migrations are up to date: `python manage.py makemigrations --check --dry-run`
+5. Nothing untracked that should be committed, nothing staged that shouldn't:
+   `git status`
+6. Each commit's staged file list is what you intended — check it explicitly when
+   splitting one body of work into several commits
 
-### Push Commands
+Then, with confirmation:
 
 ```bash
-# Standard push
-git push origin feature/exam-mode
-
-# First push of a new branch
-git push -u origin feature/exam-mode
+git push origin main
 ```
 
 ---
 
-## Pull Request Process
+## Not currently used
 
-When a feature is complete (all commits pushed, all tests passing):
+Named here so the difference between intent and practice stays visible. None of this is
+set up; adopting any of it is a decision, not a default.
 
-1. Open a PR from `feature/xxx` → `develop`.
-2. PR title follows the same conventional commit format: `feat(exam): implement exam mode`.
-3. PR description includes:
-   - Summary of changes.
-   - Link to relevant spec section.
-   - Screenshot/GIF if UI changes are involved.
-   - Test coverage summary.
-4. All CI checks must pass.
-5. Squash-merge into `develop` to keep history clean.
-
----
-
-## Release Process
-
-When `develop` is stable and ready for release:
-
-1. Merge `develop` → `main` (no squash, preserve history).
-2. Tag the release: `git tag -a v1.x.0 -m "Release v1.x.0: <summary>"`.
-3. Push tag: `git push origin v1.x.0`.
+- **Pull requests.** No PR has ever been opened. Adopting them means creating branches
+  and turning on branch protection, without which a PR is optional and gets skipped.
+- **A `develop` integration branch.** Documented for a long time, never created. Only
+  worth it if more than one change is ever in flight at once.
+- **Branch protection on `main`.** Not configured. Until it is, "no direct pushes to
+  main" is a preference rather than a rule, and nothing enforces the checklist above.
+- **Tagged releases.** Zero tags across 82 commits. If releases start mattering:
+  `git tag -a v1.x.0 -m "..."` and `git push origin v1.x.0`.
+- **A hotfix process.** Meaningless while `main` is the only branch — a fix on `main`
+  *is* the hotfix.
 
 ---
 
-## .gitignore Essentials
+## .gitignore notes
 
-Ensure these are in `.gitignore`:
+`.gitignore` is a full Python/Django ignore set plus project-specific entries. Three are
+load-bearing and easy to break:
 
 ```
-__pycache__/
-*.pyc
-*.pyo
-.env
-.env.*
-db.sqlite3
-*.sqlite3
-media/
-staticfiles/
-htmlcov/
-.coverage
-.pytest_cache/
-.ruff_cache/
-node_modules/
-.claude/settings.local.json
-*.log
+workspaces/                  # scaffolded exercise repos; each is its own git repo
+calibration/packets/         # regenerable from graded sessions
+calibration/answer-key.json  # round-local; grades.json is NOT ignored - it is the corpus
+!workspace_templates/**      # MUST stay last
 ```
 
----
-
-## Protected Branch Rules
-
-- `main`: No direct pushes. Requires PR with passing CI. No force pushes.
-- `develop`: No direct pushes. Requires PR with passing CI.
-
----
-
-## Emergency Hotfix Process
-
-For critical production bugs:
-
-1. Branch from `main`: `git checkout -b hotfix/critical-bug main`
-2. Fix, test, commit.
-3. PR into both `main` and `develop`.
-4. Tag a patch release on `main`.
+The negation is the fragile one. Exercise templates are source and must stay tracked,
+but several earlier rules (`lib/`, `.env*`, `*.sqlite3`, `media/`, `build/`) would
+otherwise swallow template files silently. It only works as the final rule — adding an
+ignore pattern after it can quietly drop template files from a commit.
