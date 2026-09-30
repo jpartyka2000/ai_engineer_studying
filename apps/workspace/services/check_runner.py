@@ -404,6 +404,11 @@ class CheckRunner:
                 timeout=limit,
                 env=process_env,
                 check=False,
+                # Never inherit the caller's stdin. `docker compose exec -T` forwards
+                # stdin into the container, so a check would otherwise consume whatever
+                # the caller was reading -- silently eating the rest of a shell loop's
+                # input -- or block forever on a pipe nobody is going to write to.
+                stdin=subprocess.DEVNULL,
             )
         except subprocess.TimeoutExpired:
             elapsed = int((time.perf_counter() - started) * 1000)

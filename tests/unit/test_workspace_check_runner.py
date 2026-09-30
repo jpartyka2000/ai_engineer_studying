@@ -534,3 +534,26 @@ def test_local_wrapping_ignores_env_flags():
     """Outside a container the subprocess environment is the right mechanism."""
     runner = CheckRunner(Path("/tmp/ws"), use_container=False)
     assert runner._wrap("pytest", {"CI": "true"}) == ["bash", "-lc", "pytest"]
+
+
+def test_commands_never_inherit_the_callers_stdin(monkeypatch):
+    """`docker compose exec -T` forwards stdin into the container.
+
+    Without DEVNULL a check consumes whatever the caller was reading -- which silently
+    ate nine of ten iterations of a shell loop driving the calibration harness -- or
+    blocks forever on a pipe nothing will write to.
+    """
+    seen = {}
+
+    class Done:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run(argv, **kwargs):
+        seen.update(kwargs)
+        return Done()
+
+    monkeypatch.setattr(check_runner.subprocess, "run", fake_run)
+    CheckRunner(Path("/tmp/ws"), use_container=False).run_command("true")
+    assert seen["stdin"] is check_runner.subprocess.DEVNULL
