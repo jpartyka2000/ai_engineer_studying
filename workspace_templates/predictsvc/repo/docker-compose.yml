@@ -1,0 +1,22 @@
+# predictsvc needs no database: the model is a JSON artifact and the evaluation set is
+# a CSV. The single service exists so tests and the eval run in a pinned interpreter.
+
+services:
+  app:
+    build: .
+    image: aiprep-predictsvc:latest
+    environment:
+      ARTIFACT_DIR: /app/artifacts
+      PYTHONPATH: /app
+    volumes:
+      # Bind-mounted so edits in your own editor take effect without a rebuild.
+      - .:/app
+    ports:
+      - "${WS_APP_PORT:-55810}:8000"
+    healthcheck:
+      # readyz, not healthz: a container whose model failed to load must not be
+      # reported healthy.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/readyz"]
+      interval: 2s
+      timeout: 5s
+      retries: 30

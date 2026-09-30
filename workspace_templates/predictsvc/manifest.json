@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "seed_commits": [
+    {
+      "message": "chore: initial service scaffold\n\nFastAPI project, Docker setup and a CI skeleton. No scoring yet.",
+      "author": "Rahul Menon <rahul.menon@example.com>",
+      "date": "2025-03-11T09:40:00Z",
+      "paths": [
+        "requirements.txt",
+        "Dockerfile",
+        "docker-compose.yml",
+        "Makefile",
+        "pytest.ini",
+        ".gitignore",
+        "svc/__init__.py",
+        "svc/routers/__init__.py",
+        "svc/features/__init__.py",
+        "svc/model/__init__.py",
+        "eval/__init__.py",
+        "tests/__init__.py"
+      ]
+    },
+    {
+      "message": "feat(model): add the scorer\n\nHand-written logistic regression over a coefficient artifact rather than a\npickled estimator: reproducible across platforms, reviewable in a diff, and it\nkeeps the model registry off the code-execution path.",
+      "author": "Rahul Menon <rahul.menon@example.com>",
+      "date": "2025-03-25T14:15:00Z",
+      "paths": ["svc/model/scorer.py"]
+    },
+    {
+      "message": "feat(features): add the spec-driven feature pipeline\n\nEvery scale, default and category list comes from the artifact, so a change to\nhow a feature is computed is a versioned data change rather than a quiet code\nedit that diverges from training.",
+      "author": "Solveig Lindqvist <solveig.lindqvist@example.com>",
+      "date": "2025-04-14T11:05:00Z",
+      "paths": ["svc/features/pipeline.py"]
+    },
+    {
+      "message": "feat(model): add the artifact registry with compatibility checks\n\nRefuses to serve a model whose feature_spec_version does not match the loaded\nspec. Serving a model against the wrong feature contract produces confident\nnonsense and is the easiest way to break this service invisibly.",
+      "author": "Solveig Lindqvist <solveig.lindqvist@example.com>",
+      "date": "2025-04-29T16:30:00Z",
+      "paths": ["svc/model/registry.py"]
+    },
+    {
+      "message": "feat(artifacts): ship churn_risk v3.0.1 against feature spec 2.1",
+      "author": "Rahul Menon <rahul.menon@example.com>",
+      "date": "2025-05-08T10:20:00Z",
+      "paths": ["artifacts/model_v3.json", "artifacts/feature_spec.json"]
+    },
+    {
+      "message": "feat(api): add predict, batch predict and split health probes\n\nreadyz is distinct from healthz on purpose: a container whose artifacts failed\nto load must not be reported healthy.",
+      "author": "Aoife Byrne <aoife.byrne@example.com>",
+      "date": "2025-05-26T13:45:00Z",
+      "paths": [
+        "svc/main.py",
+        "svc/schemas.py",
+        "svc/routers/predict.py",
+        "svc/routers/health.py"
+      ]
+    },
+    {
+      "message": "feat(eval): add metrics and the evaluation runner\n\nF1 leads rather than accuracy: the held-out set is 17% positive, so always\npredicting 'no churn' scores 83%. The majority baseline is printed next to\naccuracy so the comparison cannot be missed.",
+      "author": "Aoife Byrne <aoife.byrne@example.com>",
+      "date": "2025-06-17T09:55:00Z",
+      "paths": ["eval/metrics.py", "eval/run_eval.py"]
+    },
+    {
+      "message": "test: add the held-out labelled evaluation set\n\n400 accounts. Tenure correlates with plan, as it does in reality, and label\nnoise is asymmetric -- symmetric noise on an imbalanced set annihilates recall\nand makes any F1 bar meaningless.",
+      "author": "Solveig Lindqvist <solveig.lindqvist@example.com>",
+      "date": "2025-07-02T15:10:00Z",
+      "paths": ["data/eval_labeled.csv"]
+    },
+    {
+      "message": "test: cover the scorer, the pipeline and the API contract\n\nScores are hand-computed against the shipped artifact. The contract suite cares\nas much about the 422s as the happy path.",
+      "author": "Rahul Menon <rahul.menon@example.com>",
+      "date": "2025-07-21T12:35:00Z",
+      "paths": ["tests/test_scorer_and_features.py", "tests/test_api_and_eval.py"]
+    },
+    {
+      "message": "perf: add a scoring benchmark\n\nReports operation counts, not just timings. Wall-clock on a loaded laptop varies\nseveralfold; artifact loads per batch does not.",
+      "author": "Aoife Byrne <aoife.byrne@example.com>",
+      "date": "2025-08-13T10:15:00Z",
+      "paths": ["bench/bench_predict.py"]
+    },
+    {
+      "message": "ci: run tests, the contract suite, the evaluation and the benchmark\n\nci/run_ci.sh mirrors the workflow so the same steps run locally.",
+      "author": "Solveig Lindqvist <solveig.lindqvist@example.com>",
+      "date": "2025-09-04T08:50:00Z",
+      "paths": [".github/workflows/ci.yml", "ci/run_ci.sh"]
+    },
+    {
+      "message": "docs: document the train/serve-skew rules and why F1 leads",
+      "author": "Aoife Byrne <aoife.byrne@example.com>",
+      "date": "2025-10-06T11:25:00Z",
+      "paths": ["README.md", "ARCHITECTURE.md", "NOTES.md"]
+    }
+  ],
+  "seed_branches": [],
+  "env": {
+    "required": ["WS_APP_PORT"],
+    "extra": {
+      "ARTIFACT_DIR": "/app/artifacts",
+      "PYTHONPATH": "/app"
+    },
+    "requires_anthropic_key": false
+  },
+  "ports": {
+    "app": 8000
+  },
+  "db_seeds": {},
+  "setup_commands": [
+    "docker compose up -d --wait",
+    "make test   # expect failures: reproducing them is step one",
+    "make eval"
+  ],
+  "grading": {
+    "diff_exclude": ["*.lock", "data/*.csv"],
+    "include_full_files": [
+      "svc/features/pipeline.py",
+      "svc/model/scorer.py",
+      "svc/model/registry.py",
+      "svc/routers/predict.py",
+      "eval/metrics.py"
+    ]
+  }
+}

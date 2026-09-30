@@ -1,0 +1,35 @@
+# CI for predictsvc. Keep in step with ci/run_ci.sh.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TZ: UTC
+      PYTHONHASHSEED: random
+      CI: "true"
+      PYTHONPATH: ${{ github.workspace }}
+      ARTIFACT_DIR: artifacts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Artifact compatibility
+        run: python -c "from svc.model.registry import get_loaded_model; print(get_loaded_model().identifier)"
+      - name: Test suite
+        run: python -m pytest -p no:cacheprovider -q
+      - name: API contract suite
+        run: python -m pytest -p no:cacheprovider -q -m contract
+      - name: Model evaluation
+        run: python eval/run_eval.py --assert-f1 0.80
+      - name: Scoring benchmark
+        run: python bench/bench_predict.py --json > /dev/null
