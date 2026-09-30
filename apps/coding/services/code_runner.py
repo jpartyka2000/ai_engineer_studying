@@ -7,7 +7,6 @@ user-submitted code in isolated Docker containers with strict resource limits.
 import json
 import logging
 import subprocess
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -127,16 +126,18 @@ class CodeRunnerService:
                 logger.error("Dockerfile not found at %s", dockerfile_path)
                 return False
 
+            # Generous timeout: the image installs numpy and pandas, so a cold
+            # build downloads and unpacks tens of megabytes of wheels. The old
+            # 120s limit was sized for a bare python-slim image and would time
+            # out here, reporting a build failure for a build that was fine.
             result = subprocess.run(
                 ["docker", "build", "-t", self.DOCKER_IMAGE, str(dockerfile_path)],
                 capture_output=True,
-                timeout=120,
+                timeout=900,
             )
 
             if result.returncode != 0:
-                logger.error(
-                    "Failed to build Docker image: %s", result.stderr.decode()
-                )
+                logger.error("Failed to build Docker image: %s", result.stderr.decode())
                 return False
 
             logger.info("Successfully built Docker image %s", self.DOCKER_IMAGE)
@@ -200,8 +201,8 @@ class CodeRunnerService:
                 status=status,
                 expected_output=expected_output,
                 actual_output=output.return_value,
-                stdout=output.stdout[:self.MAX_OUTPUT_SIZE],
-                stderr=output.stderr[:self.MAX_OUTPUT_SIZE],
+                stdout=output.stdout[: self.MAX_OUTPUT_SIZE],
+                stderr=output.stderr[: self.MAX_OUTPUT_SIZE],
                 error_message=output.error,
                 execution_time_ms=output.execution_time_ms,
             )
@@ -223,8 +224,8 @@ class CodeRunnerService:
             status="passed" if passed else "failed",
             expected_output=expected_output,
             actual_output=actual_output,
-            stdout=output.stdout[:self.MAX_OUTPUT_SIZE],
-            stderr=output.stderr[:self.MAX_OUTPUT_SIZE],
+            stdout=output.stdout[: self.MAX_OUTPUT_SIZE],
+            stderr=output.stderr[: self.MAX_OUTPUT_SIZE],
             error_message="",
             execution_time_ms=output.execution_time_ms,
         )
@@ -357,8 +358,8 @@ class CodeRunnerService:
             return ExecutionOutput(
                 success=False,
                 return_value=None,
-                stdout=result.stdout[:self.MAX_OUTPUT_SIZE],
-                stderr=result.stderr[:self.MAX_OUTPUT_SIZE],
+                stdout=result.stdout[: self.MAX_OUTPUT_SIZE],
+                stderr=result.stderr[: self.MAX_OUTPUT_SIZE],
                 error="Runner produced invalid output",
                 error_type="runner_error",
                 execution_time_ms=0,
@@ -391,17 +392,13 @@ class CodeRunnerService:
         if isinstance(actual, (list, tuple)) and isinstance(expected, (list, tuple)):
             if len(actual) != len(expected):
                 return False
-            return all(
-                self._compare_outputs(a, e) for a, e in zip(actual, expected)
-            )
+            return all(self._compare_outputs(a, e) for a, e in zip(actual, expected))
 
         # Handle dict comparison
         if isinstance(actual, dict) and isinstance(expected, dict):
             if set(actual.keys()) != set(expected.keys()):
                 return False
-            return all(
-                self._compare_outputs(actual[k], expected[k]) for k in actual
-            )
+            return all(self._compare_outputs(actual[k], expected[k]) for k in actual)
 
         # Direct comparison
         return actual == expected
