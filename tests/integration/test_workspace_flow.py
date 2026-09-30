@@ -80,6 +80,36 @@ def test_catalog_filters_by_type(logged_in, exercise):
     assert b"March invoices are short" not in response.content
 
 
+def test_catalog_filters_by_difficulty(logged_in, exercise):
+    hit = logged_in.get(reverse("workspace:catalog"), {"difficulty": "intermediate"})
+    miss = logged_in.get(reverse("workspace:catalog"), {"difficulty": "beginner"})
+    assert b"March invoices are short" in hit.content
+    assert b"March invoices are short" not in miss.content
+
+
+def test_catalog_filters_by_database(logged_in, exercise):
+    """Regression test: a JSON `contains` lookup raises on SQLite.
+
+    dev falls back to SQLite, so filtering with `databases__contains` made this
+    query 500 rather than returning results.
+    """
+    hit = logged_in.get(reverse("workspace:catalog"), {"database": "postgres"})
+    miss = logged_in.get(reverse("workspace:catalog"), {"database": "mongodb"})
+    assert hit.status_code == 200
+    assert miss.status_code == 200
+    assert b"March invoices are short" in hit.content
+    assert b"March invoices are short" not in miss.content
+
+
+def test_catalog_filters_combine(logged_in, exercise):
+    response = logged_in.get(
+        reverse("workspace:catalog"),
+        {"type": "critical_bug", "difficulty": "intermediate", "database": "postgres"},
+    )
+    assert response.status_code == 200
+    assert b"March invoices are short" in response.content
+
+
 def test_exercise_page_shows_the_destination_path(logged_in, exercise):
     response = logged_in.get(reverse("workspace:exercise", kwargs={"slug": exercise.slug}))
     assert response.status_code == 200

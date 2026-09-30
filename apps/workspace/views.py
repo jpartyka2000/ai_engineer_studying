@@ -101,7 +101,14 @@ class WorkspaceCatalogView(LoginRequiredMixin, ListView):
     context_object_name = "exercises"
 
     def get_queryset(self):
-        """Return active exercises, narrowed by the querystring filters."""
+        """Return active exercises, narrowed by the querystring filters.
+
+        The database filter is applied in Python rather than as a
+        ``databases__contains`` JSON lookup, because that lookup raises
+        ``NotSupportedError`` on SQLite -- which is what dev falls back to. The
+        catalog is at most a few dozen rows, so the cost is irrelevant and it works
+        identically on every backend.
+        """
         queryset = WorkspaceExercise.objects.filter(is_active=True)
         params = self.request.GET
         if exercise_type := params.get("type"):
@@ -109,7 +116,8 @@ class WorkspaceCatalogView(LoginRequiredMixin, ListView):
         if difficulty := params.get("difficulty"):
             queryset = queryset.filter(difficulty=difficulty)
         if database := params.get("database"):
-            queryset = queryset.filter(databases__contains=database)
+            matching = [e.pk for e in queryset if database in (e.databases or [])]
+            queryset = queryset.filter(pk__in=matching)
         return queryset
 
     def get_context_data(self, **kwargs) -> dict:
