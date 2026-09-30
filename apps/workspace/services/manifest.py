@@ -152,12 +152,23 @@ def validate_template(template_name: str) -> list[str]:
     # Build artifacts a stray local test run leaves behind. They are not template
     # content, and they are excluded from scaffolding too, so they must not make
     # validation fail.
-    ignored_dirs = {"__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache"}
+    ignored_dirs = {
+        "__pycache__",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".mypy_cache",
+        # Packaging output. A container running `pip install .` against a
+        # bind-mounted workspace writes these back into the tree.
+        "build",
+        "dist",
+        ".eggs",
+    }
     all_files = {
         p
         for p in repo.rglob("*")
         if p.is_file()
         and not (ignored_dirs & set(p.parts))
+        and not any(part.endswith(".egg-info") for part in p.parts)
         and p.name not in {".DS_Store", ".coverage"}
     }
     orphans = sorted(str(p.relative_to(repo)) for p in all_files - covered)

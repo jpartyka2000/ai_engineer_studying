@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "seed_commits": [
+    {
+      "message": "chore: initial package scaffold\n\nsrc layout, pyproject, Docker and a CI skeleton. No library code yet.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-02-04T10:05:00Z",
+      "paths": [
+        "pyproject.toml",
+        "requirements.txt",
+        "Dockerfile",
+        "docker-compose.yml",
+        "Makefile",
+        ".gitignore",
+        "src/edakit/__init__.py"
+      ]
+    },
+    {
+      "message": "feat(schema): infer column types from raw CSV text\n\nRecognises the dozen spellings of missing that turn up in real exports.\nBooleans are checked before integers because 0/1 parse as both.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-02-18T14:30:00Z",
+      "paths": ["src/edakit/schema_infer.py"]
+    },
+    {
+      "message": "feat(missing): add missing-value analysis and fit/transform imputation\n\nFill values are learned at fit time and held on the imputer, so transform is a\npure lookup. Recomputing during transform is how train/serve skew starts.",
+      "author": "Tomas Vidal <tomas.vidal@example.com>",
+      "date": "2025-03-07T09:15:00Z",
+      "paths": ["src/edakit/missing.py"]
+    },
+    {
+      "message": "feat(outliers): add IQR, z-score and modified z-score detection\n\nNo default method: the two disagree on skewed data, so the caller should pick\ndeliberately. Quantiles are implemented here because libraries disagree on the\ninterpolation convention.",
+      "author": "Tomas Vidal <tomas.vidal@example.com>",
+      "date": "2025-03-21T16:40:00Z",
+      "paths": ["src/edakit/outliers.py"]
+    },
+    {
+      "message": "feat(scale): add standard, min-max and robust scalers\n\nA constant column gets spread=1.0 so a pipeline cannot divide by zero.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-04-08T11:25:00Z",
+      "paths": ["src/edakit/scale.py"]
+    },
+    {
+      "message": "feat(encode): add one-hot and ordinal encoding\n\nOutput width is fixed at fit time and the unseen-category policy is explicit,\nso a consumer's column count cannot change with the batch.",
+      "author": "Yara Mansour <yara.mansour@example.com>",
+      "date": "2025-04-24T13:50:00Z",
+      "paths": ["src/edakit/encode.py"]
+    },
+    {
+      "message": "feat(corr): add correlation and descriptive summaries\n\nConstant series correlate as 0.0 rather than NaN, and coefficients are clamped\nbecause float error can push a perfect correlation past 1.0.",
+      "author": "Yara Mansour <yara.mansour@example.com>",
+      "date": "2025-05-12T10:10:00Z",
+      "paths": ["src/edakit/corr.py"]
+    },
+    {
+      "message": "feat(profile): assemble a whole-dataset profile with findings",
+      "author": "Tomas Vidal <tomas.vidal@example.com>",
+      "date": "2025-06-02T15:35:00Z",
+      "paths": ["src/edakit/profile.py", "src/edakit/report.py"]
+    },
+    {
+      "message": "feat(cli): add edakit profile and edakit missing",
+      "author": "Yara Mansour <yara.mansour@example.com>",
+      "date": "2025-06-19T09:00:00Z",
+      "paths": ["src/edakit/cli.py"]
+    },
+    {
+      "message": "test: cover inference, imputation, outliers, scaling and encoding\n\nNumeric expectations are hand-computed with the derivation in the docstring, so\na failure means the maths changed rather than a snapshot drifting.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-07-08T12:20:00Z",
+      "paths": [
+        "tests/test_schema_infer.py",
+        "tests/test_missing.py",
+        "tests/test_outliers_scale_encode.py",
+        "tests/test_profile_and_corr.py"
+      ]
+    },
+    {
+      "message": "test: add deliberately messy sample datasets\n\nMixed null spellings, unicode, an empty column and a data-entry error, so the\nsuite exercises what a synthetic fixture would let through.",
+      "author": "Tomas Vidal <tomas.vidal@example.com>",
+      "date": "2025-07-22T14:05:00Z",
+      "paths": [
+        "datasets/customers.csv",
+        "datasets/events.csv",
+        "datasets/tiny.csv"
+      ]
+    },
+    {
+      "message": "ci: run tests, doctests and a CLI smoke test\n\nci/run_ci.sh mirrors the workflow so the same steps run locally.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-08-11T08:45:00Z",
+      "paths": [".github/workflows/ci.yml", "ci/run_ci.sh"]
+    },
+    {
+      "message": "docs: document the fit/transform contract and the numeric choices",
+      "author": "Yara Mansour <yara.mansour@example.com>",
+      "date": "2025-09-15T11:30:00Z",
+      "paths": [
+        "README.md",
+        "ARCHITECTURE.md",
+        "NOTES.md",
+        "docs/examples/quickstart.py"
+      ]
+    }
+  ],
+  "seed_branches": [],
+  "env": {
+    "required": [],
+    "extra": {},
+    "requires_anthropic_key": false
+  },
+  "ports": {},
+  "db_seeds": {},
+  "setup_commands": [
+    "docker compose up -d --wait",
+    "make test   # expect failures: reproducing them is step one"
+  ],
+  "grading": {
+    "diff_exclude": ["*.lock", "*.egg-info/*", "build/*", "dist/*"],
+    "include_full_files": [
+      "src/edakit/schema_infer.py",
+      "src/edakit/missing.py",
+      "src/edakit/outliers.py",
+      "src/edakit/encode.py"
+    ]
+  }
+}
