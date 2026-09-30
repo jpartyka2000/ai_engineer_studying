@@ -1,0 +1,26 @@
+{% comment %}
+Read-only file listing. Modified files are marked from `git status`, so the user can
+see at a glance what they have touched.
+{% endcomment %}
+{% if not exists %}
+  <p class="text-sm text-red-600">The workspace directory is not there.</p>
+{% else %}
+  <ul>
+    {% for entry in entries %}
+      <li style="padding-left: {{ entry.depth }}rem">
+        {% if entry.is_dir %}
+          <span class="text-gray-500">{{ entry.name }}/</span>
+        {% else %}
+          <button hx-get="{% url 'workspace:file' pk=session.pk %}?path={{ entry.path|urlencode }}"
+                  hx-target="#ws-file-preview" hx-swap="innerHTML"
+                  class="text-left hover:text-indigo-600 {% if entry.modified %}text-amber-700 font-medium{% else %}text-gray-700{% endif %}">
+            {{ entry.name }}{% if entry.modified %} ●{% endif %}
+          </button>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li class="text-sm text-gray-500">Nothing to show.</li>
+    {% endfor %}
+  </ul>
+  <div id="ws-file-preview" class="mt-3"></div>
+{% endif %}

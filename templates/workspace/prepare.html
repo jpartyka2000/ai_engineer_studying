@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Get set up — {{ session.exercise.title }}{% endblock %}
+
+{% block content %}
+{% comment %}
+Deliberately has NO timer. Scaffolding, container start-up and any dependency work
+happen here, off the clock, so environment setup never eats into the time box.
+{% endcomment %}
+
+<div class="mb-6">
+  <p class="text-sm text-gray-500">Exercise {{ session.exercise.exercise_number }}</p>
+  <h1 class="text-2xl font-bold text-gray-900">{{ session.exercise.title }}</h1>
+  <p class="mt-2 text-sm text-gray-600">
+    Get your environment working first. <strong>The clock is not running yet.</strong>
+  </p>
+</div>
+
+{% if session.status == "failed" %}
+<div class="mb-6 rounded-md bg-red-50 border border-red-200 p-4">
+  <h2 class="text-sm font-semibold text-red-900">Setup failed</h2>
+  <pre class="mt-2 text-xs text-red-800 whitespace-pre-wrap">{{ session.scaffold_log }}</pre>
+  <a href="{% url 'workspace:exercise' slug=session.exercise.slug %}"
+     class="mt-3 inline-block text-sm text-red-800 underline">Try again</a>
+</div>
+{% endif %}
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-2">1. Your repository</h2>
+      <p class="text-sm text-gray-600 mb-3">Open this in your terminal and editor:</p>
+      <div class="flex gap-2">
+        <code id="ws-path" class="flex-1 text-sm bg-gray-100 rounded p-3 break-all">{{ session.workspace_path }}</code>
+        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ws-path').textContent.trim())"
+                class="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Copy</button>
+      </div>
+      <p class="mt-3 text-xs text-gray-500">
+        A real git repo with history and a working <code>origin</code> remote — commit,
+        branch, push and pull all behave normally.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-2">2. Start the services</h2>
+      {% if session.compose_project %}
+      <form method="post" action="{% url 'workspace:containers' pk=session.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm hover:bg-gray-700">
+          Start containers and wait for health
+        </button>
+      </form>
+      {% if containers %}
+        <ul class="mt-4 space-y-1 text-sm">
+          {% for container in containers %}
+            <li class="flex items-center gap-2">
+              <span>{% if container.state == "running" %}✅{% else %}❌{% endif %}</span>
+              <span class="font-mono">{{ container.service }}</span>
+              <span class="text-gray-500">{{ container.state }}{% if container.health %} ({{ container.health }}){% endif %}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <p class="mt-3 text-xs text-gray-500">
+        Or do it yourself — you keep full control of the containers throughout.
+      </p>
+      {% else %}
+      <p class="text-sm text-gray-600">This exercise needs no containers.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-2">3. Confirm it runs</h2>
+      <p class="text-sm text-gray-600 mb-3">Paste these in your terminal:</p>
+      <ol class="space-y-2">
+        {% for command in setup_commands %}
+        <li class="flex items-start gap-3">
+          <span class="text-xs text-gray-400 mt-2">{{ forloop.counter }}</span>
+          <code class="flex-1 text-sm bg-gray-900 text-gray-100 rounded p-2 break-all">{{ command }}</code>
+        </li>
+        {% endfor %}
+      </ol>
+      <p class="mt-4 text-xs text-gray-500">
+        Expect the test suite to fail — that is the point. Once it fails in a way you can
+        see, you are ready.
+      </p>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    {% include "workspace/partials/_doctor.html" %}
+
+    {% if not doctor.worker_ok %}
+    <div class="rounded-md bg-amber-50 border border-amber-200 p-4">
+      <p class="text-xs text-amber-900">
+        <strong>No grading worker is running.</strong> You can still do the exercise;
+        grading will just run inline and take a minute or two. To run one:
+        <code class="block mt-2 bg-amber-100 rounded p-2">celery -A config worker -l info</code>
+      </p>
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">Start the clock</h2>
+      <p class="text-sm text-gray-600 mb-4">
+        You get <strong>{{ session.exercise.time_limit_minutes }} minutes</strong> from
+        the moment you press this. It includes writing your notes.
+      </p>
+      {% if ready %}
+      <form method="post" action="{% url 'workspace:begin' pk=session.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="w-full px-4 py-3 rounded-md bg-indigo-600 text-white font-medium hover:bg-indigo-700">
+          Start the clock
+        </button>
+      </form>
+      {% else %}
+      <button disabled class="w-full px-4 py-3 rounded-md bg-gray-200 text-gray-500 cursor-not-allowed">Not ready</button>
+      {% endif %}
+      <form method="post" action="{% url 'workspace:abandon' pk=session.pk %}" class="mt-4 pt-4 border-t"
+            onsubmit="return confirm('Discard this setup?');">
+        {% csrf_token %}
+        <button type="submit" class="text-sm text-gray-500 hover:text-red-600">Cancel</button>
+      </form>
+    </div>
+
+    {% if session.scaffold_log and session.status != "failed" %}
+    <details class="bg-white rounded-lg shadow-sm p-6">
+      <summary class="text-sm font-medium text-gray-700 cursor-pointer">Setup log</summary>
+      <pre class="mt-3 text-xs text-gray-600 whitespace-pre-wrap">{{ session.scaffold_log }}</pre>
+    </details>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

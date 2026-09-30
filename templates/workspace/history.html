@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Your workspace history{% endblock %}
+
+{% block content %}
+{% comment %}
+This mode's own stats page. Kept separate from the subject dashboards on purpose: one
+exercise spans several technologies at once, so attributing it to a single subject
+would misreport both.
+{% endcomment %}
+<div class="mb-6 flex items-end justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Your workspace history</h1>
+    <p class="mt-1 text-sm text-gray-600">Every attempt, newest first.</p>
+  </div>
+  <a href="{% url 'workspace:catalog' %}" class="text-sm text-indigo-600 hover:text-indigo-800">All exercises →</a>
+</div>
+
+{% if graded_count %}
+<div class="mb-6 grid gap-4 sm:grid-cols-3">
+  <div class="bg-white rounded-lg shadow-sm p-5">
+    <p class="text-xs uppercase tracking-wide text-gray-500">Graded</p>
+    <p class="mt-1 text-2xl font-bold">{{ graded_count }}</p>
+  </div>
+  <div class="bg-white rounded-lg shadow-sm p-5">
+    <p class="text-xs uppercase tracking-wide text-gray-500">Average score</p>
+    <p class="mt-1 text-2xl font-bold">{{ average_score }}/100</p>
+  </div>
+  <div class="bg-white rounded-lg shadow-sm p-5">
+    <p class="text-xs uppercase tracking-wide text-gray-500">Grade points</p>
+    <p class="mt-1 text-2xl font-bold">{{ average_points }}</p>
+  </div>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-lg shadow-sm overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exercise</th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Outcome</th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
+        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">When</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for session in sessions %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 text-sm">
+          <a href="{{ session.get_absolute_url }}" class="text-indigo-600 hover:text-indigo-800">
+            {{ session.exercise.title|truncatechars:52 }}
+          </a>
+        </td>
+        <td class="px-4 py-3 text-sm text-gray-600">{{ session.exercise.get_exercise_type_display }}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">{{ session.get_status_display }}</td>
+        <td class="px-4 py-3 text-sm font-semibold">
+          {% if session.grade %}{{ session.grade.letter_grade }} <span class="text-gray-400 font-normal">({{ session.grade.overall_score }})</span>{% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-3 text-sm text-gray-500">{{ session.created_at|date:"M j, Y H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">
+        No attempts yet. <a href="{% url 'workspace:catalog' %}" class="text-indigo-600">Pick an exercise.</a>
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+<div class="mt-4 flex gap-2 text-sm">
+  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="text-indigo-600">← Newer</a>{% endif %}
+  <span class="text-gray-500">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="text-indigo-600">Older →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

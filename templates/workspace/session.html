@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ session.exercise.title }} — Workspace{% endblock %}
+
+{% block extra_css %}
+<style>
+  .ws-brief h2 { font-size: 1.15rem; font-weight: 600; margin: 1.25rem 0 .5rem; }
+  .ws-brief h3 { font-size: 1rem; font-weight: 600; margin: 1rem 0 .4rem; }
+  .ws-brief p, .ws-brief li { margin-bottom: .5rem; line-height: 1.6; }
+  .ws-brief ul, .ws-brief ol { padding-left: 1.4rem; list-style: disc; }
+  .ws-brief code { background: #f3f4f6; padding: .1rem .3rem; border-radius: .2rem; font-size: .875em; }
+  .ws-brief pre { background: #1f2937; color: #f9fafb; padding: .75rem 1rem; border-radius: .375rem; overflow-x: auto; margin: .75rem 0; }
+  .ws-brief pre code { background: none; color: inherit; padding: 0; }
+  .ws-brief strong { font-weight: 600; }
+  .ws-tree { max-height: 24rem; overflow-y: auto; font-family: ui-monospace, SFMono-Regular, monospace; font-size: .8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include "workspace/partials/_timer.html" %}
+
+{# CSRF token must exist somewhere on the page: main.js copies it into the
+   X-CSRFToken header for every HTMX request. #}
+{% csrf_token %}
+
+<div id="ws-workspace-banner" class="hidden mb-4 rounded-md bg-red-50 border border-red-200 p-4">
+  <p class="text-sm text-red-800">
+    <strong>Your workspace directory is not there any more.</strong>
+    Nothing has been lost that was committed, but new work cannot be captured until it
+    is back at <code>{{ session.workspace_path }}</code>.
+  </p>
+</div>
+
+<div class="mb-6 pr-40">
+  <p class="text-sm text-gray-500">
+    Exercise {{ session.exercise.exercise_number }} ·
+    {{ session.exercise.get_exercise_type_display }} ·
+    {{ session.exercise.get_difficulty_display }}
+  </p>
+  <h1 class="text-2xl font-bold text-gray-900">{{ session.exercise.title }}</h1>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-3">
+  {# ---- left: the brief ---- #}
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <div id="ws-brief" class="ws-brief text-gray-800"></div>
+      <script id="ws-brief-source" type="text/plain">{{ session.exercise.brief_md }}</script>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-3">Definition of done</h2>
+      <ul class="space-y-2">
+        {% for item in session.exercise.definition_of_done %}
+          <li class="flex gap-2 text-sm text-gray-700">
+            <span class="text-gray-400">☐</span><span>{{ item }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="mt-4 text-xs text-gray-500">
+        Everything here is graded. Documentation is a quarter of your mark, so budget
+        about five minutes for <code>NOTES.md</code>.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-3">Your notes</h2>
+      <p class="text-xs text-gray-500 mb-3">
+        Mirrors <code>NOTES.md</code> in the repo. Edit either one — whichever you
+        prefer. Autosaves as you type.
+      </p>
+      <form hx-post="{% url 'workspace:save_notes' pk=session.pk %}"
+            hx-trigger="keyup changed delay:1500ms from:#ws-notes"
+            hx-target="#ws-notes-status"
+            hx-swap="innerHTML">
+        <textarea id="ws-notes" name="notes" rows="10"
+                  class="w-full rounded-md border-gray-300 text-sm font-mono"
+                  placeholder="## Diagnosis&#10;&#10;## Root cause&#10;&#10;## The fix">{{ session.user_notes }}</textarea>
+        <div id="ws-notes-status" class="mt-2 text-xs text-gray-400"></div>
+      </form>
+    </div>
+  </div>
+
+  {# ---- right: workspace, hints, submit ---- #}
+  <div class="space-y-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">Your workspace</h2>
+      <code class="block text-xs bg-gray-100 rounded p-2 break-all">{{ session.workspace_path }}</code>
+      <dl class="mt-3 text-sm space-y-1">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Uncommitted files</dt>
+          <dd id="ws-dirty-count" class="font-medium">0</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Your commits</dt>
+          <dd id="ws-commit-count" class="font-medium">0</dd>
+        </div>
+      </dl>
+      <div class="mt-4 pt-4 border-t">
+        <button hx-get="{% url 'workspace:tree' pk=session.pk %}"
+                hx-target="#ws-tree" hx-swap="innerHTML"
+                class="text-sm text-indigo-600 hover:text-indigo-800">
+          Browse files
+        </button>
+        <div id="ws-tree" class="ws-tree mt-3"></div>
+      </div>
+    </div>
+
+    {% if session.exercise.hints %}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">Hints</h2>
+      <div id="ws-hints" class="space-y-2">
+        {% for hint in available_hints %}
+          <div class="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
+            <span class="font-medium">Hint {{ forloop.counter }}:</span> {{ hint }}
+          </div>
+        {% endfor %}
+      </div>
+      {% if has_more_hints %}
+      <button hx-post="{% url 'workspace:hint' pk=session.pk %}"
+              hx-target="#ws-hints" hx-swap="beforeend"
+              class="mt-3 w-full text-sm px-3 py-2 rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50">
+          Reveal a hint ({{ session.hints_used }} of {{ total_hints }} used)
+      </button>
+      <p class="mt-2 text-xs text-gray-500">
+        Hints past the first cost engineering-quality points.
+      </p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <form method="post" action="{% url 'workspace:submit' pk=session.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full px-4 py-3 rounded-md bg-indigo-600 text-white font-medium hover:bg-indigo-700">
+          Submit for grading
+        </button>
+      </form>
+      <p class="mt-3 text-xs text-gray-500">
+        Captures committed, staged and uncommitted work. Your branch and index are left
+        exactly as they are.
+      </p>
+      <form method="post" action="{% url 'workspace:abandon' pk=session.pk %}" class="mt-4 pt-4 border-t"
+            onsubmit="return confirm('Abandon this exercise? Your workspace is archived, not deleted.');">
+        {% csrf_token %}
+        <button type="submit" class="text-sm text-gray-500 hover:text-red-600">Abandon exercise</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var source = document.getElementById("ws-brief-source");
+    var target = document.getElementById("ws-brief");
+    if (source && target && window.marked) {
+      target.innerHTML = marked.parse(source.textContent || "");
+    }
+  });
+</script>
+<script src="{% static 'js/workspace_timer.js' %}"></script>
+{% endblock %}

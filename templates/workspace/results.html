@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Result — {{ session.exercise.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <p class="text-sm text-gray-500">Exercise {{ session.exercise.exercise_number }}</p>
+  <h1 class="text-2xl font-bold text-gray-900">{{ session.exercise.title }}</h1>
+</div>
+
+{% if pending %}
+<div id="ws-grading" class="rounded-lg bg-white shadow-sm p-10 text-center"
+     data-status-url="{% url 'workspace:grade_status' pk=session.pk %}">
+  <div class="spinner mx-auto"></div>
+  <h2 class="mt-4 text-lg font-semibold text-gray-900">Grading your work…</h2>
+  <p class="mt-2 text-sm text-gray-600">
+    Re-running the test suite and reviewing the change. This usually takes a minute or two.
+  </p>
+</div>
+{% else %}
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="lg:col-span-2 space-y-6">
+    {# ---- the grade ---- #}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <div class="flex items-start gap-6">
+        <div class="text-center">
+          <div class="text-6xl font-bold
+            {% if grade.grade_points >= 3.7 %}text-green-600
+            {% elif grade.grade_points >= 2.7 %}text-indigo-600
+            {% elif grade.grade_points >= 1.7 %}text-amber-600
+            {% else %}text-red-600{% endif %}">{{ grade.letter_grade }}</div>
+          <div class="mt-1 text-sm text-gray-500">{{ grade.overall_score }}/100</div>
+        </div>
+        <div class="flex-1">
+          <p class="text-gray-800">{{ grade.summary_feedback }}</p>
+          <dl class="mt-4 space-y-2">
+            {% for name, score in grade.dimension_scores.items %}
+            <div>
+              <div class="flex justify-between text-xs">
+                <dt class="text-gray-600 capitalize">{{ name }}</dt>
+                <dd class="font-medium">{{ score }}</dd>
+              </div>
+              <div class="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full {% if score >= 85 %}bg-green-500{% elif score >= 70 %}bg-indigo-500{% else %}bg-amber-500{% endif %}"
+                     style="width: {{ score }}%"></div>
+              </div>
+            </div>
+            {% endfor %}
+          </dl>
+          <p class="mt-4 text-xs text-gray-500">
+            Weighted: correctness 40%, engineering 25%, documentation 25%, completeness 10%.
+          </p>
+        </div>
+      </div>
+
+      {% if grade.was_capped %}
+      <div class="mt-5 pt-5 border-t">
+        <h3 class="text-sm font-semibold text-amber-900">
+          Your score was {{ grade.base_score }}, but the grade was capped
+        </h3>
+        <ul class="mt-2 space-y-1">
+          {% for explanation in cap_explanations %}
+            <li class="text-sm text-amber-800">• {{ explanation }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if grade.speed_bonus %}
+      <p class="mt-3 text-sm text-green-700">+{{ grade.speed_bonus }} for fixing it quickly.</p>
+      {% endif %}
+
+      {% if grade.evaluation_degraded %}
+      <div class="mt-5 pt-5 border-t flex items-start justify-between gap-4">
+        <p class="text-sm text-amber-800">
+          <strong>This grade is provisional.</strong> AI review was unavailable, so
+          engineering and completeness were imputed rather than assessed.
+        </p>
+        <form method="post" action="{% url 'workspace:regrade' pk=session.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="px-3 py-2 text-sm rounded-md border border-amber-300 text-amber-800 hover:bg-amber-50 whitespace-nowrap">
+            Re-grade
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ---- automated checks ---- #}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-1">Automated checks</h2>
+      <p class="text-xs text-gray-500 mb-4">
+        These decide correctness. Objective signal: {{ grade.objective_status }}.
+      </p>
+      <div class="space-y-2">
+        {% for check in checks %}
+        <div class="flex items-start gap-3 p-3 rounded-md {% if check.passed %}bg-green-50{% elif check.ran %}bg-red-50{% else %}bg-gray-50{% endif %}">
+          <span>{% if check.passed %}✅{% elif check.ran %}❌{% else %}⚠️{% endif %}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900">
+              {{ check.description|default:check.check_id }}
+              {% if check.stretch %}<span class="ml-2 text-xs px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">stretch</span>
+              {% elif not check.required %}<span class="ml-2 text-xs text-gray-400">optional</span>{% endif %}
+            </p>
+            <p class="text-xs text-gray-600 mt-0.5">
+              expected {{ check.expected|default:"—" }} · got {{ check.actual|default:"—" }}
+            </p>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-sm text-gray-500">No automated checks were run.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ---- feedback ---- #}
+    {% if grade.detailed_feedback %}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-3">Review</h2>
+      <div class="text-sm text-gray-800 whitespace-pre-wrap">{{ grade.detailed_feedback }}</div>
+    </div>
+    {% endif %}
+
+    {% if grade.what_a_senior_would_have_done %}
+    <div class="bg-indigo-50 rounded-lg border border-indigo-200 p-6">
+      <h2 class="text-lg font-semibold text-indigo-900 mb-2">What a senior engineer would have done</h2>
+      <div class="text-sm text-indigo-900 whitespace-pre-wrap">{{ grade.what_a_senior_would_have_done }}</div>
+    </div>
+    {% endif %}
+
+    {% if grade.symptom_patch_suspected %}
+    <div class="bg-amber-50 rounded-lg border border-amber-200 p-6">
+      <h2 class="text-sm font-semibold text-amber-900">This looks like a symptom patch</h2>
+      <p class="mt-2 text-sm text-amber-900">
+        The tests may pass, but the underlying cause appears to still be there — so the
+        same class of bug can come back.
+      </p>
+      {% if grade.root_cause_summary %}
+      <p class="mt-2 text-sm text-amber-900"><strong>Root cause:</strong> {{ grade.root_cause_summary }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# ---- sidebar ---- #}
+  <div class="space-y-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">This attempt</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between"><dt class="text-gray-500">Outcome</dt><dd>{{ session.get_end_reason_display|default:"—" }}</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500">Time used</dt><dd>{{ session.elapsed_seconds|floatformat:0 }}s of {{ session.time_limit_seconds }}s</dd></div>
+        {% if submission %}
+        <div class="flex justify-between"><dt class="text-gray-500">Files changed</dt><dd>{{ submission.files_changed }}</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500">Lines</dt><dd>+{{ submission.lines_added }} −{{ submission.lines_deleted }}</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500">Commits</dt><dd>{{ submission.user_commit_count }}</dd></div>
+        {% endif %}
+        <div class="flex justify-between"><dt class="text-gray-500">Hints used</dt><dd>{{ session.hints_used }}</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500">Grade points</dt><dd>{{ grade.grade_points }}</dd></div>
+      </dl>
+
+      {% if submission.truncated %}
+      <p class="mt-4 text-xs text-amber-700">
+        Your submission was large, so parts of the diff were summarised rather than read
+        in full. The full list of changed files was still included.
+      </p>
+      {% endif %}
+      {% if submission and not submission.capture_ok %}
+      <p class="mt-4 text-xs text-red-700">
+        The workspace could not be fully read: {{ submission.capture_error }}
+      </p>
+      {% endif %}
+    </div>
+
+    {% if grade.strengths or grade.areas_for_improvement %}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      {% if grade.strengths %}
+      <h3 class="text-sm font-semibold text-green-800 mb-2">Went well</h3>
+      <ul class="space-y-1 mb-4">{% for item in grade.strengths %}<li class="text-sm text-gray-700">• {{ item }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if grade.areas_for_improvement %}
+      <h3 class="text-sm font-semibold text-amber-800 mb-2">Work on</h3>
+      <ul class="space-y-1">{% for item in grade.areas_for_improvement %}<li class="text-sm text-gray-700">• {{ item }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if grade.applied_deductions %}
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Deductions</h3>
+      <ul class="space-y-1">{% for item in grade.applied_deductions %}<li class="text-xs text-gray-600">{{ item }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow-sm p-6 space-y-3">
+      {% if workspace_exists %}
+      <p class="text-xs text-gray-500">
+        Your workspace is still on disk at <code class="break-all">{{ session.workspace_path }}</code>
+        if you want to keep exploring.
+      </p>
+      <form method="post" action="{% url 'workspace:teardown' pk=session.pk %}"
+            onsubmit="return confirm('Stop the containers and archive this workspace?');">
+        {% csrf_token %}
+        <button type="submit" class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">
+          Tear down the workspace
+        </button>
+      </form>
+      {% endif %}
+      <a href="{% url 'workspace:catalog' %}" class="block text-center w-full px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
+        Another exercise
+      </a>
+      <a href="{% url 'workspace:history' %}" class="block text-center text-sm text-gray-500 hover:text-gray-800">Your history</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if pending %}
+<script>
+  /* Grading runs in the background, so poll until the grade lands. */
+  (function () {
+    var box = document.getElementById("ws-grading");
+    if (!box) return;
+    var url = box.dataset.statusUrl;
+    var tries = 0;
+    var poll = setInterval(function () {
+      tries += 1;
+      if (tries > 120) { clearInterval(poll); return; }
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.graded) { clearInterval(poll); window.location.reload(); }
+        })
+        .catch(function () { /* keep polling; a single failure is not fatal */ });
+    }, 3000);
+  })();
+</script>
+{% endif %}
+{% endblock %}

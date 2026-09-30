@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Work With Existing Codebase{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-gray-900">Work With Existing Codebase</h1>
+  <p class="mt-2 text-gray-600 max-w-3xl">
+    Timed exercises on realistic multi-file applications, each with a test suite, a CI
+    pipeline, real git history and a database. You work in your own terminal and editor
+    against a repository on disk; when you submit you get a letter grade covering the
+    work, how well you explained it, and whether the problem is actually solved.
+  </p>
+</div>
+
+{% if active_session %}
+<div class="mb-6 rounded-md bg-indigo-50 border border-indigo-200 p-4 flex items-center justify-between">
+  <div>
+    <p class="text-sm font-medium text-indigo-900">
+      You have an exercise in progress: {{ active_session.exercise.title }}
+    </p>
+    <p class="text-xs text-indigo-700 mt-1">Status: {{ active_session.get_status_display }}</p>
+  </div>
+  <a href="{{ active_session.get_absolute_url }}"
+     class="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
+    Resume
+  </a>
+</div>
+{% endif %}
+
+<div class="mb-6" hx-get="{% url 'workspace:doctor' %}" hx-trigger="load" hx-swap="innerHTML">
+  <div class="text-sm text-gray-400">Checking your environment…</div>
+</div>
+
+<form method="get" class="mb-8 flex flex-wrap gap-3 items-end">
+  <div>
+    <label for="type" class="block text-xs font-medium text-gray-500 uppercase tracking-wide">Type</label>
+    <select name="type" id="type" class="mt-1 rounded-md border-gray-300 text-sm">
+      <option value="">All types</option>
+      {% for value, label in type_choices %}
+        <option value="{{ value }}" {% if selected.type == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="difficulty" class="block text-xs font-medium text-gray-500 uppercase tracking-wide">Difficulty</label>
+    <select name="difficulty" id="difficulty" class="mt-1 rounded-md border-gray-300 text-sm">
+      <option value="">Any</option>
+      {% for value, label in difficulty_choices %}
+        <option value="{{ value }}" {% if selected.difficulty == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="database" class="block text-xs font-medium text-gray-500 uppercase tracking-wide">Database</label>
+    <select name="database" id="database" class="mt-1 rounded-md border-gray-300 text-sm">
+      <option value="">Any</option>
+      <option value="postgres" {% if selected.database == "postgres" %}selected{% endif %}>PostgreSQL</option>
+      <option value="mongodb" {% if selected.database == "mongodb" %}selected{% endif %}>MongoDB</option>
+      <option value="duckdb" {% if selected.database == "duckdb" %}selected{% endif %}>DuckDB</option>
+    </select>
+  </div>
+  <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm hover:bg-gray-700">Filter</button>
+  <a href="{% url 'workspace:catalog' %}" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-800">Reset</a>
+  <a href="{% url 'workspace:history' %}" class="ml-auto px-3 py-2 text-sm text-indigo-600 hover:text-indigo-800">Your history →</a>
+</form>
+
+{% for type_label, items in grouped %}
+<section class="mb-8">
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
+    {{ type_label }} <span class="text-gray-400">({{ items|length }})</span>
+  </h2>
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    {% for exercise in items %}
+      {% include "workspace/partials/_exercise_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% empty %}
+<div class="rounded-md bg-gray-50 border border-gray-200 p-8 text-center">
+  <p class="text-gray-600">No exercises match those filters.</p>
+  {% if total_count == 0 %}
+  <p class="mt-2 text-sm text-gray-500">
+    Nothing is loaded yet. Run <code>python manage.py seed_workspace_exercises</code>.
+  </p>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

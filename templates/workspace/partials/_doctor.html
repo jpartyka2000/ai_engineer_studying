@@ -1,0 +1,51 @@
+{% comment %}
+Environment report. Rendered on the catalog and prepare pages so a stopped Docker or
+a missing worker is visible before an exercise starts, rather than discovered midway.
+{% endcomment %}
+<div class="rounded-md border p-4 {% if doctor.ready %}bg-green-50 border-green-200{% else %}bg-amber-50 border-amber-200{% endif %}">
+  <div class="flex items-center justify-between">
+    <h3 class="text-sm font-semibold {% if doctor.ready %}text-green-900{% else %}text-amber-900{% endif %}">
+      {% if doctor.ready %}Your environment is ready.{% else %}Your environment needs attention.{% endif %}
+    </h3>
+    <button hx-get="{% url 'workspace:doctor' %}" hx-target="closest div.rounded-md" hx-swap="outerHTML"
+            class="text-xs text-gray-500 hover:text-gray-800">Re-check</button>
+  </div>
+
+  <dl class="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
+    <div class="flex gap-2">
+      <dt>{% if doctor.git_ok %}✅{% else %}❌{% endif %} git</dt>
+      <dd class="text-gray-600">{{ doctor.git_message }}</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt>{% if doctor.docker_ok %}✅{% else %}❌{% endif %} Docker</dt>
+      <dd class="text-gray-600">{{ doctor.docker_message|truncatechars:80 }}</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt>{% if doctor.compose_ok %}✅{% else %}❌{% endif %} Compose</dt>
+      <dd class="text-gray-600">{{ doctor.compose_message|truncatechars:80 }}</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt>{% if doctor.worker_ok %}✅{% else %}⚠️{% endif %} Grading worker</dt>
+      <dd class="text-gray-600">{{ doctor.worker_message|truncatechars:80 }}</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt>{% if doctor.disk_ok %}✅{% else %}❌{% endif %} Disk</dt>
+      <dd class="text-gray-600">{{ doctor.disk_free_gb }} GB free</dd>
+    </div>
+    <div class="flex gap-2">
+      <dt>{% if doctor.workspace_root_writable %}✅{% else %}❌{% endif %} Workspace</dt>
+      <dd class="text-gray-600 break-all">{{ doctor.workspace_root }}</dd>
+    </div>
+  </dl>
+
+  {% if doctor.blockers %}
+  <ul class="mt-3 space-y-1">
+    {% for blocker in doctor.blockers %}
+      <li class="text-xs text-red-800">• {{ blocker }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% for warning in doctor.warnings %}
+    <p class="mt-2 text-xs text-amber-800">⚠️ {{ warning }}</p>
+  {% endfor %}
+</div>
