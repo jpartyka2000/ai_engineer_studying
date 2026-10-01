@@ -1,0 +1,22 @@
+--- a/src/etlduck/pipeline.py
++++ b/src/etlduck/pipeline.py
+@@ -102,6 +102,12 @@ def run_pipeline(
+     result.loads = ingest_all(connection, root)
+     result.silver = build_silver(connection)
+     result.gold = build_gold(connection)
++    # Mark the batch as processed as soon as the layers are built, so a slow quality run
++    # cannot leave the watermark behind and make the next run re-read a window this one
++    # has already handled.
++    with watermark_advanced_on_success(connection, USAGE_STREAM, max_event_time(connection)):
++        pass
++
+     result.checks = quality.run_all(connection)
+ 
+     if not result.ok:
+@@ -109,6 +115,4 @@ def run_pipeline(
+             quality.assert_ok(result.checks)
+         return result
+ 
+-    with watermark_advanced_on_success(connection, USAGE_STREAM, max_event_time(connection)):
+-        pass
+     return result

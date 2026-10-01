@@ -1,0 +1,20 @@
+--- a/src/etlduck/silver.py
++++ b/src/etlduck/silver.py
+@@ -211,9 +211,14 @@ def build_silver(connection: duckdb.DuckDBPyConnection) -> SilverResult:
+                 event_id, account_id, event_type, occurred_at, quantity, amount_cents = _validated(
+                     row
+                 )
+-            except RowRejected:
+-                # A row we cannot parse is not a row we can report on, so skip it and keep
+-                # the build moving rather than filling a table with payloads nobody reads.
++            except RowRejected as rejection:
++                connection.execute(
++                    "INSERT INTO quarantine (event_id, reason, payload, quarantined_at) "
++                    "VALUES (?, ?, ?, ?)",
++                    [row[0], rejection.reason, repr(row), stamp],
++                )
++                result.rows_quarantined += 1
++                result.reasons[rejection.reason] = result.reasons.get(rejection.reason, 0) + 1
+                 continue
+             connection.execute(
+                 "INSERT INTO silver_usage (event_id, account_id, event_type, occurred_at, "

@@ -1,0 +1,32 @@
+--- a/ci/run_ci.sh
++++ b/ci/run_ci.sh
+@@ -36,15 +36,6 @@ for path in sorted(pathlib.Path('jobs').glob('*.yaml')):
+     print(f'  {path.name}: {spec[\"name\"]} ({len(spec[\"tasks\"])} task(s))')
+ "
+ 
+-step "Cluster policy parses and pins UTC"
+-python -c "
+-import json, pathlib
+-policy = json.loads(pathlib.Path('dbx_conf/cluster_policy.json').read_text())
+-zone = policy['spark_conf.spark.sql.session.timeZone']
+-assert zone['type'] == 'fixed' and zone['value'] == 'UTC', zone
+-print('  session timeZone is fixed to UTC')
+-"
+-
+ step "Notebooks are cell-delimited and importable as scripts"
+ python -c "
+ import ast, pathlib
+--- a/dbx_conf/cluster_policy.json
++++ b/dbx_conf/cluster_policy.json
+@@ -28,8 +28,9 @@
+     "_comment": "0 means a single-node cluster, which is what this workload actually needs."
+   },
+   "spark_conf.spark.sql.session.timeZone": {
+-    "type": "fixed",
+-    "value": "UTC",
++    "type": "allowlist",
++    "values": ["UTC", "Europe/Berlin"],
++    "defaultValue": "Europe/Berlin",
+     "_comment": [
+       "Fixed, not defaulted. Every timestamp in this warehouse is a UTC instant and every",
+       "date is derived from one. A cluster configured to a local zone would bucket a slice of",
