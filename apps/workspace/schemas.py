@@ -164,6 +164,12 @@ class Manifest(BaseModel):
     db_seeds: dict[str, str] = Field(default_factory=dict)
     #: Copy-pasteable setup steps shown on the (off-the-clock) prepare page.
     setup_commands: list[str] = Field(default_factory=list)
+    #: Commands the *harness* runs inside the container before taking any
+    #: measurement, as opposed to ``setup_commands``, which are prose for a human
+    #: and may carry comments. Per base app because the requirement is: Django apps
+    #: must migrate the development database, while a service whose model is a JSON
+    #: artifact has nothing to prepare. Empty is a normal answer.
+    harness_setup: list[str] = Field(default_factory=list)
     grading: GradingSpec = Field(default_factory=GradingSpec)
 
     @model_validator(mode="after")

@@ -16,7 +16,10 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from apps.workspace.catalog.tenantsaas import EXERCISES
+# The package aggregate, not one base app's module. Imported from a single base app
+# these checks silently stop covering every exercise authored on the next one -- which
+# is exactly what happened when predictsvc was added and all 18 kept passing.
+from apps.workspace.catalog import EXERCISES
 from apps.workspace.schemas import AuthoredExercise
 from apps.workspace.services import manifest, paths
 

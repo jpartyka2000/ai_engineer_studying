@@ -23,7 +23,12 @@ from django.utils import timezone
 
 from apps.workspace.calibration.spec import Persona, apply_persona
 from apps.workspace.models import WorkspaceExercise, WorkspaceGrade, WorkspaceSession
-from apps.workspace.services import docker_env, scaffolder, submission as submission_service
+from apps.workspace.services import (
+    docker_env,
+    manifest,
+    scaffolder,
+    submission as submission_service,
+)
 from apps.workspace.services.check_runner import CheckRunner
 
 logger = logging.getLogger(__name__)
@@ -32,16 +37,30 @@ logger = logging.getLogger(__name__)
 #: real user's progress history or averages.
 CALIBRATION_USERNAME = "calibration-bot"
 
-#: Applied to the running container before the persona's edits, because every brief
-#: tells the candidate to run it as step two of reproducing the problem.
-#:
-#: Skipping it is not a harmless shortcut. pytest-django builds and migrates its own
-#: test database, so the pytest checks pass either way -- but a benchmark or a
-#: management command runs against the *development* database, and against an
-#: unmigrated one it dies with "relation does not exist". That surfaced as ex-002's
-#: query-count check erroring out for all three personas, capping every one of them at
-#: C+ for a reason that had nothing to do with the submission.
-SETUP_COMMAND = "python manage.py migrate --noinput"
+
+def harness_setup_commands(exercise) -> list[str]:
+    """Return the commands to run in the container before measuring anything.
+
+    Read from the base app's ``manifest.json`` rather than hardcoded, because the
+    requirement differs per stack: a Django app has to migrate its *development*
+    database, while ``predictsvc``, whose model is a JSON artifact and which has no
+    database at all, has nothing to prepare and no ``manage.py`` to run.
+
+    Skipping a required step is not a harmless shortcut. pytest-django builds and
+    migrates its own test database, so the pytest checks pass either way -- but a
+    benchmark or a management command runs against the development database, and
+    against an unmigrated one it dies with "relation does not exist". That surfaced as
+    ex-002's query-count check erroring out for all three personas, capping every one
+    of them at C+ for a reason that had nothing to do with the submission.
+
+    Args:
+        exercise: The :class:`~apps.workspace.models.WorkspaceExercise` being run.
+
+    Returns:
+        The declared commands, in order. An empty list is a normal answer.
+    """
+    spec = manifest.load_manifest(exercise.template_dir or exercise.base_app)
+    return list(spec.harness_setup)
 
 
 class CalibrationError(RuntimeError):
@@ -155,12 +174,13 @@ def build(persona: Persona, *, keep_containers: bool = False) -> BuildResult:
                 compose_project=session.compose_project,
                 use_container=bool(session.compose_project),
             )
-            exit_code, setup_output, _ = runner.run_command(SETUP_COMMAND)
-            if exit_code != 0:
-                raise CalibrationError(
-                    f"{SETUP_COMMAND!r} failed ({exit_code}): {setup_output[-1500:]}"
-                )
-            note("migrations applied")
+            for command in harness_setup_commands(exercise):
+                exit_code, setup_output, _ = runner.run_command(command)
+                if exit_code != 0:
+                    raise CalibrationError(
+                        f"{command!r} failed ({exit_code}): {setup_output[-1500:]}"
+                    )
+                note(f"ran {command!r}")
 
         # The clock is backdated so the session reports the persona's elapsed time.
         # begin() takes the instant explicitly for exactly this kind of caller.

@@ -25,7 +25,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.workspace.calibration.runner import SETUP_COMMAND, calibration_user
+from apps.workspace.calibration.runner import calibration_user, harness_setup_commands
 from apps.workspace.models import WorkspaceExercise, WorkspaceSession
 from apps.workspace.schemas import Baseline
 from apps.workspace.services import docker_env, git_ops, manifest, paths, scaffolder
@@ -131,10 +131,11 @@ class Command(BaseCommand):
                 if not ok:
                     raise CommandError(f"containers did not come up: {output[-800:]}")
                 runner = self._runner(session)
-                code, setup_output, _ = runner.run_command(SETUP_COMMAND)
-                if code != 0:
-                    raise CommandError(f"{SETUP_COMMAND} failed: {setup_output[-800:]}")
-                self.stdout.write("  containers up, migrations applied")
+                for command in harness_setup_commands(exercise):
+                    code, setup_output, _ = runner.run_command(command)
+                    if code != 0:
+                        raise CommandError(f"{command} failed: {setup_output[-800:]}")
+                self.stdout.write("  containers up, setup commands run")
 
             baseline = None
             if options["phase"] in {"pre", "both"}:
