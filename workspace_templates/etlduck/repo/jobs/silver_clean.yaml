@@ -1,0 +1,18 @@
+# Silver build: parse, normalise to UTC, deduplicate, quarantine.
+name: etlduck-silver-clean
+schedule:
+  quartz_cron_expression: "0 30 * * * ?"
+  timezone_id: UTC
+  pause_status: PAUSED
+max_concurrent_runs: 1
+tasks:
+  - task_key: build_silver
+    description: >
+      Full rebuild from bronze. Idempotent by construction -- silver is a pure function of
+      bronze -- so there is no merge logic and no watermark involved at this step.
+    python_file: src/etlduck/cli.py
+    parameters: ["silver"]
+    depends_on:
+      - task_key: ingest_landing_zone
+    max_retries: 2
+    timeout_seconds: 1800

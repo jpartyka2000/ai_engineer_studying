@@ -1,0 +1,61 @@
+# CI for etlduck. Keep in step with ci/run_ci.sh.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TZ: UTC
+      PYTHONHASHSEED: random
+      CI: "true"
+      ETLDUCK_ROOT: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+          pip install --no-deps .
+      - name: Import smoke test
+        run: python -c "import etlduck; print(etlduck.__version__)"
+      - name: Test suite
+        run: python -m pytest -p no:cacheprovider -q
+      - name: Job definitions parse
+        run: |
+          python -c "
+          import pathlib, yaml
+          for path in sorted(pathlib.Path('jobs').glob('*.yaml')):
+              spec = yaml.safe_load(path.read_text())
+              assert spec.get('name'), f'{path}: no name'
+              assert spec.get('tasks'), f'{path}: no tasks'
+          "
+      - name: Cluster policy parses and pins UTC
+        run: |
+          python -c "
+          import json, pathlib
+          policy = json.loads(pathlib.Path('dbx_conf/cluster_policy.json').read_text())
+          zone = policy['spark_conf.spark.sql.session.timeZone']
+          assert zone['type'] == 'fixed' and zone['value'] == 'UTC', zone
+          "
+      - name: Notebooks are cell-delimited and importable as scripts
+        run: |
+          python -c "
+          import ast, pathlib
+          for path in sorted(pathlib.Path('notebooks').glob('*.py')):
+              text = path.read_text()
+              assert text.startswith('# Databricks notebook source'), f'{path}: missing header'
+              assert '# COMMAND ----------' in text, f'{path}: no cell delimiters'
+              ast.parse(text)
+          "
+      - name: Pipeline runs end to end on the committed landing zone
+        run: bash ci/pipeline_smoke.sh
+      - name: Pipeline benchmark
+        run: python bench/bench_pipeline.py --json > /dev/null

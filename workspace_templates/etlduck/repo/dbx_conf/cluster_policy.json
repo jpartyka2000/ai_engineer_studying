@@ -1,0 +1,48 @@
+{
+  "_comment": [
+    "Shaped like the cluster policy the platform team applies to Databricks job clusters.",
+    "Nothing in this repository reads it: etlduck runs in one local process against a DuckDB",
+    "file. It is here because the constraints it encodes are the ones the pipeline is written",
+    "to respect, and because a reviewer should be able to see them.",
+    "See src/etlduck/spark_compat.py for what is and is not real."
+  ],
+  "spark_version": {
+    "type": "regex",
+    "pattern": "1[45]\\.[0-9]+\\.x-scala2\\.12",
+    "hidden": false
+  },
+  "node_type_id": {
+    "type": "allowlist",
+    "values": ["Standard_D4ds_v5", "Standard_D8ds_v5"],
+    "defaultValue": "Standard_D4ds_v5"
+  },
+  "autotermination_minutes": {
+    "type": "fixed",
+    "value": 20
+  },
+  "num_workers": {
+    "type": "range",
+    "minValue": 0,
+    "maxValue": 8,
+    "defaultValue": 0,
+    "_comment": "0 means a single-node cluster, which is what this workload actually needs."
+  },
+  "spark_conf.spark.sql.session.timeZone": {
+    "type": "fixed",
+    "value": "UTC",
+    "_comment": [
+      "Fixed, not defaulted. Every timestamp in this warehouse is a UTC instant and every",
+      "date is derived from one. A cluster configured to a local zone would bucket a slice of",
+      "events into the wrong day -- measured at 58 of 400 rows in the sample data."
+    ]
+  },
+  "spark_conf.spark.sql.ansi.enabled": {
+    "type": "fixed",
+    "value": "true",
+    "_comment": "Overflow and bad casts must raise rather than return NULL."
+  },
+  "custom_tags.cost_centre": {
+    "type": "fixed",
+    "value": "data-platform"
+  }
+}

@@ -1,0 +1,28 @@
+# Bronze ingest.
+#
+# Shaped like the platform team's Databricks job definitions so the same person can read
+# both, but nothing here submits to a cluster: `tasks[].python_file` is run by
+# `ci/run_ci.sh` and by `make run` in a single local process. See
+# src/etlduck/spark_compat.py.
+name: etlduck-bronze-ingest
+schedule:
+  quartz_cron_expression: "0 15 * * * ?"
+  timezone_id: UTC
+  # Paused because the schedule is documentation here, not a trigger.
+  pause_status: PAUSED
+max_concurrent_runs: 1
+tasks:
+  - task_key: ingest_landing_zone
+    description: >
+      Copy every unloaded file from raw/ into bronze, verbatim. Safe to re-run: the load log
+      is keyed on (source_file, content_hash), so a retry inserts nothing.
+    python_file: src/etlduck/cli.py
+    parameters: ["bronze"]
+    # Retries are only safe because the task is idempotent. If that ever stops being true,
+    # this number is how the warehouse gets multiplied by three.
+    max_retries: 2
+    min_retry_interval_millis: 60000
+    retry_on_timeout: true
+    timeout_seconds: 1800
+email_notifications:
+  on_failure: ["data-platform@example.com"]

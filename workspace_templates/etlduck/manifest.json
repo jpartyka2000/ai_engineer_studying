@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "seed_commits": [
+    {
+      "message": "chore: initial warehouse scaffold\n\nDuckDB rather than Spark. The whole warehouse is one file, so the pipeline is\nreproducible on a laptop with no cluster, no JVM and no credentials -- which is\nwhat lets the tests assert exact totals instead of ranges.",
+      "author": "Priya Raghavan <priya.raghavan@example.com>",
+      "date": "2025-04-07T09:20:00Z",
+      "paths": [
+        "pyproject.toml",
+        "requirements.txt",
+        "Dockerfile",
+        "docker-compose.yml",
+        "Makefile",
+        ".gitignore",
+        "src/etlduck/__init__.py",
+        "src/etlduck/config.py",
+        "warehouse/README.md",
+        "tests/__init__.py"
+      ]
+    },
+    {
+      "message": "feat(db): define the medallion schema in one place\n\nEvery CREATE is IF NOT EXISTS and the whole script is applied on connect, because an\nETL job is restarted far more often than it is first run. Money is BIGINT cents and\ntimestamps are UTC instants; both choices are load-bearing and documented where they\nare declared.",
+      "author": "Priya Raghavan <priya.raghavan@example.com>",
+      "date": "2025-04-22T14:05:00Z",
+      "paths": ["src/etlduck/db.py"]
+    },
+    {
+      "message": "feat(bronze): load the landing zone at most once\n\nThe load log is keyed on (source_file, content_hash) and written in the same\ntransaction as the rows. Keying on the filename alone would skip a corrected\nre-export; keying on mtime would reload a byte-identical re-delivery. A line that\nis not valid JSON is kept rather than dropped -- bronze is the only layer that will\never know it arrived.",
+      "author": "Tomás Oliveira <tomas.oliveira@example.com>",
+      "date": "2025-05-13T11:40:00Z",
+      "paths": ["src/etlduck/bronze.py"]
+    },
+    {
+      "message": "feat(silver): parse, normalise to UTC, dedupe, quarantine\n\nA naive timestamp is rejected rather than assumed to be UTC: assuming shifts an event\nacross a day boundary for every customer in a negative offset and nothing downstream\ncan detect it. A decimal in amount_cents is rejected rather than rounded. Dedupe\norders by ingested_at then source_file then rowid, so two rebuilds of the same bronze\nagree even when two files land in the same second.",
+      "author": "Tomás Oliveira <tomas.oliveira@example.com>",
+      "date": "2025-06-03T15:25:00Z",
+      "paths": ["src/etlduck/silver.py"]
+    },
+    {
+      "message": "feat(gold): roll up against a collapsed account dimension\n\nbronze_accounts holds one row per delivery, so joining it raw multiplies every event\nfor an account that appeared in two exports. That inflates revenue, raises nothing,\nand is caught only by the reconciliation. The join is against a row_number() view and\nis a LEFT JOIN, so usage for a missing dimension row is counted with a NULL plan\nrather than lost.",
+      "author": "Priya Raghavan <priya.raghavan@example.com>",
+      "date": "2025-06-24T10:15:00Z",
+      "paths": ["src/etlduck/gold.py"]
+    },
+    {
+      "message": "feat(watermark): forward-only, and only over work that finished\n\nadvance_watermark raises on a backwards move instead of clamping, and the context\nmanager runs the work before advancing. Advancing first means an exception leaves the\nwatermark past data nobody processed, and that window is never looked at again.\nPosition comes from event time, not the clock: usage telemetry arrives late as a\nmatter of course.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-07-15T08:50:00Z",
+      "paths": ["src/etlduck/watermark.py"]
+    },
+    {
+      "message": "feat(quality): six gates, reported together\n\nEach check returns a finding rather than raising, so one run tells the on-call\nengineer everything that is wrong. The reconciliation leads: every other gate could\npass while the rollup quietly double-counted a join.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-07-29T13:30:00Z",
+      "paths": ["src/etlduck/quality.py"]
+    },
+    {
+      "message": "feat(pipeline): run the layers in order and gate the watermark\n\nQuality gates run before the watermark moves, because the watermark records what has\nbeen successfully processed. strict=False changes whether a failing gate raises, never\nwhether the watermark advances.",
+      "author": "Priya Raghavan <priya.raghavan@example.com>",
+      "date": "2025-08-12T09:45:00Z",
+      "paths": ["src/etlduck/pipeline.py"]
+    },
+    {
+      "message": "feat(profile): describe a delivery before ingesting it\n\nA schema change upstream, a truncated export or a shifted null spelling are all cheap\nto see here and expensive to find three layers later. Profiling never rejects anything;\nrejection belongs to silver, with a reason attached.",
+      "author": "Tomás Oliveira <tomas.oliveira@example.com>",
+      "date": "2025-08-26T16:10:00Z",
+      "paths": ["src/etlduck/profile.py"]
+    },
+    {
+      "message": "feat(cli): etlduck run, bronze, silver, gold, check, profile, watermark\n\nEvery subcommand exits non-zero when the thing it did failed, because the scheduler\nonly looks at the exit code.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-09-09T11:05:00Z",
+      "paths": ["src/etlduck/cli.py"]
+    },
+    {
+      "message": "feat(compat): a four-method Spark-shaped facade over DuckDB\n\nSo the notebooks read like Spark and run without a JVM. Deliberately minuscule:\nanything more becomes a half-reimplementation of a distributed engine, which is a far\nworse thing to own than some SQL. The docstring is explicit that there is no cluster.",
+      "author": "Priya Raghavan <priya.raghavan@example.com>",
+      "date": "2025-09-23T14:40:00Z",
+      "paths": ["src/etlduck/spark_compat.py"]
+    },
+    {
+      "message": "test: add the seeded landing-zone generator\n\nFixed seed, so it emits the same bytes on every platform and the suite can assert\nexact totals. The defects are deliberate and fixed: per day one unparseable line, one\nnaive timestamp, one unknown event type, one decimal amount and one event with no\naccount, plus a replayed event across days. A generator that only produced clean rows\nwould let every one of those bugs through.",
+      "author": "Tomás Oliveira <tomas.oliveira@example.com>",
+      "date": "2025-10-07T10:30:00Z",
+      "paths": [
+        "tools/gen_seed_data.py",
+        "raw/accounts.csv",
+        "raw/accounts_delta.csv",
+        "raw/usage_events_2026-03-01.jsonl",
+        "raw/usage_events_2026-03-02.jsonl"
+      ]
+    },
+    {
+      "message": "test: cover idempotency, parsing, rollups, watermarks and the gates\n\nNumeric expectations are hand-computed with the arithmetic in the docstring. Every\nquality gate is tested in both directions -- a gate that has only ever been seen to\npass is not known to work.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-10-21T15:50:00Z",
+      "paths": [
+        "tests/conftest.py",
+        "tests/test_bronze_idempotency.py",
+        "tests/test_silver_parsing.py",
+        "tests/test_gold_rollups.py",
+        "tests/test_watermark.py",
+        "tests/test_quality_cli_profile.py"
+      ]
+    },
+    {
+      "message": "perf: add a pipeline benchmark\n\nReports the SQL statements issued per input row rather than only timings. Wall clock\nunder Docker varies severalfold; statements per row does not, and it is the figure\nthat reveals a per-row insert turning quadratic. Generates volume into a scratch\ndirectory, never into raw/.",
+      "author": "Priya Raghavan <priya.raghavan@example.com>",
+      "date": "2025-11-04T09:15:00Z",
+      "paths": ["bench/bench_pipeline.py"]
+    },
+    {
+      "message": "chore(dbx): add the Databricks-shaped job, policy and notebook assets\n\nShaped like the platform team's real assets so the same person can read both. Nothing\nhere submits to a cluster -- spark_compat.py says so at length -- but the constraints\nthe policy encodes are the ones this pipeline is written to respect, starting with\nsession timeZone pinned to UTC.",
+      "author": "Tomás Oliveira <tomas.oliveira@example.com>",
+      "date": "2025-11-18T13:20:00Z",
+      "paths": [
+        "jobs/bronze_ingest.yaml",
+        "jobs/silver_clean.yaml",
+        "jobs/gold_rollup.yaml",
+        "dbx_conf/cluster_policy.json",
+        "notebooks/01_explore_raw.py",
+        "notebooks/02_validate_gold.py"
+      ]
+    },
+    {
+      "message": "ci: run the suite, parse the dbx assets, prove the pipeline is idempotent\n\nci/run_ci.sh mirrors the workflow so the same steps run locally. The pipeline smoke\ntest is its own file so both call it rather than each carrying a copy -- two inline\ncopies of a check are two things to keep in step, and the one that drifts is always\nthe one nobody runs locally.",
+      "author": "Ingrid Halvorsen <ingrid.halvorsen@example.com>",
+      "date": "2025-12-02T08:35:00Z",
+      "paths": [".github/workflows/ci.yml", "ci/run_ci.sh", "ci/pipeline_smoke.sh"]
+    },
+    {
+      "message": "docs: document the layer contracts, idempotency and the numeric choices",
+      "author": "Priya Raghavan <priya.raghavan@example.com>",
+      "date": "2025-12-16T11:55:00Z",
+      "paths": ["README.md", "ARCHITECTURE.md", "NOTES.md"]
+    }
+  ],
+  "seed_branches": [],
+  "env": {
+    "required": [],
+    "extra": {
+      "ETLDUCK_ROOT": "/app",
+      "PYTHONPATH": "/app/src"
+    },
+    "requires_anthropic_key": false
+  },
+  "ports": {},
+  "db_seeds": {},
+  "setup_commands": [
+    "docker compose up -d --wait",
+    "make test   # expect failures: reproducing them is step one",
+    "make run    # the pipeline end to end, then the quality gates"
+  ],
+  "harness_setup": [],
+  "grading": {
+    "diff_exclude": ["*.lock", "warehouse/*", "raw/*.jsonl", "raw/*.csv"],
+    "include_full_files": [
+      "src/etlduck/bronze.py",
+      "src/etlduck/silver.py",
+      "src/etlduck/gold.py",
+      "src/etlduck/watermark.py",
+      "src/etlduck/quality.py",
+      "src/etlduck/pipeline.py"
+    ]
+  }
+}
