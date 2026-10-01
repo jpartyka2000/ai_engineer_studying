@@ -154,9 +154,24 @@ def test_fit_rejects_an_empty_series():
 
 
 def test_transform_is_independent_of_the_batch():
-    """One row must scale the same as the same row inside a batch."""
+    """One row must scale the same as the same row inside a batch.
+
+    Fitted on [0, 10, 20, 30], so min-max gives centre 0 and spread 30, and 15 maps to
+    0.5 whatever it is sent alongside.
+
+    Two things here are load-bearing. The expected value is **absolute** rather than a
+    comparison between two transform calls: comparing one call against another passes
+    happily when both are wrong in the same way. And the batch holds **different**
+    values, because a batch of identical rows has no spread of its own -- so a transform
+    that recomputed its parameters would produce the same wrong answer for the single
+    row and the uniform batch alike, and this test would wave it through.
+    """
     scaler = fit_scaler([0, 10, 20, 30], ScalerKind.MINMAX)
-    assert scaler.transform([15])[0] == scaler.transform([15] * 100)[0]
+    alone = scaler.transform([15])[0]
+    in_mixed_batch = scaler.transform([15, 0, 7, 100])[0]
+    assert alone == pytest.approx(0.5)
+    assert in_mixed_batch == pytest.approx(0.5)
+    assert scaler.transform([15] * 100)[0] == pytest.approx(0.5)
 
 
 # ---------------------------------------------------------------------------

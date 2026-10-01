@@ -32,5 +32,8 @@ step "CLI smoke test"
 edakit profile datasets/tiny.csv > /dev/null
 edakit missing datasets/customers.csv --threshold 0.2 > /dev/null
 
+step "Profiling benchmark"
+python bench/bench_profile.py --json > /dev/null
+
 echo
 echo "CI passed."

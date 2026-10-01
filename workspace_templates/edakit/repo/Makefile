@@ -5,7 +5,7 @@
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
 
-.PHONY: help up down shell test test-fast doctest install lint ci profile reset
+.PHONY: help up down shell test test-fast doctest install lint ci profile bench reset
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -35,6 +35,9 @@ install: ## Verify the package installs and imports cleanly
 
 profile: ## Profile the sample dataset
 	$(COMPOSE) exec -T app edakit profile datasets/customers.csv
+
+bench: ## Measure how much work profiling a table does
+	$(COMPOSE) exec -T app python bench/bench_profile.py
 
 ci: ## Run the same steps the CI pipeline runs
 	bash ci/run_ci.sh

@@ -30,6 +30,12 @@ make profile
 | `report` | Render a profile as text or Markdown |
 | `cli` | `edakit profile` and `edakit missing` |
 
+`bench/bench_profile.py` measures how much work profiling does. It reports **operation
+counts** next to the wall clock, and the counts are the figure to hold to a threshold:
+`cell_reads_per_cell` is how many times each cell is examined over one
+`profile_dataset` call. For a profiler that walks the table a fixed number of times it is
+a small constant and does not change with the column count.
+
 ## Using it
 
 ```python
