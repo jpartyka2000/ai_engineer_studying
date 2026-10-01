@@ -3,10 +3,10 @@
 Hand-written rather than imported, so every number is checkable against a confusion
 matrix you can count on paper.
 
-**Accuracy is deliberately not the headline metric here.** The evaluation set is about
-9.5% positive, so a model that always predicts "no churn" scores over 90% accuracy
-while being entirely useless. F1 is reported as the primary figure for that reason, and
-the majority-class baseline is reported alongside it so the comparison is unavoidable.
+**Accuracy is deliberately not the headline metric here.** The evaluation set is 17%
+positive, so a model that always predicts "no churn" scores 83% accuracy while being
+entirely useless. F1 is reported as the primary figure for that reason, and the
+majority-class baseline is reported alongside it so the comparison is unavoidable.
 """
 
 from __future__ import annotations

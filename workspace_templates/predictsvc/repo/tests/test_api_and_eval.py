@@ -55,6 +55,34 @@ def test_readyz_reports_the_loaded_versions(client):
 
 
 @pytest.mark.contract
+def test_readyz_reports_503_when_the_artifacts_cannot_load(tmp_path, monkeypatch):
+    """Readiness has to fail when this instance cannot actually serve.
+
+    The compose healthcheck hits /readyz for exactly this reason: a container whose
+    model failed to load must never be routed traffic. The happy-path test above would
+    pass just as well if /readyz never touched the model at all, so this is the case
+    that distinguishes a readiness probe from a liveness one.
+
+    /healthz must stay 200 throughout -- the process is alive, it just cannot serve.
+    """
+    from svc.model import registry
+
+    monkeypatch.setattr(registry, "ARTIFACT_DIR", tmp_path)
+    registry.reset_cache()
+    try:
+        probe = TestClient(create_app())
+        ready = probe.get("/readyz")
+        alive = probe.get("/healthz")
+    finally:
+        registry.reset_cache()
+
+    assert ready.status_code == 503
+    assert ready.json()["status"] == "unavailable"
+    assert ready.json()["detail"], "a 503 must say what is wrong"
+    assert alive.status_code == 200
+
+
+@pytest.mark.contract
 def test_predict_returns_a_label_and_probability(client):
     body = client.post("/predict", json=VALID).json()
     assert body["label"] in (0, 1)
@@ -187,6 +215,53 @@ def test_majority_baseline_is_reported_next_to_accuracy():
     """So an impressive-looking accuracy cannot be mistaken for an impressive model."""
     matrix = ConfusionMatrix(true_positive=0, false_positive=0, true_negative=95, false_negative=5)
     assert matrix.majority_baseline_accuracy == pytest.approx(0.95)
+
+
+@pytest.mark.model
+def test_precision_and_recall_are_not_interchangeable():
+    """tp=4 fp=6 tn=80 fn=1: precision 0.4, recall 0.8.
+
+    Deliberately fp != fn. The fixture in ``test_metrics_are_hand_computable`` has
+    fp == fn, which makes precision equal recall there -- so it would pass unchanged if
+    the two were swapped, or if one were computed with the other's denominator. This is
+    the case that can tell them apart.
+    """
+    matrix = ConfusionMatrix(true_positive=4, false_positive=6, true_negative=80, false_negative=1)
+    assert matrix.precision == pytest.approx(0.4)
+    assert matrix.recall == pytest.approx(0.8)
+
+
+@pytest.mark.model
+def test_f1_is_the_harmonic_mean_not_the_average():
+    """tp=1 fp=0 tn=98 fn=9: precision 1.0, recall 0.1.
+
+    F1 is 2pr/(p+r) = 0.1818, while the arithmetic mean of the same two numbers is
+    0.55 -- a model that catches one churner in ten being reported as half-decent.
+
+    Pinned on a case where precision and recall diverge sharply, because when they are
+    close the two formulas agree to four decimal places: on the shipped model they
+    differ by 0.0002, so neither the F1 gate nor any other test here would notice the
+    wrong one. The harmonic mean punishes imbalance between the two, which is the
+    entire reason it is the metric and not the average.
+    """
+    matrix = ConfusionMatrix(true_positive=1, false_positive=0, true_negative=98, false_negative=9)
+    assert matrix.precision == pytest.approx(1.0)
+    assert matrix.recall == pytest.approx(0.1)
+    assert matrix.f1 == pytest.approx(0.181818, abs=1e-6)
+    assert matrix.f1 < (matrix.precision + matrix.recall) / 2
+
+
+@pytest.mark.model
+def test_the_majority_baseline_holds_when_the_positive_class_is_the_majority():
+    """tp=70 fn=0 tn=30 fp=0: 70% positive, so always-predict-positive scores 0.70.
+
+    The baseline is the larger of the two class rates, not the negative rate. On this
+    project's evaluation set the negatives are the majority, so the two definitions
+    coincide and a wrong one would look right forever.
+    """
+    matrix = ConfusionMatrix(true_positive=70, false_positive=0, true_negative=30, false_negative=0)
+    assert matrix.positive_rate == pytest.approx(0.7)
+    assert matrix.majority_baseline_accuracy == pytest.approx(0.7)
 
 
 @pytest.mark.model

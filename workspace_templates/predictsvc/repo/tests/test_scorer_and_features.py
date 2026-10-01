@@ -6,10 +6,12 @@ not that a snapshot drifted.
 """
 
 import math
+from dataclasses import replace
 
 import pytest
 
 from svc.features.pipeline import FeatureError, FeatureKind, build_features
+from svc.model import registry
 from svc.model.registry import (
     ArtifactError,
     assert_compatible,
@@ -18,6 +20,7 @@ from svc.model.registry import (
 )
 from svc.model.scorer import (
     MissingFeature,
+    ModelArtifact,
     linear_predictor,
     predict,
     predict_proba,
@@ -100,6 +103,33 @@ def test_a_spec_missing_a_required_feature_is_rejected(model, spec):
     )
     with pytest.raises(ArtifactError, match="does not emit features the model requires"):
         assert_compatible(model, trimmed)
+
+
+def test_the_artifacts_are_read_from_disk_once_per_process():
+    """Scoring is a dot product; the expensive part of a prediction is the filesystem.
+
+    A cache that never hits turns every request into two JSON parses and a full
+    compatibility check. Nothing about the *answer* changes, so no other test in this
+    file would notice -- it shows up only as latency, which is why it is pinned here.
+    """
+    loads = 0
+    real_load_model = registry.load_model
+
+    def counting_load_model(*args, **kwargs):
+        nonlocal loads
+        loads += 1
+        return real_load_model(*args, **kwargs)
+
+    registry.reset_cache()
+    registry.load_model = counting_load_model
+    try:
+        for _ in range(50):
+            registry.get_loaded_model()
+    finally:
+        registry.load_model = real_load_model
+        registry.reset_cache()
+
+    assert loads == 1, f"artifacts were read from disk {loads} times for 50 requests"
 
 
 # ---------------------------------------------------------------------------
@@ -244,6 +274,27 @@ def test_label_follows_the_threshold(model, spec):
                                  "tenure_days": 0, "has_sso": False})
     assert predict(model, free)[0] == 1
     assert predict(model, build_features(spec, BASE_PAYLOAD))[0] == 0
+
+
+def test_the_threshold_comes_from_the_artifact_not_a_constant():
+    """The decision threshold is part of the model, not part of the code.
+
+    Retuning for recall means shipping a lower threshold in the artifact and changing
+    nothing else. The shipped artifact's threshold happens to be 0.5, so a hardcoded 0.5
+    in the scorer behaves identically on it and ``test_label_follows_the_threshold``
+    would not notice.
+
+    Built from a synthetic one-coefficient artifact rather than the shipped model and
+    the feature pipeline, deliberately: this has to fail *only* when the threshold is
+    ignored, not whenever something upstream changes a feature value. sigmoid(0.4) is
+    0.5987, which is above a threshold of 0.4 and below one of 0.7 -- so a constant 0.5
+    gets the first right and the second wrong.
+    """
+    artifact = ModelArtifact(
+        name="probe", version="1", intercept=0.0, coefficients={"x": 1.0}, threshold=0.5
+    )
+    assert predict(replace(artifact, threshold=0.4), {"x": 0.4})[0] == 1
+    assert predict(replace(artifact, threshold=0.7), {"x": 0.4})[0] == 0
 
 
 def test_support_tickets_increase_risk(model, spec):

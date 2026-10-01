@@ -58,31 +58,39 @@ class Counter:
 
 
 def measure(count: int) -> dict:
-    """Score a batch and report the work done."""
-    from svc.routers.predict import _score_one
+    """Score a batch through the real endpoint and report the work done.
+
+    Requests go through ``predict_one`` rather than ``_score_one``, because
+    ``_score_one`` is handed an already-loaded model and so can never exercise the
+    artifact cache -- which is the thing most likely to be wrong.
+
+    ``artifact_loads`` counts calls to ``load_model``, i.e. times the artifacts were
+    actually read from disk, not times the cached accessor was called. Those differ by
+    exactly the cache hit rate, and the former is the number that scales.
+    """
+    import svc.routers.predict as predict_module
 
     accounts = sample_accounts(count)
 
-    # Count artifact loads and pipeline invocations rather than timing them. One load
-    # for the whole batch is correct; one per request means the cache is being defeated.
-    load_counter = Counter(registry_module.get_loaded_model)
+    # Counts, not timings. Wall clock on a loaded laptop varies severalfold; one disk
+    # load for the whole batch versus one per request does not.
+    load_counter = Counter(registry_module.load_model)
     build_counter = Counter(pipeline_module.build_features)
-    original_load = registry_module.get_loaded_model
+    original_load = registry_module.load_model
     original_build = pipeline_module.build_features
 
-    import svc.routers.predict as predict_module
-
-    predict_module.get_loaded_model = load_counter
+    registry_module.load_model = load_counter
     predict_module.build_features = build_counter
+    registry_module.reset_cache()
     try:
-        loaded = original_load()
         started = time.perf_counter()
         for account in accounts:
-            _score_one(loaded, account)
+            predict_module.predict_one(account)
         elapsed_ms = (time.perf_counter() - started) * 1000
     finally:
-        predict_module.get_loaded_model = original_load
+        registry_module.load_model = original_load
         predict_module.build_features = original_build
+        registry_module.reset_cache()
 
     return {
         "requests": count,

@@ -35,6 +35,14 @@ from what training did.
 2. Every coefficient name is emitted by the spec — catches "a spec edit forgot to bump
    the version", which the first check would miss.
 
+**What those two checks cannot see.** Both compare *names*. Neither looks at a single
+feature *value*, so an edited `scale`, `default`, `clip_min` or `clip_max` passes both
+and the service goes on reporting itself ready. Every deployed spec version is archived
+under `artifacts/archive/` so the contract a stored prediction was made under can always
+be recovered — but nothing compares the active spec against its archived copy, which
+means a spec that disagrees with the version it claims to be is detectable only by its
+effect on the metrics.
+
 **Nothing is silently defaulted.** A missing required field, an unparseable number and
 an unknown category all raise. Substituting a plausible value produces a confident wrong
 prediction, which is far worse than a 422.
