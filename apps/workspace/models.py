@@ -36,6 +36,7 @@ from apps.workspace.enums import (
     CheckStatus,
     Difficulty,
     ExerciseType,
+    GradeFairness,
     LetterGrade,
     ObjectiveStatus,
 )
@@ -688,6 +689,24 @@ class WorkspaceGrade(models.Model):
     root_cause_summary = models.TextField(blank=True)
     symptom_patch_suspected = models.BooleanField(default=False)
 
+    # The engineer's verdict on their own grade. The only calibration signal that can
+    # be gathered at the one moment when judging a grade is nearly free -- immediately
+    # after finishing the exercise, with all the context still loaded. Deliberately
+    # three coarse options rather than a letter: "was this fair" is answerable in
+    # seconds, while "what letter would you have given" needs the whole exercise
+    # understood, which is why it goes unanswered.
+    fairness = models.CharField(
+        max_length=20,
+        choices=GradeFairness.choices,
+        blank=True,
+        db_index=True,
+        help_text=_("Whether the engineer thought this grade was fair"),
+    )
+    fairness_note = models.CharField(
+        max_length=500, blank=True, help_text=_("Optional free text on why")
+    )
+    fairness_recorded_at = models.DateTimeField(null=True, blank=True)
+
     rubric_version = models.CharField(max_length=20, blank=True)
     model_used = models.CharField(max_length=60, blank=True)
     input_tokens = models.PositiveIntegerField(default=0)
@@ -736,6 +755,7 @@ class WorkspaceEvent(models.Model):
         REAPED = "reaped", _("Reaped after the deadline")
         GRADED = "graded", _("Graded")
         GRADE_FAILED = "grade_failed", _("Grading failed")
+        FAIRNESS_RECORDED = "fairness_recorded", _("Fairness verdict recorded")
         TORN_DOWN = "torn_down", _("Workspace torn down")
 
     session = models.ForeignKey(WorkspaceSession, on_delete=models.CASCADE, related_name="events")

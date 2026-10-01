@@ -32,4 +32,5 @@ urlpatterns = [
     path("<int:pk>/abandon/", views.abandon_session, name="abandon"),
     path("<int:pk>/teardown/", views.teardown_workspace, name="teardown"),
     path("<int:pk>/results/", views.WorkspaceResultsView.as_view(), name="results"),
+    path("<int:pk>/fairness/", views.record_fairness, name="fairness"),
 ]

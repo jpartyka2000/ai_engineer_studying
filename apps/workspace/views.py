@@ -21,12 +21,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import DetailView, ListView
 
+from apps.workspace.enums import GradeFairness
 from apps.workspace.exceptions import UnsafePathError, WorkspaceError
 from apps.workspace.models import (
     WorkspaceEvent,
@@ -491,6 +493,54 @@ def save_notes(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required
 @require_POST
+def record_fairness(request: HttpRequest, pk: int) -> HttpResponse:
+    """Record whether the engineer thought their grade was fair.
+
+    This is the rubric's only source of human calibration data, so it is deliberately
+    cheap to answer and re-answerable: an engineer who clicks "too harsh" and then reads
+    the feedback and changes their mind should be able to say so, and the later answer is
+    the better one.
+
+    The grade itself is never altered. A fairness verdict is evidence about the rubric,
+    not an appeal against one result -- letting it move the letter would make the
+    evidence worthless.
+    """
+    session = get_object_or_404(WorkspaceSession, pk=pk, user=request.user)
+    grade = getattr(session, "grade", None)
+    if grade is None:
+        return HttpResponse(_("This attempt has not been graded yet."), status=409)
+
+    verdict = request.POST.get("fairness", "")
+    if verdict not in GradeFairness.values:
+        return HttpResponse(_("Unrecognised answer."), status=400)
+
+    grade.fairness = verdict
+    grade.fairness_note = (request.POST.get("note") or "")[:500]
+    grade.fairness_recorded_at = timezone.now()
+    grade.save(update_fields=["fairness", "fairness_note", "fairness_recorded_at"])
+
+    WorkspaceEvent.log(session, WorkspaceEvent.Kind.FAIRNESS_RECORDED, fairness=verdict)
+    logger.info(
+        "fairness for session %s: %s (grade %s, rubric %s)",
+        session.pk,
+        verdict,
+        grade.letter_grade,
+        grade.rubric_version,
+    )
+    return render(
+        request,
+        "workspace/partials/_fairness.html",
+        {
+            "session": session,
+            "grade": grade,
+            "just_saved": True,
+            "fairness_choices": GradeFairness.choices,
+        },
+    )
+
+
+@login_required
+@require_POST
 def reveal_hint(request: HttpRequest, pk: int) -> HttpResponse:
     """Reveal the next hint, at a cost to the engineering score."""
     session = _owned_session(request, pk)
@@ -645,6 +695,7 @@ class WorkspaceResultsView(LoginRequiredMixin, DetailView):
             [GATE_EXPLANATIONS.get(code, code) for code in grade.applied_caps] if grade else []
         )
         context["pending"] = grade is None
+        context["fairness_choices"] = GradeFairness.choices
         context["workspace_exists"] = bool(
             session.workspace_path and Path(session.workspace_path).is_dir()
         )

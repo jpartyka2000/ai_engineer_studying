@@ -126,3 +126,17 @@ class LetterGrade(models.TextChoices):
     D = "D", _("D")
     D_MINUS = "D-", _("D-")
     F = "F", _("F")
+
+
+class GradeFairness(models.TextChoices):
+    """The engineer's own verdict on whether a grade was fair.
+
+    Collected on the results page rather than in a calibration session, because the
+    thirty seconds after finishing an exercise is the only moment when the context
+    needed to judge the grade is free. Asking later means re-reading the whole
+    exercise, which is why the project's rubric went uncalibrated for so long.
+    """
+
+    TOO_HARSH = "too_harsh", _("Too harsh")
+    ABOUT_RIGHT = "about_right", _("About right")
+    TOO_GENEROUS = "too_generous", _("Too generous")

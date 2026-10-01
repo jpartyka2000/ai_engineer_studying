@@ -8,6 +8,11 @@ Four actions, in the order they are meant to be used::
     manage.py calibrate_workspace report   # reveal and compare
     manage.py calibrate_workspace status   # what has been built, what is outstanding
 
+Two more, outside the round:
+
+    manage.py calibrate_workspace recompute # re-derive letters after a weight change
+    manage.py calibrate_workspace fairness  # verdicts real attempts gave their own grades
+
 ``build`` and ``packet`` are separate on purpose: building is slow and hits the Claude
 API, so re-rendering packets after an accidental deletion must not require regrading.
 """
@@ -33,7 +38,7 @@ class Command(BaseCommand):
         """Register the action and its filters."""
         parser.add_argument(
             "action",
-            choices=["build", "packet", "report", "status", "recompute"],
+            choices=["build", "packet", "report", "status", "recompute", "fairness"],
             help="Which step of the round to run",
         )
         parser.add_argument(
@@ -91,8 +96,72 @@ class Command(BaseCommand):
             self._report(options)
         elif action == "recompute":
             self._recompute(options)
+        elif action == "fairness":
+            self._fairness(options)
         else:
             self._status(options)
+
+    # -- fairness ---------------------------------------------------------
+
+    def _fairness(self, options: dict) -> None:
+        """Summarise the fairness verdicts recorded on real attempts.
+
+        The point of collecting them. A synthetic corpus can only tell us whether the
+        rubric is internally consistent; these are the grades a person actually received
+        and judged, which is the only evidence that the letters mean what they should.
+
+        Broken down by rubric version, because a verdict recorded under an older version
+        says nothing about the current one and averaging across them would hide exactly
+        the drift this is meant to catch.
+        """
+        from collections import Counter
+
+        rows = (
+            WorkspaceGrade.objects.exclude(fairness="")
+            .select_related("session", "session__exercise")
+            .order_by("fairness_recorded_at")
+        )
+        if not rows:
+            self.stdout.write(
+                "No fairness verdicts recorded yet. They are collected on the results "
+                "page after a real attempt; nothing to report until someone finishes one."
+            )
+            return
+
+        by_version: dict[str, Counter] = {}
+        for row in rows:
+            by_version.setdefault(row.rubric_version or "(unrecorded)", Counter())[
+                row.fairness
+            ] += 1
+
+        for version, counts in sorted(by_version.items()):
+            total = sum(counts.values())
+            self.stdout.write(
+                self.style.MIGRATE_HEADING(f"\nrubric {version}  ({total} verdict(s))")
+            )
+            for verdict in ("too_harsh", "about_right", "too_generous"):
+                count = counts.get(verdict, 0)
+                bar = "#" * count
+                self.stdout.write(f"  {verdict:<14}{count:>3}  {bar}")
+            harsh, generous = counts.get("too_harsh", 0), counts.get("too_generous", 0)
+            if harsh and harsh >= total / 2:
+                self.stdout.write(
+                    self.style.WARNING(
+                        "  -> half or more say too harsh. Look at which dimension the "
+                        "complaints share before changing a weight."
+                    )
+                )
+            elif generous and generous >= total / 2:
+                self.stdout.write(self.style.WARNING("  -> half or more say too generous."))
+
+        self.stdout.write(self.style.MIGRATE_HEADING("\nevery verdict, newest last"))
+        for row in rows:
+            note = f"  -- {row.fairness_note}" if row.fairness_note else ""
+            self.stdout.write(
+                f"  {row.fairness_recorded_at:%Y-%m-%d}  {row.session.exercise.slug[:34]:<34} "
+                f"{row.letter_grade:>2} ({row.overall_score:>2})  {row.fairness}{note}"
+            )
+        self.stdout.write("")
 
     # -- recompute --------------------------------------------------------
 
