@@ -1,0 +1,28 @@
+--- a/src/edakit/schema_infer.py
++++ b/src/edakit/schema_infer.py
+@@ -99,8 +99,9 @@ class ColumnProfile:
+ def infer_column_type(values: list[str | None]) -> ColumnType:
+     """Infer the type of a single column from its raw values.
+ 
+-    Order matters: integers are checked before floats, because every integer also
+-    matches the float pattern.
++    Order matters. Booleans are checked before integers because ``0``/``1`` are valid
++    as both, and integers before floats because every integer also matches the float
++    pattern.
+ 
+     Args:
+         values: Raw cell values, including nulls.
+@@ -113,11 +114,11 @@ def infer_column_type(values: list[str | None]) -> ColumnType:
+     if not present:
+         return ColumnType.EMPTY
+ 
+-    if _looks_like(present, lambda v: bool(_INT_RE.match(v))):
+-        return ColumnType.INTEGER
+     lowered = [v.lower() for v in present]
+     if _looks_like(lowered, lambda v: v in _BOOL_TRUE or v in _BOOL_FALSE):
+         return ColumnType.BOOLEAN
++    if _looks_like(present, lambda v: bool(_INT_RE.match(v))):
++        return ColumnType.INTEGER
+     if _looks_like(present, lambda v: bool(_FLOAT_RE.match(v))):
+         return ColumnType.FLOAT
+     if _looks_like(present, lambda v: bool(_DATETIME_RE.match(v))):

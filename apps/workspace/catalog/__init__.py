@@ -10,12 +10,13 @@ Every entry is validated against
 exercise fails loudly instead of reaching the database.
 """
 
-from apps.workspace.catalog import predictsvc, tenantsaas
+from apps.workspace.catalog import edakit, predictsvc, tenantsaas
 
 #: Every authored exercise, in catalog order.
 EXERCISES: list[dict] = [
     *tenantsaas.EXERCISES,
     *predictsvc.EXERCISES,
+    *edakit.EXERCISES,
 ]
 
 __all__ = ["EXERCISES"]

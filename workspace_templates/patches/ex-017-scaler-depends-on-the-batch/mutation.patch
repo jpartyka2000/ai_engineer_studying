@@ -1,0 +1,35 @@
+--- a/src/edakit/scale.py
++++ b/src/edakit/scale.py
+@@ -37,8 +37,30 @@ class Scaler:
+     spread: float
+ 
+     def transform(self, values: list[float]) -> list[float]:
+-        """Scale a series using the fitted parameters."""
+-        return [(value - self.centre) / self.spread for value in values]
++        """Scale a series.
++
++        The centre and spread are re-derived from ``values`` so that a batch whose
++        distribution has drifted away from the fitting set still lands on a sensible
++        range instead of being pushed out to the tails. The fitted parameters are kept
++        as the fallback for a batch too degenerate to measure.
++        """
++        if not values:
++            return []
++
++        if self.kind == ScalerKind.STANDARD:
++            centre = statistics.fmean(values)
++            spread = statistics.pstdev(values)
++        elif self.kind == ScalerKind.MINMAX:
++            centre = min(values)
++            spread = max(values) - centre
++        else:
++            from edakit.outliers import quantile
++
++            ordered = sorted(values)
++            centre = statistics.median(values)
++            spread = quantile(ordered, 0.75) - quantile(ordered, 0.25)
++
++        return [(value - centre) / (spread or self.spread) for value in values]
+ 
+     def inverse_transform(self, values: list[float]) -> list[float]:
+         """Map scaled values back to the original units.
