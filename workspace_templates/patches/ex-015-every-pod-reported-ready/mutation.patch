@@ -1,0 +1,60 @@
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -14,9 +14,7 @@ services:
+     ports:
+       - "${WS_APP_PORT:-55810}:8000"
+     healthcheck:
+-      # readyz, not healthz: a container whose model failed to load must not be
+-      # reported healthy.
+-      test: ["CMD", "curl", "-fsS", "http://localhost:8000/readyz"]
++      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+       interval: 2s
+       timeout: 5s
+       retries: 30
+--- a/svc/routers/health.py
++++ b/svc/routers/health.py
+@@ -1,17 +1,15 @@
+ """Liveness and readiness endpoints.
+ 
+-Kept distinct on purpose. ``/healthz`` says the process is up; ``/readyz`` says it can
+-actually serve, which means the artifacts loaded and validated. A deployment that
+-conflates them will happily route traffic to a container whose model failed to load.
++Both probes answer from the same check, so an orchestrator and a load balancer can never
++disagree about whether this instance is usable.
+ """
+ 
+ from __future__ import annotations
+ 
+ import logging
+ 
+-from fastapi import APIRouter, Response, status
++from fastapi import APIRouter
+ 
+-from svc.model.registry import ArtifactError, get_loaded_model
+ from svc.schemas import HealthResponse
+ 
+ logger = logging.getLogger(__name__)
+@@ -26,20 +24,6 @@ def healthz() -> HealthResponse:
+ 
+ 
+ @router.get("/readyz", response_model=HealthResponse)
+-def readyz(response: Response) -> HealthResponse:
+-    """Readiness: whether this instance can serve a prediction right now.
+-
+-    Returns 503 with the reason when the artifacts are unusable, so the failure shows
+-    up in a load balancer rather than as wrong predictions.
+-    """
+-    try:
+-        loaded = get_loaded_model()
+-    except ArtifactError as exc:
+-        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+-        return HealthResponse(status="unavailable", detail=str(exc))
+-
+-    return HealthResponse(
+-        status="ready",
+-        model_version=loaded.model.version,
+-        feature_spec_version=loaded.spec.version,
+-    )
++def readyz() -> HealthResponse:
++    """Readiness. The same answer as liveness: if the process is up, it can serve."""
++    return HealthResponse(status="ready")

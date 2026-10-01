@@ -1,0 +1,26 @@
+--- a/svc/model/scorer.py
++++ b/svc/model/scorer.py
+@@ -66,6 +66,10 @@ def sigmoid(x: float) -> float:
+     return exponent / (1.0 + exponent)
+ 
+ 
++#: Probability at or above which the positive class is predicted.
++DECISION_THRESHOLD = 0.5
++
++
+ class MissingFeature(KeyError):
+     """Raised when a required feature is absent from a scoring request."""
+ 
+@@ -108,9 +112,8 @@ def predict(model: ModelArtifact, features: dict[str, float]) -> tuple[int, floa
+         features: Feature name to value.
+ 
+     Returns:
+-        The label is 1 when the probability is at or above the model's threshold.
+-        Comparison is ``>=`` so a threshold of 0.0 predicts the positive class for
+-        everything, which is what a caller asking for that would expect.
++        The label is 1 when the probability is at or above :data:`DECISION_THRESHOLD`.
++        Comparison is ``>=`` rather than ``>`` so the boundary case counts as positive.
+     """
+     probability = predict_proba(model, features)
+-    return (1 if probability >= model.threshold else 0), probability
++    return (1 if probability >= DECISION_THRESHOLD else 0), probability

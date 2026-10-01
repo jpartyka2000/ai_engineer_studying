@@ -1,0 +1,23 @@
+--- a/svc/model/scorer.py
++++ b/svc/model/scorer.py
+@@ -85,13 +85,17 @@ def linear_predictor(model: ModelArtifact, features: dict[str, float]) -> float:
+             matters: treating an absent feature as zero is a silent, plausible-looking
+             wrong answer, and zero is a meaningful value for most of these features.
+     """
+-    total = model.intercept
+-    for name, weight in model.coefficients.items():
++    for name in model.coefficients:
+         if name not in features:
+             raise MissingFeature(
+                 f"feature {name!r} is required by model {model.name} v{model.version}"
+             )
+-        total += weight * features[name]
++
++    # feature_names is the model's stable ordering, so the weights and the vector can be
++    # walked together in one pass instead of hashing a lookup per coefficient.
++    total = model.intercept
++    for name, value in zip(model.feature_names, features.values(), strict=True):
++        total += model.coefficients[name] * value
+     return total
+ 
+ 

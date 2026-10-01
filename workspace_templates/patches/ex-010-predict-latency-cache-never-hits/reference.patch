@@ -1,0 +1,62 @@
+--- a/svc/model/registry.py
++++ b/svc/model/registry.py
+@@ -12,6 +12,7 @@ import json
+ import logging
+ import os
+ from dataclasses import dataclass
++from functools import lru_cache
+ from pathlib import Path
+ 
+ from svc.features.pipeline import FeatureDef, FeatureKind, FeatureSpec
+@@ -151,25 +152,9 @@ def assert_compatible(model: ModelArtifact, spec: FeatureSpec) -> None:
+         logger.info("feature spec emits features model %s ignores: %s", model.name, sorted(unused))
+ 
+ 
+-#: Artifacts loaded from disk, so a model rollout does not need a worker restart.
+-_CACHE: dict[str, LoadedModel] = {}
+-
+-
+-def _artifact_stamp() -> str:
+-    """Identify the artifacts currently on disk by their modification times."""
+-    stamps = []
+-    for name in (MODEL_FILENAME, SPEC_FILENAME):
+-        path = ARTIFACT_DIR / name
+-        stamps.append(str(path.stat().st_mtime_ns) if path.is_file() else "0")
+-    return ":".join(stamps)
+-
+-
++@lru_cache(maxsize=1)
+ def get_loaded_model() -> LoadedModel:
+-    """Load and validate the model and spec, re-reading them if they changed on disk.
+-
+-    Rolling out a new model used to require restarting every worker. The artifacts are
+-    re-read when their modification times change, so a deploy that swaps the JSON is
+-    picked up in place.
++    """Load and validate the model and spec once per process.
+ 
+     Returns:
+         The cached :class:`LoadedModel`.
+@@ -179,21 +164,13 @@ def get_loaded_model() -> LoadedModel:
+             rather than swallowed, so a misconfigured deployment fails its healthcheck
+             instead of serving wrong numbers.
+     """
+-    stamp = _artifact_stamp()
+-    cached = _CACHE.get(stamp)
+-    if cached is not None:
+-        return cached
+-
+     model = load_model()
+     spec = load_feature_spec()
+     assert_compatible(model, spec)
+     logger.info("loaded model %s:%s against spec %s", model.name, model.version, spec.version)
+-    loaded = LoadedModel(model=model, spec=spec)
+-    _CACHE.clear()
+-    _CACHE[loaded.identifier] = loaded
+-    return loaded
++    return LoadedModel(model=model, spec=spec)
+ 
+ 
+ def reset_cache() -> None:
+     """Clear the cached artifacts. For tests that swap artifact directories."""
+-    _CACHE.clear()
++    get_loaded_model.cache_clear()
