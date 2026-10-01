@@ -131,8 +131,16 @@ def seeded(seeded_root: Path):
 
     Yields ``(connection, run_result)``. One pipeline run, so a test asserting on totals and
     a test asserting on the run report are looking at the same build.
+
+    Run with ``strict=False`` deliberately. A fixture that raises takes every test depending
+    on it down as an *error* rather than a failure, so one broken quality gate would replace
+    a third of this suite's named assertions with the same fixture traceback -- which says
+    only that something is wrong, not what. With the gate reported rather than raised, each
+    test fails on its own terms and the failing set points at the defect. The gates are
+    still asserted, by ``test_every_check_passes_on_clean_data`` and by the checks a run
+    returns; nothing is skipped by this, it is only reported differently.
     """
     conn = connect(seeded_root)
-    result = run_pipeline(conn, seeded_root)
+    result = run_pipeline(conn, seeded_root, strict=False)
     yield conn, result
     conn.close()

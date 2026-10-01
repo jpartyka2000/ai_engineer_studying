@@ -54,6 +54,20 @@ def test_every_check_passes_on_clean_data(connection, root):
     quality.assert_ok(checks)
 
 
+def test_the_committed_run_passes_every_quality_gate(seeded):
+    """The gates, on the real data.
+
+    The ``seeded`` fixture runs with ``strict=False`` so that a broken gate does not turn
+    every integration test into the same fixture error -- which makes this the test that
+    holds the gates to account. It names the failures rather than asserting a bare boolean,
+    so the output says which gate went and not merely that one did.
+    """
+    _, result = seeded
+    failed = [check.name for check in result.checks if not check.passed]
+    assert failed == [], f"gates failed on the committed data: {failed}"
+    assert result.ok
+
+
 def test_reconciliation_fails_when_gold_is_wrong(connection, root):
     _good(connection, root)
     connection.execute("DELETE FROM gold_daily_usage WHERE account_id = 'acct-000'")
