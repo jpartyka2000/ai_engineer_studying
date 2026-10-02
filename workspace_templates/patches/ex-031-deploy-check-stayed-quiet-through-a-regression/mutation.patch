@@ -1,0 +1,23 @@
+--- a/src/eventstore/analytics.py
++++ b/src/eventstore/analytics.py
+@@ -23,7 +23,7 @@ import duckdb
+ from eventstore.config import APDEX_TARGET_MS
+ from eventstore.perfmodel.apdex import ApdexScore, apdex
+ from eventstore.perfmodel.baseline import AnomalyScore, SeasonalBaseline
+-from eventstore.perfmodel.changepoint import DetectionResult, cusum_detect
++from eventstore.perfmodel.changepoint import DetectionResult, ewma_detect
+ from eventstore.perfmodel.intervals import Interval, bootstrap_ci, wilson_interval
+ from eventstore.perfmodel.nonparametric import ComparisonResult, mann_whitney_u
+ from eventstore.perfmodel.percentiles import LatencySummary, summarize
+@@ -388,7 +388,10 @@ def detect_sustained_regression(
+     # A reference period with no variation at all would divide by zero; one millisecond
+     # is below the resolution of the data and keeps the statistic finite.
+     sigma = max(statistics.pstdev(reference), 1.0)
+-    return cusum_detect(values, target=target, sigma=sigma)
++    # Switched to EWMA: the accumulator kept climbing through the Friday traffic
++    # ramp and paged us twice in one week. A weighted mean rides the ramp instead
++    # of adding it up, and the chart is much easier to read in a deploy review.
++    return ewma_detect(values, target=target, sigma=sigma)
+ 
+ 
+ def anomaly_scan(

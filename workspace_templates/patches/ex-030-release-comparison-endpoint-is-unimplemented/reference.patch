@@ -1,0 +1,50 @@
+--- a/src/eventstore/perfmodel/nonparametric.py
++++ b/src/eventstore/perfmodel/nonparametric.py
+@@ -121,10 +121,43 @@ def mann_whitney_u(sample_a: Sequence[float], sample_b: Sequence[float]) -> Comp
+         ``[1, 2, 3]`` against ``[4, 5, 6]``: no value of A exceeds any value of B, so
+         ``u_statistic`` is 0.0 and ``effect_size`` is -1.0.
+     """
+-    # TODO(PERF-241): not implemented. /v1/stats/compare raises the moment it is
+-    # called, so release comparison is still done by eyeballing the p95 chart.
+-    # tests/test_nonparametric.py specifies the behaviour, tie correction included.
+-    raise NotImplementedError("mann_whitney_u is not implemented yet")
++    if not sample_a or not sample_b:
++        raise ValueError("both samples must be non-empty")
++
++    n_a, n_b = len(sample_a), len(sample_b)
++    pooled = list(sample_a) + list(sample_b)
++    ranks = rank_with_ties(pooled)
++
++    rank_sum_a = sum(ranks[:n_a])
++    u_a = rank_sum_a - n_a * (n_a + 1) / 2.0
++
++    total = n_a * n_b
++    mean_u = total / 2.0
++    n = n_a + n_b
++    correction = _tie_correction(pooled)
++    variance = (total / 12.0) * ((n + 1) - correction / (n * (n - 1.0)))
++
++    if variance <= 0:
++        # Every observation in both samples is identical: U is exactly its mean and
++        # there is nothing to detect.
++        z_score = 0.0
++        p_value = 1.0
++    else:
++        # Continuity correction, towards the mean from whichever side U falls on.
++        deviation = abs(u_a - mean_u) - 0.5
++        z_score = math.copysign(max(deviation, 0.0), u_a - mean_u) / math.sqrt(variance)
++        p_value = 2.0 * (1.0 - _standard_normal_cdf(abs(z_score)))
++
++    return ComparisonResult(
++        u_statistic=u_a,
++        z_score=z_score,
++        p_value=min(1.0, max(0.0, p_value)),
++        # Rank-biserial correlation: 2*U/(n_a*n_b) - 1.
++        effect_size=(2.0 * u_a / total) - 1.0,
++        n_a=n_a,
++        n_b=n_b,
++        approximation_valid=min(n_a, n_b) >= MIN_SAMPLE_FOR_NORMAL_APPROX,
++    )
+ 
+ 
+ def _standard_normal_cdf(x: float) -> float:

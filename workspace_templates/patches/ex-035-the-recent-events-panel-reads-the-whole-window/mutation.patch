@@ -1,0 +1,22 @@
+--- a/src/eventstore/queries.py
++++ b/src/eventstore/queries.py
+@@ -98,7 +98,6 @@ def recent_cursor(
+             RECENT_PROJECTION,
+         )
+         .sort("occurred_at", -1)
+-        .limit(limit)
+     )
+ 
+ 
+@@ -123,7 +122,10 @@ def recent_events(
+         Events, newest first.
+     """
+     cursor = recent_cursor(collection, service, minutes=minutes, limit=limit, now=now)
+-    return [EventOut.from_document(document) for document in cursor]
++    # Trimmed here rather than by the server: this used to drop duplicate event
++    # ids before returning, and a server-side limit would have cut the window
++    # short before that ran. The de-duplication went when the unique index landed.
++    return [EventOut.from_document(document) for document in cursor][:limit]
+ 
+ 
+ def latency_sample(

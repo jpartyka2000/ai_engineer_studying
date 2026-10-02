@@ -1,0 +1,26 @@
+--- a/src/eventstore/perfmodel/baseline.py
++++ b/src/eventstore/perfmodel/baseline.py
+@@ -168,19 +168,12 @@ class SeasonalBaseline:
+         if not pooled:
+             raise ValueError("no observations left to fit a baseline from")
+ 
+-        # Mean and standard deviation, so what the endpoint reports is an ordinary
+-        # z-score and the runbook's three-sigma threshold applies to it directly. The
+-        # scaled-MAD version needed a threshold of its own and nobody could remember
+-        # what it was supposed to be.
+         return cls(
+-            centres={index: statistics.mean(vs) for index, vs in buckets.items()},
+-            dispersions={
+-                index: max(statistics.pstdev(vs), MIN_DISPERSION)
+-                for index, vs in buckets.items()
+-            },
++            centres={index: statistics.median(vs) for index, vs in buckets.items()},
++            dispersions={index: scaled_mad(vs) for index, vs in buckets.items()},
+             counts={index: len(vs) for index, vs in buckets.items()},
+-            pooled_centre=statistics.mean(pooled),
+-            pooled_dispersion=max(statistics.pstdev(pooled), MIN_DISPERSION),
++            pooled_centre=statistics.median(pooled),
++            pooled_dispersion=scaled_mad(pooled),
+         )
+ 
+     def score(self, moment: datetime, value: float) -> AnomalyScore:

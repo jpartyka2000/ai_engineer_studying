@@ -1,0 +1,28 @@
+--- a/src/eventstore/rollup.py
++++ b/src/eventstore/rollup.py
+@@ -167,12 +167,9 @@ def load_new_events(
+         ``(bucket, service, route)`` whose aggregate the load invalidated.
+     """
+     position = EPOCH if full else get_position(connection)
+-    # Track event time. The data team kept asking what period the warehouse is
+-    # complete through, and an ingest-time position answers a question nobody is
+-    # asking -- "when did we last hear anything" rather than "how far along are we".
+     cursor = (
+-        collection.find({"occurred_at": {"$gte": position}}, ROLLUP_PROJECTION)
+-        .sort("occurred_at", 1)
++        collection.find({"received_at": {"$gte": position}}, ROLLUP_PROJECTION)
++        .sort("received_at", 1)
+         .limit(batch_limit)
+     )
+ 
+@@ -202,8 +199,8 @@ def load_new_events(
+             report.late_events += 1
+         if report.oldest_event_loaded is None or occurred_at < report.oldest_event_loaded:
+             report.oldest_event_loaded = occurred_at
+-        if occurred_at > report.watermark:
+-            report.watermark = occurred_at
++        if received_at > report.watermark:
++            report.watermark = received_at
+ 
+     if rows:
+         connection.executemany(
