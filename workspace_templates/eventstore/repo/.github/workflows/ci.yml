@@ -1,0 +1,84 @@
+# CI for eventstore.
+#
+# ci/run_ci.sh is the executable mirror of this file. There is no GitHub runner
+# available in the exercise environment, so this workflow is the artifact you read and
+# edit while the script is what actually runs. The two must stay in step: a fix applied
+# to only one of them is an incomplete fix.
+
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+env:
+  TZ: UTC
+  PYTHONHASHSEED: random
+  CI: "true"
+  EVENTSTORE_ROOT: ${{ github.workspace }}
+  MONGO_URL: mongodb://localhost:27017
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        # Same probe as docker-compose.yml. Without it the first step to touch the
+        # database races the server's start-up.
+        options: >-
+          --health-cmd "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install --no-deps -e .
+
+      - name: Import smoke test
+        run: python -c "import eventstore; print('eventstore', eventstore.__version__)"
+
+      - name: Run the test suite
+        run: python -m pytest -p no:cacheprovider -q
+
+      - name: The statistics run without any database at all
+        env:
+          MONGO_URL: mongodb://127.0.0.1:1
+        run: |
+          python -m pytest -p no:cacheprovider -q -m "not mongo" \
+            tests/test_percentiles.py tests/test_apdex.py tests/test_intervals.py \
+            tests/test_nonparametric.py tests/test_changepoint.py tests/test_baseline.py
+
+      - name: Index declarations agree with the seed script
+        run: |
+          python - <<'PY'
+          import pathlib
+          from eventstore import mongo
+          script = pathlib.Path("seed/001_indexes.js").read_text()
+          for spec in mongo.INDEX_SPECS:
+              assert f'name: "{spec["name"]}"' in script, spec["name"]
+          PY
+
+      - name: Pipeline runs end to end on the committed exports
+        run: bash ci/smoke.sh
+
+      - name: Recent-window query stays index-served
+        run: python bench/bench_query.py --events 5000 --json
+
+      - name: Incremental rollup stays incremental
+        run: python bench/bench_rollup.py --batches 10 --json
