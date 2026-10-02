@@ -381,7 +381,18 @@ def test_submitting_captures_the_work_and_redirects(logged_in, started):
     target.write_text(target.read_text().replace("created_at__lt=", "created_at__date__lte="))
     (Path(started.workspace_path) / "NOTES.md").write_text("## Root cause\nDate coercion.\n")
 
-    with patch("apps.workspace.services.submission.grade") as graded:
+    # Pinned to the inline branch, because this test is about capture rather than about
+    # dispatch. Left unpinned it inherits whatever the developer's Redis is doing: with a
+    # broker reachable the work is queued, nothing consumes it, and there is no
+    # submission to assert on. Which branch runs does not affect what is being tested --
+    # the task and the fallback both call the same capture_and_grade.
+    with (
+        patch(
+            "apps.workspace.tasks.grade_submission.delay",
+            side_effect=OSError("Connection refused"),
+        ),
+        patch("apps.workspace.services.submission.grade") as graded,
+    ):
         response = logged_in.post(
             reverse("workspace:submit", kwargs={"pk": started.pk}), follow=True
         )
@@ -400,14 +411,28 @@ def test_submitting_does_not_disturb_the_users_git_state(logged_in, started):
     (workspace / "scratch.py").write_text("# thinking\n")
     before = git_ops.run_git(workspace, "status", "--porcelain")
 
-    with patch("apps.workspace.services.submission.grade"):
+    # Pinned to the inline branch so the capture this test is checking actually happens.
+    # Unpinned and with a broker reachable, nothing is captured at all and the assertion
+    # below is trivially true -- the test passes while testing nothing, which is a worse
+    # failure than going red.
+    with (
+        patch(
+            "apps.workspace.tasks.grade_submission.delay",
+            side_effect=OSError("Connection refused"),
+        ),
+        patch("apps.workspace.services.submission.grade"),
+    ):
         logged_in.post(reverse("workspace:submit", kwargs={"pk": started.pk}))
 
     assert git_ops.run_git(workspace, "status", "--porcelain") == before
 
 
 def test_results_page_polls_while_grading(logged_in, started):
-    with patch("apps.workspace.services.submission.grade"):
+    # Pinned to the worker-present branch, the opposite of the two tests above: the
+    # state being asserted is "queued, not yet graded", which only exists while
+    # something else holds the work. Graded inline, the session would already be
+    # COMPLETED by the time the response came back and there would be nothing to poll.
+    with patch("apps.workspace.tasks.grade_submission.delay"):
         logged_in.post(reverse("workspace:submit", kwargs={"pk": started.pk}))
 
     response = logged_in.get(reverse("workspace:results", kwargs={"pk": started.pk}))
