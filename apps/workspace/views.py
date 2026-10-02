@@ -35,7 +35,7 @@ from apps.workspace.models import (
     WorkspaceExercise,
     WorkspaceSession,
 )
-from apps.workspace.services import docker_env, git_ops, paths, reaper, scaffolder
+from apps.workspace.services import docker_env, git_ops, manifest, paths, reaper, scaffolder
 from apps.workspace.services import submission as submission_service
 
 logger = logging.getLogger(__name__)
@@ -238,6 +238,35 @@ def start_session(request: HttpRequest, slug: str) -> HttpResponse:
 # ---------------------------------------------------------------------------
 
 
+#: Shown on the prepare page when a manifest cannot be read. Deliberately generic:
+#: every base app brings its stack up this way, and anything beyond that is per-app.
+FALLBACK_SETUP_COMMANDS = ["docker compose up -d --wait", "make test"]
+
+
+def _manifest_setup_commands(base_app: str) -> list[str]:
+    """Return the base app's authored setup steps for the prepare page.
+
+    Read from the manifest rather than hardcoded, because the steps genuinely differ
+    per app -- a Django app migrates and seeds, a warehouse app loads and rolls up,
+    and a library app does neither. A hardcoded list is wrong for four of the five
+    base apps and tells the user to run a make target that does not exist.
+
+    Args:
+        base_app: The template directory name.
+
+    Returns:
+        The manifest's ``setup_commands``, or a generic fallback if the manifest
+        cannot be read. A broken manifest must not take the prepare page down -- the
+        user can still run the commands from the README.
+    """
+    try:
+        commands = manifest.load_manifest(base_app).setup_commands
+    except WorkspaceError:
+        logger.warning("could not read setup_commands for %s", base_app, exc_info=True)
+        return list(FALLBACK_SETUP_COMMANDS)
+    return list(commands) or list(FALLBACK_SETUP_COMMANDS)
+
+
 class WorkspacePrepareView(LoginRequiredMixin, DetailView):
     """The off-the-clock setup page. Shows the path and container status, no timer."""
 
@@ -268,10 +297,7 @@ class WorkspacePrepareView(LoginRequiredMixin, DetailView):
         )
         context["setup_commands"] = [
             f"cd {session.workspace_path}",
-            "docker compose up -d --wait",
-            "make migrate",
-            "make seed",
-            "make test",
+            *_manifest_setup_commands(session.exercise.base_app),
         ]
         context["ready"] = session.status == WorkspaceSession.Status.READY
         return context
