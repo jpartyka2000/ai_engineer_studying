@@ -1,0 +1,32 @@
+--- a/src/ragqa/rag/prompt_builder.py
++++ b/src/ragqa/rag/prompt_builder.py
+@@ -22,7 +22,7 @@ cassette key, so a reworded instruction invalidates every recorded answer at onc
+ 
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass, replace
++from dataclasses import dataclass
+ 
+ from ragqa.rag.retriever import Retrieved
+ 
+@@ -85,17 +85,12 @@ def fit_to_budget(
+     dropped: list[str] = []
+     used = 0
+     for hit in passages:
+-        remaining = budget - used
+-        if remaining <= 0:
++        size = len(hit.chunk.text)
++        if kept and used + size > budget:
+             dropped.append(hit.chunk.chunk_id)
+             continue
+-        # Trim to what is left rather than dropping the passage entirely, so
+-        # the budget is used fully instead of being left short.
+-        if len(hit.chunk.text) > remaining:
+-            trimmed = replace(hit.chunk, text=hit.chunk.text[:remaining])
+-            hit = replace(hit, chunk=trimmed)
+         kept.append(hit)
+-        used += len(hit.chunk.text)
++        used += size
+     return kept, dropped
+ 
+ 

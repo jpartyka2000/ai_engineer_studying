@@ -15,6 +15,7 @@ from apps.workspace.catalog import (
     etlduck,
     eventstore,
     predictsvc,
+    ragqa,
     sqlgenie,
     tenantsaas,
 )
@@ -27,6 +28,7 @@ EXERCISES: list[dict] = [
     *etlduck.EXERCISES,
     *eventstore.EXERCISES,
     *sqlgenie.EXERCISES,
+    *ragqa.EXERCISES,
 ]
 
 __all__ = ["EXERCISES"]

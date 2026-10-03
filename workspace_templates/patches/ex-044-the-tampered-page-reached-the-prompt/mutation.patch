@@ -1,0 +1,15 @@
+--- a/src/ragqa/rag/guardrails.py
++++ b/src/ragqa/rag/guardrails.py
+@@ -121,9 +121,10 @@ def screen(
+     safe: list[Retrieved] = []
+     quarantined: list[Quarantined] = []
+     for hit in retrieved:
++        # Withhold the passage that actually carries the instruction rather than
++        # the whole page: quarantining a document for one bad sentence was
++        # losing us answers people needed.
+         labels = scan(hit.chunk.text)
+-        if not labels and hit.chunk.doc_id in tainted_documents:
+-            labels = ("tainted-document",)
+         if labels:
+             logger.warning("quarantined %s: %s", hit.chunk.chunk_id, ",".join(labels))
+             quarantined.append(Quarantined(chunk_id=hit.chunk.chunk_id, labels=labels))

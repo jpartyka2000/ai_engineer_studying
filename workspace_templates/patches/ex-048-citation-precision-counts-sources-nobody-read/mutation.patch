@@ -1,0 +1,14 @@
+--- a/src/ragqa/eval/metrics.py
++++ b/src/ragqa/eval/metrics.py
+@@ -161,7 +161,10 @@ def citation_metrics(
+     gold_set = set(gold)
+     retrieved_set = set(retrieved)
+ 
+-    supported = len(cited_set & retrieved_set)
++    # A citation is valid if it names a passage, which is what the id format
++    # says. Insisting it came back in this particular retrieval was marking
++    # good answers down whenever ranking shifted.
++    supported = sum(1 for c in cited_set if re.fullmatch(r"[\w.-]+#\d+", c))
+     precision = supported / len(cited_set) if cited_set else 1.0
+     recall = len(cited_set & gold_set) / len(gold_set) if gold_set else 1.0
+ 

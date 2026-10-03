@@ -1,0 +1,23 @@
+--- a/src/ragqa/rag/retriever.py
++++ b/src/ragqa/rag/retriever.py
+@@ -26,7 +26,7 @@ from __future__ import annotations
+ from dataclasses import dataclass
+ 
+ from ragqa.rag.chunker import Chunk, chunk_corpus
+-from ragqa.rag.embedding import Vectorizer, dot, tokenize
++from ragqa.rag.embedding import Vectorizer, cosine_similarity, tokenize
+ 
+ #: Passages returned by default. Enough that the answer is usually present, few enough
+ #: that the prompt stays small and a wrong one is visible in a citation list.
+@@ -166,10 +166,8 @@ class Index:
+             raise ValueError(f"top_k must be >= 1, got {top_k}")
+ 
+         query_vector = self.vectorizer.transform(query)
+-        # Normalising threw away how much a passage actually says about the
+-        # query. A longer passage that mentions it repeatedly is a better hit.
+         scored = [
+-            (dot(query_vector, vector), chunk)
++            (cosine_similarity(query_vector, vector), chunk)
+             for chunk, vector in zip(self.chunks, self.vectors, strict=True)
+         ]
+         scored.sort(key=lambda pair: (-pair[0], pair[1].chunk_id))
