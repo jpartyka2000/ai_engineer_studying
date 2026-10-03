@@ -16,7 +16,13 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ExerciseType(models.TextChoices):
-    """The ten kinds of work an exercise can ask for."""
+    """The twelve kinds of work an exercise can ask for.
+
+    The last two arrived with the ``agentdesk`` base application. Nothing in the first
+    ten covered an agent that *acts* -- a tool-calling loop with a budget and a
+    protocol -- or the memory arithmetic behind a self-hosted model, and folding either
+    into ``genai_chatbot`` would have made that label mean "anything with a model in it".
+    """
 
     CRITICAL_BUG = "critical_bug", _("Fix a critical bug fast")
     LATENCY = "latency", _("Fix a severe latency issue")
@@ -28,6 +34,8 @@ class ExerciseType(models.TextChoices):
     EVAL_FRAMEWORK = "eval_framework", _("Create or fix a genAI evaluation framework")
     ANALYTICS_FEATURES = "analytics_features", _("Add analytics/statistical features")
     CICD_PIPELINE = "cicd_pipeline", _("Fix a broken or flaky CI/CD pipeline")
+    AGENT_TOOLS = "agent_tools", _("Fix an agentic tool-calling loop")
+    MODEL_SERVING = "model_serving", _("Fix model-serving memory and admission control")
 
 
 class Difficulty(models.TextChoices):
@@ -39,7 +47,7 @@ class Difficulty(models.TextChoices):
 
 
 class BaseApp(models.TextChoices):
-    """The seven reusable base applications exercises are built on.
+    """The eight reusable base applications exercises are built on.
 
     Exercises are ``(base_app, mutations)`` pairs rather than 50 unrelated
     codebases; this is what makes the catalog authorable.
@@ -52,6 +60,7 @@ class BaseApp(models.TextChoices):
     SQLGENIE = "sqlgenie", _("Text-to-SQL chatbot (multi-tenant Postgres)")
     EVENTSTORE = "eventstore", _("MongoDB event store + performance model")
     EDAKIT = "edakit", _("EDA / data-preprocessing library")
+    AGENTDESK = "agentdesk", _("Support desk with an agentic assistant (Postgres)")
 
 
 class Database(models.TextChoices):

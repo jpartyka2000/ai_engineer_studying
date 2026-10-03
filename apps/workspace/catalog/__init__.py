@@ -11,6 +11,7 @@ exercise fails loudly instead of reaching the database.
 """
 
 from apps.workspace.catalog import (
+    agentdesk,
     edakit,
     etlduck,
     eventstore,
@@ -29,6 +30,7 @@ EXERCISES: list[dict] = [
     *eventstore.EXERCISES,
     *sqlgenie.EXERCISES,
     *ragqa.EXERCISES,
+    *agentdesk.EXERCISES,
 ]
 
 __all__ = ["EXERCISES"]

@@ -1,0 +1,34 @@
+--- a/src/agentdesk/assistant/digest.py
++++ b/src/agentdesk/assistant/digest.py
+@@ -28,22 +28,6 @@ from agentdesk.tickets.models import Status, Ticket
+ DIGEST_ROWS = 25
+ 
+ 
+-def _refreshed_summary(ticket: Ticket) -> str:
+-    """Regenerate the summary, falling back to the cached one if that fails."""
+-    from agentdesk.assistant.loop import run_agent
+-    from agentdesk.assistant.service import build_client
+-    from agentdesk.assistant.tools import build_registry
+-
+-    try:
+-        return run_agent(
+-            f"Summarize this ticket in one line: {ticket.subject}",
+-            registry=build_registry(),
+-            client=build_client(),
+-        ).answer
+-    except Exception:
+-        return ticket.display_summary
+-
+-
+ def _line(ticket: Ticket, *, now: datetime) -> dict:
+     """Return one dashboard row.
+ 
+@@ -54,7 +38,7 @@ def _line(ticket: Ticket, *, now: datetime) -> dict:
+     return {
+         "id": ticket.id,
+         "subject": ticket.subject,
+-        "summary": _refreshed_summary(ticket),
++        "summary": ticket.display_summary,
+         "status": str(ticket.status),
+         "priority": str(ticket.priority),
+         "assignee": ticket.assignee,
