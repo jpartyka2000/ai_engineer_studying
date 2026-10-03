@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "seed_commits": [
+    {
+      "message": "chore: initial project scaffold\n\nFastAPI service, Postgres in compose and the CI skeleton. No assistant yet --\nthat is three years away.",
+      "author": "Rosa Linnell <rosa.linnell@example.com>",
+      "date": "2022-04-11T09:15:00Z",
+      "paths": [
+        "pyproject.toml",
+        "requirements.txt",
+        "Dockerfile",
+        "docker-compose.yml",
+        "Makefile",
+        ".gitignore",
+        ".env.example"
+      ]
+    },
+    {
+      "message": "feat(tickets): the ticket model and its store\n\nColumns are named explicitly in every query. SELECT * is what lets a column added\nto the table silently shift a field in the row tuple, and the symptom is a\nrequester email appearing in the assignee column six weeks later.",
+      "author": "Rosa Linnell <rosa.linnell@example.com>",
+      "date": "2022-05-03T14:40:00Z",
+      "paths": [
+        "src/agentdesk/__init__.py",
+        "src/agentdesk/config.py",
+        "src/agentdesk/tickets/__init__.py",
+        "src/agentdesk/tickets/models.py",
+        "db/migrations/0001_tickets.sql"
+      ]
+    },
+    {
+      "message": "feat(tickets): SLA timers as pure functions\n\nEvery function takes `now` as an argument rather than reading a clock. That is\nwhat lets the whole policy be tested with exact values instead of sleeps, and it\nis why this module has never been the cause of a flaky test.\n\nat_risk deliberately excludes what has already breached. Lumping the two\ntogether makes the breached ones harder to find, not easier.",
+      "author": "Rosa Linnell <rosa.linnell@example.com>",
+      "date": "2022-06-20T11:05:00Z",
+      "paths": [
+        "src/agentdesk/tickets/sla.py"
+      ]
+    },
+    {
+      "message": "feat(db): one pooled connection helper, and only one\n\nEverything goes through db.connection(). Tidiness is not the reason -- it is the\nonly way anything can later observe how long a connection is held, which turned\nout to matter a great deal.\n\nPool size is 10 and stays 10. A generous pool hides the bug where a connection is\nheld across something slow: with 200 connections you need 200 concurrent requests\nbefore anybody notices.",
+      "author": "Idris Qureshi <idris.qureshi@example.com>",
+      "date": "2022-09-14T16:20:00Z",
+      "paths": [
+        "src/agentdesk/db.py",
+        "src/agentdesk/tickets/repository.py"
+      ]
+    },
+    {
+      "message": "feat(tickets): search ranking and the service layer\n\nThe database filters and Python ranks. A few thousand live tickets is small enough\nthat an exact scan is free, and it keeps the ranking rules readable and testable\nwithout a database.\n\nTies break by id so the order is total: two tickets with equal scores must not\nswap places between two identical requests.",
+      "author": "Idris Qureshi <idris.qureshi@example.com>",
+      "date": "2022-11-08T10:30:00Z",
+      "paths": [
+        "src/agentdesk/tickets/search.py",
+        "src/agentdesk/tickets/service.py"
+      ]
+    },
+    {
+      "message": "feat(tickets): the desk's own test suite\n\nNo model, no database. If any of these ever needs either, the layering has gone\nwrong somewhere upstream of the test.",
+      "author": "Idris Qureshi <idris.qureshi@example.com>",
+      "date": "2022-11-09T09:50:00Z",
+      "paths": [
+        "tests/test_tickets.py"
+      ]
+    },
+    {
+      "message": "feat(serving): VRAM arithmetic for the model we are about to self-host\n\nNo accelerator and no torch: this is the planning layer, in exact integer arithmetic.\nThat is where production OOMs are actually caused -- the GPU did what it was told,\nit was told wrong.\n\nThe leading 2 in the KV formula is a named constant so that dropping it is a\nvisible deletion in a diff rather than an invisible edit to a number. It is the\nsingle most commonly dropped term in this calculation and it does not fail\nloudly: it makes the planner believe it has twice the headroom it has.",
+      "author": "Noor Abadi <noor.abadi@example.com>",
+      "date": "2023-07-25T13:10:00Z",
+      "paths": [
+        "src/agentdesk/serving/__init__.py",
+        "src/agentdesk/serving/memory.py"
+      ]
+    },
+    {
+      "message": "feat(serving): paged KV cache instead of contiguous reservations\n\nReserving max_context per sequence wastes most of the card and fragments it: after\na few hundred requests there is plenty of free memory and no single free run large\nenough to serve anybody.\n\nBlocks are only returned by free(). Nothing reclaims them later and they are not\nreference counted, so a path that finishes a request without calling it leaks\ncapacity for the life of the process -- no error, no crash, just a server that\nadmits fewer requests every hour. check_invariants() exists so that has somewhere\nto be caught.",
+      "author": "Noor Abadi <noor.abadi@example.com>",
+      "date": "2023-08-14T15:45:00Z",
+      "paths": [
+        "src/agentdesk/serving/blocks.py"
+      ]
+    },
+    {
+      "message": "feat(serving): admission control reserves the peak\n\nTwo questions, two mechanisms. Reservation answers 'may this start' using prompt\nplus every token the request may generate; the paged allocator answers 'where does\nthis token go' lazily.\n\nReserving on the prompt alone admits requests that each fit today and cannot all\nfit at token 300. That failure lands mid-generation, after the user has been\nstreamed half an answer, and it is invisible in a load test with short replies.\n\nPreemption evicts the newest request. Evicting the oldest maximizes the work\nthrown away and punishes the longest wait.",
+      "author": "Noor Abadi <noor.abadi@example.com>",
+      "date": "2023-09-02T11:25:00Z",
+      "paths": [
+        "src/agentdesk/serving/scheduler.py",
+        "tests/test_serving_memory.py",
+        "tests/test_serving_blocks.py",
+        "tests/test_serving_scheduler.py"
+      ]
+    },
+    {
+      "message": "feat(llm): the model, recorded\n\nNo live API call anywhere in this service. The key covers the tool contracts, the\nobservations so far, the question and the raw ticket text -- and deliberately not\nthe assembled prompt.\n\nKeying on prompt bytes would mean any rewording turned every request into a miss,\nso nobody could improve an instruction without re-recording the suite. Prompt\nstructure is checked by assertions instead.\n\nTwo circuit breakers, catching different failures: one for an agent stuck on a\nsingle state, one for an agent that keeps moving and never stops. Without them a\nbroken loop hangs rather than failing, and a hung test tells you nothing.",
+      "author": "Noor Abadi <noor.abadi@example.com>",
+      "date": "2024-01-16T10:40:00Z",
+      "paths": [
+        "src/agentdesk/llm/__init__.py",
+        "src/agentdesk/llm/types.py",
+        "src/agentdesk/llm/recorded_client.py"
+      ]
+    },
+    {
+      "message": "feat(clock): pin the clock so recordings do not expire overnight\n\nTool output carries SLA state, SLA state reaches the cassette key. With a live\nclock every recording in the repository would be stale tomorrow morning.\n\nProduction sets nothing and gets the real clock.",
+      "author": "Noor Abadi <noor.abadi@example.com>",
+      "date": "2024-01-22T09:05:00Z",
+      "paths": [
+        "src/agentdesk/clock.py"
+      ]
+    },
+    {
+      "message": "feat(assistant): tool registry, with validation at the boundary\n\nArguments arriving from a model are untrusted input, with the same standing as a\nquery string. The model is fluent, and fluency produces arguments that read\ncorrectly and are not: a ticket id of 'the printer one', a status where a priority\nbelongs, a limit parameter the tool never declared.\n\nValidation runs on every call so tool bodies may assume their arguments are\nwell-typed. The string form of an integer is accepted because a model told a\nparameter is an integer still sometimes sends \"42\", and refusing that teaches\nnothing.",
+      "author": "Priya Nandakumar <priya.nandakumar@example.com>",
+      "date": "2024-02-06T14:15:00Z",
+      "paths": [
+        "src/agentdesk/assistant/__init__.py",
+        "src/agentdesk/assistant/registry.py"
+      ]
+    },
+    {
+      "message": "feat(assistant): the tools, and the knowledge base they read\n\nAll read-only. The assistant drafts for a human to send; giving it a tool that\ncould change ticket state would be a product decision, not a technical one.\n\nThe knowledge base is a fixture rather than a table, so a policy question can\nstill be answered while the database is down.",
+      "author": "Priya Nandakumar <priya.nandakumar@example.com>",
+      "date": "2024-02-19T11:50:00Z",
+      "paths": [
+        "src/agentdesk/assistant/tools.py",
+        "fixtures/kb_articles.jsonl",
+        "fixtures/tickets.jsonl",
+        "tools/gen_fixtures.py"
+      ]
+    },
+    {
+      "message": "feat(assistant): prompt assembly, with the catalog rendered from the registry\n\nWe kept a hand-written tool catalog here because it read more nicely. It drifted\nwithin a month: search_tickets gained a limit parameter, the prose did not, and\nthe model spent three weeks never passing a limit while everybody assumed it had\ndecided five was enough. Nothing failed.\n\nUntrusted text is fenced, and the fence neutralizes marker-shaped text in the\ncontent. A fence that interpolates unchecked is theatre -- the attacker writes the\nclosing marker themselves and everything after it reads as operator instruction.",
+      "author": "Priya Nandakumar <priya.nandakumar@example.com>",
+      "date": "2024-03-11T16:30:00Z",
+      "paths": [
+        "src/agentdesk/assistant/prompt.py",
+        "tests/test_prompt.py",
+        "tests/test_registry.py"
+      ]
+    },
+    {
+      "message": "feat(assistant): the agent loop\n\nThe budget counts rounds, not successes. The tempting version increments only when\na tool succeeded, on the reasoning that a failed call did not really do anything.\nIt did: it cost a model call, and it is exactly the situation that repeats.\n\nA tool result is appended as role=tool with the id of the call it answers. The\nsame characters in an assistant message are the model's own words quoted back at\nit, so its request has not been served and it asks again.",
+      "author": "Priya Nandakumar <priya.nandakumar@example.com>",
+      "date": "2024-04-02T10:20:00Z",
+      "paths": [
+        "src/agentdesk/assistant/loop.py",
+        "src/agentdesk/assistant/recording.py",
+        "tests/test_loop.py"
+      ]
+    },
+    {
+      "message": "feat(obs): probes, after the p95 test was deleted\n\nThe test that asserted p95 lasted two weeks. It failed on busy runners, got a\nlonger timeout, then another, and ended up asserting nothing anybody believed.\nWorse, when it did fail it sent you to a profiler rather than to a line.\n\nEvery guarantee is now structural: whether a connection was open when a model call\nstarted, which thread the model ran on, how many model calls a page made. Each is\nexactly true or false on any machine under any load.",
+      "author": "Idris Qureshi <idris.qureshi@example.com>",
+      "date": "2024-05-20T13:00:00Z",
+      "paths": [
+        "src/agentdesk/obs/__init__.py",
+        "src/agentdesk/obs/probes.py"
+      ]
+    },
+    {
+      "message": "feat(assistant): where the assistant meets the request cycle\n\nRead, release, generate off the loop, write. Fold the generation inside the read's\nconnection and ten concurrent assistant requests own the whole pool, at which\npoint the ticket list -- which never asked for an assistant -- starts timing out.\n\nThe dashboard reads the summary column and never regenerates. Regenerating is one\nline, renders identically, and turns a 25-row page into 25 model calls.",
+      "author": "Idris Qureshi <idris.qureshi@example.com>",
+      "date": "2024-06-07T15:35:00Z",
+      "paths": [
+        "src/agentdesk/assistant/service.py",
+        "src/agentdesk/assistant/digest.py",
+        "db/migrations/0002_assistant_drafts.sql",
+        "tests/test_integration_latency.py"
+      ]
+    },
+    {
+      "message": "feat(assistant): record the conversations\n\nThe transcript is the intent; `agentdesk cassettes` replays it against the real\ntools to compute the keys. Hand-computing a key is error-prone in a way that fails\nsilently -- a key wrong by one character is a cassette nobody will ever read, and\nthe miss surfaces somewhere else entirely.\n\nTicket bodies are read from the seed rather than retyped, because the raw body is\npart of the key.",
+      "author": "Priya Nandakumar <priya.nandakumar@example.com>",
+      "date": "2024-06-18T12:10:00Z",
+      "paths": [
+        "fixtures/recordings.jsonl",
+        "fixtures/llm_cassettes",
+        "tools/gen_recordings.py"
+      ]
+    },
+    {
+      "message": "feat: HTTP surface and CLI\n\nEvery request model lives at module scope. With `from __future__ import\nannotations` FastAPI resolves annotations against module globals, so a model\ndefined inside a function is invisible: the parameter stops being a body, becomes\na query parameter, and every POST returns 422 naming a field nobody wrote.\n\n`agentdesk bench` prints timings for a human. Nothing gates on them.",
+      "author": "Rosa Linnell <rosa.linnell@example.com>",
+      "date": "2024-07-09T09:40:00Z",
+      "paths": [
+        "src/agentdesk/api.py",
+        "src/agentdesk/cli.py",
+        "tests/test_api.py"
+      ]
+    },
+    {
+      "message": "test: guard the layering and the cassette join\n\nAn architectural rule nothing checks is a comment. The import checks read source\nrather than imported modules, because an import inside a function body is still an\nimport and is exactly the form the rule gets broken in.\n\nThe cassette join is checked in both directions. The reverse one is what catches\nrot: a stale cassette is invisible, sitting there looking like coverage for a\nconversation that can no longer happen.",
+      "author": "Idris Qureshi <idris.qureshi@example.com>",
+      "date": "2024-08-21T14:05:00Z",
+      "paths": [
+        "tests/conftest.py",
+        "tests/test_layering.py",
+        "tests/test_cassette_consistency.py"
+      ]
+    },
+    {
+      "message": "chore(ci): pipeline, and its executable mirror\n\nThere is no GitHub runner locally, so the workflow is the artifact you read and\nrun_ci.sh is what actually runs. Change one and you must change the other; a fix\napplied to only one of them is incomplete, and the symptom is a pipeline green on\na laptop and red on a push.\n\nThe unit stage points DATABASE_URL and the proxies at dead ports. Anything that\nhas quietly acquired a connection or an HTTP call surfaces there rather than in\nproduction as a timeout nobody can explain.",
+      "author": "Rosa Linnell <rosa.linnell@example.com>",
+      "date": "2024-09-30T10:55:00Z",
+      "paths": [
+        "ci/run_ci.sh",
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "message": "docs: architecture, README and a notes skeleton\n\nThe module docstrings carry the reasoning. These three are the map.",
+      "author": "Rosa Linnell <rosa.linnell@example.com>",
+      "date": "2024-10-15T11:30:00Z",
+      "paths": [
+        "README.md",
+        "ARCHITECTURE.md",
+        "NOTES.md"
+      ]
+    }
+  ],
+  "seed_branches": [],
+  "env": {
+    "required": [
+      "WS_POSTGRES_PORT",
+      "WS_APP_PORT"
+    ],
+    "extra": {
+      "POSTGRES_DB": "agentdesk",
+      "POSTGRES_USER": "agentdesk",
+      "POSTGRES_PASSWORD": "agentdesk"
+    },
+    "requires_anthropic_key": false
+  },
+  "ports": {
+    "postgres": 5432,
+    "app": 8000
+  },
+  "db_seeds": {},
+  "setup_commands": [
+    "docker compose up -d --wait",
+    "make migrate",
+    "make seed",
+    "make test    # expect failures: reproducing them is step one",
+    "make bench   # timings for a human; nothing is gated on them"
+  ],
+  "harness_setup": [
+    "agentdesk migrate",
+    "agentdesk seed"
+  ],
+  "grading": {
+    "diff_exclude": [
+      "*.lock",
+      "fixtures/llm_cassettes/*"
+    ],
+    "include_full_files": [
+      "src/agentdesk/assistant/loop.py",
+      "src/agentdesk/assistant/prompt.py",
+      "src/agentdesk/assistant/registry.py",
+      "src/agentdesk/assistant/service.py",
+      "src/agentdesk/assistant/digest.py",
+      "src/agentdesk/serving/scheduler.py",
+      "src/agentdesk/serving/memory.py"
+    ]
+  }
+}

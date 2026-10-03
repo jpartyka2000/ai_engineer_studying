@@ -1,0 +1,56 @@
+# Services for the agentdesk exercise.
+#
+# Host ports come from the adjacent .env, which the harness generates with a port
+# allocated from 55000-55999. Compose substitutes ${WS_POSTGRES_PORT} natively, so no
+# templating step is needed and this file is directly runnable by an author.
+#
+# Only the PUBLISHED port moves. Inside this network the app reaches Postgres at db:5432.
+#
+# There is no GPU service and no model server. src/agentdesk/serving/ models the control
+# plane -- the VRAM arithmetic and the admission policy -- in pure Python, which is what
+# lets this stack be two containers on any machine.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agentdesk}
+      POSTGRES_USER: ${POSTGRES_USER:-agentdesk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentdesk}
+    ports:
+      - "${WS_POSTGRES_PORT:-55433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Without this, `docker compose up -d --wait` returns while Postgres is still
+      # starting and the first migration fails on a closed socket.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agentdesk} -d ${POSTGRES_DB:-agentdesk}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    image: aiprep-agentdesk:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agentdesk}:${POSTGRES_PASSWORD:-agentdesk}@db:5432/${POSTGRES_DB:-agentdesk}
+      AGENTDESK_ROOT: /app
+      PYTHONPATH: /app/src
+      # Pinned, and load-bearing. SLA state reaches tool output, tool output reaches the
+      # cassette key -- an unpinned clock expires every recording overnight. See
+      # src/agentdesk/clock.py.
+      AGENTDESK_NOW: "2025-06-18T09:00:00+00:00"
+    volumes:
+      - .:/app
+    ports:
+      - "${WS_APP_PORT:-55801}:8000"
+    command:
+      - sh
+      - -c
+      - "uvicorn agentdesk.api:app --host 0.0.0.0 --port 8000 || sleep infinity"
+
+volumes:
+  pgdata:

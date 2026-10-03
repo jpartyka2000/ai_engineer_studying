@@ -1,0 +1,24 @@
+# Runtime and test dependencies for the agentdesk exercise.
+#
+# No torch, no CUDA, no LLM SDK, and no HTTP client reaching anything real.
+#
+# There is no GPU here and there never will be: this runs in CI on CPU, and an exercise
+# that needs a particular accelerator to reproduce is an exercise nobody can sit. What
+# src/agentdesk/serving/ models is therefore the *control plane* of a self-hosted model --
+# the VRAM arithmetic, the paged KV allocator and the admission policy -- in pure Python
+# with exact integer accounting. Its module docstring is explicit about what that does and
+# does not cover.
+#
+# The model itself is a recorded fake keyed by what the agent has observed so far, so a
+# tool loop replays deterministically. See src/agentdesk/llm/recorded_client.py.
+#
+# The consequence, stated plainly: this service makes no network calls at all, and its
+# tests cannot bill anybody or fail because a vendor is down.
+fastapi>=0.110,<1
+uvicorn[standard]>=0.27,<1
+pydantic>=2.6,<3
+psycopg[binary,pool]>=3.1,<4
+
+httpx>=0.27,<1
+pytest>=8.0,<9
+pytest-asyncio>=0.23,<1

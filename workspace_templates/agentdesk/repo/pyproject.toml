@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentdesk"
+version = "2.3.0"
+description = "Support ticket desk, with an assistant bolted on three years later"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110,<1",
+    "uvicorn[standard]>=0.27,<1",
+    "pydantic>=2.6,<3",
+    "psycopg[binary,pool]>=3.1,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<9", "pytest-asyncio>=0.23,<1", "httpx>=0.27,<1"]
+
+[project.scripts]
+agentdesk = "agentdesk.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short -ra"
+asyncio_mode = "auto"
+markers = [
+    # Needs a running Postgres. The assistant, the serving planner and the prompt layer
+    # carry none of these, because none of them should need a database to be tested.
+    "db: requires PostgreSQL",
+    # Asserts a property of how the system spends time: which thread work ran on, how
+    # many model calls a request made, whether a connection was held across one.
+    #
+    # Deliberately NOT wall-clock assertions. See tests/test_integration_latency.py for
+    # why -- a p95 threshold in CI is a coin flip, and teaches you to chase a number
+    # instead of to find the cause.
+    "latency: asserts a mechanism that governs latency",
+]

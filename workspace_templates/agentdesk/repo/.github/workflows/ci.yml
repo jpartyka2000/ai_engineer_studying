@@ -1,0 +1,94 @@
+# The pipeline, as GitHub runs it.
+#
+# ci/run_ci.sh is the executable mirror of this file and is what runs locally and in
+# grading. They must stay in step: a fix applied to one and not the other is incomplete,
+# and the usual symptom is a pipeline that is green on a laptop and red on a push.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: agentdesk
+          POSTGRES_USER: agentdesk
+          POSTGRES_PASSWORD: agentdesk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agentdesk -d agentdesk"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+
+    env:
+      DATABASE_URL: postgresql://agentdesk:agentdesk@localhost:5432/agentdesk
+      AGENTDESK_ROOT: ${{ github.workspace }}
+      # Pinned for the same reason compose pins it: tool output carries SLA state and SLA
+      # state reaches the cassette key.
+      AGENTDESK_NOW: "2025-06-18T09:00:00+00:00"
+      PYTHONHASHSEED: random
+      TZ: UTC
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install --quiet -r requirements.txt
+          pip install --quiet --no-deps -e .
+
+      - name: Import smoke test
+        run: python -c "import agentdesk; print('agentdesk', agentdesk.__version__)"
+
+      - name: No database and no network outside agentdesk.db
+        env:
+          DATABASE_URL: postgresql://nobody@127.0.0.1:1/nothing
+          HTTP_PROXY: http://127.0.0.1:1
+          HTTPS_PROXY: http://127.0.0.1:1
+        run: python -m pytest -p no:cacheprovider -q -m "not db"
+
+      - name: Migrate and seed
+        run: |
+          agentdesk migrate
+          agentdesk seed
+
+      - name: Full test suite
+        run: python -m pytest -p no:cacheprovider -q
+
+      - name: Serving plan
+        run: agentdesk plan
+
+      - name: The dashboard renders without calling a model
+        run: |
+          python - <<'PY'
+          import sys
+          from agentdesk.assistant import digest
+          from agentdesk.clock import now
+          from agentdesk.obs import MODEL_START, tracing
+
+          with tracing() as trace:
+              payload = digest.queue_digest(now=now())
+          calls = trace.count(MODEL_START)
+          print(f"rows: {len(payload['rows'])}  model calls: {calls}")
+          if calls:
+              print(f"FAIL: the dashboard made {calls} model call(s)", file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: One draft, end to end
+        run: agentdesk ask 2 "What should I tell them about the VPN?"
