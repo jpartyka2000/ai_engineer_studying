@@ -1,0 +1,89 @@
+# CI for sqlgenie.
+#
+# ci/run_ci.sh is the executable mirror of this file. There is no GitHub runner
+# available in the exercise environment, so this workflow is the artifact you read and
+# edit while the script is what actually runs. The two must stay in step: a fix applied
+# to only one of them is an incomplete fix.
+
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+env:
+  TZ: UTC
+  PYTHONHASHSEED: random
+  CI: "true"
+  SQLGENIE_ROOT: ${{ github.workspace }}
+  DATABASE_URL: postgresql://sqlgenie_app:app@localhost:5432/sqlgenie
+  MIGRATION_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sqlgenie
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sqlgenie
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sqlgenie"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install --no-deps -e .
+
+      - name: Import smoke test
+        run: python -c "import sqlgenie; print('sqlgenie', sqlgenie.__version__)"
+
+      - name: The rewriter runs with no database and no network
+        env:
+          DATABASE_URL: postgresql://nobody@127.0.0.1:1/nothing
+          MIGRATION_DATABASE_URL: postgresql://nobody@127.0.0.1:1/nothing
+          HTTP_PROXY: http://127.0.0.1:1
+          HTTPS_PROXY: http://127.0.0.1:1
+        run: python -m pytest -p no:cacheprovider -q -m "not db"
+
+      - name: Apply migrations
+        run: sqlgenie migrate
+
+      - name: Seed the two-tenant development data
+        run: sqlgenie seed
+
+      - name: Run the full test suite
+        run: python -m pytest -p no:cacheprovider -q
+
+      - name: Run the cross-tenant suite on its own
+        run: python -m pytest -p no:cacheprovider -q -m security
+
+      - name: Replay the adversarial corpus through the policy
+        run: sqlgenie --json replay
+
+      - name: Every cassette is reachable and every question is recorded
+        run: python -m pytest -p no:cacheprovider -q tests/test_cassettes.py
+
+      - name: Answer a question end to end
+        run: sqlgenie ask --tenant acme "How many orders are in each status?"
+
+      - name: Query cost benchmark
+        run: python bench/bench_ask.py --json

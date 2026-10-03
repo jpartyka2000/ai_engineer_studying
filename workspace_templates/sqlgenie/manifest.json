@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "seed_commits": [
+    {
+      "message": "chore: initial project scaffold\n\nFastAPI service, Postgres in compose and the CI skeleton. No application\ncode yet.",
+      "author": "Rosa Delgado <rosa.delgado@example.com>",
+      "date": "2025-01-20T10:05:00Z",
+      "paths": [
+        "pyproject.toml",
+        "requirements.txt",
+        "Dockerfile",
+        "docker-compose.yml",
+        "Makefile",
+        ".gitignore",
+        ".env.example"
+      ]
+    },
+    {
+      "message": "feat(db): tenants, api keys and the four fact tables\n\ntenant_id is denormalised onto every fact table rather than inferred through\na join. order_items could reach its tenant through orders, but then a query\ntouching order_items alone would have nothing to filter on.",
+      "author": "Rosa Delgado <rosa.delgado@example.com>",
+      "date": "2025-02-04T14:30:00Z",
+      "paths": [
+        "db/migrations/0001_tenants.sql",
+        "db/migrations/0002_facts.sql",
+        "db/migrations/0003_plans.sql"
+      ]
+    },
+    {
+      "message": "feat(tenancy): API-key authentication and the request tenant context\n\nKeys are stored as SHA-256 and looked up by hash, so there is no comparison\nto time and a dump of the table yields no working credential. The tenant\nitself travels in a ContextVar: it is needed by the policy, the executor and\nthe audit logger, and a parameter threaded through six layers is one that\nwill eventually be passed wrongly by one of them.",
+      "author": "Yusuf Demir <yusuf.demir@example.com>",
+      "date": "2025-02-18T09:50:00Z",
+      "paths": [
+        "src/sqlgenie/__init__.py",
+        "src/sqlgenie/config.py",
+        "src/sqlgenie/db/__init__.py",
+        "src/sqlgenie/db/pool.py",
+        "src/sqlgenie/db/migrate.py",
+        "src/sqlgenie/tenancy/__init__.py",
+        "src/sqlgenie/tenancy/auth.py",
+        "src/sqlgenie/tenancy/context.py"
+      ]
+    },
+    {
+      "message": "feat(nl2sql): catalog, prompt assembly and the recorded model client\n\nThe model is a fixture, not an API call. Generations are keyed by\nsha256(model|system|prompt) and a miss is an error -- a suite that quietly\nreaches the internet fails differently on every machine and costs money to\nrun.\n\nConsequence worth knowing: the prompt embeds the schema section, so editing\nthe catalog moves every cassette key at once.",
+      "author": "Yusuf Demir <yusuf.demir@example.com>",
+      "date": "2025-03-06T16:15:00Z",
+      "paths": [
+        "src/sqlgenie/nl2sql/__init__.py",
+        "src/sqlgenie/nl2sql/catalog.py",
+        "src/sqlgenie/nl2sql/prompt.py",
+        "src/sqlgenie/nl2sql/generator.py",
+        "src/sqlgenie/llm/__init__.py",
+        "src/sqlgenie/llm/recorded_client.py"
+      ]
+    },
+    {
+      "message": "feat(policy): constrain generated SQL to the asking tenant\n\nThe rewrite walks query scopes rather than tables. A statement is a tree of\nscopes -- the outer select, each CTE body, each derived table, each branch of\na set operation -- and every one can reference a base table independently.\nScoping only the outermost one produces a query that is valid, returns\nplausible rows, and reads the whole table.\n\nFails closed throughout: an unresolvable reference raises rather than being\nskipped, and the walk asserts at the end that every scoped table it read\nactually received a predicate.",
+      "author": "Rosa Delgado <rosa.delgado@example.com>",
+      "date": "2025-03-25T11:20:00Z",
+      "paths": [
+        "src/sqlgenie/nl2sql/policy/__init__.py",
+        "src/sqlgenie/nl2sql/policy/row_level_policy.py"
+      ]
+    },
+    {
+      "message": "feat(nl2sql): executor, audit trail and the request pipeline\n\nThe tenant is bound as a query parameter, never formatted into SQL, which is\nwhy there is no escaping helper in this codebase. Audit records hold the SQL\nthat ran rather than the SQL that was generated, and are written on the\nrejection path too -- a trail of successes describes a service where nobody\nhas ever tried anything.",
+      "author": "Marcus Webb <marcus.webb@example.com>",
+      "date": "2025-04-10T13:40:00Z",
+      "paths": [
+        "src/sqlgenie/nl2sql/executor.py",
+        "src/sqlgenie/nl2sql/audit.py",
+        "src/sqlgenie/nl2sql/pipeline.py"
+      ]
+    },
+    {
+      "message": "feat(api): ask, schema and audit endpoints, plus the CLI\n\nNo endpoint takes a tenant parameter. It comes from the API key and from\nnowhere else -- no header a client can set, no override for internal callers.\n\n/v1/schema returns names only. Row counts and sample values are things people\nask for to help the model, and both turn it into a way to read another\ntenant's data one statistic at a time.",
+      "author": "Marcus Webb <marcus.webb@example.com>",
+      "date": "2025-04-24T15:05:00Z",
+      "paths": [
+        "src/sqlgenie/api.py",
+        "src/sqlgenie/cli.py"
+      ]
+    },
+    {
+      "message": "feat(db): restrict the application role and enable row-level security\n\nPostgres exempts a table's owner from its RLS policies unless the table is\ndeclared FORCE ROW LEVEL SECURITY. A service connecting as the owner has RLS\nenabled and inert: the policies exist, \\d lists them, and they filter\nnothing.\n\nSo migrations run as the owner, the app runs as sqlgenie_app which owns\nnothing, and all four fact tables force RLS anyway. Two mechanisms for one\nproperty, because the failure mode is invisible.",
+      "author": "Rosa Delgado <rosa.delgado@example.com>",
+      "date": "2025-05-15T10:35:00Z",
+      "paths": [
+        "db/migrations/0004_app_role.sql",
+        "db/migrations/0005_row_level_security.sql",
+        "db/migrations/0006_views.sql"
+      ]
+    },
+    {
+      "message": "feat(fixtures): deterministic two-tenant development data\n\nBoth tenants get the same customer names, SKUs, order ids and totals. Only\ntenant_id differs.\n\nThat is deliberate. With distinguishable fixtures a cross-tenant leak returns\nrows that look sensible, so a test passes for the wrong reason and whoever\nwrote it moves on. Identical data gives a leak exactly one signature: the row\ncount doubles.",
+      "author": "Yusuf Demir <yusuf.demir@example.com>",
+      "date": "2025-06-10T12:00:00Z",
+      "paths": [
+        "tools/gen_seed_data.py",
+        "db/seed.sql"
+      ]
+    },
+    {
+      "message": "test: cover the policy, the cassette set and cross-tenant isolation\n\nThe security suite is split three ways on purpose: the rewriter with no\ndatabase, the database executing deliberately unscoped SQL, and the whole\npipeline. Defence in depth means an end-to-end assertion passes if either\nlayer works, so a suite of only end-to-end tests would stay green with the\nrewriter completely broken.\n\nThe adversarial corpus includes one legitimate cross-tenant question that\nmust be allowed. Without it, refusing everything would pass the file.",
+      "author": "Marcus Webb <marcus.webb@example.com>",
+      "date": "2025-07-08T09:25:00Z",
+      "paths": [
+        "tests/__init__.py",
+        "tests/conftest.py",
+        "tests/test_cassettes.py",
+        "tests/test_catalog.py",
+        "tests/test_api.py",
+        "tests/security/__init__.py",
+        "tests/security/test_cross_tenant.py",
+        "fixtures/recordings.jsonl",
+        "fixtures/llm_cassettes",
+        "attack/prompts.jsonl",
+        "tools/gen_cassettes.py"
+      ]
+    },
+    {
+      "message": "ci: run the suite, the adversarial corpus and a smoke question\n\nci/run_ci.sh mirrors the workflow so the same steps can be run locally. The\npolicy and cassette tests run first with the database and the network both\npointed at dead ports, which is how a stray connection in what is supposed to\nbe a pure rewrite gets caught here rather than in production.",
+      "author": "Rosa Delgado <rosa.delgado@example.com>",
+      "date": "2025-09-16T11:10:00Z",
+      "paths": [
+        "ci/run_ci.sh",
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "message": "feat(prompt): richer prompt template for comparative questions\n\nYear-over-year questions were producing a subquery per metric and getting the\nnumbers wrong when the two sides had different row counts. The prompt now\nasks for each side as a named common table expression joined in the final\nselect, which keeps each side's filters explicit.\n\nRe-recorded the affected cassettes.",
+      "author": "Yusuf Demir <yusuf.demir@example.com>",
+      "date": "2026-01-13T14:45:00Z",
+      "paths": [
+        "src/sqlgenie/nl2sql/prompt.py",
+        "fixtures/recordings.jsonl",
+        "fixtures/llm_cassettes"
+      ]
+    },
+    {
+      "message": "perf: measure query cost in work rather than milliseconds\n\nStatements sent, catalog lookups made, rows examined. A wall-clock number on\na laptop running Docker describes the laptop; a statement count is identical\non every machine.",
+      "author": "Marcus Webb <marcus.webb@example.com>",
+      "date": "2026-02-10T16:30:00Z",
+      "paths": [
+        "bench/bench_ask.py"
+      ]
+    },
+    {
+      "message": "docs: the two layers, the two roles, and why both tenants are identical",
+      "author": "Rosa Delgado <rosa.delgado@example.com>",
+      "date": "2026-03-02T10:00:00Z",
+      "paths": [
+        "README.md",
+        "ARCHITECTURE.md",
+        "NOTES.md"
+      ]
+    }
+  ],
+  "seed_branches": [],
+  "env": {
+    "required": [
+      "WS_POSTGRES_PORT",
+      "WS_APP_PORT"
+    ],
+    "extra": {
+      "POSTGRES_DB": "sqlgenie",
+      "POSTGRES_USER": "postgres",
+      "POSTGRES_PASSWORD": "postgres"
+    },
+    "requires_anthropic_key": false
+  },
+  "ports": {
+    "postgres": 5432,
+    "app": 8000
+  },
+  "db_seeds": {},
+  "setup_commands": [
+    "docker compose up -d --wait",
+    "make migrate",
+    "make seed",
+    "make test   # expect failures: reproducing them is step one"
+  ],
+  "harness_setup": [
+    "sqlgenie migrate",
+    "sqlgenie seed"
+  ],
+  "grading": {
+    "diff_exclude": [
+      "*.lock",
+      "fixtures/llm_cassettes/*",
+      "db/seed.sql"
+    ],
+    "include_full_files": [
+      "src/sqlgenie/nl2sql/policy/row_level_policy.py",
+      "src/sqlgenie/nl2sql/catalog.py",
+      "src/sqlgenie/nl2sql/pipeline.py",
+      "src/sqlgenie/nl2sql/executor.py",
+      "db/migrations/0005_row_level_security.sql"
+    ]
+  }
+}

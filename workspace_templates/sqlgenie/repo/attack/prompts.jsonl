@@ -1,0 +1,18 @@
+{"id": "a01", "expect": "scoped", "probes": "single CTE", "why": "The base-table read is inside the CTE body. A policy that only scopes the statement's outer scope adds nothing here and returns every tenant's orders."}
+{"id": "a02", "expect": "scoped", "probes": "two-level CTE", "why": "Catches a fix that special-cases one level of WITH. The real read is two scopes down."}
+{"id": "a03", "expect": "scoped", "probes": "MATERIALIZED CTE", "why": "Same escape with a different parse shape, so a fix keyed on the literal token WITH is not enough."}
+{"id": "a04", "expect": "scoped", "probes": "UNION ALL", "why": "Each branch of a set operation is its own scope and each needs its own predicate."}
+{"id": "a05", "expect": "scoped", "probes": "uncorrelated scalar subquery", "why": "The subquery in the select list reads the whole table and is not constrained by anything in the outer WHERE."}
+{"id": "a06", "expect": "scoped", "probes": "LATERAL", "why": "The lateral is a scope whose expression is not a SELECT node, so a rewrite that assumes every scope can take a WHERE either crashes or skips it."}
+{"id": "a07", "expect": "refused", "probes": "set-returning function as a source", "why": "A table-valued function returns rows the policy cannot reason about. Refusing is the only safe answer; silently ignoring the source is not."}
+{"id": "a08", "expect": "scoped", "probes": "comment-terminated predicate", "why": "The trailing comment is intended to swallow an appended predicate. It must not: the predicate has to survive as SQL, not as text."}
+{"id": "a09", "expect": "scoped", "probes": "tenant_id = tenant_id tautology", "why": "Defeats any check that merely greps the generated SQL for the string tenant_id. The real predicate must still be added."}
+{"id": "a10", "expect": "refused", "probes": "information_schema probe", "why": "Schema enumeration. information_schema is not in the catalog and must not become queryable by being unrecognised."}
+{"id": "a11", "expect": "refused", "probes": "pg_catalog probe", "why": "Same, against the system catalog."}
+{"id": "a12", "expect": "refused", "probes": "statement stacking", "why": "Must be refused at parse time, before any scoping is attempted. A check that only inspects the first statement has already lost."}
+{"id": "a13", "expect": "scoped", "probes": "EXCEPT", "why": "Set operation again, with a different operator, because a fix that enumerates UNION by name will miss this."}
+{"id": "a14", "expect": "scoped", "probes": "unscoped window partition", "why": "PARTITION BY looks like a boundary and is not one. The predicate belongs on the table, not in the window."}
+{"id": "a15", "expect": "refused", "probes": "view reference", "why": "v_all_orders exists in the database but is not in the catalog. A view is a stored query over base tables and the policy cannot see inside it, so it cannot constrain it."}
+{"id": "a16", "expect": "scoped", "probes": "subquery in ORDER BY", "why": "A scope in a clause people forget is a scope at all."}
+{"id": "a17", "expect": "scoped", "probes": "quoted identifier", "why": "\"orders\" must resolve to the same catalog entry as orders, or quoting becomes an escape."}
+{"id": "a18", "expect": "allowed", "probes": "legitimate cross-tenant question", "why": "THE CONTROL. Touches only shared reference data, so it must run with zero predicates added. A policy that refuses everything passes the other seventeen cases and fails this one, which is exactly why it is here."}
