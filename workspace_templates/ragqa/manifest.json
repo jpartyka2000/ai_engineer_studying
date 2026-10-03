@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "seed_commits": [
+    {
+      "message": "chore: initial project scaffold\n\nFastAPI service, Postgres in compose and the CI skeleton. No retrieval yet.",
+      "author": "Ines Varga <ines.varga@example.com>",
+      "date": "2025-02-03T09:40:00Z",
+      "paths": [
+        "pyproject.toml",
+        "requirements.txt",
+        "Dockerfile",
+        "docker-compose.yml",
+        "Makefile",
+        ".gitignore",
+        ".env.example"
+      ]
+    },
+    {
+      "message": "feat(rag): hashed TF-IDF vectoriser standing in for an embedding job\n\nA real deployment calls an embedding API. Doing that here would make the\ncorpus un-rebuildable without a key, the tests non-deterministic and the whole\nthing dependent on a vendor being up.\n\nThe cost is semantics: only shared vocabulary brings two passages together, so\nthis behaves like good lexical search rather than a semantic retriever.\nDimension count and IDF weighting were both measured against the benchmark\nquestions rather than chosen.",
+      "author": "Ines Varga <ines.varga@example.com>",
+      "date": "2025-02-19T14:10:00Z",
+      "paths": [
+        "src/ragqa/__init__.py",
+        "src/ragqa/config.py",
+        "src/ragqa/rag/__init__.py",
+        "src/ragqa/rag/embedding.py"
+      ]
+    },
+    {
+      "message": "feat(rag): overlapping chunker\n\nThe overlap costs index size and buys one property: any two adjacent sentences\nappear together in at least one chunk. Without it a fact stated across a\nsentence boundary belongs to no chunk at all, so it is not ranked poorly -- it\nis unretrievable at any top_k.",
+      "author": "Dmitri Okafor <dmitri.okafor@example.com>",
+      "date": "2025-03-07T11:25:00Z",
+      "paths": [
+        "src/ragqa/rag/chunker.py"
+      ]
+    },
+    {
+      "message": "feat(corpus): the knowledge base\n\nTwenty-seven documents across HR, IT, finance, security and engineering,\nincluding three verbose policy pages that are eight times the length of a\nhandbook entry. That spread is why ranking has to normalise.",
+      "author": "Dmitri Okafor <dmitri.okafor@example.com>",
+      "date": "2025-03-21T16:05:00Z",
+      "paths": [
+        "corpus/documents.jsonl"
+      ]
+    },
+    {
+      "message": "feat(rag): the index, with two scores per hit\n\nCosine similarity ranks well and, because the space is hashed, invents\nsimilarity for questions the corpus cannot answer. Lexical coverage compares\nstrings rather than hashes, so it cannot be fooled the same way. The router\nneeds both.",
+      "author": "Ines Varga <ines.varga@example.com>",
+      "date": "2025-04-09T10:50:00Z",
+      "paths": [
+        "src/ragqa/rag/retriever.py"
+      ]
+    },
+    {
+      "message": "feat(rag): refuse when the corpus has no basis for an answer\n\nMeasured on this corpus: out-of-corpus questions reach 0.181 cosine while\ngenuine ones go as low as 0.148, so no threshold on similarity alone separates\nthem. Coverage puts the out-of-corpus questions at 0.000. Requiring both is\nwhat makes refusal reliable.\n\nA refusal is a successful outcome, not an error, and the model is never called\nfor one.",
+      "author": "Ines Varga <ines.varga@example.com>",
+      "date": "2025-04-28T13:30:00Z",
+      "paths": [
+        "src/ragqa/rag/router.py"
+      ]
+    },
+    {
+      "message": "feat(llm): recorded model client, keyed by question\n\nDeliberately not keyed on the assembled prompt. The prompt embeds the retrieved\npassages, so keying on it would make every retrieval change a cassette miss --\na retrieval bug would present as 'no recording found' rather than as the worse\nanswer it actually is.\n\nThe consequence, stated plainly: this cannot measure whether bad context\nproduces a bad answer. It measures everything the answer is built on instead.",
+      "author": "Priya Raman <priya.raman@example.com>",
+      "date": "2025-05-14T15:45:00Z",
+      "paths": [
+        "src/ragqa/llm/__init__.py",
+        "src/ragqa/llm/recorded_client.py",
+        "fixtures/recordings.jsonl",
+        "fixtures/llm_cassettes",
+        "tools/gen_cassettes.py"
+      ]
+    },
+    {
+      "message": "feat(rag): prompt assembly, trimmed by whole passages\n\nTruncating mid-passage leaves it labelled and citable with half its text, so\nthe answer cites an id the model only partly read. The citation validates, the\naudit trail looks clean, and the grounding is gone.",
+      "author": "Dmitri Okafor <dmitri.okafor@example.com>",
+      "date": "2025-06-02T09:15:00Z",
+      "paths": [
+        "src/ragqa/rag/prompt_builder.py"
+      ]
+    },
+    {
+      "message": "feat(rag): treat retrieved text as data and citations as claims\n\nAnyone who can edit a page can address a sentence to the model rather than to\nthe reader, and retrieval will fetch it.\n\nQuarantine is by document rather than by passage: chunking splits a page, so an\ninjected instruction lands in one chunk and the claim it is influencing lands\nin the next. Withholding only the passage carrying the attack serves the rest\nof the page, which is all the attacker needed.",
+      "author": "Priya Raman <priya.raman@example.com>",
+      "date": "2025-06-23T11:05:00Z",
+      "paths": [
+        "src/ragqa/rag/guardrails.py",
+        "src/ragqa/rag/pipeline.py"
+      ]
+    },
+    {
+      "message": "feat(eval): four metrics and a labelled set\n\nEach is a pure function over strings and ids, so each can be tested against a\nconstant worked out by hand.\n\nRefusal correctness is balanced accuracy, never plain accuracy: the set holds\n27 answerable questions and 7 unanswerable ones, as any real one would, and a\nsystem that answers everything scores 0.794 plain against 0.500 balanced.",
+      "author": "Ines Varga <ines.varga@example.com>",
+      "date": "2025-07-16T14:20:00Z",
+      "paths": [
+        "src/ragqa/eval/__init__.py",
+        "src/ragqa/eval/metrics.py",
+        "src/ragqa/eval/runner.py",
+        "eval/questions.jsonl"
+      ]
+    },
+    {
+      "message": "feat(api): ask, corpus and session history, plus the CLI\n\nA refusal is a 200. The system was asked a question and gave its honest answer;\na 4xx would make a gap in the corpus look like a malformed request and would\nput every one of them into the error rate.",
+      "author": "Dmitri Okafor <dmitri.okafor@example.com>",
+      "date": "2025-08-11T10:35:00Z",
+      "paths": [
+        "src/ragqa/api.py",
+        "src/ragqa/cli.py",
+        "src/ragqa/db.py",
+        "db/migrations/0001_sessions.sql"
+      ]
+    },
+    {
+      "message": "test: cover retrieval, routing, guardrails, assembly and scoring\n\nMost of this suite needs no database and no network, and CI asserts that by\nrunning it with both pointed at dead ports.\n\nThe baseline is 1.0 on all four metrics, deliberately: it makes every one a\nregression test with nothing to argue about.",
+      "author": "Priya Raman <priya.raman@example.com>",
+      "date": "2025-09-29T16:40:00Z",
+      "paths": [
+        "tests/__init__.py",
+        "tests/conftest.py",
+        "tests/test_chunker.py",
+        "tests/test_retriever.py",
+        "tests/test_router.py",
+        "tests/test_guardrails.py",
+        "tests/test_prompt_builder.py",
+        "tests/test_metrics.py",
+        "tests/test_cassettes.py",
+        "tests/test_pipeline.py",
+        "tests/test_eval.py",
+        "tests/test_api.py"
+      ]
+    },
+    {
+      "message": "ci: gate on the evaluation metrics, not just on the tests\n\nEvery metric is 1.0 on a healthy build, so CI can fail on any drop rather than\nnegotiating about what is good enough.",
+      "author": "Ines Varga <ines.varga@example.com>",
+      "date": "2025-11-10T12:00:00Z",
+      "paths": [
+        "ci/run_ci.sh",
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "message": "docs: the refusal, the two signals, and what the cassette key leaves out",
+      "author": "Priya Raman <priya.raman@example.com>",
+      "date": "2026-01-26T09:50:00Z",
+      "paths": [
+        "README.md",
+        "ARCHITECTURE.md",
+        "NOTES.md"
+      ]
+    }
+  ],
+  "seed_branches": [],
+  "env": {
+    "required": [
+      "WS_POSTGRES_PORT",
+      "WS_APP_PORT"
+    ],
+    "extra": {
+      "POSTGRES_DB": "ragqa",
+      "POSTGRES_USER": "ragqa",
+      "POSTGRES_PASSWORD": "ragqa"
+    },
+    "requires_anthropic_key": false
+  },
+  "ports": {
+    "postgres": 5432,
+    "app": 8000
+  },
+  "db_seeds": {},
+  "setup_commands": [
+    "docker compose up -d --wait",
+    "make migrate",
+    "make test   # expect failures: reproducing them is step one",
+    "make eval   # the four numbers, and which question moved"
+  ],
+  "harness_setup": [
+    "ragqa migrate"
+  ],
+  "grading": {
+    "diff_exclude": [
+      "*.lock",
+      "fixtures/llm_cassettes/*"
+    ],
+    "include_full_files": [
+      "src/ragqa/rag/retriever.py",
+      "src/ragqa/rag/router.py",
+      "src/ragqa/rag/guardrails.py",
+      "src/ragqa/rag/chunker.py",
+      "src/ragqa/eval/metrics.py"
+    ]
+  }
+}

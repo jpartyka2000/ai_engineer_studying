@@ -1,0 +1,52 @@
+# Services for the ragqa exercise.
+#
+# Host ports come from the adjacent .env, which the harness generates with a port
+# allocated from 55000-55999. Compose substitutes ${WS_POSTGRES_PORT} natively, so no
+# templating step is needed and this file is directly runnable by an author.
+#
+# Only the PUBLISHED port moves. Inside this network the app reaches Postgres at db:5432.
+#
+# There is no vector database service. The index is a few hundred chunks held in the
+# application process and rebuilt at start-up in milliseconds, which is why this stack is
+# two containers rather than three.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ragqa}
+      POSTGRES_USER: ${POSTGRES_USER:-ragqa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ragqa}
+    ports:
+      - "${WS_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Without this, `docker compose up -d --wait` returns while Postgres is still
+      # starting and the first migration fails on a closed socket.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ragqa} -d ${POSTGRES_DB:-ragqa}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    image: aiprep-ragqa:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ragqa}:${POSTGRES_PASSWORD:-ragqa}@db:5432/${POSTGRES_DB:-ragqa}
+      RAGQA_ROOT: /app
+      PYTHONPATH: /app/src
+    volumes:
+      - .:/app
+    ports:
+      - "${WS_APP_PORT:-55800}:8000"
+    command:
+      - sh
+      - -c
+      - "uvicorn ragqa.api:app --host 0.0.0.0 --port 8000 || sleep infinity"
+
+volumes:
+  pgdata:

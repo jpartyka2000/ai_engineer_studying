@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ragqa"
+version = "0.5.0"
+description = "Retrieval-augmented question answering over an internal knowledge base"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110,<1",
+    "uvicorn[standard]>=0.27,<1",
+    "pydantic>=2.6,<3",
+    "psycopg[binary]>=3.1,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<9", "httpx>=0.27,<1"]
+
+[project.scripts]
+ragqa = "ragqa.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short -ra"
+markers = [
+    # Needs a running Postgres. Everything about retrieval, generation and scoring
+    # carries neither marker, because none of it should need a database to be tested.
+    "db: requires PostgreSQL",
+    # The offline evaluation. Separated so CI runs it as its own step and a regression
+    # reads as "quality dropped" rather than as one red dot among hundreds.
+    "eval: scores the system against the labelled set",
+]
