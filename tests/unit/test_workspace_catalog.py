@@ -212,13 +212,34 @@ def test_the_reference_patch_reverses_the_mutation(authored):
         reference = (directory / "reference.patch").read_text(encoding="utf-8")
 
         def changes(text: str) -> tuple[list[str], list[str]]:
-            added = sorted(
-                line[1:] for line in text.splitlines() if line.startswith("+") and line[:3] != "+++"
-            )
-            removed = sorted(
-                line[1:] for line in text.splitlines() if line.startswith("-") and line[:3] != "---"
-            )
-            return added, removed
+            """Split a unified diff into its added and removed line multisets.
+
+            File headers are identified by their *pairing* -- a ``--- `` line
+            immediately followed by a ``+++ `` one -- rather than by prefix. Testing
+            the prefix alone silently discards any real change whose content begins
+            with ``--`` or ``++``, which in a patch touching SQL means every comment
+            line vanishes from the comparison and two patches that are not inverses
+            compare equal.
+            """
+            added: list[str] = []
+            removed: list[str] = []
+            lines = text.splitlines()
+            index = 0
+            while index < len(lines):
+                line = lines[index]
+                if (
+                    line.startswith("--- ")
+                    and index + 1 < len(lines)
+                    and lines[index + 1].startswith("+++ ")
+                ):
+                    index += 2
+                    continue
+                if line.startswith("+"):
+                    added.append(line[1:])
+                elif line.startswith("-"):
+                    removed.append(line[1:])
+                index += 1
+            return sorted(added), sorted(removed)
 
         mutation_added, mutation_removed = changes(mutation)
         reference_added, reference_removed = changes(reference)
