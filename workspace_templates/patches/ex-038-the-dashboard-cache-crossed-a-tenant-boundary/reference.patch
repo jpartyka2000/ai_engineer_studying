@@ -1,0 +1,39 @@
+--- a/src/sqlgenie/nl2sql/pipeline.py
++++ b/src/sqlgenie/nl2sql/pipeline.py
+@@ -94,11 +94,6 @@ class Answer:
+         }
+ 
+ 
+-#: Answers are memoised: the dashboard asks the same handful of questions on
+-#: every refresh and re-running them was the bulk of our database load.
+-_ANSWER_CACHE: dict[str, Answer] = {}
+-
+-
+ def ask(
+     question: str,
+     *,
+@@ -126,10 +121,6 @@ def ask(
+             generated SQL.
+         ExecutionError: If the scoped statement failed to run.
+     """
+-    cached = _ANSWER_CACHE.get(question)
+-    if cached is not None:
+-        return cached
+-
+     try:
+         generation = generator.generate_sql(client, question)
+     except CassetteMissError as exc:
+@@ -198,12 +189,10 @@ def ask(
+             row_count=result.row_count,
+         )
+     )
+-    answer = Answer(
++    return Answer(
+         question=question,
+         generated_sql=generation.sql,
+         executed_sql=scoped.sql,
+         result=result,
+         scoped=scoped,
+     )
+-    _ANSWER_CACHE[question] = answer
+-    return answer

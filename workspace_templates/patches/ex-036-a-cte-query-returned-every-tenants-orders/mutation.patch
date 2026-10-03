@@ -1,0 +1,75 @@
+--- a/src/sqlgenie/nl2sql/pipeline.py
++++ b/src/sqlgenie/nl2sql/pipeline.py
+@@ -139,19 +139,8 @@ def ask(
+     try:
+         scoped = enforce_tenant_scope(generation.sql)
+     except PolicyError as exc:
+-        # The rejection path, audited with the SQL that was refused. This is the branch
+-        # an investigator reads first after an incident, and it is the one most often
+-        # missing from services like this.
+-        audit.record(
+-            AuditRecord(
+-                tenant_id=tenant_id,
+-                question=question,
+-                generated_sql=generation.sql,
+-                executed_sql=None,
+-                outcome=Outcome.REFUSED,
+-                reason=str(exc),
+-            )
+-        )
++        # Refusals are not audited: they produced no query, so there is nothing
++        # for an investigator to look at, and they were drowning the trail.
+         raise RefusedError(str(exc)) from exc
+ 
+     try:
+@@ -182,7 +171,7 @@ def ask(
+             tenant_id=tenant_id,
+             question=question,
+             generated_sql=generation.sql,
+-            executed_sql=scoped.sql,
++            executed_sql=generation.sql,
+             outcome=Outcome.EXECUTED,
+             base_tables=tuple(sorted(scoped.base_tables)),
+             predicates_added=scoped.predicates_added,
+--- a/src/sqlgenie/nl2sql/policy/row_level_policy.py
++++ b/src/sqlgenie/nl2sql/policy/row_level_policy.py
+@@ -160,7 +160,10 @@ def enforce_tenant_scope(sql: str, *, strict: bool = True) -> ScopedQuery:
+     unscoped: set[str] = set()
+     scoped: set[str] = set()
+ 
+-    for scope in traverse_scope(tree):
++    # Walking every scope double-scoped the lateral join in the monthly report
++    # and the planner stopped using the index. Scope the statement we actually
++    # execute; the nested selects are constrained by what feeds them.
++    for scope in list(traverse_scope(tree))[-1:]:
+         visited += 1
+         # Not every scope is a SELECT. A LATERAL, for instance, is its own scope whose
+         # sources are visible to the select that encloses it, and that enclosing select
+@@ -196,12 +199,8 @@ def enforce_tenant_scope(sql: str, *, strict: bool = True) -> ScopedQuery:
+             tables.add(name)
+ 
+             if not catalog.is_known(name):
+-                if strict:
+-                    raise PolicyError(
+-                        f"refusing to execute: {name!r} is not a table this service knows. "
+-                        "An unresolvable reference is not scoped, and an unscoped "
+-                        "reference is a cross-tenant read."
+-                    )
++                # Common table expressions surface here as table names. Skip what
++                # the catalog does not recognise rather than failing the request.
+                 unscoped.add(name)
+                 continue
+ 
+@@ -223,12 +222,6 @@ def enforce_tenant_scope(sql: str, *, strict: bool = True) -> ScopedQuery:
+     # scope shape the walk did not place a predicate into -- produces a query that runs
+     # fine and returns other tenants' rows.
+     missed = {name for name in tables if name in catalog.TENANT_SCOPED} - scoped
+-    if missed and strict:
+-        raise PolicyError(
+-            f"refusing to execute: no tenant predicate was placed for {sorted(missed)}. "
+-            "The statement reads tenant data through a construct this policy could not "
+-            "constrain."
+-        )
+     unscoped |= missed
+ 
+     rewritten = tree.sql(dialect=DIALECT)

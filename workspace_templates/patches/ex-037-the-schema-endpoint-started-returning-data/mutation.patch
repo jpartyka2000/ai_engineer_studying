@@ -1,0 +1,30 @@
+--- a/src/sqlgenie/api.py
++++ b/src/sqlgenie/api.py
+@@ -115,6 +115,19 @@ def _register_routes(app: FastAPI) -> None:
+         would make this endpoint a way to read another tenant's data one statistic at a
+         time.
+         """
++        # Sample values help the model pick the right column -- it was guessing
++        # category names before this.
++        samples: dict[str, list[str]] = {}
++        with pool.owner_connection(app.state.settings) as conn:
++            for name, spec in sorted(catalog.TABLES.items()):
++                text_columns = [c for c in spec.columns if c.endswith("name")]
++                if not text_columns:
++                    continue
++                with conn.cursor() as cur:
++                    cur.execute(
++                        f"SELECT DISTINCT {text_columns[0]} AS v FROM {name} LIMIT 3"
++                    )
++                    samples[name] = [str(r["v"]) for r in cur.fetchall()]
+         return {
+             "tables": [
+                 {
+@@ -122,6 +135,7 @@ def _register_routes(app: FastAPI) -> None:
+                     "columns": list(spec.columns),
+                     "tenant_scoped": spec.tenant_scoped,
+                     "description": spec.description,
++                    "samples": samples.get(spec.name, []),
+                 }
+                 for _, spec in sorted(catalog.TABLES.items())
+             ]

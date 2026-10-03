@@ -1,0 +1,30 @@
+--- a/src/sqlgenie/nl2sql/pipeline.py
++++ b/src/sqlgenie/nl2sql/pipeline.py
+@@ -19,7 +19,7 @@ from decimal import Decimal
+ from typing import Any
+ 
+ from sqlgenie.llm.recorded_client import CassetteMissError, RecordedClient
+-from sqlgenie.nl2sql import audit, catalog, generator
++from sqlgenie.nl2sql import audit, generator
+ from sqlgenie.nl2sql.audit import AuditRecord, Outcome
+ from sqlgenie.nl2sql.executor import ExecutionError, ExecutionResult, execute
+ from sqlgenie.nl2sql.policy.row_level_policy import PolicyError, ScopedQuery, enforce_tenant_scope
+@@ -136,18 +136,6 @@ def ask(
+         )
+         raise RefusedError("no recorded generation for this question") from exc
+ 
+-    # Verify the catalog still matches the live schema before we trust it. Added
+-    # after a column rename shipped without the catalog being updated and the
+-    # generator spent a day producing SQL for a column that no longer existed.
+-    with connection.cursor() as _cur:
+-        for _table in sorted(catalog.TABLES):
+-            _cur.execute(
+-                "SELECT column_name FROM information_schema.columns "
+-                "WHERE table_name = %s",
+-                (_table,),
+-            )
+-            _cur.fetchall()
+-
+     try:
+         scoped = enforce_tenant_scope(generation.sql)
+     except PolicyError as exc:
